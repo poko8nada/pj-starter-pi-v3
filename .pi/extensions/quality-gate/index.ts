@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import type {
   AgentEndEvent,
   ExtensionAPI,
@@ -6,6 +7,7 @@ import type {
 import { runChecks, toRelative } from './checks.ts';
 import type { CheckRun } from './report.ts';
 import { buildGateMessage } from './report.ts';
+import { changedSince, snapshot } from './targets.ts';
 
 /**
  * 1 ターンで自動チェックをやり直せる回数の上限。
@@ -21,23 +23,41 @@ const MUTATING_TOOLS = new Set(['edit', 'write']);
 
 /** ターンをまたいで持ち越す状態 */
 interface GateState {
-  /** 今回の run で編集されたファイル（絶対パス） */
+  /** この run で edit/write が触れたファイル（絶対パス）。git が使えないときの代替 */
   touched: Set<string>;
-  /** 直近でチェックしたファイル。エージェントが何も編集しなかった場合の再チェックに使う */
-  pendingFiles: string[];
+  /** run 開始時点の指紋。git が答えられなければ undefined */
+  baseline: Map<string, string> | undefined;
   /** 自動チェックの連続失敗回数 */
   attempts: number;
+  /** 直近で落ちたチェックの名前。変更の無いターンで警告するときに使う */
+  lastFailed: string[];
+  /** 上限まで失敗して打ち切ったか。ユーザーが話すまで動かさない */
+  gaveUp: boolean;
   /** 実行中ガード（agent_end の多重実行を防ぐ） */
   running: boolean;
 }
 
 function createState(): GateState {
-  return { touched: new Set(), pendingFiles: [], attempts: 0, running: false };
+  return {
+    touched: new Set(),
+    baseline: undefined,
+    attempts: 0,
+    lastFailed: [],
+    gaveUp: false,
+    running: false,
+  };
 }
 
-function resetAttempts(state: GateState): void {
+/** 連続失敗の記録を消す */
+function clearFailures(state: GateState): void {
   state.attempts = 0;
-  state.pendingFiles = [];
+  state.lastFailed = [];
+}
+
+/** 打ち切り後、ユーザーが新しい用件を出したら再び動かす */
+function rearm(state: GateState): void {
+  clearFailures(state);
+  state.gaveUp = false;
 }
 
 /** ツール呼び出しから対象ファイルパスを取り出す（edit/write はいずれも path を持つ） */
@@ -79,13 +99,6 @@ function isInterrupted(event: AgentEndEvent): boolean {
   return stopReason === 'error' || stopReason === 'aborted';
 }
 
-/** 次にチェックすべきファイルを決める */
-function resolveTargets(state: GateState, edited: readonly string[]): string[] {
-  // エージェントが何も編集しなかった場合は前回と同じ対象を再チェックする。
-  // ここで諦めると上限回数に達する前に黙って止まってしまう。
-  return edited.length > 0 ? [...edited] : state.pendingFiles;
-}
-
 /** 失敗通知に必要な情報をまとめた入力 */
 interface FailureInput {
   readonly pi: ExtensionAPI;
@@ -98,10 +111,8 @@ interface FailureInput {
 /** 失敗内容を LLM に followUp として渡し、修正ターンを起こす */
 function reportFailure({ pi, ctx, state, files, run }: FailureInput): void {
   state.attempts += 1;
-  // 次ターンでエージェントが何も編集しなかった場合、同じ対象を再チェックできるように保持する
-  state.pendingFiles = [...files];
   const { outcomes, skipped } = run;
-  const failed = outcomes.filter((outcome) => outcome.failed);
+  state.lastFailed = outcomes.filter((outcome) => outcome.failed).map((outcome) => outcome.label);
   const isFinalAttempt = state.attempts >= MAX_ATTEMPTS;
   const toRel = (file: string) => toRelative(ctx.cwd, file);
 
@@ -120,25 +131,23 @@ function reportFailure({ pi, ctx, state, files, run }: FailureInput): void {
       details: {
         attempt: state.attempts,
         maxAttempts: MAX_ATTEMPTS,
-        failed: failed.map((outcome) => outcome.label),
+        failed: state.lastFailed,
       },
     },
     { triggerTurn: true, deliverAs: 'followUp' },
   );
 
   if (isFinalAttempt) {
-    const labels = failed.map((outcome) => outcome.label).join(', ');
-    ctx.ui.notify(
-      `quality-gate: still failing after ${MAX_ATTEMPTS} attempts (${labels}). Stopping automatic retries.`,
-      'error',
-    );
-    // 未解決のまま打ち切った内容をセッションに残す（後から追跡できるように）
-    pi.appendEntry('quality-gate-unresolved', {
-      attempts: state.attempts,
-      failed: failed.map((outcome) => outcome.label),
-      files: files.map(toRel),
-    });
-    resetAttempts(state);
+    if (ctx.hasUI) {
+      ctx.ui.notify(
+        `quality-gate: still failing after ${MAX_ATTEMPTS} attempts (${state.lastFailed.join(', ')}). Stopping automatic retries.`,
+        'error',
+      );
+    }
+    // ここで打ち切る。attempts を消すだけだと、直後のターンで編集されたときに
+    // 新しい予算でまた 3 回走り、上限が上限として働かない。
+    clearFailures(state);
+    state.gaveUp = true;
   }
 }
 
@@ -151,7 +160,7 @@ async function runGate(
 ): Promise<void> {
   const run = await runChecks(pi, ctx, files);
   if (run.outcomes.every((outcome) => !outcome.failed)) {
-    resetAttempts(state);
+    clearFailures(state);
     if (ctx.hasUI) {
       const labels = run.outcomes.map((outcome) => outcome.label).join(', ');
       ctx.ui.notify(`quality-gate: ${labels} passed`, 'info');
@@ -160,6 +169,45 @@ async function runGate(
   }
 
   reportFailure({ pi, ctx, state, files, run });
+}
+
+/**
+ * その run の間に変わったファイルを決める。
+ * git の指紋が取れればそれを使い、取れなければ edit/write の記録に落ちる。
+ */
+async function resolveTargets(
+  pi: ExtensionAPI,
+  cwd: string,
+  state: GateState,
+  edited: readonly string[],
+): Promise<string[]> {
+  // await の前に控える。待っている間に agent_start が来ても取り違えない
+  const before = state.baseline;
+  const after = await snapshot(pi, cwd);
+  // 待っている間に次の run が始まっていたら、そちらの基準を残す（早い方を持つ方が安全）
+  if (state.baseline === before) {
+    state.baseline = after;
+  }
+
+  const changed = before === undefined || after === undefined ? [] : changedSince(before, after);
+
+  // 記録も混ぜる。run の途中で commit や stash をされると差分から消えるため。
+  // 消えたパスは後段の prepareTargets が落とす。
+  return [...new Set([...changed, ...edited])];
+}
+
+/** 失敗が残ったまま変更の無いターンが終わったとき、一度だけ告げてループを閉じる */
+function reportUnresolved(ctx: ExtensionContext, state: GateState): void {
+  if (state.attempts === 0) {
+    return;
+  }
+  if (ctx.hasUI) {
+    ctx.ui.notify(
+      `quality-gate: ${state.lastFailed.join(', ')} still failing, and this turn changed nothing. Stopping automatic retries.`,
+      'error',
+    );
+  }
+  clearFailures(state);
 }
 
 /** agent_end での 1 回分の処理 */
@@ -173,21 +221,39 @@ async function handleAgentEnd(
     return;
   }
 
+  // 記録はここで必ず捨てる。打ち切り中に溜めた分を再開後のターンに持ち越さない。
   const edited = [...state.touched];
   state.touched = new Set();
-  const files = resolveTargets(state, edited);
 
-  if (files.length === 0 || isInterrupted(event)) {
-    resetAttempts(state);
+  // 打ち切り後はユーザーが話すまで動かない。
+  if (state.gaveUp) {
     return;
   }
 
+  // ユーザーが止めた run、モデルが失敗した run ではゲートを動かさない。
+  if (isInterrupted(event)) {
+    clearFailures(state);
+    return;
+  }
+
+  // 指紋の取得も含めて running で覆う（その間に次の agent_end が来ても二重に走らせない）
   state.running = true;
   try {
+    const files = await resolveTargets(pi, ctx.cwd, state, edited);
+
+    // 変更の無いターン。未解決の失敗が残っているなら、黙って見逃さずに一度だけ告げる。
+    // エージェントが「直した」と言って何も変えていない場合がここに来る。
+    if (files.length === 0) {
+      reportUnresolved(ctx, state);
+      return;
+    }
+
     await runGate(pi, ctx, state, files);
   } catch (error) {
-    ctx.ui.notify(`quality-gate: check execution failed: ${errorMessage(error)}`, 'error');
-    resetAttempts(state);
+    if (ctx.hasUI) {
+      ctx.ui.notify(`quality-gate: check execution failed: ${errorMessage(error)}`, 'error');
+    }
+    clearFailures(state);
   } finally {
     state.running = false;
   }
@@ -196,26 +262,40 @@ async function handleAgentEnd(
 export default function (pi: ExtensionAPI) {
   const state = createState();
 
+  // agent_start が重なったとき、古い snapshot が新しい基準を上書きしないようにする
+  let baselineEpoch = 0;
+
   pi.on('session_start', async () => {
     Object.assign(state, createState());
   });
 
-  // ユーザーが新しく入力した時点でリセットする。
+  // ユーザーが新しく入力した時点でリセットする（打ち切りも解く）。
   // 拡張自身の sendMessage は source: "extension" なのでここには来ない。
   pi.on('input', async (event) => {
     if (event.source !== 'extension') {
-      resetAttempts(state);
+      rearm(state);
     }
   });
 
-  // agent_end の messages にはツール入力が含まれないため、ここで収集する
-  pi.on('tool_result', async (event) => {
+  // 変更の検出は git の指紋で行う。run の開始時点を記録しておく。
+  pi.on('agent_start', async (_event, ctx) => {
+    baselineEpoch += 1;
+    const epoch = baselineEpoch;
+    const current = await snapshot(pi, ctx.cwd);
+    if (epoch === baselineEpoch) {
+      state.baseline = current;
+    }
+  });
+
+  // git が答えられないときの代替。agent_end の messages にはツール入力が無いためここで集める。
+  // 相対パスで来るので cwd 基準の絶対パスに直す（existsSync や git は process.cwd() で解決するため）
+  pi.on('tool_result', async (event, ctx) => {
     if (!MUTATING_TOOLS.has(event.toolName) || event.isError) {
       return;
     }
     const path = extractPath(event.input);
     if (path !== undefined) {
-      state.touched.add(path);
+      state.touched.add(resolve(ctx.cwd, path));
     }
   });
 
@@ -223,34 +303,5 @@ export default function (pi: ExtensionAPI) {
   // この時点の isIdle() は false で、followUp として積むのが正しい振る舞い。
   pi.on('agent_end', async (event, ctx) => {
     await handleAgentEnd(pi, ctx, state, event);
-  });
-
-  // 打ち切った後に未解決のまま残った内容を記録する（監査用）。
-  // 通常の打ち切り時は reportFailure で即時記録するため、ここは中断・終了時の取りこぼしを拾う。
-  pi.on('session_shutdown', async () => {
-    if (state.pendingFiles.length > 0 && state.attempts > 0) {
-      pi.appendEntry('quality-gate-unresolved', {
-        attempts: state.attempts,
-        files: state.pendingFiles,
-      });
-    }
-  });
-
-  pi.registerCommand('quality-gate', {
-    description: 'Run format, lint, and typecheck on the files touched in this session',
-    handler: async (_args, ctx) => {
-      const files = [...state.touched];
-      if (files.length === 0) {
-        ctx.ui.notify('quality-gate: no files touched yet in this session', 'warning');
-        return;
-      }
-
-      const run = await runChecks(pi, ctx, files);
-      const lines = run.outcomes.map(
-        (outcome) => `${outcome.failed ? 'FAIL' : 'ok  '} ${outcome.label}`,
-      );
-      const hasFailure = run.outcomes.some((outcome) => outcome.failed);
-      ctx.ui.notify(`quality-gate:\n${lines.join('\n')}`, hasFailure ? 'error' : 'info');
-    },
   });
 }
