@@ -1,9 +1,0 @@
-{
-  "enabled": true,
-  "notifications": true,
-  "sounds": {
-    "permission": "Blow",
-    "question": "Ping",
-    "done": "Glass"
-  }
-}

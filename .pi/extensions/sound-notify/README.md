@@ -26,7 +26,7 @@ cp .pi/extensions/sound-notify/index.ts ~/.pi/agent/extensions/sound-notify/
 
 ## Configuration
 
-Optional. Copy `config.example.json` to `config.json` in the same directory:
+Optional. Nothing is needed to use the defaults above. To change them, create `config.json` in this directory (it is not committed):
 
 ```json
 {
