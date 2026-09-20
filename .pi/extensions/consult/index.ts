@@ -7,7 +7,6 @@
  *   - ツールは読み取り専用。書けるツールを許したときだけ worktree に入る。
  *   - プロジェクトの設定・拡張は子に読ませない。
  *   - 出力 30k トークン / 30 ターンで走行中に打ち切る（外から変えられない）。
- *   - 入れ子は 1 段まで。
  *
  * 費用がかかるので、呼ぶ前に必ず確認を出す。
  */
@@ -51,7 +50,7 @@ const PARAMETERS = Type.Object({
     Type.String({ description: 'Appended to the system prompt. Write the role, not a file path' }),
   ),
   input: Type.Optional(
-    Type.String({ description: 'Path to a file for the child to read on stdin' }),
+    Type.String({ description: 'Path to a file for the child to read on stdin. It must exist' }),
   ),
   tools: Type.Optional(
     Type.String({ description: `Tools the child may use (default ${READ_ONLY_TOOLS})` }),
@@ -111,6 +110,7 @@ interface Prepared {
  */
 function prepare(ctx: ExtensionContext, options: ConsultOptions): Prepared {
   const base = ctx.cwd;
+  // 読めない input は例外にする。無言で空の子を走らせると、文脈なしの答えが返る。
   const payload = options.input === undefined ? undefined : readPayload(options.input, base);
   const needsIsolation = options.worktree && includesWritingTool(options.tools);
 

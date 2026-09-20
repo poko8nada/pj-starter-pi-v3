@@ -7,7 +7,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { accountEvent, type Spent } from './spec.ts';
@@ -52,10 +52,20 @@ export function removeWorktree(handle: Worktree): void {
   rmSync(handle.parent, { recursive: true, force: true });
 }
 
-/** payload を文字列にする。無ければ undefined（呼び出し側が案内する） */
-export function readPayload(spec: string, cwd: string): string | undefined {
-  const file = isAbsolute(spec) ? spec : join(cwd, spec);
-  return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+/**
+ * payload を読む。読めない入力は例外にする（道具の失敗として呼び出し側が伝える）。
+ *
+ * existsSync で先に確かめると「無いときだけ undefined」になり、
+ * 文脈を渡したつもりで空の子が走る。ディレクトリも通ってしまう。
+ */
+export function readPayload(input: string, cwd: string): string {
+  const file = isAbsolute(input) ? input : join(cwd, input);
+  try {
+    return readFileSync(file, 'utf8');
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`could not read the input file: ${file} (${detail})`, { cause: error });
+  }
 }
 
 export interface RunResult {

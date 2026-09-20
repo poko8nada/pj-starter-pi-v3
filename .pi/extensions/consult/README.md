@@ -17,16 +17,16 @@ After adding or editing, run `/reload` in pi.
 
 ## Parameters
 
-| Parameter | Required | Meaning                                                        |
-| --------- | -------- | -------------------------------------------------------------- |
-| `task`    | yes      | What the child should do                                       |
-| `role`    | no       | Appended to the system prompt. Write the role, not a file path |
-| `input`   | no       | Path to a file for the child to read on stdin                  |
-| `tools`   | no       | Tools the child may use. Default `read,ls,find,grep`           |
+| Parameter | Required | Meaning                                                                            |
+| --------- | -------- | ---------------------------------------------------------------------------------- |
+| `task`    | yes      | What the child should do                                                           |
+| `role`    | no       | Appended to the system prompt. Write the role, not a file path                     |
+| `input`   | no       | Path to a file for the child to read on stdin. Fails the call if it cannot be read |
+| `tools`   | no       | Tools the child may use. Default `read,ls,find,grep`                               |
 
 ```
 consult({ role: "You are a strict auditor. Look for what is MISSING.",
-          input: "spec/harness/v001.json",
+          input: "tsconfig.json",
           task: "What is missing in this file?" })
 ```
 
@@ -57,8 +57,6 @@ If a writing tool is allowed outside a git repository, the call fails rather tha
 
 What the child does read: `AGENTS.md`, and extensions under `~/.pi/agent/extensions/`. Only project-local resources are withheld.
 
-That last point also bounds the nesting: `consult` lives under `.pi/extensions/`, so a child cannot call it, and a grandchild cannot exist. The limits below apply per process, so would this matter if a child could nest, and it cannot.
-
 The child also does not run `quality-gate`: the extension is project-local, so it is not loaded. Checks are the parent's job.
 
 ## Cancelling
@@ -79,4 +77,4 @@ The child runs whatever model the caller's pi is configured to use, and there is
 pnpm test:run .pi/extensions/consult
 ```
 
-Covers the pure parts: pi argument assembly, JSONL parsing, the spend accounting, the worktree decision, and the nesting depth. Process spawning and worktree creation are not covered; they need a real `pi` and a real repository.
+`spec.test.ts` covers the pure parts: pi argument assembly, JSONL parsing, the spend accounting, and the worktree decision. `run.test.ts` covers reading the input file. Process spawning and worktree creation are not covered; they need a real `pi` and a real repository.

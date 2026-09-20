@@ -51,4 +51,4 @@ Three attempts per turn. Beyond that the agent is told to stop and report what r
 
 ## Tests
 
-No test file. The checks shell out to `pnpm`, and the rest is event wiring; both need a real pi session to exercise. This is the gap noted in `spec/harness/v001.json` under `quality-gate`.
+No test file. The checks shell out to `pnpm`, and the rest is event wiring; both need a real pi session to exercise.
