@@ -53,43 +53,46 @@ cycles/
 - Who:
   - <id>: 誰か。属性
 
+Changes: keep / update **理由**
+
 ## Goal
 成し遂げたい状態（利用者の側で書く）
+
+Changes: keep
 
 ## Non-goal
 - やらないこと
   - Why: やらない理由
 
+Changes: keep
+
 ## What to build
-1. <unit-id>
-   - Change: keep / update / add
-     - Why: 変えた理由（update は必須）
-   - Actor: <Who の id>
-   - Given: 前提だけ
-   - When: 1 つの行動
-   - Then: 観測できる結果
-N. <unit-id>
-   - Change: drop
-     - Why: 消した理由
+
+### 1. <unit-id>
+
+- Change: keep / update / add **理由**（update は必須）
+- Actor: <Who の id>
+- Given: 前提だけ
+- When: 1 つの行動
+- Then:
+  - 観測できる結果（複数なら箇条書き）
+
+### N. <unit-id>
+
+- Change: drop **理由**
+
+## What to keep
+
+- <unit-id> From: <NNN>
 
 ## Stack
 - 何で作るか（最後に決まる）
 
+Changes: keep
+
 ## Retro
 - Good:
 - Bad:
-```
-
-`002` 以降は題の直後に `Changes` が入る:
-
-```
-## Changes
-- From: 001
-- Goal: keep
-- Non-goal: update
-  - Why: `使わない設定を消さない` を追加
-- Stack: add
-  - Why: 当初は未定だった
 ```
 
 ## plan の型
@@ -170,7 +173,8 @@ Commit: <hash>
 ラベルと中身
 
 - 節名と欄名は英語（型なので固定）。中身は自由な言語でよい
-- 横に伸びる構造を使わない。表は長い日本語で壊れる。単位は番号付きの行、確かめは入れ子
+- 横に伸びる構造を使わない。表は長い日本語で壊れる
+- **単位は小見出し（`### N. <unit-id>`）。** 欄はその下の箇条書きで、入れ子は 2 スペース。インデントで段を作っても、Markdown の整形で正規化されるので、段は見出しで作る
 
 書くもの
 
@@ -183,6 +187,8 @@ Commit: <hash>
 - **プロダクトがすることを全部数え上げる。振る舞いの単位が無いものがあれば、定義の穴。** 数えるのはファイルではなく「プロダクトが何をするか」
 - プロダクトにとって、ハーネス（検査・フック・拡張）は与えられた環境で、単位にはならない。`Stack` に書く。このリポジトリ自身は例外で、プロダクト = ハーネスなので、ハーネスの振る舞いが単位になる
 - **1 単位 = 1 つのユーザーの行動。** 行動が 2 つに割れたら 2 単位
+- **使う側から書く。** 機構の名前（「スキルが読まれる」等）ではなく、使う人に何が起きるかを書く
+- `Then` は複数あってよい。**複数なら箇条書きにする**（1 文に詰めない）
 - 名前は「作るもの」の ID。振る舞いの説明を名前しない。英語、名詞 2 語、ハイフンは 1 つまで
 - 成果物に既に名前があればそれを使う（`quality-gate`）
 - `Actor` は `Who` の id を指す（機械的に確かめられる）
@@ -195,12 +201,14 @@ Commit: <hash>
 
 変更の記録（`002` 以降）
 
-- 単位には必ず `Change:` を付ける。`keep` / `update` / `add` / `drop`
-- `Why` は `update` と `drop` に必須、`add` は任意、`keep` は書かない
-- `drop` の単位は見出し + `Change:` + `Why` だけ。`Given` / `When` / `Then` は書かない（もう作らないものに仕様は無い）。消した 1 枚にだけ現れる
-- `drop` の単位は活動中の単位の後ろに置く
-- 単位の外（`Goal` / `Non-goal` / `Stack`）は `Changes` 節に同じ語彙で書く
-- `001` は全部 `add`。初出なので自明だが、印を省くと未記入と区別できない。`Changes` 節は `002` 以降（`From:` の相手が要る）
+- 節（`What` / `Goal` / `Non-goal` / `Stack`）の末尾に `Changes: keep / update **理由**` を置く
+- 単位の中に `Change: keep / update / add / drop **理由**` を置く（`update` と `drop` は必須）
+- 理由は `**` で囲む。**太字は理由にだけ使う**（読む人が探しているのは「何が変わったか」だから）
+- **`keep` の単位は `What to build` に書かない。** `What to keep` に集め、`From: <NNN>` で仕様のある 1 枚を指す
+- `What to build` と `What to keep` と `Changes:` で、触るものと触らないものが全部数え上がる。`From:` を辿れば仕様に着く
+- `keep` なのに検証できていない場合、本来は前の版に問題があったのだから `update` になるはず。例外として `keep` にするなら `What to build` には書かない
+- `drop` の単位は `Given` / `When` / `Then` を書かない（もう作らないものに仕様は無い）
+- `001` は全部 `add`、節も全部 `add`（初出なので自明だが、印を省くと未記入と区別できない）
 
 サイクル中の編集
 
