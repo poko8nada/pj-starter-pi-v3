@@ -25,7 +25,6 @@ export interface ConsultOptions {
   /** 選んだ type の名前。診断に使う */
   readonly type: string;
   readonly task: string;
-  readonly input?: string;
   readonly policy: TypePolicy;
 }
 

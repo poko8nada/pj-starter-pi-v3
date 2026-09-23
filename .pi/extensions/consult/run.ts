@@ -130,6 +130,42 @@ export async function runWithFallback(
 }
 
 /**
+ * 複数の payload を先に全部読む。
+ *
+ * 1 つでも読めなければ投げる。子を起動してから「2 つ目が読めない」と分かっても、
+ * 1 体目はもう走っている。setup の誤りは、走らせる前に落とす。
+ */
+export function readPayloads(inputs: readonly string[], cwd: string): string[] {
+  return inputs.map((input) => readPayload(input, cwd));
+}
+
+/** 入力ごとの結果。子の失敗も状態として持つ（投げない） */
+export type InputResult =
+  | { readonly ok: true; readonly run: RunResult }
+  | { readonly ok: false; readonly error: string };
+
+/**
+ * 入力ごとに 1 体走らせる。
+ *
+ * 子は互いに独立なので並列に走らせる。結果は入力の順で返すので、待ち時間だけが縮む。
+ * 1 体の失敗はその 1 体の状態にする（「実行中の失敗は投げない」の実装）。
+ */
+export async function runForInputs<T>(
+  inputs: readonly T[],
+  runOne: (input: T, index: number) => Promise<RunResult>,
+): Promise<InputResult[]> {
+  const settled = await Promise.allSettled(inputs.map((input, index) => runOne(input, index)));
+  return settled.map((entry) =>
+    entry.status === 'fulfilled'
+      ? { ok: true, run: entry.value }
+      : {
+          ok: false,
+          error: entry.reason instanceof Error ? entry.reason.message : String(entry.reason),
+        },
+  );
+}
+
+/**
  * 子を 1 回起動する。
  *
  * 中断（signal）で子を殺し、呼び出し側が後片付けできるように aborted を返す。

@@ -2,7 +2,15 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { modelAttempts, readPayload, runWithFallback, type RunResult } from './run.ts';
+import {
+  modelAttempts,
+  readPayloads,
+  readPayload,
+  runForInputs,
+  runWithFallback,
+  type RunResult,
+} from './run.ts';
+import { finalTextFrom, parseEvents } from './spec.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
 // 入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
@@ -115,5 +123,86 @@ describe('runWithFallback', () => {
     });
     expect(tried).toEqual(['a/1']);
     expect(run).toBe(cancelled);
+  });
+});
+
+describe('readPayloads', () => {
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'consult-test-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('1 つでも読めなければ投げる（子を起動する前に落とす）', () => {
+    writeFileSync(join(dir, 'a.md'), 'A');
+    expect(() => readPayloads(['a.md', 'missing.md'], dir)).toThrow(
+      /could not read the input file/,
+    );
+  });
+});
+
+describe('runForInputs', () => {
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'consult-test-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  /** 喋った子の結果 */
+  const spoke: RunResult = {
+    stdout: '{"type":"message_end","message":{"role":"assistant","usage":{"output":10}}}\n',
+    stderr: '',
+    code: 0,
+    aborted: false,
+  };
+
+  it('入力 1 つ → 1 体、結果も 1 つ', async () => {
+    writeFileSync(join(dir, 'a.md'), 'A');
+    const payloads = readPayloads(['a.md'], dir);
+    const tried: (string | undefined)[] = [];
+    const results = await runForInputs(payloads, async (payload) => {
+      tried.push(payload);
+      return spoke;
+    });
+    expect(tried).toEqual(['A']);
+    expect(results).toHaveLength(1);
+    expect(results[0]?.ok).toBe(true);
+  });
+
+  it('入力 2 つ → 2 体、結果は入力の順に並ぶ', async () => {
+    writeFileSync(join(dir, 'a.md'), 'A');
+    writeFileSync(join(dir, 'b.md'), 'B');
+    const payloads = readPayloads(['a.md', 'b.md'], dir);
+    // 子ごとに違う本文を返させる（応答が入力と取り違わっていないかを見る）
+    const results = await runForInputs(payloads, async (payload) => ({
+      ...spoke,
+      stdout: `{"type":"message_end","message":{"role":"assistant","usage":{"output":10},"content":[{"type":"text","text":"answer ${payload}"}]}}\n`,
+    }));
+    const answered = results.map((entry) =>
+      entry.ok ? finalTextFrom(parseEvents(entry.run.stdout)) : `failed: ${entry.error}`,
+    );
+    expect(answered).toEqual(['answer A', 'answer B']);
+  });
+
+  it('1 体が例外を投げても、その 1 つだけが失敗として残る', async () => {
+    const results = await runForInputs(['A', 'B', 'C'], async (payload) => {
+      if (payload === 'B') {
+        throw new Error('spawn failed');
+      }
+      return spoke;
+    });
+    expect(results.map((entry) => (entry.ok ? 'ok' : entry.error))).toEqual([
+      'ok',
+      'spawn failed',
+      'ok',
+    ]);
   });
 });

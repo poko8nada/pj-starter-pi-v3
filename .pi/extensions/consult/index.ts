@@ -23,8 +23,9 @@ import type { Static } from 'typebox';
 import {
   createWorktree,
   isGitRepo,
-  readPayload,
+  readPayloads,
   removeWorktree,
+  runForInputs,
   runPi,
   runWithFallback,
   type RunResult,
@@ -52,7 +53,10 @@ export const PARAMETERS = Type.Object({
   }),
   task: Type.String({ description: 'What the child should do' }),
   input: Type.Optional(
-    Type.String({ description: 'Path to a file for the child to read on stdin. It must exist' }),
+    Type.Array(
+      Type.String({ description: 'Path to a file for the child to read on stdin. It must exist' }),
+      { description: 'One child per path. Without it, one child with no payload' },
+    ),
   ),
 });
 
@@ -100,20 +104,16 @@ function usageLine(events: unknown[]): string {
 interface Prepared {
   readonly cwd: string;
   readonly worktree?: Worktree;
-  readonly payload?: string;
 }
 
 /**
- * 実行場所と payload を用意する。
+ * 実行場所を用意する。payload は読み終わっている前提。
  * 隔離するかは type の `environment` が決める（ツールから推測しない）。
  */
 function prepare(ctx: ExtensionContext, options: ConsultOptions): Prepared {
   const base = ctx.cwd;
-  // 読めない input は例外にする。無言で空の子を走らせると、文脈なしの答えが返る。
-  const payload = options.input === undefined ? undefined : readPayload(options.input, base);
-
   if (!needsIsolation(options.policy)) {
-    return { cwd: base, payload };
+    return { cwd: base };
   }
   if (!isGitRepo(base)) {
     // git 管理外では worktree を作れない。隔離できないまま実ツリーで書かせない。
@@ -122,7 +122,7 @@ function prepare(ctx: ExtensionContext, options: ConsultOptions): Prepared {
     );
   }
   const worktree = createWorktree(base);
-  return { cwd: worktree.dir, worktree, payload };
+  return { cwd: worktree.dir, worktree };
 }
 
 /** 結果を 1 つのテキストにする。止まった理由も本文に含める */
@@ -145,45 +145,69 @@ function compose(events: unknown[], run: RunResult): string {
   return lines.join('\n');
 }
 
-/** 子を走らせて、道具の戻り値にする */
+/** 子を走らせて、道具の戻り値にする。入力ごとに 1 体 */
 async function consult(
   ctx: ExtensionContext,
   options: ConsultOptions,
+  inputs: readonly string[],
   signal: AbortSignal | undefined,
 ): Promise<AgentToolResult<Record<string, unknown>>> {
-  // prepare の失敗はそのまま投げる。道具の失敗は例外で伝える。
-  const prepared = prepare(ctx, options);
-  playSound();
-  try {
-    // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
-    const run = await runWithFallback(options.policy.models, (model) =>
-      runPi({
-        piArgs: buildPiArgs({
-          ...options,
-          policy: { ...options.policy, models: model === undefined ? [] : [model] },
-        }),
-        cwd: prepared.cwd,
-        payload: prepared.payload,
-        signal,
-        env: process.env,
-        limits: options.policy.limits,
-      }),
-    );
-    playSound();
+  // 入力を先に全部読む。setup の誤りはここで落ちる（子を 1 体も起動しない）。
+  // 入力が無ければ、payload 無しで 1 体。
+  const payloads: (string | undefined)[] =
+    inputs.length === 0 ? [undefined] : readPayloads(inputs, ctx.cwd);
+  const labels: string[] = inputs.length === 0 ? ['(no input)'] : [...inputs];
 
-    const events = parseEvents(run.stdout);
-    return result(compose(events, run), {
-      type: options.type,
-      usage: usageLine(events),
-      stopped: run.stopped,
-      aborted: run.aborted,
-    });
-  } finally {
-    // 中断でも例外でも、必ず片付ける。
-    if (prepared.worktree !== undefined) {
-      removeWorktree(prepared.worktree);
+  playSound();
+  const results = await runForInputs(payloads, async (payload) => {
+    // 子ごとに用意する。隔離する type なら、子ごとに別の worktree になる。
+    const prepared = prepare(ctx, options);
+    try {
+      // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
+      return await runWithFallback(options.policy.models, (model) =>
+        runPi({
+          piArgs: buildPiArgs({
+            ...options,
+            policy: { ...options.policy, models: model === undefined ? [] : [model] },
+          }),
+          cwd: prepared.cwd,
+          payload,
+          signal,
+          env: process.env,
+          limits: options.policy.limits,
+        }),
+      );
+    } finally {
+      // 中断でも例外でも、必ず片付ける。
+      if (prepared.worktree !== undefined) {
+        removeWorktree(prepared.worktree);
+      }
     }
+  });
+  playSound();
+
+  const lines: string[] = [];
+  const details: Record<string, unknown>[] = [];
+  for (const [index, entry] of results.entries()) {
+    const label = labels[index] ?? '(no input)';
+    lines.push(`## input: ${label}`, '');
+    if (entry.ok) {
+      const events = parseEvents(entry.run.stdout);
+      lines.push(compose(events, entry.run));
+      details.push({
+        input: label,
+        usage: usageLine(events),
+        stopped: entry.run.stopped,
+        aborted: entry.run.aborted,
+      });
+    } else {
+      lines.push(`(the child could not run) ${entry.error}`);
+      details.push({ input: label, error: entry.error });
+    }
+    lines.push('');
   }
+
+  return result(lines.join('\n').trimEnd(), { type: options.type, inputs: details });
 }
 
 export default function (pi: ExtensionAPI) {
@@ -191,7 +215,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult',
     label: 'Consult',
     description:
-      "Run a child pi with the policy of a type (model, tools, environment, limits, role) and return its final text. The caller picks only the type. It does not see this conversation. If the first model cannot run, the other candidates of the type are tried, and finally the parent's own settings.",
+      "Run a child pi with the policy of a type (model, tools, environment, limits, role) and return its final text. The caller picks only the type. It does not see this conversation. If the first model cannot run, the other candidates of the type are tried, and finally the parent's own settings. One child per input; the results are listed per input.",
     promptSnippet:
       'Run a child pi with a type (research / review / trial / code) and get its text back',
     promptGuidelines: [
@@ -204,14 +228,9 @@ export default function (pi: ExtensionAPI) {
       const [, params, signal, , ctx] = args;
       // 設定は呼び出しごとに読む。変えたら次の consult から効く。
       const policy = resolveType(loadTypes(EXTENSION_DIR), params.type);
-      const options: ConsultOptions = {
-        type: policy.name,
-        task: params.task,
-        ...(params.input === undefined ? {} : { input: params.input }),
-        policy,
-      };
+      const options: ConsultOptions = { type: policy.name, task: params.task, policy };
 
-      return consult(ctx, options, signal);
+      return consult(ctx, options, params.input ?? [], signal);
     },
   });
 }
