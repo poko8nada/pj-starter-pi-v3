@@ -52,10 +52,14 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 
 ### Findings
 
-なし
+- 実演の結果: 設定 → type の解決 → 引数の組み立て → 子の起動まで、実物のコードで通った。診断のモデルは候補 1 番目（`commandcode/deepseek/deepseek-v4.1-flash`）で、子は `bash` を使えないと報告した
+- 道具（`consult`）としての呼び出しは、この走っているセッションが古いスキーマを読み込んでいるため実行できなかった（拡張は起動時に読まれる）。子の pi は新しいスキーマを読むので、そこからなら呼べる
+- `README.md` は step 5（`consult.readme`）で書き直す。それまで古いインターフェース（`role` / `tools` / `worktree`）の記述が残る
 
 ### Unplanned
 
-なし
+- `run.ts` にも手を入れた（`Todo` のファイル一覧に無い）。上限を type から渡すのに要る
+- `spec.ts` に `needsIsolation` を切り出した。隔離の判断を `environment` から引く形にしたとき、テストできる場所が要った
+- `Todo` に無い検証を 2 つ足した: `types` が空、`tools` が空。`tools` が空だと「指定なし」として親のツールが通ってしまい、意図の逆になる
 
-Commit:
+Commit: b82ef58
