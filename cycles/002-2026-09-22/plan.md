@@ -48,50 +48,59 @@
 - Files: `.pi/extensions/consult/README.md`
 - Tests: なし（書いた手順を 1 回走らせて確かめる）
 
-### step 6: definition-skill
+### step 6: consult.check
+
+- 単位を step に割った締め
+- What: 単位の `Then` を全部、1 回の実演で確かめる
+- Depends: step 1〜5
+- Action: verify
+- Files: なし
+- Tests: なし（実演が確かめ）
+
+### step 7: definition-skill
 
 - What: サイクルの始まりと終わり（1 枚を書く / 前を閉じる / 承認を待つ）をスキルにする。型はスキルが持つ
-- Depends: `consult.readme`
+- Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/definition/SKILL.md`
 - Tests: 実演。子に `definition` だけを読ませ、002 の 1 枚を再現させる（7 節と印が出るか）
 
-### step 7: stack-skill
+### step 8: stack-skill
 
 - What: `Stack` の決め方（ハーネスが土台、足した分だけを理由付きで書く）と、足す前に試す手順をスキルにする
-- Depends: `consult.readme`
+- Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/stack/SKILL.md`
 - Tests: 実演。子に 1 つライブラリを `trial` で試させ、成否が本文で返るか
 
-### step 8: plan-skill
+### step 9: plan-skill
 
 - What: 定義からプランを作る手順（`step 0`、`Steps`、`Structure`、承認を待つ）をスキルにする
-- Depends: `consult.readme`
+- Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/plan/SKILL.md`
 - Tests: 実演。子に 002 の定義からプランを書かせ、step の欄が全部埋まるか
 
-### step 9: tickets-skill
+### step 10: tickets-skill
 
 - What: チケットの切り方と閉じ方（`Todo` / `Verify` の承認 → 作業 → 実演 → `Commit`）をスキルにする
-- Depends: `consult.readme`
+- Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`
 - Tests: 実演。子に 1 枚切らせ、`Verify` が書いた時点で走れる形か
 
-### step 10: readme
+### step 11: readme
 
 - What: 何が入っていて、最初に何をするかを書く
-- Depends: step 6〜9
+- Depends: step 7〜10
 - Action: build
 - Files: `README.md`
 - Tests: なし（書いたコマンドを実際に走らせる）
 
-### step 11: cleanup
+### step 12: cleanup
 
 - What: `CYCLE-DESIGN.md` を消す（スキルに吸収済み。理由は git 履歴に残る）
-- Depends: step 6〜9
+- Depends: step 7〜10
 - Action: build
 - Files: `CYCLE-DESIGN.md`
 - Tests: なし（消した後 `pnpm check` が緑）
