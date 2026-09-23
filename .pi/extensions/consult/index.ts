@@ -60,7 +60,10 @@ export const PARAMETERS = Type.Object({
   task: Type.String({ description: 'What the child should do' }),
   input: Type.Optional(
     Type.Array(
-      Type.String({ description: 'Path to a file for the child to read on stdin. It must exist' }),
+      Type.String({
+        description:
+          "Path to a file whose contents are prepended to the child's prompt. Fails the call if it cannot be read",
+      }),
       { description: 'One child per path. Without it, one child with no payload' },
     ),
   ),
@@ -274,6 +277,9 @@ async function consult(
         lines.push('', `ref: (not created) the commit was rejected: ${work.error}`);
       }
     }
+    // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。
+    // `details` は agent には渡らないので、モデルをここに出さないと見えない。
+    lines.push('', `[consult] ${usageLine(events)}`);
     lines.push('');
     details.push({
       input: label,

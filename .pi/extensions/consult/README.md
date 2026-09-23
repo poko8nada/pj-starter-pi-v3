@@ -57,11 +57,11 @@ Whatever has to reach the child reaches it as `task` or `input`. There is no way
 
 ## Parameters
 
-| Parameter | Required | Meaning                                                           |
-| --------- | -------- | ----------------------------------------------------------------- |
-| `type`    | yes      | How the child runs. One of the types in `types.json`              |
-| `task`    | yes      | What the child should do                                          |
-| `input`   | no       | Paths to files for the child to read on stdin. One child per path |
+| Parameter | Required | Meaning                                                                               |
+| --------- | -------- | ------------------------------------------------------------------------------------- |
+| `type`    | yes      | How the child runs. One of the types in `types.json`                                  |
+| `task`    | yes      | What the child should do                                                              |
+| `input`   | no       | Paths to files whose contents are prepended to the child's prompt. One child per path |
 
 ```
 consult({ type: "review",
@@ -70,6 +70,10 @@ consult({ type: "review",
 ```
 
 One child per input, all in parallel, and the results come back in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
+
+The file's contents are **prepended to the child's prompt**, not handed over as a separate document: the child sees one message, the payload first and the task after it. An empty file therefore adds nothing, and a child may read the payload as instructions.
+
+Each input's block is the child's text, then `ref:` when it wrote something, then one `[consult]` line with the model that ran and the spend. The model is there because everything else about the run lives in the tool's `details`, which the calling agent never sees.
 
 ## Cancelling
 
