@@ -1,9 +1,10 @@
 /**
- * consult — 子 pi を type の policy で 1 回走らせ、結果のテキストを返す道具。
+ * consult — 子 pi を type の policy で走らせ、結果のテキストを返す道具。
  *
  * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は
  * type が持つ（`types.json`。git 管理外）。上書きの口は作らない。
  * 設定は呼び出しごとに読むので、変えたら次の consult から効く。
+ * モデルが使えなければ、type の候補を順に試し、最後は親と同じ設定で走る。
  *
  * 費用がかかるので、呼ぶ前に必ず確認を出す。
  */
@@ -25,6 +26,7 @@ import {
   readPayload,
   removeWorktree,
   runPi,
+  runWithFallback,
   type RunResult,
   type Worktree,
 } from './run.ts';
@@ -153,14 +155,20 @@ async function consult(
   const prepared = prepare(ctx, options);
   playSound();
   try {
-    const run = await runPi({
-      piArgs: buildPiArgs(options),
-      cwd: prepared.cwd,
-      payload: prepared.payload,
-      signal,
-      env: process.env,
-      limits: options.policy.limits,
-    });
+    // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
+    const run = await runWithFallback(options.policy.models, (model) =>
+      runPi({
+        piArgs: buildPiArgs({
+          ...options,
+          policy: { ...options.policy, models: model === undefined ? [] : [model] },
+        }),
+        cwd: prepared.cwd,
+        payload: prepared.payload,
+        signal,
+        env: process.env,
+        limits: options.policy.limits,
+      }),
+    );
     playSound();
 
     const events = parseEvents(run.stdout);
@@ -183,7 +191,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult',
     label: 'Consult',
     description:
-      'Run a child pi once with the policy of a type (model, tools, environment, limits, role) and return its final text. The caller picks only the type. It does not see this conversation.',
+      "Run a child pi with the policy of a type (model, tools, environment, limits, role) and return its final text. The caller picks only the type. It does not see this conversation. If the first model cannot run, the other candidates of the type are tried, and finally the parent's own settings.",
     promptSnippet:
       'Run a child pi with a type (research / review / trial / code) and get its text back',
     promptGuidelines: [

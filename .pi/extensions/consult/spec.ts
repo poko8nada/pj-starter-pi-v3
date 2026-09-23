@@ -106,6 +106,17 @@ export function finalTextFrom(events: unknown[]): string {
 }
 
 /**
+ * 子がモデルから何かを生成したか。乗り換えの判定に使う。
+ *
+ * assistant の `message_end` があっても、モデルが動いたとは限らない。存在しない
+ * モデル ID では pi が警告を出して API が失敗し、出力 0 のまま exit 0 で終わる。
+ * 生成が 0 なら、そのモデルは動いていない。
+ */
+export function ranFrom(events: unknown[]): boolean {
+  return usageFrom(events).output > 0;
+}
+
+/**
  * 子が実際に使ったモデル。子の報告が唯一の事実で、呼び出し元の環境に依存しない。
  * 診断に出すのは「何が動いたか」を知るためで、指定するためではない。
  */

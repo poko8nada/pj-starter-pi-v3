@@ -8,6 +8,7 @@ import {
   modelFrom,
   needsIsolation,
   parseEvents,
+  ranFrom,
   usageFrom,
   type ConsultOptions,
   type Spent,
@@ -166,6 +167,18 @@ describe('modelFrom', () => {
   it('報告が無ければ undefined（推測しない）', () => {
     expect(modelFrom([])).toBeUndefined();
     expect(modelFrom([{ type: 'message_end', message: { role: 'user' } }])).toBeUndefined();
+  });
+});
+
+describe('ranFrom', () => {
+  it('生成があれば true（モデルが動いた）', () => {
+    expect(ranFrom([messageEnd()])).toBe(true);
+  });
+
+  it('生成が 0 / イベント無しなら false（モデルが動いていない）', () => {
+    expect(ranFrom([])).toBe(false);
+    const failed = messageEnd({ usage: { input: 0, output: 0 } });
+    expect(ranFrom([failed])).toBe(false);
   });
 });
 

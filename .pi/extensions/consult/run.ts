@@ -10,7 +10,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
-import { accountEvent, type Spent } from './spec.ts';
+import { accountEvent, parseEvents, ranFrom, type Spent } from './spec.ts';
 import type { Limits } from './types.ts';
 
 const KILL_GRACE_MS = 5000;
@@ -87,6 +87,46 @@ export interface RunOptions {
   readonly env: NodeJS.ProcessEnv;
   /** 上限。type が決める */
   readonly limits: Limits;
+}
+
+/**
+ * 試すモデルの並び。候補の後ろに「親と同じ」（`--model` を渡さない）を足す。
+ * 候補が空でも 1 つは試す。
+ */
+export function modelAttempts(models: readonly string[]): (string | undefined)[] {
+  return [...models, undefined];
+}
+
+/**
+ * 候補を順に試す。
+ *
+ * 子が何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった
+ * （ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。
+ * 喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを
+ * 消費しないので、乗り換えの費用はほぼ無い。
+ *
+ * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。
+ * 候補を使い切ったら、最後に親と同じ設定で走る。
+ */
+export async function runWithFallback(
+  models: readonly string[],
+  runOnce: (model: string | undefined) => Promise<RunResult>,
+): Promise<RunResult> {
+  const attempts = modelAttempts(models);
+
+  // 再帰にする。並列にはできない（次の試行は前の結果で決まる）ので、
+  // ループにすると「待つのは意図的」という抑制コメントが要る。
+  async function tryAt(index: number): Promise<RunResult> {
+    const run = await runOnce(attempts[index]);
+    const next = index + 1;
+    // 最後の試行（親と同じ）はどのみち返す。
+    if (next >= attempts.length || run.aborted || ranFrom(parseEvents(run.stdout))) {
+      return run;
+    }
+    return tryAt(next);
+  }
+
+  return tryAt(0);
 }
 
 /**
