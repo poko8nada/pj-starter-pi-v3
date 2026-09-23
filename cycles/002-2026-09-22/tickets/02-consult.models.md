@@ -31,10 +31,13 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 
 ### Findings
 
-なし
+- 実演の結果: 候補 1 番目に存在しない ID を置くと、pi は `Warning: Model "…" not found for provider "…". Using custom model id.` を出して **exit 0** で終わり、assistant の `message_end` は作られる（生成は 0、`errorFrom` は `404 status code (no body)`）。「assistant の有無」では乗り換えを判定できない
+- 判定を「生成（output トークン）が 1 以上」に変えたら乗り換えが起き、実演が通った。診断のモデルが候補 2 番目（`commandcode/meta/muse-spark-1.3-contributor`）になり、答えも返った
+- 生成 0 は、起動できずに死んだ場合（イベント無し）と同じ条件で拾える。失敗の形が 2 つあっても規則は 1 つで済む
 
 ### Unplanned
 
-なし
+- `Todo` は判定を「assistant の `message_end` があるか」（`spokeFrom`）と書いたが、「生成が 1 以上か」（`ranFrom`）に変えた。テストの呼び名も「喋った」から「生成した」に合わせた
+- `runWithFallback` はループで書いたが、lint の `no-await-in-loop` に当たった。抑制コメントを足すのではなく再帰にして、順に試すことが形で分かるようにした
 
-Commit:
+Commit: 67365ac
