@@ -4,7 +4,7 @@ Acceptance: プランが承認されたときに agent がチケットを切っ�
 
 ## Todo
 
-- `.pi/skills/tickets/SKILL.md` を書く — frontmatter（`name` / `description`）と本文。日本語で、ラベルは英語のまま
+- `.pi/skills/tickets/SKILL.md` を書く — **英語**。frontmatter の `description` に「いつ読むか」を書く（プランが承認され、実装に入る前）
   - 「いつ読むか」 — プランが承認された後
   - 「チケットの型」 — `CYCLE-DESIGN.md` の「tickets の型」をそのまま
   - 「規則」 — 「変更の記録（`002` 以降）」以降のチケットの規則をそのまま（`Todo` の分け方 / テストの書き方 / `Verify` / `Notes` / `Commit` / 承認）

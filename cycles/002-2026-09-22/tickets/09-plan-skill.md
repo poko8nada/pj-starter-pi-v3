@@ -4,7 +4,7 @@ Acceptance: 定義が承認されたときに agent がプランを書くと、`
 
 ## Todo
 
-- `.pi/skills/plan/SKILL.md` を書く — frontmatter（`name` / `description`）と本文。日本語で、ラベルは英語のまま
+- `.pi/skills/plan/SKILL.md` を書く — **英語**。frontmatter の `description` に「いつ読むか」を書く（定義が承認され、チケットを切る前）
   - 「いつ読むか」 — 定義が承認された後、チケットを切る前
   - 「`step 0`」 — prepare（Install / Cleanup / Refactor）
   - 「step の分け方」 — 単位を割るときは `<unit-id>.<part>`。単位を割ったら締めに `<unit-id>.check` を置く
