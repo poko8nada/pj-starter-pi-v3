@@ -11,6 +11,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { accountEvent, type Spent } from './spec.ts';
+import type { Limits } from './types.ts';
 
 const KILL_GRACE_MS = 5000;
 
@@ -84,6 +85,8 @@ export interface RunOptions {
   readonly payload?: string;
   readonly signal?: AbortSignal;
   readonly env: NodeJS.ProcessEnv;
+  /** 上限。type が決める */
+  readonly limits: Limits;
 }
 
 /**
@@ -110,6 +113,7 @@ interface RunState {
   stopped?: string;
   aborted: boolean;
   readonly spent: Spent;
+  readonly limits: Limits;
 }
 
 /** 1 行を数える。上限を超えたら理由を記録し、子を殺す */
@@ -123,7 +127,7 @@ function consumeLine(line: string, state: RunState, child: ReturnType<typeof spa
   } catch {
     return; // 解析できない行はイベントではない。
   }
-  const reason = accountEvent(state.spent, event);
+  const reason = accountEvent(state.spent, event, state.limits);
   if (reason !== undefined) {
     state.stopped = reason;
     killChild(child);
@@ -143,6 +147,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       buffered: '',
       aborted: false,
       spent: { turns: 0, output: 0 },
+      limits: options.limits,
     };
     let settled = false;
 

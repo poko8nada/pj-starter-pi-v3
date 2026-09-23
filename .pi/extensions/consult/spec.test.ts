@@ -1,29 +1,37 @@
 import { describe, expect, it } from 'vitest';
+import { PARAMETERS } from './index.ts';
 import {
   accountEvent,
   buildPiArgs,
   errorFrom,
   finalTextFrom,
-  includesWritingTool,
-  MAX_OUTPUT_TOKENS,
-  MAX_TURNS,
   modelFrom,
+  needsIsolation,
   parseEvents,
-  READ_ONLY_TOOLS,
   usageFrom,
   type ConsultOptions,
   type Spent,
 } from './spec.ts';
+import type { TypePolicy } from './types.ts';
 
 // 純粋な部分だけを試す。子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
 
-function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
+/** 上限は type が決める。ここでは「効くか」を見る（数字そのものは設定の話） */
+const LIMITS = { turns: 20, output: 20000 };
+
+function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
   return {
-    task: '調べる',
-    tools: READ_ONLY_TOOLS,
-    worktree: false,
+    name: 'review',
+    models: [],
+    tools: ['read', 'ls'],
+    environment: 'tree',
+    limits: LIMITS,
     ...overrides,
   };
+}
+
+function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
+  return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
 
 describe('buildPiArgs', () => {
@@ -36,29 +44,33 @@ describe('buildPiArgs', () => {
     expect(buildPiArgs(options())).toContain('--no-approve');
   });
 
-  it('モデルは渡さない（呼び出し元と同じ設定で動かす）', () => {
+  it('`--model` に候補 1 番目を入れる', () => {
+    const args = buildPiArgs(options({ policy: policy({ models: ['a/1:high', 'b/2'] }) }));
+    const index = args.indexOf('--model');
+    expect(args[index + 1]).toBe('a/1:high');
+  });
+
+  it('候補が空ならモデルを渡さない（親と同じ設定で走る）', () => {
     expect(buildPiArgs(options())).not.toContain('--model');
   });
 
-  it('ロールはシステムプロンプトへの追記で渡す（ファイル探索はしない）', () => {
-    const args = buildPiArgs(options({ role: 'あなたは査読者です' }));
+  it('type のツールを渡す', () => {
+    const args = buildPiArgs(options({ policy: policy({ tools: ['read', 'grep'] }) }));
+    const index = args.indexOf('--tools');
+    expect(args[index + 1]).toBe('read,grep');
+  });
+
+  it('役割をシステムプロンプトへの追記で渡す（ファイル探索はしない）', () => {
+    const args = buildPiArgs(options({ policy: policy({ role: 'あなたは査読者です' }) }));
     const index = args.indexOf('--append-system-prompt');
     expect(index).toBeGreaterThan(-1);
     expect(args[index + 1]).toBe('あなたは査読者です');
   });
 
-  it('ロールが空なら追記しない', () => {
-    expect(buildPiArgs(options({ role: '' }))).not.toContain('--append-system-prompt');
-  });
-
-  it('ツールを渡す', () => {
-    const args = buildPiArgs(options({ tools: 'read,bash' }));
-    const index = args.indexOf('--tools');
-    expect(args[index + 1]).toBe('read,bash');
-  });
-
-  it('ツールが空なら渡さない', () => {
-    expect(buildPiArgs(options({ tools: '' }))).not.toContain('--tools');
+  it('役割が空なら追記しない', () => {
+    expect(buildPiArgs(options({ policy: policy({ role: '' }) }))).not.toContain(
+      '--append-system-prompt',
+    );
   });
 
   it('指示は最後に置く（フラグとして解釈させない）', () => {
@@ -66,16 +78,20 @@ describe('buildPiArgs', () => {
   });
 });
 
-describe('includesWritingTool', () => {
-  it('書き込み可能なツールを検出する', () => {
-    for (const tools of ['bash', 'read,bash', 'edit', 'write', 'powershell']) {
-      expect(includesWritingTool(tools), tools).toBe(true);
-    }
+describe('needsIsolation', () => {
+  it('`environment` が `worktree` → 隔離する', () => {
+    expect(needsIsolation(policy({ environment: 'worktree' }))).toBe(true);
   });
 
-  it('読み取り専用は false', () => {
-    expect(includesWritingTool(READ_ONLY_TOOLS)).toBe(false);
-    expect(includesWritingTool('read')).toBe(false);
+  it('`environment` が `tree` → 隔離しない', () => {
+    expect(needsIsolation(policy({ environment: 'tree' }))).toBe(false);
+  });
+});
+
+describe('PARAMETERS', () => {
+  it('項目が type / task / input だけ', () => {
+    // 上書きの口（role / tools / worktree）が戻ってきたら気づけるようにする。
+    expect(Object.keys(PARAMETERS.properties)).toEqual(['type', 'task', 'input']);
   });
 });
 
@@ -182,35 +198,43 @@ describe('accountEvent', () => {
 
   it('assistant 以外は数えない', () => {
     const spent: Spent = { turns: 0, output: 0 };
-    expect(accountEvent(spent, { type: 'message_end', message: { role: 'user' } })).toBeUndefined();
-    expect(accountEvent(spent, { type: 'turn_start' })).toBeUndefined();
+    expect(
+      accountEvent(spent, { type: 'message_end', message: { role: 'user' } }, LIMITS),
+    ).toBeUndefined();
+    expect(accountEvent(spent, { type: 'turn_start' }, LIMITS)).toBeUndefined();
     expect(spent.turns).toBe(0);
   });
 
   it('ターンと出力トークンを積む', () => {
     const spent: Spent = { turns: 0, output: 0 };
-    accountEvent(spent, turn(100));
-    accountEvent(spent, turn(200));
+    accountEvent(spent, turn(100), LIMITS);
+    accountEvent(spent, turn(200), LIMITS);
     expect(spent).toEqual({ turns: 2, output: 300 });
   });
 
   it('上限内では止めない', () => {
-    expect(accountEvent({ turns: 0, output: 0 }, turn(1000))).toBeUndefined();
+    expect(accountEvent({ turns: 0, output: 0 }, turn(1000), LIMITS)).toBeUndefined();
   });
 
   it('ターン数の上限を超えたら理由を返す', () => {
-    const spent: Spent = { turns: MAX_TURNS, output: 0 };
-    expect(accountEvent(spent, turn(1))).toMatch(/turn limit/);
+    const spent: Spent = { turns: LIMITS.turns, output: 0 };
+    expect(accountEvent(spent, turn(1), LIMITS)).toMatch(/turn limit/);
   });
 
   it('出力トークンの上限を超えたら理由を返す', () => {
-    const spent: Spent = { turns: 0, output: MAX_OUTPUT_TOKENS - 500 };
-    expect(accountEvent(spent, turn(1000))).toMatch(/output token limit/);
+    const spent: Spent = { turns: 0, output: LIMITS.output - 500 };
+    expect(accountEvent(spent, turn(1000), LIMITS)).toMatch(/output token limit/);
   });
 
   it('ちょうど上限までは許し、1 を超えたら止める', () => {
-    const spent: Spent = { turns: 0, output: MAX_OUTPUT_TOKENS - 500 };
-    expect(accountEvent(spent, turn(500))).toBeUndefined();
-    expect(accountEvent(spent, turn(1))).toMatch(/output token limit/);
+    const spent: Spent = { turns: 0, output: LIMITS.output - 500 };
+    expect(accountEvent(spent, turn(500), LIMITS)).toBeUndefined();
+    expect(accountEvent(spent, turn(1), LIMITS)).toMatch(/output token limit/);
+  });
+
+  it('type ごとの上限が効く（同じ消費でも狭い上限なら止まる）', () => {
+    const narrow = { turns: 1, output: 100 };
+    expect(accountEvent({ turns: 0, output: 0 }, turn(200), narrow)).toMatch(/output token limit/);
+    expect(accountEvent({ turns: 0, output: 0 }, turn(200), LIMITS)).toBeUndefined();
   });
 });

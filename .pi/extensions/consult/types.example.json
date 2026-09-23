@@ -1,0 +1,36 @@
+{
+  "types": [
+    {
+      "name": "research",
+      "models": [],
+      "tools": ["read", "ls", "find", "grep", "web_search", "fetch_content"],
+      "environment": "tree",
+      "limits": { "turns": 40, "output": 40000 },
+      "role": "調べた事実を返す。意見や提案を足さない"
+    },
+    {
+      "name": "review",
+      "models": [],
+      "tools": ["read", "ls", "find", "grep", "web_search"],
+      "environment": "tree",
+      "limits": { "turns": 20, "output": 20000 },
+      "role": "判定を返す。直さない。根拠を示す"
+    },
+    {
+      "name": "trial",
+      "models": [],
+      "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
+      "environment": "worktree",
+      "limits": { "turns": 50, "output": 50000 },
+      "role": "試して結果を報告する。作り込まない"
+    },
+    {
+      "name": "code",
+      "models": [],
+      "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
+      "environment": "worktree",
+      "limits": { "turns": 60, "output": 60000 },
+      "role": "実装する。依頼の範囲だけを変える"
+    }
+  ]
+}

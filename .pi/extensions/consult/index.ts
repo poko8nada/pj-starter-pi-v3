@@ -1,17 +1,16 @@
 /**
- * consult — 1 回だけ子 pi を走らせて、結果のテキストを返す道具。
+ * consult — 子 pi を type の policy で 1 回走らせ、結果のテキストを返す道具。
  *
- * ロールを渡して用途を変える。文脈を渡さなければ、まっさらな視点になる。
- *
- * 安全側の既定:
- *   - ツールは読み取り専用。書けるツールを許したときだけ worktree に入る。
- *   - プロジェクトの設定・拡張は子に読ませない。
- *   - 出力 30k トークン / 30 ターンで走行中に打ち切る（外から変えられない）。
+ * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は
+ * type が持つ（`types.json`。git 管理外）。上書きの口は作らない。
+ * 設定は呼び出しごとに読むので、変えたら次の consult から効く。
  *
  * 費用がかかるので、呼ぶ前に必ず確認を出す。
  */
 
 import { spawn } from 'node:child_process';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   AgentToolResult,
   AgentToolUpdateCallback,
@@ -33,27 +32,25 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
-  includesWritingTool,
   modelFrom,
+  needsIsolation,
   parseEvents,
-  READ_ONLY_TOOLS,
   usageFrom,
   type ConsultOptions,
 } from './spec.ts';
+import { loadTypes, resolveType } from './types.ts';
 
-/**
- * 道具のパラメータ。ロールで用途を変え、input で文脈を渡す。
- */
-const PARAMETERS = Type.Object({
+/** 設定の場所。拡張の隣に置く */
+const EXTENSION_DIR = dirname(fileURLToPath(import.meta.url));
+
+/** 道具のパラメータ。type で走り方を選び、input で文脈を渡す */
+export const PARAMETERS = Type.Object({
+  type: Type.String({
+    description: 'How the child runs (research / review / trial / code). Set in types.json',
+  }),
   task: Type.String({ description: 'What the child should do' }),
-  role: Type.Optional(
-    Type.String({ description: 'Appended to the system prompt. Write the role, not a file path' }),
-  ),
   input: Type.Optional(
     Type.String({ description: 'Path to a file for the child to read on stdin. It must exist' }),
-  ),
-  tools: Type.Optional(
-    Type.String({ description: `Tools the child may use (default ${READ_ONLY_TOOLS})` }),
   ),
 });
 
@@ -106,21 +103,20 @@ interface Prepared {
 
 /**
  * 実行場所と payload を用意する。
- * worktree が要るかはツール指定で決まる（書けるツールを許したときだけ隔離する）。
+ * 隔離するかは type の `environment` が決める（ツールから推測しない）。
  */
 function prepare(ctx: ExtensionContext, options: ConsultOptions): Prepared {
   const base = ctx.cwd;
   // 読めない input は例外にする。無言で空の子を走らせると、文脈なしの答えが返る。
   const payload = options.input === undefined ? undefined : readPayload(options.input, base);
-  const needsIsolation = options.worktree && includesWritingTool(options.tools);
 
-  if (!needsIsolation) {
+  if (!needsIsolation(options.policy)) {
     return { cwd: base, payload };
   }
   if (!isGitRepo(base)) {
-    // git 管理外では worktree を作れない。書けるツールを許したまま実ツリーで走らせない。
+    // git 管理外では worktree を作れない。隔離できないまま実ツリーで書かせない。
     throw new Error(
-      'a writing tool was allowed but this is not a git repository, so the work cannot be isolated. Use read-only tools, or run inside a repository',
+      'this type needs isolation but the directory is not a git repository. Use a type whose environment is "tree", or run inside a repository',
     );
   }
   const worktree = createWorktree(base);
@@ -163,11 +159,13 @@ async function consult(
       payload: prepared.payload,
       signal,
       env: process.env,
+      limits: options.policy.limits,
     });
     playSound();
 
     const events = parseEvents(run.stdout);
     return result(compose(events, run), {
+      type: options.type,
       usage: usageLine(events),
       stopped: run.stopped,
       aborted: run.aborted,
@@ -185,23 +183,24 @@ export default function (pi: ExtensionAPI) {
     name: 'consult',
     label: 'Consult',
     description:
-      'Run pi once in a child process and return its final text. Give it a role to specialise it, and an input file to give it context. It does not see this conversation.',
+      'Run a child pi once with the policy of a type (model, tools, environment, limits, role) and return its final text. The caller picks only the type. It does not see this conversation.',
     promptSnippet:
-      'Run a child pi with a role and optional context, and get its text back (bounded to 30k output tokens and 30 turns)',
+      'Run a child pi with a type (research / review / trial / code) and get its text back',
     promptGuidelines: [
       'Use consult when a question is better answered without this conversation in view: reviewing your own work, getting a second opinion, or applying a role you were not given.',
+      'The types and their limits live in .pi/extensions/consult/types.json. The caller cannot override them; to change the policy, edit that file.',
     ],
     parameters: PARAMETERS,
 
     async execute(...args: ExecuteArgs) {
       const [, params, signal, , ctx] = args;
-      const tools = params.tools ?? READ_ONLY_TOOLS;
+      // 設定は呼び出しごとに読む。変えたら次の consult から効く。
+      const policy = resolveType(loadTypes(EXTENSION_DIR), params.type);
       const options: ConsultOptions = {
+        type: policy.name,
         task: params.task,
-        role: params.role,
-        input: params.input,
-        tools,
-        worktree: includesWritingTool(tools),
+        ...(params.input === undefined ? {} : { input: params.input }),
+        policy,
       };
 
       return consult(ctx, options, signal);

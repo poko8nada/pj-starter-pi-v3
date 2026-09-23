@@ -3,55 +3,50 @@
  *
  * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、
  * 道具としての入口は index.ts が持つ。
+ *
+ * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、
+ * 選び直す口は無い。費用の歯止め（上限）も type が持つ。
  */
 
-/** 子に渡す既定のツール。読み取り専用なので実ツリーを汚せない */
-export const READ_ONLY_TOOLS = 'read,ls,find,grep';
-
-/** これを含むツール指定なら worktree に入れる */
-export const WRITING_TOOLS = new Set(['bash', 'edit', 'write', 'powershell']);
+import type { Limits, TypePolicy } from './types.ts';
 
 /**
- * 1 回の実行で使える出力トークンの上限。変更できない。
+ * 隔離が要るか。type の `environment` が決める。
  *
- * 費用の歯止めは呼び出し元が外せてはいけない。範囲の広いタスクを無制限に
- * 走らせて出力 87,876 トークンを消費したことがある（通常は 4,000〜16,000）。
+ * ツールから推測しない。試すための type は、書き込むツールを持っていても
+ * 実ツリーを汚してよいわけではない。逆に書き込むツールを持たない type でも
+ * 隔離したいことはある。決めるのは 1 箇所だけにする。
  */
-export const MAX_OUTPUT_TOKENS = 30_000;
-
-/** ターン数の上限。走り続ける子を止める */
-export const MAX_TURNS = 30;
-
-export interface ConsultOptions {
-  readonly task: string;
-  readonly role?: string;
-  readonly input?: string;
-  readonly tools: string;
-  readonly worktree: boolean;
+export function needsIsolation(policy: TypePolicy): boolean {
+  return policy.environment === 'worktree';
 }
 
-/** ツール指定に書き込み可能なものを含むか */
-export function includesWritingTool(tools: string): boolean {
-  return tools
-    .split(',')
-    .map((name) => name.trim())
-    .some((name) => WRITING_TOOLS.has(name));
+export interface ConsultOptions {
+  /** 選んだ type の名前。診断に使う */
+  readonly type: string;
+  readonly task: string;
+  readonly input?: string;
+  readonly policy: TypePolicy;
 }
 
 /**
  * 子に渡す引数を組み立てる。
- * モデルは渡さない。子が呼び出し元と同じ設定で動くのが正しく、
- * モデルを選べる口があると、高いモデルの費用がアカウント所有者に落ちる。
+ *
+ * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、
+ * ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
+  const { policy } = options;
   const args = ['--mode', 'json', '-p', '--no-session'];
-  if (options.role !== undefined && options.role !== '') {
+  const model = policy.models[0];
+  if (model !== undefined) {
+    args.push('--model', model);
+  }
+  if (policy.role !== undefined && policy.role !== '') {
     // 追記なので、既定のツール説明を壊さない。
-    args.push('--append-system-prompt', options.role);
+    args.push('--append-system-prompt', policy.role);
   }
-  if (options.tools !== '') {
-    args.push('--tools', options.tools);
-  }
+  args.push('--tools', policy.tools.join(','));
   // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
   args.push('--no-approve');
   args.push(options.task);
@@ -170,18 +165,18 @@ export interface Spent {
  * 走りながら呼ぶ。message_end が届いた時点で usage は入っている。
  * 終わってから数えても、使った後では遅い。
  */
-export function accountEvent(spent: Spent, event: unknown): string | undefined {
+export function accountEvent(spent: Spent, event: unknown, limits: Limits): string | undefined {
   const { type, message } = asEvent(event);
   if (type !== 'message_end' || message?.role !== 'assistant') {
     return undefined;
   }
   spent.turns += 1;
   spent.output += message.usage?.output ?? 0;
-  if (spent.turns > MAX_TURNS) {
-    return `turn limit reached (${MAX_TURNS})`;
+  if (spent.turns > limits.turns) {
+    return `turn limit reached (${limits.turns})`;
   }
-  if (spent.output > MAX_OUTPUT_TOKENS) {
-    return `output token limit reached (${MAX_OUTPUT_TOKENS})`;
+  if (spent.output > limits.output) {
+    return `output token limit reached (${limits.output})`;
   }
   return undefined;
 }
