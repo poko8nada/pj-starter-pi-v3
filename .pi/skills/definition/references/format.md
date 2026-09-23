@@ -87,7 +87,7 @@ A unit is one thing the product does, seen from the user's side. The rules:
 - A unit that is `keep` but has never been verified means the previous version had a problem, so it should normally be `update`. If it stays `keep` as an exception, it does not belong in `What to build`
 - A `drop` unit has no `Given` / `When` / `Then`: there is no definition for something that will not exist
 - `drop` units go after the active ones
-- `001` is all `add`, sections included: it is the first sheet, so nothing carries over
+- A product's first sheet is all `add`, sections included, whatever the cycle number is: there is nothing yet to carry over. A new product's first sheet is also all `add`, even when other products have been through cycles before it
 
 ## Writing
 
