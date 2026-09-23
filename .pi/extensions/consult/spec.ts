@@ -1,11 +1,9 @@
 /**
  * consult が起動する子 pi の組み立てと、子が返す JSONL の解釈。
  *
- * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、
- * 道具としての入口は index.ts が持つ。
+ * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、道具としての入口は index.ts が持つ。
  *
- * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、
- * 選び直す口は無い。費用の歯止め（上限）も type が持つ。
+ * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、選び直す口は無い。費用の歯止め（上限）も type が持つ。
  */
 
 import type { Limits, TypePolicy } from './types.ts';
@@ -13,9 +11,7 @@ import type { Limits, TypePolicy } from './types.ts';
 /**
  * 隔離が要るか。type の `environment` が決める。
  *
- * ツールから推測しない。試すための type は、書き込むツールを持っていても
- * 実ツリーを汚してよいわけではない。逆に書き込むツールを持たない type でも
- * 隔離したいことはある。決めるのは 1 箇所だけにする。
+ * ツールから推測しない。試すための type は、書き込むツールを持っていても実ツリーを汚してよいわけではない。逆に書き込むツールを持たない type でも隔離したいことはある。決めるのは 1 箇所だけにする。
  */
 export function needsIsolation(policy: TypePolicy): boolean {
   return policy.environment === 'worktree';
@@ -31,8 +27,7 @@ export interface ConsultOptions {
 /**
  * 子に渡す引数を組み立てる。
  *
- * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、
- * ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。
+ * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
   const { policy } = options;
@@ -107,17 +102,14 @@ export function finalTextFrom(events: unknown[]): string {
 /**
  * 子がモデルから何かを生成したか。乗り換えの判定に使う。
  *
- * assistant の `message_end` があっても、モデルが動いたとは限らない。存在しない
- * モデル ID では pi が警告を出して API が失敗し、出力 0 のまま exit 0 で終わる。
- * 生成が 0 なら、そのモデルは動いていない。
+ * assistant の `message_end` があっても、モデルが動いたとは限らない。存在しないモデル ID では pi が警告を出して API が失敗し、出力 0 のまま exit 0 で終わる。生成が 0 なら、そのモデルは動いていない。
  */
 export function ranFrom(events: unknown[]): boolean {
   return usageFrom(events).output > 0;
 }
 
 /**
- * 子が実際に使ったモデル。子の報告が唯一の事実で、呼び出し元の環境に依存しない。
- * 診断に出すのは「何が動いたか」を知るためで、指定するためではない。
+ * 子が実際に使ったモデル。子の報告が唯一の事実で、呼び出し元の環境に依存しない。診断に出すのは「何が動いたか」を知るためで、指定するためではない。
  */
 export function modelFrom(events: unknown[]): string | undefined {
   for (let i = events.length - 1; i >= 0; i -= 1) {
@@ -172,8 +164,7 @@ export interface Spent {
 /**
  * 1 イベント分を数える。上限を超えたら理由を返す（超えていなければ undefined）。
  *
- * 走りながら呼ぶ。message_end が届いた時点で usage は入っている。
- * 終わってから数えても、使った後では遅い。
+ * 走りながら呼ぶ。message_end が届いた時点で usage は入っている。終わってから数えても、使った後では遅い。
  */
 export function accountEvent(spent: Spent, event: unknown, limits: Limits): string | undefined {
   const { type, message } = asEvent(event);

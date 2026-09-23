@@ -1,9 +1,7 @@
 /**
  * 子 pi の起動と後片付け。
  *
- * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると
- * AbortSignal が渡されるので、それに合わせて子プロセスを殺す。
- * CLI 版は SIGINT で finally が走らず worktree を残した。
+ * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせて子プロセスを殺す。CLI 版は SIGINT で finally が走らず worktree を残した。
  */
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -24,10 +22,7 @@ export interface Worktree {
 /**
  * git を起動するときの環境。
  *
- * フック（lefthook など）の中で走ると、`GIT_INDEX_FILE` のような変数が process.env に
- * 載っている。そのまま渡すと、`cwd` で指定したリポジトリではなくフックのリポジトリを
- * 見てしまう（`.git/index: index file open failed: Not a directory` になった）。
- * git は `cwd` と自分の探索で解決させる。
+ * フック（lefthook など）の中で走ると、`GIT_INDEX_FILE` のような変数が process.env に載っている。そのまま渡すと、`cwd` で指定したリポジトリではなくフックのリポジトリを見てしまう（`.git/index: index file open failed: Not a directory` になった）。git は `cwd` と自分の探索で解決させる。
  */
 export function gitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const cleaned: NodeJS.ProcessEnv = {};
@@ -80,8 +75,7 @@ export function removeWorktree(handle: Worktree): void {
 /**
  * payload を読む。読めない入力は例外にする（道具の失敗として呼び出し側が伝える）。
  *
- * existsSync で先に確かめると「無いときだけ undefined」になり、
- * 文脈を渡したつもりで空の子が走る。ディレクトリも通ってしまう。
+ * existsSync で先に確かめると「無いときだけ undefined」になり、文脈を渡したつもりで空の子が走る。ディレクトリも通ってしまう。
  */
 export function readPayload(input: string, cwd: string): string {
   const file = isAbsolute(input) ? input : join(cwd, input);
@@ -114,8 +108,7 @@ export interface RunOptions {
 }
 
 /**
- * 試すモデルの並び。候補の後ろに「親と同じ」（`--model` を渡さない）を足す。
- * 候補が空でも 1 つは試す。
+ * 試すモデルの並び。候補の後ろに「親と同じ」（`--model` を渡さない）を足す。候補が空でも 1 つは試す。
  */
 export function modelAttempts(models: readonly string[]): (string | undefined)[] {
   return [...models, undefined];
@@ -124,13 +117,9 @@ export function modelAttempts(models: readonly string[]): (string | undefined)[]
 /**
  * 候補を順に試す。
  *
- * 子が何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった
- * （ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。
- * 喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを
- * 消費しないので、乗り換えの費用はほぼ無い。
+ * 子が何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼ無い。
  *
- * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。
- * 候補を使い切ったら、最後に親と同じ設定で走る。
+ * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後に親と同じ設定で走る。
  */
 export async function runWithFallback(
   models: readonly string[],
@@ -138,8 +127,7 @@ export async function runWithFallback(
 ): Promise<RunResult> {
   const attempts = modelAttempts(models);
 
-  // 再帰にする。並列にはできない（次の試行は前の結果で決まる）ので、
-  // ループにすると「待つのは意図的」という抑制コメントが要る。
+  // 再帰にする。並列にはできない（次の試行は前の結果で決まる）ので、ループにすると「待つのは意図的」という抑制コメントが要る。
   async function tryAt(index: number): Promise<RunResult> {
     const run = await runOnce(attempts[index]);
     const next = index + 1;
@@ -156,8 +144,7 @@ export async function runWithFallback(
 /**
  * 複数の payload を先に全部読む。
  *
- * 1 つでも読めなければ投げる。子を起動してから「2 つ目が読めない」と分かっても、
- * 1 体目はもう走っている。setup の誤りは、走らせる前に落とす。
+ * 1 つでも読めなければ投げる。子を起動してから「2 つ目が読めない」と分かっても、1 体目はもう走っている。setup の誤りは、走らせる前に落とす。
  */
 export function readPayloads(inputs: readonly string[], cwd: string): string[] {
   return inputs.map((input) => readPayload(input, cwd));
@@ -171,8 +158,7 @@ export type InputOutcome<R> =
 /**
  * 入力ごとに 1 体走らせる。
  *
- * 子は互いに独立なので並列に走らせる。結果は入力の順で返すので、待ち時間だけが縮む。
- * 1 体の失敗はその 1 体の状態にする（「実行中の失敗は投げない」の実装）。
+ * 子は互いに独立なので並列に走らせる。結果は入力の順で返すので、待ち時間だけが縮む。1 体の失敗はその 1 体の状態にする（「実行中の失敗は投げない」の実装）。
  */
 export async function runForInputs<T, R>(
   inputs: readonly T[],
@@ -209,8 +195,7 @@ export type InstallOutcome =
 /**
  * worktree に依存を入れる。
  *
- * 入っていない worktree では、子もフックも何も確かめられない。worktree の用意の
- * 一部であって、子の仕事ではない。失敗は環境の失敗で、設定の誤りではない。
+ * 入っていない worktree では、子もフックも何も確かめられない。worktree の用意の一部であって、子の仕事ではない。失敗は環境の失敗で、設定の誤りではない。
  */
 export function installDependencies(worktree: Worktree): InstallOutcome {
   const command = installCommand(worktree.dir);
@@ -264,8 +249,7 @@ export type CommitOutcome =
 /**
  * 子が残した変更をコミットして、ブランチを作る。
  *
- * フック（リポジトリの検査）はここで走る。落ちたらブランチを作らない。
- * 「ref ができた = 検査を通った」を崩さないためで、`--no-verify` は使わない。
+ * フック（リポジトリの検査）はここで走る。落ちたらブランチを作らない。「ref ができた = 検査を通った」を崩さないためで、`--no-verify` は使わない。
  */
 export function commitWorktree(label: string, git: GitRun): CommitOutcome {
   if (git(['status', '--porcelain']).stdout.trim() === '') {
@@ -292,8 +276,7 @@ export function commitWorktree(label: string, git: GitRun): CommitOutcome {
 /**
  * 子を 1 回起動する。
  *
- * 中断（signal）で子を殺し、呼び出し側が後片付けできるように aborted を返す。
- * 上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
+ * 中断（signal）で子を殺し、呼び出し側が後片付けできるように aborted を返す。上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
  */
 /** 子を殺す。SIGTERM を無視する子がいるので、猶予の後に強制終了する */
 function killChild(child: ReturnType<typeof spawn>): void {

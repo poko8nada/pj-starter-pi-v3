@@ -20,8 +20,7 @@ import {
 } from './run.ts';
 import { finalTextFrom, parseEvents } from './spec.ts';
 
-// 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
-// 入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
+// 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
 
 /** git を差し替えて、コミットと ref 作りの判断だけを試す */
 function recorder(overrides: Record<string, GitOutput> = {}) {

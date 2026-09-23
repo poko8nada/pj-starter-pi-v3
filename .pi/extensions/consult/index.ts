@@ -1,10 +1,7 @@
 /**
- * consult — 子 pi を type の policy で走らせ、結果のテキストを返す道具。
+ * consult —子 pi を type の policy で走らせ、結果のテキストを返す道具。
  *
- * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は
- * type が持つ（`types.json`。git 管理外）。上書きの口は作らない。
- * 設定は呼び出しごとに読むので、変えたら次の consult から効く。
- * モデルが使えなければ、type の候補を順に試し、最後は親と同じ設定で走る。
+ * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は type が持つ（`types.json`。git 管理外）。上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次の consult から効く。モデルが使えなければ、type の候補を順に試し、最後は親と同じ設定で走る。
  *
  * 費用がかかるので、呼ぶ前に必ず確認を出す。
  */
@@ -72,8 +69,7 @@ export const PARAMETERS = Type.Object({
 type Params = Static<typeof PARAMETERS>;
 
 /**
- * pi が渡す引数。位置で渡される 5 つを 1 つのタプルにまとめる。
- * 本体では params と ctx と signal しか使わないので、間に 2 つ挟まる形を避けられる。
+ * pi が渡す引数。位置で渡される 5 つを 1 つのタプルにまとめる。本体では params と ctx と signal しか使わないので、間に 2 つ挟まる形を避けられる。
  */
 type ExecuteArgs = [
   toolCallId: string,
@@ -116,8 +112,7 @@ interface Prepared {
 }
 
 /**
- * 実行場所を用意する。payload は読み終わっている前提。
- * 隔離するかは type の `environment` が決める（ツールから推測しない）。
+ * 実行場所を用意する。payload は読み終わっている前提。隔離するかは type の `environment` が決める（ツールから推測しない）。
  */
 function prepare(ctx: ExtensionContext, options: ConsultOptions): Prepared {
   const base = ctx.cwd;
@@ -166,8 +161,7 @@ function pad2(value: number): string {
 }
 
 /**
- * ブランチ名の後半。同じ秒に複数の子が終わっても衝突しないように、番号を付ける。
- * 親はこの名前で取り込むかどうかを決める。
+ * ブランチ名の後半。同じ秒に複数の子が終わっても衝突しないように、番号を付ける。親はこの名前で取り込むかどうかを決める。
  */
 function refLabel(type: string, index: number): string {
   const now = new Date();
@@ -243,8 +237,7 @@ async function consult(
   inputs: readonly string[],
   signal: AbortSignal | undefined,
 ): Promise<AgentToolResult<Record<string, unknown>>> {
-  // 入力を先に全部読む。setup の誤りはここで落ちる（子を 1 体も起動しない）。
-  // 入力が無ければ、payload 無しで 1 体。
+  // 入力を先に全部読む。setup の誤りはここで落ちる（子を 1 体も起動しない）。入力が無ければ、payload 無しで 1 体。
   const payloads: (string | undefined)[] =
     inputs.length === 0 ? [undefined] : readPayloads(inputs, ctx.cwd);
   const labels: string[] = inputs.length === 0 ? ['(no input)'] : [...inputs];
@@ -277,8 +270,7 @@ async function consult(
         lines.push('', `ref: (not created) the commit was rejected: ${work.error}`);
       }
     }
-    // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。
-    // `details` は agent には渡らないので、モデルをここに出さないと見えない。
+    // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。`details` は agent には渡らないので、モデルをここに出さないと見えない。
     lines.push('', `[consult] ${usageLine(events)}`);
     lines.push('');
     details.push({
