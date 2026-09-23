@@ -7,7 +7,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { accountEvent, parseEvents, ranFrom, type Spent } from './spec.ts';
@@ -21,9 +21,31 @@ export interface Worktree {
   readonly cwd: string;
 }
 
+/**
+ * git を起動するときの環境。
+ *
+ * フック（lefthook など）の中で走ると、`GIT_INDEX_FILE` のような変数が process.env に
+ * 載っている。そのまま渡すと、`cwd` で指定したリポジトリではなくフックのリポジトリを
+ * 見てしまう（`.git/index: index file open failed: Not a directory` になった）。
+ * git は `cwd` と自分の探索で解決させる。
+ */
+export function gitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const cleaned: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (!key.startsWith('GIT_')) {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
+
 /** git リポジトリの中で実行しているか。worktree を作れるかの判定 */
 export function isGitRepo(cwd: string): boolean {
-  const result = spawnSync('git', ['rev-parse', '--git-dir'], { cwd, encoding: 'utf8' });
+  const result = spawnSync('git', ['rev-parse', '--git-dir'], {
+    cwd,
+    encoding: 'utf8',
+    env: gitEnv(),
+  });
   return result.status === 0;
 }
 
@@ -34,6 +56,7 @@ export function createWorktree(cwd: string, from = 'HEAD'): Worktree {
   const result = spawnSync('git', ['worktree', 'add', '--detach', dir, from], {
     cwd,
     encoding: 'utf8',
+    env: gitEnv(),
   });
   if (result.status !== 0) {
     rmSync(parent, { recursive: true, force: true });
@@ -49,6 +72,7 @@ export function removeWorktree(handle: Worktree): void {
   spawnSync('git', ['worktree', 'remove', '--force', handle.dir], {
     cwd: handle.cwd,
     encoding: 'utf8',
+    env: gitEnv(),
   });
   rmSync(handle.parent, { recursive: true, force: true });
 }
@@ -139,9 +163,9 @@ export function readPayloads(inputs: readonly string[], cwd: string): string[] {
   return inputs.map((input) => readPayload(input, cwd));
 }
 
-/** 入力ごとの結果。子の失敗も状態として持つ（投げない） */
-export type InputResult =
-  | { readonly ok: true; readonly run: RunResult }
+/** 入力ごとの結果。失敗も状態として持つ（投げない） */
+export type InputOutcome<R> =
+  | { readonly ok: true; readonly value: R }
   | { readonly ok: false; readonly error: string };
 
 /**
@@ -150,19 +174,119 @@ export type InputResult =
  * 子は互いに独立なので並列に走らせる。結果は入力の順で返すので、待ち時間だけが縮む。
  * 1 体の失敗はその 1 体の状態にする（「実行中の失敗は投げない」の実装）。
  */
-export async function runForInputs<T>(
+export async function runForInputs<T, R>(
   inputs: readonly T[],
-  runOne: (input: T, index: number) => Promise<RunResult>,
-): Promise<InputResult[]> {
+  runOne: (input: T, index: number) => Promise<R>,
+): Promise<InputOutcome<R>[]> {
   const settled = await Promise.allSettled(inputs.map((input, index) => runOne(input, index)));
   return settled.map((entry) =>
     entry.status === 'fulfilled'
-      ? { ok: true, run: entry.value }
+      ? { ok: true, value: entry.value }
       : {
           ok: false,
           error: entry.reason instanceof Error ? entry.reason.message : String(entry.reason),
         },
   );
+}
+
+/** worktree に初手で走らせるコマンド。lockfile で決める */
+export function installCommand(dir: string): readonly string[] | undefined {
+  if (existsSync(join(dir, 'pnpm-lock.yaml'))) {
+    return ['pnpm', 'install', '--frozen-lockfile'];
+  }
+  if (existsSync(join(dir, 'package-lock.json'))) {
+    return ['npm', 'ci'];
+  }
+  return undefined;
+}
+
+/** 依存を入れた結果。失敗しても投げない（その子の状態として返す） */
+export type InstallOutcome =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'ok'; readonly command: string }
+  | { readonly kind: 'failed'; readonly command: string; readonly error: string };
+
+/**
+ * worktree に依存を入れる。
+ *
+ * 入っていない worktree では、子もフックも何も確かめられない。worktree の用意の
+ * 一部であって、子の仕事ではない。失敗は環境の失敗で、設定の誤りではない。
+ */
+export function installDependencies(worktree: Worktree): InstallOutcome {
+  const command = installCommand(worktree.dir);
+  if (command === undefined) {
+    return { kind: 'none' };
+  }
+  const [file, ...args] = command;
+  if (file === undefined) {
+    return { kind: 'none' };
+  }
+  const result = spawnSync(file, args, { cwd: worktree.dir, encoding: 'utf8' });
+  const label = command.join(' ');
+  if (result.status !== 0) {
+    const detail = (result.stderr || result.error?.message || '').trim();
+    return { kind: 'failed', command: label, error: detail };
+  }
+  return { kind: 'ok', command: label };
+}
+
+/** git 1 回分の出力。起動そのものを受け取るので、テストで差し替えられる */
+export interface GitOutput {
+  readonly status: number;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+export type GitRun = (args: readonly string[]) => GitOutput;
+
+/** 本番の git。worktree の中で走らせる */
+export function worktreeGit(worktree: Worktree): GitRun {
+  return (args) => {
+    const result = spawnSync('git', [...args], {
+      cwd: worktree.dir,
+      encoding: 'utf8',
+      env: gitEnv(),
+    });
+    return {
+      status: result.status ?? 1,
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? result.error?.message ?? '',
+    };
+  };
+}
+
+/** コミットの結果。`ref` は作ったブランチ名 */
+export type CommitOutcome =
+  | { readonly kind: 'no-change' }
+  | { readonly kind: 'committed'; readonly ref: string; readonly stat: string }
+  | { readonly kind: 'failed'; readonly error: string };
+
+/**
+ * 子が残した変更をコミットして、ブランチを作る。
+ *
+ * フック（リポジトリの検査）はここで走る。落ちたらブランチを作らない。
+ * 「ref ができた = 検査を通った」を崩さないためで、`--no-verify` は使わない。
+ */
+export function commitWorktree(label: string, git: GitRun): CommitOutcome {
+  if (git(['status', '--porcelain']).stdout.trim() === '') {
+    return { kind: 'no-change' };
+  }
+  git(['add', '-A']);
+  const committed = git(['commit', '-m', `consult(${label}): the child's work`]);
+  if (committed.status !== 0) {
+    return { kind: 'failed', error: (committed.stderr || committed.stdout).trim() };
+  }
+  const ref = `consult/${label}`;
+  const branch = git(['branch', ref, 'HEAD']);
+  if (branch.status !== 0) {
+    return { kind: 'failed', error: (branch.stderr || branch.stdout).trim() };
+  }
+  const stat = git(['show', '--stat', '--oneline', 'HEAD'])
+    .stdout.trim()
+    .split('\n')
+    .slice(0, 3)
+    .join('\n');
+  return { kind: 'committed', ref, stat };
 }
 
 /**

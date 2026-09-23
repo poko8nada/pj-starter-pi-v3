@@ -1,19 +1,38 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  commitWorktree,
+  createWorktree,
+  gitEnv,
+  installCommand,
   modelAttempts,
-  readPayloads,
   readPayload,
+  readPayloads,
+  removeWorktree,
   runForInputs,
   runWithFallback,
+  worktreeGit,
+  type GitOutput,
   type RunResult,
 } from './run.ts';
 import { finalTextFrom, parseEvents } from './spec.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
 // 入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
+
+/** git を差し替えて、コミットと ref 作りの判断だけを試す */
+function recorder(overrides: Record<string, GitOutput> = {}) {
+  const calls: string[][] = [];
+  const git = (args: readonly string[]): GitOutput => {
+    calls.push([...args]);
+    const key = args[0] ?? '';
+    return overrides[key] ?? { status: 0, stdout: '', stderr: '' };
+  };
+  return { git, calls };
+}
 
 describe('readPayload', () => {
   let dir = '';
@@ -187,7 +206,7 @@ describe('runForInputs', () => {
       stdout: `{"type":"message_end","message":{"role":"assistant","usage":{"output":10},"content":[{"type":"text","text":"answer ${payload}"}]}}\n`,
     }));
     const answered = results.map((entry) =>
-      entry.ok ? finalTextFrom(parseEvents(entry.run.stdout)) : `failed: ${entry.error}`,
+      entry.ok ? finalTextFrom(parseEvents(entry.value.stdout)) : `failed: ${entry.error}`,
     );
     expect(answered).toEqual(['answer A', 'answer B']);
   });
@@ -204,5 +223,98 @@ describe('runForInputs', () => {
       'spawn failed',
       'ok',
     ]);
+  });
+});
+
+describe('gitEnv', () => {
+  it('フックの GIT_* を落とす（cwd のリポジトリを見させる）', () => {
+    const cleaned = gitEnv({ PATH: '/bin', GIT_INDEX_FILE: '/tmp/index', GIT_DIR: '/other' });
+    expect(cleaned).toEqual({ PATH: '/bin' });
+  });
+});
+
+describe('installCommand', () => {
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'consult-install-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('`pnpm-lock.yaml` がある → `pnpm install --frozen-lockfile`', () => {
+    writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+    expect(installCommand(dir)).toEqual(['pnpm', 'install', '--frozen-lockfile']);
+  });
+
+  it('`package-lock.json` がある → `npm ci`', () => {
+    writeFileSync(join(dir, 'package-lock.json'), '{}');
+    expect(installCommand(dir)).toEqual(['npm', 'ci']);
+  });
+
+  it('どちらも無い → 何もしない', () => {
+    expect(installCommand(dir)).toBeUndefined();
+  });
+});
+
+describe('commitWorktree', () => {
+  const repos: string[] = [];
+
+  afterEach(() => {
+    for (const repo of repos.splice(0)) {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  const changed: GitOutput = { status: 0, stdout: ' M note.md\n', stderr: '' };
+
+  it('変更あり → コミットされ、ブランチが返る', () => {
+    const { git, calls } = recorder({
+      status: changed,
+      show: { status: 0, stdout: 'abc123 the child work\n note.md | 1 +\n', stderr: '' },
+    });
+    const outcome = commitWorktree('demo', git);
+    expect(outcome.kind).toBe('committed');
+    expect(outcome).toMatchObject({ ref: 'consult/demo' });
+    expect(calls.map((args) => args[0])).toEqual(['status', 'add', 'commit', 'branch', 'show']);
+    expect(calls[3]).toEqual(['branch', 'consult/demo', 'HEAD']);
+  });
+
+  it('変更なし → ブランチを作らない', () => {
+    const { git, calls } = recorder();
+    expect(commitWorktree('demo', git)).toEqual({ kind: 'no-change' });
+    expect(calls.map((args) => args[0])).toEqual(['status']);
+  });
+
+  it('フックが落ちたらブランチを作らない', () => {
+    const { git, calls } = recorder({
+      status: changed,
+      commit: { status: 1, stdout: '', stderr: 'lint failed' },
+    });
+    expect(commitWorktree('demo', git)).toEqual({ kind: 'failed', error: 'lint failed' });
+    expect(calls.map((args) => args[0])).toEqual(['status', 'add', 'commit']);
+  });
+
+  it('worktree を消してもブランチは残る（親のツリーも汚れない）', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
+    repos.push(repo);
+    const run = (args: string[]) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+    run(['init', '--quiet']);
+    run(['config', 'user.email', 'consult@example.com']);
+    run(['config', 'user.name', 'consult']);
+    writeFileSync(join(repo, 'README.md'), 'base\n');
+    run(['add', '-A']);
+    run(['commit', '--quiet', '-m', 'base']);
+
+    const worktree = createWorktree(repo);
+    writeFileSync(join(worktree.dir, 'note.md'), 'the child wrote this\n');
+    const outcome = commitWorktree('demo', worktreeGit(worktree));
+    removeWorktree(worktree);
+
+    expect(outcome.kind).toBe('committed');
+    expect(run(['branch', '--list', 'consult/*']).stdout).toContain('consult/demo');
+    expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
   });
 });

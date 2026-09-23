@@ -21,13 +21,19 @@ import type {
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import {
+  commitWorktree,
   createWorktree,
+  gitEnv,
+  installDependencies,
   isGitRepo,
   readPayloads,
   removeWorktree,
   runForInputs,
   runPi,
   runWithFallback,
+  worktreeGit,
+  type CommitOutcome,
+  type InstallOutcome,
   type RunResult,
   type Worktree,
 } from './run.ts';
@@ -145,6 +151,88 @@ function compose(events: unknown[], run: RunResult): string {
   return lines.join('\n');
 }
 
+/** 子 1 体分の仕事。work は書き込む type のときだけ入る */
+interface ChildResult {
+  readonly run: RunResult;
+  readonly install?: InstallOutcome;
+  readonly work?: CommitOutcome;
+}
+
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/**
+ * ブランチ名の後半。同じ秒に複数の子が終わっても衝突しないように、番号を付ける。
+ * 親はこの名前で取り込むかどうかを決める。
+ */
+function refLabel(type: string, index: number): string {
+  const now = new Date();
+  const date = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
+  const time = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+  return `${type}-${date}-${time}-${index}`;
+}
+
+/** 子 1 体分の走らせ方 */
+interface ChildJob {
+  readonly payload: string | undefined;
+  readonly index: number;
+  readonly signal: AbortSignal | undefined;
+}
+
+/**
+ * 子 1 体分を走らせる。
+ *
+ * worktree の用意から後片付けまでを 1 つにまとめる。中断でも例外でも片付ける。
+ */
+async function runOneChild(
+  ctx: ExtensionContext,
+  options: ConsultOptions,
+  job: ChildJob,
+): Promise<ChildResult> {
+  const { payload, index, signal } = job;
+  // 子ごとに用意する。隔離する type なら、子ごとに別の worktree になる。
+  const prepared = prepare(ctx, options);
+  try {
+    // 依存を入れる。無いと子もフックも何も確かめられない。
+    const install =
+      prepared.worktree === undefined ? undefined : installDependencies(prepared.worktree);
+    if (install?.kind === 'failed') {
+      // 環境の失敗。setup の誤り（設定）とは区別して、この子の状態にする。
+      throw new Error(`could not install dependencies (${install.command}): ${install.error}`);
+    }
+    // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
+    const run = await runWithFallback(options.policy.models, (model) =>
+      runPi({
+        piArgs: buildPiArgs({
+          ...options,
+          policy: { ...options.policy, models: model === undefined ? [] : [model] },
+        }),
+        cwd: prepared.cwd,
+        payload,
+        signal,
+        env: gitEnv(),
+        limits: options.policy.limits,
+      }),
+    );
+    // 書き込む type は、子が残した変更をコミットして ref にする。親は取り込まない。
+    const work =
+      prepared.worktree === undefined
+        ? undefined
+        : commitWorktree(refLabel(options.type, index), worktreeGit(prepared.worktree));
+    return {
+      run,
+      ...(install === undefined ? {} : { install }),
+      ...(work === undefined ? {} : { work }),
+    };
+  } finally {
+    // 中断でも例外でも、必ず片付ける。ブランチはリポジトリ側に残る。
+    if (prepared.worktree !== undefined) {
+      removeWorktree(prepared.worktree);
+    }
+  }
+}
+
 /** 子を走らせて、道具の戻り値にする。入力ごとに 1 体 */
 async function consult(
   ctx: ExtensionContext,
@@ -159,31 +247,9 @@ async function consult(
   const labels: string[] = inputs.length === 0 ? ['(no input)'] : [...inputs];
 
   playSound();
-  const results = await runForInputs(payloads, async (payload) => {
-    // 子ごとに用意する。隔離する type なら、子ごとに別の worktree になる。
-    const prepared = prepare(ctx, options);
-    try {
-      // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
-      return await runWithFallback(options.policy.models, (model) =>
-        runPi({
-          piArgs: buildPiArgs({
-            ...options,
-            policy: { ...options.policy, models: model === undefined ? [] : [model] },
-          }),
-          cwd: prepared.cwd,
-          payload,
-          signal,
-          env: process.env,
-          limits: options.policy.limits,
-        }),
-      );
-    } finally {
-      // 中断でも例外でも、必ず片付ける。
-      if (prepared.worktree !== undefined) {
-        removeWorktree(prepared.worktree);
-      }
-    }
-  });
+  const results = await runForInputs(payloads, (payload, index) =>
+    runOneChild(ctx, options, { payload, index, signal }),
+  );
   playSound();
 
   const lines: string[] = [];
@@ -191,20 +257,32 @@ async function consult(
   for (const [index, entry] of results.entries()) {
     const label = labels[index] ?? '(no input)';
     lines.push(`## input: ${label}`, '');
-    if (entry.ok) {
-      const events = parseEvents(entry.run.stdout);
-      lines.push(compose(events, entry.run));
-      details.push({
-        input: label,
-        usage: usageLine(events),
-        stopped: entry.run.stopped,
-        aborted: entry.run.aborted,
-      });
-    } else {
-      lines.push(`(the child could not run) ${entry.error}`);
+    if (!entry.ok) {
+      lines.push(`(the child could not run) ${entry.error}`, '');
       details.push({ input: label, error: entry.error });
+      continue;
+    }
+    const { run, install, work } = entry.value;
+    const events = parseEvents(run.stdout);
+    lines.push(compose(events, run));
+    if (work !== undefined) {
+      if (work.kind === 'committed') {
+        lines.push('', `ref: ${work.ref}`, work.stat);
+      } else if (work.kind === 'no-change') {
+        lines.push('', 'ref: (the child changed nothing)');
+      } else {
+        lines.push('', `ref: (not created) the commit was rejected: ${work.error}`);
+      }
     }
     lines.push('');
+    details.push({
+      input: label,
+      usage: usageLine(events),
+      stopped: run.stopped,
+      aborted: run.aborted,
+      ...(install === undefined ? {} : { install }),
+      ...(work === undefined ? {} : { work }),
+    });
   }
 
   return result(lines.join('\n').trimEnd(), { type: options.type, inputs: details });
