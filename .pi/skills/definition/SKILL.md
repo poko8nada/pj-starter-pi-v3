@@ -1,0 +1,112 @@
+---
+name: definition
+description: Use when a cycle starts or closes, or when a request may change the sheet's What, Goal or Non-goal. Writes the one-page definition for a product, grills the owner one question at a time until you share the same understanding, then freezes it.
+---
+
+# definition
+
+A cycle is one sheet for one product: the definition, then the stack, the plan, the tickets, then a Retro. The sheet is frozen by a commit, and after that it is never edited. A later cycle writes a new sheet that carries the differences.
+
+This skill writes that sheet, and closes the previous one. The shape of the sheet, its field rules, its change markers and its language rules are in `references/format.md` (relative to this file). Read that before you write anything. The later stages of the cycle have their own skills, and each of those says in its description when to read it.
+
+## Step 1: the impulse
+
+Ask the owner what this cycle is for. One line is enough ("rebuild the reader", "add a trend chart", "make the export work"). Nothing else is known yet, so this is the one question with no material behind it.
+
+## Step 2: gather the facts, do not ask
+
+Send `consult` with the `research` type, one child per subject, in parallel (the same task, split by input):
+
+- the previous sheet, to see what the product already is
+- the closed cycle's tickets, for their `Findings` (a hole recorded there is material for this sheet)
+- no input, for the repository itself: the code, the config, whatever the sheet has to agree with
+
+Gathering the facts is not the owner's job. The decisions are, and those are the only things Step 4 asks about. If a question can be answered from what comes back, ask the repository instead of the owner.
+
+The `Findings` of closed tickets are also the source of the previous cycle's `Retro` carry-over. Do not read them from memory; read them from the tickets.
+
+## Step 3: settle the scope
+
+Decide which sections move in this cycle, and say so before writing anything. The change markers are the record of "what moved", and they are settled here, first: `Changes:` on the sections, `Change:` on the units. Their exact form is in `references/format.md`.
+
+There are two entry points, depending on where the impulse comes from.
+
+**Frame first** (a rebuild, or a change of direction): `What` → `Goal` → `Non-goal`, then the units. A rebuild moves all three.
+
+**Unit first** (an addition, a fix): before touching the units, check whether the change moves `What`, `Goal` or `Non-goal`.
+
+- If it does, switch to frame first and settle the frame before you write any unit.
+- If it does not, the three sections stay `keep`, and you go straight to the units.
+
+A unit that contradicts the frame is the definition of a hole. Never write one.
+
+Propose the scope, with a recommendation and with the markers spelled out, and get it confirmed. This proposal is the first question of the grilling.
+
+## Step 4: grill the sections
+
+Sections move in the order they depend on each other: `What` → `Goal` → `Non-goal` → the units. Do not ask about a later section while an earlier one is still open.
+
+**A section is done when your questions run out, not after one question.** Grill `What` with as many questions as it needs, one at a time, until a recommendation no longer draws a correction and you cannot think of another question. Then move to `Goal`, and so on. Three questions in one pass and done is not this.
+
+- **One question at a time.** Waiting for each answer is not slowness; several questions at once is bewildering, and the answers blur into each other.
+- **Bring a recommended answer to every question.** The owner corrects a position faster than they fill a blank. "I would say the goal is X — does that match?" beats "what is the goal?".
+- **Ask only what changes the sheet.** If the answer cannot change a line of the sheet, it is not a question. Look it up instead.
+- **Facts are looked up, decisions are asked.** Keep the two apart, and say which one you are asking for.
+- **Keep going until you share the same understanding.** That is the end condition, not "the sheet has been written".
+
+Starting questions, to adapt rather than recite:
+
+- `What`: what is this? who is it for? what is it not?
+- `Goal`: with this in hand, who is in what state? what is missing today?
+- `Non-goal`: what are we deciding now not to do? where is the boundary?
+
+## Step 5: count the behaviours
+
+Close the grilling with one question: "with this `Goal` and these `Non-goal`s, what does the product need to do?" The units come out of this answer.
+
+Counting file by file is not counting. Count what the product does. If something the product does has no unit, the sheet has a hole.
+
+## Step 6: build the units
+
+Derive the units from what the frame and the facts say. This is your job, not the owner's: you are the one who read the repository and counted the behaviours, and the units are a derivation, not a preference. Bring them as a proposal.
+
+Do not walk the owner through the units one by one. That is not what the grilling is for, and it turns a derivation into a questionnaire. They will correct the result.
+
+Before you write them down, read them against the frame. A unit that needs a `Non-goal` changed, or that only makes sense under a `Goal` you did not agree on, means the frame moves: go back to Step 3 instead of writing a unit the frame cannot explain.
+
+## Step 7: write the sheet
+
+Write it whole, following `references/format.md`. Two things about the sheet are worth keeping in mind here:
+
+- **`Stack` stays empty.** It is decided in the stack step, and an empty `Stack` is not an unresolved one. Every other empty section is unresolved
+- **`Retro` is empty by definition.** It is written when the cycle closes, in Step 9 or in a later run
+
+Then read your own sheet against `references/format.md`, once, before anyone else sees it: the seven sections, the markers, and the language of the content.
+
+## Step 8: put it to the owner
+
+Do not commit anything yet. Put the sheet in front of the owner and talk it through:
+
+- start with `What to build`, the part they have not seen: it is your derivation, and a proposal is easiest to correct there
+- then the sheet as a whole, so the parts are seen together once
+- a correction that moves `What`, `Goal` or `Non-goal` sends you back to Step 3; do not patch the unit and leave the frame behind
+- when they say yes, commit. **The commit is the freeze mark**, and that cycle's sheet is not edited afterwards
+
+## Step 9: close the previous cycle
+
+Close it in its own sheet, and never touch that sheet again for anything else:
+
+- write `Retro` — `Good`, `Bad`, and `Carry over`. The carry-over lists every `Findings` line of the closed cycle's tickets, one line each. Copy them; shortening is how they get lost
+- put it to the owner: they are the only one who can judge `Good` and `Bad`, and they are the last check that `Carry over` is complete
+- when they say yes, commit. That commit closes the cycle (the commit is the freeze mark; nothing about that cycle is edited afterwards)
+
+`Carry over` is what the next sheet has to account for. When you write the next sheet, make every line land somewhere: a new unit, a `Non-goal`, a `Changes` reason, or an explicit refusal with a reason. A carry-over line that lands nowhere is a hole in the next sheet.
+
+Then write this sheet's `Changes` from the differences. `Retro` is the experience and the carry-over, `Changes` is the decisions, and the order runs experience → decisions.
+
+## How not to write this
+
+- Do not put check marks in a sheet. The commit hash is the state
+- Do not update a written sheet (write the next one)
+- Do not put the order of work inside a unit (that is the plan's job)
+- Do not enumerate error paths in the definition (that is the tickets' tests)
