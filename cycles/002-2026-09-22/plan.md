@@ -120,4 +120,10 @@ README.md             add
 CYCLE-DESIGN.md       drop（step 11）
 ```
 
-外すもの: `AGENTS.md`（`agent-rules` は `keep`）、`cycles/`（成果物そのもの）、`.pi/extensions/sound-notify/` と `quality-gate/`、`package.json` / `tsconfig.json` / `vitest.config.ts` / `lefthook.yaml`（足すものがない）
+## What to keep
+
+- `AGENTS.md`（`agent-rules` が keep なので触らない）
+- `lefthook.yaml` / `package.json` / `tsconfig.json` / `vitest.config.ts`（足すものがない）
+- `.pi/extensions/quality-gate/`
+- `.pi/extensions/sound-notify/`
+- `cycles/`（成果物そのもの）
