@@ -38,8 +38,8 @@ Changes: keep
 - Given: pi セッションが動いている
 - When: agent が type を渡して子に任せる
 - Then:
-  - 子は type ごとに決まったモデル・ツール・環境・上限で走る（agent が選べるのは type だけ）
-  - `per-input` の type なら、入力ごとに 1 体走る
+  - 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る（agent が選べるのは type だけ）
+  - 入力ごとに 1 体走る（入力が 1 つなら 1 体）
   - `code` の子のコミットは ref で返り、agent が取り込むかを決める
 
 ### 2. definition-skill
