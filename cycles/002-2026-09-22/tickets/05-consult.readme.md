@@ -22,10 +22,12 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 
 ### Findings
 
-なし
+- 実演の結果: `research` を 2 入力で走らせ、両方とも診断のモデルが 1 番目の候補（`commandcode/deepseek/deepseek-v4.1-flash`）、結果は入力ごとに並んだ
+- 入力の 1 つ目に `README.md` を渡したら、子は「ファイルが指定されていない」と答えた（payload ではなく、リポジトリを自分で探し始めた）。`README.md` は 0 バイトの追跡ファイルなので、空の payload が渡っていた
+- `readPayload` は読めない入力を例外にしている（001 で「無言で空の子を走らせない」と決めた）のに、空ファイルは素通りする。同じ「文脈なしの答えが返る」形なので、次に拾う
 
 ### Unplanned
 
-なし
+- `README.md` の節は `Todo` の 8 つに加えて、既存の `Cancelling` / `Sound` / `Tests` を残した（内容は今の実装に合わせて直した）
 
-Commit:
+Commit: c05a471
