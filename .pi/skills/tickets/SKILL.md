@@ -37,7 +37,7 @@ Follow `references/format.md`. In short:
   - a second call, where the behaviour has side effects
   - concurrency, where it can be called at the same time
 - each case is `input → result`, marked `(happy)` or `(error)`, and the result is a concrete value, error type or state. "It does not throw", "it is truthy" or "the mock was called" is not a result. The plan's own words (`(empty)`, `(boundary)`) are categories, not marks: an empty input that returns a value is `(happy)`
-- `Verify` is one thing: how this step is checked when it closes. It has to be runnable at that moment, not later. A step with no files writes なし in `Todo` and says why, and its `Verify` is the demonstration itself: what is run, and the values to look at
+- `Verify` is one thing: how this step is checked when it closes. It has to be runnable at that moment, not later. A step with no files writes なし in `Todo` and says why, and its `Verify` is the demonstration itself: what is run, and the values to look at. The demonstration must not leave anything behind: a child that **writes** leaves its worktree's commit as a ref, so have it report the text back instead, and only let it write outside the repository
 - `Commit:` is the last line, and it stays empty until the step is done
 - a ticket that touches the same file as another step says so, and says which of them is implemented first — the plan's `Depends` sees the documents, not the tools
 
