@@ -56,4 +56,4 @@ Acceptance: 対象は、名前が秘密を表すもの（`.env` / `.envrc` / `*.
 
 - なし
 
-Commit:
+Commit: 8b1f664
