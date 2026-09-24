@@ -102,6 +102,8 @@ Close it in its own sheet, and never touch that sheet again for anything else:
 
 `Carry over` is what the next sheet has to account for. When you write the next sheet, make every line land somewhere: a new unit, a `Non-goal`, a `Changes` reason, or an explicit refusal with a reason. A carry-over line that lands nowhere is a hole in the next sheet.
 
+A cycle may be abandoned. If the definition breaks, close the cycle and move to the next one, with the reason in the `Retro`. Dropping work early is cheap, and keeping it cheap is the point.
+
 Then write this sheet's `Changes` from the differences. `Retro` is the experience and the carry-over, `Changes` is the decisions, and the order runs experience → decisions.
 
 ## How not to write this

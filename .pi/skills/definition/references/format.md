@@ -4,6 +4,12 @@ Section and field names are English. They are the type: the same in every sheet,
 
 **The content is Japanese.** The owner reads these sheets, and the project's rule is that documents a person reads are written in Japanese. So the placeholders in the template below are in Japanese on purpose: they show the language the content goes in, not the labels. Keep the labels as they are and write the rest in Japanese.
 
+## Where it lives
+
+The sheet is `cycles/<NNN-YYYY-MM-DD>/definition.md`: the cycle's number and the day it was agreed. Everything for one cycle collects in that one folder, so the cycle can be handled as a folder when it closes, and the number is written once. Another product means another repository; a change of direction is stacked as a later cycle of the same product. A clone starts with an empty `cycles/`.
+
+A closed cycle is recognised by its `Retro`: there is no status field anywhere.
+
 ## The shape
 
 ```markdown
@@ -96,6 +102,7 @@ A unit is one thing the product does, seen from the user's side. The rules:
 - `Retro` and `Stack` may be empty in a definition. Any other empty section is unresolved
 - **`Carry over` is not shortened.** It lists every `Findings` line of the closed cycle's tickets. Shortening it is how a hole gets lost, and the next sheet has to account for each line
 - Prefer whole sheets over diffs: repeating what did not change is allowed, and a `keep` marker says so
+- Lines that did not change are copied from the previous sheet exactly. A diff that shows a change where nothing changed is a lie
 - Do not put the order of work inside a unit (that is the plan's job)
 - Do not enumerate error paths here (that is the tickets' tests)
 
