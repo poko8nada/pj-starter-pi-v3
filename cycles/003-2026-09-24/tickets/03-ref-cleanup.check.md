@@ -21,10 +21,15 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: 3 つとも観測できた
+  - `list` → `consult/trial-20260924-161035-0 83a8bbe9587fb02fa468b50a7c5e8341509519c1`
+  - `delete`（`main`）→ `消さない: consult/ で始まらない`。`git branch` は `consult/trial-…` と `main` のまま、`main` のハッシュは `7c18996` で変わらない
+  - `delete`（`consult/trial-20260924-161035-0`）→ `消した: consult/trial-20260924-161035-0`。`git branch` は `main` だけになり、`main` 以外の ref は無くなった
+- 002 の 07 で残った ref は、これで道具で消せることが確かめられた。**「残してよいのは自分で消せるものだけ」という規則が、道具として形になった**
+- 拡張の登録は起動時に読まれるので、実演の前にセッションをリロードした（002 の 06 と同じ）
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:
