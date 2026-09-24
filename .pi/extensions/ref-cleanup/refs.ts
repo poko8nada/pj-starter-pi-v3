@@ -73,3 +73,57 @@ export function judgeRef(name: string): { ok: true } | { ok: false; reason: stri
   }
   return { ok: true };
 }
+
+/** 消す。git の起動は引数で受ける。終了コード非 0 なら投げる */
+export function deleteRef(run: GitRun, name: string): { deleted: string } {
+  const result = run(['branch', '-D', name]);
+  if (result.status !== 0) {
+    throw new Error(`refs: git が失敗した: ${(result.stderr ?? result.stdout).trim()}`);
+  }
+  return { deleted: name };
+}
+
+/** 道具が受ける操作 */
+export type Action =
+  | { readonly action: 'list' }
+  | { readonly action: 'delete'; readonly name: string };
+export type ActionResult =
+  | { readonly refs: ConsultRef[] }
+  | { readonly deleted: string }
+  | { readonly refused: string };
+
+/** 引数を検証して操作にする。知らない形は投げる */
+export function parseAction(raw: unknown): Action {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new Error('refs: 引数がオブジェクトではない');
+  }
+  const { action, name } = raw as { action?: unknown; name?: unknown };
+  if (action === 'list') {
+    if (name !== undefined) {
+      throw new Error('refs: list に name は渡せない');
+    }
+    return { action: 'list' };
+  }
+  if (action === 'delete') {
+    if (typeof name !== 'string' || name === '') {
+      throw new Error('refs: delete には空でない name が要る');
+    }
+    return { action: 'delete', name };
+  }
+  throw new Error(`refs: 知らない action: ${JSON.stringify(action)}`);
+}
+
+/**
+ * 操作を実行する。git の起動は引数で受ける（道具の登録から切り離し、ここでテストできる形）。
+ * 消す前に判定し、拒むものは消さない。
+ */
+export function runAction(action: Action, run: GitRun): ActionResult {
+  if (action.action === 'list') {
+    return { refs: listConsultRefs(run) };
+  }
+  const verdict = judgeRef(action.name);
+  if (!verdict.ok) {
+    return { refused: verdict.reason };
+  }
+  return deleteRef(run, action.name);
+}

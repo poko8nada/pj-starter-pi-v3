@@ -36,10 +36,14 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: `pnpm test:run` = 118 件緑（`ref-cleanup` の 16 件を含む）。`pnpm lint` / `pnpm typecheck` も緑。`runAction` のテストが `Then` 1（一覧）と 2（拒否）をその場で覆っている
+- `parseAction` を `index.ts` ではなく `refs.ts` に置いた（チケットは `index.ts` と書いていた）。テストから読むには、拡張の登録（pi の型を読む）を import せずに済ませたい。`index.ts` は登録だけになった
+- `gitEnv`（`GIT_*` を落とす環境）は `consult/run.ts` にあり、`../consult/run.ts` から借りた。同じものを 2 つ持たないため
+- lint が 1 つ（`git()` の中の変数名が外の `result()` を隠す）→ 直した
+- 登録した道具の呼び出しは step 3 の実演で見る（拡張は起動時に読まれるので、`/reload` の後）
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:
