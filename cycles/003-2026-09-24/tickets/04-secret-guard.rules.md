@@ -1,40 +1,46 @@
 # secret-guard.rules
 
-Acceptance: 対象は、名前が秘密を表すもの（`.env` / `.envrc` / `*.pem` / `*.key`）
+Acceptance: 対象は、名前が秘密を表すもの（`.env` / `.envrc` / `*.pem` / `*.key`）。子の `read` は拒否され、子は「読めない」と報告する。親の `.env` の中身は変わらない
 
 ## Todo
 
-- 下調べ（コードを書く前。結果は `Notes` に書く）
-  - pi が子に「このパスは読ませない」を渡す口を確かめる。候補は 3 つ — ① `pi --help` にある `--exclude-tools` / `--tools`（名前単位。パス単位ではない）② 子の env（`RunOptions.env` に足せる）③ 権限の拡張（`pi-permission-system`。`**/.git/**` のようなパス規則を持っているので、設定の置き場所を探す）
-  - 使える口が決まったら、`denyRules` の返す形を決める（配列そのもの）
-  - **この下の 2 行（`denyRules` の期待値）を、決まった形で書き直す。** どの口も使えないと分かったら、ここで止めて owner に相談する（`Then` が満たせないので、定義側の話になる）
-- `.pi/extensions/consult/guard.ts`
-  - `SECRET_NAMES` を書く — 確定: `.env` / `.envrc` / `*.pem` / `*.key`。git が無視する全部ではなく、名前で決める
-  - `isSecretPath` を書く — パスがその名前に合うか（小文字のみ、深い場所でも名前で拾う）
-  - `denyRules` を書く — 下調べで決めた形に落とす（子の起動か設定に渡せる形）
-- `.pi/extensions/consult/guard.test.ts`
-  - `isSecretPath`: `.env` → `true` (happy)
-  - `isSecretPath`: `sub/dir/.env` → `true` (happy)
-  - `isSecretPath`: `.envrc` → `true` (happy)
-  - `isSecretPath`: `keys/server.pem` → `true` (happy)
-  - `isSecretPath`: `id.key` → `true` (happy)
-  - `isSecretPath`: `.ENV` → `false`（小文字だけ） (error)
-  - `isSecretPath`: `foo.env` → `false`（前方一致しない。定義の名前は `.env` であって `*.env` ではない） (error)
+- なぜ自前で持つのかを `Notes` に書く — ホストのグローバル設定（`pi-permission-system`）は**この 1 台では**正しく働いている（3 型で実測）。だが **(a) clone には無い (b) 規則は字面ベースで、組み立てたパスはすり抜けうる**（2026-09-24 の実測: `cat .env` は止まるが、パスを変数で組めば文字列として一致しない）
+- `.pi/extensions/consult/child-guard.ts`（**`-e` で子にだけ読ませる。pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない**）
+  - `SECRET_NAMES` を書く — `.env` / `.envrc` / `*.pem` / `*.key`（名前で決める。git が無視する全部ではない）
+  - `isSecretPath` を書く — **解決後の絶対パス**で判定する（argv の字面ではなく。symlink と `..` を畳んでから見る）
+  - `judgeToolCall` を書く — 道具名と引数から、その呼び出しを通すか拒むかを決める（純関数。`read` / `grep` / `bash` のパスを解決して `isSecretPath` に渡す）
+  - 拡張本体を書く — `tool_call` で `judgeToolCall` を呼び、拒むなら**拒否の文に「読めない」を含めて**返す（子がそれを報告できるように）
+- `.pi/extensions/consult/child-guard.test.ts`
+  - `isSecretPath`: `/repo/.env` → `true` (happy)
+  - `isSecretPath`: `/repo/sub/.envrc` → `true` (happy)
+  - `isSecretPath`: `/repo/keys/server.pem` → `true` (happy)
+  - `isSecretPath`: `/repo/id.key` → `true` (happy)
+  - `isSecretPath`: 相対 `../../.env`（cwd 付きで解決）→ `true` (happy)
+  - `isSecretPath`: symlink を解決した先が `.env` → `true`（**字面のすり抜けを塞ぐ**） (happy)
+  - `isSecretPath`: `/repo/README.md` → `false` (happy)
+  - `isSecretPath`: `.ENV`（大文字）→ `false`（規則は小文字だけ） (error)
+  - `isSecretPath`: `foo.env` → `false`（前方一致しない） (error)
   - `isSecretPath`: `id.key.bak` → `false`（接尾辞が違う） (error)
-  - `isSecretPath`: `.env.example` → `false`（定義の名前 4 つに無い。止めすぎない側に倒す） (error)
-  - `isSecretPath`: `node_modules/react/index.js` → `false`（広げない） (happy)
-  - `isSecretPath`: `README.md` → `false` (happy)
   - `isSecretPath`: `""` → `false` (error)
-  - `denyRules`: <下調べで決めた形> → 期待値は下調べで決める（合意後ではなく、この step の最初に決めて `Notes` に書く。決まらないまま書けないなら owner に相談する） (happy)
-  - `denyRules`: 対象が無いパスを渡す → 空の配列（`[]`） (error)
-  - `SECRET_NAMES`: 4 つ全部が入っている → `[".env", ".envrc", "*.pem", "*.key"]`（配列そのもの） (happy)
-  - null / undefined → 型で防ぐ（パスは常に文字列）— ケース無し
-  - 権限 → この関数は規則を作るだけ。適用は step 5 — ケース無し
+  - `isSecretPath`: 解決できないパス（存在しない）→ `true`（**読めないものを通さない**側に倒す） (error)
+  - `isSecretPath`: `/repo/.env.bak` → `false`（境界: 定義の名前は `.env` だけで、`.env.*` は定義に無い） (error)
+  - `isSecretPath`: `node_modules/react/index.js` → `false`（広げない） (happy)
+  - `judgeToolCall`: `read` + `/repo/.env` → `{deny: "読めない"}` (error)
+  - `judgeToolCall`: `read` + `/repo/.envrc` → `{deny: "読めない"}` (error)
+  - `judgeToolCall`: `grep` + `/repo/keys/x.pem` → `{deny: "読めない"}` (error)
+  - `judgeToolCall`: `bash` + `cat /repo/.env` → `{deny: "読めない"}`（argv を分解してパスを見る） (error)
+  - `judgeToolCall`: `bash` + `cat /repo/.e""nv`（**組み立てたパス**）→ `{deny: "読めない"}`（**字面のすり抜けを塞ぐ**） (error)
+  - `judgeToolCall`: `read` + `/repo/README.md` → `{deny: undefined}`（通す） (happy)
+  - `judgeToolCall`: `ls` + `/repo` → 通す（秘密を指していない） (happy)
+  - `judgeToolCall`: 引数にパスが無い道具（`web_search` など）→ 通す (happy)
+  - `judgeToolCall`: `read` + `""` → 通す（空は `isSecretPath` が false） (happy)
+  - null / undefined → 型で防ぐ — ケース無し
+  - 権限 → 判定だけを持つ — ケース無し
   - 2 回目 / 並行 → 状態を持たない純関数 — ケース無し
 
 ## Verify
 
-- `pnpm test:run` が緑。下調べの結果（pi に渡す形と、その根拠になったファイル・行）が `Notes` に書かれている。`denyRules` の期待値が、その形になっている
+- `pnpm test:run` が緑。`judgeToolCall` のテストが、拒む側（4 経路）と通す側、`deny` の文を全部覆う。拡張本体は `judgeToolCall` の結果を返すだけの 3 行で、**別にテストできる中身が無い**（pi の登録は実演で見る — 05 と 06）
 
 ## Notes
 
