@@ -37,8 +37,8 @@ Commit: <hash>
 
 ## Names
 
-- One ticket per step, named `NN-<step-name>.md` with the step's number: `01-consult.types.md`, `08-stack-skill.md`. Numbered, the tickets read in the order the work happens
-- The heading is the step's name: the unit's id, or `<unit-id>.<part>` when the unit was split
+- One ticket per step, named `NN-<step-name>.md` with the step's number: `01-consult.types.md`, `08-stack-skill.md`. The files live in `cycles/<NNN-DATE>/tickets/`, next to the plan. Numbered, the tickets read in the order the work happens
+- The heading is the step's name: the unit's id, or `<unit-id>.<part>` when the unit was split. The dot stays in the file name (`01-consult.types.md`)
 - A `step 0` whose answers are all なし gets no ticket: there is nothing to make
 
 ## Todo
@@ -49,7 +49,8 @@ Commit: <hash>
 - Every file in the step's `Files` appears here, and every input the artifact can fail on
 - Tests are cases of `input → result`, each marked `(happy)` or `(error)`. The error paths live here and nowhere else: the definition deliberately leaves them out
 - The cases come from the definition, not from the implementation. A test written next to the code it tests asserts what the code does, not what the sheet says it does
-- Walk these categories and, for each one, write either the case or the reason it does not apply. Skipping one silently is the same as forgetting it: the happy path / null, undefined, missing / empty / boundary values / invalid input / the expected error path / permission / a second call / concurrency
+- Walk these categories and, for each one, write either the case or the reason it does not apply. Skipping one silently is the same as forgetting it: the happy path / null, undefined, missing / empty / boundary values / invalid input / the expected error path / permission / a second call / concurrency. The reason sits as a bullet under the artifact it belongs to, in the same list as the cases
+- A step with no files (a `.check`) writes なし in `Todo` and says why; its `Verify` is the demonstration
 - The result is a concrete value, an error type or a state. A test that would still pass if the code returned the wrong value is too weak: write the value, not the absence of an exception
 - No check marks. One ticket is one commit, so the `Commit:` hash says whether it is done
 
