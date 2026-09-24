@@ -35,6 +35,35 @@ function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
 
+describe('buildPiArgs: child-guard', () => {
+  it('-e で child-guard を子に渡し、--tools の後ろに置く', () => {
+    const args = buildPiArgs(options());
+    const index = args.indexOf('--extension');
+    expect(index).toBeGreaterThan(args.indexOf('--tools'));
+    expect(args[index + 1]?.endsWith('child-guard.ts')).toBe(true);
+  });
+
+  it('child-guard のパスは空でない絶対パス', () => {
+    const args = buildPiArgs(options());
+    const path = args[args.indexOf('--extension') + 1] ?? '';
+    expect(path.startsWith('/')).toBe(true);
+    expect(path.length).toBeGreaterThan('/child-guard.ts'.length);
+  });
+
+  it('-e は 1 回だけ入る', () => {
+    expect(buildPiArgs(options()).filter((arg) => arg === '--extension')).toHaveLength(1);
+  });
+
+  it('--tools が空配列でも -e の位置が崩れない', () => {
+    const args = buildPiArgs(options({ policy: policy({ tools: [] }) }));
+    expect(args.indexOf('--extension')).toBeGreaterThan(args.indexOf('--tools'));
+  });
+
+  it('パスは機械に依らない形で組まれる（このファイルの隣）', () => {
+    const args = buildPiArgs(options());
+    expect(args[args.indexOf('--extension') + 1]?.includes('/.pi/extensions/consult/')).toBe(true);
+  });
+});
 describe('buildPiArgs', () => {
   it('ヘッドレスで 1 回だけ走る形にする', () => {
     const args = buildPiArgs(options());

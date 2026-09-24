@@ -29,10 +29,14 @@ Acceptance: 子の `read` は拒否され、子は「読めない」と報告す
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: `pnpm test:run` = 151 件緑（`spec.test.ts` の新 5 件を含む）。`pnpm lint` / `pnpm typecheck` も緑
+- パスは `import.meta.url` から組む（`fileURLToPath(new URL('./child-guard.ts', import.meta.url))`）。**チケットは「配列そのものを比較」と書いたが、絶対パスは機械に依存するので、テストは「`--tools` の後ろ」「`child-guard.ts` で終わる絶対パス」「`-e` は 1 回だけ」で確かめている**（この差はここに記録）
+- `-e` は `--tools` の直後、`--no-approve` の前に置いた。まとまりとして読める位置
+- **子に読ませる実演はこの step では行わない。** この step の一部（引数の組み立て）はテストが覆い、単位全体の実演（生きた子に `.env` を読ませる）は 06 が持つ（`plan` スキルの「その step の `Verify` は自分の分だけを覆う」に従った）
+- 親の側のケースは作らない — `buildPiArgs` は子の引数を組む関数で、親はこの経路を通らない（構造で保証される）
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:

@@ -6,7 +6,15 @@
  * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、選び直す口は無い。費用の歯止め（上限）も type が持つ。
  */
 
+import { fileURLToPath } from 'node:url';
 import type { Limits, TypePolicy } from './types.ts';
+
+/**
+ * 子に読ませる guard。`-e` で子の起動に渡す。
+ *
+ * 子だけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`child-guard.ts` は自動では読まれない）。ホストの権限設定が無い環境でも、子が秘密のパスに触れないようにする。
+ */
+const CHILD_GUARD = fileURLToPath(new URL('./child-guard.ts', import.meta.url));
 
 /**
  * 隔離が要るか。type の `environment` が決める。
@@ -41,6 +49,8 @@ export function buildPiArgs(options: ConsultOptions): string[] {
     args.push('--append-system-prompt', policy.role);
   }
   args.push('--tools', policy.tools.join(','));
+  // 子にだけ guard を読ませる。親の設定には触らない（親はこの関数を通らない）。
+  args.push('--extension', CHILD_GUARD);
   // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
   args.push('--no-approve');
   args.push(options.task);
