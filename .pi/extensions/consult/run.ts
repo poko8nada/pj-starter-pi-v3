@@ -163,7 +163,11 @@ export async function runForInputs<T, R>(
   inputs: readonly T[],
   runOne: (input: T, index: number) => Promise<R>,
 ): Promise<InputOutcome<R>[]> {
-  const settled = await Promise.allSettled(inputs.map((input, index) => runOne(input, index)));
+  // コールバックを async で包む。包まないと、コールバックが**同期で**投げたときに入力の map がそこで止まり、
+  // この関数ごと棄却される（1 つの入力の失敗が他を巻き込む。2026-09-24 の実演で踏んだ）。
+  const settled = await Promise.allSettled(
+    inputs.map(async (input, index) => runOne(input, index)),
+  );
   return settled.map((entry) =>
     entry.status === 'fulfilled'
       ? { ok: true, value: entry.value }

@@ -317,3 +317,39 @@ describe('commitWorktree', () => {
     expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
   });
 });
+
+describe('runForInputs: 同期で投げるコールバック', () => {
+  // コールバックが同期で投げても、その入力だけが {ok: false} になり、他の入力は走る。
+  // 実演で踏んだ形（ガードを async でないコールバックに置いたら、入力の map がそこで止まった）。
+  it('投げた入力だけが {ok: false} で、他の入力の子は走る', async () => {
+    let started = 0;
+    const results = await runForInputs(['', '中身'], (payload) => {
+      if (payload === '') {
+        throw new Error('空の入力');
+      }
+      started += 1;
+      return Promise.resolve(`answer ${payload}`);
+    });
+    expect(results).toEqual([
+      { ok: false, error: '空の入力' },
+      { ok: true, value: 'answer 中身' },
+    ]);
+    expect(started).toBe(1);
+  });
+
+  it('全部が空なら、子は 1 体も走らない', async () => {
+    let started = 0;
+    const results = await runForInputs(['', '   '], (payload) => {
+      if (payload.trim() === '') {
+        throw new Error('空の入力');
+      }
+      started += 1;
+      return Promise.resolve(`answer ${payload}`);
+    });
+    expect(results).toEqual([
+      { ok: false, error: '空の入力' },
+      { ok: false, error: '空の入力' },
+    ]);
+    expect(started).toBe(0);
+  });
+});
