@@ -79,20 +79,37 @@ Before you write them down, read them against the frame. A unit that needs a `No
 Write it whole, following `references/format.md`. Two things about the sheet are worth keeping in mind here:
 
 - **`Stack` stays empty.** It is decided in the stack step, and an empty `Stack` is not an unresolved one. Every other empty section is unresolved
-- **`Retro` is empty by definition.** It is written when the cycle closes, in Step 9 or in a later run
+- **`Retro` is empty by definition.** It is written when the cycle closes, in Step 10 or in a later run
 
 Then read your own sheet against `references/format.md`, once, before anyone else sees it: the seven sections, the markers, and the language of the content.
 
-## Step 8: put it to the owner
+## Step 8: review it
+
+Before the owner sees it, put the sheet in front of a `review` child. The frame has been grilled with the owner, so the part they have not seen is the units: this is where those get a second pair of eyes. Fix what comes back, repeat until it comes back clean, and cap it at three rounds. A fixed checklist is what makes this converge.
+
+The task, verbatim:
+
+- Check this definition sheet against the format and against itself, and nothing else:
+  - the seven sections are there, and no section is empty except `Stack` and `Retro`
+  - the markers are right: `Changes:` on the sections, `Change:` on the units, reasons in bold, and no `keep` unit written under `What to build`
+  - every behaviour the `Goal` and the `Non-goal`s ask for has a unit
+  - no unit contradicts the frame
+  - labels are English, and the content is Japanese
+- Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
+
+The input is the sheet. Do not show it to the owner until this comes back clean.
+
+## Step 9: put it to the owner
 
 Do not commit anything yet. Put the sheet in front of the owner and talk it through:
 
 - start with `What to build`, the part they have not seen: it is your derivation, and a proposal is easiest to correct there
 - then the sheet as a whole, so the parts are seen together once
 - a correction that moves `What`, `Goal` or `Non-goal` sends you back to Step 3; do not patch the unit and leave the frame behind
+- show the review's findings and what you did with each: fixed, or answered with a reason
 - when they say yes, commit. **The commit is the freeze mark**, and that cycle's sheet is not edited afterwards
 
-## Step 9: close the previous cycle
+## Step 10: close the previous cycle
 
 Close it in its own sheet, and never touch that sheet again for anything else:
 

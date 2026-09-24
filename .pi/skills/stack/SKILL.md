@@ -67,11 +67,26 @@ Changes: keep / update **理由**
 - The sheet's content is Japanese; the labels stay English
 - Do not wrap the lines
 
-## Step 6: put it to the owner
+## Step 6: review it
+
+Before the owner sees it, put the filled `Stack` in front of a `review` child. Same shape as everywhere else: a checklist that is fixed, fix what comes back, repeat until it comes back clean, and cap it at three rounds. A fixed checklist is what makes this converge.
+
+The task, verbatim:
+
+- Check this Stack against the definition, and nothing else:
+  - the base is names only, and they are the names the repository actually uses
+  - what the product needs is there, and nothing is added that the definition does not ask for
+  - the marker is right: `add` on a product's first sheet, `keep` or `update` after it
+- Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
+
+The input is the definition file. Do not show the result to the owner until this comes back clean.
+
+## Step 7: put it to the owner
 
 Do not commit yet. Show what was added — and, when something was tried, what the trial reported.
 
 - a rejection sends you back to Step 3
+- show the review's findings and what you did with each: fixed, or answered with a reason
 - when they say yes, commit. The `Stack` is inside a frozen sheet, so this commit is what freezes it in turn, and it is not edited afterwards
 
 ## How not to do this
