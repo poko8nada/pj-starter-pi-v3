@@ -32,4 +32,4 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
 
 - なし
 
-Commit:
+Commit: ea45f97
