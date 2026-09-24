@@ -1,0 +1,50 @@
+# Harness-included starter
+
+A starter where a project and its **agent harness** come up together. Clone it, and the checks, the commit gates, the agent rules and the cycle mechanism are already in place.
+
+日本語: [README.ja.md](README.ja.md)
+
+## What is in it
+
+- **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
+- **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
+- **Agent rules** — `AGENTS.md`, read in every session
+- **The cycle mechanism** — four skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets`)
+- **consult** — a tool that runs a child `pi` without showing it this conversation (`.pi/extensions/consult/`)
+- **The cycle records** — `cycles/`
+
+## Getting started
+
+```bash
+pnpm install
+```
+
+1. Delete `cycles/` — this starter's own cycles. They do not belong in a clone
+2. Copy `.pi/extensions/consult/types.example.json` to `types.json`, and put your own models in it (`types.json` is not committed)
+3. Start `pi`. The skills are found in `.pi/skills/`
+
+## Checks
+
+| Command                             | What it does                 |
+| ----------------------------------- | ---------------------------- |
+| `pnpm test:run`                     | Run the tests once           |
+| `pnpm lint`                         | `oxlint`, warnings included  |
+| `pnpm typecheck`                    | `tsc --noEmit`               |
+| `pnpm format` / `pnpm format:check` | Format, or verify the format |
+
+- **On commit** — format, lint, typecheck and test, on what changed
+- **On push** — typecheck and test
+- **On every agent turn** — the same four, on whatever that turn changed
+
+## The cycle
+
+One cycle is a definition, a stack, a plan, tickets, then a Retro. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
+
+```
+definition   write the one sheet (What / Goal / Non-goal / What to build / Stack / Retro)
+stack        decide what to build with (the harness is the base; only additions are listed)
+plan         decide the order (steps, files, tests)
+tickets      cut a ticket per step, agree it, implement it, close it
+```
+
+The records stay in `cycles/<NNN-DATE>/`. **A cycle is closed when its `Retro` is there.** Git holds the state, so there is no check box and no status field anywhere.
