@@ -19,7 +19,9 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
     - `judgeRef`: `"consult"` → `{ok: false, reason: "consult/ で始まらない"}` (error)
     - `judgeRef`: `"consulting/x"` → `{ok: false, reason: "consult/ で始まらない"}`（前方一致の境目） (error)
     - `judgeRef`: `"main"` → `{ok: false, reason: "consult/ で始まらない"}` (error)
-    - `listConsultRefs`: git が `"abc123 abc1234567890123456789012345678901234567\n"` と `"def456 refs/heads/main\n"` を返す → `[{hash: "abc1234567890123456789012345678901234567", name: "consult/foo"}]`（`main` は落ちる） (happy)
+    - `judgeRef`: `""` → `{ok: false, reason: "consult/ で始まらない"}`（空の名前） (error)
+    - `listConsultRefs`: git が `"abc1234567890123456789012345678901234567 refs/heads/consult/foo\n"` と `"def456 refs/heads/main\n"` を返す → `[{hash: "abc1234567890123456789012345678901234567", name: "consult/foo"}]`（`main` は落ちる） (happy)
+    - `listConsultRefs`: git が `""` を返す → `[]` (empty)
     - `listConsultRefs`: git が終了コード 1 で失敗 → 投げる (error)
     - null / undefined → 型で防ぐ（git の出力も ref の名前も常に文字列なので、実行時には来ない）— ケース無し
     - `"consult/"` だけの ref → git が作れない（末尾が `/` の ref は無い）ので、実行時には来ない — ケース無し
