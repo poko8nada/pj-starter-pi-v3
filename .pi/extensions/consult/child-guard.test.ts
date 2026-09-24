@@ -81,8 +81,12 @@ describe('isSecretPath', () => {
     expect(isSecretPath('', dir)).toBe(false);
   });
 
-  it('存在しないパスは true（読めないものを通さない）', () => {
-    expect(isSecretPath(join(dir, 'does-not-exist'), dir)).toBe(true);
+  it('存在しないパスは、名前が秘密でなければ通す（cat のような語で子が凍らない）', () => {
+    expect(isSecretPath(join(dir, 'does-not-exist'), dir)).toBe(false);
+  });
+
+  it('存在しないが名前が秘密（まだ作られていない .env）は止める', () => {
+    expect(isSecretPath(join(dir, 'sub/not-yet/.env'), dir)).toBe(true);
   });
 
   it('node_modules の中は広げない', () => {
@@ -122,6 +126,14 @@ describe('judgeToolCall', () => {
 
   it('bash + cat /dir/.env を拒む', () => {
     expect(judgeToolCall('bash', { command: `cat ${join(dir, '.env')}` }, dir).block).toBe(true);
+  });
+
+  it('bash のコマンド名（cat）では止めない', () => {
+    expect(judgeToolCall('bash', { command: 'ls -la' }, dir)).toEqual({});
+  });
+
+  it('bash + 存在しないパス（/nonexistent/x.txt）でも止めない', () => {
+    expect(judgeToolCall('bash', { command: 'cat /nonexistent/x.txt' }, dir)).toEqual({});
   });
 
   it('bash + 組み立てたパス（.e""nv）を拒む', () => {

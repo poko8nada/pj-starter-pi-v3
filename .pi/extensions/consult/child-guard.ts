@@ -27,17 +27,18 @@ function matchesName(name: string, pattern: string): boolean {
 
 /**
  * パスが秘密を指すか。**解決後の絶対パス**で見る。
- * 解決できない（存在しない・読めない）場合は `true` — 読めないものを通さない側に倒す。
+ *
+ * 解決できない（存在しない・読めない）場合は、**解決前のベース名**で規則を見る。
+ * bash のトークンは `cat` のような存在しない語を含むので、それを全部止めると子が凍る（2026-09-24 の実演）。実体が無いものは読めないので、名前が秘密でなければ通す。
  */
 export function isSecretPath(path: string, cwd: string): boolean {
   const absolute = isAbsolute(path) ? path : resolve(cwd, path);
-  let resolved: string;
+  let name: string;
   try {
-    resolved = realpathSync(absolute);
+    name = basename(realpathSync(absolute));
   } catch {
-    return true;
+    name = basename(absolute);
   }
-  const name = basename(resolved);
   return SECRET_NAMES.some((pattern) => matchesName(name, pattern));
 }
 
