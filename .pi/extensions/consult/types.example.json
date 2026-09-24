@@ -13,7 +13,7 @@
       "models": [],
       "tools": ["read", "ls", "find", "grep", "web_search"],
       "environment": "tree",
-      "limits": { "turns": 20, "output": 20000 },
+      "limits": { "turns": 20, "output": 60000 },
       "role": "判定を返す。直さない。根拠を示す"
     },
     {
