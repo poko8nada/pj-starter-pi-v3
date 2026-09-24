@@ -35,4 +35,4 @@ Acceptance: チケットが出て、`Todo` と `Verify` の承認を取り、コ
 
 - スキル本文に 5 箇所、`format.md` に 3 箇所足した（チケットの `Todo` に無い）: ① チケットの置き場所は `cycles/<NNN-DATE>/tickets/` ② `<unit-id>.<part>` のドットはファイル名にも残る ③ 「適用しない理由」は case と同じリストに置く ④ 検査だけの step は `Todo` に なし と理由を書き、`Verify` は実演そのもの ⑤ プランの `Tests` は出発点で、9 観点をたどって足す ⑥ プランの `(empty)` などはカテゴリで、印は `(happy)` / `(error)` のみ ⑦ 子を起こせないなら止める（レビュー前のチケットを owner に出さない） ⑧ オーナーが居ないなら止める
 
-Commit:
+Commit: 2868bf2
