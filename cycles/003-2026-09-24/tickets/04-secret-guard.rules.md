@@ -46,10 +46,14 @@ Acceptance: 対象は、名前が秘密を表すもの（`.env` / `.envrc` / `*.
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: `pnpm test:run` = 146 件緑（`child-guard.test.ts` の 28 件を含む）。`pnpm lint` / `pnpm typecheck` も緑
+- 止め方の形は、権限の拡張（`@gotgenes/pi-permission-system`）のコードから拾った: `pi.on("tool_call", handler)` が入口で、結果は `{ block: true, reason }`。**handler が例外を投げると pi は止めずに通す**（SDK が catch しない）ので、本体は自分で握って fail-closed で止める
+- 判定は `realpathSync` を使う。**存在しないパスは `true`**（「読めないものを通さない」）。テストは一時ディレクトリに本物のファイルと symlink を作って確かめた
+- 字面のすり抜け対策は「引用符と `\` を剥がす」形（`cat .e""nv` → `.env`）。**シェルの展開を完全に真似ているわけではない**ので、`$VAR` を使った組み立ては「存在しないパス」として fail-closed で止まるが、**これは偶然で、保証ではない**。次の 1 枚への持ち越し
+- 道具によってパスのキー名が違う（`path` / `file_path` / `filePath` / `file`）。pi の `read` の実際のキー名は未確認で、4 つを候補として見ている
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:
