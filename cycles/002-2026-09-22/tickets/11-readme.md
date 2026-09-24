@@ -18,10 +18,12 @@ Acceptance: clone 直後に owner が `README.md` を開くと、何が入って
 
 ### Findings
 
-なし
+- 実演の結果: README に書いたコマンドを全部走らせた。`pnpm install` は「Already up to date」（共有ストアに何も落ちていない）、`pnpm test:run` / `pnpm lint` / `pnpm typecheck` / `pnpm format:check` は全部緑
+- **プロダクト名は未決のまま**。両方の README のタイトルは仮（「ハーネス付きスターター」/「Harness-included starter」）
 
 ### Unplanned
 
-なし
+- **`README.ja.md` を追加した**（owner の指示: 英語が本体、日本語版を併置、相互リンク）。`Todo` とプランの `Files` は `README.md` だけだった
+- 検査の一覧は、実在するスクリプトだけにした（プランの step 12 にあった `pnpm check` は `package.json` に無い）
 
-Commit:
+Commit: 8a3262a
