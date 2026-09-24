@@ -33,6 +33,14 @@ export interface ConsultOptions {
 }
 
 /**
+ * 中身が無い入力か。0 バイトか空白だけなら空とみなす。
+ * 「無言で、文脈なしの子を走らせない」ための判定（001 の規則）。
+ */
+export function isBlank(text: string): boolean {
+  return text.trim() === '';
+}
+
+/**
  * 子のプロンプトを組む。`input` は文書ではなく、プロンプトの先頭に連結されるテキスト。
  * 空（`undefined` / 空文字）なら足さない。
  */

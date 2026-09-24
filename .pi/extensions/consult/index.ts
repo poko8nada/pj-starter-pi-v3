@@ -38,6 +38,7 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
+  isBlank,
   joinPrompt,
   modelFrom,
   needsIsolation,
@@ -244,9 +245,14 @@ async function consult(
   const labels: string[] = inputs.length === 0 ? ['(no input)'] : [...inputs];
 
   playSound();
-  const results = await runForInputs(payloads, (payload, index) =>
-    runOneChild(ctx, options, { payload, index, signal }),
-  );
+  const results = await runForInputs(payloads, (payload, index) => {
+    // 「無言で、文脈なしの子を走らせない」（001 の規則）。中身が無い入力は子を起こさない。
+    // 投げればこの入力だけが {ok: false, error} になり、他の入力はそのまま走る（runForInputs は allSettled）。
+    if (payload !== undefined && isBlank(payload)) {
+      throw new Error('空の入力');
+    }
+    return runOneChild(ctx, options, { payload, index, signal });
+  });
   playSound();
 
   const lines: string[] = [];

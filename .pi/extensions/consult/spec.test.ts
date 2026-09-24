@@ -5,6 +5,7 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
+  isBlank,
   joinPrompt,
   modelFrom,
   needsIsolation,
@@ -35,6 +36,28 @@ function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
 function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
+
+describe('isBlank', () => {
+  it('空文字は空', () => {
+    expect(isBlank('')).toBe(true);
+  });
+
+  it('空白だけ（改行・タブを含む）は空', () => {
+    expect(isBlank('   \n\t')).toBe(true);
+  });
+
+  it('文字が 1 つでもあれば空ではない', () => {
+    expect(isBlank('a')).toBe(false);
+  });
+
+  it('中身が「0」なら空ではない（長さ 0 と別）', () => {
+    expect(isBlank('0')).toBe(false);
+  });
+
+  it('前後に空白があっても、中身があれば空ではない', () => {
+    expect(isBlank('   a')).toBe(false);
+  });
+});
 
 describe('joinPrompt', () => {
   it('payload を先頭に連結する（間に改行）', () => {
