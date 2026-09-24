@@ -37,10 +37,12 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: `pnpm test:run` = 102 件緑（`refs.test.ts` の 14 件を含む）。`pnpm lint` / `pnpm typecheck` も緑。git を起動しない純関数なので、実演は何も残さない
+- **最初の実行は赤だった。** `listConsultRefs` が git の絞り込みに任せていて、`main` を落としていなかった（チケットは「`main` は落ちる」と決めていた）→ コード側で `refs/heads/consult/` を filter する形に直した。git 側のパターンも残してある（効率）
+- lint が 2 つ（不要な型アサーション）と 1 つ（テストの不要なテンプレート）を指摘 → 直した
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:
