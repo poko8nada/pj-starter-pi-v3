@@ -62,7 +62,7 @@ Trying costs a child per attempt, and it downloads the package into the shared p
 Changes: keep / update **理由**
 ```
 
-- **The marker is yours to write.** The definition left this section empty and said why; this step is what fills it, so this step decides `keep` or `update`. Nothing changed: `Changes: keep`, with the previous lines copied verbatim. Something changed: `Changes: update`, with the reason in bold — the frame moved and this followed it, or the stack itself was re-decided
+- **The marker is yours to write.** The definition left this section empty and said why; this step is what fills it, so this step decides the marker. On a product's **first sheet** it is `add`: there is nothing to carry over. From the second one on: nothing changed is `Changes: keep`, with the previous lines copied verbatim; something changed is `Changes: update`, with the reason in bold — the frame moved and this followed it, or the stack itself was re-decided
 - `Added: なし` when nothing was needed. Saying "none" is a decision and looks different from leaving the line out
 - The sheet's content is Japanese; the labels stay English
 - Do not wrap the lines
