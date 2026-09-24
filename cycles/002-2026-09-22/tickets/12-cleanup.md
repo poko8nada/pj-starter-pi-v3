@@ -9,7 +9,7 @@ Acceptance: `CYCLE-DESIGN.md` がリポジトリに無い（スキル 4 つに�
 
 ## Verify
 
-- 実演: `pnpm test:run` と `pnpm lint` と `pnpm typecheck` が緑で、`grep -r CYCLE-DESIGN` が何も返さない
+- 実演: 削除の前に、`CYCLE-DESIGN.md` の項目を 1 つずつ潰す — どのスキルに入ったか、または消すと決めたか（移し漏れゼロが条件）。そのうえで `pnpm test:run` と `pnpm lint` と `pnpm typecheck` が緑で、`grep -r CYCLE-DESIGN` が何も返さない
 
 ## Notes
 
