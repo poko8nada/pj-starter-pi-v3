@@ -31,4 +31,4 @@ Acceptance: 定義 1 枚のレビューが、出力上限に当たらずに終�
 
 - なし
 
-Commit:
+Commit: 8141f72
