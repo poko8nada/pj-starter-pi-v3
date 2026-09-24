@@ -26,10 +26,15 @@ Acceptance: 単位の `Then` を全部、1 回の実演で確かめる（type �
 
 ### Findings
 
-なし
+- **type ごとの policy と引数の読み合わせ**（`types.json` / `spec.ts` の `buildPiArgs`）: tools は `--tools`（カンマ区切りの一覧）/ environment は実行場所（`tree` か一時 worktree）/ limits は `types.json` の値そのもの（子の `output` 上限と turns）/ **role は `--append-system-prompt`**（追記なので既定のツール説明を壊さない）。他は `--mode json -p --no-session` / `--model <1 番目>` / `-e child-guard.ts` / `--no-approve`、最後にプロンプト
+- `PARAMETERS` は `type` / `task` / `input` の 3 つだけ（agent が選べるのは type だけ）
+- **`research` を 2 入力**（`definition.md` + `plan.md`）で 1 回 → 結果は 2 件、**入力順**。1 体目は「先行文書は存在しません…文書は 1 つだけ」、2 体目は `# PLAN 003` を引用した — **入力ごとに 1 体**で、各子は自分の payload 1 枚とタスクを受け取っている。両方とも payload の先頭行を正しく引用した（payload がプロンプトに入っている証拠）
+- **`code` 1 体** → `PROBE.md` を作り、`ref: consult/code-20260924-174013-0`（`92fa8a5`、1 file changed）が返った。**取り込まない**と決め、`ref_cleanup` の `list` → `delete` で消した。親のツリーは 1 度も触られていない（`git status` は綺麗、`git branch` は `main` だけ、worktree も残っていない）
+- **`review` の上限**は 07 の実演で確認済み（定義 1 枚 → 33,792 トークン、上限に当たらず）
+- README の type 表と `types.json` の `tools` が一致していることを読み合わせた
 
 ### Unplanned
 
-なし
+- なし
 
-Commit:
+Commit: なし（コードを変えない。実演だけ）
