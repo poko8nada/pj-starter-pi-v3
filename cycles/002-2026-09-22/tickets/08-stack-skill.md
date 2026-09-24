@@ -20,10 +20,15 @@ Acceptance: 定義の他の節が埋まっているときに agent がスタッ�
 
 ### Findings
 
-なし
+- 実演（a）の結果: 読み取り専用の子（`review`。worktree も ref も作らない）が、スキルとリポジトリだけから `Stack` を書いた。`Base` はファイルと行番号つき（`package.json:4` / `tsconfig.json:7-14` / `lefthook.yaml:1-32`）、`Added: なし`（保存は `node:fs` / 入力は `node:util` の `parseArgs` と `node:readline` / 配布は `noEmit`）。印について質問を 1 つ返してきた
+- 実演（b）の結果: `trial` の子が `picocolors` を追加して実行し、`rm` と `git checkout -- package.json pnpm-lock.yaml` で戻せた。**リポジトリには何も残らず（ref もできず）**、共有ストアに 1 つ分が残った
+- 子が見つけた欠陥: 最初の 1 枚の印は `add`（定義側の規則）なのに、スキルは `keep` / `update` しか出していなかった。直した
+- 子の観察: 002 の `Node 24` / `pnpm 12` はコードからは読めない（`Base` は名前だけ、の規則に合う）
 
 ### Unplanned
 
-なし
+- `Verify` を (a)(b) に分け、`Todo` も「スキルを書く」から「(a)+(b) で確かめる」まで含む形に直した（1 枚から `Stack` を決められるかを確かめていなかった、というユーザーの指摘）
+- **`trial` の実演が、共有ストア（リポジトリの外）に触った。** 事後に `pnpm store prune` を案内したのは無責任で、実際にそれが打たれた。規則を「先に許可を取る / グローバルな操作を提案しない / 何が消えて何が残るかは測れない」に直した
+- `references/` は置かない（型が 2 行で `SKILL.md` に収まる）
 
-Commit:
+Commit: 983d725
