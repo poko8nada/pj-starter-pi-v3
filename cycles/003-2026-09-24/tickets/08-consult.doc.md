@@ -45,4 +45,4 @@ Acceptance: `input` の全文が、子のプロンプトの先頭に payload と
 
 - なし
 
-Commit:
+Commit: 28ddbbb
