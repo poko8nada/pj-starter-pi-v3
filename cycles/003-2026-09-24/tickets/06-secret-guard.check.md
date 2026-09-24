@@ -31,10 +31,15 @@ Acceptance: 単位の `Then` を全部、1 回の実演で確かめる（子に 
 
 ### Findings
 
-なし
+- `research`（リポジトリ直）: `read .env` / `read .envrc` / `grep .env` → **すべて child-guard が拒否**（「読めない: … は秘密として扱う（child-guard）」）。再帰 `grep`（`.` / `PROJECT_STARTER`）→ 通るが `No matches`（`.env` の行は混ざらない）。`README.md` → 通る（止めすぎていない）
+- `review`（リポジトリ直）: 同じ 4 つで同じ結果（拒否の文も child-guard）
+- `trial`（worktree）: `cat <絶対パス>/.env` → child-guard 拒否。`ls -la` / `pwd` → 通る。`cat <絶対パス>/probe.pem` / `grep -c x <絶対パス>/probe.pem` → child-guard 拒否
+- **自前 guard の証明**: `probe.pem`（偽物）はあなたの config に規則が無い（`.env` / `.envrc` のみ）。それが child-guard で拒否された = **私たちの guard が効いている**。あなたの設定が無いクローンでも子は届かない
+- 親の `.env` は前後で変わらない（mtime `Sep 20 14:33` / `.envrc` は `Sep 16 09:17`、ともに不変）。ハッシュは方針で拒否される（argv に `.env` を含むと弾かれる）ため、mtime と `git status` で見た
+- 実演の後: `probe.pem` を親が消し、`git status` は綺麗。子は何も残さなかった（`ref: (the child changed nothing)`）
 
 ### Unplanned
 
-なし
+- **実演が実バグを捕まえた。** 1 回目の `trial` で拒否の文が「読めない: **cat** は秘密として扱う」になった — 04 で入れた「解決できないパスは `true`」が、bash のトークン（`cat` / `ln` / `cp` / `pwd` / `ls`）を全部止め、**子が凍った**。直した: `realpath` が失敗したら**解決前のベース名**で判定する（`.env` は止まり、`cat` は通る）。テストを 3 件追加して 154 件。修正は `064c820`
 
-Commit:
+Commit: 064c820
