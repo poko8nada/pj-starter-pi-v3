@@ -39,4 +39,4 @@ Acceptance: 子の `read` は拒否され、子は「読めない」と報告す
 
 - なし
 
-Commit:
+Commit: f7ff327
