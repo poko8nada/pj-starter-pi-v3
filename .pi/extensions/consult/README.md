@@ -8,12 +8,12 @@ The agent calls it directly: there is no script to run and no CLI, because a too
 
 The caller picks a type, and the type holds the whole policy: model candidates, tools, environment, spend limits, and role. There is no way to override any of it per call — to change the policy, edit `types.json`.
 
-| Type       | Tools                     | Environment | Turns | Output tokens |
-| ---------- | ------------------------- | ----------- | ----- | ------------- |
-| `research` | read, ls, find, grep, web | the tree    | 40    | 40,000        |
-| `review`   | read, ls, find, grep, web | the tree    | 20    | 20,000        |
-| `trial`    | plus writing              | a worktree  | 50    | 50,000        |
-| `code`     | plus writing              | a worktree  | 60    | 60,000        |
+| Type       | Tools                                           | Environment | Turns | Output tokens |
+| ---------- | ----------------------------------------------- | ----------- | ----- | ------------- |
+| `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 40,000        |
+| `review`   | read, ls, find, grep, web_search                | the tree    | 20    | 60,000        |
+| `trial`    | plus writing                                    | a worktree  | 50    | 50,000        |
+| `code`     | plus writing                                    | a worktree  | 60    | 60,000        |
 
 The limits are enforced while the child runs, and neither the caller nor the child can raise them. Normal use finishes far below them.
 
@@ -46,6 +46,8 @@ The parent decides what to do with the ref: cherry-pick it, take part of it, or 
 ## Trust
 
 The child does not load the project's settings, project-local extensions, or skills. Those can change how the child runs — a skill or an extension carries instructions, and a repository can ship one.
+
+On top of whatever the host enforces, consult passes its own guard (`-e child-guard.ts`) to the child: it refuses reads of secret paths (`.env`, `.envrc`, `*.pem`, `*.key`) by their **resolved** location, so a path built by a command cannot slip past a string rule. That guard holds even where the host has no permission config at all.
 
 What the child does read is `AGENTS.md` and user/global extensions. A `GIT_*` environment from a hook (lefthook sets `GIT_INDEX_FILE`) is stripped before git and the child start, so a caller's git context cannot leak into either.
 

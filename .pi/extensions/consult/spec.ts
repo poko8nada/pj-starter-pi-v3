@@ -33,6 +33,17 @@ export interface ConsultOptions {
 }
 
 /**
+ * 子のプロンプトを組む。`input` は文書ではなく、プロンプトの先頭に連結されるテキスト。
+ * 空（`undefined` / 空文字）なら足さない。
+ */
+export function joinPrompt(payload: string | undefined, task: string): string {
+  if (payload === undefined || payload === '') {
+    return task;
+  }
+  return `${payload}\n${task}`;
+}
+
+/**
  * 子に渡す引数を組み立てる。
  *
  * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。

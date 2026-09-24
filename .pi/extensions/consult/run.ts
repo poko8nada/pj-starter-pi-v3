@@ -100,7 +100,6 @@ export interface RunResult {
 export interface RunOptions {
   readonly piArgs: readonly string[];
   readonly cwd: string;
-  readonly payload?: string;
   readonly signal?: AbortSignal;
   readonly env: NodeJS.ProcessEnv;
   /** 上限。type が決める */
@@ -382,10 +381,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       finish(code ?? 0);
     });
 
-    if (options.payload === undefined) {
-      child.stdin.end();
-    } else {
-      child.stdin.end(options.payload);
-    }
+    // 入力は呼び出し側がプロンプトに連結済み（joinPrompt）。stdin へは何も流さない。
+    child.stdin.end();
   });
 }

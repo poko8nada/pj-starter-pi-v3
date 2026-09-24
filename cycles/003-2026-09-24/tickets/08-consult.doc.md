@@ -36,10 +36,13 @@ Acceptance: `input` の全文が、子のプロンプトの先頭に payload と
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: `pnpm test:run` = 159 件緑（`joinPrompt` の 5 件を含む）。`pnpm lint` / `pnpm typecheck` も緑
+- **コードがドキュメントに追いついていなかった。** README は前から「prepended to the child's prompt… the payload first and the task after it」と書いていたが、実装は payload を **stdin** に流していた。実装を README に合わせた: `joinPrompt` を `spec.ts` に置き、`index.ts` がプロンプトを組んで `task` として渡す。`run.ts` から `payload` の口と stdin への書き込みを消した
+- `RunOptions.payload` は**消した**（チケットの「消すか残すか決めて `Notes` に書く」への判断）。使っていたのは `run.ts` の stdin だけで、`run.test.ts` は `readPayloads` のほうしか見ていない
+- README の修正: type 表のツール（`web` → `web_search` / `fetch_content`）と `review` の Output を 60,000 に。Trust の節に自前 guard（`-e child-guard.ts`、解決後のパスで拒む）の説明を足した
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:

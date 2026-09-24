@@ -38,6 +38,7 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
+  joinPrompt,
   modelFrom,
   needsIsolation,
   parseEvents,
@@ -203,10 +204,10 @@ async function runOneChild(
       runPi({
         piArgs: buildPiArgs({
           ...options,
+          task: joinPrompt(payload, options.task),
           policy: { ...options.policy, models: model === undefined ? [] : [model] },
         }),
         cwd: prepared.cwd,
-        payload,
         signal,
         env: gitEnv(),
         limits: options.policy.limits,

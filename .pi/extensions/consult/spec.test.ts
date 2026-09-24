@@ -5,6 +5,7 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
+  joinPrompt,
   modelFrom,
   needsIsolation,
   parseEvents,
@@ -34,6 +35,28 @@ function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
 function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
+
+describe('joinPrompt', () => {
+  it('payload を先頭に連結する（間に改行）', () => {
+    expect(joinPrompt('PAYLOAD', 'TASK')).toBe('PAYLOAD\nTASK');
+  });
+
+  it('payload が無ければ task だけ', () => {
+    expect(joinPrompt(undefined, 'TASK')).toBe('TASK');
+  });
+
+  it('payload が空文字なら足さない', () => {
+    expect(joinPrompt('', 'TASK')).toBe('TASK');
+  });
+
+  it('payload の中の改行を壊さない', () => {
+    expect(joinPrompt('A\nB', 'T')).toBe('A\nB\nT');
+  });
+
+  it('空白だけの payload は足す（空とみなすのは入力の段の仕事）', () => {
+    expect(joinPrompt('  ', 'TASK')).toBe('  \nTASK');
+  });
+});
 
 describe('buildPiArgs: child-guard', () => {
   it('-e で child-guard を子に渡し、--tools の後ろに置く', () => {
