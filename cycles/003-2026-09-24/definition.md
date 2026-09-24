@@ -162,7 +162,10 @@ Changes: update **owner の判断の境界と、触らないものを足した**
 
 ## Stack
 
-Changes: keep
+- Base: Node / TypeScript / pnpm / lefthook / oxlint / oxfmt / vitest / `@earendil-works/pi-coding-agent`
+- Added: なし
+
+Changes: update **002 の 5 行（Runtime / Package manager / Checks / Hooks / Agent）を、ハーネスの名前の 1 行にまとめた。中身は同じ**
 
 ## Retro
 
