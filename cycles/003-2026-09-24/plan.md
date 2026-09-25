@@ -10,7 +10,10 @@
 
 ### step 1: ref-cleanup.refs
 
-- What: `consult` の ref を一覧し、消してよいかを判定する純関数を作る（git を触らずに判断だけ試せる形）
+- What: `consult` の ref を扱う純関数を作る
+  - ref を一覧する
+  - 消してよいかを判定する
+  - git を触らずに判断だけ試せる形にする
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/ref-cleanup/refs.ts`、`refs.test.ts`
@@ -21,7 +24,9 @@
 
 ### step 2: ref-cleanup.tool
 
-- What: pi の道具として登録する。消す前に一覧を見せ、`consult` 以外の ref は拒む
+- What: pi の道具として登録する
+  - 消す前に一覧を見せる
+  - `consult` 以外の ref は拒む
 - Depends: `ref-cleanup.refs`
 - Action: build
 - Files: `.pi/extensions/ref-cleanup/index.ts`、`refs.ts`
@@ -44,7 +49,10 @@
 
 ### step 4: secret-guard.rules
 
-- What: 秘密とみなす名前の一覧と、子に渡す拒否の規則を作る（git が無視する全部ではなく、名前で決める）
+- What: 秘密の規則を作る
+  - 秘密とみなす名前を一覧する
+  - 子に渡す拒否の規則を作る
+  - git が無視する全部ではなく、名前で決める
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/consult/guard.ts`、`guard.test.ts`
@@ -135,11 +143,11 @@
 ### step 11: work-skill
 
 - What: チケットの合意後の進め方をスキルにする
-  - 親か子か
-  - ref
-  - merge
-  - 実演
-  - 穴の置き場所
+  - 誰が作業するか決める
+  - 子のコミットを ref で受け取る
+  - 親が取り込むか決める
+  - 実演で確かめる
+  - 穴をどの段に置くか決める
 - Depends: step 1〜10
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`
@@ -152,7 +160,9 @@
 
 ### step 12: definition-skill
 
-- What: 本文から次のスキルの名指しを消し、子に見せる題材の規則を足す
+- What: 本文の名指しと題材の規則を直す
+  - 本文から次のスキルの名指しを消す
+  - 子に見せる題材の規則を足す
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/definition/SKILL.md`
@@ -178,7 +188,9 @@
 
 ### step 14: plan-skill
 
-- What: `description` の句を消し、単位に無い step は `step 0` の `Cleanup` に置くと書く
+- What: `description` と `Cleanup` の書き方を直す
+  - `description` の句を消す
+  - 単位に無い step は `step 0` の `Cleanup` に置くと書く
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/plan/SKILL.md`
@@ -192,7 +204,9 @@
 
 ### step 15: tickets-skill
 
-- What: `description` の句を消し、合意したところで終わることを本文どおりにする
+- What: `description` と本文を直す
+  - `description` の句を消す
+  - 合意したところで終わることを本文どおりにする
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`
