@@ -13,9 +13,13 @@ Acceptance:
 ## Todo
 
 - `.pi/skills/plan/SKILL.md`
-  - `description` から「before the tickets」を消す — 残るのは「Use when a definition has been approved and its Stack is filled」まで
+  - `description` から「before the tickets」を消す
+    - 残るのは「Use when a definition has been approved and its Stack is filled」まで
   - Step 2 に足す
-    - 単位に無い step（後片付け、消す、移す）は `step 0` の `Cleanup` に置く
+    - 単位に無い step は `step 0` の `Cleanup` に置く
+      - 後片付け
+      - 消す
+      - 移す
     - 002 の step 12 で扱いが決まらなかった件
   - （オーナーの指摘）Step 4 の `Depends` の説明に足す
     - **道具の依存**も書く
@@ -44,9 +48,13 @@ Acceptance:
 
 ### Findings
 
-- 実演の結果（`Verify`）: 子（`trial`）に `plan` の 2 ファイルだけを読ませ、1 枚のプランを書かせた
-  - 題材は前の実演の作業用の 1 枚（`/tmp/stack-demo/definition.md`）、書き先は `/tmp/plan-demo/plan.md`
-  - `step 0`（`Install` / `Cleanup` / `Refactor` すべて なし）、step 1〜8、`Structure` 8 行（`add` / `update`）が出た
+- 実演の結果（`Verify`）: 子（`trial`）に `plan` の 2 ファイルだけを読ませた
+  - 1 枚のプランを書かせた
+  - 題材は前の実演の作業用の 1 枚（`/tmp/stack-demo/definition.md`）
+  - 書き先は `/tmp/plan-demo/plan.md`
+  - `step 0` は `Install` / `Cleanup` / `Refactor` すべて なし
+  - step 1〜8 が出た
+  - `Structure` は 8 行（`add` / `update`）
 - step 1 以降はすべて `Files` と `Tests` を持っている
   - `step 0` は 3 つの問いだけで `Files` / `Tests` を持たない
 - **道具の依存が書けた**
