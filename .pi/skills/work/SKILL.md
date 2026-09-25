@@ -5,13 +5,13 @@ description: Use when the tickets are agreed. Carries one step to done; who does
 
 # work
 
-Carry a step to done. The tickets say what to do and how it will be checked; this skill is how that work is actually done, and how it is closed. Writing the sheet, cutting the tickets and closing the cycle are other skills' jobs, not this one.
+Carry a step to done. The tickets say what to do and how it will be checked; this skill is how that work is actually done, and how it is closed.
 
 **The step is the unit.** One ticket, one implementation, one `Verify` run on the parent's tree, one closure. A step is not done while its `Verify` cannot run or its ticket has no `Commit:`.
 
 **The parent owns the judgment.** The parent reads the ticket, decides who does the work, merges, runs the `Verify` on the merged tree, decides what to take, and cleans up the refs. A child may do the work; it does not judge it. What the parent does not do is write about work it did not do: the `Notes` belong to whoever did the work.
 
-**Work ends when the tree holds it.** The line is: the parent's tree contains the step's result, the `Verify` has run on that tree, the ticket is closed with a `Commit:`, and no ref from this step is left. Judging the cycle as a whole — the seams between units — is a different skill's job (`close`), not this one.
+**Work ends when the tree holds it.** The line is: the parent's tree contains the step's result, the `Verify` has run on that tree, the ticket is closed with a `Commit:`, and no ref from this step is left. This skill is done when the last ticket is closed — it never judges the cycle as a whole; the seams between units are a separate question.
 
 ## Step 1: read the ticket
 
