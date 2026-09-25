@@ -89,67 +89,17 @@ Acceptance:
 
 ### Findings
 
-- 実演（`Verify`）は親が別の子（`consult`）で回す担当
-  - この子は子を起こさないので、観察項目はまだこの子の側では観察していない
-    - 実演の 1 枚に 4 つとも載るか
-    - `git status` がプランのファイルだけか
-  - 親が実演するときに見る
-- 004 の `plan.md` とチケットはこの規則より前に書かれている
-  - `Depends` は `plan` を直す step 2 を待っていない
-  - `Structure` の隣に `Layers` も `Seam` も無い
-  - 規則は次のサイクルのプランから効く
-    - `Todo` の指示どおりここに書く
-  - このズレは 004 の外の穴なので、次の 1 枚が受ける
-- （親が追記）**実演**（親が回した）
-  - `trial` の子に練習用の 1 枚から 9 step のプランを書かせた
-    - 練習用の 1 枚: `/tmp/stack-demo/definition.md`
-    - 書かせた先: `/tmp/plan-demo-2/plan.md`
-  - `Structure` は入れ子の木
-    - `.pi/skills/close/SKILL.md add` の形
-  - `Layers` は「層は上を知らない」
-  - `Seam` は `types.json`
-  - 形の問いの答えは「`close/` が入っても `.pi/skills/` はまだ 1 つのことを表す」
-    - 整理は不要（`Refactor: なし`）
-  - 練習の 1 枚に構造の step が無いので、「構造の step は形で検証」だけはこの実演では出ない
-    - 規則は `format.md` にある
-- （親が追記）**親の読み**（Step 8）
-  - `git diff` を読み、1 つ直した
-    - `work` skill に、この step の規則と重なる古い但し書きが残っていた
-      - 「plan は順序を表さない」→「plan の step の順序が運ぶ」
-  - step の外の穴なので別コミット（`2ea0740`）
+- **実演は親が別の子（`consult`）で回した** — `trial` の子に練習用の 1 枚（`/tmp/stack-demo/definition.md`）から 9 step のプランを書かせた（`/tmp/plan-demo-2/plan.md`）。`Structure` は入れ子の木、`Layers` は「層は上を知らない」、`Seam` は `types.json`、形の問いの答えは「`close/` が入っても `.pi/skills/` はまだ 1 つのことを表す」（`Refactor: なし`）。練習の 1 枚に構造の step が無いので「構造の step は形で検証」だけは出ていない（規則は `format.md` にある）（決めた）
+- **実演で見ていないこと** — 子が承認までに触ったのがプランのファイルだけか（`git status`）は記録が無い（未解決）
+- **004 のプランとチケットはこの規則より前に書かれている** — `Depends` は `plan` を直す step 2 を待っておらず、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く。このズレは 004 の外の穴なので次の 1 枚が受ける（次へ回す）
+- **親の読み（Step 8）** — `git diff` を読み、`work` skill に残っていた古い但し書きを直した（「plan は順序を表さない」→「plan の step の順序が運ぶ」）。step の外の穴なので別コミット（`2ea0740`）（決めた）
 
 ### Unplanned
 
-- `Todo` は「Step 5 に形の問いを足す」「層と向きを書かせる段を足す」と言う
-- step の番号を動かさず、Step 5 を `write the structure and the form` に書き換えた
-  - 開始質問をそこに入れた
-  - `## Layers` をそこに入れた
-  - `## Seam` をそこに入れた
-  - 形の問いをそこに入れた
-  - `Step 6: review` 以降の番号はそのまま
-- `Todo` に無かったが整合のために足した
-  - `review` のチェックリストに足した行
-    - `Layers` が向きを言っている
-    - `Seam` が差し替え点を言っている
-    - 形を移す step が形で検証される
-    - 形の問いに答えがある
-  - Step 3 と format の `Steps` に実装の順の規則
-    - skill を変える step が、それに運ばれる step より先
-  - `How not to do this` に 2 行
-    - フォルダの形を問わずに足さない
-    - 自分の差し替え点を壊す形を書かない
-- `format.md`
-  - 層と向きと差し替え点を `## Structure` の隣に置く
-    - 層と向き: `## Layers`
-    - 差し替え点: `## Seam`
-  - `Structure` はフォルダを入れ子で書く「形」だと明記する
-  - 形を移す step の `Tests` は形の検証と決める
-    - コマンドか読み方
-- この step は skill 本文と format の修正なので、観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）にケースは無い
-- 失敗の入力は `Verify` の観察項目が持つ
-- （親が追記）004 の事故の後、`Tests` に 1 文足した
-  - 検査を足す step は、その検査が自分で決める置き場を書く
-  - 規則そのものは `AGENTS.md` に置く
-    - `08-agent-rules` の案に 1 条
+- **Step 5 を書き換えた** — `Todo` は「Step 5 に形の問いを足す」「層と向きを書かせる段を足す」と言う。番号を動かさず Step 5 を `write the structure and the form` に書き換え、開始質問・`Layers`・`Seam`・形の問いをそこに入れた。Step 6 以降の番号はそのまま（決めた）
+- **整合のために足した行** — `review` のチェックリストに 4 行（`Layers` が向き / `Seam` が差し替え点 / 形を移す step が形で検証 / 形の問いに答え）、Step 3 と `format.md` の `Steps` に実装の順の規則（skill を変える step が、それに運ばれる step より先）、`How not to do this` に 2 行（フォルダの形を問わずに足さない / 自分の差し替え点を壊す形を書かない）。`Todo` には無い（決めた）
+- **`format.md`** — 層と向きと差し替え点を `Structure` の隣に置く（`Layers` / `Seam`）。`Structure` はフォルダを入れ子で書く「形」と明記。形を移す step の `Tests` は形の検証と決める（コマンドか読み方）（決めた）
+- **観点にケースは無い** — skill 本文と `format.md` の修正なので作るものが無い。失敗の入力は `Verify` の観察項目が持つ（決めた）
+- **検査の置き場の 1 文** — 004 の事故の後、`Tests` に「検査を足す step は、その検査が自分で決める置き場を書く」を足した。規則そのものは `AGENTS.md` に置く（`08-agent-rules` の案に 1 条）（次へ回す）
 
 Commit: 2ea0740（子 `7128087` + 親の読みで直した分）

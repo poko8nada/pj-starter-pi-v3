@@ -64,57 +64,17 @@ Acceptance:
 
 ### Findings
 
-- `review` の子は `bash` を持たない
-  - 根拠: `.pi/extensions/consult/README.md` の表と `types.example.json` の tools が `read` / `ls` / `find` / `grep` / `web_search` のみ
-  - だから子に `git diff` を走らせて diff を見せることはできない
-  - Step 8 は diff をリポジトリの外に書き出し、`consult` の `input` として渡す形にした
-  - チケットは子が名前で読む
-  - 実際の `types.json` はこのリポジトリに無い（README いわくアカウント依存で non-commit）
-    - この判断は README と example の記載にもとづく
-- 置き場所は `Verify`（Step 7）の後・`Commit:`（Step 9）の前
-  - あいだに入れるため Step 8 以降を 1 つ繰り下げた
-  - `The failures the text answers` の `Step 9` を `Step 10` に直した
-- 実演（`Verify`）は親の担当で、この子は子（`consult`）を起こさない
-  - よって次の 2 つは、まだ子の側では観察していない
-    - unit の diff が `review` に当たった記録が `Notes` にある
-    - 3 周で止まる
-- （親が追記）`types.json` は「無い」のではなく **git 管理外**（実物は存在する）
-  - 結論（子に `git diff` は走らせられない）は変わらない
-- （親が追記）本文のチェックは `Then` を `Acceptance` と言い換えている
-  - `Acceptance` は `Then` の写しなので同じものを指す
-- （親が追記）このチケットの `Acceptance`「findings が残っている」は「残っていない」の意
-  - 合意済みなのでチケットは直さず、ここに書く
-- （親が追記）レビューで blocking が出た: レビューを `Verify` の後に置いたので、「`Commit:` は `Verify` が判定した内容」と嚙み合わない
-  - **ツリーが変わったラウンドは Step 7 に戻る**と本文に足した
-- （親が追記）**実演（`Verify`）は、この step 自身の流れが兼ねる**
-  - 子が `tickets` と `work` を読んで step を進めた
-  - 親が diff を `review` の子にかけた
-    - 1 周目 1 blocking
-    - 2 周目 2 blocking
-    - 3 周目 0
-  - findings の処遇をここに並べた
-  - 実演を別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形をしているため
-- （親が追記）外の穴: `README.md` と `README.ja.md:48` の `work` の行の要約に `the review` が無い
-  - 本文の `description` には入った
-  - step 9 の「各スキルの役割を `description` と突き合わせる」が受ける
+- **`review` の子は `bash` を持たない** — `read` / `ls` / `find` / `grep` / `web_search` だけなので `git diff` を子に走らせられない。Step 8 は diff をリポジトリの外に書き出し、`consult` の `input` として渡し、チケットは子が名前で読む（決めた）
+- **`types.json` は git 管理外** — 実物はあるが commit されないので、HEAD から作る子の worktree には入らない。子に diff を走らせられない結論は変わらない（次へ回す）
+- **レビューの置き場** — `Verify`（Step 7）の後・`Commit:`（Step 9）の前。入れるため Step 8 以降を 1 つ繰り下げ、`The failures the text answers` の `Step 9` を `Step 10` に直した。ツリーが変わったラウンドは Step 7 に戻ると本文に足した（決めた）
+- **実演はこの step 自身の流れが兼ねる** — 子が `tickets` と `work` を読み、親が diff を `review` の子にかけた（1 周目 1 / 2 周目 2 / 3 周目 0 blocking）。findings の処遇はここに並べた。別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形だから（決めた）
+- **`Then` と `Acceptance`** — 本文のチェックは `Then` を `Acceptance` と言い換える（写しなので同じもの）。`Acceptance`「findings が残っている」は「残っていない」の意で、合意済みなのでチケットは直さずここに書く（決めた）
+- **外の穴: README の `work` の要約** — `README.md` と `README.ja.md:48` の `work` の行に `the review` が無い。本文の `description` には入った。step 9 の「各スキルの役割を `description` と突き合わせる」が受ける（次へ回す）
 
 ### Unplanned
 
-- `Todo` に無かったが本文の整合のために足した
-  - frontmatter の `description` に `the review`
-  - `**Work ends when the tree holds it.**` の線に `the diff has been through the review`
-  - `The failures the text answers` にレビュー失敗 2 行
-    - 子を起こせない
-    - 3 周で clean にならない
-  - `How not to do this` に 1 行
-    - 未レビューの diff で閉じない
-    - 3 周を超えない
-  - `AGENTS.md` の「散文とコードが食い違ったら同じターンで直す」に沿う
-- レビュー子が見るものは `tickets` の unit レビューと同じ形にした
-  - チケットと diff
-  - 3 周で止め、残りは owner に渡す
-  - `Todo` は「同じ形にする」とだけ言っていた
-- （親が追記）`consult/README.md` の `review` の Turns が実物（40）と食い違っていたので合わせた
-  - step 1 の成果物ではないので、別コミットにした
+- **本文の整合で足した行** — frontmatter `description` に `the review`、`**Work ends when the tree holds it.**` に `the diff has been through the review`、`The failures the text answers` にレビュー失敗 2 行（子を起こせない / 3 周で clean にならない）、`How not to do this` に 1 行（未レビューの diff で閉じない / 3 周を超えない）。`AGENTS.md` の「散文とコードが食い違ったら同じターンで直す」に沿う（決めた）
+- **レビュー子が見るもの** — `tickets` の unit レビューと同じ形にした。チケットと diff、3 周で止めて残りは owner。`Todo` は「同じ形にする」とだけ言っていた（決めた）
+- **`consult/README.md` の Turns** — `review` の Turns が実物（40）と食い違っていたので合わせた。step 1 の成果物ではないので別コミットにした（決めた）
 
 Commit: 7106b2f（子 `709eac0` + レビューで直した分）
