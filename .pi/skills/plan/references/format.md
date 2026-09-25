@@ -80,9 +80,9 @@ Section and field names are English. They are the type: the same in every plan, 
 
 ## Writing
 
-- Do not write what can be derived from the code. Write decisions
-- **One line is one fact.** A fact that needs two lines takes two. Do not pack a paragraph into one line: the one-line rule is there so a re-flow never touches a line you did not change, not so that a line holds everything. When a line grows a `/`-chain, a nested parenthesis or a third `→`, split it into its own line
+- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line
 - Do not chain facts with `/`. Do not nest parentheses. `→` is for a landing place only
+- Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line
 - Do not use structures that grow sideways. Tables break with long text
 - The plan is frozen when it is committed. What changes later is recorded in the tickets, not here

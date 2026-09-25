@@ -63,12 +63,20 @@ Commit: <hash>
 - It must run the moment the step closes: a `Verify` that waits for a later step leaves nothing to judge the step by
 - Write what to observe, not what is expected to happen
 - What was observed goes in `Notes`, not back into the `Verify`
+- Write the observation in one line. Do not list the commands that were run, and do not list counts: green is `緑`, and a number appears only when the number is the observation
 
 ## Notes
 
 - Two parts. `Findings` is what was noticed; `Unplanned` is what was handled that the `Todo` did not mention. Write なし when there is nothing
 - Both feed the cycle's `Retro`, and `Retro`'s carry-over is read when the next sheet is written
 - `Notes` are written from what was seen and checked, not from what was claimed
+
+## 何を書くか
+
+- 書く: 次に読む人が動けること（穴 / 決めたこと / 食い違い / 驚いたこと）
+- 書かない: 走らせたコマンドと緑だったこと（実演の観察に 1 行「緑」で足りる）/ コードや差分から導けること / 見出しだけで中身の無い一覧
+- 3 つ問う: 居合わせなかった人が読んで次に何かできるか / コードや commit から導けるか（導けるなら書かない）/ 見出しだけで中身が無いか（無いなら中身を書くか、消す）
+- ここに書いた行は全部 `Carry over` に写り、次の 1 枚が会計する。**雑音を書くと、雑音が次のサイクルに残る**
 
 ## Commit
 
@@ -79,7 +87,7 @@ Commit: <hash>
 
 ## Writing
 
-- **One line is one fact.** A fact that needs two lines takes two. Do not pack a paragraph into one line: the one-line rule is there so a re-flow never touches a line you did not change, not so that a line holds everything. When a line grows a `/`-chain, a nested parenthesis or a third `→`, split it into its own line
+- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line. The one-line rule (`Do not wrap lines mid-sentence`) is there so a re-flow never touches a line you did not change, not so that a line holds everything
 - Do not chain facts with `/`. Do not nest parentheses. `→` is for a landing place only (`input → result` cases keep theirs)
 - Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line

@@ -103,11 +103,17 @@ A unit is one thing the product does, seen from the user's side. The rules:
 - `drop` units go after the active ones
 - A product's first sheet is all `add`, sections included, whatever the cycle number is: there is nothing yet to carry over. A new product's first sheet is also all `add`, even when other products have been through cycles before it
 
+## 何を書くか（`Good` / `Bad`）
+
+- 書く: 何がどうなったか（主張）+ それをどこから読んだか（値）。`Bad` には半端に終わったことも
+- 書かない: 見出しだけの一覧（「〜が着地した」+ 項目名の羅列）。読んだ値の無い主張は 1 行ではない
+- `Carry over` は `Bad` の言い換えではない。次の 1 枚が受ける穴を、チケットの行のまま写す
+
 ## Writing
 
-- Do not write what can be derived from the code. Write decisions
-- **One line is one fact.** A fact that needs two lines takes two. Do not pack a paragraph into one line: the one-line rule is there so a re-flow never touches a line you did not change, not so that a line holds everything. When a line grows a `/`-chain, a nested parenthesis or a third `→`, split it into its own line
+- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line
 - Do not chain facts with `/`. Do not nest parentheses. `→` is for the landing place of a line (`Remarks` and `Carry over` keep theirs)
+- Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
 - `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
 - **`Carry over` is not shortened, and it is not just a list.** It holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written. Shortening it is how a hole gets lost, and the next sheet has to account for each line in its own `## Carry over`, one line per line, `<前の 1 行> → <受けた場所>`
