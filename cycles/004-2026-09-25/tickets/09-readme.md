@@ -32,9 +32,12 @@ Acceptance: 何が入っているか分かる。最初に何をすればいい�
 - 自分で走らせた `Verify`: `pnpm install`（Already up to date）/ `pnpm test:run`（6 files / 167 passed）/ `pnpm lint`（エラーなし）/ `pnpm typecheck`（エラーなし）/ `pnpm format:check`（91 files, All matched files use the correct format）— 全緑
 - clone 直後のつもりで README だけを読んだ: 入っているもの（検査 / ゲート / エージェントの規則 / 6 skill / 4 拡張 / `cycles/`）が言え、最初の手順（`pnpm install` → `cycles/` を消す → `types.json` を作る → `pi` を起動）が言える
 - `Verify` の実演のうち子が要る部分は親の担当。この子は子（`consult`）を起こさない
+- （親が追記）**実演の数え上げ**（親が確認）: `format.md` の `## ` = 9 → README の列挙と一致 / `ls .pi/skills/` の 6 つ ↔ README の表（`description` 6 件）で一致 / `ls .pi/extensions/` の 4 つ ↔ README の拡張の一覧で一致 / `phase: 'verify'` = 2 → README の検査の数と一致 / `work` の行に「レビュー」が入り、`close` の行が増えた
+- （親が追記）**親の読み（Step 8）**: 子の diff は `README.md` / `README.ja.md` / このチケットの `Notes`。英語と日本語が同じ内容で、実物（6 skill / 4 拡張 / 9 節 / 検査 2）と一致。直すところは無かった
+- （親が追記）子の観察: README 2 枚は `quality-gate` の lint / typecheck の対象外（マークダウン）なので、この実演の数え上げだけが実際の gate — 次の 1 枚が受ける
 
 ### Unplanned
 
 なし
 
-Commit:
+Commit: 5073c54（子）
