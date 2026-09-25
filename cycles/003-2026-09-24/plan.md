@@ -14,7 +14,10 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/ref-cleanup/refs.ts`、`refs.test.ts`
-- Tests: `refs.test.ts`（`consult/` で始まる ref だけが対象 / それ以外は理由つきで拒む / 一覧は git の出力から作る）
+- Tests: `refs.test.ts`
+  - `consult/` で始まる ref だけが対象
+  - それ以外は理由つきで拒む
+  - 一覧は git の出力から作る
 
 ### step 2: ref-cleanup.tool
 
@@ -22,7 +25,9 @@
 - Depends: `ref-cleanup.refs`
 - Action: build
 - Files: `.pi/extensions/ref-cleanup/index.ts`、`refs.ts`
-- Tests: `refs.test.ts`（引数の組み立て / 拒否の理由が返る）
+- Tests: `refs.test.ts`
+  - 引数の組み立て
+  - 拒否の理由が返る
 
 ### step 3: ref-cleanup.check
 
@@ -39,7 +44,10 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/consult/guard.ts`、`guard.test.ts`
-- Tests: `guard.test.ts`（`.env` / `.envrc` / `*.pem` / `*.key` が入る / `node_modules` のような広いものは入らない / 規則が pi の設定の形に合う）
+- Tests: `guard.test.ts`
+  - `.env`、`.envrc`、`*.pem`、`*.key` が入る
+  - `node_modules` のような広いものは入らない
+  - 規則が pi の設定の形に合う
 
 ### step 5: secret-guard.consult
 
@@ -47,7 +55,10 @@
 - Depends: `secret-guard.rules`
 - Action: build
 - Files: `.pi/extensions/consult/run.ts`、`run.test.ts`
-- Tests: `run.test.ts`（子の起動に規則が入る / 親の起動には入らない / 子の `read` が拒まれて「読めない」と報告する）
+- Tests: `run.test.ts`
+  - 子の起動に規則が入る
+  - 親の起動には入らない
+  - 子の `read` が拒まれて「読めない」と報告する
 
 ### step 6: secret-guard.check
 
@@ -64,20 +75,34 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/consult/types.example.json`、`types.json`
-- Tests: 実演。定義 1 枚のレビューが上限に当たらずに終わる。clone が受け取るのは `types.example.json` だけなので、そちらが実物と同じ値になっている
+- Tests: 実演
+  - 定義 1 枚のレビューが上限に当たらずに終わる
+  - clone が受け取るのは `types.example.json` だけなので、そちらが実物と同じ値になっている
 
 ### step 8: consult.doc
 
-- What: `input` の全文が子のプロンプトの先頭に payload として入るようにする（いまの経路を `run.ts` / `spec.ts` で読み、違えば直す）。README の表を実物（`types.json` の上限）に合わせる
+- What: `input` の全文が子のプロンプトの先頭に payload として入るようにする
+  - いまの経路を `run.ts` と `spec.ts` で読み、違えば直す
+  - README の表を実物（`types.json` の上限）に合わせる
 - Depends: `consult.limits`
 - Action: build
 - Files: `.pi/extensions/consult/run.ts`、`spec.ts`、`README.md`、`index.ts`
-- Tests: `spec.test.ts`（payload がプロンプトの先頭に入る）/ 実演（子の返答が payload を引用する。README の表が実物と一致する）
+- Tests: `spec.test.ts`（payload がプロンプトの先頭に入る）
+  - 実演
+    - 子の返答が payload を引用する
+    - README の表が実物と一致する
 
 ### step 9: consult.check
 
 - 単位を step に割った締め
-- What: 単位の `Then` を全部、1 回の実演で確かめる（type ごとの policy / agent が選べるのは type だけ / 入力ごとの 1 体 / ref が返る / `input` の入り方 / README の表 / レビューが上限に当たらない）
+- What: 単位の `Then` を全部、1 回の実演で確かめる
+  - type ごとの policy
+  - agent が選べるのは type だけ
+  - 入力ごとの 1 体
+  - ref が返る
+  - `input` の入り方
+  - README の表
+  - レビューが上限に当たらない
 - Depends: step 7〜8
 - Action: verify
 - Files: なし
@@ -89,15 +114,29 @@
 - Depends: `secret-guard.consult`（同じファイルを触る）
 - Action: build
 - Files: `.pi/extensions/consult/spec.ts`、`run.ts`、`spec.test.ts`、`run.test.ts`
-- Tests: `spec.test.ts` / `run.test.ts`（空のファイルは走らない / 理由が返る / 空の文字列も同じ / 入力なしは今までどおり 1 体）
+- Tests: `spec.test.ts`、`run.test.ts`
+  - 空のファイルは走らない
+  - 理由が返る
+  - 空の文字列も同じ
+  - 入力なしは今までどおり 1 体
 
 ### step 11: work-skill
 
-- What: チケットの合意後の進め方（親か子か / ref / merge / 実演 / 穴の置き場所）をスキルにする
+- What: チケットの合意後の進め方をスキルにする
+  - 親か子か
+  - ref
+  - merge
+  - 実演
+  - 穴の置き場所
 - Depends: step 1〜10
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`
-- Tests: 実演。子に `tickets` と `work` だけを読ませ、1 枚を閉じさせる（ハッシュが `Commit:` に入る / `Notes` に `Findings` と `Unplanned` が入る / 子に任せたコミットが ref で返る / 実演のあと消せるものだけが残る）
+- Tests: 実演
+  - 子に `tickets` と `work` だけを読ませ、1 枚を閉じさせる
+    - ハッシュが `Commit:` に入る
+    - `Notes` に `Findings` と `Unplanned` が入る
+    - 子に任せたコミットが ref で返る
+    - 実演のあと消せるものだけが残る
 
 ### step 12: definition-skill
 
@@ -105,7 +144,13 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/definition/SKILL.md`
-- Tests: 実演。子に `definition` だけを読ませ、003 の 1 枚を書かせる（7 節が出る / `Carry over` の全行がどこかに対応する / 承認まで `cycles/` 以外に変更が無い / 名指しが無い / 題材の規則が書いてある）
+- Tests: 実演
+  - 子に `definition` だけを読ませ、003 の 1 枚を書かせる
+    - 7 節が出る
+    - `Carry over` の全行がどこかに対応する
+    - 承認まで `cycles/` 以外に変更が無い
+    - 名指しが無い
+    - 題材の規則が書いてある
 
 ### step 13: stack-skill
 
@@ -113,7 +158,11 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/stack/SKILL.md`
-- Tests: 実演。子に `stack` だけを読ませ、1 枚の `Stack` を書かせる（`Stack` が埋まる / 足した理由が差分で読める / `description` に次のスキルの名前が無い）
+- Tests: 実演
+  - 子に `stack` だけを読ませ、1 枚の `Stack` を書かせる
+    - `Stack` が埋まる
+    - 足した理由が差分で読める
+    - `description` に次のスキルの名前が無い
 
 ### step 14: plan-skill
 
@@ -121,7 +170,13 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/plan/SKILL.md`
-- Tests: 実演。子に `plan` だけを読ませ、1 枚のプランを書かせる（`step 0` が出る / 全 step にファイルとテストが入る / 単位に無い step が `Cleanup` に行く / 承認までプラン以外に変更が無い / 名指しが無い）
+- Tests: 実演
+  - 子に `plan` だけを読ませ、1 枚のプランを書かせる
+    - `step 0` が出る
+    - 全 step にファイルとテストが入る
+    - 単位に無い step が `Cleanup` に行く
+    - 承認までプラン以外に変更が無い
+    - 名指しが無い
 
 ### step 15: tickets-skill
 
@@ -129,15 +184,26 @@
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`
-- Tests: 実演。子に `tickets` だけを読ませ、1 枚切らせる（チケットが出て `Todo` と `Verify` の承認を取り、コミットされる / ハッシュを書くのは作業した側 / 名指しが無い）
+- Tests: 実演
+  - 子に `tickets` だけを読ませ、1 枚切らせる
+    - チケットが出て `Todo` と `Verify` の承認を取り、コミットされる
+    - ハッシュを書くのは作業した側
+    - 名指しが無い
 
 ### step 16: readme
 
-- What: 節は 7 つ・tickets の行を分ける・名指しをやめる・検査の数を実物に合わせる
+- What: README の記述を直す
+  - 節は 7 つ
+  - tickets の行を分ける
+  - 名指しをやめる
+  - 検査の数を実物に合わせる
 - Depends: step 1〜15
 - Action: build
 - Files: `README.md`、`README.ja.md`
-- Tests: 実演。書いたコマンドを全部走らせる。clone 直後のつもりで README だけを読み、何が入っているかと最初の手順が言えるか。節の数・tickets の行・検査の数・各スキルの役割が実物と一致するか
+- Tests: 実演
+  - 書いたコマンドを全部走らせる
+  - clone 直後のつもりで README だけを読み、何が入っているかと最初の手順が言えるか
+  - 節の数、tickets の行、検査の数、各スキルの役割が実物と一致するか
 
 ## Structure
 
@@ -166,6 +232,14 @@ README.ja.md          update
 ## What to keep
 
 - `AGENTS.md`（`agent-rules` が keep なので触らない）
-- `lefthook.yaml` / `package.json` / `pnpm-lock.yaml` / `tsconfig.json` / `vitest.config.ts` / `.pi/tsconfig.json`（足すものがない）
-- `.pi/extensions/quality-gate/` / `.pi/extensions/sound-notify/`（keep の単位）
+- 足すものがないもの
+  - `lefthook.yaml`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `tsconfig.json`
+  - `vitest.config.ts`
+  - `.pi/tsconfig.json`
+- keep の単位
+  - `.pi/extensions/quality-gate/`
+  - `.pi/extensions/sound-notify/`
 - `cycles/`（成果物そのもの）
