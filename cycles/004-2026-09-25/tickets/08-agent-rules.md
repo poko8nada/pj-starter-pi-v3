@@ -3,7 +3,8 @@
 Acceptance:
 
 - `AGENTS.md` の規則に従う
-- コードに触る前に 1 枚を書き、承認を待つ
+- コードに触る前に 1 枚を書く
+- 承認を待つ
 - 検査を弱めない
 - サイクルの流れと、いつでも当てはまる規則だけがある
 - どの規則も skill と重複していない
@@ -107,7 +108,8 @@ Acceptance:
   - `## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い
   - 最も近いのは 1 組
     - 10 条の前半 — 検査は環境と置き場を継承せず自分で決める
-    - `.pi/skills/plan/SKILL.md:40` と `.pi/skills/plan/references/format.md:63` — `Tests` に、検査が自分で決める置き場を書く
+    - `.pi/skills/plan/SKILL.md` の `Tests` の段と `.pi/skills/plan/references/format.md` の `Tests`
+      - `Tests` に、検査が自分で決める置き場を書く
   - 前者は検査の振る舞い
   - 後者は plan の `Tests` 欄に書くことの要求
   - 主語も行為も違う
