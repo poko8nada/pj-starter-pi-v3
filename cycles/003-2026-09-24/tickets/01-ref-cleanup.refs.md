@@ -1,18 +1,27 @@
 # ref-cleanup.refs
 
-Acceptance: 消す前に、消えるものが一覧で見える。`consult` の ref 以外は拒まれる
+Acceptance:
+
+- 消す前に、消えるものが一覧で見える
+- `consult` の ref 以外は拒まれる
 
 ## Todo
 
 - `.pi/extensions/ref-cleanup/refs.ts`
-  - `parseRefs` を書く — git の `--format='%(objectname) %(refname)'` の出力（2 列）を `{hash, name}` の一覧にする。git を起動しない
-  - `listConsultRefs` を書く — git の起動を引数で受け取り、`--format='%(objectname) %(refname)'` とパターン `refs/heads/consult/` で絞る。名前から `refs/heads/` を落として `consult/…` にする
+  - `parseRefs` を書く
+    - git の `--format='%(objectname) %(refname)'` の出力（2 列）を `{hash, name}` の一覧にする
+    - git を起動しない
+  - `listConsultRefs` を書く
+    - git の起動を引数で受け取る
+    - `--format='%(objectname) %(refname)'` とパターン `refs/heads/consult/` で絞る
+    - 名前から `refs/heads/` を落として `consult/…` にする
   - `judgeRef` を書く — 1 本の名前から `{ok: true}` か `{ok: false, reason}` を返す
   - `refs.test.ts`
     - `parseRefs`: `"abc123 consult/foo\n"` → `[{hash: "abc123", name: "consult/foo"}]` (happy)
     - `parseRefs`: `""` → `[]` (empty)
     - `parseRefs`: `"\n abc123 consult/foo \n\n"` → `[{hash: "abc123", name: "consult/foo"}]` (happy)
-    - `parseRefs`: `"abc123 refs/heads/consult/foo"` → `[{hash: "abc123", name: "refs/heads/consult/foo"}]`（`refs/heads/` を落とすのは `listConsultRefs`） (happy)
+    - `parseRefs`: `"abc123 refs/heads/consult/foo"` → `[{hash: "abc123", name: "refs/heads/consult/foo"}]` (happy)
+      - `refs/heads/` を落とすのは `listConsultRefs`
     - `parseRefs`: `"abc123"`（1 列）→ 投げる (error)
     - `parseRefs`: `"abc123 consult/foo extra"`（3 列）→ 投げる (error)
     - `judgeRef`: `"consult/foo"` → `{ok: true}` (happy)
@@ -20,7 +29,8 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
     - `judgeRef`: `"consulting/x"` → `{ok: false, reason: "consult/ で始まらない"}`（前方一致の境目） (error)
     - `judgeRef`: `"main"` → `{ok: false, reason: "consult/ で始まらない"}` (error)
     - `judgeRef`: `""` → `{ok: false, reason: "consult/ で始まらない"}`（空の名前） (error)
-    - `listConsultRefs`: git が `"abc1234567890123456789012345678901234567 refs/heads/consult/foo\n"` と `"def456 refs/heads/main\n"` を返す → `[{hash: "abc1234567890123456789012345678901234567", name: "consult/foo"}]`（`main` は落ちる） (happy)
+    - `listConsultRefs`: git が `"abc1234567890123456789012345678901234567 refs/heads/consult/foo\n"` と `"def456 refs/heads/main\n"` を返す → `[{hash: "abc1234567890123456789012345678901234567", name: "consult/foo"}]` (happy)
+      - `main` は落ちる
     - `listConsultRefs`: git が `""` を返す → `[]` (empty)
     - `listConsultRefs`: git が終了コード 1 で失敗 → 投げる (error)
     - null / undefined → 型で防ぐ（git の出力も ref の名前も常に文字列なので、実行時には来ない）— ケース無し
@@ -37,9 +47,17 @@ Acceptance: 消す前に、消えるものが一覧で見える。`consult` の 
 
 ### Findings
 
-- 実演の結果（`Verify`）: `pnpm test:run` = 102 件緑（`refs.test.ts` の 14 件を含む）。`pnpm lint` / `pnpm typecheck` も緑。git を起動しない純関数なので、実演は何も残さない
-- **最初の実行は赤だった。** `listConsultRefs` が git の絞り込みに任せていて、`main` を落としていなかった（チケットは「`main` は落ちる」と決めていた）→ コード側で `refs/heads/consult/` を filter する形に直した。git 側のパターンも残してある（効率）
-- lint が 2 つ（不要な型アサーション）と 1 つ（テストの不要なテンプレート）を指摘 → 直した
+- 実演の結果（`Verify`）
+  - `pnpm test:run` = 102 件緑（`refs.test.ts` の 14 件を含む）
+  - `pnpm lint` / `pnpm typecheck` も緑
+  - git を起動しない純関数なので、実演は何も残さない
+- **最初の実行は赤だった**
+  - `listConsultRefs` が git の絞り込みに任せていて、`main` を落としていなかった
+    - チケットは「`main` は落ちる」と決めていた
+  - コード側で `refs/heads/consult/` を filter する形に直した
+  - git 側のパターンも残してある（効率）
+- lint が 2 つ指摘（不要な型アサーション）→ 直した
+- lint が 1 つ指摘（テストの不要なテンプレート）→ 直した
 
 ### Unplanned
 
