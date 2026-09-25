@@ -28,7 +28,7 @@ Design and run **one** integration that crosses the units: a path a person can w
 
 The criteria are the one `Goal` and the `Then`s, and nothing else. A run that needs a criterion the sheet does not hold has found a hole: write it down for Step 4, do not promote it into a criterion.
 
-The run leaves nothing behind. When it needs a child that writes, have the child report the text back instead, and keep the writing outside the repository; a ref, a worktree or a file that the run leaves is found again in Step 3, and it is a finding.
+The run leaves nothing it made. When it needs a child that writes, have the child report the text back instead, and keep the writing outside the repository; a ref, a worktree or a file that the run leaves behind is found again in Step 3, and it is a finding. A file the product itself keeps — its own data — is not a leftover, and it stays where the product puts it.
 
 ## Step 3: put the finished form in front of a review child
 
@@ -47,9 +47,10 @@ If no child can be raised, stop: a cycle is not closed without this review.
 
 ## Step 4: send each hole where it belongs
 
-Every finding from Step 3, and every hole Steps 1 and 2 turned up, gets exactly one of two places, and the reason is written next to it:
+Every finding from Step 3, and every hole Steps 1 and 2 turned up, gets exactly one of three places, and the reason is written next to it:
 
-- **a hole that breaks the `Goal`** → it belongs to this cycle. Cut a ticket for it, and the cycle does not close until it is fixed. The judgment came from the criteria, so cutting the ticket does not need a new agreement; only a criterion that moves does, and that is the owner's
+- **a hole that breaks the `Goal`** → it belongs to this cycle. Cut a ticket for it, and the cycle does not close until it is fixed. The judgment came from the criteria, so cutting the ticket does not need a new agreement; only a criterion that moves does, and that is the owner's. Carrying the ticket out is work for whoever carries a step — this skill does not change the product, and the cycle waits for it
+- **a hole in the closing act itself** — a `Carry over` that dropped a line, a `Good` with no value read from anywhere, a finding sent to the wrong place — → it belongs to this step, and it is fixed here: this skill changes no product, but its own act is its own to correct
 - **anything else** → it belongs to the next cycle. It is copied as it was written into the `Retro`'s `Carry over`, and the next sheet accounts for it
 
 A hole is never fixed silently, and a frozen sheet or plan is never rewritten to make a hole look closed. What actually happened is written in the `Retro` and in the `Notes`, not back into an agreed document.
