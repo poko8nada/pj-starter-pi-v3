@@ -44,7 +44,7 @@ Acceptance:
 - **足した理由はコミットメッセージに書かれた**
   - 子が使うつもりのコミットメッセージを提示した
   - Step 3 の「理由はシートに書かず、コミットが記録」が読めている
-- **`description` にも本文にも次の段の名前が無い**
+- **`description` にも本文にも次のフェーズの名前が無い**
   - 子が `description` を引用して「No」と報告した
 - **ref の規則を引用で示せた**
   - `A trial child can write, and what it leaves behind is committed...`

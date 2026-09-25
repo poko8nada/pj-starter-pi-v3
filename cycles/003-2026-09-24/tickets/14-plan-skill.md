@@ -62,7 +62,7 @@ Acceptance:
   - `plan-skill` は `review` の子に依存すると `Depends` に書いた
 - 単位に無い仕事は出なかった（`Cleanup` は なし）
   - 出ればそこに行く、と子が答えた
-- `description` に次の段の名前は無い
+- `description` に次のフェーズの名前は無い
 - リポジトリには 1 ファイルも触っていない
   - 子の ref は `(the child changed nothing)`
 - **次のサイクルへ送る**: 子が「本文は次のフェーズを名指ししている（Step 6 の `review`）」と報告した

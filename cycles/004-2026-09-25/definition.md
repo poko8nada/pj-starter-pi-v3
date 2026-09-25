@@ -287,7 +287,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 - **09-readme**
   - **README は gate の外** — README 2 枚は `quality-gate` の lint と typecheck の対象外で、この実演の数え上げだけが実際の gate（次へ回す）
 - **`close` のフェーズ（サイクル全体）**
-  - **`work` の `Then` と木のズレ** — `Then` は「unit の diff を `review` の子に当てる」だが、ツリーは親が `git diff` を読む形（`Remarks` に記録済み）（次へ回す）
+  - **`work` の `Then` とツリーのズレ** — `Then` は「unit の diff を `review` の子に当てる」だが、ツリーは親が `git diff` を読む形（`Remarks` に記録済み）（次へ回す）
   - **子の残したファイルが ref に混ざる** — 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒にコミットした。親が手で消すことになり、1 つ見落とした（次へ回す）
   - **`git-env.ts` の位置** — `consult/` 直下にあり、unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類（次へ回す）
   - **実演の題材も lint の対象** — `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint に当たる（次へ回す）

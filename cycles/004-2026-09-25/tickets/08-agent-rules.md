@@ -108,7 +108,7 @@ Acceptance:
   - `## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い
   - 最も近いのは 1 組
     - 10 条の前半 — 検査は環境と場所を継承せず自分で決める
-    - `.pi/skills/plan/SKILL.md` の `Tests` の段と `.pi/skills/plan/references/format.md` の `Tests`
+    - `.pi/skills/plan/SKILL.md` の `Tests` のフェーズと `.pi/skills/plan/references/format.md` の `Tests`
       - `Tests` に、検査が自分で決める場所を書く
   - 前者は検査の振る舞い
   - 後者は plan の `Tests` 欄に書くことの要求
