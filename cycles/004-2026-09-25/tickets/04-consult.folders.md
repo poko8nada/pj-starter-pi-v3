@@ -2,16 +2,30 @@
 
 Acceptance:
 
-- 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る（agent が選べるのは type だけ）
-- 入力ごとに 1 体走る（入力が 1 つなら 1 体）
-- `code` の子のコミットは ref で返り、agent が取り込むかを決める
-- `input` の全文が、子のプロンプトの先頭に payload として入る（子が読む文書ではない）
+- 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る
+  - agent が選べるのは type だけ
+- 入力ごとに 1 体走る
+  - 入力が 1 つなら 1 体
+- `code` の子のコミットは ref で返る
+  - agent が取り込むかを決める
+- `input` の全文が、子のプロンプトの先頭に payload として入る
+  - 子が読む文書ではない
 - `consult` の `README` の表が、実際のツールと一致する
 - 定義 1 枚のレビューが、出力上限に当たらずに終わる
-- agent が、直したいものがどのフォルダにあるか一目で分かる（`policy/` `child/` `run/` `tool/`。README と json は直下）
-- `index.ts` を開くと道具の登録だけがあり、進行も整形も見当たらない
-- import の向きが一方通行で、逆向きを探しても無い（`tool` は `run` を、`run` は `child` を、`child` は `policy` を知っている）
-- 既存の検査が緑のまま（振る舞いは変えない）
+- agent が、直したいものがどのフォルダにあるか一目で分かる
+  - `policy/`
+  - `child/`
+  - `run/`
+  - `tool/`
+  - README と json は直下
+- `index.ts` を開くと道具の登録だけがある
+  - 進行も整形も見当たらない
+- import の向きが一方通行で、逆向きを探しても無い
+  - `tool` は `run` を知っている
+  - `run` は `child` を知っている
+  - `child` は `policy` を知っている
+- 既存の検査が緑のまま
+  - 振る舞いは変えない
 
 ## Todo
 
@@ -50,9 +64,11 @@ Acceptance:
 - `.pi/extensions/ref-cleanup/index.ts`
   - `gitEnv` の import 先を `../consult/run/run.ts` に直す（`ref-cleanup` の統合は 005。ここは 1 行だけ）
 - 観点のうち、正常系
-  - `pnpm test:run` の 5 テスト（4 + `refs.test.ts`）→ 緑 (happy)
+  - 移動後のソース → 緑 (happy)
 - 想定エラー経路 (error)
-  - 外から借りている 1 行 → `pnpm typecheck` の赤（消えた `run.ts` を指す。`refs.test.ts` は `index.ts` を読まないのでテストでは錆びない）
+  - 外から借りている 1 行 → 型検査が赤
+    - 消えた `run.ts` を指す
+    - `refs.test.ts` は `index.ts` を読まないのでテストでは錆びない
   - `-e` の名前リテラル → 子の起動失敗
   - `types.test.ts` の読み先 → ファイル無し
 - 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）
@@ -86,12 +102,10 @@ Acceptance:
     - `run` → `policy`
   - このチケットの 6 本が正しく、プラン側は凍結なので直さない
 - （親が追記）**事故**: 子が step 4 をやり、`consult` がその作業をコミットするときにフックが落ちた
-  - `run.test.ts` の実リポジトリのテストが、フックの `GIT_*` に負けて実リポジトリの config を書き換え、自分が壊した repo で失敗した
+  - `run.test.ts` の実リポジトリのテストが、フックの `GIT_*` に負けて実リポジトリの config を書き換えた
+  - 自分が壊した repo で失敗した
   - ref が作られず worktree ごと消え、**子の作業は残っていない**
   - 原因と対処（検査が自分の置き場を自分で決める）は別コミットと 1 枚の `Remarks` に記録
-    - `25e1a04`
-    - `81e0743`
-    - `38b22f9`
 - （親が追記）**親がやり直した**（`work` skill の「子が ref を返さなかったとき」の経路）
 - （親が追記）**実演**: `consult` を 1 回呼んだ
   - type: `review`
