@@ -34,7 +34,8 @@ Acceptance:
 
 ### Findings
 
-- 実演: 子（`trial`）に `stack` の 1 ファイルだけを読ませ、前の実演が `/tmp/definition-demo/` に書いた作業用の 1 枚の `Stack` を埋めさせた
+- 実演: 子（`trial`）に `stack` の 1 ファイルだけを読ませた
+  - 前の実演が `/tmp/definition-demo/` に書いた作業用の 1 枚の `Stack` を埋めさせた
   - 書き先は `/tmp/stack-demo/definition.md`
   - 出た `Stack`
     - base は名前の 1 行
@@ -61,7 +62,9 @@ Acceptance:
     - 既存の規則で足りている
   - このシートは 4 枚目なのでマーカーは `add` にならない
     - Step 5 に書いてある
-  - base 行の形を 003（名前 1 行）と 002（5 行）のどちらで書くか
+  - base 行の形を 003 と 002 のどちらで書くか
+    - 003 は名前 1 行
+    - 002 は 5 行
     - 形を変えるなら `Changes: update` と理由で足りる
       - 003 がまさにそうした
   - Step 6 の `review` の子は子からは起こせない
