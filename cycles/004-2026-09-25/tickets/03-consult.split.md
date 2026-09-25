@@ -59,13 +59,13 @@ Acceptance:
     - テストは `execute` を通らないので、黙って壊れる
 - `.pi/extensions/consult/tool/render.ts`（新規）
   - 整形と音を持たせる
-    - `compose`
-    - `usageLine`
-    - `pad2`
-    - `refLabel`
-    - `result`
-    - `playSound`
-    - `SOUND_FILE`
+    - `compose` — 子の出力を 1 つのテキストにまとめる
+    - `usageLine` — 消費量の 1 行
+    - `pad2` — 2 桁に揃える
+    - `refLabel` — ref の名前
+    - `result` — 道具の戻り値
+    - `playSound` — 開始と終了の音
+    - `SOUND_FILE` — 鳴らす音のファイル
 - `.pi/extensions/consult/spec.test.ts`
   - `PARAMETERS` の import 先を `./tool/consult.ts` にする
 - **中身は書き換えない**
@@ -74,8 +74,8 @@ Acceptance:
 - 移動後のソース → 4 ファイルが緑 (happy)
 - import の貼り替え漏れ → 赤 (error)
 - `types.json` の読み先 → 子の起動失敗 (error)
-- null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行 — ケース無し
-  - ファイルの移動で、呼び出しの意味は変わらない
+- 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）
+  - ファイルの移動で、呼び出しの意味は変わらない — ケース無し
 
 ## Verify
 
