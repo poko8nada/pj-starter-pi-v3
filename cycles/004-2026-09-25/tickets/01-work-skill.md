@@ -2,15 +2,18 @@
 
 Acceptance:
 
-- 子に任せた場合、そのコミットは ref で返り、agent が取り込むかを決める
+- 子に任せた場合、そのコミットは ref で返る
+- 取り込むかを agent が決める
 - チケットは `Commit:` のハッシュで閉じる
 - `Notes` に `Findings` と `Unplanned` が書かれている
   - その step の中の穴は直す
   - 外の穴は次の 1 枚に渡す
 - 実演のあと、リポジトリに残っているのは自分で消せるものだけ
-- unit の diff が `review` の子に当たり、findings が残っている
+- unit の diff が `review` の子に当たる
+- findings が残っている
 - 直したか、理由をつけて答えていないかが `Notes` に書かれている
-- 3 周で止まり、残りは owner に渡る
+- 3 周で止まる
+- 残りは owner に渡る
 
 ## Todo
 
@@ -72,7 +75,9 @@ Acceptance:
   - あいだに入れるため Step 8 以降を 1 つ繰り下げた
   - `The failures the text answers` の `Step 9` を `Step 10` に直した
 - 実演（`Verify`）は親の担当で、この子は子（`consult`）を起こさない
-  - よって「unit の diff が `review` に当たった記録が `Notes` にある / 3 周で止まる」は、まだ子の側では観察していない
+  - よって次の 2 つは、まだ子の側では観察していない
+    - unit の diff が `review` に当たった記録が `Notes` にある
+    - 3 周で止まる
 - （親が追記）`types.json` は「無い」のではなく **git 管理外**（実物は存在する）
   - 結論（子に `git diff` は走らせられない）は変わらない
 - （親が追記）本文のチェックは `Then` を `Acceptance` と言い換えている
@@ -105,7 +110,9 @@ Acceptance:
     - 未レビューの diff で閉じない
     - 3 周を超えない
   - `AGENTS.md` の「散文とコードが食い違ったら同じターンで直す」に沿う
-- 「3 周で止め、残りは owner」と、レビュー子が見るもの（チケット + diff）は `tickets` の unit レビューと同じ形にした
+- レビュー子が見るものは `tickets` の unit レビューと同じ形にした
+  - チケットと diff
+  - 3 周で止め、残りは owner に渡す
   - `Todo` は「同じ形にする」とだけ言っていた
 - （親が追記）`consult/README.md` の `review` の Turns が実物（40）と食い違っていたので合わせた
   - step 1 の成果物ではないので、別コミットにした
