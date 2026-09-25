@@ -30,10 +30,19 @@ Acceptance: `cycles/<NNN-DATE>/definition.md` が出て、7 節がある（`Stac
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: 子（`trial`）に `definition` の 2 ファイルだけを読ませ、003 の次のサイクルの作業用の 1 枚を `/tmp/definition-demo/definition.md` に書かせた。**8 節**（What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Retro）がこの順で出た
+- **`Carry over`**: 003 の閉じたチケット（01〜11 + 15）から **53 行**を拾い、全行をどこかに着地させた（35 → 既存 unit を `What to keep` / 15 → `secret-guard` の `Change: update` の理由 / 1 → `Non-goal` の明示的な拒否 / ほか）
+- 5 つの規則（子に見せる題材 / 指摘の振り分け / 凍結の表 / ref の規則 / `Remarks` の規則）は、子が**引用で示せた** = 読める形で書けている
+- **本文は次の段の skill を名指ししていない** ✓（子の報告: `The later stages of the cycle have their own skills, and each of those says in its description when to read it`。unit の id は artifact の名前としてしか使っていない）
+- **リポジトリには 1 ファイルも触っていない**（`ref: (the child changed nothing)` = ref も残っていない）
 
 ### Unplanned
 
-なし
+- 実演が 3 つの穴を出したので、この step で直した（どれもこの step の中）
+  1. **着地の印が無い** — 「make every line land somewhere」と言うが、着地先を書く場所が形式に無く、子は太字の理由や `Non-goal` の `Why` に埋めるしかなかった → `Carry over` の 1 行を `<閉じたチケットの 1 行> → <着地先>` にした（`Remarks` と同じ形）
+  2. **`Carry over` が `Findings` しか見ていない** — `Unplanned` に「次のサイクルへ」と書いた行が漏れる（11 がまさにそうで、003 のチケットは `Findings` / `Unplanned` の使い分けが揺れている）→ 「その step で直さなかった行」に広げた
+  3. **`Stack` の `Changes:`** — マーカーの一覧は `Stack` にも `Changes:` を求め、テンプレートは空の `Stack` を見せるので矛盾に見える（002 も 003 も、中身が入った `Stack` に `Changes:` を持っている）→ 「中身が入ったら」と書いた
+- チケットの前提が外れた 2 つ: `format.md` に**節数の記述が無かった**（「7 → 8 に直す」対象が無い。テンプレートと空節の規則を直した）／`plan.md` の step 12 の `Tests` とチケットの `Acceptance` は「7 節」だが、この step で 8 節になる → **8 節は 004 の 1 枚から**。003 の 1 枚は凍結なので触らない
+- 実演の題材は人工的（003 はまだ閉じておらず、12〜16 も未閉じ）。子はそれを見抜いて「003 は閉じていないが、コードが入っている 12 は update として扱った」と報告した。相手が閉じたサイクルならこの曖昧さは出ない
 
-Commit:
+Commit: 08bea1d（節と規則）、99eab7d（実演で見つけた 3 つの穴）
