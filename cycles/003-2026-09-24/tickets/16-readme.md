@@ -24,10 +24,12 @@ Acceptance: 何が入っているか分かる。最初に何をすればいい�
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: ① 5 つのコマンドが総て緑（`pnpm install` / 166 件 green / lint / typecheck / format）② シートの節は **8**（What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Retro）で、README の名前列と一致 ③ `tickets` の行から「実装」が消え、`work` の行がある ④ 5 つの skill の `description` と表の役割が一致 ⑤ verify に載る検査は **2**（`lint` / `typecheck`。fix 側は `lint:fix` / `format`）⑥ clone 直後のつもりで読んで、入っているもの（検査 / ゲート / 規則 / 5 skill / consult / 記録）と最初の手順（`pnpm install` → `cycles/` を消す → `types.example.json` をコピー → `pi` 起動）が言えた
+- **チケットの `Verify` のコマンドが誤っていた**: `grep -n '^## ' .pi/skills/definition/references/format.md` は **14** を返す（format.md 自身の節が混ざる）。8 を数えるにはコードブロックの中を見る必要がある（`sed -n '/^```markdown/,/^```$/p' … | grep -c '^## '` = 8）。チケットは凍結されているので直さず、正しいコマンドで確かめた
+- README の文（「次の段を名指ししない」）はそのまま残した — 実物（skill 側）が規則に追いついたので、消さずに済んだ
 
 ### Unplanned
 
-なし
+- なし
 
-Commit:
+Commit: 73d7e1d
