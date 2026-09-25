@@ -18,10 +18,13 @@ Acceptance: `PROBE.txt` がリポジトリの根にあり、中身が `probe` �
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: リポジトリの根に `PROBE.txt` を作り、`cat PROBE.txt` → `probe`（終了コード 0）。求めた 1 行がそのまま出た
+- 値も見た: `wc -l` = 1、`od -c` = `p r o b e \n` の 6 バイト。余分な行も空白も無い
+- この worktree に残した変更は `PROBE.txt`（新規）とこのチケットの `Notes` の 2 つだけ。実演の後片付けが要るものは残していない
+- `Commit:` は空のままにした。書くのは ref を取る側（親）で、ハッシュは `consult` がコミットしたあとにしか無い
 
 ### Unplanned
 
-なし
+- なし
 
 Commit:
