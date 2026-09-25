@@ -31,9 +31,13 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 
 - プランの step 4 の `Files` に `tool/render.ts`（`child/spec.ts` から引くので import が変わる）と、移す・改名するテスト 4 本が無い。プランは凍結済みなので、ここに書く
 - プランの step 4 の `Tests` と `05` の実演 ③ は、辺を 3 本（`tool` → `run` / `run` → `child` / `child` → `policy`）と書いているが、実物にはもう 3 本ある（`tool` → `child` / `tool` → `policy` / `run` → `policy`）。このチケットの 6 本が正しく、プラン側は凍結なので直さない
+- （親が追記）**事故**: 子が step 4 をやり、`consult` がその作業をコミットするときにフックが落ちた（`run.test.ts` の実リポジトリのテストが、フックの `GIT_*` に負けて実リポジトリの config を書き換え、自分が壊した repo で失敗した）。ref が作られず worktree ごと消え、**子の作業は残っていない**。原因と対処（検査が自分の置き場を自分で決める）は別コミット（`25e1a04` / `81e0743` / `38b22f9`）と 1 枚の `Remarks` に記録
+- （親が追記）**親がやり直した**（`work` skill の「子が ref を返さなかったとき」の経路）。移動・改名・import の貼り替え・README・`ref-cleanup` の 1 行。検査: `pnpm test:run` 167 / `pnpm typecheck` / `pnpm lint` / 実フック（どちらも `2baa672` の上で）
+- （親が追記）**実演**: `consult` を 1 回呼んだ（`review` / 入力無し / `.env` を読ませる）→ 子が起動して「読めない: `.env` は秘密として扱う（child-guard）」を返した = `types.json` が読めている（`EXTENSION_DIR` が新しい位置から `consult/` を指す）＋ `-e` が新しい `child/guard.ts` を指している
+- （親が追記）チケットの `Files` に無いもの: `git-env.ts`（検査が git の置き場を決めるヘルパー。事故の対処で直下に増えた）。`child/spec.test.ts` → `../tool/consult.ts` は上向きの辺（`PARAMETERS` のため、チケットが指定）、`tool/consult.ts` → `./render.ts` は同じ層の中の辺（step 3 が作った）
 
 ### Unplanned
 
 なし
 
-Commit:
+Commit: 2baa672
