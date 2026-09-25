@@ -17,22 +17,15 @@ A closed cycle is recognised by its `Retro`: there is no status field anywhere.
 
 ## What
 
-- Type: 何であるか
-- Who:
-  - <id>: 誰か。何をする人か
+### Type
 
-Changes: keep / update **理由**
+何であるか
 
-## Goal
+### Who
 
-成し遂げたい状態（利用者の側から書く）
-
-Changes: keep / update **理由**
-
-## Non-goal
-
-- やらないこと
-  - Why: やらない理由
+- <id>: 誰か
+  - Does: その製品で何をするか
+  - Needs: その製品に何を必要としているか
 
 Changes: keep / update **理由**
 
@@ -57,10 +50,6 @@ Changes: keep / update **理由**
 
 ## Stack
 
-## Remarks
-
-- <オーナーの指摘> → <着地先>
-
 ## Carry over
 
 - **<主題>**（`<前のチケット>`）→ <受けた場所>
@@ -81,11 +70,28 @@ Changes: keep / update **理由**
   - **<主題>** — <中身>（次へ回す / 未解決）
 ```
 
+## Who
+
+`Who` is the product's users: the roles that act in the product. Pick them from this list.
+
+- people: owner / administrator / operator / moderator / staff / member / user / customer / subscriber / guest / visitor / author / editor / reader / viewer / buyer / seller / player / student / teacher
+- developers, for a library, a framework, an API or a CLI: developer / integrator / plugin author
+- not a person: another service / the side that sends a webhook / agent / an organisation or a team
+
+When nothing in the list fits, propose an addition.
+
+Then write, for each one, what they do in the product and what they need from it (`Does` and `Needs`):
+
+- what they do — and what they want to do
+- what they need
+
+The assumption the list rests on: this harness is general-purpose for building anything web-related, so the users differ from product to product.
+
 ## Units
 
 A unit is one thing the product does, seen from the user's side. The rules:
 
-- **Count everything the product does.** A behaviour without a unit is a hole in the sheet. Count what the product does, not what the repository holds
+- **Count everything the product does.** A behaviour without a unit is a hole in the definition. Count what the product does, not what the repository holds
 - **For a product, the harness (checks, hooks, extensions) is given.** It goes in `Stack`, not in the units. This repository is the exception: its product is the harness, so the harness is counted here
 - **One unit is one user action.** If the action splits in two, make two units
 - **Write from the user's side.** Not the name of a mechanism, but what the person experiences
@@ -101,10 +107,10 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 ## Change markers (from `002` onwards)
 
-- A section (`What` / `Goal` / `Non-goal`, and `Stack` once it has content) ends with `Changes: keep / update **理由**`
+- A section (`What` / `What to build` / `What to keep`, and `Stack` once it has content) ends with `Changes: keep / update **理由**`
 - A unit carries `Change: keep / update / add / drop **理由**` at the top
 - **Reasons are wrapped in `**`.** Bold is for reasons only: they are what the reader is looking for when they ask "what changed here?"
-- **A `keep` unit is not written in `What to build`.** It is collected in `What to keep`, with `From: <NNN>` pointing at the sheet that holds its definition
+- **A `keep` unit is not written in `What to build`.** It is collected in `What to keep`, with `From: <NNN>` pointing at the definition that holds it
 - `What to build`, `What to keep` and the `Changes:` markers together account for every unit: what is touched, and what stays. `From:` is how you walk back to a definition
 - A unit that is `keep` but has never been verified means the previous version had a problem, so it should normally be `update`. If it stays `keep` as an exception, it does not belong in `What to build`
 - A `drop` unit has no `Given` / `When` / `Then`: there is no definition for something that will not exist
@@ -124,8 +130,8 @@ A unit is one thing the product does, seen from the user's side. The rules:
 - **Do not write what the reader can look up.** Not the commands that were run, not that the checks were green (an observation is one line: `green`), not what the code, the diff or the commit already shows
 - **Do not wrap a sentence across lines, and do not use structures that grow sideways.** One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change. Tables break with long text
 - **`Carry over` copies holes, not noise.** Every hole a ticket left unresolved is copied as it was written, and noise is never copied — it is not written in the first place. A line numbers nothing: point by file and heading
-- `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
-- **`Remarks` is a log, not a decision.** One line per remark, `<指摘> → <着地先>`, and the landing place is where it acts (the next sheet, a unit's ticket, a stage's skill, the document that holds the rule). It is written at any time and it is never frozen; a remark that lands nowhere is a hole when the cycle closes
+- `Stack` and `Retro` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous definition's `Carry over`. Any other empty section is unresolved
+
 - Prefer whole sheets over diffs: repeating what did not change is allowed, and a `keep` marker says so
 - Lines that did not change are copied from the previous sheet exactly. A diff that shows a change where nothing changed is a lie
 - Do not put the order of work inside a unit (that is the plan's job)
