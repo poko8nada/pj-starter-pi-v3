@@ -34,10 +34,19 @@ Acceptance: 子に任せた場合、そのコミットは ref で返り、agent 
 
 ### Findings
 
-なし
+- 実演の結果（`Verify`）: 子（`type code`）に `.pi/skills/tickets/SKILL.md` と `.pi/skills/work/SKILL.md` を読ませ、探り用チケット `99-probe.md` を閉じさせた。子は `PROBE.txt` を書き、`Verify` を走らせ（`cat` → `probe`、`wc -l` = 1、`od -c` = `p r o b e \n`）、**自分の `Notes` をチケットに書いた**。`Commit:` は空のままにし、「書くのは ref を取る側」と自分で書いた
+- 子のコミットが ref `consult/code-20260925-110408-0`（`75d5206`）で返り、**親が merge した** — このリポジトリで ref を取り込んだのは初めて。fast-forward だったので `75d5206` がそのまま `main` の HEAD になり、チケットに書いたハッシュが有効なまま残った
+- 親のツリーで `Verify` を走らせ（`cat PROBE.txt` → `probe`）、`Commit: 75d5206` を書いて閉じた。その後、探り用の 2 ファイルを消し、ref を `ref_cleanup` で消した。残っているのは `main` だけ
+- 子が「どちらの skill にも書いていない」と自分で言ってきた 2 つ: hook は子の退出後に `consult` が打つコミットで走る（だから自分で `oxfmt --check` を回した）／`commitWorktree` が `git add -A` する（だから書く前にツリーを綺麗にした）。**どちらも Step 2 に足した**（`ccc3e19`）
+- `Verify` の後半（失敗 4 つの置き場所）: ref が返らない・子の作業が失敗 → Step 6 ／ 依存なのに前の ref が無い → Step 3 ／ ref が消せない → Step 9
 
 ### Unplanned
 
-なし
+- **オーナーの指摘 4 件を skill に反映した**（`458c741`）: 誰がやるか（既定は子。サイクルの `What to build` が 3 unit 以下かつ 5 枚以下なら親。親の文脈が要る step と `.check` は親）／work の終わりの線（親のツリーに入り、`Verify` がそこで走り、チケットが `Commit:` で閉じ、ref が 0 本）／`Notes` は実装者、`Commit:` は取り込んだ人／実演で子に書かせない
+- 計測: **子はコミットできない**（`git commit *` は承認必須で、子には UI が無い）。だから `Commit:` は取り込む側が書く。ref の経路は README どおりに動いた
+- **私のミス**: その計測で子にファイルを書かせた（「実演で子に書かせない」の違反。`git commit --allow-empty` で足りた）。残った ref は消し、教訓は Step 7 に足した
+- **004 に送る**（このサイクルでは作らない）: `close` skill（サイクル全体の統合・完成形のレビュー・振り分け・Retro。中身は 004 で詰める）／`Goal` を壊す穴はそのサイクルで直し、それ以外は次へ／**実装を第二の目で見るレビューが skill にも枠にも無い**／close は実装しない（提案）
+- **サイクル全体の判定は、いまどの skill のものでもない**（オーナーの指摘）: `work` は最初 `close` を名指しして「ここから先は別の skill」と書いていたが、`close` はまだ無いので**穴が境界に見えてしまう**。`tickets` の作法（自分の終わりだけ書き、次の skill を名指ししない）に合わせ、その 1 文と導入の「自分の仕事ではない」列挙を落とした。003 の plan は `definition` がサイクルを閉じると言っており、誰が引き受けるかは 004 で決める
+- 探り用のコミットが履歴に残る（`da4cfc4` 追加 / `bc59819` 削除）。子は `HEAD` の写しで働くので、探り用チケットはコミットしないと子から見えない
 
-Commit:
+Commit: 458c741, ccc3e19（skill）、ecc011d（ref を取って閉じた）
