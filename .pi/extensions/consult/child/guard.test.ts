@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { isSecretPath, judgeToolCall, unquote } from './child-guard.ts';
+import { isSecretPath, judgeToolCall, unquote } from './guard.ts';
 
 /**
  * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、

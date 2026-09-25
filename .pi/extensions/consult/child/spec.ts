@@ -7,14 +7,14 @@
  */
 
 import { fileURLToPath } from 'node:url';
-import type { Limits, TypePolicy } from './types.ts';
+import type { Limits, TypePolicy } from '../policy/types.ts';
 
 /**
  * 子に読ませる guard。`-e` で子の起動に渡す。
  *
  * 子だけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`child-guard.ts` は自動では読まれない）。ホストの権限設定が無い環境でも、子が秘密のパスに触れないようにする。
  */
-const CHILD_GUARD = fileURLToPath(new URL('./child-guard.ts', import.meta.url));
+const CHILD_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 
 /**
  * 隔離が要るか。type の `environment` が決める。

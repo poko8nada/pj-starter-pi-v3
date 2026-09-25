@@ -8,8 +8,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
-import { accountEvent, parseEvents, ranFrom, type Spent } from './spec.ts';
-import type { Limits } from './types.ts';
+import { accountEvent, parseEvents, ranFrom, type Spent } from '../child/spec.ts';
+import type { Limits } from '../policy/types.ts';
 
 const KILL_GRACE_MS = 5000;
 

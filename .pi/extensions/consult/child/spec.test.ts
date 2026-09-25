@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PARAMETERS } from './tool/consult.ts';
+import { PARAMETERS } from '../tool/consult.ts';
 import {
   accountEvent,
   buildPiArgs,
@@ -15,7 +15,7 @@ import {
   type ConsultOptions,
   type Spent,
 } from './spec.ts';
-import type { TypePolicy } from './types.ts';
+import type { TypePolicy } from '../policy/types.ts';
 
 // 純粋な部分だけを試す。子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
 
@@ -86,7 +86,7 @@ describe('buildPiArgs: child-guard', () => {
     const args = buildPiArgs(options());
     const index = args.indexOf('--extension');
     expect(index).toBeGreaterThan(args.indexOf('--tools'));
-    expect(args[index + 1]?.endsWith('child-guard.ts')).toBe(true);
+    expect(args[index + 1]?.endsWith('guard.ts')).toBe(true);
   });
 
   it('child-guard のパスは空でない絶対パス', () => {

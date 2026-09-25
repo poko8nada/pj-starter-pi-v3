@@ -42,7 +42,7 @@ function config(...types: unknown[]): string {
 describe('parseTypes', () => {
   it('正しい設定 → 4 つの type が引ける', () => {
     // 同梱の例がそのまま読めることも確かめる。
-    const example = readFileSync(join(HERE, 'types.example.json'), 'utf8');
+    const example = readFileSync(join(HERE, '..', 'types.example.json'), 'utf8');
     expect(parseTypes(example).map((type) => type.name)).toEqual([
       'research',
       'review',

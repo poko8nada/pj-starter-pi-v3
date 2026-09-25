@@ -31,7 +31,7 @@ import {
   type InstallOutcome,
   type RunResult,
   type Worktree,
-} from '../run.ts';
+} from '../run/run.ts';
 import {
   buildPiArgs,
   isBlank,
@@ -39,8 +39,8 @@ import {
   needsIsolation,
   parseEvents,
   type ConsultOptions,
-} from '../spec.ts';
-import { loadTypes, resolveType } from '../types.ts';
+} from '../child/spec.ts';
+import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, playSound, refLabel, result, usageLine } from './render.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */

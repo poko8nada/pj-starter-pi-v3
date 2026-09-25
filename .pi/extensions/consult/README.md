@@ -47,7 +47,7 @@ The parent decides what to do with the ref: cherry-pick it, take part of it, or 
 
 The child does not load the project's settings, project-local extensions, or skills. Those can change how the child runs — a skill or an extension carries instructions, and a repository can ship one.
 
-On top of whatever the host enforces, consult passes its own guard (`-e child-guard.ts`) to the child: it refuses reads of secret paths (`.env`, `.envrc`, `*.pem`, `*.key`) by their **resolved** location, so a path built by a command cannot slip past a string rule. That guard holds even where the host has no permission config at all.
+On top of whatever the host enforces, consult passes its own guard (`-e child/guard.ts`) to the child: it refuses reads of secret paths (`.env`, `.envrc`, `*.pem`, `*.key`) by their **resolved** location, so a path built by a command cannot slip past a string rule. That guard holds even where the host has no permission config at all.
 
 What the child does read is `AGENTS.md` and user/global extensions. A `GIT_*` environment from a hook (lefthook sets `GIT_INDEX_FILE`) is stripped before git and the child start, so a caller's git context cannot leak into either.
 
@@ -91,6 +91,6 @@ Plays `Tink` at the start and at the end. It is a signal for the person at the k
 pnpm test:run .pi/extensions/consult
 ```
 
-`spec.test.ts` covers the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, and the switch decision. `run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. Spawning a real `pi` is not covered; the demonstrations do that.
 
 A check that spawns git fixes where it writes through `git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.

@@ -14,7 +14,7 @@ import type {
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { spawnSync } from 'node:child_process';
-import { gitEnv } from '../consult/run.ts';
+import { gitEnv } from '../consult/run/run.ts';
 import { parseAction, runAction, type GitRun } from './refs.ts';
 
 /** 道具のパラメータ。一覧する（`list`）か、消す（`delete`）か */

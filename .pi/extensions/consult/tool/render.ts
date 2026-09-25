@@ -6,8 +6,8 @@
 
 import { spawn } from 'node:child_process';
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../spec.ts';
-import type { RunResult } from '../run.ts';
+import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../child/spec.ts';
+import type { RunResult } from '../run/run.ts';
 
 /** 開始と終了に鳴らす音。ユーザーへの合図で、エージェントの関心ではない */
 const SOUND_FILE = '/System/Library/Sounds/Tink.aiff';

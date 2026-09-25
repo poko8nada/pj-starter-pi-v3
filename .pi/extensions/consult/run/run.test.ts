@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runGit } from './git-env.ts';
+import { runGit } from '../git-env.ts';
 import {
   commitWorktree,
   createWorktree,
@@ -19,7 +19,7 @@ import {
   type GitOutput,
   type RunResult,
 } from './run.ts';
-import { finalTextFrom, parseEvents } from './spec.ts';
+import { finalTextFrom, parseEvents } from '../child/spec.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
 
