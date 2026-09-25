@@ -36,10 +36,9 @@ Acceptance: `AGENTS.md` の規則に従う。コードに触る前に 1 枚を�
 8. One commit is one meaning. Split it if it is mixed.
 9. Never report done while a check is red, and never weaken a check: no loosened rules, no deleted tests, no
    `--no-verify`.
-10. A check declares its own world: everything it depends on — environment, paths, config, clock, network —
-    it sets for itself, and it writes nothing outside what it made. Where it could reach outside, it proves it
-    does not, before it writes. It holds wherever the repository runs it: the commit hook, a linked
-    worktree, every turn.
+10. A check sets up what it depends on — environment, paths, config, clock, network — instead of inheriting it,
+    and it writes nothing outside what it made. Where it could reach outside, it proves it does not, before it
+    writes. It holds wherever the repository runs it: the commit hook, a linked worktree, every turn.
 
 The checks are wired: `quality-gate` runs them every turn on what that turn changed, and `lefthook` runs them
 every commit.

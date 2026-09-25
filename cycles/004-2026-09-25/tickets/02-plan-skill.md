@@ -41,6 +41,6 @@ Acceptance: `step 0` を含む `Steps` と、`Structure` が出る。全 step �
 - 自分で走らせた検査: `pnpm exec oxfmt --check .pi/skills/plan/SKILL.md .pi/skills/plan/references/format.md` → All matched files use the correct format / `pnpm test:run` → 166 passed / `pnpm typecheck` → エラーなし / `pnpm lint` → エラーなし
 - `description` に次のスキルの名前は無い（本文の `tickets` は既存のまま）
 - `Commit:` は空のまま。ハッシュは子では作れない（`git commit` は承認が要る）
-- （親が追記）004 の事故の後、`Tests` に 1 文足した（検査を足す step は、その検査が自分で宣言する世界を書く）。規則そのものは `AGENTS.md` に置く（`08-agent-rules` の案に 1 条）
+- （親が追記）004 の事故の後、`Tests` に 1 文足した（検査を足す step は、その検査が自分で決める置き場を書く）。規則そのものは `AGENTS.md` に置く（`08-agent-rules` の案に 1 条）
 
 Commit: 2ea0740（子 `7128087` + 親の読みで直した分）

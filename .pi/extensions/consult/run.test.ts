@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runInGitWorld } from './git-world.ts';
+import { runGit } from './git-env.ts';
 import {
   commitWorktree,
   createWorktree,
@@ -302,7 +302,7 @@ describe('commitWorktree', () => {
     const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
     const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
     repos.push(repo, home);
-    const run = (args: readonly string[]) => runInGitWorld(repo, home, args);
+    const run = (args: readonly string[]) => runGit(repo, home, args);
     run(['init', '--quiet']);
     run(['config', 'user.email', 'consult@example.com']);
     run(['config', 'user.name', 'consult']);
@@ -320,32 +320,32 @@ describe('commitWorktree', () => {
     expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
   });
 
-  it('継承した GIT_* を無視する（外の repo を指していても、自分で決めた世界に書く）', () => {
-    // 外の世界の代役。ここが書き換わったら、検査は外に届いている。
+  it('継承した GIT_* を無視する（外の repo を指していても、自分の repo に書く）', () => {
+    // 外の repo の代役。ここが書き換わったら、検査は外に届いている。
     const decoy = mkdtempSync(join(tmpdir(), 'consult-decoy-'));
     const mine = mkdtempSync(join(tmpdir(), 'consult-repo-'));
     const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
     repos.push(decoy, mine, home);
-    runInGitWorld(decoy, home, ['init', '--quiet']);
-    runInGitWorld(mine, home, ['init', '--quiet']);
+    runGit(decoy, home, ['init', '--quiet']);
+    runGit(mine, home, ['init', '--quiet']);
 
     // フックが載せる形: 継承した GIT_* が、外の repo（decoy）を指している
     vi.stubEnv('GIT_DIR', join(decoy, '.git'));
     vi.stubEnv('GIT_WORK_TREE', decoy);
 
-    runInGitWorld(mine, home, ['config', 'user.email', 'mine@example.com']);
-    expect(runInGitWorld(mine, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
+    runGit(mine, home, ['config', 'user.email', 'mine@example.com']);
+    expect(runGit(mine, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
       'mine@example.com',
     );
-    expect(runInGitWorld(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe('');
+    expect(runGit(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe('');
 
-    // 裏取り: 世界を宣言しない呼び方なら、同じ汚れで外の decoy に届く。この検査は空振りできない
+    // 裏取り: 置き場を決めない呼び方なら、同じ汚れで外の decoy に届く。この検査は空振りできない
     spawnSync('git', ['config', 'user.email', 'leaked@example.com'], {
       cwd: mine,
       encoding: 'utf8',
       env: process.env,
     });
-    expect(runInGitWorld(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
+    expect(runGit(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
       'leaked@example.com',
     );
   });
