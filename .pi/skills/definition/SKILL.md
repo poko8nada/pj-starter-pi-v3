@@ -116,7 +116,7 @@ Do not commit anything yet. Put the sheet in front of the owner and talk it thro
 
 Close it in its own sheet, and never touch that sheet again for anything else:
 
-- write `Retro` — `Good`, `Bad`, and `Carry over`. The carry-over lists every `Findings` line of the closed cycle's tickets, one line each. Copy them; shortening is how they get lost
+- write `Retro` — `Good`, `Bad`, and `Carry over`. The carry-over holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written and followed by ` → <着地先>`. Copying is not shortening; shortening is how they get lost
 - put it to the owner: they are the only one who can judge `Good` and `Bad`, and they are the last check that `Carry over` is complete
 - when they say yes, commit. That commit closes the cycle (the commit is the freeze mark; nothing about that cycle is edited afterwards)
 
