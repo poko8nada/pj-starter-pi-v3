@@ -23,7 +23,15 @@ Acceptance: 何が入っているか分かる。最初に何をすればいい�
 
 ### Findings
 
-なし
+- 節の数: `format.md` の実物は 9（`## Carry over` を含む）。README の節の列挙（英日）を 9 に合わせた。チケットは「8 のままか 9 かは step 6 の決定で決まる」と言っていたが、step 6 で 9 に決まっている（`06-definition-skill` の `Notes` / `Remarks`）
+- 拡張の一覧: `ls .pi/extensions/` は 4 つ（`consult` / `quality-gate` / `ref-cleanup` / `sound-notify`）。README の「拡張 / Extensions」を実物の 4 つに合わせた（`quality-gate` は Gates の行にも名前がある）。`ref-cleanup` の説明は「`consult` が残した ref を一覧し、1 つ消す」（`index.ts` の `description` と一致。消せるのは `consult/` の ref だけ）
+- 検査の数: `grep -c "phase: 'verify'" .pi/extensions/quality-gate/checks.ts` = 2（lint / typecheck）。README の「`lint` と `typecheck`」と一致、変更なし
+- 各スキルの役割: `grep -h '^description:' .pi/skills/*/SKILL.md` の 6 つとサイクルの表を突き合わせて一致。`close` の行を足した。01 の `Notes` の外の穴「`work` の行に `the review` が無い」を受けて、`work` の行にレビューを足した
+- スキル数の記述: 「5 つ / five skills」→「6 つ / six skills」にし、`close` を列挙に足した
+- 名指しの規則（「次の段を名指ししない」）の文はそのまま残した
+- 自分で走らせた `Verify`: `pnpm install`（Already up to date）/ `pnpm test:run`（6 files / 167 passed）/ `pnpm lint`（エラーなし）/ `pnpm typecheck`（エラーなし）/ `pnpm format:check`（91 files, All matched files use the correct format）— 全緑
+- clone 直後のつもりで README だけを読んだ: 入っているもの（検査 / ゲート / エージェントの規則 / 6 skill / 4 拡張 / `cycles/`）が言え、最初の手順（`pnpm install` → `cycles/` を消す → `types.json` を作る → `pi` を起動）が言える
+- `Verify` の実演のうち子が要る部分は親の担当。この子は子（`consult`）を起こさない
 
 ### Unplanned
 
