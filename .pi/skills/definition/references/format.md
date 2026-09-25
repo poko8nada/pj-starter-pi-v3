@@ -61,6 +61,10 @@ Changes: keep / update **理由**
 
 - <オーナーの指摘> → <着地先>
 
+## Carry over
+
+- <前の 1 枚の `Carry over` の 1 行> → <受けた場所>
+
 ## Retro
 
 - Good:
@@ -103,8 +107,8 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 - Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
-- `Retro`, `Stack` and `Remarks` may be empty in a definition. Any other empty section is unresolved
-- **`Carry over` is not shortened, and it is not just a list.** It holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written. Shortening it is how a hole gets lost, and the next sheet has to account for each line
+- `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
+- **`Carry over` is not shortened, and it is not just a list.** It holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written. Shortening it is how a hole gets lost, and the next sheet has to account for each line in its own `## Carry over`, one line per line, `<前の 1 行> → <受けた場所>`
 - **`Remarks` is a log, not a decision.** One line per remark, `<指摘> → <着地先>`, and the landing place is where it acts (the next sheet, a unit's ticket, a stage's skill, the document that holds the rule). It is written at any time and it is never frozen; a remark that lands nowhere is a hole when the cycle closes
 - Prefer whole sheets over diffs: repeating what did not change is allowed, and a `keep` marker says so
 - Lines that did not change are copied from the previous sheet exactly. A diff that shows a change where nothing changed is a lie

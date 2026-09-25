@@ -82,7 +82,9 @@ Write it whole, following `references/format.md`. Three things about the sheet a
 - **`Retro` is empty by definition.** It is written when the cycle closes, in Step 10 or in a later run
 - **`Remarks` is empty until the owner says something.** It is written while the cycle runs, and it is never frozen
 
-Then read your own sheet against `references/format.md`, once, before anyone else sees it: the eight sections, the markers, and the language of the content.
+The sheet also carries the accounting of the previous one, in `## Carry over`: one line per line of the previous sheet's `Carry over`, reading `<前の 1 行> → <受けた場所>` — the same one-line shape as `Remarks`. The landing place is where that line now lives: a unit (`What to build` or `What to keep`), a `Non-goal`, a `Changes` reason, or an explicit refusal with its reason. Nothing is shortened, and a line that lands nowhere is a hole in this sheet, so every line of the previous `Carry over` is written. **`## Carry over` is empty only in the first sheet**, which has no previous cycle; from the second sheet it holds the previous lines.
+
+Then read your own sheet against `references/format.md`, once, before anyone else sees it: the nine sections, the markers, and the language of the content.
 
 ## Step 8: review it
 
@@ -91,7 +93,7 @@ Before the owner sees it, put the sheet in front of a `review` child. The frame 
 The task, verbatim:
 
 - Check this definition sheet against the format and against itself, and nothing else:
-  - the eight sections are there, and no section is empty except `Stack`, `Retro` and `Remarks`
+  - the nine sections are there, and no section is empty except `Stack`, `Retro` and `Remarks`, and `Carry over` on the first sheet
   - the markers are right: `Changes:` on the sections, `Change:` on the units, reasons in bold, and no `keep` unit written under `What to build`
   - every behaviour the `Goal` and the `Non-goal`s ask for has a unit
   - no unit contradicts the frame
@@ -120,7 +122,7 @@ Close it in its own sheet, and never touch that sheet again for anything else:
 - put it to the owner: they are the only one who can judge `Good` and `Bad`, and they are the last check that `Carry over` is complete
 - when they say yes, commit. That commit closes the cycle (the commit is the freeze mark; nothing about that cycle is edited afterwards)
 
-`Carry over` is what the next sheet has to account for. When you write the next sheet, make every line land somewhere: a new unit, a `Non-goal`, a `Changes` reason, or an explicit refusal with a reason. A carry-over line that lands nowhere is a hole in the next sheet.
+`Carry over` is what the next sheet has to account for, and Step 7's accounting section says how: the next sheet's `## Carry over` holds one line per line here, each with the place that received it — a unit, a `Non-goal`, a `Changes` reason, or an explicit refusal with its reason. A carry-over line that lands nowhere is a hole in the next sheet.
 
 A cycle may be abandoned. If the definition breaks, close the cycle and move to the next one, with the reason in the `Retro`. Dropping work early is cheap, and keeping it cheap is the point.
 
