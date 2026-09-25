@@ -14,13 +14,19 @@
 ## Non-goal
 
 - CI に検査を足さない
-  - Why: ローカルのフックが担う。自分用のスターターなので
+  - Why: ローカルのフックが担う
+    - 自分用のスターターなので
 - clone 先の技術選定に関与しない
   - Why: スタックは clone した側が決める
 - 使わない設定を消さない
-  - Why: 休眠として残す（react / src / app / pages）
+  - Why: 休眠として残す
+    - `react`
+    - `src`
+    - `app`
+    - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
-  - Why: サードパーティのパッケージの仕事。ハーネスは設定の置き場所（`.pi/remote-pi/.gitignore`）だけを用意する
+  - Why: サードパーティのパッケージの仕事
+    - ハーネスは設定の置き場所（`.pi/remote-pi/.gitignore`）だけを用意する
 
 ## What to build
 
@@ -32,7 +38,11 @@
      - 依存は未インストール
    - When: `pnpm install` のあと `pnpm test:run` を叩く
    - Then:
-     - format / lint / typecheck / test の 4 つが走る
+     - 4 つの検査が走る
+       - format
+       - lint
+       - typecheck
+       - test
      - 結果が 1 行ずつ出る
      - 全部通れば exit 0
 2. commit-gate
@@ -66,7 +76,8 @@
    - When: owner が「テストが落ちてるので直して」と頼む
    - Then:
      - `AGENTS.md` の規則に従う
-     - コードに触る前に 1 枚を書き、承認を待つ
+     - コードに触る前に 1 枚を書く
+     - 承認を待つ
      - 検査を弱めない
 5. consult
    - Change: add
@@ -87,11 +98,21 @@
 
 ## Stack
 
-- Runtime: Node 24 / TypeScript 6
+- Runtime:
+  - Node 24
+  - TypeScript 6
 - Package manager: pnpm 12
-- Checks: oxlint / oxfmt / tsc / vitest
-- Hooks: lefthook（pre-commit / pre-push）
-- Agent: pi 拡張（quality-gate / consult）
+- Checks:
+  - oxlint
+  - oxfmt
+  - tsc
+  - vitest
+- Hooks: lefthook
+  - pre-commit
+  - pre-push
+- Agent: pi 拡張
+  - quality-gate
+  - consult
 
 ## Retro
 
@@ -103,8 +124,8 @@
     - チェックボックスなら「書いた」で終わっていた
   - `Verify` を動かせない規則が、失敗を失敗のまま残した
   - 自分で違反をやって、その場で規則にできた
-    - `Todo` の書き換え
-    - `Verify` の書き換え
+    - `Todo` の書き換え → 合意した時点で確定し、実際と違うことは `Notes` に書く
+    - `Verify` の書き換え → 合意した時点で確定し、観察したことは `Notes` に書く
 - Bad:
   - 機構がスキルとして存在しないので、`agent-rules` の `Acceptance` は達成できない
     - ハーネスが揃う前に回した
