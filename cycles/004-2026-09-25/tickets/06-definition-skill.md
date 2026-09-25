@@ -2,11 +2,18 @@
 
 Acceptance:
 
-- `cycles/<NNN-DATE>/definition.md` が出て、9 節がある
-  - `Stack` / `Remarks` / `Retro` / `Carry over` は空でよい
-  - `Carry over` が空でよいのは最初の 1 枚だけ
+- `cycles/<NNN-DATE>/definition.md` が出る
+- 9 節がある
+  - `Stack` は空でよい
+  - `Remarks` は空でよい
+  - `Retro` は空でよい
+  - `Carry over` は空でよい
+    - 空でよいのは最初の 1 枚だけ
 - 前のサイクルの `Carry over` の全行が、この 1 枚のどこかに対応している
-  - 受けた場所は単位 / `Non-goal` / `Changes` の理由 / 明示的な拒否
+  - 受けた場所は単位
+  - `Non-goal`
+  - `Changes` の理由
+  - 明示的な拒否
 - 承認までは、`cycles/` 以外に変更が無い
 - 本文が、次のスキルを名指ししない
 - 受けた場所が、その 1 枚から読める
@@ -19,7 +26,10 @@ Acceptance:
   - Step 7（1 枚を書く）に、**会計の節**を足す
     - 新しい 1 枚が `## Carry over` を持つ
     - 前の `Carry over` の 1 行につき 1 行を書く（`<前の 1 行> → <受けた場所>`）
-    - 受けた場所は unit / `Non-goal` / `Changes` の理由 / 明示的な拒否
+    - 受けた場所は unit
+    - 受けた場所は `Non-goal`
+    - 受けた場所は `Changes` の理由
+    - 受けた場所は明示的な拒否
     - `Remarks` と同じ形（1 行ずつ）
   - Step 10 の「`Carry over` は次の 1 枚が会計する」を、この節を指すように書き換える
     - いまは行き先が無い
@@ -32,8 +42,11 @@ Acceptance:
     - `## Remarks` の隣
     - `<前の 1 行> → <受けた場所>`
   - 型に、空でよい条件（最初の 1 枚だけ）を書く
-  - 空節の規則（`Retro` / `Stack` / `Remarks` は空でよい）に `Carry over` を足す
-    - 条件つき
+  - 空節の規則に `Carry over` を足す
+    - `Retro` は空でよい
+    - `Stack` は空でよい
+    - `Remarks` は空でよい
+    - `Carry over` は条件つきで空でよい
 - 観点のうち、正常系（happy）→ `Verify` の実演が担う
   - 子が 1 枚書く
 - 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）→ この step は skill 本文と format の修正で、作るものが無い
