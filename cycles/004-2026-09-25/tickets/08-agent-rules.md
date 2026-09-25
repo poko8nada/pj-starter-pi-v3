@@ -63,10 +63,16 @@ every commit.
 
 ### Findings
 
-なし
+- 重複検査（`Verify` の読み）: `.pi/skills/` の 6 skill 本文と `references/format.md` 3 本を読んだ。`## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い。最も近いのは 1 組 — 10 条の前半（検査は環境・置き場を継承せず自分で決める）と `.pi/skills/plan/SKILL.md:40` / `.pi/skills/plan/references/format.md:63`（`Tests` に、検査が自分で決める置き場を書く）。前者は検査の振る舞い、後者は plan の `Tests` 欄に書くことの要求で、主語も行為も違う。重複とは読まなかったが、どちらかを動かすのは criteria の話なので親 / owner が決める（`Remarks` は 2 つを同時に足したと書いている）
+- 5 条に近いもの（`close` の `Good` の「読んだ値の無い主張は 1 行ではない」/ `tickets/references/format.md` の「`Notes` は見て確かめたことから書く」）と、4 条に近いもの（各 skill の「owner に聞く」段）は、いずれも欄・段に閉じた当てはめで、規則の言い直しではないと読んだ
+- `Verify` の実演のうち「clone 直後のつもりで読む」は fresh な目ではない（この子は既に全部読んだ）。`consult` の子を起こせないので、fresh eyes の実演は親の担当
+- 名指しした仕組みは実在する: `.pi/skills/`（7 skill）/ `.pi/extensions/quality-gate/` / `lefthook.yaml`
+- `AGENTS.md` はチケットの案と 1 バイトも違わない（案を切り出して `diff` 一致）。変えたファイルは `AGENTS.md` だけ（`git status`）
+- 自分で走らせた検査: `pnpm exec oxfmt --check AGENTS.md` → All matched files use the correct format / `pnpm format:check`（91 files）→ 同じ / `pnpm lint` → エラーなし / `pnpm typecheck` → エラーなし / `pnpm test:run` → 167 passed
 
 ### Unplanned
 
-なし
+- なし。`Todo` の「案のまま書く」だけで、文言・条数・行は変えていない
+- `Commit:` は空のまま。子ではコミットできない（`git commit` は承認が要る）。依頼により未コミットで残す
 
 Commit:
