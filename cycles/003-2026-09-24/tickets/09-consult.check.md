@@ -3,10 +3,14 @@
 Acceptance:
 
 - 単位の `Then` を全部、1 回の実演で確かめる
-- 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る（agent が選べるのは type だけ）
-- 入力ごとに 1 体走る（入力が 1 つなら 1 体）
-- `code` の子のコミットは ref で返り、agent が取り込むかを決める
-- `input` の全文が、子のプロンプトの先頭に payload として入る（子が読む文書ではない）
+- 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る
+  - agent が選べるのは type だけ
+- 入力ごとに 1 体走る
+  - 入力が 1 つなら 1 体
+- `code` の子のコミットは ref で返る
+  - agent が取り込むかを決める
+- `input` の全文が、子のプロンプトの先頭に payload として入る
+  - 子が読む文書ではない
 - `consult` の `README` の表が、実際のツールと一致する
 - 定義 1 枚のレビューが、出力上限に当たらずに終わる
 
@@ -17,8 +21,11 @@ Acceptance:
   - `code` を 1 回走らせ、ref が返ることを見る
   - `review` を `cycles/003-2026-09-24/definition.md` に当て、上限に当たらずに終わることを見る
 - type ごとの policy を確かめる
-  - `types.json` の tools / environment / limits / role と、子の起動引数を突き合わせる
-  - 子の起動引数は `--tools` / `--extension child-guard.ts` / `--no-approve`
+  - `types.json` の設定を子の起動引数と突き合わせる
+  - 子の起動引数
+    - `--tools`
+    - `--extension child-guard.ts`
+    - `--no-approve`
 - `Then` ごとの観測
   - `入力 → 結果` の形で書く
   - `research` 1 体 → 返答の末尾に `[consult] <モデル名>` がある (happy)
@@ -29,12 +36,13 @@ Acceptance:
   - 道具の引数 → `PARAMETERS` に `type` / `task` / `input` 以外が無い (happy)
     - agent が選べるのは type だけ
   - `research` 2 入力 → 結果が 2 件 (happy)
-    - **入力順に**並ぶ（完了順ではない）
+    - **入力順に**並ぶ
+      - 完了順ではない
   - `code` 1 体 → `{"kind":"committed","ref":...}` が返る (happy)
     - **agent がその ref を取り込むか捨てるかを言う**
     - `Notes` に書く
   - `research`（payload `"PAYLOAD"` + task `"TASK"`）→ 子の返答がその 2 つを引用する (happy)
-  - 読み合わせ → `types.json` の tools / environment / limits / role と子の起動引数を突き合わせる (happy)
+  - 読み合わせ → `types.json` の設定を子の起動引数と突き合わせる (happy)
     - tools は `--tools`
     - limits は `types.json` の値そのもの
     - role は `--append-system-prompt`
@@ -57,11 +65,13 @@ Acceptance:
 
 ### Findings
 
-- **type ごとの policy と引数の読み合わせ**（`types.json` / `spec.ts` の `buildPiArgs`）
+- **type ごとの policy と引数の読み合わせ**
+  - 出どころは `types.json` と `spec.ts` の `buildPiArgs`
   - tools は `--tools`（カンマ区切りの一覧）
   - environment は実行場所（`tree` か一時 worktree）
   - limits は `types.json` の値そのもの（子の `output` 上限と turns）
-  - **role は `--append-system-prompt`**（追記なので既定のツール説明を壊さない）
+  - **role は `--append-system-prompt`**
+    - 追記なので既定のツール説明を壊さない
   - 他は次のとおり
     - `--mode json -p --no-session`
     - `--model <1 番目>`
@@ -75,10 +85,13 @@ Acceptance:
   - **入力順**
   - 1 体目の返答は「先行文書は存在しません…文書は 1 つだけ」
   - 2 体目の返答は `# PLAN 003` を引用した
-  - **入力ごとに 1 体**で、各子は自分の payload 1 枚とタスクを受け取っている
-  - 両方とも payload の先頭行を正しく引用した（payload がプロンプトに入っている証拠）
-- **`code` 1 体** → `PROBE.md` を作り、`ref: consult/code-20260924-174013-0` が返った
-  - `92fa8a5`（1 file changed）
+  - **入力ごとに 1 体**
+    - 各子は自分の payload 1 枚とタスクを受け取っている
+  - 両方とも payload の先頭行を正しく引用した
+    - payload がプロンプトに入っている証拠
+- **`code` 1 体** → `PROBE.md` を作った
+  - `ref: consult/code-20260924-174013-0` が返った
+  - `92fa8a5`
   - **取り込まない**と決めた
   - `ref_cleanup` の `list` と `delete` で消した
   - 親のツリーは 1 度も触られていない
