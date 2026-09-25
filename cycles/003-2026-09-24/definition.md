@@ -59,7 +59,7 @@ Changes: update **owner の判断の境界と、触らないものを足した**
   - チケットは `Commit:` のハッシュで閉じる
   - `Notes` に `Findings` と `Unplanned` が書かれている
     - その step の中の穴は直す
-    - 外の穴は次の 1 枚に渡す
+    - 次の 1 枚が受ける穴は次の 1 枚に渡す
   - 実演のあと、リポジトリに残っているのは自分で消せるものだけ
 
 ### 2. ref-cleanup
@@ -247,7 +247,7 @@ Changes: update
   - 文書とコードのズレを 1 つ捕まえた
     - `consult` の README は「payload はプロンプトの先頭」と書いていたが、実装は stdin に流していた（08）
   - オーナーの指摘が、skill の本文に入った
-    - `work`: 誰が実装するか（既定は子、例外は親）、`<unit-id>.check` は親、work の終わりの線、`Notes` は実装した者が書く
+    - `work`: 誰が実装するか（既定は子、例外は親）、`<unit-id>.check` は親、work のどこで終わりとするか、`Notes` は実装した者が書く
     - `definition`: `Remarks` と凍結の表、指摘の振り分け（枠 / 単位 / 段の手順 / サイクルの規則）
 - Bad:
   - 同じ形の失敗を、また自分でやった
@@ -272,7 +272,7 @@ Changes: update
   - `10-input-guard`: 置き場所はチケットの `run.ts` ではなく `index.ts` にした（`runForInputs` は結果を組む係で、入力の検証は呼び出し側）
   - `10-input-guard`: 結果の形はチケットの `{ok: false, reason}` ではなく `{ok: false, error}`（`InputOutcome`）
   - `10-input-guard`: 拡張は起動時に読まれるので、親のコードを直した実演は毎回 `/reload` が要る（子に渡すファイルなら要らない）
-  - `11-work-skill`: 探り用チケットはコミットしないと子から見えない（子は `HEAD` の写しで働く）ので、履歴に残る（`da4cfc4` 追加 / `bc59819` 削除）
+  - `11-work-skill`: 試し用チケットはコミットしないと子から見えない（子は `HEAD` の写しで働く）ので、履歴に残る（`da4cfc4` 追加 / `bc59819` 削除）
   - `11-work-skill`: `close` skill（サイクル全体の統合・レビュー・振り分け・`Retro`）が無く、サイクル全体の判定がどの skill のものでもない → 004 で決める
   - `11-work-skill`: 実装を第二の目で見るレビューが、skill にも枠にも無い → 004
   - `12-definition-skill`: `format.md` に節数の記述が無く、「7 節 → 8 節」に直す対象が無かった（テンプレートと空節の規則を直した）

@@ -7,7 +7,7 @@ Acceptance:
 - チケットは `Commit:` のハッシュで閉じる
 - `Notes` に `Findings` と `Unplanned` が書かれている
   - その step の中の穴は直す
-  - 外の穴は次の 1 枚に渡す
+  - 次の 1 枚が受ける穴は次の 1 枚に渡す
 - 実演のあと、リポジトリに残っているのは自分で消せるものだけ
 - unit の diff が `review` の子に当たる
 - findings が残っている
@@ -67,9 +67,9 @@ Acceptance:
 - **`review` の子は `bash` を持たない** — `read` / `ls` / `find` / `grep` / `web_search` だけなので `git diff` を子に走らせられない。Step 8 は diff をリポジトリの外に書き出し、`consult` の `input` として渡し、チケットは子が名前で読む（決めた）
 - **`types.json` は git 管理外** — 実物はあるが commit されないので、HEAD から作る子の worktree には入らない。子に diff を走らせられない結論は変わらない（次へ回す）
 - **レビューの置き場** — `Verify`（Step 7）の後・`Commit:`（Step 9）の前。入れるため Step 8 以降を 1 つ繰り下げ、`The failures the text answers` の `Step 9` を `Step 10` に直した。ツリーが変わったラウンドは Step 7 に戻ると本文に足した（決めた）
-- **実演はこの step 自身の流れが兼ねる** — 子が `tickets` と `work` を読み、親が diff を `review` の子にかけた（1 周目 1 / 2 周目 2 / 3 周目 0 blocking）。findings の処遇はここに並べた。別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形だから（決めた）
+- **実演はこの step 自身の流れが兼ねる** — 子が `tickets` と `work` を読み、親が diff を `review` の子にかけた（1 周目 1 / 2 周目 2 / 3 周目 0 blocking）。findings の処遇はここに並べた。別の試し用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形だから（決めた）
 - **`Then` と `Acceptance`** — 本文のチェックは `Then` を `Acceptance` と言い換える（写しなので同じもの）。`Acceptance`「findings が残っている」は「残っていない」の意で、合意済みなのでチケットは直さずここに書く（決めた）
-- **外の穴: README の `work` の要約** — `README.md` と `README.ja.md:48` の `work` の行に `the review` が無い。本文の `description` には入った。step 9 の「各スキルの役割を `description` と突き合わせる」が受ける（次へ回す）
+- **次の 1 枚が受ける穴: README の `work` の要約** — `README.md` と `README.ja.md:48` の `work` の行に `the review` が無い。本文の `description` には入った。step 9 の「各スキルの役割を `description` と突き合わせる」が受ける（次へ回す）
 
 ### Unplanned
 

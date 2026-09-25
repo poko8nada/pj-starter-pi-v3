@@ -91,8 +91,8 @@ Acceptance:
 
 - **実演は親が別の子（`consult`）で回した** — `trial` の子に練習用の 1 枚（`/tmp/stack-demo/definition.md`）から 9 step のプランを書かせた（`/tmp/plan-demo-2/plan.md`）。`Structure` は入れ子の木、`Layers` は「層は上を知らない」、`Seam` は `types.json`、形の問いの答えは「`close/` が入っても `.pi/skills/` はまだ 1 つのことを表す」（`Refactor: なし`）。練習の 1 枚に構造の step が無いので「構造の step は形で検証」だけは出ていない（規則は `format.md` にある）（決めた）
 - **実演で見ていないこと** — 子が承認までに触ったのがプランのファイルだけか（`git status`）は記録が無い（未解決）
-- **004 のプランとチケットはこの規則より前に書かれている** — `Depends` は `plan` を直す step 2 を待っておらず、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く。このズレは 004 の外の穴なので次の 1 枚が受ける（次へ回す）
-- **親の読み（Step 8）** — `git diff` を読み、`work` skill に残っていた古い但し書きを直した（「plan は順序を表さない」→「plan の step の順序が運ぶ」）。step の外の穴なので別コミット（`2ea0740`）（決めた）
+- **004 のプランとチケットはこの規則より前に書かれている** — `Depends` は `plan` を直す step 2 を待っておらず、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く。このズレは 004 の次の 1 枚が受ける穴なので次の 1 枚が受ける（次へ回す）
+- **親の読み（Step 8）** — `git diff` を読み、`work` skill に残っていた古い但し書きを直した（「plan は順序を表さない」→「plan の step の順序が運ぶ」）。step の次の 1 枚が受ける穴なので別コミット（`2ea0740`）（決めた）
 
 ### Unplanned
 
