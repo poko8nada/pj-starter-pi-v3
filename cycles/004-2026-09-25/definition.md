@@ -265,10 +265,14 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
       - 例外 2 本は記録
     - `EXTENSION_DIR` は道具が自分の位置から解決する
   - `close` skill が生まれ、**このサイクルの閉じで実際に使って動いた**
-    - 単位をまたぐ通し 1 本（6 段を玩具で通した子の報告）
-    - `review` の子（blocking 0）
-    - 振り分け
-    - `Retro`
+    - 単位をまたぐ通し 1 本
+      - 6 段を玩具で通した子の報告
+    - `review` の子
+      - blocking 0
+    - 穴の振り分け
+      - `Goal` を壊すものはそのサイクルで直す
+      - それ以外は次へ
+    - `Retro` を書いた
   - 実演の題材を小さくする教訓が効いた
     - 003 の 1 枚 82 行で出力上限に当たって死ぬ → 玩具 5 行で通る
   - README、`AGENTS.md`、6 skill が実物と一致
@@ -285,7 +289,8 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
     - 閉じる行為自体の行き先が無い
     - 残置物と製品のデータの衝突
   - `review` の `turns` 20 では足りず、チケット段の全体レビューが報告の前に止まった
-    - → 40、出力上限も 60,000 に
+    - `turns` を 40 に上げた
+    - 出力上限を 60,000 に上げた
   - キャンセルしたのに、子の残した編集が ref で返った（README は「何も残らない」と書いている）
   - 半端: 004 の 1 枚に `## Carry over` が無い（凍結時は 8 節だった）
     - 003 の持ち越しの会計は次の 1 枚が持つ
@@ -319,7 +324,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
       - 3 ラウンド、1 周目 1 blocking、2 周目 2 blocking、3 周目 0
     - findings の処遇をここに並べた
     - 実演を別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形をしているため
-  - （親が追記）外の穴: `README.md` と `README.ja.md:48` の `work` の行の要約に `the review` が無い
+  - （親が追記）外の穴: `README.md` と `README.ja.md` の `work` の行の要約に `the review` が無い
     - 本文の `description` には入った
     - step 9 の「各スキルの役割を `description` と突き合わせる」が受ける
   - 実演（`Verify`）は親が別の子（`consult`）で回す担当
@@ -431,7 +436,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
     - 004 の plan step 6 は `definition` の Step 10 を触っておらず、step 6 のチケットはまだ閉じていない
     - どちらが閉じるのかは決まっていない
     - この step では直さず（`Todo` の外）、次の 1 枚が拾う
-  - 本文に skill 名は無い（`grep -nE '`(definition|stack|plan|tickets|work|close)`' .pi/skills/close/SKILL.md` が 0 件）
+  - 本文に skill 名は無い
     - `description` は入口を名乗る（`Use when every ticket of a cycle is closed.`）
   - 観点（null、空、境界、不正、権限、2 回目、並行）→ この step は skill 本文の新規作成で、作るものが無い
     - ケース無し（チケットの `Todo` のとおり）
@@ -442,7 +447,8 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
   - 重複検査（`Verify` の読み）
     - `.pi/skills/` の 6 skill 本文と `references/format.md` 3 本を読んだ
     - `## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い
-    - 最も近いのは 1 組: 10 条の前半（検査は環境・置き場を継承せず自分で決める）と `.pi/skills/plan/SKILL.md:40` と `.pi/skills/plan/references/format.md:63`（`Tests` に、検査が自分で決める置き場を書く）
+    - 最も近いのは 1 組: 10 条の前半（検査は環境・置き場を継承せず自分で決める）と `.pi/skills/plan/SKILL.md` の `Tests` と `.pi/skills/plan/references/format.md` の `Steps`
+      - どちらも `Tests` に、検査が自分で決める置き場を書く
       - 前者は検査の振る舞い、後者は plan の `Tests` 欄に書くことの要求で、主語も行為も違う
       - 重複とは読まなかったが、どちらかを動かすのは criteria の話なので親 / owner が決める
     - `Remarks` は 2 つを同時に足したと書いている
@@ -456,20 +462,20 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
     - `.pi/skills/`（7 skill）
     - `.pi/extensions/quality-gate/`
     - `lefthook.yaml`
-  - `AGENTS.md` はチケットの案と 1 バイトも違わない（案を切り出して `diff` 一致）
+  - `AGENTS.md` はチケットの案と 1 バイトも違わない
     - 変えたファイルは `AGENTS.md` だけ（`git status`）
   - 節の数: `format.md` の実物は 9（`## Carry over` を含む）
     - README の節の列挙（英日）を 9 に合わせた
     - チケットは「8 のままか 9 かは step 6 の決定で決まる」と言っていたが、step 6 で 9 に決まっている（`06-definition-skill` の `Notes`、`Remarks`）
-  - 拡張の一覧: `ls .pi/extensions/` は 4 つ（`consult`、`quality-gate`、`ref-cleanup`、`sound-notify`）
+  - 拡張の一覧: 実物は 4 つ（`consult`、`quality-gate`、`ref-cleanup`、`sound-notify`）
     - README の「拡張 / Extensions」を実物の 4 つに合わせた
       - `quality-gate` は Gates の行にも名前がある
     - `ref-cleanup` の説明は「`consult` が残した ref を一覧し、1 つ消す」
       - `index.ts` の `description` と一致
       - 消せるのは `consult/` の ref だけ
-  - 検査の数: `grep -c "phase: 'verify'" .pi/extensions/quality-gate/checks.ts` = 2（lint、typecheck）
+  - 検査の数: 実物は 2 つ（`lint`、`typecheck`）
     - README の「`lint` と `typecheck`」と一致、変更なし
-  - 各スキルの役割: `grep -h '^description:' .pi/skills/*/SKILL.md` の 6 つとサイクルの表を突き合わせて一致
+  - 各スキルの役割: `description` 6 件とサイクルの表が一致
     - `close` の行を足した
     - 01 の `Notes` の外の穴「`work` の行に `the review` が無い」を受けて、`work` の行にレビューを足した
   - スキル数の記述: 「5 つ / five skills」→「6 つ / six skills」にした
@@ -486,18 +492,18 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
     - この子は子（`consult`）を起こさない
   - （親が追記）**実演の数え上げ**（親が確認）
     - `format.md` の `## ` = 9 → README の列挙と一致
-    - `ls .pi/skills/` の 6 つ ↔ README の表（`description` 6 件）で一致
-    - `ls .pi/extensions/` の 4 つ ↔ README の拡張の一覧で一致
+    - `description` 6 件 ↔ README の表で一致
+    - 実物の 4 つ ↔ README の拡張の一覧で一致
     - `phase: 'verify'` = 2 → README の検査の数と一致
     - `work` の行に「レビュー」が入り、`close` の行が増えた
   - （親が追記）**親の読み（Step 8）**: 子の diff は `README.md`、`README.ja.md`、このチケットの `Notes`
     - 英語と日本語が同じ内容で、実物（6 skill、4 拡張、9 節、検査 2）と一致
     - 直すところは無かった
-  - （親が追記）子の観察: README 2 枚は `quality-gate` の lint / typecheck の対象外（マークダウン）
+  - （親が追記）子の観察: README 2 枚はマークダウンなので `quality-gate` の対象外
     - この実演の数え上げだけが実際の gate
     - 次の 1 枚が受ける
     - （close の Step 3 の `review` の子の findings。blocking 0 件、行は子の報告のとおり）
-      - `work` のレビュー子と 3 周が木に無い（`definition.md:84,86` の `Then` に対して木は親が読む形）
+      - `work` のレビュー子と 3 周が木に無い（この 1 枚の `3. work-skill` の `Then` に対して木は親が読む形）
         - `Remarks` で記録済み
         - `Carry over` に 1 行要る
       - 閉じる段が 2 つの skill にある（`definition` の Step 10、`close` の Step 5）
@@ -506,18 +512,20 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
         - `consult` の README は「子は殺され、worktree は消える」、実物は ref を返した
         - `work` の失敗の一覧にもキャンセルが無い
       - 004 の 1 枚に `## Carry over` 節が無く、003 の持ち越しのうち少なくとも 3 行が 004 のどこにも現れない
-        - `003:201` の `$VAR` の fail-closed は偶然
-        - `003:202` の `read` のキー名が未確認
-        - `003:261` の `review` の句が 4 skill にある
+        - `003` の `Carry over` の `04-secret-guard.rules` の `$VAR` の fail-closed は偶然
+        - `003` の `Carry over` の `04-secret-guard.rules` の `read` のキー名が未確認
+        - `003` の `Carry over` の `14-plan-skill` の `review` の句が 4 skill にある
       - 逆向きの import の辺が 1 本（`child/spec.test.ts` → `../tool/consult.ts` の上向き）
         - 同層 1 本（`tool/consult.ts` → `./render.ts`）
-      - README（マークダウン）はどの検査も通らない（`quality-gate` は lint / typecheck の 2 つ）
+      - README（マークダウン）はどの検査も通らない
+        - `quality-gate` は lint / typecheck の 2 つ
       - `types.json` が worktree に無い制約はどこにも書かれていない（README は「Uncommitted changes are invisible」まで）
-      - `git-env.ts` は `consult/` 直下にあり、unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類
+      - `git-env.ts` は `consult/` 直下にある
+        - unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類
       - チケットの記録と木の小さな食い違い 3 点
-        - `01:41` の「review と書いてある」は木では直済み
-        - `03:43` と `05:20` の turns の言い方
-        - `04:11` の長さ比較が `spec.test.ts:96` に `'/child-guard.ts'.length` のまま
+        - `01-work-skill` の `Unplanned` の「review と書いてある」は木では直済み
+        - `01-work-skill` の `Unplanned` と `05-consult.check` の `Findings` の turns の言い方
+        - `04-consult.folders` の `Todo` の長さ比較が `spec.test.ts` に `'/child-guard.ts'.length` のまま
       - （close の Step 4。このターンで踏んだ）実演の題材を `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint 対象になる（玩具の `notes.mjs` の `forEach` が `unicorn(no-array-for-each)` に当たった）
         - 実演の題材も、そのリポジトリの検査を通る形で書く
       - 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒に ref にコミットした
