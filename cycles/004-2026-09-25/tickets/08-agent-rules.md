@@ -103,7 +103,7 @@ Acceptance:
 
 ### Findings
 
-- 重複検査（`Verify` の読み）
+- **重複検査** — `Verify` の読みで確かめた（決めた）
   - `.pi/skills/` の 6 skill 本文と `references/format.md` 3 本を読んだ
   - `## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い
   - 最も近いのは 1 組
@@ -116,14 +116,14 @@ Acceptance:
   - 重複とは読まなかった
     - どちらかを動かすのは criteria の話なので、親と owner が決める
       - `Remarks` は 2 つを同時に足したと書いている
-- 5 条に近いもの
+- **5 条に近いもの** — `close` の `Good` と `tickets/format.md`（決めた）
   - `close` の `Good` — 「読んだ値の無い主張は 1 行ではない」
   - `tickets/references/format.md` — 「`Notes` は見て確かめたことから書く」
   - いずれも欄に閉じた当てはめで、規則の言い直しではないと読んだ
-- 4 条に近いもの
+- **4 条に近いもの** — 各 skill の「owner に聞く」段（決めた）
   - 各 skill の「owner に聞く」段
   - いずれも段に閉じた当てはめで、規則の言い直しではないと読んだ
-- `Verify` の実演のうち「clone 直後のつもりで読む」は fresh な目ではない
+- **fresh eyes は親の担当** — `Verify` の実演のうち「clone 直後のつもりで読む」は fresh な目ではない（決めた）
   - この子は既に全部読んだ
   - `consult` の子を起こせないので、fresh eyes の実演は親の担当
 
