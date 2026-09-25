@@ -115,7 +115,7 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 - `Good` says what the cycle made happen, with the value it was read from. `Bad` says what went wrong, including what was left half-done. **Both are heading 3**, and one item is one line: `- **<主題>** — <中身>`. The subject is what a reader scans for, so a line without one is a line nobody finds
 - **A line has to earn its place.** Ask what the reader loses if the line is gone. If the answer is nothing — the code, the commit, or another line already says it — do not write it. A heading whose children are only more names is the same failure: write the content, or drop the line
-- `Carry over` is not a second `Bad`. **It is grouped by ticket**, and it holds only the items the tickets marked `次へ回す` or `未解決` — the holes the next sheet has to take. A ticket that left nothing gets no heading here
+- `Carry over` is not a second `Bad`. **It is grouped by ticket**, and it holds only the items the tickets marked `次へ回す` or `未解決` — the holes the next sheet has to take. A ticket that left nothing gets no heading here. A hole the closing stage itself found has no ticket: it gets its own group, named for the stage
 
 ## Writing
 

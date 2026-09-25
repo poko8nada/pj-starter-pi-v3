@@ -286,3 +286,10 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
   - **閉じが 2 箇所にある** — `definition` の Step 10 と `close` の Step 5 のどちらが閉じるかは決まっていない（次へ回す）
 - **09-readme**
   - **README は gate の外** — README 2 枚は `quality-gate` の lint と typecheck の対象外で、この実演の数え上げだけが実際の gate（次へ回す）
+- **閉じの段（サイクル全体）**
+  - **`work` の `Then` と木のズレ** — `Then` は「unit の diff を `review` の子に当てる」だが、木は親が `git diff` を読む形（`Remarks` に記録済み）（次へ回す）
+  - **子の残置物が ref に混ざる** — 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒にコミットした。親が手で消すことになり、1 つ見落とした（次へ回す）
+  - **`git-env.ts` の位置** — `consult/` 直下にあり、unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類（次へ回す）
+  - **実演の題材も lint の対象** — `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint に当たる（次へ回す）
+  - **003 の持ち越しが行き先不明** — 少なくとも 3 行（`$VAR` の fail-closed は偶然、`read` のキー名が未確認、`review` の句が 4 skill にある）が 004 のどこにも現れない（未解決）
+  - **`/tmp` の玩具** — `close-toy`、`definition-toy`、`six-skills-toy`、`plan-demo-2`、`stack-demo` は、記録が場所を指しているので閉じるときに消す（未解決）
