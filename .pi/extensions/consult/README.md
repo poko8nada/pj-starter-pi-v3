@@ -10,12 +10,14 @@ The caller picks a type, and the type holds the whole policy: model candidates, 
 
 | Type       | Tools                                           | Environment | Turns | Output tokens |
 | ---------- | ----------------------------------------------- | ----------- | ----- | ------------- |
-| `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 40,000        |
-| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 60,000        |
-| `trial`    | plus writing                                    | a worktree  | 50    | 50,000        |
-| `code`     | plus writing                                    | a worktree  | 60    | 60,000        |
+| `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 60,000        |
+| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 120,000       |
+| `trial`    | plus writing                                    | a worktree  | 50    | 120,000       |
+| `code`     | plus writing                                    | a worktree  | 60    | 120,000       |
 
 The limits are enforced while the child runs, and neither the caller nor the child can raise them. Normal use finishes far below them.
+
+**A type's output is sized for one document's work** — reading it, judging it, and editing its lines. That is the unit a child gets: one document. A child that rewrites a whole document spends its budget emitting lines nobody asked it to change, and on a long document it runs out before it writes anything; the fix is to edit the lines, not to raise the number.
 
 ## Model candidates
 
