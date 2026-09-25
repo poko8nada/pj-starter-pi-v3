@@ -11,7 +11,13 @@
 ### step 1: consult.types
 
 - What: type は `research`、`review`、`trial`、`code`
-  - 設定は配列で、各 type が モデル（候補の配列）・ツール・環境・上限・役割 を持つ
+  - 設定は配列
+  - 各 type は次の項目を持つ
+    - モデル（候補の配列）
+    - ツール
+    - 環境
+    - 上限
+    - 役割
   - 呼び出し側が渡すのは type と task と入力だけ
   - 設定は呼び出しごとに読む
   - setup の誤りは投げる
