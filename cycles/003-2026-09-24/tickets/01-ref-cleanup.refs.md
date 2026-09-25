@@ -30,11 +30,18 @@ Acceptance:
     - `listConsultRefs`: git が `"abc1234567890123456789012345678901234567 refs/heads/consult/foo\n"` と `"def456 refs/heads/main\n"` を返す → `[{hash: "abc1234567890123456789012345678901234567", name: "consult/foo"}]`（`main` は落ちる） (happy)
     - `listConsultRefs`: git が `""` を返す → `[]` (empty)
     - `listConsultRefs`: git が終了コード 1 で失敗 → 投げる (error)
-    - null / undefined → 型で防ぐ（git の出力も ref の名前も常に文字列なので、実行時には来ない）— ケース無し
-    - `"consult/"` だけの ref → git が作れない（末尾が `/` の ref は無い）ので、実行時には来ない — ケース無し
-    - 権限 → 判定を持たない（git が拒めば「git が失敗」で拾う）— ケース無し
-    - 2 回目の呼び出し → 状態を持たない純関数なので、同じ入力なら同じ結果 — ケース無し
-    - 並行 → 同上（共有の状態が無い）— ケース無し
+    - null → 型で防ぐ — ケース無し
+    - undefined → 型で防ぐ — ケース無し
+      - git の出力も ref の名前も常に文字列なので、実行時には来ない
+    - `"consult/"` だけの ref → 実行時には来ない — ケース無し
+      - git が作れない
+      - 末尾が `/` の ref は無い
+    - 権限 → 判定を持たない — ケース無し
+      - git が拒めば「git が失敗」で拾う
+    - 2 回目の呼び出し → 同じ入力なら同じ結果 — ケース無し
+      - 状態を持たない純関数だから
+    - 並行 → 同上 — ケース無し
+      - 共有の状態が無い
 
 ## Verify
 
@@ -45,11 +52,9 @@ Acceptance:
 
 ### Findings
 
-- 実演（`Verify`）は緑
 - **最初の実行は赤だった**
   - `listConsultRefs` が git の絞り込みに任せていて、`main` を落としていなかった
   - チケットは「`main` は落ちる」と決めていた
-  - コード側で `refs/heads/consult/` を filter する形に直した
   - git 側のパターンは効率のため残した
 
 ### Unplanned

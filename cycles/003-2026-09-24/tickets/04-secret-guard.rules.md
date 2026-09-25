@@ -2,14 +2,19 @@
 
 Acceptance:
 
-- 対象は、名前が秘密を表すもの（`.env` / `.envrc` / `*.pem` / `*.key`）
+- 対象は、名前が秘密を表すもの
+  - 名前が `.env` のもの
+  - 名前が `.envrc` のもの
+  - 名前が `*.pem` のもの
+  - 名前が `*.key` のもの
 - 子の `read` は拒否され、子は「読めない」と報告する
 - 親の `.env` の中身は変わらない
 
 ## Todo
 
 - なぜ自前で持つのかを `Notes` に書く
-  - ホストのグローバル設定（`pi-permission-system`）は**この 1 台では**正しく働いている（3 型で実測）
+  - ホストのグローバル設定（`pi-permission-system`）は**この 1 台では**正しく働いている
+    - 3 型で実測
   - だが clone には無い
   - 規則は字面ベースで、組み立てたパスはすり抜けうる
     - 2026-09-24 の実測: `cat .env` は止まる
@@ -18,7 +23,10 @@ Acceptance:
   - `-e` で子にだけ読ませる
   - pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない
   - `SECRET_NAMES` を書く
-    - 名前は `.env` / `.envrc` / `*.pem` / `*.key`
+    - 名前は `.env`
+    - 名前は `.envrc`
+    - 名前は `*.pem` に一致
+    - 名前は `*.key` に一致
     - 名前で決める。git が無視する全部ではない
   - `isSecretPath` を書く
     - **解決後の絶対パス**で判定する
@@ -26,7 +34,9 @@ Acceptance:
   - `judgeToolCall` を書く
     - 道具名と引数から、その呼び出しを通すか拒むかを決める
     - 純関数
-    - `read` / `grep` / `bash` のパスを解決して `isSecretPath` に渡す
+    - `read` のパスを解決して `isSecretPath` に渡す
+    - `grep` のパスを解決して `isSecretPath` に渡す
+    - `bash` のパスを解決して `isSecretPath` に渡す
   - 拡張本体を書く
     - `tool_call` で `judgeToolCall` を呼ぶ
     - 拒むなら**拒否の文に「読めない」を含めて**返す
@@ -55,13 +65,18 @@ Acceptance:
   - `judgeToolCall`: `ls` + `/repo` → 通す（秘密を指していない） (happy)
   - `judgeToolCall`: 引数にパスが無い道具（`web_search` など）→ 通す (happy)
   - `judgeToolCall`: `read` + `""` → 通す（空は `isSecretPath` が false） (happy)
-  - null / undefined → 型で防ぐ — ケース無し
+  - null → 型で防ぐ — ケース無し
+  - undefined → 型で防ぐ — ケース無し
   - 権限 → 判定だけを持つ — ケース無し
-  - 2 回目 / 並行 → 状態を持たない純関数 — ケース無し
+  - 2 回目 → 状態を持たない純関数 — ケース無し
+  - 並行 → 状態を持たない純関数 — ケース無し
 
 ## Verify
 
-- `judgeToolCall` のテストが、拒む側と通す側、`deny` の文を全部覆う
+- `judgeToolCall` のテストが全部覆う
+  - 拒む側 — `{deny: "読めない"}` が返る
+  - 通す側 — `{deny: undefined}` が返る
+  - `deny` の文 — 「読めない」を含む
   - 拡張本体は `judgeToolCall` の結果を返すだけで、**別にテストできる中身が無い**
     - pi の登録は実演で見る（05 と 06）
 
@@ -76,7 +91,6 @@ Acceptance:
     - 本体は自分で握って fail-closed で止める
 - 判定は `realpathSync` を使う
   - **存在しないパスは `true`**（「読めないものを通さない」）
-  - テストは一時ディレクトリに本物のファイルと symlink を作って確かめた
 - 字面のすり抜け対策は「引用符と `\` を剥がす」形
   - `cat .e""nv` → `.env`
 - **シェルの展開を完全に真似ているわけではない**
@@ -84,7 +98,10 @@ Acceptance:
   - **これは偶然で、保証ではない**
   - 次の 1 枚への持ち越し
 - 道具によってパスのキー名が違う
-  - `path` / `file_path` / `filePath` / `file` を候補として見ている
+  - `path` を候補として見ている
+  - `file_path` を候補として見ている
+  - `filePath` を候補として見ている
+  - `file` を候補として見ている
   - pi の `read` の実際のキー名は未確認
 
 ### Unplanned
