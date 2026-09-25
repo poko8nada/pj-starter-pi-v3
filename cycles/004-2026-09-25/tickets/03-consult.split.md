@@ -92,22 +92,10 @@ Acceptance:
 
 ### Findings
 
-- プランの step 3 の `Files` に `spec.test.ts` が無い
-  - `PARAMETERS` が `index.ts` を出るため、import 先を直す必要がある
-  - プランは凍結済みなので、ここに書く
-- **子の worktree には `types.json` が無い**
-  - git 管理外のファイルは HEAD から作る worktree に入らない
-  - この worktree にあるのは `types.example.json` だけ
-  - 実演の「子が起動して返る」は `types.json` が読めずに落ちる
-    - `EXTENSION_DIR` の決め方に関係なく
-  - 親の実ツリーでは読める
-  - この制約はチケットにも skill にも書かれていない
-- `EXTENSION_DIR` は道具に自分の位置から解決させた
-  - 定数を `index.ts` に残して渡すと、道具を工場にする形が要る
-  - 上向きの辺を作らないことを優先した
-- （親が追記）**実演**: `consult` を 1 回呼ぶと子が起動し、`ok` を返した
-  - `loadTypes(EXTENSION_DIR)` が `types.json` を読めている証拠
-    - 読めなければ子を起こす前に落ちる
+- **プランの step 3 の `Files` に `spec.test.ts` が無い** — `PARAMETERS` が `index.ts` を出るため import 先を直す必要がある。プランは凍結済みなのでここに書く（決めた）
+- **子の worktree には `types.json` が無い** — git 管理外のファイルは HEAD から作る worktree に入らず、そこにあるのは `types.example.json` だけ。実演の「子が起動して返る」は `EXTENSION_DIR` の決め方に関係なく読めずに落ちる。親の実ツリーでは読める。この制約はチケットにも skill にも書かれていない（次へ回す）
+- **`EXTENSION_DIR` は道具に自分の位置から解決させた** — 定数を `index.ts` に残して渡すと道具を工場にする形が要る。上向きの辺を作らないことを優先した（決めた）
+- **実演** — `consult` を 1 回呼ぶと子が起動し `ok` を返した。`loadTypes(EXTENSION_DIR)` が `types.json` を読めている証拠（読めなければ子を起こす前に落ちる）（決めた）
 
 ### Unplanned
 
