@@ -161,6 +161,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 
 ## Remarks
 
+- チケットの合意: `definition` の 1 枚は **9 節**（`## Carry over` を足す。前の `Carry over` の各行を受けた場所を 1 行ずつ）→ 06 の `Acceptance` / `Todo` / `Verify` に反映。`AGENTS.md` は **9 条**の案で進める → 08
 - 反省点は次のサイクルに生かす → 既にある（`Retro` の `Carry over` がそれを運ぶ。004 の実装中に見つけた反省も、その場でチケットの `Findings` に書く）
 
 ## Retro
