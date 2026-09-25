@@ -24,10 +24,17 @@ Acceptance: 子に任せた場合、そのコミットは ref で返り、agent 
 
 ### Findings
 
-なし
+- `review` の子は `bash` を持たない（`.pi/extensions/consult/README.md` の表と `types.example.json` の tools が `read` / `ls` / `find` / `grep` / `web_search` のみ）。だから子に `git diff` を走らせて diff を見せることはできない。Step 8 は「diff をリポジトリの外に書き出し、`consult` の `input` として渡す。チケットは子が名前で読む」形にした
+  - 実際の `types.json` はこのリポジトリに無い（README いわくアカウント依存で non-commit）。この判断は README と example の記載にもとづく
+- 置き場所は `Verify`（Step 7）の後・`Commit:`（Step 9）の前。あいだに入れるため Step 8 以降を 1 つ繰り下げ、`The failures the text answers` の `Step 9` を `Step 10` に直した
+- 実演（`Verify`）は親の担当で、この子は子（`consult`）を起こさない。よって「unit の diff が `review` に当たった記録が `Notes` にある / 3 周で止まる」は、まだ子の側では観察していない
+- 自分で走らせた検査: `pnpm exec oxfmt --check .pi/skills/work/SKILL.md` → All matched files use the correct format / `pnpm test:run` → 166 passed / `pnpm typecheck` → エラーなし / `pnpm lint` → エラーなし
 
 ### Unplanned
 
-なし
+- `Todo` に無かったが本文の整合のために足した: frontmatter の `description` に `the review`、`**Work ends when the tree holds it.**` の線に `the diff has been through the review`、`The failures the text answers` にレビュー失敗 2 行（子を起こせない / 3 周で clean にならない）、`How not to do this` に 1 行（未レビューの diff で閉じない / 3 周を超えない）。`AGENTS.md` の「散文とコードが食い違ったら同じターンで直す」に沿う
+- 「3 周で止め、残りは owner」と、レビュー子が見るもの（チケット + diff）は `tickets` の unit レビューと同じ形にした。`Todo` は「同じ形にする」とだけ言っていた
+- この step は skill 本文の修正なので、観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）にケースは無い。失敗の入力は Step 8 の本文と `Verify` の観察項目が持つ
+- `Commit:` は空のまま。ハッシュは子では作れない（`git commit` は承認が要る）
 
 Commit:
