@@ -2,12 +2,7 @@
 
 Acceptance:
 
-- 子は type ごとに決まった設定で走る
-  - モデル
-  - ツール
-  - 環境
-  - 上限
-  - 役割
+- 子は type ごとに決まったモデル・ツール・環境・上限・役割で走る
 - agent が選べるのは type だけ
 
 ## Todo
@@ -17,26 +12,15 @@ Acceptance:
   - `resolveType` を書く — 名前から type を引く
   - 設定の検証を書く — 壊れていれば投げる
 - `types.example.json`
-  - 4 つの type の形を書く
-    - モデル候補
-    - ツール
-    - 環境
-    - 上限
-    - 役割
+  - 4 つの type の形を書く — モデル候補・ツール・環境・上限・役割
 - `.gitignore`
   - `types.json` を足す — 実のモデル名は git に置かない
 - `spec.ts`
   - `buildPiArgs` を直す — type の policy から組み立てる
-  - `ConsultOptions` を直す — 上書きを消す
-    - `role`
-    - `tools`
-    - `worktree`
+  - `ConsultOptions` を直す — 上書き（`role`・`tools`・`worktree`）を消す
   - 隔離の判断を直す — ツールからではなく `environment` から決める
 - `index.ts`
-  - `PARAMETERS` を直す — 渡すのは次だけ
-    - `type`
-    - `task`
-    - `input`
+  - `PARAMETERS` を直す — 渡すのは `type`・`task`・`input` だけ
 - `types.test.ts`
   - 正しい設定 → 4 つの type が引ける (happy)
   - 設定を読み直す → 次の呼び出しに効く (happy)
@@ -63,10 +47,7 @@ Acceptance:
   - `buildPiArgs` が役割を `--append-system-prompt` に入れる (happy)
   - `environment` が `worktree` → 隔離すると判断する (happy)
   - `environment` が `tree` → 隔離しないと判断する (happy)
-  - `PARAMETERS` の項目が次だけ (happy)
-    - `type`
-    - `task`
-    - `input`
+  - `PARAMETERS` の項目が `type`・`task`・`input` だけ (happy)
 
 ## Verify
 
@@ -83,12 +64,10 @@ Acceptance:
   - 子は `bash` を使えないと報告した
 - 道具 `consult` としての呼び出しは、この走っているセッションが古いスキーマを読み込んでいるため実行できなかった
   - 拡張は起動時に読まれる
-- 子の pi は新しいスキーマを読むので、そちらからなら呼べる
+- 子の pi は新しいスキーマを読む
+- そちらからなら呼べる
 - `README.md` は step 5（`consult.readme`）で書き直す
-- それまで古いインターフェースの記述が残る
-  - `role`
-  - `tools`
-  - `worktree`
+- それまで古いインターフェース（`role`・`tools`・`worktree`）の記述が残る
 
 ### Unplanned
 
