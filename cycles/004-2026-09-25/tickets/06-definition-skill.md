@@ -25,9 +25,13 @@ Acceptance: `cycles/<NNN-DATE>/definition.md` が出て、9 節がある（`Stac
 ### Findings
 
 - **owner の指摘（合意時）で 9 節に決まった**（`## Carry over` を足す）。定義の `Then` は 8 節と言っているが、会計の置き場所がいまの 8 節に無いので、`Acceptance` を 9 節に改訂した（理由 = owner の指摘。1 枚の `Remarks` にも記録）。定義の 1 枚は凍結なので、`Then` 自体は触らない
+- （親が追記）**子はキャンセルされたが、`consult` は子の残した編集をコミットして ref `3c63945` を返した** — README には「キャンセルすると子は殺され、worktree は消える」と書いてあり、何も返らないはず。フローの穴（`work` skill の経路は成功 / 失敗 / タイムアウト / フック拒否の 4 つで、キャンセルが無い）
+- （親が追記）**親の読み（Step 8）**: 子の diff は 2 ファイル（`definition/SKILL.md` / `format.md`）。会計の節（Step 7）/ 9 節（Step 7 と Step 8 のチェックリスト）/ Step 10 の行き先 / `format.md` の型と空節の規則 — チケットの `Todo` を全部覆っていて、直すところは無かった
+- （親が追記）**実演**: 玩具の前の 1 枚（`/tmp/definition-toy/previous.md`。`## Carry over` 5 行）から `trial` の子に次の 1 枚を書かせた（`/tmp/definition-toy/next.md`）→ 9 節（`Remarks` と `Retro` だけ空）/ 前の 5 行に対して 5 行で全部に着地先がある / 次のスキルの名前は 0 件 / リポジトリと玩具は無傷（ハッシュ一致）
+- （親が追記）Note: 最初の実演の題材に 003 の 1 枚（82 行）を使い、子が出力上限 50,000 に当たって死んだ（out 51,278）。玩具の 5 行に変えて通った — **実演の題材は小さく**（親の題材選びの失敗）
 
 ### Unplanned
 
 なし
 
-Commit:
+Commit: 3c63945（子。実演と記録は親）
