@@ -89,6 +89,7 @@ Commit: <hash>
 
 - **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line. The one-line rule (`Do not wrap lines mid-sentence`) is there so a re-flow never touches a line you did not change, not so that a line holds everything
 - Do not chain facts with `/`. Do not nest parentheses. `→` is for a landing place only (`input → result` cases keep theirs)
+- A list of values is one fact, not two: `null / 空 / 境界` as a category's names, a list of tool names, the markers `add / update / drop`. Split a line only when it holds two **events**, and leave a value list alone
 - Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line
 - Do not use structures that grow sideways. Tables break with long text

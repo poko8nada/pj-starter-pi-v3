@@ -113,6 +113,7 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 - **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line
 - Do not chain facts with `/`. Do not nest parentheses. `→` is for the landing place of a line (`Remarks` and `Carry over` keep theirs)
+- A list of values is one fact, not two: a list of tool names, the names of a category's cases, the markers `add / update / drop`. Split a line only when it holds two **events**, and leave a value list alone
 - Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
 - `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
