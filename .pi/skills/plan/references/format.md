@@ -80,10 +80,8 @@ Section and field names are English. They are the type: the same in every plan, 
 
 ## Writing
 
-- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line
-- Do not chain facts with `/`. Do not nest parentheses. `→` is for a landing place only
-- A list of values is one fact, not two: the names of the layers, a list of tool names, the markers `add / update / drop`. Split a line only when it holds two **events**, and leave a value list alone
-- Do not write what can be derived from the code. Write decisions
-- Do not wrap lines mid-sentence. One paragraph is one line
-- Do not use structures that grow sideways. Tables break with long text
+- **One line carries one thing.** A line holding two events is split into a short line plus 2-space sub-lines under it. A sub-line must say something the line above does not: a sub-line that only repeats the stem means the line was a list, and a list stays on one line. A list of values is one thing — the names of the layers, a list of tool names, the markers `add / update / drop`
+- **Do not chain events with `/`, nested parentheses or `→`.** `→` is for a landing place. Swapping a separator for `、` is not a split; it is the same crammed line
+- **Do not write what the reader can look up.** Not the commands that were run, not that the checks were green, not what the code, the diff or the commit already shows
+- **Do not wrap a sentence across lines, and do not use structures that grow sideways.** One paragraph is one line. Tables break with long text
 - The plan is frozen when it is committed. What changes later is recorded in the tickets, not here

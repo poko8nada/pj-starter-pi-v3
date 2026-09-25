@@ -71,12 +71,11 @@ Commit: <hash>
 - Both feed the cycle's `Retro`, and `Retro`'s carry-over is read when the next sheet is written
 - `Notes` are written from what was seen and checked, not from what was claimed
 
-## 何を書くか
+## 何を書くか（`Findings` / `Unplanned`）
 
-- 書く: 次に読む人が動けること（穴 / 決めたこと / 食い違い / 驚いたこと）
-- 書かない: 走らせたコマンドと緑だったこと（実演の観察に 1 行「緑」で足りる）/ コードや差分から導けること / 見出しだけで中身の無い一覧
-- 3 つ問う: 居合わせなかった人が読んで次に何かできるか / コードや commit から導けるか（導けるなら書かない）/ 見出しだけで中身が無いか（無いなら中身を書くか、消す）
-- ここに書いた行は全部 `Carry over` に写り、次の 1 枚が会計する。**雑音を書くと、雑音が次のサイクルに残る**
+- Write what moves the next reader: a hole, a decision, a mismatch, a surprise. `Unplanned` is what was handled that the `Todo` did not name
+- **A line has to earn its place.** Ask what the reader loses if the line is gone. If the answer is nothing — the code, the commit, or another line already says it — do not write it. A heading whose children are only more names is the same failure: write the content, or drop the line
+- Everything written here is copied into the cycle's `Carry over`, so noise does not stay here: it goes into the next cycle
 
 ## Commit
 
@@ -87,10 +86,8 @@ Commit: <hash>
 
 ## Writing
 
-- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line. The one-line rule (`Do not wrap lines mid-sentence`) is there so a re-flow never touches a line you did not change, not so that a line holds everything
-- Do not chain facts with `/`. Do not nest parentheses. `→` is for a landing place only (`input → result` cases keep theirs)
-- A list of values is one fact, not two: `null / 空 / 境界` as a category's names, a list of tool names, the markers `add / update / drop`. Split a line only when it holds two **events**, and leave a value list alone
-- Do not write what can be derived from the code. Write decisions
-- Do not wrap lines mid-sentence. One paragraph is one line
-- Do not use structures that grow sideways. Tables break with long text
+- **One line carries one thing.** A line holding two events is split into a short line plus 2-space sub-lines under it. A sub-line must say something the line above does not: a sub-line that only repeats the stem means the line was a list, and a list stays on one line. A list of values is one thing — `null / 空 / 境界`, the names of tools, the markers `add / update / drop`
+- **Do not chain events with `/`, nested parentheses or `→`.** `→` is for a landing place, and `input → result` cases keep theirs. Swapping a separator for `、` is not a split; it is the same crammed line
+- **Do not write what the reader can look up.** Not the commands that were run, not that the checks were green (a `## Verify` observation is one line: `緑`), not what the code, the diff or the commit already shows
+- **Do not wrap a sentence across lines, and do not use structures that grow sideways.** One paragraph is one line. Tables break with long text
 - `Todo` and `Verify` are fixed once agreed. What actually happened goes in `Notes`

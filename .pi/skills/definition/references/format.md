@@ -105,19 +105,18 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 ## 何を書くか（`Good` / `Bad`）
 
-- 書く: 何がどうなったか（主張）+ それをどこから読んだか（値）。`Bad` には半端に終わったことも
-- 書かない: 見出しだけの一覧（「〜が着地した」+ 項目名の羅列）。読んだ値の無い主張は 1 行ではない
-- `Carry over` は `Bad` の言い換えではない。次の 1 枚が受ける穴を、チケットの行のまま写す
+- `Good` says what the cycle made happen, with the value it was read from. `Bad` says what went wrong, including what was left half-done
+- **A line has to earn its place.** Ask what the reader loses if the line is gone. If the answer is nothing — the code, the commit, or another line already says it — do not write it. A heading whose children are only more names is the same failure: write the content, or drop the line
+- `Carry over` is not a second `Bad`: it holds the holes the next sheet has to take, and nothing else
 
 ## Writing
 
-- **A line carrying two facts is split, not shortened.** Splitting is the fix: a crammed line becomes a short line plus 2-space sub-lines under it. The tell is a `/`-chain, a nested parenthesis or a third `→` — but swapping a separator for `、` is not the fix, it is the same crammed line
-- Do not chain facts with `/`. Do not nest parentheses. `→` is for the landing place of a line (`Remarks` and `Carry over` keep theirs)
-- A list of values is one fact, not two: a list of tool names, the names of a category's cases, the markers `add / update / drop`. Split a line only when it holds two **events**, and leave a value list alone
-- Do not write what can be derived from the code. Write decisions
-- Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
+- **One line carries one thing.** A line holding two events is split into a short line plus 2-space sub-lines under it. A sub-line must say something the line above does not: a sub-line that only repeats the stem means the line was a list, and a list stays on one line. A list of values is one thing — `null / 空 / 境界`, the names of tools, the markers `add / update / drop`
+- **Do not chain events with `/`, nested parentheses or `→`.** `→` is for a landing place, and `input → result` cases keep theirs. Swapping a separator for `、` is not a split; it is the same crammed line
+- **Do not write what the reader can look up.** Not the commands that were run, not that the checks were green (an observation is one line: `green`), not what the code, the diff or the commit already shows
+- **Do not wrap a sentence across lines, and do not use structures that grow sideways.** One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change. Tables break with long text
+- **`Carry over` copies holes, not noise.** Every hole a ticket left unresolved is copied as it was written, and noise is never copied — it is not written in the first place. A line numbers nothing: point by file and heading
 - `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
-- **`Carry over` is not shortened, and it is not just a list.** It holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written. Shortening it is how a hole gets lost, and the next sheet has to account for each line in its own `## Carry over`, one line per line, `<前の 1 行> → <受けた場所>`
 - **`Remarks` is a log, not a decision.** One line per remark, `<指摘> → <着地先>`, and the landing place is where it acts (the next sheet, a unit's ticket, a stage's skill, the document that holds the rule). It is written at any time and it is never frozen; a remark that lands nowhere is a hole when the cycle closes
 - Prefer whole sheets over diffs: repeating what did not change is allowed, and a `keep` marker says so
 - Lines that did not change are copied from the previous sheet exactly. A diff that shows a change where nothing changed is a lie
