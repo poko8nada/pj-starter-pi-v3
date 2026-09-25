@@ -21,6 +21,12 @@ Read `Acceptance`, `Todo` and `Verify` before anything else. `Acceptance` is wha
 
 The default is a child. For a child, use `type code`, and hand it the `Acceptance`, the `Todo`, and the `Notes` it has to fill in: a child does not need the machinery, and it does not see this conversation.
 
+What a child has to know about how its work lands, because it cannot commit:
+
+- the commit is made **after it stops**, and the repository's own hooks run on that commit — the tree it leaves has to pass them
+- everything left in the worktree goes into that commit, so it leaves only what belongs there (no scratch files)
+- `Commit:` stays empty: the hash exists only after that commit
+
 The exception is size. When the cycle's `What to build` holds three units or fewer **and** the cycle holds five tickets or fewer, the parent does the work itself: at that size, a round trip through a worktree and a ref costs more than the work.
 
 Two things stay with the parent whatever the size:
