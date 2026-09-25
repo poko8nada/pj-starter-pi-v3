@@ -18,7 +18,7 @@ Acceptance:
       - トリガーはここで成立させる
     - 案: `Use when a cycle starts or closes, or when a request may change the sheet's What, Goal or Non-goal. Writes the one-page definition for a product, grills the owner one question at a time until you share the same understanding, then freezes it.`
   - `When this runs`
-    - サイクルのフェーズ階の地図を 1 段落で書く
+    - サイクルのフェーズの地図を 1 段落で書く
   - `Step 1: the impulse`
     - 今回やりたいことを 1 文で受ける
   - `Step 2: read (facts)`
