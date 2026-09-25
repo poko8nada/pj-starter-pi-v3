@@ -88,39 +88,32 @@ Acceptance:
 
 ### Findings
 
-- プランの step 4 の `Files` に無いものが 2 つある
+- **プランの `Files` の抜け** — step 4 の `Files` に無いものが 2 つある（決めた）
   - `tool/render.ts`（`child/spec.ts` から引くので import が変わる）
   - 移す・改名するテスト 4 本
   - プランは凍結済みなので、ここに書く
-- プランの step 4 の `Tests` と `05` の実演 ③ が挙げる辺は 3 本
-  - `tool` → `run`
-  - `run` → `child`
-  - `child` → `policy`
-  - 実物にはもう 3 本ある
-    - `tool` → `child`
-    - `tool` → `policy`
-    - `run` → `policy`
+- **プランの辺の数** — step 4 の `Tests` と `05` の実演 ③ は辺を 3 本と書くが、実物にはもう 3 本ある（決めた）
+  - プラン: `tool` → `run` / `run` → `child` / `child` → `policy`
+  - 実物: `tool` → `child` / `tool` → `policy` / `run` → `policy`
   - このチケットの 6 本が正しく、プラン側は凍結なので直さない
-- （親が追記）**事故**: 子が step 4 をやり、`consult` がその作業をコミットするときにフックが落ちた
+- **事故: 子の作業が消えた** — 子が step 4 をやったが、その作業をコミットするフックが落ち、worktree ごと消えて何も残らなかった（決めた）
   - `run.test.ts` の実リポジトリのテストが、フックの `GIT_*` に負けて実リポジトリの config を書き換えた
   - 自分が壊した repo で失敗した
-  - ref が作られず worktree ごと消え、**子の作業は残っていない**
   - 原因は「検査が自分の置き場を自分で決める」
   - 対処は別コミットと 1 枚の `Remarks` に記録
-- （親が追記）**親がやり直した**（`work` skill の「子が ref を返さなかったとき」の経路）
-- （親が追記）**実演**: `consult` を 1 回呼んだ
+- **親のやり直し** — 子が ref を返さなかったので、親が `work` skill の「子が ref を返さなかったとき」の経路でやり直した（決めた）
+- **実演** — `consult` を 1 回呼んだ（決めた）
   - type: `review`
   - 入力: 無し
   - `.env` を読ませた
   - 子が起動して「読めない: `.env` は秘密として扱う（child-guard）」を返した
   - `types.json` が読めている（`EXTENSION_DIR` が新しい位置から `consult/` を指す）
   - `-e` が新しい `child/guard.ts` を指している
-- （親が追記）チケットの `Files` に無いもの: `git-env.ts`
-  - 検査が git の置き場を決めるヘルパー
+- **`git-env.ts`** — チケットの `Files` に無いファイルで、検査が git の置き場を決めるヘルパー（決めた）
   - 事故の対処で直下に増えた
-- （親が追記）`child/spec.test.ts` → `../tool/consult.ts` は上向きの辺
+- **上向きの辺** — `child/spec.test.ts` → `../tool/consult.ts` が残る（決めた）
   - `PARAMETERS` のため、チケットが指定
-- （親が追記）`tool/consult.ts` → `./render.ts` は同じ層の中の辺
+- **同じ層の中の辺** — `tool/consult.ts` → `./render.ts` が残る（決めた）
   - step 3 が作った
 
 ### Unplanned
