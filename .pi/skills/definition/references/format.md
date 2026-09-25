@@ -106,6 +106,8 @@ A unit is one thing the product does, seen from the user's side. The rules:
 ## Writing
 
 - Do not write what can be derived from the code. Write decisions
+- **One line is one fact.** A fact that needs two lines takes two. Do not pack a paragraph into one line: the one-line rule is there so a re-flow never touches a line you did not change, not so that a line holds everything. When a line grows a `/`-chain, a nested parenthesis or a third `→`, split it into its own line
+- Do not chain facts with `/`. Do not nest parentheses. `→` is for the landing place of a line (`Remarks` and `Carry over` keep theirs)
 - Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
 - `Retro`, `Stack` and `Remarks` may be empty in a definition. `Carry over` may be empty only in the first sheet, which has no previous cycle; from the second sheet it holds one line per line of the previous sheet's `Carry over`. Any other empty section is unresolved
 - **`Carry over` is not shortened, and it is not just a list.** It holds every line the closed cycle's tickets left unresolved in their own step — every `Findings` line, and any `Unplanned` line that its step did not fix — copied as it was written. Shortening it is how a hole gets lost, and the next sheet has to account for each line in its own `## Carry over`, one line per line, `<前の 1 行> → <受けた場所>`
