@@ -25,7 +25,7 @@ Follow `references/format.md`. In short:
 
 - `Acceptance` is the definition's `Then` for this step, copied. When the step has no unit (a cleanup, a check), it is the step's `What`, in one line
 - `Todo` is split by artifact: the files, then what changes in each, then the tests as cases
-- the tests are cases, and they are where the error paths live. Write them from the definition, not from the implementation: the sheet says what the behaviour is, and the cases come out of that. The plan's `Tests` names the cases to start from; walking the nine categories below is how you find the ones the plan left out
+- the tests are cases, and they are where the error paths live. Write them from the definition, not from the implementation: the definition says what the behaviour is, and the cases come out of that. The plan's `Tests` names the cases to start from; walking the nine categories below is how you find the ones the plan left out
 - go down this list for each unit of behaviour, and write either the case or the reason it does not apply:
   - the happy path
   - null, undefined, missing
@@ -80,7 +80,7 @@ What the owner sees is the map, not the pile: what differs from the plan, the fi
 
 Only an agreed `Todo` and `Verify` can judge the work: the writer does not decide their own criteria, and a check that was not agreed cannot be used to conclude that something failed. Once agreed, they are fixed, because a criterion that moves after the result is seen stops meaning anything.
 
-They may be revised before that step's implementation starts, with the previous step's `Notes` or an owner's remark as the reason and the owner's agreement. An owner's remark lands where it acts; in a cycle whose sheet has a `Remarks` section it is written there, and in a cycle without one it goes in the ticket's `Notes`. After that they are frozen: what actually happened goes in `Notes`, not back into the ticket.
+They may be revised before that step's implementation starts, with the previous step's `Notes` or an owner's remark as the reason and the owner's agreement. An owner's remark lands where it acts; in a cycle whose definition has a `Remarks` section it is written there, and in a cycle without one it goes in the ticket's `Notes`. After that they are frozen: what actually happened goes in `Notes`, not back into the ticket.
 
 ## Step 6: commit the agreements
 

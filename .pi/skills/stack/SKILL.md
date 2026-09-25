@@ -7,7 +7,7 @@ description: 'Use when a definition has been approved. Every cycle passes throug
 
 Fill the `Stack` section of a definition that is already approved. The other sections are settled and frozen; this is the one section that is written after the freeze. **Every cycle passes through here**, even when the answer is that nothing changes.
 
-## Step 1: read the sheet, and the stack before it
+## Step 1: read the definition, and the stack before it
 
 Read the definition as it stands. The constraints on the stack are already in it:
 
@@ -15,11 +15,11 @@ Read the definition as it stands. The constraints on the stack are already in it
 - `Goal` and `Non-goal` say what it must do and what it will not do, which cuts most of the space
 - `What to build` says what it has to run
 
-Do not ask the owner for facts that the sheet or the repository answers.
+Do not ask the owner for facts that the definition or the repository answers.
 
 ## Step 2: look at the base
 
-The harness of the repository is given, not chosen. Read the repository and name it; its versions and its settings are readable from the code, so the sheet only needs the names.
+The harness of the repository is given, not chosen. Read the repository and name it; its versions and its settings are readable from the code, so the definition only needs the names.
 
 ```
 - Base: Node / TypeScript / pnpm / lefthook
@@ -40,9 +40,9 @@ Walk the checklist and ask, for each, whether this product needs something:
 
 Most slots will be answered by the base. Only the additions become candidates; the harness is not a decision and does not belong in `Added`.
 
-Do not write reasons in the sheet. The commit that fills the `Stack`, and the report from the trial below, are the record of why.
+Do not write reasons in the definition. The commit that fills the `Stack`, and the report from the trial below, are the record of why.
 
-Start from the `Stack` of the previous sheet: lines that did not change are copied as they are, because a diff that shows a change where nothing changed is a lie. A candidate that has become unnecessary is removed.
+Start from the `Stack` of the previous definition: lines that did not change are copied as they are, because a diff that shows a change where nothing changed is a lie. A candidate that has become unnecessary is removed.
 
 ## Step 4: try what is not obvious
 
@@ -64,9 +64,9 @@ A `trial` child can write, and what it leaves behind is committed: a ref is made
 Changes: keep / update **理由**
 ```
 
-- **The marker is yours to write.** The definition left this section empty and said why; this step is what fills it, so this step decides the marker. On a product's **first sheet** it is `add`: there is nothing to carry over. From the second one on: nothing changed is `Changes: keep`, with the previous lines copied verbatim; something changed is `Changes: update`, with the reason in bold — the frame moved and this followed it, or the stack itself was re-decided
+- **The marker is yours to write.** The definition left this section empty and said why; this step is what fills it, so this step decides the marker. On a product's **first definition** it is `add`: there is nothing to carry over. From the second one on: nothing changed is `Changes: keep`, with the previous lines copied verbatim; something changed is `Changes: update`, with the reason in bold — the frame moved and this followed it, or the stack itself was re-decided
 - `Added: なし` when nothing was needed. Saying "none" is a decision and looks different from leaving the line out
-- The sheet's content is Japanese; the labels stay English
+- The definition's content is Japanese; the labels stay English
 - Do not wrap the lines
 
 ## Step 6: review it
@@ -78,7 +78,7 @@ The task, verbatim:
 - Check this Stack against the definition, and nothing else:
   - the base is names only, and they are the names the repository actually uses
   - what the product needs is there, and nothing is added that the definition does not ask for
-  - the marker is right: `add` on a product's first sheet, `keep` or `update` after it
+  - the marker is right: `add` on a product's first definition, `keep` or `update` after it
 - Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
 
 The input is the definition file. Do not show the result to the owner until this comes back clean.
@@ -89,11 +89,11 @@ Do not commit yet. Show what was added — and, when something was tried, what t
 
 - a rejection sends you back to Step 3
 - show the review's findings and what you did with each: fixed, or answered with a reason
-- when they say yes, commit. The `Stack` is inside a frozen sheet, so this commit is what freezes it in turn, and it is not edited afterwards
+- when they say yes, commit. The `Stack` is inside a frozen definition, so this commit is what freezes it in turn, and it is not edited afterwards
 
 ## How not to do this
 
 - Do not decide the stack before the definition is approved: the constraints come from it
 - Do not write the harness into `Added`; it is the base
-- Do not write reasons in the sheet, and do not describe the base beyond its names
+- Do not write reasons in the definition, and do not describe the base beyond its names
 - Do not leave a candidate undecided. The stack step ends with every candidate either added or answered with なし

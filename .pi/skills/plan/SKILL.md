@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when a definition has been approved and its Stack is filled. Turns the sheet into steps, each with the files it touches and the tests that prove it, and freezes it.
+description: Use when a definition has been approved and its Stack is filled. Turns the definition into steps, each with the files it touches and the tests that prove it, and freezes it.
 ---
 
 # plan
@@ -9,7 +9,7 @@ Turn the approved definition into a plan: the order of work, the files each step
 
 ## Step 1: read the definition
 
-Read the approved sheet. The units are the work, and each unit's `Then` is what the step will be checked against. `What to keep` and `Non-goal` say what will not be touched.
+Read the approved definition. The units are the work, and each unit's `Then` is what the step will be checked against. `What to keep` and `Non-goal` say what will not be touched.
 
 ## Step 2: prepare (step 0)
 

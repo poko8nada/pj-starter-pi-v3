@@ -70,7 +70,7 @@ Whatever has to reach the child reaches it as `task` or `input`. There is no way
 ```
 consult({ type: "review",
           input: ["cycles/002-2026-09-22/definition.md"],
-          task: "What is missing in this sheet?" })
+          task: "What is missing in this definition?" })
 ```
 
 One child per input, all in parallel, and the results come back in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
