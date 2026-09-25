@@ -75,7 +75,8 @@ Acceptance:
 ### Findings
 
 - 実演の結果
-  - 診断のモデルが 1 番目の候補 `commandcode/deepseek/deepseek-v4.1-flash` だった
+  - 診断のモデルが 1 番目の候補だった
+    - `commandcode/deepseek/deepseek-v4.1-flash`
   - 結果が入力ごとに並んだ
 - 入力の 1 つ目に `README.md` を渡したら、子は「ファイルが指定されていない」と答えた
   - payload ではなく、リポジトリを自分で探し始めた
