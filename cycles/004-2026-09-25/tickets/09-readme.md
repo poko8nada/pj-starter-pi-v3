@@ -61,13 +61,19 @@ Acceptance:
   - step 6 で 9 に決まった（`06-definition-skill` の `Notes` / `Remarks`）
   - README の列挙（英日 2 枚）を 9 に合わせた
 - 拡張の一覧
-  - `ls .pi/extensions/` は 4 つ — `consult` / `quality-gate` / `ref-cleanup` / `sound-notify`
+  - 実物は 4 つ
+    - `consult`
+    - `quality-gate`
+    - `ref-cleanup`
+    - `sound-notify`
   - README の「Extensions」を 4 つに合わせた
   - `quality-gate` は Gates の行にも名前がある
   - `ref-cleanup` の説明は「`consult` が残した ref を一覧し、1 つ消す」（`index.ts` の `description` と一致）
   - 消せるのは `consult/` の ref だけ
 - 検査の数
-  - verify に載るのは 2 つ — `lint` / `typecheck`
+  - verify に載るのは 2 つ
+    - `lint`
+    - `typecheck`
   - README の記述と一致、変更なし
 - 各スキルの役割
   - `description` の 6 つとサイクルの表が一致
@@ -76,15 +82,25 @@ Acceptance:
   - 規則は「次の段を名指ししない」
   - 実物が規則に追いついている
 - clone 直後のつもりで README だけを読んだ
-  - 入っているもの — 検査 / ゲート / エージェントの規則 / 6 skill / 4 拡張 / `cycles/`
-  - 最初の手順 — `pnpm install` → `cycles/` を消す → `types.json` を作る → `pi` を起動
+  - 入っているものが言える
+    - 検査
+    - ゲート
+    - エージェントの規則
+    - 6 skill
+    - 4 拡張
+    - `cycles/`
+  - 最初の手順が言える
+    - `pnpm install`
+    - `cycles/` を消す
+    - `types.json` を作る
+    - `pi` を起動
 - `Verify` の実演のうち子が要る部分は親の担当
   - この子は子（`consult`）を起こさない
 - （親が追記）実演の数え上げ
   - `format.md` の `##` は 9 で README の列挙と一致
   - `.pi/skills/` は 6 つで README の表と一致
   - `.pi/extensions/` は 4 つで README と一致
-  - `phase: 'verify'` は 2 で README の検査の数と一致
+  - verify の検査は 2 で README の検査の数と一致
 - （親が追記）親の読み（Step 8）
   - 英日の README が同じ内容
   - 実物と一致
@@ -93,7 +109,7 @@ Acceptance:
     - 9 節
     - 検査 2
 - （親が追記）子の観察
-  - README 2 枚は `quality-gate` の lint / typecheck の対象外（マークダウン）
+  - README 2 枚は `quality-gate` の lint と typecheck の対象外（マークダウン）
   - この実演の数え上げだけが実際の gate
   - 次の 1 枚が受ける
 
