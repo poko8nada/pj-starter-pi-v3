@@ -161,4 +161,6 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 
 ## Remarks
 
+- 反省点は次のサイクルに生かす → 既にある（`Retro` の `Carry over` がそれを運ぶ。004 の実装中に見つけた反省も、その場でチケットの `Findings` に書く）
+
 ## Retro
