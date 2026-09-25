@@ -23,7 +23,7 @@ Section and field names are English. They are the type: the same in every plan, 
 - Depends: 何を待つか
 - Action: verify / build
 - Files: 具体的なファイル名
-- Tests: テストファイル名（コロケーションなので構成図には書かない）
+- Tests: テストファイル名（コロケーションなので構成図には書かない）。形を移す step は、形の検証（コマンドか読み方）
 
 ### step N: <unit-id>.check
 
@@ -36,7 +36,15 @@ Section and field names are English. They are the type: the same in every plan, 
 
 ## Structure
 
-（変えるファイルのツリー。行の後ろに `add` / `update` / `drop`）
+（変えるファイルのツリー。フォルダは入れ子で書き、行の後ろに `add` / `update` / `drop`）
+
+## Layers
+
+（層と向き。`A は B を知らない` の形で書く）
+
+## Seam
+
+（差し替え点。何を交換しても他を触らずに済むか）
 
 ## What to keep
 
@@ -47,16 +55,27 @@ Section and field names are English. They are the type: the same in every plan, 
 
 - The title is `# PLAN <NNN>`, with the cycle's number, so it lines up with its `definition.md`
 - `step 0` is always there, even when all three answers are なし
-- Step numbers are the order of work. The name after the colon is either a unit's id or `<unit-id>.<part>`
+- Step numbers are the order of work, and that order is the implementation order. A step that changes a skill comes before the steps whose work that skill carries
+- The name after the colon is either a unit's id or `<unit-id>.<part>`
 - `0` is the only step with a fixed name: every other one is named after the thing it builds
 - A step that only closes a unit (`<unit-id>.check`) has no files and no tests: the demonstration is what verifies it
+- A `Tests` entry is a test file, except when the step moves the form: then it is the form's check — a command or a reading, with the expected shape in words. 「部品に色の直値が無い」「`spec` は `run` を知らない」 are that kind of entry
+- A step that moves the form answers the shape question: what the folder is after the file is added, or where the tidy-up is written
 
 ## Structure
 
+- `Structure` is the form, not a file list: the folders are written nested, one line per folder with its files under it, so the shape is readable at a glance
 - Only the files this plan changes. A file that is neither changed nor adjacent does not belong
 - One marker per line: `add`, `update` or `drop`
 - Test files do not appear here: they are colocated with the code, and `Tests` in the step already names them
 - `## What to keep` is not part of `Structure`. Keeping them apart is what makes "what changed" readable at a glance
+
+## Layers and Seam
+
+- `Layers` and `Seam` sit next to `Structure`, and both are decisions: they are written, not derived from the code
+- `Layers` is one rule with two appearances: the design layers (a value feeds the style layer, the style layer feeds the part) and the boundary layers (who may cross into whom). A front end and a back end are not two templates here
+- The direction is written as `A は B を知らない`, one line per edge that must not exist; the edges that may exist are written too
+- `Seam` names what can be exchanged without touching anything else. The plan must not contain a shape that breaks its own seam: when the seam moves, that is a decision, and it is written down
 
 ## Writing
 

@@ -27,10 +27,17 @@ Acceptance: `step 0` を含む `Steps` と、`Structure` が出る。全 step �
 
 ### Findings
 
-なし
+- 実演（`Verify`）は親が別の子（`consult`）で回す担当。この子は子を起こさないので、観察項目（実演の 1 枚に 4 つとも載るか / `git status` がプランのファイルだけか）はまだこの子の側では観察していない。親が実演するときに見る
+- 004 の `plan.md` とチケットはこの規則より前に書かれている。`Depends` は `plan` を直す step 2 を待っていないし、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く（`Todo` の指示どおりここに書く）。このズレは 004 の外の穴なので、次の 1 枚が受ける
 
 ### Unplanned
 
-なし
+- `Todo` は「Step 5 に形の問いを足す」「層と向きを書かせる段を足す」と言う。step の番号を動かさず、Step 5 を `write the structure and the form` に書き換えて、開始質問（設計側 / 境界側）、`## Layers`、`## Seam`、形の問いをそこに入れた。`Step 6: review` 以降の番号はそのまま
+- `Todo` に無かったが整合のために足した: `review` のチェックリストに 2 行（`Layers` が向きを、`Seam` が差し替え点を言っている / 形を移す step が形で検証され、形の問いに答えがある）。Step 3 と format の `Steps` に実装の順の規則（skill を変える step が、それに運ばれる step より先）。`How not to do this` に 2 行（フォルダの形を問わずに足さない / 自分の差し替え点を壊す形を書かない）
+- `format.md`: 層と向きは `## Layers`、差し替え点は `## Seam` として `## Structure` の隣に置き、`Structure` はフォルダを入れ子で書く「形」だと明記し、形を移す step の `Tests` は形の検証（コマンドか読み方）と決めた
+- この step は skill 本文と format の修正なので、観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）にケースは無い。失敗の入力は `Verify` の観察項目が持つ
+- 自分で走らせた検査: `pnpm exec oxfmt --check .pi/skills/plan/SKILL.md .pi/skills/plan/references/format.md` → All matched files use the correct format / `pnpm test:run` → 166 passed / `pnpm typecheck` → エラーなし / `pnpm lint` → エラーなし
+- `description` に次のスキルの名前は無い（本文の `tickets` は既存のまま）
+- `Commit:` は空のまま。ハッシュは子では作れない（`git commit` は承認が要る）
 
 Commit:
