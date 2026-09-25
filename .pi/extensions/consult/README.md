@@ -92,3 +92,5 @@ pnpm test:run .pi/extensions/consult
 ```
 
 `spec.test.ts` covers the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, and the switch decision. `run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. Spawning a real `pi` is not covered; the demonstrations do that.
+
+A check that spawns git declares its own world through `git-world.ts` — repository, config and `HOME` — instead of inheriting the one it runs in, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.

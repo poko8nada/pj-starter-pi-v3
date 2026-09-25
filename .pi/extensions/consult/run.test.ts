@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { runInGitWorld } from './git-world.ts';
 import {
   commitWorktree,
   createWorktree,
@@ -262,6 +263,7 @@ describe('commitWorktree', () => {
   const repos: string[] = [];
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     for (const repo of repos.splice(0)) {
       rmSync(repo, { recursive: true, force: true });
     }
@@ -298,10 +300,9 @@ describe('commitWorktree', () => {
 
   it('worktree を消してもブランチは残る（親のツリーも汚れない）', () => {
     const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
-    repos.push(repo);
-    // フックの中では GIT_* が載っている（002 の Retro）。cwd より環境が勝つので、落としてから打つ。
-    const run = (args: string[]) =>
-      spawnSync('git', args, { cwd: repo, encoding: 'utf8', env: gitEnv(process.env) });
+    const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
+    repos.push(repo, home);
+    const run = (args: readonly string[]) => runInGitWorld(repo, home, args);
     run(['init', '--quiet']);
     run(['config', 'user.email', 'consult@example.com']);
     run(['config', 'user.name', 'consult']);
@@ -319,24 +320,34 @@ describe('commitWorktree', () => {
     expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
   });
 
-  it('継承した GIT_* を落とさないと、fixture は実リポジトリを見る（回帰）', () => {
-    const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
-    repos.push(repo);
-    // フックが載せる形を模す。ここを落とさないと、fixture の git は cwd ではなくこの一式を見る。
-    const poisoned = {
-      ...process.env,
-      GIT_DIR: join(process.cwd(), '.git'),
-      GIT_WORK_TREE: process.cwd(),
-      GIT_INDEX_FILE: join(process.cwd(), '.git', 'index'),
-    };
-    const seen = (env: NodeJS.ProcessEnv) =>
-      spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: repo, encoding: 'utf8', env });
-    expect(
-      spawnSync('git', ['init', '--quiet'], { cwd: repo, encoding: 'utf8', env: gitEnv(poisoned) })
-        .status,
-    ).toBe(0);
-    expect(seen(gitEnv(poisoned)).stdout.trim()).toBe(realpathSync(repo));
-    expect(seen(poisoned).stdout.trim()).not.toBe(realpathSync(repo));
+  it('継承した GIT_* を無視する（外の repo を指していても、自分で決めた世界に書く）', () => {
+    // 外の世界の代役。ここが書き換わったら、検査は外に届いている。
+    const decoy = mkdtempSync(join(tmpdir(), 'consult-decoy-'));
+    const mine = mkdtempSync(join(tmpdir(), 'consult-repo-'));
+    const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
+    repos.push(decoy, mine, home);
+    runInGitWorld(decoy, home, ['init', '--quiet']);
+    runInGitWorld(mine, home, ['init', '--quiet']);
+
+    // フックが載せる形: 継承した GIT_* が、外の repo（decoy）を指している
+    vi.stubEnv('GIT_DIR', join(decoy, '.git'));
+    vi.stubEnv('GIT_WORK_TREE', decoy);
+
+    runInGitWorld(mine, home, ['config', 'user.email', 'mine@example.com']);
+    expect(runInGitWorld(mine, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
+      'mine@example.com',
+    );
+    expect(runInGitWorld(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe('');
+
+    // 裏取り: 世界を宣言しない呼び方なら、同じ汚れで外の decoy に届く。この検査は空振りできない
+    spawnSync('git', ['config', 'user.email', 'leaked@example.com'], {
+      cwd: mine,
+      encoding: 'utf8',
+      env: process.env,
+    });
+    expect(runInGitWorld(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
+      'leaked@example.com',
+    );
   });
 });
 
