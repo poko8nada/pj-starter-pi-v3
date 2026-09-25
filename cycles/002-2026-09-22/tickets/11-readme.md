@@ -19,14 +19,11 @@ Acceptance:
 ## Verify
 
 - 実演: 書いたコマンドを書いたとおりに走らせる
-  - `pnpm install`
-  - `pnpm test:run` など
 
 ## Notes
 
 ### Findings
 
-- 実演: 緑
 - **プロダクト名は未決のまま**
   - 両方の README のタイトルが仮
     - 「ハーネス付きスターター」

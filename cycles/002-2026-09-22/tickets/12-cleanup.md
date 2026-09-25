@@ -8,7 +8,11 @@ Acceptance:
 ## Todo
 
 - `CYCLE-DESIGN.md` を消す — 中身がスキル 4 つにあることを先に確かめる
-  - 確かめる先は definition、stack、plan、tickets
+  - 確かめる先は次の 4 つ
+    - definition
+    - stack
+    - plan
+    - tickets
 - 消した後に残る参照を直す
   - `CYCLE-DESIGN.md` を指している文書やコメントがあれば直す
 
