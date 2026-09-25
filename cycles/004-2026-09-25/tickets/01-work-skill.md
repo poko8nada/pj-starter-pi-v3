@@ -29,12 +29,19 @@ Acceptance: 子に任せた場合、そのコミットは ref で返り、agent 
 - 置き場所は `Verify`（Step 7）の後・`Commit:`（Step 9）の前。あいだに入れるため Step 8 以降を 1 つ繰り下げ、`The failures the text answers` の `Step 9` を `Step 10` に直した
 - 実演（`Verify`）は親の担当で、この子は子（`consult`）を起こさない。よって「unit の diff が `review` に当たった記録が `Notes` にある / 3 周で止まる」は、まだ子の側では観察していない
 - 自分で走らせた検査: `pnpm exec oxfmt --check .pi/skills/work/SKILL.md` → All matched files use the correct format / `pnpm test:run` → 166 passed / `pnpm typecheck` → エラーなし / `pnpm lint` → エラーなし
+- （親が追記）`types.json` は「無い」のではなく **git 管理外**（実物は存在する）。結論（子に `git diff` は走らせられない）は変わらない
+- （親が追記）本文のチェックは `Then` を `Acceptance` と言い換えている。`Acceptance` は `Then` の写しなので同じものを指す
+- （親が追記）このチケットの `Acceptance`「findings が残っている」は「残っていない」の意。合意済みなのでチケットは直さず、ここに書く
+- （親が追記）レビューで blocking が出た: レビューを `Verify` の後に置いたので、「`Commit:` は `Verify` が判定した内容」と嚙み合わない。**ツリーが変わったラウンドは Step 7 に戻る**と本文に足した
+- （親が追記）**実演（`Verify`）は、この step 自身の流れが兼ねる**: 子が `tickets` と `work` を読んで step を進め、親が diff を `review` の子にかけ（3 ラウンド、1 周目 1 blocking / 2 周目 2 blocking / 3 周目 0）、findings の処遇をここに並べた。実演を別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形をしているため
+- （親が追記）外の穴: `README.md` / `README.ja.md:48` の `work` の行の要約に `the review` が無い（本文の `description` には入った）。step 9 の「各スキルの役割を `description` と突き合わせる」が受ける
 
 ### Unplanned
 
 - `Todo` に無かったが本文の整合のために足した: frontmatter の `description` に `the review`、`**Work ends when the tree holds it.**` の線に `the diff has been through the review`、`The failures the text answers` にレビュー失敗 2 行（子を起こせない / 3 周で clean にならない）、`How not to do this` に 1 行（未レビューの diff で閉じない / 3 周を超えない）。`AGENTS.md` の「散文とコードが食い違ったら同じターンで直す」に沿う
 - 「3 周で止め、残りは owner」と、レビュー子が見るもの（チケット + diff）は `tickets` の unit レビューと同じ形にした。`Todo` は「同じ形にする」とだけ言っていた
+- （親が追記）`consult/README.md` の `review` の Turns が実物（40）と食い違っていたので合わせた。step 1 の成果物ではないので、別コミットにした
 - この step は skill 本文の修正なので、観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）にケースは無い。失敗の入力は Step 8 の本文と `Verify` の観察項目が持つ
 - `Commit:` は空のまま。ハッシュは子では作れない（`git commit` は承認が要る）
 
-Commit:
+Commit: 7106b2f（子 `709eac0` + レビューで直した分）
