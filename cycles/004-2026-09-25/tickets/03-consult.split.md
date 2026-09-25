@@ -32,9 +32,11 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 - 実演は `pnpm test:run`（6 ファイル / 166 テストが緑）、`pnpm typecheck`・`pnpm lint`・`pnpm format:check`（いずれも緑）、`grep` で `index.ts` に移動した定義（`compose` / `playSound` / `consult` など）が残っていないこと、まで。道具を 1 回呼ぶ実演は親に渡す
 - **子の worktree には `types.json` が無い** — git 管理外のファイルは HEAD から作る worktree に入らない。この worktree にあるのは `types.example.json` だけなので、実演の「子が起動して返る」は `EXTENSION_DIR` の決め方に関係なく `types.json` が読めずに落ちる（親の実ツリーでは読める）。この制約はチケットにも skill にも書かれていない
 - `EXTENSION_DIR` は `tool/consult.ts` が `dirname(dirname(fileURLToPath(import.meta.url)))` で `consult/` を指す形にした。定数を `index.ts` に残して渡すには道具を工場にする形が要るので、道具が自分の位置から解決し、上向きの辺を作らないようにした
+- （親が追記）**親の読み**（Step 8）: `index.ts` は登録だけ（25 行）で `PARAMETERS` と `execute` を import する形 ✓ / 中身は書き換えていない（削除 299 行・追加 314 行を突き合わせると、説明のつかない書き換えは無し。差分は import の貼り替え・`EXTENSION_DIR` の 1 行・`export` の付与・インデントのずれだけ。インデントに敏感な確認なので証明ではなく観察）
+- （親が追記）**実演**（親のツリーで、`/reload` の後）: `consult` を 1 回呼んだ（`research` / 入力無し / 「ok とだけ返せ」）→ 子が起動して `ok` を返した（1 turn / in 235 / out 2 / $0.0001）。`loadTypes(EXTENSION_DIR)` が `types.json` を読めている証拠（読めなければ子を起こす前に落ちる）
 
 ### Unplanned
 
 なし
 
-Commit:
+Commit: e064433（子のみ。親の修正なし）
