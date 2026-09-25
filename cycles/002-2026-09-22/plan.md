@@ -10,59 +10,35 @@
 
 ### step 1: consult.types
 
-- What: type は `research`、`review`、`trial`、`code`
-  - 設定は配列で、各 type が モデル（候補の配列）・ツール・環境・上限・役割 を持つ
-  - 呼び出し側が渡すのは type と task と入力だけ
-  - 設定は呼び出しごとに読む
-  - setup の誤りは投げる
-  - 上限は `research` 40/40k、`review` 20/20k、`trial` 50/50k、`code` 60/60k（暫定）
+- What: type は `research` / `review` / `trial` / `code`。設定は配列で、各 type が モデル（候補の配列）・ツール・環境・上限・役割 を持つ。呼び出し側が渡すのは type と task と入力だけ。設定は呼び出しごとに読む。setup の誤りは投げる。上限は `research` 40/40k、`review` 20/20k、`trial` 50/50k、`code` 60/60k（暫定）
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/consult/types.ts`、`types.test.ts`、`types.example.json`、`spec.ts`、`index.ts`、`.gitignore`
-- Tests: `types.test.ts`
-  - 未知の type は投げる
-  - 上書きの口が無い
-  - 検証: model・tools・environment・limits・role
-  - 数字は形で見る
+- Tests: `types.test.ts`（未知の type は投げる / 上書きの口が無い / 検証: model・tools・environment・limits・role / 数字は形で見る）
 
 ### step 2: consult.models
 
-- What: モデル候補を順に試す
-  - 子が 1 つも assistant を返さずに死んだら次の候補へ
-  - 尽きたら `--model` を渡さず親と同じ設定で走る
+- What: モデル候補を順に試す。子が 1 つも assistant を返さずに死んだら次の候補へ。尽きたら `--model` を渡さず親と同じ設定で走る
 - Depends: `consult.types`
 - Action: build
 - Files: `.pi/extensions/consult/spec.ts`、`run.ts`、`run.test.ts`
-- Tests: `run.test.ts`
-  - 1 番目で走れば 1 回で終わる
-  - 使えなければ次へ
-  - 尽きたら `--model` なし
-  - タスク失敗では乗り換えない
+- Tests: `run.test.ts`（1 番目で走れば 1 回で終わる / 使えなければ次へ / 尽きたら `--model` なし / タスク失敗では乗り換えない）
 
 ### step 3: consult.inputs
 
-- What: 入力ごとに 1 体走らせる
-  - 実行中の失敗は子ごとの状態として返す
+- What: 入力ごとに 1 体走らせる。実行中の失敗は子ごとの状態として返す
 - Depends: `consult.models`
 - Action: build
 - Files: `.pi/extensions/consult/run.ts`、`index.ts`、`run.test.ts`
-- Tests: `run.test.ts`
-  - 入力 1 つで 1 体
-  - 入力ごとの成否が並ぶ
-  - setup の誤りだけ投げる
+- Tests: `run.test.ts`（入力 1 つで 1 体 / 入力ごとの成否が並ぶ / setup の誤りだけ投げる）
 
 ### step 4: consult.code
 
-- What: 書き込む子は worktree で走り、コミットして ref を返す
-  - worktree は消える
-  - ref は残る
+- What: 書き込む子は worktree で走り、コミットして ref を返す。worktree は消え、ref は残る
 - Depends: `consult.inputs`
 - Action: build
 - Files: `.pi/extensions/consult/run.ts`、`index.ts`、`run.test.ts`
-- Tests: `run.test.ts`
-  - ref が返る
-  - worktree が消える
-  - 親は取り込まずに終われる
+- Tests: `run.test.ts`（ref が返る / worktree が消える / 親は取り込まずに終われる）
 
 ### step 5: consult.readme
 
@@ -83,8 +59,7 @@
 
 ### step 7: definition-skill
 
-- What: サイクルの始まりと終わり（1 枚を書く、前を閉じる、承認を待つ）をスキルにする
-  - 型はスキルが持つ
+- What: サイクルの始まりと終わり（1 枚を書く / 前を閉じる / 承認を待つ）をスキルにする。型はスキルが持つ
 - Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/definition/SKILL.md`
@@ -108,8 +83,7 @@
 
 ### step 10: tickets-skill
 
-- What: チケットの切り方と閉じ方をスキルにする
-  - `Todo` と `Verify` の承認 → 作業 → 実演 → `Commit`
+- What: チケットの切り方と閉じ方（`Todo` / `Verify` の承認 → 作業 → 実演 → `Commit`）をスキルにする
 - Depends: `consult.check`
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`
@@ -125,9 +99,7 @@
 
 ### step 12: cleanup
 
-- What: `CYCLE-DESIGN.md` を消す
-  - スキルに吸収済み
-  - 理由は git 履歴に残る
+- What: `CYCLE-DESIGN.md` を消す（スキルに吸収済み。理由は git 履歴に残る）
 - Depends: step 7〜10
 - Action: build
 - Files: `CYCLE-DESIGN.md`
@@ -160,7 +132,7 @@ CYCLE-DESIGN.md       drop（step 11）
 ## What to keep
 
 - `AGENTS.md`（`agent-rules` が keep なので触らない）
-- `lefthook.yaml`、`package.json`、`tsconfig.json`、`vitest.config.ts`（足すものがない）
+- `lefthook.yaml` / `package.json` / `tsconfig.json` / `vitest.config.ts`（足すものがない）
 - `.pi/extensions/quality-gate/`
 - `.pi/extensions/sound-notify/`
 - `cycles/`（成果物そのもの）

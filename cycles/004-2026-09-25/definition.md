@@ -252,3 +252,5 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
   - （同上）8. `git-env.ts` は `consult/` 直下にあり、unit の `Then` の列挙（`policy/` `child/` `run/` `tool/` + README と json）に無い 3 つ目の種類
   - （同上）9. チケットの記録と木の小さな食い違い 3 点（`01:41` の「review と書いてある」は木では直済み / `03:43` と `05:20` の turns の言い方 / `04:11` の長さ比較が `spec.test.ts:96` に `'/child-guard.ts'.length` のまま）
   - （close の Step 4。このターンで踏んだ）実演の題材を `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint 対象になる（玩具の `notes.mjs` の `forEach` が `unicorn(no-array-for-each)` に当たった）→ 実演の題材も、そのリポジトリの検査を通る形で書く
+  - 子は作業ファイル（`.flat` / `.tokens` / `.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒に ref にコミットした。親が手で消すことになり、始めは 4 つのうち 3 つしか消せず 1 つ残った（`2d2c0dd` → `0ee8250`）→ 子の残置物を ref に混ぜない道が要る
+  - `/tmp` の実演の玩具（`close-toy` / `definition-toy` / `six-skills-toy` / `plan-demo-2` / `stack-demo`）はまだ残っている。記録が場所を指しているので、サイクルを閉じるまで残し、閉じるときに消す
