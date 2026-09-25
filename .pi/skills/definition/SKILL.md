@@ -5,7 +5,7 @@ description: Use when a cycle starts or closes, or when a request may change the
 
 # definition
 
-A cycle is one sheet for one product: the definition, then the stack, the plan, the tickets, then a Retro. The sheet is frozen by a commit, and after that it is never edited. A later cycle writes a new sheet that carries the differences.
+A cycle is one sheet for one product. The sheet is frozen by a commit, and after that it is never edited, except for the three sections that stay writable: `Stack`, `Remarks` and `Retro`. A later cycle writes a new sheet that carries the differences.
 
 This skill writes that sheet, and closes the previous one. The shape of the sheet, its field rules, its change markers and its language rules are in `references/format.md` (relative to this file). Read that before you write anything. The later stages of the cycle have their own skills, and each of those says in its description when to read it.
 
@@ -76,12 +76,13 @@ Before you write them down, read them against the frame. A unit that needs a `No
 
 ## Step 7: write the sheet
 
-Write it whole, following `references/format.md`. Two things about the sheet are worth keeping in mind here:
+Write it whole, following `references/format.md`. Three things about the sheet are worth keeping in mind here:
 
-- **`Stack` stays empty.** It is decided in the stack step, and an empty `Stack` is not an unresolved one. Every other empty section is unresolved
+- **`Stack` stays empty, and that is not an unresolved section.** It is filled later, after this sheet is frozen
 - **`Retro` is empty by definition.** It is written when the cycle closes, in Step 10 or in a later run
+- **`Remarks` is empty until the owner says something.** It is written while the cycle runs, and it is never frozen
 
-Then read your own sheet against `references/format.md`, once, before anyone else sees it: the seven sections, the markers, and the language of the content.
+Then read your own sheet against `references/format.md`, once, before anyone else sees it: the eight sections, the markers, and the language of the content.
 
 ## Step 8: review it
 
@@ -90,7 +91,7 @@ Before the owner sees it, put the sheet in front of a `review` child. The frame 
 The task, verbatim:
 
 - Check this definition sheet against the format and against itself, and nothing else:
-  - the seven sections are there, and no section is empty except `Stack` and `Retro`
+  - the eight sections are there, and no section is empty except `Stack`, `Retro` and `Remarks`
   - the markers are right: `Changes:` on the sections, `Change:` on the units, reasons in bold, and no `keep` unit written under `What to build`
   - every behaviour the `Goal` and the `Non-goal`s ask for has a unit
   - no unit contradicts the frame
@@ -98,6 +99,8 @@ The task, verbatim:
 - Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
 
 The input is the sheet. Do not show it to the owner until this comes back clean.
+
+The same holds for any child you hand a piece of writing to: give it a subject the repository does not already answer. A child can copy what is in the tree, and a copy proves nothing.
 
 ## Step 9: put it to the owner
 
@@ -122,6 +125,32 @@ Close it in its own sheet, and never touch that sheet again for anything else:
 A cycle may be abandoned. If the definition breaks, close the cycle and move to the next one, with the reason in the `Retro`. Dropping work early is cheap, and keeping it cheap is the point.
 
 Then write this sheet's `Changes` from the differences. `Retro` is the experience and the carry-over, `Changes` is the decisions, and the order runs experience → decisions.
+
+## What is frozen, and when
+
+| What                 | Freezes at                  | How it changes after that                                                                                                                      |
+| -------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| the sheet            | the commit that agrees it   | never edited. `Stack`, `Remarks` and `Retro` are written into it later, and the next cycle writes a new sheet                                  |
+| the plan             | the commit that agrees it   | not reopened. A change is recorded in the ticket that hit it                                                                                   |
+| the tickets          | the commit that agrees them | revised only before that step's implementation, with the previous step's `Notes` or an owner's remark as the reason, and the owner's agreement |
+| the skills, the code | nothing                     | never frozen. Fix before the next use                                                                                                          |
+
+A ref belongs to the stage that made it: the stage that decides to take or drop it deletes it then, and only the tool does the deleting (`ref-cleanup`) — never `git branch -D` by hand. A demonstration that hands the writing to a child (`trial`, `code`) can leave one behind, so prefer a child that reports the text back.
+
+## Remarks
+
+While the cycle runs, what the owner says is recorded in the sheet's `Remarks`: one line per remark, reading `<指摘> → <着地先>`. It is written at any time, and it is never frozen.
+
+Where a remark lands is where it acts:
+
+- it moves the frame (`What` / `Goal` / `Non-goal`) → the next cycle's sheet
+- it changes a unit → that unit's ticket
+- it is about how a stage is run → that stage's skill
+- it is a rule for cycles → the document that holds that rule
+
+**A remark that moves the frame does not touch a unit.** If it only makes sense under a `Goal` that was not agreed, or if it moves a `Non-goal`, the frame moved: leave the units alone and let the next sheet carry it.
+
+Decisions live in the repository, not in the conversation — a remark that stays where it was said will come back. When the cycle closes, `Retro` reads the `Remarks` once: a remark that landed nowhere is a hole.
 
 ## How not to write this
 

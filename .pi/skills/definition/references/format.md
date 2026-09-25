@@ -57,6 +57,10 @@ Changes: keep / update **理由**
 
 ## Stack
 
+## Remarks
+
+- <オーナーの指摘> → <着地先>
+
 ## Retro
 
 - Good:
@@ -99,8 +103,9 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 - Do not write what can be derived from the code. Write decisions
 - Do not wrap lines mid-sentence. One paragraph is one line: the editor soft-wraps, and a re-flow never touches a line you did not change
-- `Retro` and `Stack` may be empty in a definition. Any other empty section is unresolved
+- `Retro`, `Stack` and `Remarks` may be empty in a definition. Any other empty section is unresolved
 - **`Carry over` is not shortened.** It lists every `Findings` line of the closed cycle's tickets. Shortening it is how a hole gets lost, and the next sheet has to account for each line
+- **`Remarks` is a log, not a decision.** One line per remark, `<指摘> → <着地先>`, and the landing place is where it acts (the next sheet, a unit's ticket, a stage's skill, the document that holds the rule). It is written at any time and it is never frozen; a remark that lands nowhere is a hole when the cycle closes
 - Prefer whole sheets over diffs: repeating what did not change is allowed, and a `keep` marker says so
 - Lines that did not change are copied from the previous sheet exactly. A diff that shows a change where nothing changed is a lie
 - Do not put the order of work inside a unit (that is the plan's job)
