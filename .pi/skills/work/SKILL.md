@@ -7,9 +7,9 @@ description: Use when the tickets are agreed. Carries one step to done; who does
 
 Carry a step to done. The tickets say what to do and how it will be checked; this skill is how that work is actually done, and how it is closed.
 
-**The step is the unit.** One ticket, one implementation, one `Verify` run on the parent's tree, one closure. A step is not done while its `Verify` cannot run or its ticket has no `Commit:`.
+**The step is the unit.** One ticket, one implementation, a `Verify` on the parent's tree (run again after any round that changed it), one closure. A step is not done while its `Verify` cannot run or its ticket has no `Commit:`.
 
-**The parent owns the judgment.** The parent reads the ticket, decides who does the work, merges, runs the `Verify` on the merged tree, decides what to take, and cleans up the refs. A child may do the work; it does not judge it. What the parent does not do is write about work it did not do: the `Notes` belong to whoever did the work.
+**The parent owns the judgment.** The parent reads the ticket, decides who does the work, merges, runs the `Verify` on the merged tree, puts the diff through the review, decides what to take, and cleans up the refs. A child may do the work; it does not judge it. What the parent does not do is write about work it did not do: the `Notes` belong to whoever did the work.
 
 **Work ends when the tree holds it.** The line is: the parent's tree contains the step's result, the `Verify` has run on that tree, the diff has been through the review, the ticket is closed with a `Commit:`, and no ref from this step is left. This skill is done when the last ticket is closed — it never judges the cycle as a whole; the seams between units are a separate question.
 
@@ -66,9 +66,9 @@ To find out what a child is allowed to do, ask it for the refusal text, not for 
 
 A `Verify` is not loosened after the fact. If it cannot be run, the step is not done.
 
-## Step 8: review the unit's diff
+## Step 8: review the step's diff
 
-Before the ticket closes, put the unit's diff in front of a `review` child, in one call. `review` can read but cannot run a command, so `git diff` is written out to a file **outside the repository** and handed over as the call's `input`; the child is given the task and reads the ticket itself, by name (say which).
+Before the ticket closes, put this step's diff — from the commit the step started at to the tree you have — in front of a `review` child, in one call. When a unit is split into several tickets, `<unit-id>.check` is where the unit's diff as a whole goes in front of one child — that range runs from the commit the unit's first step started at. `review` can read but cannot run a command, so `git diff` is written out to a file **outside the repository** and handed over as the call's `input`; the child is given the task and reads the ticket itself, by name (say which, and name the definition too: it is the same cycle folder). Delete that file when the round is over: the review's leftovers are the review's to clean.
 
 The task, verbatim:
 
@@ -79,15 +79,15 @@ The task, verbatim:
   - no finding is left unfixed, and none is passed over without a reason
 - Report findings only, each with its file and line, marked blocking or not. If there is nothing, say "no findings".
 
-Fix what comes back, repeat until it comes back clean, and cap it at three rounds; what is left goes to the owner. If you cannot spawn a child at all, stop: an unreviewed diff does not close.
+Fix what comes back, repeat until it comes back clean, and cap it at three rounds; what is left goes to the owner. **A round that changes the tree sends you back to Step 7**: the `Commit:` names the content the `Verify` judged, and a fix the `Verify` never saw is not judged. If you cannot spawn a child at all, stop: an unreviewed diff does not close.
 
-What the review found, and what was done with each finding — fixed, or answered with a reason — goes in the ticket's `Notes`, in the same place as the closure.
+What the review found, and what was done with each finding — fixed, or answered with a reason — goes under the ticket's `Findings`, one round per line, including the round that came back with nothing, and the round the cap stopped at.
 
 ## Step 9: close the ticket
 
 `Notes` belong to whoever did the work. A child fills in its own `Findings` and `Unplanned` in the ticket, in its worktree, and they come back with the ref: the record is first-hand, not retold. A hole **inside** this step is fixed here, in a new commit, and written under `Unplanned`; a hole **outside** it is a finding for the next cycle to carry over. When someone other than the writer fixes a hole later, they **append** their own lines; nobody edits another hand's account. A fix that is not written down is a fix nobody can find.
 
-`Commit:` takes the hash of the implementation commit: the one whose content the `Verify` judged. Whoever **takes the ref** writes it, because the hash exists only after `consult` has committed, and a child cannot commit at all (`git commit` needs an approval a child has no UI for). When the step changed no code (a demonstration, a check), say that instead of inventing a hash.
+`Commit:` takes the hash of the implementation commit: the one whose content the `Verify` judged. Whoever **takes the ref** writes it, because the hash exists only after `consult` has committed, and a child cannot commit at all (`git commit` needs an approval a child has no UI for). A fix that a review round forced is a commit too, and it is the taker's: the child is gone by then, and the `Verify` runs again on what the taker built. One ticket carries one hash: the **tip** — the last commit whose content the `Verify` judged. When the step changed no code (a demonstration, a check), say that instead of inventing a hash.
 
 ## Step 10: clean up the refs
 
