@@ -42,14 +42,16 @@ Acceptance:
   - `parseAction`: `{action: "rm"}` → 投げる (error)
   - `parseAction`: `name` が無い（`delete`）→ 投げる (error)
   - `parseAction`: `name` が空文字（`delete`）→ 投げる (error)
-  - null / undefined → 型で防ぐ
+  - null → 型で防ぐ
+  - undefined → 型で防ぐ
     - 引数はオブジェクト
     - git の出力は文字列
     - ケース無し
   - 権限 → 判定を持たない
     - git が拒めば `deleteRef` の失敗で拾う
     - ケース無し
-  - 2 回目 / 並行 → 状態を持たない
+  - 2 回目 → 状態を持たない
+  - 並行 → 状態を持たない
     - git の起動を差し替えるので、多重でも互いに干渉しない
     - ケース無し
 
