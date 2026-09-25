@@ -27,4 +27,4 @@ Acceptance: `PROBE.txt` がリポジトリの根にあり、中身が `probe` �
 
 - なし
 
-Commit:
+Commit: 75d5206
