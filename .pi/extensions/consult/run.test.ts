@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -299,7 +299,9 @@ describe('commitWorktree', () => {
   it('worktree を消してもブランチは残る（親のツリーも汚れない）', () => {
     const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
     repos.push(repo);
-    const run = (args: string[]) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+    // フックの中では GIT_* が載っている（002 の Retro）。cwd より環境が勝つので、落としてから打つ。
+    const run = (args: string[]) =>
+      spawnSync('git', args, { cwd: repo, encoding: 'utf8', env: gitEnv(process.env) });
     run(['init', '--quiet']);
     run(['config', 'user.email', 'consult@example.com']);
     run(['config', 'user.name', 'consult']);
@@ -315,6 +317,26 @@ describe('commitWorktree', () => {
     expect(outcome.kind).toBe('committed');
     expect(run(['branch', '--list', 'consult/*']).stdout).toContain('consult/demo');
     expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
+  });
+
+  it('継承した GIT_* を落とさないと、fixture は実リポジトリを見る（回帰）', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
+    repos.push(repo);
+    // フックが載せる形を模す。ここを落とさないと、fixture の git は cwd ではなくこの一式を見る。
+    const poisoned = {
+      ...process.env,
+      GIT_DIR: join(process.cwd(), '.git'),
+      GIT_WORK_TREE: process.cwd(),
+      GIT_INDEX_FILE: join(process.cwd(), '.git', 'index'),
+    };
+    const seen = (env: NodeJS.ProcessEnv) =>
+      spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: repo, encoding: 'utf8', env });
+    expect(
+      spawnSync('git', ['init', '--quiet'], { cwd: repo, encoding: 'utf8', env: gitEnv(poisoned) })
+        .status,
+    ).toBe(0);
+    expect(seen(gitEnv(poisoned)).stdout.trim()).toBe(realpathSync(repo));
+    expect(seen(poisoned).stdout.trim()).not.toBe(realpathSync(repo));
   });
 });
 
