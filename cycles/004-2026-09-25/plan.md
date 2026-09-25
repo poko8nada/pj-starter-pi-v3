@@ -102,12 +102,12 @@
 
 ### step 5: consult.check
 
-- What: 単位全体の実演
-  - 新しい形
-  - 既存の検査
+- What: 単位の `Then` を全部、1 回の実演で確かめる
+  - 新しい形で動く
+  - 既存の検査を走らせる
   - 生きた子 1 体
     - `review` の子に 003 の 1 枚を当て、上限に当たらないこと
-  - `README` の表と `types.json` の一致
+  - `README` の表と `types.json` が一致する
 - Depends: step 4
 - Action: verify
 - Files: なし
@@ -129,16 +129,18 @@
 ### step 7: close-skill
 
 - What: サイクルを閉じる skill を作る
-  - 全体の統合
-  - 完成形のレビュー
-  - 振り分け
-  - Retro
+  - 全体を統合する
+  - 完成形を `review` の子に当てる
+  - findings を振り分ける
+  - `Retro` を書く
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/close/SKILL.md`
 - Tests: 実演
   - 子に `close` だけを読ませ、閉じを 1 本走らせる
-  - 1 本の中で完成形が `review` の子に当たり、findings が振り分けられている
+  - 1 本の中で走る
+    - 完成形が `review` の子に当たる
+    - findings が振り分けられている
   - `Goal` を壊す穴はそのサイクルで直すと書いてある
   - `Retro` の形が出る
   - owner が閉じてよいと言う段がある
@@ -157,17 +159,21 @@
 ### step 9: readme
 
 - What: README を実物に合わせる
-  - 拡張の一覧
-  - `close` の行
-  - 節の数
-  - 各スキルの役割
-  - 検査の数
+  - 拡張の一覧を実物に合わせる
+  - `close` の行を足す
+  - 節の数を実物に合わせる
+  - 各スキルの役割を実物に合わせる
+  - 検査の数を実物に合わせる
 - Depends: step 1, 2, 6, 7
 - Action: build
 - Files: `README.md`、`README.ja.md`
 - Tests: 実演
   - clone 直後のつもりで読み、入っているものと最初の手順が言える
-  - 拡張の一覧・各スキルの役割・節の数・検査の数が実物と一致する（`grep` で数える）
+  - `grep` で数えて確かめる
+    - 拡張の一覧が実物と一致する
+    - 各スキルの役割が実物と一致する
+    - 節の数が実物と一致する
+    - 検査の数が実物と一致する
 
 ## Structure
 
@@ -206,8 +212,20 @@ README.ja.md                          update
 ## What to keep
 
 - `AGENTS.md` は step 8 で作り直すので、ここには書かない（`agent-rules` が update）
-- `.pi/extensions/consult/types.json`、`types.example.json`（直下に残す）
-- `.pi/extensions/ref-cleanup/`、`.pi/extensions/quality-gate/`、`.pi/extensions/sound-notify/`（keep の単位）
-- `.pi/skills/stack/SKILL.md`、`.pi/skills/tickets/SKILL.md`（keep の単位）
-- `lefthook.yaml`、`package.json`、`pnpm-lock.yaml`、`tsconfig.json`、`vitest.config.ts`、`.pi/tsconfig.json`（足すものがない）
+- `consult` の直下に残すもの
+  - `.pi/extensions/consult/types.json`
+  - `.pi/extensions/consult/types.example.json`
+- keep の単位
+  - `.pi/extensions/ref-cleanup/`
+  - `.pi/extensions/quality-gate/`
+  - `.pi/extensions/sound-notify/`
+  - `.pi/skills/stack/SKILL.md`
+  - `.pi/skills/tickets/SKILL.md`
+- 足すものがないもの
+  - `lefthook.yaml`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `tsconfig.json`
+  - `vitest.config.ts`
+  - `.pi/tsconfig.json`
 - `cycles/`（成果物そのもの）
