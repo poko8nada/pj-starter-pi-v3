@@ -8,18 +8,22 @@ Acceptance:
 
 - `.pi/extensions/consult/spec.ts`
   - 入力の検証を書く
-    - 読み終えた payload が空（0 バイト、または空白だけ）なら、理由つきで弾く
+    - 読み終えた payload が空なら、理由つきで弾く
+      - 空は 0 バイト、または空白だけ
     - 001 の規則「無言で、文脈なしの子を走らせない」を形にする
 - `.pi/extensions/consult/run.ts`
   - 実装の順を書く
-    - 08 が先に `run.ts` と `spec.ts` を触る（08 の `Verify` はこの step を待たない）
+    - 08 が先に `run.ts` と `spec.ts` を触る
+      - 08 の `Verify` はこの step を待たない
     - 08 のあとに 10 を実装する
       - plan の `Depends` は step 5 しか見ていない
   - 子を起動する前に弾く
-    - 空が混ざっていれば、その入力について子を走らせず、理由を結果に載せる
+    - 空が混ざっていれば、その入力について子を走らせない
+      - 理由を結果に載せる
     - `run.ts` の結果まで（`{ok: false, reason: "空の入力"}`）
     - 道具の本文の文言はこの step の担当外
-      - `index.ts` は step 8 の `Files`。そこでは `input` の説明しか直さない
+      - `index.ts` は step 8 の `Files`
+        - そこでは `input` の説明しか直さない
       - この文言は今サイクルでは扱わず `Findings` に書く
   - 入力なし（`input` を渡さない）は今までどおり 1 体
     - 空の「入力リスト」と、空の「1 つの入力」は別物
@@ -63,7 +67,8 @@ Acceptance:
   - 中身のあるほうは走り、答えを返した
 - 空の入力に `[consult]` の行が付かないので、結果を見ただけで「子が走ったか」が分かる
 - 置き場所はチケットの `run.ts` ではなく **`index.ts`** にした
-  - `runForInputs` は結果を組む係で、入力の検証はその呼び出し側の仕事
+  - `runForInputs` は結果を組む係
+    - 入力の検証はその呼び出し側の仕事
 - 結果の形はチケットの `{ok: false, reason}` ではなく実物の **`{ok: false, error}`** になった
   - `InputOutcome` の形
 

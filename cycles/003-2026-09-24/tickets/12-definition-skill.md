@@ -6,15 +6,22 @@ Acceptance:
   - 7 節がある
   - `Stack` と `Retro` は空でよい
 - 前のサイクルの `Carry over` の全行が、この 1 枚のどこかに対応している
-  - 単位
-  - `Non-goal`
-  - `Changes` の理由
+  - 単位に落とす
+  - `Non-goal` に落とす
+  - `Changes` の理由に落とす
 - 子に書かせる題材には、リポジトリに答えが無いものを選ぶ
   - 子が写せない
 - 承認までは、`cycles/` 以外に変更が無い
 - 本文が、次のスキルを名指ししない
 
-（オーナーの指摘で範囲が広い: 指摘の振り分け、凍結の表、`Remarks` の節と `format.md`。003 の `Remarks` はまだ無いので、理由はこの ticket の `Notes` と `Retro` に落とす）
+（オーナーの指摘で範囲が広い）
+
+- 指摘の振り分け
+- 凍結の表
+- `Remarks` の節
+- `format.md`
+- 003 の `Remarks` はまだ無い
+  - 理由はこの ticket の `Notes` と `Retro` に落とす
 
 ## Todo
 
