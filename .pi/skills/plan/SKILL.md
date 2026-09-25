@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when a definition has been approved and its Stack is filled, before the tickets. Turns the sheet into steps, each with the files it touches and the tests that prove it, and freezes it.
+description: Use when a definition has been approved and its Stack is filled. Turns the sheet into steps, each with the files it touches and the tests that prove it, and freezes it.
 ---
 
 # plan
@@ -21,6 +21,8 @@ Open with `step 0`, always. It answers three questions before anything is built:
 
 Write なし where there is nothing to do. Leaving it out hides whether it was considered.
 
+**`Cleanup` is where work that belongs to no unit goes.** A tidy-up, a deletion, a move — the definition does not ask for it, and no unit's `Then` covers it, so it gets no step of its own: a step exists to carry a `Then`. It is written here, and it is still written down.
+
 ## Step 3: split the units into steps
 
 A step is the smallest thing that can be verified on its own. When a unit needs more than one, split it and name the parts `<unit-id>.<part>`: the dot is what shows which unit a step belongs to.
@@ -30,14 +32,14 @@ When a unit is split, close it with a `<unit-id>.check` step: one run that verif
 ## Step 4: fill each step
 
 - `What`: what this step does, in one line
-- `Depends`: what has to be done first (another step, or nothing)
+- `Depends`: what has to be done first (another step, or nothing). **A dependency is not only documents: a step can need a tool.** When a step relies on a skill or on code that is not right yet, the step that puts it right comes first, and that order is written here. A stale skill is fixed by a step of its own, not on the way to some later one
 - `Action`: `build` when something is produced, `verify` when the step only checks
 - `Files`: the files it touches. Test files are colocated, so they do not appear in `Structure`
 - `Tests`: the test file names. Error paths live here; the definition deliberately leaves them out
 
 ## Step 5: write the structure
 
-`## Structure` lists the files the plan changes, as a tree, with one marker per line: `add`, `update` or `drop`. Only the changes: what stays untouched is not drawn.
+`## Structure` lists the files the plan changes, as a tree, with one marker per line: `add`, `update` or `drop`. Only the changes: what stays untouched is not drawn. If the range widens while the plan is being written — an owner's remark, say — this follows it, because the picture and the steps have to agree. After the freeze it does not: a file that turns out to be needed is recorded in the ticket that touched it, not by editing the plan
 
 `## What to keep` lists the files a reader would expect to change and that will not. The criterion is the reader: what would make someone ask "does this change too?"
 
