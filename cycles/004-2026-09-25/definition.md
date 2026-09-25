@@ -30,7 +30,7 @@ Changes: keep
     - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
   - Why: サードパーティのパッケージの仕事
-    - ハーネスは設定の場所所（`.pi/remote-pi/.gitignore`）だけを用意する
+    - ハーネスは設定の場所（`.pi/remote-pi/.gitignore`）だけを用意する
 - owner の判断を、エージェントが代わりにやらない
   - Why: これらは owner のもの
     - シートの OK
@@ -44,7 +44,7 @@ Changes: keep
   - Why: このサイクルは「エージェントだけで終わらせる」に絞る
 - `ref-cleanup` を `consult` に統合しない
   - Why: 統合は 005 でやる
-    - 004 は棚を作るところまで
+    - 004 は整理のところまで
 - リファクタで振る舞いを変えない
   - Why: 動かすだけ
     - 差分が読めることが、この unit の検査の質を決める
@@ -87,13 +87,13 @@ Changes: update **004 でやらないことを足した（統合は 005 / 構造
 
 ### 2. close-skill
 
-- Change: add **サイクル全体を判定する段がどの skill にも無い。unit の `check` は継ぎ目を見ない**
+- Change: add **サイクル全体を判定するフェーズがどの skill にも無い。unit の `check` は継ぎ目を見ない**
 - Actor: agent
 - Given: 全チケットが閉じている
 - When: agent がサイクルを閉じる
 - Then:
   - サイクル全体の統合が 1 本走り、1 枚の `Goal` と `Then` に当たる
-  - 完成形が `review` の子に当たる
+  - 完成形を `review` の子に出す
   - 穴が振り分けられる
     - `Goal` を壊すものはそのサイクルで直す
     - それ以外は次へ
@@ -101,7 +101,7 @@ Changes: update **004 でやらないことを足した（統合は 005 / 構造
 
 ### 3. work-skill
 
-- Change: update **実装を第二の目で見るレビューが、どの skill にも枠にも無い**
+- Change: update **別の子に見てもらうレビューが、どの skill にも枠にも無い**
 - Actor: agent
 - Given: チケットの `Todo` と `Verify` が合意されている
 - When: agent がチケットの作業を進める
@@ -111,7 +111,7 @@ Changes: update **004 でやらないことを足した（統合は 005 / 構造
   - `Notes` に `Findings` と `Unplanned` が書かれている
     - その step の中の穴は直し、次の 1 枚が受ける穴は次の 1 枚に渡す
   - 実演のあと、リポジトリに残っているのは自分で消せるものだけ
-  - unit の diff が `review` の子に当たり、findings が残っている
+  - unit の diff を `review` の子に出し、findings が残っている
   - 直したか、理由をつけて答えていないかが `Notes` に書かれている
   - 3 周で止まり、残りは owner に渡る
 
