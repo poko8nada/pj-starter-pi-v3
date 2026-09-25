@@ -14,7 +14,9 @@
 - Depends: なし
 - Action: verify
 - Files: `package.json`、`.oxlintrc.json`、`.oxfmtrc.json`、`tsconfig.json`、`vitest.config.ts`
-- Tests: なし（設定だけ。検査そのものが対象）
+- Tests: なし
+  - 設定だけ
+  - 検査そのものが対象
 
 ### step 2: commit-gate
 
@@ -38,28 +40,39 @@
 - Depends: `quality-gate.changed`
 - Action: verify
 - Files: `.pi/extensions/quality-gate/checks.ts`、`report.ts`
-- Tests: なし（検査の起動は実演で確かめる）
+- Tests: なし
+  - 検査の起動は実演で確かめる
 
 ### step 5: quality-gate.pushback
 
-- What: 落ちたら差し戻し、緑でないまま終えようとしたら戻し、3 回で打ち切る
+- What:
+  - 落ちたら差し戻す
+  - 緑でないまま終えようとしたら戻す
+  - 3 回で打ち切る
 - Depends: `quality-gate.checks`
 - Action: verify
 - Files: `.pi/extensions/quality-gate/index.ts`
-- Tests: なし（pi セッションが要る。実演で確かめる）
+- Tests: なし
+  - pi セッションが要る
+  - 実演で確かめる
 
 ### step 6: agent-rules
 
-- What: エージェントが守る規則（1 枚を先に書く / 緑でないまま終わらない / 検査を弱めない）
+- What:
+  - エージェントが守る規則を書く
+    - 1 枚を先に書く
+    - 緑でないまま終わらない
+    - 検査を弱めない
 - Depends: なし
 - Action: build
 - Files: `AGENTS.md`
-- Tests: なし（文書。実演で確かめる）
+- Tests: なし
+  - 文書
+  - 実演で確かめる
 
 ## Structure
 
-このプランに関係するファイルを全部書く。行の後ろの印はこのサイクルでの扱いで、
-`add` / `update` / `drop` が決定、`keep` は「関わるが変更しない」。
+このプランに関係するファイルを全部書く。行の後ろの印はこのサイクルでの扱いで、`add` / `update` / `drop` が決定、`keep` は「関わるが変更しない」。
 
 ```
 <pj-starter-pi-v3>/
