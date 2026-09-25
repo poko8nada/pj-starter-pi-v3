@@ -44,7 +44,7 @@ If the dependency is real and the earlier ref is gone (that step was dropped, or
 
 Steps whose files do not overlap may run together, as several inputs of one `consult` call or as one child each. Steps that touch the same file are serialised, and the ticket says which of them comes first.
 
-A ticket that changes this skill comes before the tickets whose work it carries: while the skill is wrong, every step carried under it is carried wrong. The plan's `Depends` names the documents a step needs, not the skill that carries it, so it will not show this order — read it off the skill.
+A ticket that changes this skill comes before the tickets whose work it carries: while the skill is wrong, every step carried under it is carried wrong. The plan's step order carries this; its `Depends` names the documents a step needs, not the skill that carries it.
 
 ## Step 5: grouping
 
