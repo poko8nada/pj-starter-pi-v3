@@ -11,10 +11,10 @@
 ### step 1: check-suite
 
 - What: 検査を 1 コマンドで走らせる
-  - `format`
-  - `lint`
-  - `typecheck`
-  - `test`
+  - 整形は `format`
+  - 規則は `lint`
+  - 型は `typecheck`
+  - 振る舞いは `test`
 - Depends: なし
 - Action: verify
 - Files:
@@ -29,7 +29,8 @@
 
 ### step 2: commit-gate
 
-- What: commit 時に同じ検査を回して、緑でなければ止める
+- What: commit 時に同じ検査を回す
+  - 緑でなければ止める
 - Depends: `check-suite`
 - Action: verify
 - Files: `lefthook.yaml`
@@ -45,7 +46,8 @@
 
 ### step 4: quality-gate.checks
 
-- What: 対象に 4 つの検査を回して、結果をまとめる
+- What: 対象に 4 つの検査を回す
+  - 結果をまとめる
 - Depends: `quality-gate.changed`
 - Action: verify
 - Files:
