@@ -82,15 +82,22 @@ The assumption the list rests on: this harness is general-purpose for building a
 
 ## Carry over
 
-- One line per line of the previous definition's `Carry over`, each with the place that took it, or a refusal with its reason. A line that lands nowhere is a hole
+- One line per hole that is still open. A line this cycle resolved — a unit took it, or it was judged not to be a hole — is not copied: it is done
+- A line has three parts, in this order, and nothing else:
+  - the place: file, section, unit, as narrowly as the hole allows
+  - the state: what is missing, wrong or undecided
+  - what closes it: the thing to decide or do. Without this part the next cycle cannot act on the line
+- `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it. A copied line keeps its original `From:`
 
 ## Writing
 
 - Do not write what the reader can look up
+- No tables: they break with long text
 - A field whose content cannot be written yet keeps its name and stays empty: it is what still has to be decided
 - `Carry over` copies holes, as they were written
+- The order of work is the plan's, and the error paths are the tests': not here
 
 ## Retro
 
 - `Good` and `Bad` are heading 3, one item per line: `- <主題> — <中身>`
-- `Carry over` holds the holes the tickets left: copied, not shortened
+- `Carry over` holds the lines that are still open: the copied ones, and the ones this cycle left. Copied, not shortened
