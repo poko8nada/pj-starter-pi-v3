@@ -40,7 +40,7 @@ Acceptance:
   - `research` + `probe.pem` → 私たちの guard で拒否（ホストの規則には無い） (error)
   - 親の `.env` の `shasum` → 前後で同じ (happy)
   - `probe.pem` を消したあと `git status` → 綺麗（実演が何も残さない） (happy)
-- 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）
+- 観点
   - この step は作るものが無く、実演そのものなので当たらない — ケース無し
 
 ## Verify
@@ -56,11 +56,16 @@ Acceptance:
 ### Findings
 
 - 子は秘密を読めない
-  - `.env` / `.envrc` / `probe.pem` のどれも、`research` / `review` / `trial` のどれでも拒否された
+  - `.env` は 3 型すべてで拒否された
+  - `.envrc` は 3 型すべてで拒否された
+  - `probe.pem` は 3 型すべてで拒否された
   - 拒否の文は「読めない: … は秘密として扱う（child-guard）」
 - 再帰 `grep` にも `.env` の行は混ざらない
 - `README.md` は通る（止めすぎていない）
-- **自前 guard の証明**: `probe.pem` にホストの config の規則は無い（`.env` / `.envrc` だけ）
+- **自前 guard の証明**
+  - `probe.pem` にホストの config の規則は無い
+    - ホストの規則があるのは `.env`
+    - ホストの規則があるのは `.envrc`
   - それでも拒否された。あなたの設定が無いクローンでも子は秘密に届かない
 - 親の `.env` は前後で変わらない
   - mtime は `Sep 20 14:33`

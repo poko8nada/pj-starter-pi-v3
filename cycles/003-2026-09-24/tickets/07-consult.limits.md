@@ -23,12 +23,14 @@ Acceptance: 定義 1 枚のレビューが、出力上限に当たらずに終�
 - 想定エラー経路 → 002 の step 1 が持つ — ケース無し
   - `types.json` を読めない
   - `types.json` が壊れている
-- null / 空 / 境界 / 権限 / 2 回目 / 並行 → 値を読むだけ — ケース無し
+- 残りの観点 — ケース無し
+  - 値を読むだけ
   - 呼び出しごとに読み直す既存の形
 
 ## Verify
 
-- 実演: `review` の子を 1 体、入力 `cycles/003-2026-09-24/definition.md` で走らせ、出力上限に当たらずに終わる
+- 実演: `review` の子を 1 体、入力 `cycles/003-2026-09-24/definition.md` で走らせる
+  - 出力上限に当たらずに終わる
   - `in` と `out` のトークンを `Notes` に書く
 - `types.example.json` と `types.json` の `review` の `output` が同じ値であることを読み合わせる
 
@@ -37,7 +39,9 @@ Acceptance: 定義 1 枚のレビューが、出力上限に当たらずに終�
 ### Findings
 
 - 実演（`Verify`）: `review` の子を `cycles/003-2026-09-24/definition.md` に当てた
-  - **最後まで読み切り、出力 33,792 トークンで、上限に当たらずに終わった**
+  - **最後まで読み切った**
+    - 出力 33,792 トークン
+    - 上限に当たらずに終わった
     - 上げる前は 3 周とも `stopped early: output token limit reached (20000)` で死んでいた
 - `types.example.json` と `types.json` の `review` の `output` が、ともに `60000` であることを読み合わせた
 - `turns` は変えない

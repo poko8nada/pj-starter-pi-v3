@@ -23,7 +23,9 @@ Acceptance:
   - 子の起動で、その組み立てたプロンプトを渡す
   - 別の口（stdin など）にも流していれば、そちらを消す
   - `RunOptions.payload` の扱いを決めて `Notes` に書く — 消すか残すか
-    - `readPayloads` / `runForInputs` は残る
+    - `readPayloads` は残る
+      - 既存のテストが使う
+    - `runForInputs` は残る
       - 既存のテストが使う
 - `.pi/extensions/consult/index.ts`
   - 道具の説明（`PARAMETERS`）を直す — `input` は子が読む文書ではない
@@ -46,10 +48,11 @@ Acceptance:
     - 組み立ては純関数で投げない
     - 読めない入力は `run.ts` 側が扱う
     - この step の担当外
-  - null / undefined — ケース無し
-    - 型で防ぐ
-  - 権限 / 2 回目 / 並行 — ケース無し
-    - 純関数（組み立てるだけ）
+  - null → 型で防ぐ — ケース無し
+  - undefined → 型で防ぐ — ケース無し
+  - 権限 → 純関数（組み立てるだけ） — ケース無し
+  - 2 回目 → 純関数（組み立てるだけ） — ケース無し
+  - 並行 → 純関数（組み立てるだけ） — ケース無し
 
 ## Verify
 
