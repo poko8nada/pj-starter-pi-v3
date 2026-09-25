@@ -26,7 +26,7 @@
     - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
   - Why: サードパーティのパッケージの仕事
-    - ハーネスは設定の置き場所（`.pi/remote-pi/.gitignore`）だけを用意する
+    - ハーネスは設定の場所所（`.pi/remote-pi/.gitignore`）だけを用意する
 
 ## What to build
 

@@ -30,7 +30,7 @@ Changes: keep
     - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
   - Why: サードパーティのパッケージの仕事
-    - ハーネスは設定の置き場所（`.pi/remote-pi/.gitignore`）だけを用意する
+    - ハーネスは設定の場所所（`.pi/remote-pi/.gitignore`）だけを用意する
 - owner の判断を、エージェントが代わりにやらない
   - Why: これらは owner のもの
     - シートの OK
@@ -253,7 +253,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 ### Good
 
 - **チケットの閉じ** — 9 枚が全部 `Commit:` で閉じ（子 5 枚 / 親 4 枚）、最後の 1 枚を閉じた時点で ref も worktree も残っていない
-- **事故の原因を直した** — 検査が自分の git の置き場を自分で決める形に直し（`git-env.ts`）、`AGENTS.md` に 1 条と `plan` の `Tests` に 1 文を足し、フックの環境を模した実行でも実リポジトリが汚れないことを検査が示す
+- **事故の原因を直した** — 検査が自分の git の場所を自分で決める形に直し（`git-env.ts`）、`AGENTS.md` に 1 条と `plan` の `Tests` に 1 文を足し、フックの環境を模した実行でも実リポジトリが汚れないことを検査が示す
 - **`consult` の構造** — `index.ts` は登録だけ（25 行）で `policy/` `child/` `run/` `tool/` に分かれ、辺は下向きだけ（例外 2 本は記録）
 - **`close` skill** — 生まれ、このサイクルの閉じで実際に使って動いた（6 段を練習用の題材で通した通し 1 本、`review` の子を当てて blocking 0 件、穴の振り分け）
 - **実演の題材** — 小さくする教訓が効いた（82 行の 1 枚は出力上限で死に、練習用の題材 5 行なら通る）
@@ -277,7 +277,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 - **02-plan-skill**
   - **実演で見ていないこと** — 子が承認までに触ったのがプランのファイルだけか（`git status`）は記録が無い（未解決）
   - **004 のプランとチケットはこの規則より前に書かれている** — `Depends` は `plan` を直す step 2 を待っておらず、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く（次へ回す）
-  - **検査の置き場の 1 文** — 004 の事故の後、`Tests` に「検査を足す step は、その検査が自分で決める置き場を書く」を足した。規則そのものは `AGENTS.md` に置く（次へ回す）
+  - **検査の場所の 1 文** — 004 の事故の後、`Tests` に「検査を足す step は、その検査が自分で決める場所を書く」を足した。規則そのものは `AGENTS.md` に置く（次へ回す）
 - **03-consult.split**
   - **子の worktree には `types.json` が無い** — git 管理外なので HEAD から作る worktree に入らず、実演の「子が起動して返る」は `EXTENSION_DIR` の決め方に関係なく落ちる（親の実ツリーでは読める）（次へ回す）
 - **06-definition-skill**
@@ -287,7 +287,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 - **09-readme**
   - **README は gate の外** — README 2 枚は `quality-gate` の lint と typecheck の対象外で、この実演の数え上げだけが実際の gate（次へ回す）
 - **`close` のフェーズ（サイクル全体）**
-  - **`work` の `Then` と木のズレ** — `Then` は「unit の diff を `review` の子に当てる」だが、木は親が `git diff` を読む形（`Remarks` に記録済み）（次へ回す）
+  - **`work` の `Then` と木のズレ** — `Then` は「unit の diff を `review` の子に当てる」だが、ツリーは親が `git diff` を読む形（`Remarks` に記録済み）（次へ回す）
   - **子の残したファイルが ref に混ざる** — 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒にコミットした。親が手で消すことになり、1 つ見落とした（次へ回す）
   - **`git-env.ts` の位置** — `consult/` 直下にあり、unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類（次へ回す）
   - **実演の題材も lint の対象** — `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint に当たる（次へ回す）

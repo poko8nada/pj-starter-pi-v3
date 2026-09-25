@@ -76,7 +76,7 @@ Acceptance:
 
 ### Unplanned
 
-- owner に出す前の review の段を追加した — `Step 6`
+- owner に出す前の review のフェーズを追加した — `Step 6`
   - 子は `review` 型
   - 子に固定のチェックリストを当てる
   - 直して再レビューする

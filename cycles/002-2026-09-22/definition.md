@@ -31,7 +31,7 @@ Changes: update **エージェントがサイクルを回せることを加え�
     - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
   - Why: サードパーティのパッケージの仕事
-    - ハーネスは設定の置き場所だけを用意する
+    - ハーネスは設定の場所所だけを用意する
       - `.pi/remote-pi/.gitignore`
 
 Changes: keep

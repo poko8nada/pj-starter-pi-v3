@@ -43,7 +43,7 @@ Acceptance:
   - payload が `"A\nB"` + task `"T"` → `"A\nB\nT"`（payload の中の改行を壊さない） (happy)
   - payload が空白だけ `"  "` + task `"TASK"` → `"  \nTASK"` (happy)
     - 空白は空とみなさない
-    - 空とみなすのは入力の段で step 10 が決める
+    - 空とみなすのは入力のフェーズで step 10 が決める
   - 想定エラー経路 — ケース無し
     - 組み立ては純関数で投げない
     - 読めない入力は `run.ts` 側が扱う

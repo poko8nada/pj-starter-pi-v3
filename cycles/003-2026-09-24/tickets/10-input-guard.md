@@ -66,7 +66,7 @@ Acceptance:
   - 空のほうは「(the child could not run) 空の入力」が返り、子は走らなかった
   - 中身のあるほうは走り、答えを返した
 - 空の入力に `[consult]` の行が付かないので、結果を見ただけで「子が走ったか」が分かる
-- 置き場所はチケットの `run.ts` ではなく **`index.ts`** にした
+- 場所所はチケットの `run.ts` ではなく **`index.ts`** にした
   - `runForInputs` は結果を組む係
     - 入力の検証はその呼び出し側の仕事
 - 結果の形はチケットの `{ok: false, reason}` ではなく実物の **`{ok: false, error}`** になった

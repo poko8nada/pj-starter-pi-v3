@@ -104,8 +104,8 @@ Acceptance:
   - `Verify` は走る形になった
 - 子がスキルの穴を 10 返してきた
   - **8 つは本物**（下の `Unplanned` で直した）
-    - 置き場所
-    - 「適用しない理由」の置き場
+    - 場所所
+    - 「適用しない理由」の場所
     - 印の語彙
     - プランの `Tests` と定義の関係
     - 検査だけの step の `Todo` と `Verify`
@@ -123,7 +123,7 @@ Acceptance:
 ### Unplanned
 
 - スキル本文に 5 箇所、`format.md` に 3 箇所足した（チケットの `Todo` に無い）
-  - ① チケットの置き場所は `cycles/<NNN-DATE>/tickets/`
+  - ① チケットの場所所は `cycles/<NNN-DATE>/tickets/`
   - ② `<unit-id>.<part>` のドットはファイル名にも残る
   - ③ 「適用しない理由」は case と同じリストに置く
   - ④ 検査だけの step

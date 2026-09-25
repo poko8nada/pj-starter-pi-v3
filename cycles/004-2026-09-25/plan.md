@@ -19,7 +19,7 @@
 - Files: `.pi/skills/work/SKILL.md`
 - Tests: 実演
   - 子に `tickets` と `work` だけを読ませ、1 枚を閉じさせる
-  - unit の diff をレビューに当てた記録が `Notes` に残る
+  - unit の diff をレビューに出た記録が `Notes` に残る
   - 3 周で止まる
   - `Notes` に `Findings` と `Unplanned` がある
   - 実演の後に残ったのは自分で消せるものだけ

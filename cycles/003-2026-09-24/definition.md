@@ -30,7 +30,7 @@ Changes: keep
     - `pages`
 - メッシュ（`remote-pi`）をハーネスの機能にしない
   - Why: サードパーティのパッケージの仕事
-    - ハーネスは設定の置き場所（`.pi/remote-pi/.gitignore`）だけを用意する
+    - ハーネスは設定の場所所（`.pi/remote-pi/.gitignore`）だけを用意する
 - owner の判断を、エージェントが代わりにやらない
   - Why: これらは owner のもの
     - シートの OK
@@ -269,7 +269,7 @@ Changes: update
   - `04-secret-guard.rules`: `$VAR` を組み立てた字面は「存在しないパス」として fail-closed で止まるが、偶然であって保証ではない
   - `04-secret-guard.rules`: 道具によってパスのキー名が違う（`path` / `file_path` / `filePath` / `file`）。pi の `read` の実際のキー名は未確認
   - `05-secret-guard.consult`: チケットの「配列そのものを比較」は絶対パスが機械に依存するため、テストは `--tools` の後ろ / `child-guard.ts` で終わる絶対パス / `-e` は 1 回で確かめている
-  - `10-input-guard`: 置き場所はチケットの `run.ts` ではなく `index.ts` にした（`runForInputs` は結果を組む係で、入力の検証は呼び出し側）
+  - `10-input-guard`: 場所所はチケットの `run.ts` ではなく `index.ts` にした（`runForInputs` は結果を組む係で、入力の検証は呼び出し側）
   - `10-input-guard`: 結果の形はチケットの `{ok: false, reason}` ではなく `{ok: false, error}`（`InputOutcome`）
   - `10-input-guard`: 拡張は起動時に読まれるので、親のコードを直した実演は毎回 `/reload` が要る（子に渡すファイルなら要らない）
   - `11-work-skill`: 試し用チケットはコミットしないと子から見えない（子は `HEAD` の写しで働く）ので、履歴に残る（`da4cfc4` 追加 / `bc59819` 削除）
@@ -277,7 +277,7 @@ Changes: update
   - `11-work-skill`: 実装を第二の目で見るレビューが、skill にも枠にも無い → 004
   - `12-definition-skill`: `format.md` に節数の記述が無く、「7 節 → 8 節」に直す対象が無かった（テンプレートと空節の規則を直した）
   - `12-definition-skill`: `plan.md` の step 12 の `Tests` とチケットの `Acceptance` は「7 節」だが、この step で 8 節になる（8 節は 004 の 1 枚から。003 の 1 枚は凍結なので触らない）
-  - `14-plan-skill`: 本文が次の段を名指しする句が 4 skill にある（`definition` / `stack` / `plan` / `tickets`）。1 つだけ直すと揺れる（`review` は consult の type で skill 名ではない）→ 次のサイクル
+  - `14-plan-skill`: 本文が次のフェーズを名指しする句が 4 skill にある（`definition` / `stack` / `plan` / `tickets`）。1 つだけ直すと揺れる（`review` は consult の type で skill 名ではない）→ 次のサイクル
   - `15-tickets-skill`: `tickets` のレビューと合意の取得は、子に `consult` が無くオーナーも居ない演習だったので実演で走っていない
   - `15-tickets-skill`: 子が自分の worktree でコミットし、ref `consult/trial-20260924-161035-0` を 1 本残した（002 の 07 と同じ形。`ref-cleanup` で消すか、先に owner の許可を取る）
   - `16-readme`: チケットの `Verify` のコマンドが誤っていた（`format.md` 自身の節が混ざって 14 を返し、8 を数えるにはコードブロックの中を見る）。チケットは凍結なので直さない

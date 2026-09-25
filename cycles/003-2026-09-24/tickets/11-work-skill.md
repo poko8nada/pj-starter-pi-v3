@@ -56,7 +56,7 @@ Acceptance:
     - `ref-cleanup` の道具を使う
     - 消す前に一覧を見せる
     - `consult` 以外は拒む
-  - 穴の置き場所
+  - 穴の場所所
     - その step の中なら直して `Unplanned`
     - 外なら `Findings`
       - 次の 1 枚が拾う
@@ -112,7 +112,7 @@ Acceptance:
   - `commitWorktree` が `git add -A` する
     - だから書く前にツリーを綺麗にした
   - どちらも Step 2 に足した（`ccc3e19`）
-- `Verify` の後半（失敗 4 つの置き場所）
+- `Verify` の後半（失敗 4 つの場所所）
   - ref が返らない → Step 6
   - 子の作業が失敗 → Step 6
   - 依存なのに前の ref が無い → Step 3

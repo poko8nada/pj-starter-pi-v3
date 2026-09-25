@@ -147,7 +147,7 @@
   - 子のコミットを ref で受け取る
   - 親が取り込むか決める
   - 実演で確かめる
-  - 穴をどの段に置くか決める
+  - 穴をどのフェーズに置くか決める
 - Depends: step 1〜10
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`

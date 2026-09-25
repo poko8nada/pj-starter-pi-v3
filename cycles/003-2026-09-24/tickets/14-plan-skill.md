@@ -65,7 +65,7 @@ Acceptance:
 - `description` に次の段の名前は無い
 - リポジトリには 1 ファイルも触っていない
   - 子の ref は `(the child changed nothing)`
-- **次のサイクルへ送る**: 子が「本文は次の段を名指ししている（Step 6 の `review`）」と報告した
+- **次のサイクルへ送る**: 子が「本文は次のフェーズを名指ししている（Step 6 の `review`）」と報告した
   - ここでの `review` は consult の **type** で skill 名ではない（`consult` を読めば分かる）
   - 子自身が練習用シートに `review` という skill の unit を作っていたので、そう読めた
   - 同じ句が definition / stack / plan / tickets の 4 skill にあるので、1 つだけ直すと揺れる
@@ -74,7 +74,7 @@ Acceptance:
 ### Unplanned
 
 - チケットの「本文が答えるべき失敗 2 つ」は名前が無かったので、`Then` の裏側から読んだ
-  - 単位に無い step の置き場が無い → Step 2 の `Cleanup` の規則
+  - 単位に無い step の場所が無い → Step 2 の `Cleanup` の規則
   - 承認前に他所（古い skill）に手を入れてしまう → Step 4 の道具の依存と、Step 7 の「コミットしない」
 - `trial` の子は子を起こせない（`consult` が無い）ので、Step 6 のレビューは実演の中で走っていない
   - skill の穴ではなく、レビューは agent の仕事

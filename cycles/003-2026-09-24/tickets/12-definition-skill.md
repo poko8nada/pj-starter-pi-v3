@@ -122,7 +122,7 @@ Acceptance:
   - 凍結の表
   - ref の規則
   - `Remarks` の規則
-- **本文は次の段の skill を名指ししていない** ✓
+- **本文は次のフェーズの skill を名指ししていない** ✓
   - 子の報告: `The later stages of the cycle have their own skills, and each of those says in its description when to read it`
   - unit の id は artifact の名前としてしか使っていない
 - **リポジトリには 1 ファイルも触っていない**
