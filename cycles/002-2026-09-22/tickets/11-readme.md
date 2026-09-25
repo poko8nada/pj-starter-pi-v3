@@ -9,24 +9,12 @@ Acceptance:
 
 - `README.md` を書く
   - 「何が入っているか」 — ハーネス付きのスターターであること
-    - 検査とゲート
-    - エージェントの規則
-    - consult
-    - スキル 4 つ
   - 「最初に何をするか」 — clone した直後の手順
     - `pnpm install`
     - pi の起動
     - `.pi/extensions/consult/types.json` を例から作る
   - 「サイクルの回し方」 — スキル 4 つが読み込まれること
-    - definition
-    - stack
-    - plan
-    - tickets
   - 「検査」 — 何がいつ走るか
-    - ターンごと
-    - commit 時
-    - push 時
-    - 手で叩く
 
 ## Verify
 
