@@ -89,11 +89,15 @@ Acceptance:
 
 ### Findings
 
-- 実演（a）の結果: 子は `.pi/skills/definition/` だけを読んで 1 枚を書いた
+- 実演（a）の結果
+  - 子は `.pi/skills/definition/` だけを読んで 1 枚を書いた
   - 7 節が出た
-  - 印が出た（`update` の理由を太字）
-  - 単位は `memo-entry` と `memo-list`
-  - `Then` は観測できる（`exit 0`）
+  - 印は `update` の理由が太字
+  - 単位は 2 つ
+    - `memo-entry`
+    - `memo-list`
+  - `Then` は観測できる形
+    - `exit 0`
   - `Stack` は空のまま
   - 実行できない段を全部報告した
     - `consult` が無い
@@ -101,7 +105,8 @@ Acceptance:
     - 前のサイクルが未クローズ
   - `001` と「最初の 1 枚」の混同を指摘した
     - スキル側で修正済み
-- 実演（b）の結果: 成立
+- 実演（b）の結果
+  - 成立
   - 1 問ずつ
   - 推奨案つき
   - 節の順で回せた
