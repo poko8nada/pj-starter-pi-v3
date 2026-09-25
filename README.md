@@ -9,7 +9,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
-- **The cycle mechanism** — four skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets`)
+- **The cycle mechanism** — five skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets` / `work`)
 - **consult** — a tool that runs a child `pi` without showing it this conversation (`.pi/extensions/consult/`)
 - **The cycle records** — `cycles/`
 
@@ -34,17 +34,20 @@ pnpm install
 
 - **On commit** — format, lint, typecheck and test, on what changed
 - **On push** — typecheck and test
-- **On every agent turn** — the same four, on whatever that turn changed
+- **On every agent turn** — `lint` and `typecheck`, on whatever that turn changed (the formatter runs first, as a fix)
 
 ## The cycle
 
-One cycle is a definition, a stack, a plan, tickets, then a Retro. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
+One cycle is a definition, a stack, a plan, tickets, the work of carrying them out, then a Retro. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
 
 ```
-definition   write the one sheet (What / Goal / Non-goal / What to build / Stack / Retro)
+definition   write the one sheet (What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Retro)
 stack        decide what to build with (the harness is the base; only additions are listed)
 plan         decide the order (steps, files, tests)
-tickets      cut a ticket per step, agree it, implement it, close it
+tickets      cut a ticket per step, agree them
+work         carry each step to done (decide who does it, merge, demonstrate, close, clean the refs)
 ```
 
 The records stay in `cycles/<NNN-DATE>/`. **A cycle is closed when its `Retro` is there.** Git holds the state, so there is no check box and no status field anywhere.
+
+Most of a sheet is frozen by the commit that agrees it. Three sections stay writable: `Stack`, `Remarks` and `Retro`. `Remarks` is where the owner's remarks land while the cycle runs — one line each, `<remark> → <where it lands>`.

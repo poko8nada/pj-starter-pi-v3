@@ -9,7 +9,7 @@ English: [README.md](README.md)
 - **検査** — `oxlint` / `oxfmt` / `tsc` / `vitest` と、それを走らせる `pnpm` スクリプト
 - **ゲート** — commit と push で検査を通す `lefthook` と、ターンごとにそのターンで変えた分だけを検査する `quality-gate`
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
-- **サイクルの仕組み** — `.pi/skills/` の 4 つ（`definition` / `stack` / `plan` / `tickets`）
+- **サイクルの仕組み** — `.pi/skills/` の 5 つ（`definition` / `stack` / `plan` / `tickets` / `work`）
 - **consult** — 会話を見せずに子の `pi` を走らせる道具（`.pi/extensions/consult/`）
 - **サイクルの記録** — `cycles/`
 
@@ -34,17 +34,20 @@ pnpm install
 
 - **commit 時** — 変えた分に format / lint / typecheck / test
 - **push 時** — typecheck / test
-- **エージェントのターンごと** — 同じ 4 つを、そのターンで変えたものに
+- **エージェントのターンごと** — `lint` と `typecheck` を、そのターンで変えたものに（整形はその前に修正として走る）
 
 ## サイクル
 
-1 サイクル = 1 枚の定義 → スタック → プラン → チケット → 反省。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段に「次はこれ」とは書かない。
+1 サイクル = 1 枚の定義 → スタック → プラン → チケット → その実行 → 反省。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段に「次はこれ」とは書かない。
 
 ```
-definition   1 枚を書く（What / Goal / Non-goal / What to build / Stack / Retro）
+definition   1 枚を書く（What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Retro）
 stack        何で作るか（ハーネスが土台。足した分だけ）
 plan         どの順で作るか（step / ファイル / テスト）
-tickets      step ごとにチケットを切り、合意し、実装し、閉じる
+tickets      step ごとにチケットを切り、合意する
+work         step を 1 つずつ片付ける（誰がやるか / 取り込み / 実演 / 閉じる / ref の片付け）
 ```
 
 記録は `cycles/<NNN-DATE>/` に残る。**閉じているかは `Retro` の有無で分かる** — 状態は git が持つので、チェックマークも状態欄も無い。
+
+1 枚の大半は、合意したコミットで凍結される。書けるままなのは `Stack` / `Remarks` / `Retro` の 3 節。`Remarks` はサイクル中にオーナーの指摘が着地する場所で、1 行ずつ `<指摘> → <着地先>` と書く。
