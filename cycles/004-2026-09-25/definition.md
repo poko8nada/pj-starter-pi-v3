@@ -253,283 +253,58 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 - Good:
   - 9 枚のチケットが全部 `Commit:` で閉じた
     - うち 5 枚は子、4 枚は親が関与
-    - 最後の 1 枚を閉じた時点で、ref も worktree も残っていない（親の確認）
-  - 事故（検査が実リポジトリの config を書き換えた）を、サイクルの中で根まで直した
+    - 最後の 1 枚を閉じた時点で、ref も worktree も残っていない
+  - 事故（検査がフックの中で実リポジトリの config を書き換えた）を、サイクルの中で根まで直した
     - 検査が自分の git の置き場を自分で決める形にした（`git-env.ts`）
-    - `AGENTS.md` に 1 条足した
-    - `plan` の `Tests` に 1 文足した
-    - フックの環境を模した実行でも実リポジトリが汚れないことを検査が示す
-  - `consult` の構造
-    - `index.ts` は 25 行（登録だけ）
-    - `policy/`、`child/`、`run/`、`tool/` に分かれ、辺は下向きだけ
-      - 例外 2 本は記録
-    - `EXTENSION_DIR` は道具が自分の位置から解決する
-  - `close` skill が生まれ、**このサイクルの閉じで実際に使って動いた**
-    - 単位をまたぐ通し 1 本
-      - 6 段を玩具で通した子の報告
-    - `review` の子
-      - blocking 0
-    - 穴の振り分け
-      - `Goal` を壊すものはそのサイクルで直す
-      - それ以外は次へ
-    - `Retro` を書いた
-  - 実演の題材を小さくする教訓が効いた
-    - 003 の 1 枚 82 行で出力上限に当たって死ぬ → 玩具 5 行で通る
-  - README、`AGENTS.md`、6 skill が実物と一致
-    - 6 skill、4 拡張、9 節、検査 2
+    - `AGENTS.md` に 1 条、`plan` の `Tests` に 1 文
+    - フックの環境を模した実行でも、実リポジトリが汚れないことを検査が示す
+  - `consult` の構造: `index.ts` は登録だけ（25 行）、`policy/` `child/` `run/` `tool/` に分かれ、辺は下向きだけ（例外 2 本は記録）
+  - `close` skill が生まれ、このサイクルの閉じで実際に使って動いた
+    - 単位をまたぐ通し 1 本（6 段を玩具で通した子の報告）
+    - `review` の子を当てて blocking 0 件
+    - 穴の振り分けをした
+  - 実演の題材を小さくする教訓が効いた（82 行の 1 枚では出力上限で死に、玩具 5 行なら通る）
+  - README、`AGENTS.md`、6 skill が実物と一致（6 skill、4 拡張、9 節、検査 2）
 - Bad:
-  - **子の作業が 1 本消えた**（step 4。フックが拒否し、worktree ごと破棄）
+  - 子の作業が 1 本消えた（step 4。フックが拒否し、worktree ごと破棄）
     - やり直しで足りたが、原因は検査がフックの中で実リポジトリを書き換えたこと
-  - **親（私）が黙って判断した**
+  - 親（私）が黙って判断した
     - 並列にできるのに直列で流した
-    - 事故対応をあなたに諮らずにコミットした（`25e1a04`、`81e0743`、`38b22f9`）
+    - 事故対応を owner に諮らずにコミットした（`25e1a04`、`81e0743`、`38b22f9`）
     - 造語（「世界」）と折り返しコメントを書いた
-    - すべてあなたの指摘でやり直した
-  - `close` skill の初版に穴 → 実演で見つけて直した（`1e06d88`）
+  - `close` skill の初版に穴があり、実演で見つけて直した（`1e06d88`）
     - 閉じる行為自体の行き先が無い
     - 残置物と製品のデータの衝突
-  - `review` の `turns` 20 では足りず、チケット段の全体レビューが報告の前に止まった
-    - `turns` を 40 に上げた
-    - 出力上限を 60,000 に上げた
+  - `review` の `turns` 20 では足りず、チケット段の全体レビューが報告の前に止まった（40 に上げた）
   - キャンセルしたのに、子の残した編集が ref で返った（README は「何も残らない」と書いている）
-  - 半端: 004 の 1 枚に `## Carry over` が無い（凍結時は 8 節だった）
-    - 003 の持ち越しの会計は次の 1 枚が持つ
-  - 実演の委譲: `review` の子は「残置物が無いか」を自分では確かめられない（`.git` が読めない、コマンドが無い）のに、確かめたと書いた
-    - この項目は親が持つ
+  - 半端: 004 の 1 枚には `## Carry over` が無い（凍結時は 8 節だった）。003 の持ち越しの会計は次の 1 枚が持つ
+  - `review` の子は「残置物が無いか」を自分では確かめられない（`.git` が読めず、コマンドも無い）のに、確かめたと書いた
 - Carry over:
-  - `review` の子は `bash` を持たない
-    - `.pi/extensions/consult/README.md` の表と `types.example.json` の tools は `read`、`ls`、`find`、`grep`、`web_search` のみ
-    - 子に `git diff` を走らせて diff を見せることはできない
-    - Step 8 は「diff をリポジトリの外に書き出し、`consult` の `input` として渡す」形にした
-      - チケットは子が名前で読む
-  - 置き場所は `Verify`（Step 7）の後、`Commit:`（Step 9）の前
-    - あいだに入れるため Step 8 以降を 1 つ繰り下げた
-    - `The failures the text answers` の `Step 9` を `Step 10` に直した
-  - 実演（`Verify`）は親の担当
-    - この子は子（`consult`）を起こさない
-    - 「unit の diff が `review` に当たった記録が `Notes` にある」と「3 周で止まる」は、まだ子の側では観察していない
-  - （親が追記）`types.json` は「無い」のではなく **git 管理外**
-    - 実物は存在する
-    - 結論（子に `git diff` は走らせられない）は変わらない
-  - （親が追記）本文のチェックは `Then` を `Acceptance` と言い換えている
-    - `Acceptance` は `Then` の写しなので同じものを指す
-  - （親が追記）このチケットの `Acceptance`「findings が残っている」は「残っていない」の意
-    - 合意済みなのでチケットは直さず、ここに書く
-  - （親が追記）レビューで blocking が出た
-    - レビューを `Verify` の後に置いたので、「`Commit:` は `Verify` が判定した内容」と嚙み合わない
-    - **ツリーが変わったラウンドは Step 7 に戻る**と本文に足した
-  - （親が追記）**実演（`Verify`）は、この step 自身の流れが兼ねる**
-    - 子が `tickets` と `work` を読んで step を進める
-    - 親が diff を `review` の子にかける
-      - 3 ラウンド、1 周目 1 blocking、2 周目 2 blocking、3 周目 0
-    - findings の処遇をここに並べた
-    - 実演を別の探り用チケットで回さなかったのは、この step 自体が「子 + 親のレビュー + 閉じ」の形をしているため
-  - （親が追記）外の穴: `README.md` と `README.ja.md` の `work` の行の要約に `the review` が無い
-    - 本文の `description` には入った
-    - step 9 の「各スキルの役割を `description` と突き合わせる」が受ける
-  - 実演（`Verify`）は親が別の子（`consult`）で回す担当
-    - この子は子を起こさないので、観察項目（実演の 1 枚に 4 つとも載るか、`git status` がプランのファイルだけか）はまだこの子の側では観察していない
-    - 親が実演するときに見る
-  - 004 の `plan.md` とチケットはこの規則より前に書かれている
-    - `Depends` は `plan` を直す step 2 を待っていない
-    - `Structure` の隣に `Layers` も `Seam` も無い
-    - 規則は次のサイクルのプランから効く（`Todo` の指示どおりここに書く）
-    - このズレは 004 の外の穴なので、次の 1 枚が受ける
-  - （親が追記）**実演**（親が回した）
-    - `trial` の子に練習用の 1 枚（`/tmp/stack-demo/definition.md`）から 9 step のプランを書かせた（`/tmp/plan-demo-2/plan.md`）
-    - `Structure` は**入れ子の木**（`.pi/skills/close/SKILL.md add` の形）
-    - `Layers` は「層は上を知らない」
-    - `Seam` は `types.json`
-    - 形の問いの答えは「`close/` が入っても `.pi/skills/` はまだ 1 つのことを表す」
-      - 整理は不要（`Refactor: なし`）
-    - 練習の 1 枚に構造の step が無いので、「構造の step は形で検証」だけはこの実演では出ない
-      - 規則は `format.md` にある
-  - （親が追記）**親の読み**（Step 8）: `git diff` を読み、1 つ直した
-    - `work` skill に、この step の規則と重なる古い但し書きが残っていた
-      - 「plan は順序を表さない」→「plan の step の順序が運ぶ」
-    - step の外の穴なので別コミット（`2ea0740`）
-  - プランの step 3 の `Files` に `spec.test.ts` が無い
-    - `PARAMETERS` が `index.ts` を出るため、import 先を直す必要がある
-    - プランは凍結済みなので、ここに書く
-  - **子の worktree には `types.json` が無い**
-    - git 管理外のファイルは HEAD から作る worktree に入らない
-    - この worktree にあるのは `types.example.json` だけ
-    - 実演の「子が起動して返る」は `EXTENSION_DIR` の決め方に関係なく `types.json` が読めずに落ちる
-      - 親の実ツリーでは読める
-    - この制約はチケットにも skill にも書かれていない
-  - `EXTENSION_DIR` は `tool/consult.ts` が `dirname(dirname(fileURLToPath(import.meta.url)))` で `consult/` を指す形にした
-    - 定数を `index.ts` に残して渡すには道具を工場にする形が要る
-    - 道具が自分の位置から解決し、上向きの辺を作らないようにした
-  - （親が追記）**親の読み**（Step 8）: `index.ts` は登録だけ（25 行）で `PARAMETERS` と `execute` を import する形
-    - 中身は書き換えていない
-    - 削除 299 行・追加 314 行を突き合わせると、説明のつかない書き換えは無し
-    - 差分は import の貼り替え、`EXTENSION_DIR` の 1 行、`export` の付与、インデントのずれだけ
-    - インデントに敏感な確認なので証明ではなく観察
-  - （親が追記）**実演**（親のツリーで、`/reload` の後）
-    - `consult` を 1 回呼んだ（`research`、入力無し、「ok とだけ返せ」）
-    - 子が起動して `ok` を返した（1 turn、in 235、out 2、$0.0001）
-    - `loadTypes(EXTENSION_DIR)` が `types.json` を読めている証拠
-      - 読めなければ子を起こす前に落ちる
-  - プランの step 4 の `Files` に `tool/render.ts` と、移す・改名するテスト 4 本が無い
-    - `tool/render.ts` は `child/spec.ts` から引くので import が変わる
-    - プランは凍結済みなので、ここに書く
-  - プランの step 4 の `Tests` と `05` の実演 ③ は、辺を 3 本と書いている
-    - `tool` → `run`
-    - `run` → `child`
-    - `child` → `policy`
-    - 実物にはもう 3 本ある
-      - `tool` → `child`
-      - `tool` → `policy`
-      - `run` → `policy`
-    - このチケットの 6 本が正しく、プラン側は凍結なので直さない
-  - （親が追記）**事故**: 子が step 4 をやり、`consult` がその作業をコミットするときにフックが落ちた
-    - `run.test.ts` の実リポジトリのテストが、フックの `GIT_*` に負けて実リポジトリの config を書き換え、自分が壊した repo で失敗した
-    - ref が作られず worktree ごと消え、**子の作業は残っていない**
-    - 原因と対処（検査が自分の置き場を自分で決める）は別コミット（`25e1a04`、`81e0743`、`38b22f9`）と 1 枚の `Remarks` に記録
-  - （親が追記）**親がやり直した**（`work` skill の「子が ref を返さなかったとき」の経路）
-    - 移動、改名、import の貼り替え、README、`ref-cleanup` の 1 行
-  - （親が追記）**実演**: `consult` を 1 回呼んだ（`review`、入力無し、`.env` を読ませる）
-    - 子が起動して「読めない: `.env` は秘密として扱う（child-guard）」を返した
-    - `types.json` が読めている証拠
-      - `EXTENSION_DIR` が新しい位置から `consult/` を指す
-      - `-e` が新しい `child/guard.ts` を指している
-  - （親が追記）チケットの `Files` に無いもの: `git-env.ts`
-    - 検査が git の置き場を決めるヘルパー
-    - 事故の対処で直下に増えた
-    - `child/spec.test.ts` → `../tool/consult.ts` は上向きの辺
-      - `PARAMETERS` のため、チケットが指定
-    - `tool/consult.ts` → `./render.ts` は同じ層の中の辺
-      - step 3 が作った
-  - **`review` の `turns` は 20 では足りない**
-    - チケット 9 枚の全体レビューが、読むだけで 20 を使い切り、報告の前に止まった
-      - **この step の実演で踏んだのではなく、チケットの段で踏んだ**
-    - `turns` を 40 に上げ、`types.json` と `types.example.json` を揃えた
-    - この変更はこの step の `Files`（なし）ではない
-      - ツールの失敗から出た、プランに無い変更
-    - 合意の材料としてここに残す
-  - **owner の指摘（合意時）で 9 節に決まった**（`## Carry over` を足す）
-    - 定義の `Then` は 8 節と言っているが、会計の置き場所がいまの 8 節に無い
-    - `Acceptance` を 9 節に改訂した（理由 = owner の指摘。1 枚の `Remarks` にも記録）
-    - 定義の 1 枚は凍結なので、`Then` 自体は触らない
-  - （親が追記）**子はキャンセルされたが、`consult` は子の残した編集をコミットして ref `3c63945` を返した**
-    - README には「キャンセルすると子は殺され、worktree は消える」と書いてあり、何も返らないはず
-    - フローの穴
-      - `work` skill の経路は成功、失敗、タイムアウト、フック拒否の 4 つで、キャンセルが無い
-  - （親が追記）**親の読み（Step 8）**: 子の diff は 2 ファイル（`definition/SKILL.md`、`format.md`）
-    - 会計の節（Step 7）、9 節（Step 7 と Step 8 のチェックリスト）、Step 10 の行き先、`format.md` の型と空節の規則を覆っている
-    - チケットの `Todo` を全部覆っていて、直すところは無かった
-  - （親が追記）**実演**: 玩具の前の 1 枚（`/tmp/definition-toy/previous.md`、`## Carry over` 5 行）から `trial` の子に次の 1 枚を書かせた（`/tmp/definition-toy/next.md`）
-    - 9 節（`Remarks` と `Retro` だけ空）
-    - 前の 5 行に対して 5 行で全部に着地先がある
-    - 次のスキルの名前は 0 件
-    - リポジトリと玩具は無傷（ハッシュ一致）
-  - （親が追記）Note: 最初の実演の題材に 003 の 1 枚（82 行）を使い、子が出力上限 50,000 に当たって死んだ（out 51,278）
-    - 玩具の 5 行に変えて通った
-    - **実演の題材は小さく**（親の題材選びの失敗）
-  - この step は 004 の step 7 なので、ここで作る `close` は 004 自身の閉じには間に合わない
-    - `close` は全チケットが閉じた後に読む skill で、それを書いているのがこの step にあたる
-    - `Verify` の実演が玩具のサイクルを使うのはそのため
-    - 004 の閉じは、この skill が入った後（次サイクルの頭、または owner の判断）でこの skill を読むことになる
-  - 外の穴（前の step へ）: 閉じが 2 箇所にある
-    - `definition` の Step 10 が「前のサイクルを閉じる」と書く
-    - この `close` の Step 5 が「`Retro` を書いて閉じる」と書く
-    - 004 の plan step 6 は `definition` の Step 10 を触っておらず、step 6 のチケットはまだ閉じていない
-    - どちらが閉じるのかは決まっていない
-    - この step では直さず（`Todo` の外）、次の 1 枚が拾う
-  - 本文に skill 名は無い
-    - `description` は入口を名乗る（`Use when every ticket of a cycle is closed.`）
-  - 観点（null、空、境界、不正、権限、2 回目、並行）→ この step は skill 本文の新規作成で、作るものが無い
-    - ケース無し（チケットの `Todo` のとおり）
-    - 失敗の入力は `Verify` の観察項目が持つ
-  - `Verify` のうち実演は親の担当
-    - 玩具のサイクル、1 本の統合、`review` の子、findings の振り分け、玩具の 1 枚とプランが変わらない
-    - この子は `consult` を起こさないので、ここではまだ観察していない
-  - 重複検査（`Verify` の読み）
-    - `.pi/skills/` の 6 skill 本文と `references/format.md` 3 本を読んだ
-    - `## Rules` の 3〜10 で、skill 本文の手順をそのまま規則として言い直している条は無い
-    - 最も近いのは 1 組: 10 条の前半（検査は環境・置き場を継承せず自分で決める）と `.pi/skills/plan/SKILL.md` の `Tests` と `.pi/skills/plan/references/format.md` の `Steps`
-      - どちらも `Tests` に、検査が自分で決める置き場を書く
-      - 前者は検査の振る舞い、後者は plan の `Tests` 欄に書くことの要求で、主語も行為も違う
-      - 重複とは読まなかったが、どちらかを動かすのは criteria の話なので親 / owner が決める
-    - `Remarks` は 2 つを同時に足したと書いている
-  - 5 条に近いものと 4 条に近いものは、いずれも欄・段に閉じた当てはめで、規則の言い直しではないと読んだ
-    - 5 条: `close` の `Good` の「読んだ値の無い主張は 1 行ではない」と `tickets/references/format.md` の「`Notes` は見て確かめたことから書く」
-    - 4 条: 各 skill の「owner に聞く」段
-  - `Verify` の実演のうち「clone 直後のつもりで読む」は fresh な目ではない
-    - この子は既に全部読んだ
-    - `consult` の子を起こせないので、fresh eyes の実演は親の担当
-  - 名指しした仕組みは実在する
-    - `.pi/skills/`（7 skill）
-    - `.pi/extensions/quality-gate/`
-    - `lefthook.yaml`
-  - `AGENTS.md` はチケットの案と 1 バイトも違わない
-    - 変えたファイルは `AGENTS.md` だけ（`git status`）
-  - 節の数: `format.md` の実物は 9（`## Carry over` を含む）
-    - README の節の列挙（英日）を 9 に合わせた
-    - チケットは「8 のままか 9 かは step 6 の決定で決まる」と言っていたが、step 6 で 9 に決まっている（`06-definition-skill` の `Notes`、`Remarks`）
-  - 拡張の一覧: 実物は 4 つ（`consult`、`quality-gate`、`ref-cleanup`、`sound-notify`）
-    - README の「拡張 / Extensions」を実物の 4 つに合わせた
-      - `quality-gate` は Gates の行にも名前がある
-    - `ref-cleanup` の説明は「`consult` が残した ref を一覧し、1 つ消す」
-      - `index.ts` の `description` と一致
-      - 消せるのは `consult/` の ref だけ
-  - 検査の数: 実物は 2 つ（`lint`、`typecheck`）
-    - README の「`lint` と `typecheck`」と一致、変更なし
-  - 各スキルの役割: `description` 6 件とサイクルの表が一致
-    - `close` の行を足した
-    - 01 の `Notes` の外の穴「`work` の行に `the review` が無い」を受けて、`work` の行にレビューを足した
-  - スキル数の記述: 「5 つ / five skills」→「6 つ / six skills」にした
-    - `close` を列挙に足した
-  - 名指しの規則（「次の段を名指ししない」）の文はそのまま残した
-  - clone 直後のつもりで README だけを読んだ
-    - 入っているもの（検査、ゲート、エージェントの規則、6 skill、4 拡張、`cycles/`）が言える
-    - 最初の手順が言える
-      - `pnpm install`
-      - `cycles/` を消す
-      - `types.json` を作る
-      - `pi` を起動
-  - `Verify` の実演のうち子が要る部分は親の担当
-    - この子は子（`consult`）を起こさない
-  - （親が追記）**実演の数え上げ**（親が確認）
-    - `format.md` の `## ` = 9 → README の列挙と一致
-    - `description` 6 件 ↔ README の表で一致
-    - 実物の 4 つ ↔ README の拡張の一覧で一致
-    - `phase: 'verify'` = 2 → README の検査の数と一致
-    - `work` の行に「レビュー」が入り、`close` の行が増えた
-  - （親が追記）**親の読み（Step 8）**: 子の diff は `README.md`、`README.ja.md`、このチケットの `Notes`
-    - 英語と日本語が同じ内容で、実物（6 skill、4 拡張、9 節、検査 2）と一致
-    - 直すところは無かった
-  - （親が追記）子の観察: README 2 枚はマークダウンなので `quality-gate` の対象外
-    - この実演の数え上げだけが実際の gate
-    - 次の 1 枚が受ける
-    - （close の Step 3 の `review` の子の findings。blocking 0 件、行は子の報告のとおり）
-      - `work` のレビュー子と 3 周が木に無い（この 1 枚の `3. work-skill` の `Then` に対して木は親が読む形）
-        - `Remarks` で記録済み
-        - `Carry over` に 1 行要る
-      - 閉じる段が 2 つの skill にある（`definition` の Step 10、`close` の Step 5）
-        - どちらが閉じるか未定
-      - キャンセル経路の穴が開いたまま
-        - `consult` の README は「子は殺され、worktree は消える」、実物は ref を返した
-        - `work` の失敗の一覧にもキャンセルが無い
-      - 004 の 1 枚に `## Carry over` 節が無く、003 の持ち越しのうち少なくとも 3 行が 004 のどこにも現れない
-        - `003` の `Carry over` の `04-secret-guard.rules` の `$VAR` の fail-closed は偶然
-        - `003` の `Carry over` の `04-secret-guard.rules` の `read` のキー名が未確認
-        - `003` の `Carry over` の `14-plan-skill` の `review` の句が 4 skill にある
-      - 逆向きの import の辺が 1 本（`child/spec.test.ts` → `../tool/consult.ts` の上向き）
-        - 同層 1 本（`tool/consult.ts` → `./render.ts`）
-      - README（マークダウン）はどの検査も通らない
-        - `quality-gate` は lint / typecheck の 2 つ
-      - `types.json` が worktree に無い制約はどこにも書かれていない（README は「Uncommitted changes are invisible」まで）
-      - `git-env.ts` は `consult/` 直下にある
-        - unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類
-      - チケットの記録と木の小さな食い違い 3 点
-        - `01-work-skill` の `Unplanned` の「review と書いてある」は木では直済み
-        - `01-work-skill` の `Unplanned` と `05-consult.check` の `Findings` の turns の言い方
-        - `04-consult.folders` の `Todo` の長さ比較が `spec.test.ts` に `'/child-guard.ts'.length` のまま
-      - （close の Step 4。このターンで踏んだ）実演の題材を `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint 対象になる（玩具の `notes.mjs` の `forEach` が `unicorn(no-array-for-each)` に当たった）
-        - 実演の題材も、そのリポジトリの検査を通る形で書く
-      - 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒に ref にコミットした
-        - 親が手で消すことになり、始めは 4 つのうち 3 つしか消せず 1 つ残った（`2d2c0dd` → `0ee8250`）
-        - 子の残置物を ref に混ぜない道が要る
-      - `/tmp` の実演の玩具（`close-toy`、`definition-toy`、`six-skills-toy`、`plan-demo-2`、`stack-demo`）はまだ残っている
-        - 記録が場所を指しているので、サイクルを閉じるまで残し、閉じるときに消す
+  - `review` の子は `bash` を持たないので、`git diff` を子に見せるには親が外に書き出すしかない
+  - その置き場所は `Verify` の後、`Commit:` の前。あいだに入れるため Step 8 以降を 1 つ繰り下げた
+  - 実演（`Verify`）は親の担当で、子の側では観察しない（子は `consult` を起こさない）
+  - `types.json` は「無い」のではなく git 管理外で、HEAD から作る worktree に入らない
+    - 子の worktree では `types.json` が読めず、`EXTENSION_DIR` の直し方に関係なく実演が落ちる
+  - チケットの `Acceptance`「findings が残っている」は「残っていない」の意（合意済みなので直さない）
+  - レビューを `Verify` の後に置くと「`Commit:` は `Verify` が判定した内容」と噛み合わない。ツリーが変わったラウンドは `Verify` に戻ると本文に足した
+  - 外の穴（step 9 が受けた）: README の `work` の行の要約に `the review` が無かった
+  - 004 の `plan.md` とチケットは新しい規則より前に書かれている（`Depends` が `plan` を直す step を待っていない、`Structure` の隣に `Layers` も `Seam` も無い）。規則は次のプランから効く
+  - プランの `Files` に、`spec.test.ts`（step 3）と `tool/render.ts` + 移すテスト 4 本（step 4）が無い。プランは凍結なのでチケットに書いた
+  - プランの `Tests` と `05` の実演 ③ は辺を 3 本と書いているが、実物は 6 本（`tool` → `child`、`tool` → `policy`、`run` → `policy` が抜けている）
+  - 子のコミットでフックが落ちると、ref が作られず子の作業が消える
+  - チケットの `Files` に無いものを足した: `git-env.ts`（検査が git の置き場を決めるヘルパー）
+    - 逆向きの辺 1 本（`child/spec.test.ts` → `../tool/consult.ts`）と同層の辺 1 本（`tool/consult.ts` → `./render.ts`）も残っている
+  - `review` の `turns` 20 では足りない（9 枚の全体レビューが読むだけで尽きた）。`types.json` と `types.example.json` を 40 に揃えた
+  - owner の指摘で 1 枚は 9 節に決まった。定義の `Then` は 8 節のままだが凍結なので触らない
+  - 子をキャンセルしても、子の残した編集が ref で返る。`work` の失敗の一覧にもキャンセルの経路が無い
+  - 実演の題材が大きいと出力上限で死ぬ（003 の 1 枚 82 行 → out 51,278 で死亡）
+  - 閉じが 2 箇所にある: `definition` の Step 10 と `close` の Step 5。どちらが閉じるかは決まっていない
+  - `close` の `review` の子は「残置物が無いか」を確かめられないので、この項目は親が持つ
+  - 閉じの段で見つけた穴（次のサイクルが受ける）
+    - `work` の `Then` は「unit の diff を `review` の子に当てる」だが、木は親が `git diff` を読む形（`Remarks` に記録済み）
+    - README（マークダウン）はどの検査も通らない（`quality-gate` は lint と typecheck の 2 つ）
+    - `git-env.ts` は `consult/` 直下にあり、unit の `Then` の列挙に無い 3 つ目の種類
+    - 実演の題材を `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint 対象になる
+    - 子は作業ファイル（`.flat`、`.tokens`、`.words`）をサイクルのフォルダに残し、`consult` がそれを成果と一緒に ref にコミットした。子の残置物を ref に混ぜない道が要る
+    - 003 の持ち越しのうち少なくとも 3 行（`$VAR` の fail-closed は偶然、`read` のキー名が未確認、`review` の句が 4 skill にある）が 004 のどこにも現れない
+  - `/tmp` の実演の玩具（`close-toy`、`definition-toy`、`six-skills-toy`、`plan-demo-2`、`stack-demo`）は、記録が場所を指しているので閉じるときに消す
