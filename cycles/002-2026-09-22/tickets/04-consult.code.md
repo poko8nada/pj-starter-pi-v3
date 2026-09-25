@@ -43,7 +43,7 @@ Acceptance:
 ### Findings
 
 - 実演の結果
-  - `install: ok pnpm install --frozen-lockfile`（worktree に依存が入った）
+  - worktree に依存が入った
   - 子は `consult-demo-note.md` を作った
   - `{"kind":"committed","ref":"consult/demo"}` が返った
   - worktree は消えた
@@ -52,15 +52,20 @@ Acceptance:
 - **コミットのフックで落ちた**
   - `createWorktree` が `.git/index: index file open failed: Not a directory` で失敗した
   - lefthook が `GIT_INDEX_FILE` などの変数を環境に載せていた
-  - それを git にそのまま渡していたので、git は `cwd` の一時リポジトリではなくフックのリポジトリを見ていた
+  - それを git にそのまま渡していた
+    - git は `cwd` の一時リポジトリではなくフックのリポジトリを見ていた
   - 素の実行では再現しない（環境の差）
   - ローカルのテストが緑でも、フックの中では落ち得る
 - フックが実際に走ることは、この実演では確かめられない
-  - lefthook は非コードのファイルを飛ばすので、markdown 1 つの変更では検査が動かない
+  - lefthook は非コードのファイルを飛ばす
+  - markdown 1 つの変更では検査が動かない
   - `.ts` を触らせれば動くが、子が落とす可能性もある
     - その場合は ref ができない（決めたとおり）
 - 親の取り込みは実装していない（チケットどおり）
-  - ref を cherry-pick するか、一部を取るか、捨てるかは親の判断
+  - ref の扱いは親の判断
+    - cherry-pick する
+    - 一部を取る
+    - 捨てる
   - 必要になったら次の 1 枚
 
 ### Unplanned
