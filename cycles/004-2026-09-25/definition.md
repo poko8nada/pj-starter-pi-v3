@@ -154,6 +154,11 @@ Changes: update **004 でやらないことを足した（統合は 005 / 構造
 
 ## Stack
 
+- Base: Node / TypeScript / pnpm / lefthook / oxlint / oxfmt / vitest / `@earendil-works/pi-coding-agent` / `typebox`
+- Added: なし
+
+Changes: update **`typebox` を Base に足した。pi のホストが peer として与えるもので、選んだものではない（無料で来たものと、選んだものを見分けられるようにする）**
+
 ## Remarks
 
 ## Retro
