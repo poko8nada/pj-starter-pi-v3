@@ -1,6 +1,6 @@
 ---
 name: stack
-description: 'Use when a definition has been approved and before the plan is written. Every cycle passes through here, even when nothing changes. Decides what the product is built with: the harness that comes for free, and the additions the product itself needs.'
+description: 'Use when a definition has been approved. Every cycle passes through here, even when nothing changes. Decides what the product is built with: the harness that comes for free, and the additions the product itself needs.'
 ---
 
 # stack
@@ -49,6 +49,8 @@ Start from the `Stack` of the previous sheet: lines that did not change are copi
 When a candidate can be read off the repository, take it. When its dependency resolution, its configuration, or the shape of its API is not readable, try it before deciding: send a `trial` child, which runs in a worktree with the dependencies installed, and read its report.
 
 Trying costs a child per attempt, and it downloads the package into the shared package store: that is outside the repository, on the owner's machine. **Ask the owner before running one.** Do not hand them a cleanup command afterwards, and do not propose a global operation: what a shared store holds, and what a cleanup would take with it, is not yours to measure. A trial that fails is a result: it belongs in the ticket's `Notes`, and it takes that candidate off the list.
+
+A `trial` child can write, and what it leaves behind is committed: a ref is made. A trial's work does not go into the tree — its report does — so drop the ref, and delete it with the tool (`ref-cleanup`) at that moment, never by hand.
 
 ## Step 5: write it
 
