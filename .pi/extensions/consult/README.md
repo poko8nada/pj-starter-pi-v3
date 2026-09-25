@@ -11,7 +11,7 @@ The caller picks a type, and the type holds the whole policy: model candidates, 
 | Type       | Tools                                           | Environment | Turns | Output tokens |
 | ---------- | ----------------------------------------------- | ----------- | ----- | ------------- |
 | `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 40,000        |
-| `review`   | read, ls, find, grep, web_search                | the tree    | 20    | 60,000        |
+| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 60,000        |
 | `trial`    | plus writing                                    | a worktree  | 50    | 50,000        |
 | `code`     | plus writing                                    | a worktree  | 60    | 60,000        |
 
