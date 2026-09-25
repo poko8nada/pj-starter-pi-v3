@@ -29,6 +29,10 @@ Acceptance: 子は type ごとに決まったモデル・ツール・環境・�
 
 - プランの step 3 の `Files` に `spec.test.ts` が無い（`PARAMETERS` が `index.ts` を出るため、import 先を直す必要がある）。プランは凍結済みなので、ここに書く
 
+- 実演は `pnpm test:run`（6 ファイル / 166 テストが緑）、`pnpm typecheck`・`pnpm lint`・`pnpm format:check`（いずれも緑）、`grep` で `index.ts` に移動した定義（`compose` / `playSound` / `consult` など）が残っていないこと、まで。道具を 1 回呼ぶ実演は親に渡す
+- **子の worktree には `types.json` が無い** — git 管理外のファイルは HEAD から作る worktree に入らない。この worktree にあるのは `types.example.json` だけなので、実演の「子が起動して返る」は `EXTENSION_DIR` の決め方に関係なく `types.json` が読めずに落ちる（親の実ツリーでは読める）。この制約はチケットにも skill にも書かれていない
+- `EXTENSION_DIR` は `tool/consult.ts` が `dirname(dirname(fileURLToPath(import.meta.url)))` で `consult/` を指す形にした。定数を `index.ts` に残して渡すには道具を工場にする形が要るので、道具が自分の位置から解決し、上向きの辺を作らないようにした
+
 ### Unplanned
 
 なし

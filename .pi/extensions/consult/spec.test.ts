@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PARAMETERS } from './index.ts';
+import { PARAMETERS } from './tool/consult.ts';
 import {
   accountEvent,
   buildPiArgs,
