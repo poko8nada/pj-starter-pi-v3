@@ -292,7 +292,7 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
   - **`git-env.ts` の位置** — `consult/` 直下にあり、unit の `Then` の列挙（`policy/`、`child/`、`run/`、`tool/` + README と json）に無い 3 つ目の種類（次へ回す）
   - **実演の題材も lint にかかる** — `/tmp` に置いても、そのターンに触ったファイルとして `quality-gate` の lint に当たる（次へ回す）
   - **003 の持ち越しの行き先が決まっていない** — 少なくとも 3 行（`$VAR` の fail-closed は偶然、`read` のキー名が未確認、`review` の句が 4 skill にある）が 004 のどこにも現れない（未解決）
-  - **`/tmp` の練習用の題材** — `close-toy`、`definition-toy`、`six-skills-toy`、`plan-demo-2`、`stack-demo` は、記録が場所を指しているので閉じるときに消す（未解決）
+  - **`/tmp` の練習用の題材は消した** — `close-toy`、`definition-toy`、`six-skills-toy`、`plan-demo-2`、`stack-demo` を閉じるときに消した（決めた）
   - **記録の形の検査** — `Notes` の項目が `- **主題** — 中身（状態）` の形か、`Retro` に `###` の見出しがあるか、`Carry over` がチケットごとに分かれているかを、機械的に検査する（次へ回す）
   - **禁止語の検査はしない** — 造語のリストで機械的に止める案は採らない。owner が別の方法を考えている（次へ回す）
   - **001〜003 の記録はこの形にしない** — owner の判断（時間がかかりすぎる）。次のサイクル以降は新しい型で書く（決めた）

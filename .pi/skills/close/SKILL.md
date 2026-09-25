@@ -1,6 +1,6 @@
 ---
 name: close
-description: Use when every ticket of a cycle is closed. Judges the cycle as a whole: one integration run across the units, the finished form through a review child, where each hole goes, and the Retro that closes the cycle.
+description: Use when every ticket of a cycle is closed. Judges the cycle as a whole. One integration run across the units, the finished form through a review child, where each hole goes, and the Retro that closes the cycle.
 ---
 
 # close
