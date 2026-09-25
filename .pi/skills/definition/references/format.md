@@ -63,14 +63,22 @@ Changes: keep / update **理由**
 
 ## Carry over
 
-- <前の 1 枚の `Carry over` の 1 行> → <受けた場所>
+- **<主題>**（`<前のチケット>`）→ <受けた場所>
 
 ## Retro
 
-- Good:
-- Bad:
-- Carry over:
-  - <閉じたチケットの 1 行を、そのまま>
+### Good
+
+- **<主題>** — <何がどうなったか（値つき）>
+
+### Bad
+
+- **<主題>** — <何がどうだったか（値つき）>
+
+### Carry over
+
+- **<チケット名>**
+  - **<主題>** — <中身>（次へ回す / 未解決）
 ```
 
 ## Units
@@ -105,9 +113,9 @@ A unit is one thing the product does, seen from the user's side. The rules:
 
 ## 何を書くか（`Good` / `Bad`）
 
-- `Good` says what the cycle made happen, with the value it was read from. `Bad` says what went wrong, including what was left half-done
+- `Good` says what the cycle made happen, with the value it was read from. `Bad` says what went wrong, including what was left half-done. **Both are heading 3**, and one item is one line: `- **<主題>** — <中身>`. The subject is what a reader scans for, so a line without one is a line nobody finds
 - **A line has to earn its place.** Ask what the reader loses if the line is gone. If the answer is nothing — the code, the commit, or another line already says it — do not write it. A heading whose children are only more names is the same failure: write the content, or drop the line
-- `Carry over` is not a second `Bad`: it holds the holes the next sheet has to take, and nothing else
+- `Carry over` is not a second `Bad`. **It is grouped by ticket**, and it holds only the items the tickets marked `次へ回す` or `未解決` — the holes the next sheet has to take. A ticket that left nothing gets no heading here
 
 ## Writing
 

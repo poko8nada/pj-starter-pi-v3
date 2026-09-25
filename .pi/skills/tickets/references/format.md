@@ -67,8 +67,10 @@ Commit: <hash>
 
 ## Notes
 
-- Two parts. `Findings` is what was noticed; `Unplanned` is what was handled that the `Todo` did not mention. Write なし when there is nothing
-- Both feed the cycle's `Retro`, and `Retro`'s carry-over is read when the next sheet is written
+- Two parts, both heading 3: `### Findings` is what was noticed, `### Unplanned` is what was handled that the `Todo` did not mention. Write なし when there is nothing
+- **One item is one line**: `- **<主題>** — <中身>（<状態>）`
+  - the subject is a short name a reader can scan for; it is also what the cycle's `Carry over` shows, so a line without one is a line nobody finds later
+  - the state is one of `決めた` / `次へ回す` / `未解決`. It decides whether the item leaves the ticket: `決めた` stays here, the other two are carried
 - `Notes` are written from what was seen and checked, not from what was claimed
 
 ## 何を書くか（`Findings` / `Unplanned`）
