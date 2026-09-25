@@ -29,6 +29,8 @@ Acceptance: `step 0` を含む `Steps` と、`Structure` が出る。全 step �
 
 - 実演（`Verify`）は親が別の子（`consult`）で回す担当。この子は子を起こさないので、観察項目（実演の 1 枚に 4 つとも載るか / `git status` がプランのファイルだけか）はまだこの子の側では観察していない。親が実演するときに見る
 - 004 の `plan.md` とチケットはこの規則より前に書かれている。`Depends` は `plan` を直す step 2 を待っていないし、`Structure` の隣に `Layers` も `Seam` も無い。規則は次のサイクルのプランから効く（`Todo` の指示どおりここに書く）。このズレは 004 の外の穴なので、次の 1 枚が受ける
+- （親が追記）**実演**（親が回した）: `trial` の子に練習用の 1 枚（`/tmp/stack-demo/definition.md`）から 9 step のプランを書かせた（`/tmp/plan-demo-2/plan.md`）。`Structure` は**入れ子の木**（`.pi/skills/close/SKILL.md add` の形）/ `Layers` は「層は上を知らない」/ `Seam` は `types.json` / 形の問いの答えは「`close/` が入っても `.pi/skills/` はまだ 1 つのことを表す → 整理は不要（`Refactor: なし`）」。練習の 1 枚に構造の step が無いので、「構造の step は形で検証」だけはこの実演では出ない（規則は `format.md` にある）
+- （親が追記）**親の読み**（Step 8）: `git diff` を読み、1 つ直した — `work` skill に、この step の規則と重なる古い但し書きが残っていた（「plan は順序を表さない」→「plan の step の順序が運ぶ」）。step の外の穴なので別コミット（`2ea0740`）
 
 ### Unplanned
 
@@ -40,4 +42,4 @@ Acceptance: `step 0` を含む `Steps` と、`Structure` が出る。全 step �
 - `description` に次のスキルの名前は無い（本文の `tickets` は既存のまま）
 - `Commit:` は空のまま。ハッシュは子では作れない（`git commit` は承認が要る）
 
-Commit:
+Commit: 2ea0740（子 `7128087` + 親の読みで直した分）
