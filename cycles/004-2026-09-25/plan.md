@@ -12,7 +12,8 @@
 ### step 1: work-skill
 
 - What: unit の実装を閉じる前に `review` の子へ当てる段を足す
-  - 3 周で止め、残りは owner に渡す
+  - 3 周で止める
+  - 残りは owner に渡す
 - Depends: なし
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`
@@ -22,9 +23,10 @@
   - 3 周で止まる
   - `Notes` に `Findings` と `Unplanned` がある
   - 実演の後に残ったのは自分で消せるものだけ
-  - 子のコミットは ref で返り、親が取り込むかを言う
+  - 子のコミットは ref で返る
+    - 親が取り込むかを言う
   - チケットの `Commit:` にハッシュが入る
-  - レビューの findings が「直した」か「理由をつけて答えていない」を言っている
+  - レビューの findings に、直したか理由をつけて答えていないかが書いてある
 
 ### step 2: plan-skill
 
@@ -50,14 +52,19 @@
 ### step 3: consult.split
 
 - What: `index.ts` から整形と音を出す
-  - 道具の面・進行・入口を分ける
+  - 道具の面を分ける
+  - 進行を分ける
+  - 入口を分ける
   - 進行（道具の実行そのもの）は `tool/consult.ts`
   - 中身は書き換えない
 - Depends: なし
 - Action: build
 - Files: `.pi/extensions/consult/index.ts`、`.pi/extensions/consult/tool/consult.ts`、`.pi/extensions/consult/tool/render.ts`
 - Tests:
-  - `spec.test.ts`、`run.test.ts`、`types.test.ts`、`child-guard.test.ts`
+  - `spec.test.ts`
+  - `run.test.ts`
+  - `types.test.ts`
+  - `child-guard.test.ts`
   - 実演: `index.ts` に登録以外が残っていない（`grep` で見る）
 
 ### step 4: consult.folders
@@ -69,16 +76,28 @@
 - Depends: step 3
 - Action: build
 - Files:
-  - `policy/types.ts`、`child/spec.ts`、`child/guard.ts`、`run/run.ts`
+  - `policy/types.ts`
+  - `child/spec.ts`
+  - `child/guard.ts`
+  - `run/run.ts`
   - `tool/consult.ts`
   - `.pi/extensions/consult/README.md`
   - `.pi/extensions/ref-cleanup/index.ts`
-  - 降ろす 4 つ: `types.ts`、`spec.ts`、`child-guard.ts`、`run.ts`
+  - 降ろす 4 つ
+    - `types.ts`
+    - `spec.ts`
+    - `child-guard.ts`
+    - `run.ts`
 - Tests:
-  - `policy/types.test.ts`、`child/spec.test.ts`、`child/guard.test.ts`、`run/run.test.ts`
-  - 実演:
-    - `tool` は `run` を、`run` は `child` を、`child` は `policy` を知っている
-    - 逆向きの辺が無い（4 本とも `grep` で見る）
+  - `policy/types.test.ts`
+  - `child/spec.test.ts`
+  - `child/guard.test.ts`
+  - `run/run.test.ts`
+  - 実演
+    - `tool` は `run` を知っている
+    - `run` は `child` を知っている
+    - `child` は `policy` を知っている
+    - 逆向きの辺が無い
     - `README` の `-e` とテストの場所が新しいパスを指している
 
 ### step 5: consult.check
@@ -86,7 +105,8 @@
 - What: 単位全体の実演
   - 新しい形
   - 既存の検査
-  - 生きた子 1 体: `review` の子に 003 の 1 枚を当て、上限に当たらないこと
+  - 生きた子 1 体
+    - `review` の子に 003 の 1 枚を当て、上限に当たらないこと
   - `README` の表と `types.json` の一致
 - Depends: step 4
 - Action: verify
