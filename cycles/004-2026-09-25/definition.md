@@ -161,9 +161,10 @@ Changes: update **`typebox` を Base に足した。pi のホストが peer と�
 
 ## Remarks
 
-- チケットの合意: `definition` の 1 枚は **9 節**（`## Carry over` を足す。前の `Carry over` の各行を受けた場所を 1 行ずつ）→ 06 の `Acceptance` / `Todo` / `Verify` に反映。`AGENTS.md` は **9 条**の案で進める → 08
+- チケットの合意: `definition` の 1 枚は **9 節**（`## Carry over` を足す。前の `Carry over` の各行を受けた場所を 1 行ずつ）→ 06 の `Acceptance` / `Todo` / `Verify` に反映。`AGENTS.md` は **9 条**の案で進める（→ 事故の 1 条を足して 10 条）→ 08
 - **`work` 中のレビューは粒度が細かすぎた** → 「親が `git diff` を読む」に直した（子レビュワーを起こさない、diff の準備も不要）。fresh eyes は `close` のレビュワー（最初からの想定）が担う。凍結した `Then`（unit の diff を `review` の子に）は記録として残し、次の 1 枚が受ける
 - **`review` の子に `git diff` だけを許す道具** → 005 の候補。`bash` を足すのは不可（レビュワーが書けてしまう。`role` の約束は道具を止めない）。guard と同じ `-e` の形で渡す（引数は構造化、シェル無し）
 - 反省点は次のサイクルに生かす → 既にある（`Retro` の `Carry over` がそれを運ぶ。004 の実装中に見つけた反省も、その場でチケットの `Findings` に書く）
+- **004 の事故（テスト設計）**: `run.test.ts` の fixture がフックの中で実リポジトリの config（`core.bare` / `user.*`）を書き換え、フックが落ちて子の作業が 1 本失われた（やり直しで足りる、と owner の判断）。環境を継承し、分離を外の状態（cwd 探索）に任せ、封じ込めを確かめていなかった — 3 つが揃って起きた。規則「検査は自分の世界を宣言する」を `AGENTS.md` に足し（→ 08）、`plan` の `Tests` に 1 文足した。git のテストは隔離した形に直す（どの unit にも入らない harness の修正なので、その事実をここに残す）
 
 ## Retro

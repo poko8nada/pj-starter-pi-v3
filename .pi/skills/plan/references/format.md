@@ -23,7 +23,7 @@ Section and field names are English. They are the type: the same in every plan, 
 - Depends: 何を待つか
 - Action: verify / build
 - Files: 具体的なファイル名
-- Tests: テストファイル名（コロケーションなので構成図には書かない）。形を移す step は、形の検証（コマンドか読み方）
+- Tests: テストファイル名（コロケーションなので構成図には書かない）。形を移す step は、形の検証（コマンドか読み方）。検査を足す step は、その検査が自分で決める世界（環境・設定・置き場）も書く
 
 ### step N: <unit-id>.check
 
@@ -60,6 +60,7 @@ Section and field names are English. They are the type: the same in every plan, 
 - `0` is the only step with a fixed name: every other one is named after the thing it builds
 - A step that only closes a unit (`<unit-id>.check`) has no files and no tests: the demonstration is what verifies it
 - A `Tests` entry is a test file, except when the step moves the form: then it is the form's check — a command or a reading, with the expected shape in words. 「部品に色の直値が無い」「`spec` は `run` を知らない」 are that kind of entry
+- A step that adds a check says what world that check declares: what it sets up for itself instead of inheriting — environment, config, paths, a server, a clock
 - A step that moves the form answers the shape question: what the folder is after the file is added, or where the tidy-up is written
 
 ## Structure

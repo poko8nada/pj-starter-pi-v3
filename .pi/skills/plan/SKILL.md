@@ -37,7 +37,7 @@ The step numbers are the order of work, and that order is the implementation ord
 - `Depends`: what has to be done first (another step, or nothing). **A dependency is not only documents: a step can need a tool.** When a step relies on a skill or on code that is not right yet, the step that puts it right comes first, and that order is written here. A stale skill is fixed by a step of its own, not on the way to some later one
 - `Action`: `build` when something is produced, `verify` when the step only checks
 - `Files`: the files it touches. Test files are colocated, so they do not appear in `Structure`
-- `Tests`: the test file names. Error paths live here; the definition deliberately leaves them out. When the step moves the form — it adds, moves or drops files and folders — the verification is the form, not a behaviour: `Tests` holds the command or the reading that shows it
+- `Tests`: the test file names. Error paths live here; the definition deliberately leaves them out. When the step moves the form — it adds, moves or drops files and folders — the verification is the form, not a behaviour: `Tests` holds the command or the reading that shows it. A step that adds a check says what world that check declares, and what it sets up for itself instead of inheriting
 
 ## Step 5: write the structure and the form
 

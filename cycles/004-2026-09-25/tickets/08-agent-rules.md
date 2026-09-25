@@ -36,14 +36,19 @@ Acceptance: `AGENTS.md` の規則に従う。コードに触る前に 1 枚を�
 8. One commit is one meaning. Split it if it is mixed.
 9. Never report done while a check is red, and never weaken a check: no loosened rules, no deleted tests, no
    `--no-verify`.
+10. A check declares its own world: everything it depends on — environment, paths, config, clock, network —
+    it sets for itself, and it writes nothing outside what it made. Where it could reach outside, it proves it
+    does not, before it writes. It holds wherever the repository runs it: the commit hook, a linked
+    worktree, every turn.
 
 The checks are wired: `quality-gate` runs them every turn on what that turn changed, and `lefthook` runs them
 every commit.
 ```
 
 - 各条の出どころ（合意の材料）: 1〜2 = サイクルそのもの / 3 = 002「消える文書に規則を書き足した」/ 4 = 1 枚の `Non-goal`「owner の判断を代わりにやらない」（毎サイクルの話ではないのでここに置く）/ 5 = `.env` の一件（子の主張を事実として書いた）/ 6 = 002 の frontmatter・003 の README とコードのズレ / 7〜9 = いまの 4・3・2+6
+- 10 = **004 の事故**（owner の指摘で合意）: `run.test.ts` の fixture がフックの中で実リポジトリの config を書き換え、フックが落ちて子の作業が 1 本失われた。検査は環境を継承し、分離を外の状態（cwd 探索）に任せ、封じ込めを確かめていなかった — この 3 つを 1 条にまとめる
 - **落とした条**（skill と同じ）: 「消せるものだけ作る」と ref の手順 → `work` / `definition`、「決定はリポジトリに置く」→ `definition`、「自分で判定しない」の実装側 → `work` / `tickets`
-- **長さは合意で決める** — いまは 6 条、案は 9 条（+ サイクルの 2 行）
+- **長さは合意で決める** — いまは 6 条、案は 10 条（+ サイクルの 2 行）
 - 観点のうち、正常系（happy）→ `Verify` の実演が担う（clone 直後のつもりで読む）
 - 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）→ この step は文書で、作るものが無い — ケース無し
 - 失敗の入力（skill と重複した規則を書く）→ `Verify` の観察項目が拾う。期待する値: 読みで確かめて、skill 本文と**同じことを言っている条が無い**（文が違っても同じ意味なら重複。`grep` は補助）(error)
