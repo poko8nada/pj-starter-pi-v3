@@ -1,40 +1,18 @@
-# close-skill
-
-Acceptance: サイクル全体の統合が 1 本走り、1 枚の `Goal` と `Then` に当たる。完成形が `review` の子に当たる。穴が振り分けられる（`Goal` を壊すものはそのサイクルで直し、それ以外は次へ）。`Retro` が書かれ、owner が閉じてよいと言う
-
-## Todo
-
-- `.pi/skills/close/SKILL.md`（新規）
-  - 導入を書く — 全チケットが閉じた後に読む skill。サイクルを閉じるのはこれ。**実装しない**（手を動かすのは `work`）
-  - 本文が次のスキルを名指ししない（他の skill と同じ作法）。`description` が入口を名乗る
-  - Step 1: 読む — 1 枚（`Goal` と全部の `Then`）/ 全部のチケットの `Notes` / `Remarks`
-  - Step 2: サイクル全体の統合を 1 本、設計して走らせる — **単位をまたぐ筋**を見る（単位の中は各 `<unit-id>.check` が見ている）。基準は 1 枚の `Goal` と `Then` だけ（**この skill は基準を発明しない**。足りない基準が要ると分かったら、それは穴であって基準ではない）
-  - Step 3: 完成形を `review` の子に当てる — **親が起こす**（子は子を起こせない）。固定のチェックリストは:
-    - 1 枚の `Goal` と `Then` を、成果物が満たしているか
-    - 1 枚が約束していないことを作っていないか
-    - チケットの `Notes` に書かれた穴が、実際に閉じているか
-    - 実演が残したもの（ref / worktree / ファイル）が無いか
-  - 3 周で止める / 子を起こせないなら止まる（レビュー無しで閉じない）
-  - Step 4: 振り分け — `Goal` を壊す穴は**そのサイクルで直す**（チケットを切って `work` に戻す。criteria は owner の合意が要る）/ それ以外は次のサイクルへ（`Carry over` に渡す）
-  - Step 5: `Retro` を書く（`Good` / `Bad` / `Carry over`）→ owner が `Good` と `Bad` を判定し、`Carry over` の漏れを見る → よければコミット（**それがサイクルを閉じる**）
-  - 「How not to do this」— 実装しない / 基準を発明しない / 穴を黙って直さない / 凍結した 1 枚とプランを書き換えない（閉じた `Retro` は書く）
-  - 実装の順を書く — 004 の step 7。ここで作る skill は、004 自身の閉じには間に合わない（`Notes` に書く）
-- 観点のうち、正常系（happy）→ `Verify` の実演が担う（子が 1 本走らせる）
-- 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）→ この step は skill 本文の新規作成で、作るものが無い — ケース無し
-- 失敗の入力（完成形のレビューが走らない / `Goal` を壊す穴を次に回す / 基準を発明する / 穴を黙って直す / 凍結した 1 枚やプランを書き換える / 子に `review` を起こさせる）→ `Verify` の観察項目が拾う。期待する値: 実演の報告にレビューの findings と、1 件ごとの「直した / 次へ回した（理由）」がある / 玩具の 1 枚とプランが書き換わっていない（`diff` を取る）/ 実演の子の報告に `review` の子を起こした形跡が無い (error)
-
-## Verify
-
-- 実演: 題材は**玩具のサイクル**（`/tmp` に置いた 1 枚 + チケット 2 枚。リポジトリのものではない）、書き先も `/tmp`。子に `close` だけを読ませ、閉じを 1 本走らせる。**`review` の子は親が起こす**（子の報告を待って、親が当てる）。観察: 1 本の中で完成形が `review` の子に当たり、findings が振り分けられている / `Goal` を壊す穴はそのサイクルで直すと書いてある / `Retro` の形が出る / owner が閉じてよいと言う段がある / 玩具の 1 枚とプランが変わっていない / 本文に次のスキルの名前が無い / `description` が入口を名乗っている
-
 ## Notes
 
 ### Findings
 
-なし
+- この step は 004 の step 7 なので、ここで作る `close` は 004 自身の閉じには間に合わない（`close` は全チケットが閉じた後に読む skill で、それを書いているのがこの step にあたる）。`Verify` の実演が玩具のサイクルを使うのはそのため。004 の閉じは、この skill が入った後（次サイクルの頭、または owner の判断）でこの skill を読むことになる
+- 外の穴（前の step へ）: `definition` の Step 10 が「前のサイクルを閉じる」と書き、この `close` の Step 5 が「`Retro` を書いて閉じる」と書く — 閉じが 2 箇所にある。004 の plan step 6 は `definition` の Step 10 を触っておらず、step 6 のチケットはまだ閉じていない。どちらが閉じるのかは決まっていない。この step では直さず（`Todo` の外）、次の 1 枚が拾う
+- 自分で走らせた検査: `pnpm format:check` → All matched files use the correct format（91 files）/ `pnpm lint` → エラーなし / `pnpm typecheck` → エラーなし
+- 本文に skill 名は無い（`grep -nE '`(definition|stack|plan|tickets|work|close)`' .pi/skills/close/SKILL.md` が 0 件）。`description` は入口を名乗る（`Use when every ticket of a cycle is closed.`）
+- 観点（null / 空 / 境界 / 不正 / 権限 / 2 回目 / 並行）→ この step は skill 本文の新規作成で、作るものが無い — ケース無し（チケットの `Todo` のとおり）。失敗の入力は `Verify` の観察項目が持つ
+- `Verify` のうち実演（玩具のサイクル / 1 本の統合 / `review` の子 / findings の振り分け / 玩具の 1 枚とプランが変わらない）は親の担当。この子は `consult` を起こさないので、ここではまだ観察していない
 
 ### Unplanned
 
-なし
+- 同じチケットの 2 つ目の bullet（本文が次のスキルを名指ししない）を Step 4 にも通した。`Todo` の Step 4 は `work` と名指しするが、本文では skill 名を書かず「the stage that carries a step」とした（他の skill と同じく、本文に skill 名を置かない形に揃えた）
+- Step 2 に「実演は何も残さない（書く子には本文を返させ、書き先はリポジトリの外）」を足した。`Todo` には無いが、repo の他の skill（`work` / `stack`）と同じ規則で、Step 3 のチェック項目（残ったもの）と噛み合う
+- `Commit:` は空のまま。ハッシュは子では作れない（親が ref を取り込んだ後に書く）
 
 Commit:
