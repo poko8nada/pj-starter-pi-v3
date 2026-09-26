@@ -21,8 +21,9 @@
 - Action: build
 - Files: `.pi/skills/stack/SKILL.md`, `.pi/skills/definition/references/format.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。100 字超の行が 0 であること
+  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
   - Look: `review` の子に `.pi/skills/stack/SKILL.md` だけを渡し、手順どおりに `Stack` が書けるか報告させる
+  - エラーパス: なし（文書の書き換え）
 
 ### step 2: tickets-skill
 
@@ -41,8 +42,9 @@
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`, `.pi/skills/tickets/references/format.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。100 字超の行が 0 であること
-  - Look: `Acceptance` の規則が、単位を持たない step（`check`、`refactor`）も扱えること
+  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
+  - Look: `review` の子に `.pi/skills/tickets/SKILL.md` と `references/format.md` だけを渡し、チケットが切れるか報告させる
+  - エラーパス: なし（文書の書き換え）
 
 ### step 3: work-skill
 
@@ -58,8 +60,9 @@
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。100 字超の行が 0 であること
+  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
   - Look: `review` の子に `.pi/skills/work/SKILL.md` だけを渡し、1 つの step を最後まで運べるか報告させる
+  - エラーパス: なし（文書の書き換え）
 
 ### step 4: close-skill
 
@@ -77,18 +80,21 @@
 - Verify:
   - Run: `grep -n "Goal\|Remarks" .pi/skills/close/SKILL.md` が 0 行。`oxfmt --check` が通る
   - Look: `review` の子に `.pi/skills/close/SKILL.md` だけを渡し、サイクルを閉じられるか報告させる
+  - エラーパス: なし（文書の書き換え）
 
 ### step 5: readme
 
 - What:
-  - skill 6 つを書き換えたので、README の中身が実物と食い違っている → 実物どおりにする
+  - README が `Goal` / `Non-goal` / `Remarks` をまだ挙げている（この製品にその節は無い） → 実物どおりにする
+  - README が `Remarks` を「書き続けられる節」と書いている → 消す
   - `work` の行にレビューが無い → 実物に合わせる
 - Depends: step 4
 - Action: build
 - Files: `README.md`, `README.ja.md`
 - Verify:
-  - Run: なし（文書）
-  - Look: README の 1 行ずつが実物と一致すること（skill の数、`work` の行）
+  - Run: `grep -n "Goal\|Non-goal\|Remarks" README.md README.ja.md` が 0 行
+  - Look: `review` の子に `.pi/skills/` 一覧と `README.md` を渡し、両者が一致するか報告させる
+  - エラーパス: なし（文書の書き換え）
 
 ## Structure
 
@@ -113,6 +119,3 @@ README.ja.md                 update
 ```
 
 ## What to keep
-
-- `.pi/skills/definition/`: このサイクルで書き終えて、コミット済み
-- `.pi/skills/plan/`: 同じく書き終えている

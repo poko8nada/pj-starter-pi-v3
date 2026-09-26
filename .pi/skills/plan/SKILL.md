@@ -27,15 +27,13 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - the split is named `<unit-id>.<part>`
    - the parts divide the unit's `Now` lines: together they cover every line once
    - the parts stand in order, and each `Depends` is the part before it
-   - the unit is closed by a `<unit-id>.check` step: one run that proves every `Then` of it
+   - a unit that is split is closed by a `<unit-id>.check` step: one run that proves every `Then` of it
 4. **Read the existing code.** The gaps land in a repository that is already there.
    - read what is around where they land
-   - ask: does this build make the structure worse?
-     - a file that would hold haphazard logic
-     - a structure that becomes flat, where nothing can be found
-     - a dependency that becomes complex
-     - a layer or a dependency that breaks
-   - if none of them: no refactor step
+   - ask: does this build make one name stand for two things?
+     - the file, the folder or the value that would take a second job
+     - a reader who would read it two ways
+   - if none: no refactor step
 5. **Write the refactor step.** For each thing the build makes worse:
    - the name is `<unit-id>.refactor`: the unit whose build needs it
    - `Why` is the worse thing, in one line, with the names of the place
@@ -52,10 +50,11 @@ The shape of the file and its field rules are in `references/format.md`. Read th
 7. **Fill the fields.** With the owner where a field is a decision:
    - `Files`: the files it touches
    - `Verify` has two parts, and the step names the kinds that fit what it builds:
-     - `Run`: the machine runs it — the cases, the types, the lint, the build, the form
+     - `Run`: the commands the machine runs — the cases, the types, the lint, the build
      - `Look`: a person looks at it — a value, a screen in the browser, a file, a diff
      - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
    - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
+   - a step with no error path says so in `Verify`
 8. **Draw the form.** `Structure`: the tree after the gaps are filled, one marker per line:
    - ask what a folder looks like after a file is added
    - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step

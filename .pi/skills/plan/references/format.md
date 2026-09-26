@@ -69,8 +69,11 @@ src/
 
 - the title is `# PLAN <NNN>`, with the cycle's number
 - `step 0` is always there, with `Install` and `Cleanup`, and `なし` when there is nothing
+  - `なし` is written when it was looked at and nothing is needed
+  - an empty field is one that is not decided yet
 - the name after the colon is a unit's id, or `<unit-id>.<part>`
-  - a step with no unit adds a suffix: `<unit-id>.check` or `<unit-id>.refactor`
+  - a unit that was split is closed by `<unit-id>.check`
+  - `<unit-id>.refactor` is a step with no unit
 - the step numbers are the order of work
 - `Depends` names the step to wait for, or `なし`
   - the same file: the later step depends on the earlier one
@@ -84,11 +87,13 @@ src/
 - `Action` is `build` when something is produced, and `verify` when the step only checks
   - a `<unit-id>.check` is always `verify`
 - `Verify` runs when the step closes, and the step names the kinds that fit what it builds:
-  - `Run` is what the machine runs: the cases, the types, the lint, the build, the form
+  - `Run` is the commands the machine runs: the cases, the types, the lint, the build
+  - a condition ("no line is over 100") is not a `Run` entry
   - `Look` is what a person looks at: a value, a screen, a file, a diff
   - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
   - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
   - the error paths live here: the definition leaves them out
+  - a step with no error path says so in `Verify`
   - a step that moves the form is proved by the form: `Run` holds the command or the reading
 - `What to keep` is a promise list: `<ファイル>: <なぜ関わるか>`
   - what this plan does not change, and a reader would still ask about
