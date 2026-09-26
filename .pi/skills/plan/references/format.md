@@ -16,28 +16,35 @@
 
 ### step N: <unit-id> または <unit-id>.<part>
 
-- What: 閉じるギャップ（`<Now の行> → <Then の行>`）
+- What:
+  - いまの 1 行 → それはどうなるか
 - Depends: 何を待つか
 - Action: build / verify
 - Files: 触るファイル
-- Tests: テストファイル
+- Verify:
+  - Run: その場で走るもの（コマンド、走るケース）
+  - Look: 人が見る値や状態
 
 ### step N: <unit-id>.check
 
 - What: 単位の `Then` を全部、1 回で確かめる
-- Depends: その単位の step
+- Depends: その単位の最後の step
 - Action: verify
 - Files: なし
-- Tests: なし
+- Verify:
+  - Run: 単位の `Then` を 1 回で確かめる実演
 
 ### step N: <unit-id>.refactor
 
 - Why: このビルドで、構造がどう悪くなるか（1 行）
-- What: 既存の何を、どう直すか
+- What:
+  - `Why` の 1 行 → 既存をどう直すか
 - Depends: 原因になった step
 - Action: build
 - Files: 直すファイル（既存）
-- Tests: 既存のテストがそのまま通ること
+- Verify:
+  - Run: 既存のテストがそのまま通ること
+  - Read: 動きが変わっていないこと
 
 ## Structure
 
@@ -58,34 +65,27 @@ src/
 - `lib/format.ts`: `money` と同じ値を使う
 ````
 
-An example of a refactor step:
-
-```md
-### step 1: login.refactor
-
-- Why: `login` が `user.ts` に認証を持ち込むので、`user.ts` が表示と認証の 2 つを指すようになる
-- What: `src/lib/user.ts` を `auth.ts` と `user-view.ts` に割る
-- Depends: step 3
-- Action: build
-- Files: `src/lib/user.ts`, `src/lib/auth.ts`, `src/lib/user-view.ts`
-- Tests: `user.ts` の既存のテストがそのまま通ること
-```
-
 ## Steps
 
 - the title is `# PLAN <NNN>`, with the cycle's number
 - `step 0` is always there, with `Install` and `Cleanup`, and `なし` when there is nothing
 - the name after the colon is a unit's id, or `<unit-id>.<part>`
   - a step with no unit adds a suffix: `<unit-id>.check` or `<unit-id>.refactor`
-- a `<unit-id>.refactor` has no gap and no `Then`
-  - its `Tests` is what shows that the behaviour did not change
-- `Why` names what the build makes worse: the structure, a dependency or a layer
 - the step numbers are the order of work
-- a `<unit-id>.check` step has no files and no tests: its `What` is the proof
+- `Depends` names the step to wait for, or `なし`
+- `What` is the relation: one line per `Now` line, and what it becomes
+  - the number of the definition's lines is not a relation: a reader of this plan does not open the definition
+  - together, the steps of a unit carry every `Now` line of it, once
+- a `<unit-id>.refactor` has no gap and no `Then`
+  - `Why` is what the build makes worse, and `What` is the relation
 - `Action` is `build` when something is produced, and `verify` when the step only checks
   - a `<unit-id>.check` is always `verify`
-- a `Tests` entry is a test file, except when the step moves the form
-  - then it is the command or the reading that shows the new form
+- `Verify` runs when the step closes, and the step names the kinds that fit what it builds:
+  - `Run` is what the machine runs: the cases, the types, the lint, the build, the form
+  - `Look` is what a person looks at: a value, a screen, a file, a diff
+  - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
+  - the error paths live here: the definition leaves them out
+  - a step that moves the form is proved by the form: `Run` holds the command or the reading
 - a step that adds a check writes what it sets up for itself: the paths, the config, the environment
 
 ## Structure
@@ -93,7 +93,7 @@ An example of a refactor step:
 - the form, not a file list: the folders nested, one line per folder with its files under it
 - only the files this plan changes
 - one marker per line: `add`, `update` or `drop`
-- test files do not appear: they are colocated, and `Tests` names them
+- test files do not appear: they are colocated, and `Verify` names the cases
 - `What to keep` is not part of it
 
 ## Writing
