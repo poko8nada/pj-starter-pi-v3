@@ -75,7 +75,7 @@ src/
   - a unit that was split is closed by `<unit-id>.check`
   - `<unit-id>.refactor` is a step with no unit
 - the step numbers are the order of work
-- `Depends` names the step to wait for, or `なし`
+- `Depends` names the step, or the steps, to wait for, or `なし`
   - the same file: the later step depends on the earlier one
   - a step that uses what an earlier step produced depends on it
   - otherwise: `なし`

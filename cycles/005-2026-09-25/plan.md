@@ -21,7 +21,7 @@
 - Action: build
 - Files: `.pi/skills/stack/SKILL.md`, `.pi/skills/definition/references/format.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
+  - Run: `oxfmt --check .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md; awk 'length > 100' .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md`
   - Look: `review` の子に `.pi/skills/stack/SKILL.md` だけを渡し、手順どおりに `Stack` が書けるか報告させる
   - エラーパス: なし（文書の書き換え）
 
@@ -42,7 +42,7 @@
 - Action: build
 - Files: `.pi/skills/tickets/SKILL.md`, `.pi/skills/tickets/references/format.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
+  - Run: `oxfmt --check .pi/skills/tickets/SKILL.md .pi/skills/tickets/references/format.md; awk 'length > 100' .pi/skills/tickets/SKILL.md .pi/skills/tickets/references/format.md`
   - Look: `review` の子に `.pi/skills/tickets/SKILL.md` と `references/format.md` だけを渡し、チケットが切れるか報告させる
   - エラーパス: なし（文書の書き換え）
 
@@ -60,7 +60,7 @@
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`
 - Verify:
-  - Run: `oxfmt --check` が通る。`awk 'length > 100'` が 0 行
+  - Run: `oxfmt --check .pi/skills/work/SKILL.md; awk 'length > 100' .pi/skills/work/SKILL.md`
   - Look: `review` の子に `.pi/skills/work/SKILL.md` だけを渡し、1 つの step を最後まで運べるか報告させる
   - エラーパス: なし（文書の書き換え）
 
@@ -78,22 +78,24 @@
 - Action: build
 - Files: `.pi/skills/close/SKILL.md`
 - Verify:
-  - Run: `grep -n "Goal\|Remarks" .pi/skills/close/SKILL.md` が 0 行。`oxfmt --check` が通る
+  - Run: `grep -n "Goal\|Remarks" .pi/skills/close/SKILL.md; oxfmt --check .pi/skills/close/SKILL.md`
   - Look: `review` の子に `.pi/skills/close/SKILL.md` だけを渡し、サイクルを閉じられるか報告させる
   - エラーパス: なし（文書の書き換え）
 
 ### step 5: readme
 
 - What:
-  - README が `Goal` / `Non-goal` / `Remarks` をまだ挙げている（この製品にその節は無い） → 実物どおりにする
-  - README が `Remarks` を「書き続けられる節」と書いている → 消す
+  - README が実物と食い違っている → 実物どおりにする
+    - `README.md:44` と `README.ja.md:44` に `Goal` / `Non-goal` / `Remarks` が残っている（この製品にその節は無い）
+    - `README.md:52` に、`Remarks` は書き続けられる、とある
   - `work` の行にレビューが無い → 実物に合わせる
-- Depends: step 4
+    - `README.md:48` と `README.ja.md:48` を、`.pi/skills/` の実物と比べる
+- Depends: step 1, step 2, step 3, step 4
 - Action: build
 - Files: `README.md`, `README.ja.md`
 - Verify:
-  - Run: `grep -n "Goal\|Non-goal\|Remarks" README.md README.ja.md` が 0 行
-  - Look: `review` の子に `.pi/skills/` 一覧と `README.md` を渡し、両者が一致するか報告させる
+  - Run: `grep -n "Goal\|Non-goal\|Remarks" README.md README.ja.md`
+  - Look: `review` の子に `.pi/skills/` の一覧と `README.md` を渡し、両者が一致するか報告させる
   - エラーパス: なし（文書の書き換え）
 
 ## Structure
@@ -119,3 +121,5 @@ README.ja.md                 update
 ```
 
 ## What to keep
+
+- なし

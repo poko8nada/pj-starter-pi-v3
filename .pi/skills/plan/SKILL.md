@@ -49,6 +49,7 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - otherwise: `Depends: なし`
 7. **Fill the fields.** With the owner where a field is a decision:
    - `Files`: the files it touches
+   - a step may touch a file in another unit's folder, when its unit's `Now` sends the work there
    - `Verify` has two parts, and the step names the kinds that fit what it builds:
      - `Run`: the commands the machine runs — the cases, the types, the lint, the build
      - `Look`: a person looks at it — a value, a screen in the browser, a file, a diff
