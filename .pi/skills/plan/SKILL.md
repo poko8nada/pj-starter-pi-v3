@@ -22,8 +22,9 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - `What` is the relation: one line per `Now` line, and what it becomes
    - an empty gap: the unit is not in the plan
 3. **Split what is too big.** A step is the smallest thing that can be verified on its own:
-   - its `Verify` is one thing, and it runs when the step closes, not later
-   - when the unit's `Verify` cannot be written as one thing, split it into `<unit-id>.<part>`
+   - its `Verify` runs when the step closes, not later
+   - one child finishes it in one go: when it cannot, the unit is split
+   - the split is named `<unit-id>.<part>`
    - the parts divide the unit's `Now` lines: together they cover every line once
    - the parts stand in order, and each `Depends` is the part before it
    - the unit is closed by a `<unit-id>.check` step: one run that proves every `Then` of it
@@ -45,13 +46,16 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - the cost is the owner's call: a tidy-up takes time
 6. **Order the steps.** The numbers are the implementation order:
    - a step that fixes a skill comes before the steps its work is carried under
-   - `Depends` names that step
+   - two steps that touch the same file cannot run together: the later one depends on the earlier
+   - a step that uses what an earlier step produced depends on it
+   - otherwise: `Depends: なし`
 7. **Fill the fields.** With the owner where a field is a decision:
    - `Files`: the files it touches
    - `Verify` has two parts, and the step names the kinds that fit what it builds:
      - `Run`: the machine runs it — the cases, the types, the lint, the build, the form
      - `Look`: a person looks at it — a value, a screen in the browser, a file, a diff
      - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
+   - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
 8. **Draw the form.** `Structure`: the tree after the gaps are filled, one marker per line:
    - ask what a folder looks like after a file is added
    - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step

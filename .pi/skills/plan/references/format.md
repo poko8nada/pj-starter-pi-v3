@@ -44,7 +44,7 @@
 - Files: 直すファイル（既存）
 - Verify:
   - Run: 既存のテストがそのまま通ること
-  - Read: 動きが変わっていないこと
+  - Look: 動きが変わっていないこと
 
 ## Structure
 
@@ -73,6 +73,9 @@ src/
   - a step with no unit adds a suffix: `<unit-id>.check` or `<unit-id>.refactor`
 - the step numbers are the order of work
 - `Depends` names the step to wait for, or `なし`
+  - the same file: the later step depends on the earlier one
+  - a step that uses what an earlier step produced depends on it
+  - otherwise: `なし`
 - `What` is the relation: one line per `Now` line, and what it becomes
   - the number of the definition's lines is not a relation: a reader of this plan does not open the definition
   - together, the steps of a unit carry every `Now` line of it, once
@@ -84,8 +87,11 @@ src/
   - `Run` is what the machine runs: the cases, the types, the lint, the build, the form
   - `Look` is what a person looks at: a value, a screen, a file, a diff
   - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
+  - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
   - the error paths live here: the definition leaves them out
   - a step that moves the form is proved by the form: `Run` holds the command or the reading
+- `What to keep` is a promise list: `<ファイル>: <なぜ関わるか>`
+  - what this plan does not change, and a reader would still ask about
 - a step that adds a check writes what it sets up for itself: the paths, the config, the environment
 
 ## Structure
