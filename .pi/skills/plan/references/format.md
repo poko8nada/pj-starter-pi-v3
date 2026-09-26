@@ -1,87 +1,103 @@
 # The plan's format
 
-Section and field names are English. They are the type: the same in every plan, and fixed.
-
-**The content is Japanese.** The owner reads these plans, and the project's rule is that documents a person reads are written in Japanese. So the placeholders below are in Japanese on purpose: they show the language the content goes in, not the labels.
+`cycles/<NNN-YYYY-MM-DD>/plan.md`. Section and field names are English; the content is Japanese.
 
 ## The shape
 
-```md
+````md
 # PLAN <NNN>
 
 ## Steps
 
 ### step 0: prepare
 
-- Install: 何を入れるか
-- Cleanup: 何を消すか（依存の削除、不要になったファイル）
-- Refactor: 先に直す構造。無くても「なし」と書く
+- Install: 何を入れるか。無ければ なし
+- Cleanup: 何を消すか、何を動かすか。無ければ なし
 
 ### step N: <unit-id> または <unit-id>.<part>
 
-- What: 何をするか（1 行）
+- What: 閉じるギャップ（`<Now の行> → <Then の行>`）
 - Depends: 何を待つか
-- Action: verify / build
-- Files: 具体的なファイル名
-- Tests: テストファイル名（コロケーションなので構成図には書かない）。形を移す step は、形の検証（コマンドか読み方）。検査を足す step は、その検査が自分で決める置き場（リポジトリ・config・`HOME`）も書く
+- Action: build / verify
+- Files: 触るファイル
+- Tests: テストファイル
 
 ### step N: <unit-id>.check
 
-- 単位を step に割った場合の締め
-- What: 単位の `Then` を全部、1 回の実演で確かめる
+- What: 単位の `Then` を全部、1 回で確かめる
 - Depends: その単位の step
 - Action: verify
 - Files: なし
-- Tests: なし（実演が確かめ）
+- Tests: なし
+
+### step N: <unit-id>.refactor
+
+- Why: このビルドで、構造がどう悪くなるか（1 行）
+- What: 既存の何を、どう直すか
+- Depends: 原因になった step
+- Action: build
+- Files: 直すファイル（既存）
+- Tests: 既存のテストがそのまま通ること
 
 ## Structure
 
-（変えるファイルのツリー。フォルダは入れ子で書き、行の後ろに `add` / `update` / `drop`）
-
-## Layers
-
-（層と向き。`A は B を知らない` の形で書く）
-
-## Seam
-
-（差し替え点。何を交換しても他を触らずに済むか）
+```text
+src/
+  features/
+    cart/
+      CartButton.tsx   add
+      useCart.ts       add
+  lib/
+    money.ts           update
+  old/
+    cart.ts            drop
+```
 
 ## What to keep
 
-（触らないが関わるファイル。読む人が「ここも変わるのでは」と思うもの）
+- `lib/format.ts`: `money` と同じ値を使う
+````
+
+An example of a refactor step:
+
+```md
+### step 1: login.refactor
+
+- Why: `login` が `user.ts` に認証を持ち込むので、`user.ts` が表示と認証の 2 つを指すようになる
+- What: `src/lib/user.ts` を `auth.ts` と `user-view.ts` に割る
+- Depends: step 3
+- Action: build
+- Files: `src/lib/user.ts`, `src/lib/auth.ts`, `src/lib/user-view.ts`
+- Tests: `user.ts` の既存のテストがそのまま通ること
 ```
 
 ## Steps
 
-- The title is `# PLAN <NNN>`, with the cycle's number, so it lines up with its `definition.md`
-- `step 0` is always there, even when all three answers are なし
-- Step numbers are the order of work, and that order is the implementation order. A step that changes a skill comes before the steps whose work that skill carries
-- The name after the colon is either a unit's id or `<unit-id>.<part>`
-- `0` is the only step with a fixed name: every other one is named after the thing it builds
-- A step that only closes a unit (`<unit-id>.check`) has no files and no tests: the demonstration is what verifies it
-- A `Tests` entry is a test file, except when the step moves the form: then it is the form's check — a command or a reading, with the expected shape in words. 「部品に色の直値が無い」「`spec` は `run` を知らない」 are that kind of entry
-- A step that adds a check says what it sets up for itself instead of inheriting: the paths, the config, the environment, the server, the clock it needs
-- A step that moves the form answers the shape question: what the folder is after the file is added, or where the tidy-up is written
+- the title is `# PLAN <NNN>`, with the cycle's number
+- `step 0` is always there, with `Install` and `Cleanup`, and `なし` when there is nothing
+- the name after the colon is a unit's id, or `<unit-id>.<part>`
+  - a step with no unit adds a suffix: `<unit-id>.check` or `<unit-id>.refactor`
+- a `<unit-id>.refactor` has no gap and no `Then`
+  - its `Tests` is what shows that the behaviour did not change
+- `Why` names what the build makes worse: the structure, a dependency or a layer
+- the step numbers are the order of work
+- a `<unit-id>.check` step has no files and no tests: its `What` is the proof
+- `Action` is `build` when something is produced, and `verify` when the step only checks
+  - a `<unit-id>.check` is always `verify`
+- a `Tests` entry is a test file, except when the step moves the form
+  - then it is the command or the reading that shows the new form
+- a step that adds a check writes what it sets up for itself: the paths, the config, the environment
 
 ## Structure
 
-- `Structure` is the form, not a file list: the folders are written nested, one line per folder with its files under it, so the shape is readable at a glance
-- Only the files this plan changes. A file that is neither changed nor adjacent does not belong
-- One marker per line: `add`, `update` or `drop`
-- Test files do not appear here: they are colocated with the code, and `Tests` in the step already names them
-- `## What to keep` is not part of `Structure`. Keeping them apart is what makes "what changed" readable at a glance
-
-## Layers and Seam
-
-- `Layers` and `Seam` sit next to `Structure`, and both are decisions: they are written, not derived from the code
-- `Layers` is one rule with two appearances: the design layers (a value feeds the style layer, the style layer feeds the part) and the boundary layers (who may cross into whom). A front end and a back end are not two templates here
-- The direction is written as `A は B を知らない`, one line per edge that must not exist; the edges that may exist are written too
-- `Seam` names what can be exchanged without touching anything else. The plan must not contain a shape that breaks its own seam: when the seam moves, that is a decision, and it is written down
+- the form, not a file list: the folders nested, one line per folder with its files under it
+- only the files this plan changes
+- one marker per line: `add`, `update` or `drop`
+- test files do not appear: they are colocated, and `Tests` names them
+- `What to keep` is not part of it
 
 ## Writing
 
-- **One line carries one thing.** A line holding two events is split into a short line plus 2-space sub-lines under it. A sub-line must say something the line above does not: a sub-line that only repeats the stem means the line was a list, and a list stays on one line. A list of values is one thing — the names of the layers, a list of tool names, the markers `add / update / drop`
-- **Do not chain events with `/`, nested parentheses or `→`.** `→` is for a landing place. Swapping a separator for `、` is not a split; it is the same crammed line
-- **Do not write what the reader can look up.** Not the commands that were run, not that the checks were green, not what the code, the diff or the commit already shows
-- **Do not wrap a sentence across lines, and do not use structures that grow sideways.** One paragraph is one line. Tables break with long text
-- The plan is frozen when it is committed. What changes later is recorded in the tickets, not here
+- Do not write what the reader can look up
+- No tables: they break with long text
+- A field whose content cannot be written yet keeps its name and stays empty

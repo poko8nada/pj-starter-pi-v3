@@ -1,94 +1,98 @@
 ---
 name: plan
-description: Use when a definition has been approved and its Stack is filled. Turns the definition into steps, each with the files it touches and the tests that prove it, and freezes it.
+description: Use after the definition and its Stack. Turns the gap between Now and Then into steps, and freezes it.
 ---
 
 # plan
 
-Turn the approved definition into a plan: the order of work, the files each step touches, and the form they have to keep. The definition says what the product does; the plan says in what order it gets built, and what shape holds it. The shape and the field rules are in `references/format.md`.
+A cycle is one plan.
 
-## Step 1: read the definition
+The plan fills the gap between the state today and the state after the build.
 
-Read the approved definition. The units are the work, and each unit's `Then` is what the step will be checked against. `What to keep` and `Non-goal` say what will not be touched.
+The definition says what the product does. The plan says in what order it is built, and the tickets are cut from its steps.
 
-## Step 2: prepare (step 0)
+The shape of the file and its field rules are in `references/format.md`.
 
-Open with `step 0`, always. It answers three questions before anything is built:
+Read that before writing anything.
 
-- Install: what has to be added (dependencies the stack already decided)
-- Cleanup: what has to go (dead files, dropped dependencies)
-- Refactor: what has to be straightened out first, so that the step after it is small
+## Steps
 
-Write なし where there is nothing to do. Leaving it out hides whether it was considered.
+1. **Read the definition.** The units are the work.
+2. **Take the gaps.** For each unit, the gap between its `Now` and its `Then`:
+   - the `Now` lines: the state today, and what `Structure` touches
+   - the `Then` lines: the state after the build, and what proves a step
+   - an empty gap: the unit is not in the plan
+   - a gap too big for one step: split it into `<unit-id>.<part>`
+   - a split unit is closed by a `<unit-id>.check` step: one run that proves every `Then` of it
+3. **Read the existing code.** The gaps land in a repository that is already there.
+   - read what is around where they land
+   - ask: does this build make the structure worse?
+     - a file that would hold haphazard logic
+     - a structure that becomes flat, where nothing can be found
+     - a dependency that becomes complex
+     - a layer or a dependency that breaks
+   - if none of them: no refactor step
+4. **Write the refactor step.** For each thing the build makes worse:
+   - the name is `<unit-id>.refactor`: the unit whose build needs it
+   - `Why` is the worse thing, in one line, with the names of the place
+   - `What` is what is straightened out in the existing code
+   - it comes before the work when it has to: an early number, `Depends: なし`
+   - otherwise it comes after the step that made it necessary, and `Depends` names it
+   - a deletion or a move that no unit needs is not a step: it is one line in `step 0`'s `Cleanup`
+   - the cost is the owner's call: a tidy-up takes time
+5. **Order the steps.** The numbers are the implementation order:
+   - a step that fixes a skill comes before the steps its work is carried under
+   - `Depends` names that step
+6. **Fill the fields.** With the owner where a field is a decision.
+7. **Draw the form.** `Structure`: the tree after the gaps are filled, one marker per line:
+   - ask what a folder looks like after a file is added
+   - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step
+8. **Read it against `references/format.md`**, once, before anyone else sees it.
+9. **The `review` child**, with the checklist below:
+   - fix what comes back, and repeat until it is clean
+   - cap it at three rounds
+10. **The owner.** Show the steps and the form, and the findings with what you did with each.
+11. **Commit.** The commit is the freeze mark:
+    - the plan is not edited afterwards
+    - what changes during the cycle is recorded in the ticket that hit it
 
-**`Cleanup` is where work that belongs to no unit goes.** A tidy-up, a deletion, a move — the definition does not ask for it, and no unit's `Then` covers it, so it gets no step of its own: a step exists to carry a `Then`. It is written here, and it is still written down.
+A fact the repository holds is looked up, not asked. Ask only what changes the file.
 
-## Step 3: split the units into steps
+## The file
 
-A step is the smallest thing that can be verified on its own. When a unit needs more than one, split it and name the parts `<unit-id>.<part>`: the dot is what shows which unit a step belongs to.
+`cycles/<NNN-YYYY-MM-DD>/plan.md`, following `references/format.md`.
 
-When a unit is split, close it with a `<unit-id>.check` step: one run that verifies every `Then` of that unit together. A step's own `Verify` covers only its part, so without this the unit as a whole is never checked.
+- Write a field only when it can be derived from the repository, or when the owner can correct it
 
-The step numbers are the order of work, and that order is the implementation order. A step that changes a skill comes before the steps whose work that skill carries: while the skill is wrong, every step carried under it is carried wrong.
+## The review's checklist
 
-## Step 4: fill each step
+The `review` child of step 9 gets this, and nothing else:
 
-- `What`: what this step does, in one line
-- `Depends`: what has to be done first (another step, or nothing). **A dependency is not only documents: a step can need a tool.** When a step relies on a skill or on code that is not right yet, the step that puts it right comes first, and that order is written here. A stale skill is fixed by a step of its own, not on the way to some later one
-- `Action`: `build` when something is produced, `verify` when the step only checks
-- `Files`: the files it touches. Test files are colocated, so they do not appear in `Structure`
-- `Tests`: the test file names. Error paths live here; the definition deliberately leaves them out. When the step moves the form — it adds, moves or drops files and folders — the verification is the form, not a behaviour: `Tests` holds the command or the reading that shows it. A step that adds a check says what it sets up for itself instead of inheriting: the paths, the config, the environment it needs
+- every unit with a gap is a step
+- a `<unit-id>.refactor` step has no gap: it is there to straighten out
+  - its `Why` names what the build makes worse
+- every `Then` has something that proves it
+- each step can be verified on its own, and its `Depends` is the real dependency
+- every file in `Files` is in `Structure`, and every file in `Structure` belongs to a step
+- test files are the exception
+- nothing is built that the definition does not ask for
+- every field is filled, and `なし` is written where there is nothing
+- the error paths are in `Tests`
+- a step that moves the form is proved by the form
 
-## Step 5: write the structure and the form
+Report findings only, each with its line, marked blocking or not.
 
-The definition's `Then`s say what is built; they do not say what shape holds it. Ask these before drawing the tree, adapting them to the plan rather than reciting them, and bring a recommended answer to each:
+## What is frozen
 
-- the design side: where do the values live? who reads them? what is the seam?
-- the boundary side: where is the boundary? who may cross it? which boundary faces the outside?
-
-One question at a time, and stop when the answers stop moving the plan. A fact the repository already holds is looked up, not asked.
-
-`## Structure` lists the files the plan changes, as a tree, with one marker per line: `add`, `update` or `drop`. Only the changes: what stays untouched is not drawn. **The tree is the form**: write the folders nested, one line per folder with its files under it, so the shape reads at a glance. If the range widens while the plan is being written — an owner's remark, say — this follows it, because the picture and the steps have to agree. After the freeze it does not: a file that turns out to be needed is recorded in the ticket that touched it, not by editing the plan
-
-**Ask what the folder looks like after.** When the plan adds a file or a folder, ask whether that folder still stands for one thing once the file is there. If it does not, the tidy-up is this plan's, and it is not optional: put it in `step 0`'s `Refactor` when it comes before the work, or in a step of its own when it carries a `Then`. `Refactor: なし` is a decision, not a default.
-
-`## Layers` writes the layers and the direction between them, next to `Structure`, **as one rule**: a value feeds the style layer, the style layer feeds the part, and a layer does not know the one above it. The same rule is the boundary rule — who may cross into whom — so a front end and a back end are not two templates here, they are the same rule seen from two sides. Write the edges that must not exist as `A は B を知らない`, one line each, and the edges that may exist.
-
-`## Seam` writes the seam: what can be exchanged without touching the rest. The plan keeps that premise, so a shape that would break it is not put into the plan; when the seam itself has to move, that move is a decision, and it is written here.
-
-## Step 6: review it
-
-Before the owner sees it, put the plan in front of a `review` child: it has not read this conversation, so it does not fill in what the plan leaves unsaid. Fix what it finds, and repeat until it comes back with nothing.
-
-Each round is one child, and the checklist below is the whole of what it is asked. A fixed checklist is what makes this converge: the reviews stop when a round raises no new finding. Cap it at three rounds, and take whatever is left to the owner.
-
-The task, verbatim:
-
-- Check the plan against the definition, and nothing else:
-  - every unit is a step
-  - every `Then` has something that verifies it (a test, or a demonstration)
-  - each step can be verified on its own, and its `Depends` is the real dependency
-  - every file in `Files` appears in `Structure`, and every file in `Structure` belongs to a step (test files excepted)
-  - nothing is built that the definition does not ask for
-  - every field is filled, `step 0` says なし where there is nothing, and the error paths are in `Tests`
-  - `Layers` says the direction, and `Seam` says what can be swapped
-  - a step that moves the form verifies the form, and the shape question has an answer
-- Report findings only, each with its file and line, marked blocking or not. If there is nothing, say "no findings".
-
-The input is the plan file: one child, no other input. Do not cut tickets from the plan until this comes back clean.
-
-## Step 7: put it to the owner
-
-Do not cut tickets yet, and do not commit. Show the steps and the structure.
-
-- a correction sends you back to Step 3
-- when they say yes, commit. The plan is frozen by that commit and is not edited afterwards: what changes during the cycle is recorded in the tickets, not here
-- show the review's findings and what you did with each: fixed, or answered with a reason. That is what makes this step short
+- **The definition** — freezes at its own commit
+  - A correction that moves it goes back to the `definition` stage
+- **The plan** — freezes at the commit that agrees it, and is not reopened
+- **The tickets** — freeze at the commit that agrees them
+  - Revised only before that step starts, with the reason and the owner's agreement
 
 ## How not to do this
 
-- Do not write the order of work into the definition; it belongs here
-- Do not leave a step without a file or without a test: a step nobody can point at is not a step
-- Do not add a file without asking what the folder looks like after: an increase in files is not automatically an increase in what the folder is
-- Do not write a plan whose shape breaks its own seam
-- Do not edit a frozen plan. A change is recorded in the ticket that hit it
+- Do not write a step that no `Then` asks for
+- Do not leave a step without a file or without something that proves it
+- Do not add a file without asking what the folder looks like after
+- Do not ignore what the build makes worse in the structure
