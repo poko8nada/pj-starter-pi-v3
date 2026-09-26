@@ -15,7 +15,7 @@ The shape of the file and its field rules are in `references/format.md`. Read th
 
 ## Steps
 
-1. **Read the definition.** The units are the work.
+1. **Read `What to build`.** The units are the work.
 2. **Take the gaps.** For each unit, the gap between its `Now` and its `Then`:
    - the `Now` lines: the state today
    - the `Then` lines: the state after the build
