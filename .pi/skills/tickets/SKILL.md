@@ -24,31 +24,13 @@ Read that before writing anything.
 1. **Read the plan.** One ticket per step, cut in the plan's order.
    - the tickets of a unit are cut together, and shown as one set
    - a `step 0` that says なし takes no ticket
-2. **Write the `Acceptance`.** The step's target: the right side of the plan's `What`, copied.
-3. **Write the `Todo`.** The concrete work, by artifact:
-   - a document: the headings, and what changes in each
-   - code: the functions to write or change
-   - a refactor: what is split, moved or dropped
-   - the test files, with their paths. The plan does not name them: here is where they are decided
-4. **Write `Verify`.** One block per type the plan named:
-   - the types, and what each block holds, are in the plan's `format.md`
-   - together, the blocks decide every `Acceptance` line
-   - each block says which `Acceptance` lines it decides
-5. **Write the cases**, for a step that has `test`:
-   - a case is `<入力> → <結果>`, and the result is a value, an error type or a state
-   - "It does not throw" is not a result
-   - the cases come from the definition, not from the implementation
-   - walk these, and write the case or the reason it does not apply:
-     - the happy path
-     - null, undefined, missing
-     - empty
-     - boundary values
-     - invalid input
-     - the expected error path
-     - permission
-     - a second call
-     - concurrency
-   - the reason sits as a bullet under the artifact, in the same list as the cases
+2. **Write the `Acceptance`.** The step's target, from the plan's `What`.
+3. **Write the `Todo`.** The concrete work, by artifact.
+   - a file the plan's `Files` does not name: stop and show the owner
+4. **Write `Verify`.** One block per type the plan named.
+   - it runs when the step closes, not later
+5. **Write the cases.** For a step that has `test`, walk the categories.
+   - write each case, or the reason it does not apply
 6. **Read it against `references/format.md`**, once, before anyone else sees it.
 7. **The `review` child**, with the checklist below:
    - it gets the unit's tickets, in one call
@@ -70,7 +52,7 @@ A fact the repository holds is looked up, not asked.
 The `review` child of step 7 gets this, and nothing else:
 
 - every step has a ticket, and a `step 0` with なし has none
-- the `Acceptance` is the right side of the plan's `What`, copied
+- the `Acceptance` is the step's target, taken from the plan's `What`
 - the `Todo` covers every file in the step's `Files`, and the concrete work is named
 - the test files are here, not in the plan
 - every `Verify` type the plan named has its concrete

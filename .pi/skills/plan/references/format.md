@@ -64,7 +64,7 @@ src/
 
 ## The Verify types
 
-The plan names the types; the ticket writes the concrete. For each type, what the ticket holds:
+For each type, what the ticket holds:
 
 - `test`: a machine runs the tests, and reads the pass or the fail
   - the file, the command, and the cases
@@ -107,9 +107,6 @@ The plan names the types; the ticket writes the concrete. For each type, what th
   - `<unit-id>.refactor` is a step with no unit
 - the step numbers are the order of work
 - `Depends` names the step, or the steps, to wait for, or `なし`
-  - the same file: the later step depends on the earlier one
-  - a step that uses what an earlier step produced depends on it
-  - otherwise: `なし`
 - `What` is the relation: one line per `Now` line, and what it becomes
   - the number of the definition's lines is not a relation
     - a reader of this plan does not open the definition

@@ -25,7 +25,6 @@ Read that before writing anything.
 2. **Take the gaps.** For each unit, the gap between its `Now` and its `Then`:
    - the `Now` lines: the state today
    - the `Then` lines: the state after the build
-   - `What` is the relation: one line per `Now` line, and what it becomes
    - an empty gap: the unit is not in the plan
 3. **Split what is too big.** A step is one child's work:
    - its `Verify` is a few types, and it runs when the step closes, not later

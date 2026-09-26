@@ -50,20 +50,24 @@ Commit:
 
 - one ticket per step, named `<NN>-<step-name>.md` with the step's number
   - `01-tickets-skill.md`, `02-stack-skill.md`
-- the heading is the unit's id, without the definition's number: `# tickets-skill`
-  - a step with no unit: `<unit-id>.check` or `<unit-id>.refactor`
+- the heading is the step's name, without the definition's number: `# tickets-skill`
+- the step's name is the plan's
+  - `<unit-id>`, `<unit-id>.<part>`, `<unit-id>.check`, `<unit-id>.refactor`
 - a `step 0` that says なし takes no ticket
 
 ## Acceptance
 
-- the right side of the plan's `What`, copied
+- the step's target, from the plan's `What`
+  - the test: reading this line, does it say what must be true?
+  - a relation: the right side — `商品ページで押すと、ヘッダの件数が増える`
+  - a line that is already a target: as it stands — `単位の Then を全部、1 回で確かめる`
 
 ## Todo
 
 - the concrete work, by artifact
-  - a document: the headings, and what changes in each
-  - code: the functions to write or change
-  - a refactor: what is split, moved or dropped
+- a document: the headings, and what changes in each
+- code: the functions to write or change
+- a refactor: what is split, moved or dropped
 - the test files are here, with their paths: the plan does not name them
 - every file in the step's `Files` appears
 - a step with no files writes なし, and says why
@@ -73,11 +77,15 @@ Commit:
 - one block per type the plan named
 - the types, and what each block holds, are in the plan's `format.md`
 - together, the blocks decide every `Acceptance` line, and each block says which lines it decides
-- a `test` block holds the file and the cases
+- a `test` block holds the file, the command, and the cases
   - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
-  - the reason a category does not apply is a bullet under the artifact
-    - in the same list as the cases
-- the run happens when the step closes, not later
+  - the result is a value, an error type or a state
+  - "It does not throw" is not a result
+  - the cases come from the `Acceptance`, not from the implementation
+  - walk these, and write each case, or the reason it does not apply:
+    - the happy path / null, undefined, missing / empty / boundary values
+    - invalid input / the expected error path / permission / a second call / concurrency
+  - the reason sits as a bullet under the artifact, in the same list as the cases
 
 ## Notes
 

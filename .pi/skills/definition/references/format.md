@@ -96,7 +96,6 @@ The users therefore differ from product to product.
   - values and the check belong to the plan
   - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
 - The name is the ID of the thing: two nouns, at most one hyphen
-- Count what the product does, from the `Who`'s side: a behaviour without a unit is a hole
 - A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
 
 ## Markers
