@@ -1,6 +1,6 @@
 ---
 name: tickets
-description: Use when a plan is approved. One ticket per step, reviewed and agreed, and frozen by a commit.
+description: Use when a plan is approved. One ticket per step, reviewed, agreed, and frozen.
 ---
 
 # tickets
@@ -11,7 +11,9 @@ A ticket is what the work will be judged by: what to do, and how it will be chec
 
 The plan says the steps; a ticket is one step, and the tickets are cut in the plan's order.
 
-A unit is one build unit from the definition: the smallest thing a `Who` can use. Its steps are its tickets.
+A unit is one build unit from the definition: the smallest thing a `Who` can use.
+
+Its steps are its tickets.
 
 The shape of the file and its field rules are in `references/format.md`.
 
@@ -30,6 +32,7 @@ Read that before writing anything.
    - a step with no files writes なし, and says why
 4. **Write the tests.** They are cases, and the error paths live here.
    - the definition leaves the error paths out
+   - a step with no behaviour writes なし in the tests, and says why
    - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
    - the result is a value, an error type or a state
    - "It does not throw" is not a result

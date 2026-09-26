@@ -57,6 +57,7 @@ Commit:
 - a document is split by heading, code by function, tests by case
 - every file in the step's `Files` appears
 - a step with no files writes なし, and says why
+- a step with no behaviour writes なし for the tests, and says why
 
 ## Verify
 
