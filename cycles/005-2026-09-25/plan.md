@@ -7,25 +7,7 @@
 - Install: なし
 - Cleanup: なし
 
-### step 1: stack-skill
-
-- What:
-  - サイクルの上流工程の変更を受けて、適切な手順になっていない → `definition` の新しい形に合わせる
-  - `Stack` 節の形が skill の中にある → `definition` の `format.md` に移す
-  - 手順が具体的でなく、雰囲気で読むことになる → 軸と判定と例を書く
-  - 本文がダラダラしていて、構造が無い → 1 行 1 つに割る
-  - 同じ手順が 2 つの skill にある → 1 つに寄せる
-  - 規則だけで、判断の基準と例が無い（読み違えられる） → 軸と判定と例を書く
-  - 太字が多すぎて、本当に大事なものがどれかわからない → 大事なものだけ太字にする
-- Depends: なし
-- Action: build
-- Files: `.pi/skills/stack/SKILL.md`, `.pi/skills/definition/references/format.md`
-- Verify:
-  - Run: `oxfmt --check .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md; awk 'length > 100' .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md`
-  - Look: `review` の子に `.pi/skills/stack/SKILL.md` だけを渡し、手順どおりに `Stack` が書けるか報告させる
-  - エラーパス: なし（文書の書き換え）
-
-### step 2: tickets-skill
+### step 1: tickets-skill
 
 - What:
   - サイクルの上流工程の変更を受けて、適切な手順になっていない → `definition` と `plan` の新しい形に合わせる
@@ -44,6 +26,24 @@
 - Verify:
   - Run: `oxfmt --check .pi/skills/tickets/SKILL.md .pi/skills/tickets/references/format.md; awk 'length > 100' .pi/skills/tickets/SKILL.md .pi/skills/tickets/references/format.md`
   - Look: `review` の子に `.pi/skills/tickets/SKILL.md` と `references/format.md` だけを渡し、チケットが切れるか報告させる
+  - エラーパス: なし（文書の書き換え）
+
+### step 2: stack-skill
+
+- What:
+  - サイクルの上流工程の変更を受けて、適切な手順になっていない → `definition` の新しい形に合わせる
+  - `Stack` 節の形が skill の中にある → `definition` の `format.md` に移す
+  - 手順が具体的でなく、雰囲気で読むことになる → 軸と判定と例を書く
+  - 本文がダラダラしていて、構造が無い → 1 行 1 つに割る
+  - 同じ手順が 2 つの skill にある → 1 つに寄せる
+  - 規則だけで、判断の基準と例が無い（読み違えられる） → 軸と判定と例を書く
+  - 太字が多すぎて、本当に大事なものがどれかわからない → 大事なものだけ太字にする
+- Depends: なし
+- Action: build
+- Files: `.pi/skills/stack/SKILL.md`, `.pi/skills/definition/references/format.md`
+- Verify:
+  - Run: `oxfmt --check .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md; awk 'length > 100' .pi/skills/stack/SKILL.md .pi/skills/definition/references/format.md`
+  - Look: `review` の子に `.pi/skills/stack/SKILL.md` だけを渡し、手順どおりに `Stack` が書けるか報告させる
   - エラーパス: なし（文書の書き換え）
 
 ### step 3: work-skill
