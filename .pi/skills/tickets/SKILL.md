@@ -23,7 +23,7 @@ Read that before writing anything.
 
 1. **Read the plan.** One ticket per step, cut in the plan's order.
    - the tickets of a unit are cut together, and shown as one set
-   - a `step 0` that says なし takes no ticket
+   - a `<unit-id>.refactor` step belongs to the unit in its name
 2. **Write the `Acceptance`.** The step's target, from the plan's `What`.
 3. **Write the `Todo`.** The concrete work, by artifact.
    - a file the plan's `Files` does not name: stop and show the owner

@@ -1,99 +1,116 @@
 ---
 name: stack
-description: 'Use when a definition has been approved. Every cycle passes through here, even when nothing changes. Decides what the product is built with: the harness that comes for free, and the additions the product itself needs.'
+description: Use when a definition is approved. Writes its Stack section, after the freeze.
 ---
 
 # stack
 
-Fill the `Stack` section of a definition that is already approved. The other sections are settled and frozen; this is the one section that is written after the freeze. **Every cycle passes through here**, even when the answer is that nothing changes.
+A definition is approved, and its `Stack` section is still empty.
 
-## Step 1: read the definition, and the stack before it
+What a product is built with is decided here, and written into that section.
 
-Read the definition as it stands. The constraints on the stack are already in it:
+The section has three parts: the `Runtime` it stands on, the `Deploy`, and the `Added` things.
 
-- `What` says what kind of thing this is (a CLI, a service, a library)
-- `Goal` and `Non-goal` say what it must do and what it will not do, which cuts most of the space
-- `What to build` says what it has to run
+Every cycle passes through here, even when nothing changes.
 
-Do not ask the owner for facts that the definition or the repository answers.
+The shape of the section is in `../definition/references/format.md`.
 
-## Step 2: look at the base
+Read that before writing anything.
 
-The harness of the repository is given, not chosen. Read the repository and name it; its versions and its settings are readable from the code, so the definition only needs the names.
+## Steps
 
-```
-- Base: Node / TypeScript / pnpm / lefthook
-```
+1. **Read the definition.** The candidates come from it:
+   - `### Type`: what kind of thing this is
+   - `### Who`: who acts in it
+   - each unit's `Does`: what the product does
+   - `## What to keep`: what stays as it is
+   - `## Carry over`: what was left open
+2. **Read the stack before it.**
+   - the previous `Stack` is the starting point
+   - what was decided stays decided until something moves
+   - the units this cycle marks `update`, `add` or `drop` are where it moves
+3. **Read the runtime and the language.** They are in the repository.
+   - this comes first: the runtime bounds what can be put on it
+4. **Find the facts.** The `consult` tool, type `research`.
+   - what this kind of product is built with now, and what each piece costs
+   - the units say what is needed: 買い物かごに入れる → a place to hold the state
+   - ログインする → authentication; 一覧を表示する → the parts a screen is built from
+   - it returns facts, not a recommendation: the options are yours
+5. **Make the options.** Two or three whole stacks, from those facts:
+   - what each costs, and what each buys
+   - each option says whether it ships, and where to: see "The fields"
+   - (a) a router only, and hand-rolled state / (b) a framework, and its parts
+   - when no unit asks for anything new: the option is "nothing to add", and the owner still picks
+6. **The owner picks.** One option, or a mix of them.
+   - stop here until they have: the rest follows their pick
+7. **Try what is not obvious.**
+   - when the dependency, the configuration or the shape of the API cannot be read
+   - a `trial` child: see "The trial child"
+   - ask the owner before running one
+8. **Write the `Stack`.** The shape is in `../definition/references/format.md`, and the field rules in "The fields".
+9. **The `review` child**, with the checklist below:
+   - the `consult` tool, type `review`
+   - it gets the definition file and this checklist, in one call
+   - fix what comes back, and repeat until it is clean, up to three rounds
+   - what is left after three rounds goes to the owner
+10. **The owner.** Show what was added, and what a trial reported.
+    - a rejection sends you back to step 5
+11. **Commit.** After step 10's yes.
 
-A fresh agent has to be able to tell what came for free and what was chosen. That is the whole point of writing the base down: reading the code later cannot tell the two apart.
+A fact the repository holds is looked up, not asked. Ask only what changes the file.
 
-## Step 3: list the candidates
+## The file
 
-Walk the checklist and ask, for each, whether this product needs something:
+`cycles/<NNN-YYYY-MM-DD>/definition.md`, the `## Stack` section only.
 
-- language and runtime
-- packages and the package manager
-- checks (lint, format, typecheck, tests)
-- hooks (what runs on commit and on push)
-- distribution (how the thing is run or shipped)
-- libraries and services
+## The fields
 
-Most slots will be answered by the base. Only the additions become candidates; the harness is not a decision and does not belong in `Added`.
+- `Runtime` is the ground the product stands on: the runtime and the language, names only
+  - the test: does a reader know what this runs on without opening the repository?
+  - `Node / TypeScript` — the runtime
+  - it comes before the others: the runtime bounds what can be put on it
+- `Deploy` is whether it ships, and where to
+  - the test: is a reader told that it does not ship, or where it ships?
+  - `なし` — it does not ship
+  - `Cloudflare Workers, on push to main` — it ships
+  - empty — not decided yet, and that is not the same as `なし`
+- `Added` is what this product decided to put on the runtime: one line each
+  - the test: did this product decide it, or did it come with the ground?
+  - `shadcn`, an auth library, a DB and an ORM — a product's additions
+    - what came with the ground is not written
+  - `なし` when nothing was put on it: it is a decision, and it looks different from an empty line
+- the marker is written with the rest:
+  - the test: does the marker match what changed, in the content or in the shape?
+  - a product's first definition: `Changes: add`
+  - after it: `Changes: keep` when nothing changed, with the previous lines copied verbatim
+  - `Changes: update`, with the reason, when something changed
+    - when the shape itself moved: `update` too, and the reason says how
+- the section is the stack now, not a log of the cycles: what is no longer true is dropped
+- a line that did not change is copied as it was: a change where nothing changed is a lie
+  - the test: is every line still true, and is it the stack now?
 
-Do not write reasons in the definition. The commit that fills the `Stack`, and the report from the trial below, are the record of why.
+## The review's checklist
 
-Start from the `Stack` of the previous definition: lines that did not change are copied as they are, because a diff that shows a change where nothing changed is a lie. A candidate that has become unnecessary is removed.
+The `review` child of step 9 gets this checklist and the definition file, and nothing else:
 
-## Step 4: try what is not obvious
+- every unit's `Does` has what it needs, or a reason it needs nothing added
+- nothing is in `Added` that this product did not decide
+- the runtime is the one the repository uses, and `Deploy` is decided
+- the marker is right: `add` on a product's first definition, `keep`, or `update` with its reason
 
-When a candidate can be read off the repository, take it. When its dependency resolution, its configuration, or the shape of its API is not readable, try it before deciding: send a `trial` child, which runs in a worktree with the dependencies installed, and read its report.
+Report findings only, each with its line, marked blocking or not.
 
-Trying costs a child per attempt, and it downloads the package into the shared package store: that is outside the repository, on the owner's machine. **Ask the owner before running one.** Do not hand them a cleanup command afterwards, and do not propose a global operation: what a shared store holds, and what a cleanup would take with it, is not yours to measure. A trial that fails is a result: it belongs in the ticket's `Notes`, and it takes that candidate off the list.
+## The trial child
 
-A `trial` child can write, and what it leaves behind is committed: a ref is made. A trial's work does not go into the tree — its report does — so drop the ref, and delete it with the tool (`ref-cleanup`) at that moment, never by hand.
+- the `consult` tool, type `trial`
+- it works in its own worktree, with the dependencies installed: this tree is not touched
+- what it writes stays in a ref: its report comes back, the files do not
+- a trial that fails is a result: it takes that candidate off the list
+- drop the ref with `ref_cleanup` when the report comes back, never by hand
+- the package lands in the shared store on the owner's machine: ask first
 
-## Step 5: write it
-
-```
-## Stack
-
-- Base: Node / TypeScript / pnpm / lefthook
-- Added:
-  - <what was added, one line each>
-
-Changes: keep / update **理由**
-```
-
-- **The marker is yours to write.** The definition left this section empty and said why; this step is what fills it, so this step decides the marker. On a product's **first definition** it is `add`: there is nothing to carry over. From the second one on: nothing changed is `Changes: keep`, with the previous lines copied verbatim; something changed is `Changes: update`, with the reason in bold — the frame moved and this followed it, or the stack itself was re-decided
-- `Added: なし` when nothing was needed. Saying "none" is a decision and looks different from leaving the line out
-- The definition's content is Japanese; the labels stay English
-- Do not wrap the lines
-
-## Step 6: review it
-
-Before the owner sees it, put the filled `Stack` in front of a `review` child. Same shape as everywhere else: a checklist that is fixed, fix what comes back, repeat until it comes back clean, and cap it at three rounds. A fixed checklist is what makes this converge.
-
-The task, verbatim:
-
-- Check this Stack against the definition, and nothing else:
-  - the base is names only, and they are the names the repository actually uses
-  - what the product needs is there, and nothing is added that the definition does not ask for
-  - the marker is right: `add` on a product's first definition, `keep` or `update` after it
-- Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
-
-The input is the definition file. Do not show the result to the owner until this comes back clean.
-
-## Step 7: put it to the owner
-
-Do not commit yet. Show what was added — and, when something was tried, what the trial reported.
-
-- a rejection sends you back to Step 3
-- show the review's findings and what you did with each: fixed, or answered with a reason
-- when they say yes, commit. The `Stack` is inside a frozen definition, so this commit is what freezes it in turn, and it is not edited afterwards
-
-## How not to do this
+## How not to write this
 
 - Do not decide the stack before the definition is approved: the constraints come from it
-- Do not write the harness into `Added`; it is the base
-- Do not write reasons in the definition, and do not describe the base beyond its names
-- Do not leave a candidate undecided. The stack step ends with every candidate either added or answered with なし
+- Do not walk a checklist of slots: the candidates come from the units
+- Do not leave a unit's need undecided: it is either in `Added`, or it needs nothing

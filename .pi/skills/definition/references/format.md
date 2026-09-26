@@ -43,6 +43,11 @@ Changes: keep
 
 ## Stack
 
+- Runtime: <ランタイムと言語の名前>
+- Deploy: <出すのか、出すならどこへどう>
+- Added:
+  - <足したもの、1 行 1 つ>
+
 Changes: keep
 
 ## Carry over
@@ -105,7 +110,8 @@ The users therefore differ from product to product.
   - a `keep` unit is not here: it goes in `What to keep`, with `From: <NNN>`
 - The frame ends with `Changes: keep`, or with `Changes: update **理由**`
   - `### Type` and `### Who`
-- `## Stack` ends the same way
+- `## Stack` ends with `Changes: add` on a product's first definition
+  - and with `keep`, or `update **理由**`, after it
 - `What to build`, `What to keep` and `Change:` account for every unit
   - what is touched, and what stays
 

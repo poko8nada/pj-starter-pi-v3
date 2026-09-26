@@ -37,11 +37,14 @@ Acceptance:
 
 ### Findings
 
-- なし
+- <場所>: <状態>（なぜ完遂できなかったか）。閉じるもの
+  - なし
 
 ### Unplanned
 
-- なし
+- <場所>: <何を変えたか>
+  - なぜ: <チケットに無かったのに変えた原因>
+  - なし
 
 Commit:
 ```
@@ -77,6 +80,7 @@ Commit:
 - one block per type the plan named
 - the types, and what each block holds, are in the plan's `format.md`
 - together, the blocks decide every `Acceptance` line, and each block says which lines it decides
+  - `1・4・8 行` — those three lines are in this block
 - a `test` block holds the file, the command, and the cases
   - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
   - the result is a value, an error type or a state
@@ -89,7 +93,15 @@ Commit:
 
 ## Notes
 
-- `Findings` and `Unplanned` belong to whoever did the work
+- `Findings`: what the work could not finish
+  - a judgment left to someone else, or a thing it could not do, and why it stopped
+  - the place, the state, and what closes it: the same three parts as the definition's `Carry over`
+  - the close copies these into `Carry over`, as they were written
+  - the `From: <NNN>.<ticket>` is added when the cycle closes
+- `Unplanned`: a hole that was not in the ticket, and was changed here
+  - the place, what changed, and why the change could not wait
+  - not copied: it is closed
+- both belong to whoever did the work
 - `なし` is written when it was looked at and nothing is needed
 - `Commit:` is the last line, and it stays empty until the step is done
 

@@ -152,6 +152,19 @@ Changes: update **フレームを `### Type` と `### Who` の 2 節にした（
 
 ## Stack
 
+- Runtime: Node / TypeScript
+- Deploy: なし
+- Added:
+  - pnpm
+  - lefthook
+  - oxlint
+  - oxfmt
+  - vitest
+  - `@earendil-works/pi-coding-agent`
+  - typebox
+
+Changes: update **欄を `Runtime` / `Deploy` / `Added` に絞り、ハーネスの部品を `Base` から `Added` に移した**
+
 ## Carry over
 
 - `consult` の `types.json` が git 管理外になっている。管理に入れるか、別の渡し方にするかを決める From: 004.01-work-skill
