@@ -1,6 +1,8 @@
 # The plan's format
 
-`cycles/<NNN-YYYY-MM-DD>/plan.md`. Section and field names are English; the content is Japanese.
+`cycles/<NNN-YYYY-MM-DD>/plan.md`.
+
+Section and field names are English; the content is Japanese.
 
 ## The shape
 
@@ -20,10 +22,8 @@
   - いまの 1 行 → それはどうなるか
 - Depends: 何を待つか
 - Action: build / verify
-- Files: 触るファイル
-- Verify:
-  - Run: その場で走るもの（コマンド、走るケース）
-  - Look: 人が見る値や状態
+- Files: 触るファイル。テストは書かない
+- Verify: <型>
 
 ### step N: <unit-id>.check
 
@@ -31,8 +31,7 @@
 - Depends: その単位の最後の step
 - Action: verify
 - Files: なし
-- Verify:
-  - Run: 単位の `Then` を 1 回で確かめる実演
+- Verify: <型>
 
 ### step N: <unit-id>.refactor
 
@@ -42,9 +41,7 @@
 - Depends: 原因になった step
 - Action: build
 - Files: 直すファイル（既存）
-- Verify:
-  - Run: 既存のテストがそのまま通ること
-  - Look: 動きが変わっていないこと
+- Verify: <型>
 
 ## Structure
 
@@ -62,8 +59,42 @@ src/
 
 ## What to keep
 
-- `lib/format.ts`: `money` と同じ値を使う
+- なし
 ````
+
+## The Verify types
+
+The plan names the types; the ticket writes the concrete. For each type, what the ticket holds:
+
+- `test`: a machine runs the tests, and reads the pass or the fail
+  - the file, the command, and the cases
+- `api`: a request is sent to the interface, and the response is read
+  - the request, and the response that is expected
+- `browser`: a person walks the screens, and reports what was seen
+  - the URL, the steps, and what is seen
+- `visual`: a screenshot of the screens is compared against the agreed look
+  - the screen, and the look
+- `compat`: the same walk on another browser or width
+  - which browser or width
+- `a11y`: the screens are walked with a screen reader
+  - or the tree, the contrast and the labels are checked
+  - the screen, and what is walked or checked
+- `cli`: a command is run, and its output is read
+  - the command, and the output that is expected
+- `perf`: a machine reads the time or the load of the product while it runs
+  - what is measured, and the number
+- `data`: rows are written into the store and read back, and a migration runs forward and back
+  - the rows, the store, and the migration
+- `security`: a request that should be refused is sent, and the refusal is read
+  - the request, and the refusal
+- `form`: a machine checks the length, the counts, or compares two files
+  - the files, the command, and the number
+- `read`: a child reads a document and reports
+  - which child, which document, and what it reports
+- `use`: a child uses the document, and reports
+  - which child, which document, and what it does with it
+- `look`: a person reads a value: a screen, a log, a DB, a file
+  - where the value is read, and what it should be
 
 ## Steps
 
@@ -80,23 +111,17 @@ src/
   - a step that uses what an earlier step produced depends on it
   - otherwise: `なし`
 - `What` is the relation: one line per `Now` line, and what it becomes
-  - the number of the definition's lines is not a relation: a reader of this plan does not open the definition
+  - the number of the definition's lines is not a relation
+    - a reader of this plan does not open the definition
   - together, the steps of a unit carry every `Now` line of it, once
 - a `<unit-id>.refactor` has no gap and no `Then`
   - `Why` is what the build makes worse, and `What` is the relation
 - `Action` is `build` when something is produced, and `verify` when the step only checks
   - a `<unit-id>.check` is always `verify`
-- `Verify` runs when the step closes, and the step names the kinds that fit what it builds:
-  - `Run` is the commands the machine runs: the cases, the types, the lint, the build
-  - a condition ("no line is over 100") is not a `Run` entry
-  - `Look` is what a person looks at: a value, a screen, a file, a diff
-  - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
-  - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
-  - the error paths live here: the definition leaves them out
-  - a step with no error path says so in `Verify`
-  - a step that moves the form is proved by the form: `Run` holds the command or the reading
-- `What to keep` is a promise list: `<ファイル>: <なぜ関わるか>`
-  - what this plan does not change, and a reader would still ask about
+- `Verify` is the types that decide every line of `What`, from the list above
+  - a document's lines need `read`, `use` or `form`
+  - the tests are the ticket's: no case is written here
+  - a step that moves the form is proved by the form
 - a step that adds a check writes what it sets up for itself: the paths, the config, the environment
 
 ## Structure
@@ -104,7 +129,7 @@ src/
 - the form, not a file list: the folders nested, one line per folder with its files under it
 - only the files this plan changes
 - one marker per line: `add`, `update` or `drop`
-- test files do not appear: they are colocated, and `Verify` names the cases
+- test files do not appear: the ticket decides them
 - `What to keep` is not part of it
 
 ## Writing

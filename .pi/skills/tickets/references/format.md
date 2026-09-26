@@ -7,7 +7,7 @@ Section and field names are English; the content is Japanese.
 ## The shape
 
 ```md
-# <step 名>
+# <unit-id>
 
 Acceptance:
 
@@ -22,8 +22,16 @@ Acceptance:
 
 ## Verify
 
-- Run: <その場で走るコマンド>
-- Look: <人が見る値や状態>
+### test
+
+- `pnpm test login`（8 ケース）
+  - 正しいメールとパスワード → ホームに着く（happy）
+  - パスワードが違う → `401` が返る（error）
+
+### read
+
+- `review` の子に `.pi/skills/stack/SKILL.md` だけを渡す
+  - 手順どおりに `Stack` が書けるか報告させる
 
 ## Notes
 
@@ -41,30 +49,35 @@ Commit:
 ## Names
 
 - one ticket per step, named `<NN>-<step-name>.md` with the step's number
-  - `01-tickets-skill.md`, `08-stack-skill.md`
-- the heading is the step's name
-  - a unit's id, or `<unit-id>.<part>`
+  - `01-tickets-skill.md`, `02-stack-skill.md`
+- the heading is the unit's id, without the definition's number: `# tickets-skill`
   - a step with no unit: `<unit-id>.check` or `<unit-id>.refactor`
 - a `step 0` that says なし takes no ticket
 
 ## Acceptance
 
-- the step's target: the right side of the plan's `What`, copied
+- the right side of the plan's `What`, copied
 
 ## Todo
 
-- by artifact: a file, then the units inside it, then its tests
-- a document is split by heading, code by function, tests by case
+- the concrete work, by artifact
+  - a document: the headings, and what changes in each
+  - code: the functions to write or change
+  - a refactor: what is split, moved or dropped
+- the test files are here, with their paths: the plan does not name them
 - every file in the step's `Files` appears
 - a step with no files writes なし, and says why
 
 ## Verify
 
-- the step's `Verify` from the plan: `Run` is the command, `Look` is what a person reads
-  - the cases, the types, the lint, the build go in `Run`
-- the error paths live in the tests, and `Verify` names the run that shows them
-- it runs the moment the step closes, not later
-- a step that moves the form is proved by the form
+- one block per type the plan named
+- the types, and what each block holds, are in the plan's `format.md`
+- together, the blocks decide every `Acceptance` line, and each block says which lines it decides
+- a `test` block holds the file and the cases
+  - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
+  - the reason a category does not apply is a bullet under the artifact
+    - in the same list as the cases
+- the run happens when the step closes, not later
 
 ## Notes
 

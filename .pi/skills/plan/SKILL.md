@@ -1,17 +1,23 @@
 ---
 name: plan
-description: Use after the definition and its Stack. Turns the gap between Now and Then into steps, and freezes it.
+description: Use after the definition and its Stack. Turns the gaps into steps, and freezes it.
 ---
 
 # plan
 
 A cycle is one plan.
 
-The plan fills the gap between the state today and the state after the build.
+The definition says what the product does.
 
-The definition says what the product does. The plan says in what order it is built, and the tickets are cut from its steps.
+The plan says in what order it is built.
 
-The shape of the file and its field rules are in `references/format.md`. Read that before writing anything.
+The owner agrees the plan: the order, the steps and the form.
+
+What a step is made of is the ticket's.
+
+The shape of the file and its field rules are in `references/format.md`.
+
+Read that before writing anything.
 
 ## Steps
 
@@ -21,14 +27,14 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - the `Then` lines: the state after the build
    - `What` is the relation: one line per `Now` line, and what it becomes
    - an empty gap: the unit is not in the plan
-3. **Split what is too big.** A step is the smallest thing that can be verified on its own:
-   - its `Verify` runs when the step closes, not later
-   - one child finishes it in one go: when it cannot, the unit is split
-   - the split is named `<unit-id>.<part>`
+3. **Split what is too big.** A step is one child's work:
+   - its `Verify` is a few types, and it runs when the step closes, not later
+   - when one child cannot finish it in one go, split it into `<unit-id>.<part>`
    - the parts divide the unit's `Now` lines: together they cover every line once
    - the parts stand in order, and each `Depends` is the part before it
-   - a unit that is split is closed by a `<unit-id>.check` step: one run that proves every `Then` of it
-4. **Read the existing code.** The gaps land in a repository that is already there.
+   - a unit that is split is closed by a `<unit-id>.check` step
+     - one run that proves every `Then` of it
+4. **Read the existing code.** The gaps land in a repository that is already there:
    - read what is around where they land
    - ask: does this build make one name stand for two things?
      - the file, the folder or the value that would take a second job
@@ -48,14 +54,10 @@ The shape of the file and its field rules are in `references/format.md`. Read th
    - a step that uses what an earlier step produced depends on it
    - otherwise: `Depends: なし`
 7. **Fill the fields.** With the owner where a field is a decision:
-   - `Files`: the files it touches
-   - a step may touch a file in another unit's folder, when its unit's `Now` sends the work there
-   - `Verify` has two parts, and the step names the kinds that fit what it builds:
-     - `Run`: the commands the machine runs — the cases, the types, the lint, the build
-     - `Look`: a person looks at it — a value, a screen in the browser, a file, a diff
-     - a component or a front end: the types and the build in `Run`, a walk in the browser in `Look`
-   - a `Then` that is not a value — the quality of a document — is proved in `Look`: a child reads it and reports
-   - a step with no error path says so in `Verify`
+   - `Files`: the files it touches. The tests are the ticket's
+   - `Verify`: the types that decide every line of `What`
+     - take each line of `What`, and ask which type gives a verdict on it
+     - a line with no type: stop and propose the type to the owner
 8. **Draw the form.** `Structure`: the tree after the gaps are filled, one marker per line:
    - ask what a folder looks like after a file is added
    - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step
@@ -74,8 +76,6 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 `cycles/<NNN-YYYY-MM-DD>/plan.md`, following `references/format.md`.
 
-- Write a field only when it can be derived from the repository, or when the owner can correct it
-
 ## The review's checklist
 
 The `review` child of step 10 gets this, and nothing else:
@@ -84,12 +84,11 @@ The `review` child of step 10 gets this, and nothing else:
 - a `<unit-id>.refactor` step has no gap: it is there to straighten out
   - its `Why` names what the build makes worse, and its `What` is the relation
 - together, the steps of a unit carry every `Now` line of it, once
-- every `Then` has something that proves it
+- every line of `What` is decided by one of the `Verify` types
 - each step can be verified on its own, and its `Depends` is the real dependency
 - every file in `Files` is in `Structure`, and every file in `Structure` belongs to a step
 - nothing is built that the definition does not ask for
 - every field is filled, and `なし` is written where there is nothing
-- the error paths are in `Verify`
 - a step that moves the form is proved by the form
 
 Report findings only, each with its line, marked blocking or not.
@@ -105,6 +104,6 @@ Report findings only, each with its line, marked blocking or not.
 ## How not to do this
 
 - Do not write a step that no `Then` asks for
-- Do not leave a step without a file or without something that proves it
+- Do not write the tests here: they are the ticket's
 - Do not add a file without asking what the folder looks like after
 - Do not ignore what the build makes worse in the structure
