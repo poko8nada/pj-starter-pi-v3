@@ -1,97 +1,85 @@
 ---
 name: tickets
-description: Use when a plan has been approved. Cuts a ticket per step, has them reviewed as a set, agrees them with the owner, and commits the agreement.
+description: Use when a plan is approved. One ticket per step, reviewed and agreed, and frozen by a commit.
 ---
 
 # tickets
 
-Turn a frozen plan into one ticket per step, agree them with the owner, and commit them. The ticket is what the work will be judged by: what to do, and how it will be checked. The shape and the field rules are in `references/format.md`.
+A cycle is one set of tickets.
 
-**The unit is the chunk.** A unit is one thing the product does; its `Then`s are covered by the unit's steps together, and the `<unit-id>.check` step is what closes it. So the cutting, the review and the reading all happen per unit: the tickets of one unit are written together and read together.
+A ticket is what the work will be judged by: what to do, and how it will be checked.
 
-**This skill ends when the tickets are agreed and committed.** Who implements them, and whether that is the parent or a child, is not decided here: that belongs to the step that does the work.
+The plan says the steps; a ticket is one step, and the tickets are cut in the plan's order.
 
-A ticket is a working document. It is committed when its `Todo` and `Verify` are agreed, and it is closed later, by whoever does the work, by writing the hash of the implementation commit into `Commit:`.
+A unit is one build unit from the definition: the smallest thing a `Who` can use. Its steps are its tickets.
 
-## Step 1: cut one unit at a time
+The shape of the file and its field rules are in `references/format.md`.
 
-Take the plan's units in order. For a unit, cut **all** of its steps before moving to the next: the unit's steps and its `<unit-id>.check`. The file is named after the step, `NN-<step-name>.md`, so the tickets read in the order the work happens.
+Read that before writing anything.
 
-A `step 0` that says なし gets no ticket: there is nothing to do.
+## Steps
 
-## Step 2: write the tickets
+1. **Read the plan.** The steps are the tickets: one ticket per step.
+   - the tickets of a unit are cut together, and shown as one set
+   - a `step 0` that says なし takes no ticket
+2. **Write the `Acceptance`.** It is the step's target:
+   - the right side of the plan's `What`, copied
+3. **Write the `Todo`.** The work, split by artifact:
+   - a file, then the units inside it (a heading in a document, a function in code), then the tests
+   - every file in the step's `Files` appears
+   - a step with no files writes なし, and says why
+4. **Write the tests.** They are cases, and the error paths live here.
+   - the definition leaves the error paths out
+   - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
+   - the result is a value, an error type or a state
+   - "It does not throw" is not a result
+   - the cases come from the definition, not from the implementation
+   - walk these, and write the case or the reason it does not apply:
+     - the happy path
+     - null, undefined, missing
+     - empty
+     - boundary values
+     - invalid input
+     - the expected error path
+     - permission
+     - a second call
+     - concurrency
+5. **Write the `Verify`.** It is the step's `Verify` from the plan, in the ticket's own words.
+   - `Run` is the command, and `Look` is what a person reads
+   - it runs the moment the step closes, not later
+   - a step that moves the form is proved by the form
+6. **Read it against `references/format.md`**, once, before anyone else sees it.
+7. **The `review` child**, with the checklist below:
+   - it gets the unit's tickets, in one call
+   - fix what comes back, and repeat until it is clean, up to three rounds
+8. **The owner.** Show the unit's tickets, and the findings with what you did with each.
+9. **Commit.** The commit is the freeze mark.
 
-Follow `references/format.md`. In short:
+A fact the repository holds is looked up, not asked.
 
-- `Acceptance` is the definition's `Then` for this step, copied. When the step has no unit (a cleanup, a check), it is the step's `What`, in one line
-- `Todo` is split by artifact: the files, then what changes in each, then the tests as cases
-- the tests are cases, and they are where the error paths live. Write them from the definition, not from the implementation: the definition says what the behaviour is, and the cases come out of that. The plan's `Tests` names the cases to start from; walking the nine categories below is how you find the ones the plan left out
-- go down this list for each unit of behaviour, and write either the case or the reason it does not apply:
-  - the happy path
-  - null, undefined, missing
-  - empty (an empty string, array or object)
-  - boundary values (0, 1, max, max + 1)
-  - invalid or malformed input
-  - the expected error path (a failure, not "it does not crash")
-  - permission or authorisation, where the behaviour has one
-  - a second call, where the behaviour has side effects
-  - concurrency, where it can be called at the same time
-- each case is `input → result`, marked `(happy)` or `(error)`, and the result is a concrete value, error type or state. "It does not throw", "it is truthy" or "the mock was called" is not a result. The plan's own words (`(empty)`, `(boundary)`) are categories, not marks: an empty input that returns a value is `(happy)`
-- `Verify` is one thing: how this step is checked when it closes. It has to be runnable at that moment, not later. A step with no files writes なし in `Todo` and says why, and its `Verify` is the demonstration itself: what is run, and the values to look at. The demonstration must not leave anything behind: a child that **writes** leaves its worktree's commit as a ref, so have it report the text back instead, and only let it write outside the repository
-- `Commit:` is the last line, and it stays empty until the step is done
-- a ticket that touches the same file as another step says so, and says which of them is implemented first — the plan's `Depends` sees the documents, not the tools
+## The files
 
-## Step 3: review the unit
+`cycles/<NNN-YYYY-MM-DD>/tickets/<NN>-<step-name>.md`, following `references/format.md`.
 
-Before the owner sees anything, put **the unit's tickets** in front of a `review` child, in one call. `consult` runs one child per input, and an input is one file's contents, so for a unit of several tickets the child is given the task and reads the tickets itself, by name (say which ones).
+- the number is the step's number, so the tickets read in the order the work happens
 
-Fix what comes back, repeat until it comes back clean, and cap it at three rounds. The task, verbatim:
+## The review's checklist
 
-- Check these tickets against the plan and the definition, and nothing else:
-  - the `Acceptance` is the definition's `Then` for this step, copied, or the step's `What` when the step has no unit
-  - the `Todo` covers every file in the step's `Files`, and every input the artifact can fail on
-  - every test is `input → result`, marked happy or error, and the result is concrete
-  - every category either has a case or a reason it does not apply
-  - the `Verify` can be run the moment the step closes, without waiting for a later step
-- Report findings only, each with its line, marked blocking or not. If there is nothing, say "no findings".
+The `review` child of step 7 gets this, and nothing else:
 
-If you cannot spawn a child at all, stop: unreviewed tickets do not go in front of the owner.
+- every step has a ticket, and a `step 0` with なし has none
+- the `Acceptance` is the right side of the plan's `What`, copied
+- the `Todo` covers every file in the step's `Files`
+- every test is `<入力> → <結果>`, marked happy or error, and the result is concrete
+- every category has a case or a reason it does not apply
+- the `Verify` can run the moment the step closes
+- `Commit:` is the last line and is empty
 
-Show the findings, and what you did with each, when you put the tickets to the owner.
-
-## Step 4: review the set
-
-When every unit is cut and reviewed, put **all** the tickets in front of **one** child, and repeat until it comes back clean (same cap: three rounds). It looks only at what a ticket-by-ticket review cannot see:
-
-- the split into steps: do the tickets of one unit fit together, and does every `Then` of that unit get covered by its steps and its `<unit-id>.check`?
-- overlaps: two tickets that touch the same file — is the order real (does one depend on the other)?
-- order: is any `Depends` wrong or missing, including tool dependencies (a ticket that needs another ticket's file changed first)?
-- duplication: the same work appearing in two tickets
-- naming: the same thing called by different names across tickets
-- anything the plan says that no ticket does, or a ticket doing what the plan does not say
-
-Report findings only, each naming the ticket(s) and the line, marked blocking or not. If there is nothing, say "no findings".
-
-## Step 5: get them agreed
-
-Put the tickets to the owner **once**, after every unit is cut and both reviews are clean. Not earlier: a remark that moves an early ticket is cheap while nothing is built, and a ticket that was agreed and then changed was a criterion that moved.
-
-What the owner sees is the map, not the pile: what differs from the plan, the findings and what was done with each, and the points that need a decision. The detail is in the files, and they can read the ones they care about.
-
-Only an agreed `Todo` and `Verify` can judge the work: the writer does not decide their own criteria, and a check that was not agreed cannot be used to conclude that something failed. Once agreed, they are fixed, because a criterion that moves after the result is seen stops meaning anything.
-
-They may be revised before that step's implementation starts, with the previous step's `Notes` or an owner's remark as the reason and the owner's agreement. An owner's remark lands where it acts; in a cycle whose definition has a `Remarks` section it is written there, and in a cycle without one it goes in the ticket's `Notes`. After that they are frozen: what actually happened goes in `Notes`, not back into the ticket.
-
-## Step 6: commit the agreements
-
-Commit the tickets before any implementation, in one commit. What will be built, and how it will be judged, is worth having in git before the work starts. If there is no owner to agree with, stop before this step.
-
-Then this skill is done for this cycle.
+Report findings only, each with its line, marked blocking or not.
 
 ## How not to do this
 
-- Do not decide here who implements a ticket, or how. This skill ends at the agreement
-- Do not start the work to see whether the `Todo` is right: a criterion that is agreed after the result is not a criterion
-- Do not write a ticket without a `Verify`: a step nobody can judge is not a step
-- Do not cut one step at a time: the unit is the chunk, and its tickets are reviewed together
-- Do not skip the set review: a ticket-by-ticket review cannot see the joins between tickets
+- Do not write a ticket that no step asks for
+- Do not leave a file out of `Todo`
+- Do not write a test whose result is not a value
+- Do not close a ticket before its `Verify` runs
