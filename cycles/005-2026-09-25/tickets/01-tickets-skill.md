@@ -58,4 +58,4 @@ Acceptance:
 - `.pi/skills/tickets/SKILL.md` / `references/format.md`: `.refactor` の step の所属と、`Acceptance` の行の例を足した
   - なぜ: 検証の指摘。どちらもチケットの `Todo` に無かったが、切り方と書き方が決まらない穴だった
 
-Commit:
+Commit: cc5346b

@@ -68,4 +68,4 @@ Acceptance:
   - `Runtime: Node / TypeScript` / `Deploy: なし` / `Added: ハーネスの部品 7 つ` / `Changes: update` と理由
   - なぜ: 形が `Runtime` / `Deploy` / `Added` に変わったため。004 のままでは読めなかった。step 2 の `Files` に無いファイルだった。owner の指示
 
-Commit:
+Commit: cc5346b
