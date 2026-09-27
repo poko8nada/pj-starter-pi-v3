@@ -48,7 +48,7 @@ Acceptance:
 
 - `perl -CSD -ne 'print if length($_) > 100' .pi/skills/close/SKILL.md | wc -l` → 0 行（1 行）
 - `grep -n 'Goal\|Remarks' .pi/skills/close/SKILL.md` → 0 行（3 行）
-- `grep -o '\*\*' .pi/skills/close/SKILL.md | wc -l` → 12（手順 6 の 2 倍）（7 行）
+- `grep -o '\*\*' .pi/skills/close/SKILL.md | wc -l` → 14（手順 7 の 2 倍）（7 行）
 
 ## Notes
 
@@ -58,6 +58,7 @@ Acceptance:
 
 ### Unplanned
 
-- なし
+- `cycles/005-2026-09-25/tickets/04-close-skill.md` の `form`: 太字の期待値を 12（手順 6）と書いたが、実物は 14（手順 7）
+  - なぜ: 書ける手順を数えずに先に凍らせた。検証の子が見つけた。`Verify` が動かない形なので、その場で直した
 
 Commit:
