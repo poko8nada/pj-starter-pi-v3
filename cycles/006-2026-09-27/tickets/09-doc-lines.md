@@ -40,4 +40,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: 917f75d
