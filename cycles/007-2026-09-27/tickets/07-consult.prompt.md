@@ -41,10 +41,12 @@ Acceptance:
 
 ### Findings
 
-- なし
+- 計画とチケットの `Files` は `spec.ts` / `run.ts` / `README.md` だけを挙げるが、`runPi` が stdin を受け取る形にすると呼び出し側の `tool/consult.ts` も直さないと指示が子に届かない。最小の 1 箇所だけ直した（決めた）
+- 子は stdin を初回プロンプトの前に連結する（pi の `docs/cli.md`）。`@path` がファイル展開になるのは位置引数のときだけなので、stdin に置けば先頭が `-` / `@` でも文書のまま渡る（決めた）
+- `runPi` の stdin への書き込みは IO なので子のテストでは見ない。空の指示は `joinPrompt(undefined, '')` が空文字を返すことで確かめた（決めた）
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/tool/consult.ts` の `runPi` 呼び出し（`task:` の上書きをやめ、`stdin:` を渡す）。チケットの `Files` には無いが、stdin 化に必須
 
 Commit:

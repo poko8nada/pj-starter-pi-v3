@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -132,11 +132,27 @@ describe('loadTypes', () => {
     expect(loadTypes(dir).map((type) => type.name)).toEqual(['second']);
   });
 
-  it('設定が無ければ投げる（走ってから気づくのを避ける）', () => {
+  it('types.json が無い → 読めなかったファイルの名前と復元の案内を含む（error）', () => {
     const dir = mkdtempSync(join(tmpdir(), 'consult-types-'));
     dirs.push(dir);
-    expect(() => loadTypes(dir)).toThrow(/types\.json/);
+    const attempt = () => loadTypes(dir);
+    expect(attempt).toThrow(/types\.json/);
+    expect(attempt).toThrow(/restore it/);
   });
+
+  it.skipIf(process.getuid?.() === 0)(
+    '権限で読めない → 「コミットしてある」と言わない（error）',
+    () => {
+      const dir = mkdtempSync(join(tmpdir(), 'consult-types-'));
+      dirs.push(dir);
+      const file = join(dir, 'types.json');
+      writeFileSync(file, config(aType()));
+      chmodSync(file, 0o000);
+      const attempt = () => loadTypes(dir);
+      expect(attempt).not.toThrow(/committed/);
+      expect(attempt).toThrow(/could not read/);
+    },
+  );
 
   it('文面は例を写せと言わない（例のファイルはコミットしていない）', () => {
     const dir = mkdtempSync(join(tmpdir(), 'consult-types-'));

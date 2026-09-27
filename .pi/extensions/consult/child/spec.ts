@@ -28,6 +28,7 @@ export function needsIsolation(policy: TypePolicy): boolean {
 export interface ConsultOptions {
   /** 選んだ type の名前。診断に使う */
   readonly type: string;
+  /** 子への指示。argv には載せず、標準入力へ流す（run.ts） */
   readonly task: string;
   readonly policy: TypePolicy;
 }
@@ -54,6 +55,8 @@ export function joinPrompt(payload: string | undefined, task: string): string {
 /**
  * 子に渡す引数を組み立てる。
  *
+ * 指示（`task`）は載せない。argv に置くと、先頭が `-` や `@` の文書が pi のオプションやファイル引数として読まれる。run.ts が標準入力へ流す。
+ *
  * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
@@ -72,10 +75,6 @@ export function buildPiArgs(options: ConsultOptions): string[] {
   args.push('--extension', CHILD_GUARD);
   // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
   args.push('--no-approve');
-  // 指示の前に `--` を置く。payload（文書）の先頭が `-` だと、pi の引数解析が「知らないオプション」で
-  // 落ちる（2026-09-27、YAML の frontmatter で始まる `work/SKILL.md` を `read` に渡したときに起きた）。
-  args.push('--');
-  args.push(options.task);
   return args;
 }
 

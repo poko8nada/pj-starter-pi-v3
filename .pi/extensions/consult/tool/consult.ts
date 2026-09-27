@@ -139,9 +139,9 @@ async function runOneChild(
       runPi({
         piArgs: buildPiArgs({
           ...options,
-          task: joinPrompt(payload, options.task),
           policy: { ...options.policy, models: model === undefined ? [] : [model] },
         }),
+        stdin: joinPrompt(payload, options.task),
         cwd: prepared.cwd,
         signal,
         env: gitEnv(),

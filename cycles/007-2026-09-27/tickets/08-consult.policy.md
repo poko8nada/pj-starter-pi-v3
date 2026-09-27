@@ -35,7 +35,8 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `form` の `grep -c "60000\|60,000"` は `research` の `output: 60000` も数えるため、Todo どおり `review` を 60000 にすると 2 になる（チケットの期待値 1 と食い違う）（次へ回す）
+- 権限の失敗は `chmod 0o000` で作る。root では読めてしまうので `skipIf(process.getuid?.() === 0)` を付けた（決めた）
 
 ### Unplanned
 

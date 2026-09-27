@@ -157,6 +157,15 @@ export function parseTypes(text: string): readonly TypePolicy[] {
   return types;
 }
 
+/** 失敗の種類。文面を原因で分けるのに使う */
+function errorCode(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+}
+
 /** `<dir>/types.json` を読んで type の一覧にする。毎回読む */
 export function loadTypes(dir: string): readonly TypePolicy[] {
   const file = join(dir, CONFIG_FILE);
@@ -165,10 +174,12 @@ export function loadTypes(dir: string): readonly TypePolicy[] {
     text = readFileSync(file, 'utf8');
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `consult types: could not read ${file}. It is committed in this repository: restore it, or put your own models in it (${detail})`,
-      { cause: error },
-    );
+    // 「コミットしてある。復元しろ」と言えるのは、ファイルが無いときだけ。権限やディレクトリの失敗は原因をそのまま見せる。
+    const hint =
+      errorCode(error) === 'ENOENT'
+        ? ' It is committed in this repository: restore it, or put your own models in it'
+        : '';
+    throw new Error(`consult types: could not read ${file}.${hint} (${detail})`, { cause: error });
   }
   return parseTypes(text);
 }

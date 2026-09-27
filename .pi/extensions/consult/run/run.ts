@@ -99,6 +99,8 @@ export interface RunResult {
 
 export interface RunOptions {
   readonly piArgs: readonly string[];
+  /** 子の標準入力に流す本文。指示を argv に載せないための口 */
+  readonly stdin: string;
   readonly cwd: string;
   readonly signal?: AbortSignal;
   readonly env: NodeJS.ProcessEnv;
@@ -385,7 +387,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       finish(code ?? 0);
     });
 
-    // 入力は呼び出し側がプロンプトに連結済み（joinPrompt）。stdin へは何も流さない。
-    child.stdin.end();
+    // 指示は stdin から渡す。argv に載せると、先頭が `-` や `@` の文書がオプションやファイル引数として読まれる。
+    child.stdin.end(options.stdin);
   });
 }

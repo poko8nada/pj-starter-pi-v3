@@ -19,7 +19,7 @@
       ],
       "tools": ["read", "ls", "find", "grep", "web_search"],
       "environment": "tree",
-      "limits": { "turns": 40, "output": 120000 },
+      "limits": { "turns": 40, "output": 60000 },
       "role": "判定を返す。直さない。根拠を示す"
     },
     {

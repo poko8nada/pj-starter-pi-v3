@@ -20,7 +20,7 @@ The caller picks a type, and the type holds the whole policy: model candidates, 
 | Type       | Tools                                           | Environment | Turns | Output tokens |
 | ---------- | ----------------------------------------------- | ----------- | ----- | ------------- |
 | `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 60,000        |
-| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 120,000       |
+| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 60,000        |
 | `trial`    | plus writing                                    | a worktree  | 50    | 120,000       |
 | `code`     | plus writing                                    | a worktree  | 60    | 120,000       |
 
@@ -93,6 +93,8 @@ consult({ type: "review",
 One child per input, all in parallel, and the results come back in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
 
 The file's contents are **prepended to the child's prompt**, not handed over as a separate document: the child sees one message, the payload first and the task after it. An empty file therefore adds nothing, and a child may read the payload as instructions.
+
+The prompt reaches the child on stdin, not as an argument, so a task or payload that begins with `-` or `@` stays text.
 
 Each input's block is the child's text, then `ref:` when it wrote something, then one `[consult]` line with the model that ran and the spend. The model is there because everything else about the run lives in the tool's `details`, which the calling agent never sees.
 

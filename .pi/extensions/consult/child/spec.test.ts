@@ -149,14 +149,27 @@ describe('buildPiArgs', () => {
     );
   });
 
-  it('指示は最後に置く（フラグとして解釈させない）', () => {
-    expect(buildPiArgs(options({ task: '調べる' })).at(-1)).toBe('調べる');
+  it('task: 調べる → 引数に指示が載らない（happy）', () => {
+    const args = buildPiArgs(options({ task: '調べる' }));
+    expect(args).not.toContain('調べる');
+    expect(args).not.toContain('--');
   });
 
-  it('指示の前に `--` を置く（先頭が `-` の文書でもオプションとして読ませない）', () => {
-    const args = buildPiArgs(options({ task: '---\nname: work' }));
-    expect(args.at(-2)).toBe('--');
-    expect(args.at(-1)).toBe('---\nname: work');
+  it('task: 先頭が `-` の文書 → 引数の並びが変わらない（happy、boundary）', () => {
+    expect(buildPiArgs(options({ task: '---\nname: x' }))).toEqual(
+      buildPiArgs(options({ task: '調べる' })),
+    );
+  });
+
+  it('task: 先頭が `@` の文書 → 引数の並びが変わらない（happy、boundary）', () => {
+    expect(buildPiArgs(options({ task: '@file' }))).toEqual(
+      buildPiArgs(options({ task: '調べる' })),
+    );
+  });
+
+  it('task: 空 → 引数は同じで、stdin に空を書く（happy、empty）', () => {
+    expect(buildPiArgs(options({ task: '' }))).toEqual(buildPiArgs(options({ task: '調べる' })));
+    expect(joinPrompt(undefined, '')).toBe('');
   });
 });
 
