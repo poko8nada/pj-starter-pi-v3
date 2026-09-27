@@ -45,7 +45,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - the judgment came from the criteria, so cutting needs no new agreement
        - only a criterion that moves does
    - a hole in the closing act itself is fixed here
-     - a dropped `Carry over` line, a `Good` with no value
+     - a `Carry over` line that went missing, a `Good` with no value
    - anything else belongs to the next cycle: the `Retro`'s `Carry over`
    - a hole is never fixed silently, and a frozen definition or plan is never rewritten to close it
 5. **Write the `Retro`**, in the definition, in its format: `Good`, `Bad`, `Carry over`.
@@ -53,6 +53,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a `Then` that holds, a `Verify` that passed: the value is the line that showed it
    - `Bad`: what went wrong, including what was left half-done
    - `Carry over`: two sources, one list
+     - numbered from 1, across both sources
      - the previous `Carry over`'s lines that are still open, copied as written
        - their own `From:` is kept
        - a line this cycle resolved is not copied: it is done
@@ -62,7 +63,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - copying is not shortening; shortening is how a hole gets lost
 6. **The owner.** Show them the `Retro`.
    - they are the only one who can judge `Good` and `Bad`
-   - they are the last check that `Carry over` has no gaps
+   - they are the last check on `Carry over`
+     - a missing line comes back; a line the owner drops leaves a `Bad` line
    - a rejection sends you back to step 4
 7. **Commit.** After the owner's yes.
    - that commit closes the cycle, and nothing about that cycle is edited afterwards

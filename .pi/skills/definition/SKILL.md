@@ -31,7 +31,7 @@ Read that before writing anything.
    - a carried line no unit covers: a unit of its own, back to the top of this step
    - a unit the frame cannot explain: a hole, back to step 1
 6. **`Carry over`, written.** Now that the units exist:
-   - the lines no unit took are copied into `## Carry over`, as they were written
+   - the lines no unit took are copied into `## Carry over`, as they were written, numbered from 1
    - a line a unit took is not copied
 7. **Read it against `references/format.md`**, once, before anyone else sees it
 8. **The `review` child**, with the checklist below
@@ -66,7 +66,7 @@ The `review` child of step 8 gets this, and nothing else:
 - `Type` is the owner's line; every `Who` is from the list, and has `Does` and `Needs`
 - every unit is written from one of the `Who`'s sides, and its `Actor` is one of them
   - it is the smallest thing the `Who` can use
-- every open line of the previous `Carry over` is copied, stands alone, and keeps its `From:`
+- every open line of the previous `Carry over` stands alone, numbered from 1, with its `From:`
   - a line this cycle resolved is not copied
 - labels are English, and the content is Japanese
 

@@ -52,7 +52,7 @@ Changes: keep
 
 ## Carry over
 
-- <場所>: <状態>。閉じるもの。From: <NNN>.<ticket>
+1. <場所>: <状態>。閉じるもの。From: <NNN>.<ticket>
 
 ## Retro
 
@@ -77,7 +77,7 @@ Pick them from this list.
   - developer / integrator / plugin author
 - not a person: another service / the side that sends a webhook / agent / an organisation or a team
 
-The assumption the list rests on: this harness is general-purpose for building anything web-related.
+The assumption the list rests on: this harness is general-purpose for anything web.
 
 The users therefore differ from product to product.
 
@@ -117,7 +117,8 @@ The users therefore differ from product to product.
 
 ## Carry over
 
-- One line per hole that is still open
+- Numbered from 1, one hole per line
+  - the number is a position, not an identity: `From:` carries that
   - a line this cycle resolved is not copied: it is done
     - a unit took it, or it was judged not to be a hole
 - A line has three parts, in this order, and nothing else:
@@ -134,7 +135,7 @@ The users therefore differ from product to product.
 - No tables: they break with long text
 - A field whose content cannot be written yet keeps its name and stays empty
   - it is what still has to be decided
-- `Carry over` copies holes, as they were written
+- `Carry over` copies holes as they were written
 - The order of work is the plan's, and the error paths are the tests': not here
 
 ## Retro
@@ -142,3 +143,6 @@ The users therefore differ from product to product.
 - `Good` and `Bad` are heading 3, one item per line: `- <主題> — <中身>`
 - `Carry over` holds the lines that are still open: the copied ones, and the ones this cycle left
   - copied, not shortened
+  - a line the owner drops at the close is not in it: its number and the reason are one `Bad` line
+    - the rest is numbered again from 1
+    - `- <番号> を owner が落とした — <理由>`
