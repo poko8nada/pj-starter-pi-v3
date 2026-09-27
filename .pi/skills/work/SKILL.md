@@ -30,6 +30,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a dependency whose earlier ref is gone (the step was dropped, or its child failed)
      - cut the step again: a file that was never merged cannot be depended on
 4. **Decide what runs together.** Only where the writes cannot meet, and only what is checked.
+   - the child is the one step 2 picked: what it carries is decided here
    - steps whose files overlap are serialised, in the order the ticket gives
    - a ticket that changes this skill comes before the tickets whose work it carries
    - several steps to one child: one call, one ref, and the same hash in both tickets

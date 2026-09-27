@@ -42,7 +42,8 @@ Read that before writing anything.
    - when the dependency, the configuration or the shape of the API cannot be read
    - a `trial` child: see "The trial child"
    - ask the owner before running one
-8. **Write the `Stack`.** The shape is in `../definition/references/format.md`, and the field rules in "The fields".
+8. **Write the `Stack`.** The shape is in `../definition/references/format.md`.
+   - the field rules are in "The fields"
 9. **The `review` child**, with the checklist below:
    - the `consult` tool, type `review`
    - it gets the definition file and this checklist, in one call
