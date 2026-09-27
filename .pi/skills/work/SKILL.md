@@ -105,6 +105,10 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - read what it printed, and check the tickets
       - a `.check` step keeps `Commit: なし（理由）`: it changed nothing
     - commit the tickets: the squash's commit holds the code, not the records
+    - an `ex-` ticket the `close` cut is its own unit: the same shape end to end
+      - the review, the squash, and the records commit, exactly as above
+      - `<base>` is where that ticket's work started, and `--tickets` names it
+      - `Commit:` names the squashed commit; the records are their own commit
 12. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
