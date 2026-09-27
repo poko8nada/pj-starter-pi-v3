@@ -28,4 +28,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: 96fe082（01・11・12・13 が同じコミット。`read` の検証は 4 枚とも通過）
