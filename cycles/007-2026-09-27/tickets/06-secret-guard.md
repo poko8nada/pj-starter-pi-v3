@@ -22,10 +22,11 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `consult/README.md`（`## Trust`）: 「穴は 3 つ」と断定しているが、同じコマンド内の代入（`FOO=.env; cat $FOO`）は `guard.ts` にしか書いていない。閉じるには: README にも書くか、断定をやめるかを決める
+- `consult/child/guard.ts`: glob（`cat .e*`）と、コマンドで組み立てた名前（`node -e "…'.en'+'v'"` など）は、トークンが秘密の名前にならないので通る。閉じるには: この族も穴として書くか、ホストと OS の境界に委ねると決める
 
 ### Unplanned
 
 - なし
 
-Commit:
+Commit: 25759d5（05・06 が同じコミット。`read` は、guard が止める範囲と穴 3 つが両方のファイルにあることを確かめた）

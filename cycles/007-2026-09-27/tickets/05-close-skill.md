@@ -30,4 +30,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: 25759d5（05・06 が同じコミット。`read` 通過）
