@@ -6,7 +6,8 @@
  *
  * 判定は**解決後の絶対パス**で行う。bash のトークンは先に変数展開する。
  * `$VAR` / `${VAR}` は `process.env` から引く（未定義は空。bash と同じ）。
- * `$(...)` / `$((...))` / backtick のように値が決められないトークンは、中身を推測せず止める。
+ * 展開しても `$` や backtick が残るトークン（`$(...)`、`$((...))`、`$'...'`、`$1`、`$?`、`${X:-default}`）
+ * は、中身を推測せず止める。値が決まらないものを通さない（fail-closed）。
  *
  * 残る穴: 同じコマンドの中で代入した変数（`FOO=.env; cat $FOO`）は guard からは分からない。
  * それはコマンドを実行する側の仕事で、本当の境界はホストの権限設定（`pi-permission-system`）
@@ -64,8 +65,8 @@ const UNRESOLVED = '\u0000';
 /**
  * シェルの変数展開。`$VAR` / `${VAR}` を `process.env` から引く（未定義は空。bash と同じ）。
  *
- * `$(...)` / `$((...))` / backtick は、コマンドの実行結果に依存するので guard には決められない。
- * そういうトークンには `UNRESOLVED` を付けて返す。**中身を推測しない**という規則であって、
+ * 展開しても `$` が残るトークンは「解決できなかった」として `UNRESOLVED` を付ける。`$(...)`、`$((...))`、
+ * `$'...'`、`$1`、`$?`、`${X:-default}` がこれに当たる。**中身を推測しない**という規則であって、
  * たまたま `.env` に見えないから通す、ということではない。分からないものは通さない（fail-closed）。
  *
  * 残る穴: ここが見るのは guard 自身の `process.env` だけ。同じコマンドの中で代入した
@@ -73,12 +74,13 @@ const UNRESOLVED = '\u0000';
  * （`pi-permission-system`）と OS 側にある。
  */
 export function expandVars(token: string): string {
-  if (token.includes('`') || token.includes('$(')) {
+  if (token.includes('`')) {
     return UNRESOLVED + token;
   }
-  return token
+  const expanded = token
     .replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name: string) => process.env[name] ?? '')
     .replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) => process.env[name] ?? '');
+  return expanded.includes('$') ? UNRESOLVED + expanded : expanded;
 }
 
 /** オブジェクトからキーを引く。オブジェクトでなければ undefined。キャストを使わない */
@@ -114,10 +116,14 @@ function pathsFrom(name: string, input: unknown): string[] {
     if (command === undefined) {
       return [];
     }
-    return command
-      .split(/\s+/)
-      .map((token) => expandVars(unquote(token)))
-      .filter((token) => token !== '' && token !== '--');
+    return (
+      command
+        .split(/\s+/)
+        // 展開を先に、引用符と `\` を剥がすのを後に。逆にすると `$'\x2eenv'` が `$x2eenv`
+        // （普通の変数名）になって素通りする（2026-09-27 の検査で見つかった）。
+        .map((token) => unquote(expandVars(token)))
+        .filter((token) => token !== '' && token !== '--')
+    );
   }
   const paths: string[] = [];
   for (const key of PATH_KEYS) {
@@ -149,6 +155,10 @@ export function judgeToolCall(
 export default function (pi: ExtensionAPI) {
   pi.on('tool_call', (event, ctx) => {
     try {
+      // pi の `tool_call` が渡すキーは `toolName` と `input`。
+      // 出所: `node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts` の `ToolCallEvent`
+      // （`ReadToolCallEvent` は `input: { path }`、`BashToolCallEvent` は `input: { command }`）。
+      // `name` / `arguments` は控え（古い名前のため）。
       const name = str(event, 'name') ?? str(event, 'toolName') ?? '';
       const input = at(event, 'input') ?? at(event, 'arguments');
       return judgeToolCall(name, input, ctx.cwd);

@@ -162,6 +162,18 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('bash', { command: 'cat $(echo .env)' }, dir).block).toBe(true);
   });
 
+  it('bash + cat ${X:-.env} を拒む（既定値付きの展開は解決できない）', () => {
+    expect(judgeToolCall('bash', { command: 'cat ${X:-.env}' }, dir).block).toBe(true);
+  });
+
+  it("bash + cat $'\\x2eenv' を拒む（ANSI-C の引用符は解決できない）", () => {
+    expect(judgeToolCall('bash', { command: "cat $'\\x2eenv'" }, dir).block).toBe(true);
+  });
+
+  it('bash + echo $? も拒む（値が決まらないものは通さない。止める側に倒す）', () => {
+    expect(judgeToolCall('bash', { command: 'echo $?' }, dir).block).toBe(true);
+  });
+
   it('bash + echo $PATH は通す（展開後も秘密の名前ではない）', () => {
     expect(judgeToolCall('bash', { command: 'echo $PATH' }, dir)).toEqual({});
   });
