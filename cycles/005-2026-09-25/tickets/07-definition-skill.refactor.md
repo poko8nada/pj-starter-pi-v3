@@ -48,4 +48,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: 1ec28f2
