@@ -60,13 +60,14 @@ The child does not load the project's settings, project-local extensions, or ski
 
 On top of whatever the host enforces, consult passes its own guard (`-e child/guard.ts`) to the child: it refuses reads of secret paths (`.env`, `.envrc`, `*.pem`, `*.key`) by their **resolved** location, so a path built by a command cannot slip past a string rule. That guard holds even where the host has no permission config at all.
 
-The guard does not imitate the shell: it expands `$VAR` / `${VAR}` from the environment, and refuses a token while a `$` is still unresolved. That is the whole of it, and three holes sit outside that line:
+The guard does not imitate the shell: it expands `$VAR` / `${VAR}` from the environment, and refuses a token while a `$` is still unresolved. That is the whole of it. Four holes sit outside that line:
 
 - `cat${IFS}.env` — it does not split words, so `$IFS` does not become whitespace and the token stays `cat.env`
 - `cat .env;ls` — it does not join operators, so `;` does not split the token and `.env;ls` stays one word
 - a non-bash `path` is not expanded while pi expands `~`, so the guard cannot resolve where `~` points
+- a variable assigned in the same command (`FOO=.env; cat $FOO`) is invisible: the guard reads the environment the child was started with, not what the command sets
 
-The real boundary is therefore the host and the OS, not this guard: the guard holds where the host has no config, and those three holes are where the host has to hold instead.
+The real boundary is therefore the host and the OS, not this guard: the guard holds where the host has no config, and those four holes are where the host has to hold instead.
 
 What the child does read is `AGENTS.md` and user/global extensions. A `GIT_*` environment from a hook (lefthook sets `GIT_INDEX_FILE`) is stripped before git and the child start, so a caller's git context cannot leak into either.
 

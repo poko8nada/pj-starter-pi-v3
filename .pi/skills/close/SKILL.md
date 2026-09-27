@@ -54,6 +54,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
        - a line this cycle resolved is not copied: it is done
      - this cycle's: every `Findings` line the tickets left, as it was written
        - those take `From: <NNN>.<ticket>`
+       - first, re-check each line against the focus criteria of `work` step 9
+         - a line that was in focus is a hole in its own step: cut it as an `ex-` ticket and fix it, do not copy it
      - `Unplanned` is not copied: its hole was closed in its step
      - copying is not shortening; shortening is how a hole gets lost
      - the list is grouped: the `high` lines first, then the `low`, one heading each
