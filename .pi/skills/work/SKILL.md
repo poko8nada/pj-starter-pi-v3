@@ -82,16 +82,18 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
     - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
-11. **The unit's end.** When every step of the unit is verified and its diff read:
-    - the review child: the unit's diff and the unit's `Then`, and nothing else
-      - viewpoints: 2〜4, the files named, findings only, up to three rounds
-    - fix what it reports, and run the `Verify` of the steps it touched again
-    - squash the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>...`
+11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
+    - reviews the unit once, before its commit: a `consult` child of type `review`
+      - it gets the unit's diff and the unit's `Then`, and nothing else
+      - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
+    - fixes what it reports, and runs the `Verify` of the steps it touched again
+    - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>...`
       - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite
       - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
       - the run makes a backup tag first, then `reset --soft` and one commit
-    - write the hash it printed into every ticket of the unit: `Commit: <hash>`
-    - the records are their own commit: the tickets, with their `Notes`
+    - writes the hash it printed into every ticket of the unit: `Commit: <hash>`
+      - a `.check` step keeps `Commit: なし（理由）`: it changed nothing
+    - commits the records: `Commit:` is not part of the squash
 12. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
