@@ -7,6 +7,7 @@ description: Use when the tickets are agreed. Carries one step to done, and clos
 
 Carry a step to done: the tickets say what to do and how it will be checked.
 This is how that work is done, and how it closes.  
+A cycle is the unit of this work: unless the owner says otherwise, carry every ticket of it to done, and report once, at the end.  
 A step is one ticket, one implementation, a `Verify` on the parent's tree, and one closure.  
 The parent owns the judgment. A child may do the work; it does not judge it.
 
@@ -52,6 +53,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - and write what happened, do not invent work
 7. **Run the `Verify`.** On the parent's tree, and read the values, not the exit code.
    - the types, and what each block holds: `../plan/references/format.md`
+   - the shape of the block, and its pass line: `../tickets/references/format.md`
    - a `read` or a `use`: one `consult` child, of the type the block names
      - the block names the child (`review`), the document, and what it reports: `read` is the verify type, not the child's name
      - the document goes in `input`, the tool's argument: the child is a reading type, and it is not asked to write
@@ -77,19 +79,28 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a hole outside it, earlier or later: `Findings`
    - a child writes its own in its worktree, and they come back with the ref
    - the parent appends its own: the take or drop, and what its read found
-10. **Close the ticket.** `Commit:` takes the tip's hash.
-    - the tip is the last commit whose content the `Verify` judged
-    - the parent writes it: the hash exists only after the commit
-      - a child cannot commit: `git commit` needs an approval it has no UI for
-    - a step that changed nothing (a `.check` step): `Commit: なし`, with the reason in the parentheses on the same line
-11. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
+10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read.
+    - `Commit:` stays empty here: it is written at the unit's end (step 11)
+    - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
+11. **The unit's end.** When every step of the unit is verified and its diff read:
+    - the review child: the unit's diff and the unit's `Then`, and nothing else
+      - viewpoints: 2〜4, the files named, findings only, up to three rounds
+    - fix what it reports, and run the `Verify` of the steps it touched again
+    - squash the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>...`
+      - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite
+      - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
+      - the run makes a backup tag first, then `reset --soft` and one commit
+    - write the hash it printed into every ticket of the unit: `Commit: <hash>`
+    - the records are their own commit: the tickets, with their `Notes`
+12. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
     - do not delete a ref by hand: `git branch -D` is not the tool's job
-12. **Report.** To the owner, after the commit.
+13. **Report.** To the owner, once, when the cycle's work is done.
     - read the work again in full, not only the change: the lines around it as well
     - what changed, and how the whole flow reads now
-    - what you notice looking back: it may need fixing here, in this step
+    - stop here: the owner reads it, and the cycle goes to `close`
+    - what you notice looking back: it may need fixing here, in the step that carries it
 
 ## How not to do this
 
