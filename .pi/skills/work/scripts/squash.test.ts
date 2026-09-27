@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { execute, makeGit, main, parseArgs, planSquash } from './squash.mjs';
+import { BACKUP_TAG, execute, makeGit, main, parseArgs, planSquash } from './squash.mjs';
 
 // git を実際に打つ。書き込む先は毎回の一時ディレクトリ（自分の repo・config・HOME）に固定する。
 
@@ -201,7 +201,29 @@ describe('execute', () => {
     const repo = makeRepo();
     writeFileSync(join(repo.dir, 'dirty.txt'), 'x\n');
     expect(() => execute(makeGit(repo.dir), options(repo))).toThrow(/汚れている/);
-    expect(repo.git(['tag', '--list', 'squash-backup-*']).stdout.trim()).toBe('');
+    expect(repo.git(['tag', '--list', BACKUP_TAG]).stdout.trim()).toBe('');
+  });
+});
+
+describe('backup tag', () => {
+  it('2 回続けて run してもタグは 1 本で、直近の書き換え前を指す', () => {
+    const repo = makeRepo();
+    const first = execute(makeGit(repo.dir), options(repo));
+
+    writeFileSync(join(repo.dir, 'file4.txt'), 'x4\n');
+    repo.git(['add', '-A']);
+    repo.git(['commit', '-q', '-m', '999 step 4: change 4']);
+    const tip = repo.git(['rev-parse', '--short', 'HEAD']).stdout.trim();
+    execute(makeGit(repo.dir), { cycleDir: repo.cycle, base: first.squash, hashes: [tip] });
+
+    expect(repo.git(['tag', '--list']).stdout.trim()).toBe(BACKUP_TAG);
+    expect(repo.git(['rev-parse', '--short', BACKUP_TAG]).stdout.trim()).toBe(tip);
+  });
+
+  it('乾燥では退避タグを打たない', () => {
+    const repo = makeRepo();
+    planSquash(makeGit(repo.dir), options(repo));
+    expect(repo.git(['tag', '--list']).stdout.trim()).toBe('');
   });
 });
 

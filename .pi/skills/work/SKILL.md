@@ -92,7 +92,8 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
       - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite or fill
       - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
-      - the run makes a backup tag first, then `reset --soft` and one commit
+      - the run points the one backup tag (`squash-backup`) at what it is about to rewrite, then `reset --soft` and one commit
+      - the next unit overwrites that tag: there is nothing to delete, and `git reset --hard squash-backup` is the undo
     - the script has written the hash into every ticket of the unit: `Commit: <hash>`
       - read what it printed, and check the tickets
       - a `.check` step keeps `Commit: なし（理由）`: it changed nothing

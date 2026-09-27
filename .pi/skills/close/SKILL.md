@@ -31,7 +31,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - a value one unit makes and the next consumes, a file two units write, a shape they share
    - the criteria are the units' `Then`s and nothing else
      - a run that needs another criterion has found a hole
-   - the run leaves nothing it made: a ref, a worktree, a file. A leftover is a finding
+   - the run leaves nothing it made: a ref, a worktree, a file, a tag. A leftover is a finding
+     - `squash-backup` is not a leftover: it is the last unit's undo point, overwritten by the next squash
 3. **Send each hole where it belongs.** One place each, and the reason beside it.
    - a hole that breaks a `Then` belongs to this cycle: cut a ticket for it
      - the ticket is named `ex-<NN>-<step-name>.md`, with the next free number: that is `../tickets/references/format.md`'s `Names`

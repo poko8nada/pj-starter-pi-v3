@@ -6,7 +6,8 @@
  *   node squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...] [run]
  *
  * `run` を最後に置いたときだけ実行する。無ければ乾燥（何も変えず、予定だけ出す）。
- * 実行前に退避のタグを打つので、`git reset --hard squash-backup-…` で戻せる。
+ * 実行の直前に、退避のタグ `squash-backup` を「書き換える前の先頭」へ向け直す（上書き）。
+ * 戻すときは `git reset --hard squash-backup`。ユニットごとに上書きするので、1 本しか残らない。
  *
  * 実行しない条件（どれも投げる）:
  *   - 作業ツリーが汚れている（未コミットの物があると reset が事故になる）
@@ -200,14 +201,8 @@ export function rewriteTickets(cycleDir, mapping, { squash, tickets }) {
   return changes;
 }
 
-/** 退避タグの名前。同じ秒に 2 回走っても衝突しないよう、最後のハッシュを混ぜる */
-export function backupTag(hashes, now = new Date()) {
-  const stamp = now
-    .toISOString()
-    .replaceAll(/[-:]/g, '')
-    .replace(/\.\d+Z$/, 'Z');
-  return `squash-backup-${stamp}-${hashes.at(-1)}`;
-}
+/** 退避タグの名前。ユニットごとに上書きするので 1 本しか残らない */
+export const BACKUP_TAG = 'squash-backup';
 
 /**
  * 実行する。予定を組み直し、安全を確かめてから、タグ → reset → 1 コミット → チケットの書き換え。
@@ -219,8 +214,9 @@ export function execute(run, options) {
   if (dirty !== '') {
     throw new Error(`作業ツリーが汚れている（コミットするか戻してから）\n${dirty}`);
   }
-  const tag = backupTag(options.hashes);
-  must(run, ['tag', tag], '退避タグが打てない');
+  // 書き換える前の先頭に退避タグを向け直す。上書きなので、常に直近の 1 本だけが残る。
+  const tag = BACKUP_TAG;
+  must(run, ['tag', '-f', tag, options.hashes.at(-1)], '退避タグが打てない');
   must(run, ['reset', '--soft', options.base], 'reset できない');
   const commit = run(
     plan.message.body === ''
@@ -243,6 +239,9 @@ export function execute(run, options) {
 export function formatPlan(plan) {
   const lines = [];
   lines.push(`潰す: ${plan.range.join(' ')}（${plan.range.length} 件）`);
+  lines.push(
+    `退避: ${BACKUP_TAG} → ${plan.range.at(-1)}（戻すときは git reset --hard ${BACKUP_TAG}）`,
+  );
   lines.push(`新しいメッセージ: ${plan.message.subject}`);
   if (plan.message.body !== '') {
     lines.push(plan.message.body);
@@ -277,7 +276,9 @@ export function main(argv, cwd = process.cwd()) {
       return 0;
     }
     const done = execute(run, options);
-    console.log(`1 コミットにまとめた: ${done.squash}（退避タグ ${done.tag}）`);
+    console.log(
+      `1 コミットにまとめた: ${done.squash}（退避タグ ${done.tag} → ${done.plan.range.at(-1)}）`,
+    );
     for (const change of done.changes) {
       const from = change.from === '' ? '（空）' : change.from;
       console.log(`  ${change.file}: ${from} → ${change.to}`);
