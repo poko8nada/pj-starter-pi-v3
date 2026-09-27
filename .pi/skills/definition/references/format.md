@@ -127,12 +127,12 @@ The users therefore differ from product to product.
   - the definition seeds it with the carried lines; the close adds the ones this cycle left
   - numbered from 1, one hole per line
     - the number is a position, not an identity: `From:` carries that
-  - a line has three parts, in this order, and nothing else:
-    - the place: file, section, unit, as narrowly as the hole allows
-    - the state: what is missing, wrong or undecided
-    - what closes it: the thing to decide or do
-      - without this part the next cycle cannot act on the line
-  - `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
+  - a line is a heading, then labelled bullets, in this order:
+    - `Status`: what is wrong, missing or undecided, and how it shows
+    - `Research`: how common it is, and whether a standard remedy exists in this setting
+    - `Action`: what to do, in the next cycle: without it the line cannot be acted on
+    - `Basis`: the sources: URLs, issue numbers
+    - `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
   - the lines are the holes the `close` decided to act on: the research and the owner's call come first
     - a hole decided to be ignored is not written
     - each line keeps its sources

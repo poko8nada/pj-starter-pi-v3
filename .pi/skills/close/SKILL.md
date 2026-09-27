@@ -62,8 +62,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a `Then` that holds, a `Verify` that passed: the value is the line that showed it
    - `Bad`: what went wrong, including what was left half-done
    - `Carry over`: the holes decided to be acted on: the ones step 4 kept
-     - numbered from 1
-     - each line keeps its parts, its `From:` and its sources
+     - numbered from 1; each line is a heading, then `Status`, `Research`, `Action`, `Basis` and `From:`
+       - the shape is `../definition/references/format.md`; the labels stay English, the content is written in Japanese
      - the previous `Carry over`'s lines that are still open, copied as written
        - their own `From:` is kept
        - a line this cycle resolved is not copied: it is done
