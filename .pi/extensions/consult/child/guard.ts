@@ -4,8 +4,13 @@
  * `consult` が子の起動引数に `-e <このファイル>` を入れる。子だけがこれを読む
  * （pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない）。
  *
- * 判定は**解決後の絶対パス**で行う。ホストの `pi-permission-system` はコマンド文字列を見るので、
- * 変数で組んだパスはすり抜けうる（2026-09-24 の実測）。こちらは実ファイルの位置で見る。
+ * 判定は**解決後の絶対パス**で行う。bash のトークンは先に変数展開する。
+ * `$VAR` / `${VAR}` は `process.env` から引く（未定義は空。bash と同じ）。
+ * `$(...)` / `$((...))` / backtick のように値が決められないトークンは、中身を推測せず止める。
+ *
+ * 残る穴: 同じコマンドの中で代入した変数（`FOO=.env; cat $FOO`）は guard からは分からない。
+ * それはコマンドを実行する側の仕事で、本当の境界はホストの権限設定（`pi-permission-system`）
+ * と OS 側にある。
  *
  * 純関数 2 つ（`isSecretPath` / `judgeToolCall`）が判定の全部を持つ。本体はそれを返すだけ。
  */
@@ -50,6 +55,32 @@ export function unquote(token: string): string {
   return token.replaceAll('"', '').replaceAll("'", '').replaceAll('\\', '');
 }
 
+/**
+ * 展開できないトークンに付ける印。ファイル名に NUL は入らないので、実在の名前と衝突しない。
+ * この印が付いたトークンは、中身を見る前に拒む。
+ */
+const UNRESOLVED = '\u0000';
+
+/**
+ * シェルの変数展開。`$VAR` / `${VAR}` を `process.env` から引く（未定義は空。bash と同じ）。
+ *
+ * `$(...)` / `$((...))` / backtick は、コマンドの実行結果に依存するので guard には決められない。
+ * そういうトークンには `UNRESOLVED` を付けて返す。**中身を推測しない**という規則であって、
+ * たまたま `.env` に見えないから通す、ということではない。分からないものは通さない（fail-closed）。
+ *
+ * 残る穴: ここが見るのは guard 自身の `process.env` だけ。同じコマンドの中で代入した
+ * 変数（`FOO=.env; cat $FOO`）は分からない。本当の境界はホストの権限設定
+ * （`pi-permission-system`）と OS 側にある。
+ */
+export function expandVars(token: string): string {
+  if (token.includes('`') || token.includes('$(')) {
+    return UNRESOLVED + token;
+  }
+  return token
+    .replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name: string) => process.env[name] ?? '')
+    .replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) => process.env[name] ?? '');
+}
+
 /** オブジェクトからキーを引く。オブジェクトでなければ undefined。キャストを使わない */
 function at(value: unknown, key: string): unknown {
   if (typeof value !== 'object' || value === null) {
@@ -69,8 +100,12 @@ function str(value: unknown, key: string): string | undefined {
   return typeof raw === 'string' ? raw : undefined;
 }
 
-/** 引数として見るキー。道具によって名前が違う */
-const PATH_KEYS = ['path', 'file_path', 'filePath', 'file'] as const;
+/**
+ * 引数として見るキー。pi の道具がパスを渡す名前は実測で `path` だけ
+ * （`read` / `edit` / `write` / `ls` / `grep` / `find`。`node_modules/@earendil-works/pi-coding-agent/dist/core/tools/*.js` の schema）。
+ * `bash` は `command` を別に読む。候補を推測で並べない。
+ */
+const PATH_KEYS = ['path'] as const;
 
 /** 道具の入力から、パスとして見る文字列を取り出す */
 function pathsFrom(name: string, input: unknown): string[] {
@@ -81,7 +116,7 @@ function pathsFrom(name: string, input: unknown): string[] {
     }
     return command
       .split(/\s+/)
-      .map((token) => unquote(token))
+      .map((token) => expandVars(unquote(token)))
       .filter((token) => token !== '' && token !== '--');
   }
   const paths: string[] = [];
@@ -101,6 +136,9 @@ export function judgeToolCall(
   cwd: string,
 ): { block?: true; reason?: string } {
   for (const path of pathsFrom(name, input)) {
+    if (path.includes(UNRESOLVED)) {
+      return { block: true, reason: '読めない: 展開できないトークンがある（child-guard）' };
+    }
     if (isSecretPath(path, cwd)) {
       return { block: true, reason: `読めない: ${path} は秘密として扱う（child-guard）` };
     }

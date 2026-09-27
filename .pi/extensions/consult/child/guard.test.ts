@@ -146,6 +146,34 @@ describe('judgeToolCall', () => {
     );
   });
 
+  it('bash + cat $HOME/.env を拒む（展開後の basename が .env）', () => {
+    expect(judgeToolCall('bash', { command: 'cat $HOME/.env' }, dir).block).toBe(true);
+  });
+
+  it('bash + cat $UNSET/.env を拒む（未定義は空に展開され /.env になる）', () => {
+    expect(judgeToolCall('bash', { command: 'cat $UNSET/.env' }, dir).block).toBe(true);
+  });
+
+  it('bash + cat .e${X}nv を拒む（展開後 .env）', () => {
+    expect(judgeToolCall('bash', { command: 'cat .e${X}nv' }, dir).block).toBe(true);
+  });
+
+  it('bash + cat $(echo .env) を拒む（解決できない展開は通さない）', () => {
+    expect(judgeToolCall('bash', { command: 'cat $(echo .env)' }, dir).block).toBe(true);
+  });
+
+  it('bash + echo $PATH は通す（展開後も秘密の名前ではない）', () => {
+    expect(judgeToolCall('bash', { command: 'echo $PATH' }, dir)).toEqual({});
+  });
+
+  it('read + file_path だけは通す（pi は path を渡すので見ない）', () => {
+    expect(judgeToolCall('read', { file_path: 'sub/dir/.envrc' }, dir)).toEqual({});
+  });
+
+  it('bash + コマンド内の代入（FOO=.env; cat $FOO）は見ない（残る穴）', () => {
+    expect(judgeToolCall('bash', { command: 'FOO=.env; cat $FOO' }, dir)).toEqual({});
+  });
+
   it('read + README.md は通す', () => {
     expect(judgeToolCall('read', { path: join(dir, 'README.md') }, dir)).toEqual({});
   });
