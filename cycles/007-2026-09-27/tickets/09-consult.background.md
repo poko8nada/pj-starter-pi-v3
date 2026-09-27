@@ -50,4 +50,6 @@ Acceptance:
 
 - `child/spec.test.ts` の `PARAMETERS` の検査（項目が `type` / `task` / `input` だけ）を `action` / `id` を含む形に直した。`pnpm test:run .pi/extensions/consult` を緑に保つため。上書きの口（role / tools / worktree）が戻っていないことは引き続き見ている。
 
-Commit:
+- 親の確認（reload 後）: `consult` はすぐ `started: <id>` を返し、走っている子の一覧を出す。子のテキストは `[consult]` 行とともにメッセージで届き、次のターンを起こす（このサイクルの `read` 検証 3 体で実演）。止める口は、ユーザーが `/consult-status` / `/consult-cancel <id>`、エージェントが `action: list` / `cancel`
+
+Commit: 5dc57d7（`test` 181 件・`read` 通過）
