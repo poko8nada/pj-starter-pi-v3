@@ -48,6 +48,8 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 6. **Merge one step at a time.** The `Verify` runs on the parent's tree.
    - a step that is not in the tree cannot be demonstrated
    - take the ref or drop it, and the `Notes` carry which
+   - read what the ref brings before taking it: a file the ticket does not name is not taken
+     - drop it, or ask the child why it is there: do not carry it in silently
    - a ref means a commit that passed the repository's own hooks: that is the shape to take
    - the work the parent did itself: the parent commits it, and that commit is the tip
    - a child that produced nothing (no ref, a failure, a timeout): do the work in the parent
