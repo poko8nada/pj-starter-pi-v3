@@ -9,9 +9,14 @@
  * 展開しても `$` や backtick が残るトークン（`$(...)`、`$((...))`、`$'...'`、`$1`、`$?`、`${X:-default}`）
  * は、中身を推測せず止める。値が決まらないものを通さない（fail-closed）。
  *
- * 残る穴: 同じコマンドの中で代入した変数（`FOO=.env; cat $FOO`）は guard からは分からない。
- * それはコマンドを実行する側の仕事で、本当の境界はホストの権限設定（`pi-permission-system`）
- * と OS 側にある。
+ * **シェルは真似ない。** 止める側に倒すのは「値が決まらない `$`」までで、それ以外のシェルの
+ * 流儀（単語分割、演算子、`~` の展開）は追わない。その線の外に残る穴が 3 つ:
+ *   - `cat${IFS}.env` のような単語分割: `$IFS` を空白に割らないので `cat.env` の 1 語になる
+ *   - `cat .env;ls` のような演算子の接着: `;` で語を割らないので `.env;ls` の 1 語になる
+ *   - 非 bash の `path` を展開しないのに pi は `~` を展開する: `~` の先を解決できない
+ *
+ * このほか、同じコマンドの中で代入した変数（`FOO=.env; cat $FOO`）は guard からは分からない。
+ * 本当の境界はホストの権限設定（`pi-permission-system`）と OS 側にある。
  *
  * 純関数 2 つ（`isSecretPath` / `judgeToolCall`）が判定の全部を持つ。本体はそれを返すだけ。
  */
@@ -69,6 +74,8 @@ const UNRESOLVED = '\u0000';
  * `$'...'`、`$1`、`$?`、`${X:-default}` がこれに当たる。**中身を推測しない**という規則であって、
  * たまたま `.env` に見えないから通す、ということではない。分からないものは通さない（fail-closed）。
  *
+ * シェルは真似ない: ここがやるのは `$VAR` / `${VAR}` の置換だけで、単語分割や演算子は扱わない。
+ *
  * 残る穴: ここが見るのは guard 自身の `process.env` だけ。同じコマンドの中で代入した
  * 変数（`FOO=.env; cat $FOO`）は分からない。本当の境界はホストの権限設定
  * （`pi-permission-system`）と OS 側にある。
@@ -118,6 +125,8 @@ function pathsFrom(name: string, input: unknown): string[] {
     }
     return (
       command
+        // シェルの単語分割と演算子は真似ない。`\s+` で割るだけなので `cat${IFS}.env` は 1 語のまま、
+        // `cat .env;ls` の `;` も語を割らない（残る穴）。
         .split(/\s+/)
         // 展開を先に、引用符と `\` を剥がすのを後に。逆にすると `$'\x2eenv'` が `$x2eenv`
         // （普通の変数名）になって素通りする（2026-09-27 の検査で見つかった）。
@@ -125,6 +134,7 @@ function pathsFrom(name: string, input: unknown): string[] {
         .filter((token) => token !== '' && token !== '--')
     );
   }
+  // 非 bash の `path` は展開しない。pi は `~` を展開するので、その先は解決できない（残る穴）。
   const paths: string[] = [];
   for (const key of PATH_KEYS) {
     const value = str(input, key);

@@ -32,15 +32,9 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - the criteria are the units' `Then`s and nothing else
      - a run that needs another criterion has found a hole
    - the run leaves nothing it made: a ref, a worktree, a file. A leftover is a finding
-3. **The `review` child**, with the checklist below.
-   - the `consult` tool, type `review`
-   - it gets the definition, the tickets, and this checklist, in one call
-   - every finding goes to step 4: this step fixes only its own act
-   - run the child again after those acts, up to three rounds
-   - what is left after three rounds goes to the owner
-   - no child, no close: a cycle is not closed without this review
-4. **Send each hole where it belongs.** One place each, and the reason beside it.
+3. **Send each hole where it belongs.** One place each, and the reason beside it.
    - a hole that breaks a `Then` belongs to this cycle: cut a ticket for it
+     - the ticket is named `ex-<NN>-<step-name>.md`, with the next free number: that is `../tickets/references/format.md`'s `Names`
      - the cycle waits for that work, and step 1 is where it resumes
      - the judgment came from the criteria, so cutting needs no new agreement
        - only a criterion that moves does
@@ -48,7 +42,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a `Carry over` line that went missing, a `Good` with no value
    - anything else belongs to the next cycle: the `Retro`'s `Carry over`
    - a hole is never fixed silently, and a frozen definition or plan is never rewritten to close it
-5. **Write the `Retro`**, in the definition, in its format: `Good`, `Bad`, `Carry over`.
+4. **Write the `Retro`**, in the definition, in its format: `Good`, `Bad`, `Carry over`.
    - `Good`: what this cycle got right, with the value it was read from
      - a `Then` that holds, a `Verify` that passed: the value is the line that showed it
    - `Bad`: what went wrong, including what was left half-done
@@ -61,21 +55,31 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
        - those take `From: <NNN>.<ticket>`
      - `Unplanned` is not copied: its hole was closed in its step
      - copying is not shortening; shortening is how a hole gets lost
-6. **The owner.** Show them the `Retro`.
+5. **The owner.** Show them the `Retro`, before the review.
    - they are the only one who can judge `Good` and `Bad`
    - they are the last check on `Carry over`
      - a missing line comes back; a line the owner drops leaves a `Bad` line
-   - a rejection sends you back to step 4
-7. **Commit.** After the owner's yes.
+   - a rejection sends you back to step 3
+6. **The `review` child**, with the checklist below.
+   - the `consult` tool, type `review`
+   - it gets the definition, the tickets, and this checklist, in one call
+   - a hole it finds goes to step 3: this step fixes only its own act
+   - run the child again after those acts, up to three rounds
+   - what is left after three rounds goes to the owner
+   - no child, no close: a cycle is not closed without this review
+7. **Commit.** After the owner's yes and the review's last round.
    - that commit closes the cycle, and nothing about that cycle is edited afterwards
 
 ## The review's checklist
 
-- the units' `Then`s are satisfied by what is in the tree
-- nothing is built that the definition does not promise
+The `review` child of step 6 gets this checklist, the definition and the tickets, and nothing else:
+
+- the owner has seen the `Retro` and agreed
+- every change since the owner's look answers their point
+- the units' `Then`s are satisfied by what is in the tree, and nothing is built that the definition does not promise
 - a hole written in the tickets' `Notes` is closed, or it is in the `Retro`'s `Carry over`
-- the run left nothing behind: a ref, a worktree, a file
-- each finding comes with its line, marked blocking or not
+
+Report findings only, each with its line, marked blocking or not.
 
 ## How not to do this
 
