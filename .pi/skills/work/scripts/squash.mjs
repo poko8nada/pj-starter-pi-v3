@@ -3,7 +3,7 @@
  * squash — ひとつのユニットの step コミットを 1 つにまとめ、チケットの `Commit:` を書き換える。
  *
  * 使い方:
- *   node squash.mjs <cycle-dir> <base-hash> <hash>... [run]
+ *   node squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...] [run]
  *
  * `run` を最後に置いたときだけ実行する。無ければ乾燥（何も変えず、予定だけ出す）。
  * 実行前に退避のタグを打つので、`git reset --hard squash-backup-…` で戻せる。
@@ -16,13 +16,17 @@
  *
  * 実行後、`<cycle-dir>/tickets/*.md` の `Commit:` の行のハッシュを、古い→新しいで書き換える
  * （`Commit: abc1234（注記）` の注記はそのまま残す）。
+ * `--tickets` で名指したチケットは、空の `Commit:` も新しいハッシュで埋める。step の時点では空で、
+ * ユニットの終わりに閉じる（`../tickets/references/format.md`）——その閉じる手を 1 つにするのがこの口。
+ * 名指さないチケットの空行は触らない（まだ書いていない step を巻き込まないため）。
  */
 
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const USAGE = 'usage: squash.mjs <cycle-dir> <base-hash> <hash>... [run]';
+export const USAGE =
+  'usage: squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...] [run]';
 
 /**
  * git を打つときの環境。`GIT_*` を落とす。
@@ -68,11 +72,23 @@ export function parseArgs(argv) {
     throw new Error(`run は最後に置く\n${USAGE}`);
   }
   const rest = argv.filter((arg) => arg !== 'run');
-  if (rest.length < 3) {
+  const flag = rest.indexOf('--tickets');
+  const positional = flag === -1 ? rest : rest.slice(0, flag);
+  const tickets = flag === -1 ? [] : rest.slice(flag + 1);
+  if (flag !== -1 && tickets.length === 0) {
+    throw new Error(`--tickets の後ろにチケットの名前が要る\n${USAGE}`);
+  }
+  if (positional.length < 3) {
     throw new Error(USAGE);
   }
-  const [cycleDir, base, first, ...others] = rest;
-  return { cycleDir, base, hashes: [first, ...others], run: argv.at(-1) === 'run' };
+  const [cycleDir, base, first, ...others] = positional;
+  return {
+    cycleDir,
+    base,
+    hashes: [first, ...others],
+    tickets,
+    run: argv.at(-1) === 'run',
+  };
 }
 
 /** `base..HEAD` を古い順に返す */
@@ -85,8 +101,13 @@ export function commitsInRange(run, base) {
     .toReversed();
 }
 
-/** 予定を組む。何も変えない */
-export function planSquash(run, { base, hashes, cycleDir }) {
+/**
+ * 予定を組む。何も変えない
+ *
+ * @param {(args: string[]) => { status: number, stdout: string, stderr: string }} run
+ * @param {{ cycleDir: string, base: string, hashes: string[], tickets?: string[] }} options
+ */
+export function planSquash(run, { base, hashes, cycleDir, tickets = [] }) {
   const head = must(run, ['rev-parse', '--short', 'HEAD'], 'HEAD が引けない').trim();
   const range = commitsInRange(run, base);
   if (range.length === 0) {
@@ -110,13 +131,17 @@ export function planSquash(run, { base, hashes, cycleDir }) {
     subject: first,
     body: rest.map((subject) => `- ${subject}`).join('\n'),
   };
-  return { range, subjects, message, tickets: planTickets(cycleDir, hashes) };
+  return { range, subjects, message, tickets: planTickets(cycleDir, hashes, tickets) };
 }
 
-/** どのチケットの `Commit:` を書き換えるか（まだ書き換えない） */
-export function planTickets(cycleDir, hashes) {
+/**
+ * どのチケットの `Commit:` を書き換えるか・埋めるか（まだ書き換えない）。
+ * `from: ''` は空の行の印。
+ */
+export function planTickets(cycleDir, hashes, tickets = []) {
   const dir = join(cycleDir, 'tickets');
   const wanted = new Set(hashes);
+  const named = new Set(tickets.map(ticketName));
   const targets = [];
   for (const file of readdirSync(dir).filter((name) => name.endsWith('.md'))) {
     const text = readFileSync(join(dir, file), 'utf8');
@@ -124,15 +149,31 @@ export function planTickets(cycleDir, hashes) {
       const match = /^Commit: ([0-9a-f]{7,40})(.*)$/.exec(line);
       if (match !== null && wanted.has(match[1])) {
         targets.push({ file, line: index + 1, from: match[1] });
+      } else if (named.has(file) && isEmptyCommit(line)) {
+        targets.push({ file, line: index + 1, from: '' });
       }
     }
   }
   return targets;
 }
 
-/** チケットの `Commit:` のハッシュを、古い→新しいで書き換える */
-export function rewriteTickets(cycleDir, mapping) {
+/** チケットの名前。拡張子の有無をどちらでも受ける */
+function ticketName(name) {
+  return name.endsWith('.md') ? name : `${name}.md`;
+}
+
+/** 空の `Commit:` の行か（`なし（理由）` は違う） */
+function isEmptyCommit(line) {
+  return /^Commit:\s*$/.test(line);
+}
+
+/**
+ * チケットの `Commit:` のハッシュを、古い→新しいで書き換える。
+ * `tickets` で名指されたファイルの空の `Commit:` は `squash` で埋める。
+ */
+export function rewriteTickets(cycleDir, mapping, { squash, tickets }) {
   const dir = join(cycleDir, 'tickets');
+  const named = new Set(tickets.map(ticketName));
   const changes = [];
   for (const file of readdirSync(dir).filter((name) => name.endsWith('.md'))) {
     const path = join(dir, file);
@@ -141,11 +182,15 @@ export function rewriteTickets(cycleDir, mapping) {
       .split('\n')
       .map((line) => {
         const match = /^Commit: ([0-9a-f]{7,40})(.*)$/.exec(line);
-        if (match === null || !mapping.has(match[1])) {
-          return line;
+        if (match !== null && mapping.has(match[1])) {
+          changes.push({ file, from: match[1], to: mapping.get(match[1]) });
+          return `Commit: ${mapping.get(match[1])}${match[2]}`;
         }
-        changes.push({ file, from: match[1], to: mapping.get(match[1]) });
-        return `Commit: ${mapping.get(match[1])}${match[2]}`;
+        if (named.has(file) && isEmptyCommit(line)) {
+          changes.push({ file, from: '', to: squash });
+          return `Commit: ${squash}`;
+        }
+        return line;
       })
       .join('\n');
     if (out !== text) {
@@ -189,6 +234,7 @@ export function execute(run, options) {
   const changes = rewriteTickets(
     options.cycleDir,
     new Map(plan.range.map((hash) => [hash, squash])),
+    { squash, tickets: options.tickets ?? [] },
   );
   return { tag, squash, changes, plan };
 }
@@ -202,11 +248,12 @@ export function formatPlan(plan) {
     lines.push(plan.message.body);
   }
   if (plan.tickets.length === 0) {
-    lines.push('書き換えるチケット: なし（まだ空か、古いハッシュが無い）');
+    lines.push('書き換えるチケット: なし（空も、古いハッシュも無い）');
   } else {
     lines.push('書き換えるチケット:');
     for (const target of plan.tickets) {
-      lines.push(`  ${target.file}:${target.line}: ${target.from} → <新しいハッシュ>`);
+      const from = target.from === '' ? '（空）' : target.from;
+      lines.push(`  ${target.file}:${target.line}: ${from} → <新しいハッシュ>`);
     }
   }
   return lines.join('\n');
@@ -232,7 +279,8 @@ export function main(argv, cwd = process.cwd()) {
     const done = execute(run, options);
     console.log(`1 コミットにまとめた: ${done.squash}（退避タグ ${done.tag}）`);
     for (const change of done.changes) {
-      console.log(`  ${change.file}: ${change.from} → ${change.to}`);
+      const from = change.from === '' ? '（空）' : change.from;
+      console.log(`  ${change.file}: ${from} → ${change.to}`);
     }
     return 0;
   } catch (error) {

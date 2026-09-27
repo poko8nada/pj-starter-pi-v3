@@ -34,7 +34,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - the child is the one step 2 picked: what it carries is decided here
    - steps whose files overlap are serialised, in the order the ticket gives
    - a ticket that changes this skill comes before the tickets whose work it carries
-   - several steps to one child: one call, one ref, and the same hash in both tickets
+   - several steps to one child: one call, one ref, and both tickets point at the same unit commit (written at step 11)
    - grouping steps that are verified apart turns the closure into a guess
 5. **Hand the work over.** The `consult` tool, a child of type `code`.
    - it gets the ticket, and the `Notes` it fills
@@ -88,8 +88,9 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
         - required, whatever else is picked: the owner has seen what this unit answers, and agreed; every change since their look answers the point they made
     - fixes what it reports, and runs the `Verify` of the steps it touched again
-    - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>...`
-      - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite
+    - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...]`
+      - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
+      - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite or fill
       - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
       - the run makes a backup tag first, then `reset --soft` and one commit
     - the script has written the hash into every ticket of the unit: `Commit: <hash>`

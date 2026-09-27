@@ -23,6 +23,8 @@ interface Repo {
   readonly hashes: string[];
   readonly cycle: string;
   readonly ticket: string;
+  /** 2 枚目のチケット。名指しの有無を見るのに使う */
+  readonly other: string;
   readonly git: (args: string[]) => { stdout: string; status: number | null };
 }
 
@@ -61,10 +63,10 @@ function makeRepo(overrides: { steps?: number } = {}): Repo {
   const cycle = join(dir, 'cycles', '999-2026-01-01');
   mkdirSync(join(cycle, 'tickets'), { recursive: true });
   const ticket = join(cycle, 'tickets', '01-a.md');
-  writeFileSync(
-    ticket,
-    `# a\n\n## Verify\n\n### read\n\n- 何か\n\n## Notes\n\n### Findings\n\n- なし\n\nCommit: \n`,
-  );
+  const other = join(cycle, 'tickets', '02-b.md');
+  const body = `# a\n\n## Verify\n\n### read\n\n- 何か\n\n## Notes\n\n### Findings\n\n- なし\n\nCommit: \n`;
+  writeFileSync(ticket, body);
+  writeFileSync(other, body.replace('# a', '# b'));
   git(['add', '-A']);
   git(['commit', '-q', '-m', '999: the tickets']);
   const base = git(['rev-parse', '--short', 'HEAD']).stdout.trim();
@@ -76,7 +78,7 @@ function makeRepo(overrides: { steps?: number } = {}): Repo {
     git(['commit', '-q', '-m', `999 step ${index}: change ${index}`]);
     hashes.push(git(['rev-parse', '--short', 'HEAD']).stdout.trim());
   }
-  return { dir, base, hashes, cycle, ticket, git };
+  return { dir, base, hashes, cycle, ticket, other, git };
 }
 
 function options(repo: Repo, hashes: string[] = repo.hashes) {
@@ -90,6 +92,22 @@ describe('parseArgs', () => {
 
   it('run が最後でなければ投げる', () => {
     expect(() => parseArgs(['run', 'cycles/999', 'abc1234', 'def5678'])).toThrow(/run/);
+  });
+
+  it('--tickets の後ろの名前を読み、run は最後のまま', () => {
+    const parsed = parseArgs([
+      'cycles/999',
+      'abc1234',
+      'def5678',
+      'fedcba9',
+      '--tickets',
+      '01-a.md',
+      'run',
+    ]);
+    expect(parsed.tickets).toEqual(['01-a.md']);
+    expect(parsed.hashes).toEqual(['def5678', 'fedcba9']);
+    expect(parsed.run).toBe(true);
+    expect(() => parseArgs(['cycles/999', 'abc1234', 'def5678', '--tickets'])).toThrow(/--tickets/);
   });
 });
 
@@ -106,10 +124,16 @@ describe('planSquash', () => {
     expect(repo.git(['rev-parse', 'HEAD']).stdout).toBe(before);
   });
 
+  it('乾燥は、名指ししたチケットの空の Commit: を行として出す', () => {
+    const repo = makeRepo();
+    const targets = planSquash(makeGit(repo.dir), { ...options(repo), tickets: ['01-a'] }).tickets;
+    expect(targets).toEqual([{ file: '01-a.md', line: 15, from: '' }]);
+  });
+
   it('潰す対象が 0 件なら何もせず、そう言う', () => {
     const repo = makeRepo();
     expect(() =>
-      planSquash(makeGit(repo.dir), { ...options(repo), base: repo.hashes.at(-1) }),
+      planSquash(makeGit(repo.dir), { ...options(repo), base: repo.hashes.at(-1) ?? repo.base }),
     ).toThrow(/0 件/);
   });
 });
@@ -147,6 +171,23 @@ describe('execute', () => {
     const repo = makeRepo();
     const done = execute(makeGit(repo.dir), options(repo));
     expect(done.changes).toEqual([]);
+  });
+
+  it('名指ししたチケットの空の Commit: を新しいハッシュで埋める', () => {
+    const repo = makeRepo();
+    const done = execute(makeGit(repo.dir), { ...options(repo), tickets: ['01-a.md'] });
+
+    expect(done.changes).toEqual([{ file: '01-a.md', from: '', to: done.squash }]);
+    expect(readFileSync(repo.ticket, 'utf8')).toMatch(new RegExp(`^Commit: ${done.squash}$`, 'm'));
+  });
+
+  it('名指ししていないチケットの空の Commit: は触らない', () => {
+    const repo = makeRepo();
+    const done = execute(makeGit(repo.dir), options(repo));
+
+    expect(done.changes).toEqual([]);
+    expect(readFileSync(repo.ticket, 'utf8')).toMatch(/^Commit:\s*$/m);
+    expect(readFileSync(repo.other, 'utf8')).toMatch(/^Commit:\s*$/m);
   });
 
   it('一覧が base..HEAD と違えば中止する', () => {
