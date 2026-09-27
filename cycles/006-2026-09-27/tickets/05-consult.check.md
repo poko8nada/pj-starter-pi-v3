@@ -33,4 +33,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: なし（実演 1 本で単位の `Then` 3 行を確かめた。コードを変えていない）
