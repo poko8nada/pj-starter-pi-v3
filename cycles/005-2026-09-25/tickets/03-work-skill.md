@@ -48,7 +48,13 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `.pi/skills/work/SKILL.md`（step 4）: まとめる相手（子）は step 2 で決まるが、step 4 は誰をまとめるかを名指ししていない
+  - 閉じるには: step 2 に吸収するか、step 5 の前書きにするかを決める。owner が残した判断
+- `.pi/skills/work/SKILL.md`（step 10）: `Commit: なし` は `tickets/references/format.md` に無い（あちらは「最後の 1 行、終わるまで空」だけ）
+  - 閉じるには: `なし` を tickets の形に足すか、`.check` step の閉じ方を決める
+- `.pi/skills/work/SKILL.md`（step 7）: `read` / `use` の `Verify` は `review` の子を起こすが、本文は `consult` の `code` の子しか名指ししていない
+  - 閉じるには: `read` / `use` の起こし方を `plan/references/format.md` の型の側に書くか、work に書くかを決める
+- `.pi/skills/*/SKILL.md`: 2 桁の step は本文の下げ幅を番号の幅に合わせる（`10. ` なら 4）。揃っていないと oxfmt が本文を切り離す（step 10 以降で起きた）
 
 ### Unplanned
 
