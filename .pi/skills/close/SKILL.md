@@ -56,6 +56,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
        - those take `From: <NNN>.<ticket>`
      - `Unplanned` is not copied: its hole was closed in its step
      - copying is not shortening; shortening is how a hole gets lost
+     - the list is grouped: the `high` lines first, then the `low`, one heading each
+     - nothing is dropped for being `low`: the grouping is the order, not a filter
 5. **The owner.** Show them the `Retro`, before the review.
    - they are the only one who can judge `Good` and `Bad`
    - they are the last check on `Carry over`

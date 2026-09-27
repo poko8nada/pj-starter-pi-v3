@@ -32,6 +32,9 @@ Read that before writing anything.
    - ask: does this build make one name stand for two things?
      - the file, the folder or the value that would take a second job
      - a reader who would read it two ways
+   - walk the dependents of what each step changes: who states this in prose, in a comment or in a test
+     - a document, a comment, another skill, a check, a test that names the thing the step changes
+     - what the walk finds goes into that step's `Files` and `What`: a step does not leave a dependent it has seen out
    - if none: no refactor step
 5. **Write the refactor step.** For each thing the build makes worse:
    - the name is `<unit-id>.refactor`: the unit whose build needs it
@@ -47,7 +50,7 @@ Read that before writing anything.
    - a step that uses what an earlier step produced depends on it
    - otherwise: `Depends: なし`
 7. **Fill the fields.** With the owner where a field is a decision:
-   - `Files`: the files it touches. The tests are the ticket's
+   - `Files`: the files it touches, including the dependents the walk in step 4 found. The tests are the ticket's
    - `Verify`: the types that decide every line of `What`
      - take each line of `What`, and ask which type gives a verdict on it
      - a line with no type: stop and propose the type to the owner

@@ -133,6 +133,9 @@ The users therefore differ from product to product.
     - what closes it: the thing to decide or do
       - without this part the next cycle cannot act on the line
   - `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
+  - the lines are grouped by the priority the ticket wrote: `### high` then `### low`
+    - a line with no priority: taken as `low`
+    - nothing is dropped for being `low`: grouping is the order, not a filter
     - a copied line keeps its original `From:`
   - a line this cycle resolved is not copied: it is done
     - a unit took it, or it was judged not to be a hole

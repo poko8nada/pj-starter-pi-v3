@@ -22,7 +22,7 @@ Section and field names are English; the content is Japanese.
   - いまの 1 行 → それはどうなるか
 - Depends: 何を待つか
 - Action: build / verify
-- Files: 触るファイル。テストは書かない
+- Files: 触るファイル。テストは書かない。調べた依存先（この step が変える物を語っている文書・コメント・テスト）も入れる
 - Verify: <型>
 
 ### step N: <unit-id>.check

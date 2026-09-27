@@ -66,17 +66,24 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a `Verify` that goes through `consult`, when the step changed `consult`'s own code: stop, and ask the owner to reload
      - the session keeps the code it loaded, and that code is what runs the child
    - a `Verify` that fails on the merged tree is a hole in this step: fix it here
-8. **Read the diff.** From the commit the step started at, against the ticket and the unit.
+8. **Read the impact.** From the commit the step started at, against the ticket and the unit.
    - the parent does this whether it wrote the change or a child did
+   - the impact child: a `consult` child of type `review`, with the ticket and this step's commit range
+     - it names what the change makes stale, by `file:line`: a document or a comment that now contradicts, a test still asserting the old behavior, a behavior that changed with no test on it
+     - its reply is material: the parent sorts it in step 9
    - what to look for:
      - a change the `Todo` does not name
      - a line of the `Acceptance` the change does not cover
-     - a document the change contradicts
+     - a document, a comment or a test the change makes stale
      - a hole this step would be passing over
-   - a hole found here is this step's: fix it, and run step 7 again
+   - a hole this step's own change made is this step's: fix it, and run step 7 again
 9. **Write the `Notes`.** The two fields and their shape: `../tickets/references/format.md`.
-   - a hole inside this step: fixed here, and written under `Unplanned`
-   - a hole outside it, earlier or later: `Findings`
+   - in focus: a hole in a file the `Todo` or the plan's `Files` names, or in the behavior the `Acceptance` or the unit's `Then` states, or in a document, a comment or a test this change makes stale
+     - fixed here, and written under `Unplanned`
+   - out of focus: everything else: `Findings`
+     - each line carries why it is out (which of the criteria it misses) and `priority: high|low`
+     - `high`: left alone, the next reader acts on a wrong premise, a flow breaks, a door opens that cannot be closed, or a failure reaches the owner
+     - `low`: the cost stops at tidying, wording or coverage
    - a child writes its own in its worktree, and they come back with the ref
    - the parent appends its own: the take or drop, and what its read found
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read.
