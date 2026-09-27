@@ -1,115 +1,90 @@
 ---
 name: work
-description: Use when the tickets are agreed. Carries one step to done; who does the work, how it merges, the review, the demonstration, the closure, the record, and the ref cleanup.
+description: Use when the tickets are agreed. Carries one step to done, and closes it.
 ---
 
 # work
 
-Carry a step to done. The tickets say what to do and how it will be checked; this skill is how that work is actually done, and how it is closed.
+Carry a step to done: the tickets say what to do and how it will be checked.
+This is how that work is done, and how it closes.  
+A step is one ticket, one implementation, a `Verify` on the parent's tree, and one closure.  
+The parent owns the judgment. A child may do the work; it does not judge it.
 
-**The step is the unit.** One ticket, one implementation, a `Verify` on the parent's tree (run again after any fix), one closure. A step is not done while its `Verify` cannot run or its ticket has no `Commit:`.
+## Steps
 
-**The parent owns the judgment.** The parent reads the ticket, decides who does the work, merges, runs the `Verify` on the merged tree, reads the diff, decides what to take, and cleans up the refs. A child may do the work; it does not judge it. What the parent does not do is write about work it did not do: the `Notes` belong to whoever did the work.
-
-**Work ends when the tree holds it.** The line is: the parent's tree contains the step's result, the `Verify` has run on that tree, the diff has been read, the ticket is closed with a `Commit:`, and no ref from this step is left. This skill is done when the last ticket is closed — it never judges the cycle as a whole; the seams between units are a separate question.
-
-## Step 1: read the ticket
-
-Read `Acceptance`, `Todo` and `Verify` before anything else. `Acceptance` is what the step owes its unit. `Todo` is the work, split by artifact. `Verify` is what will be run when it closes, and it has to be runnable at that moment: if it needs something a later step builds, the ticket is wrong — say so before starting, and fix it before implementing (that is the only time a ticket may change).
-
-## Step 2: decide who does it
-
-The default is a child. For a child, use `type code`, and hand it the `Acceptance`, the `Todo`, and the `Notes` it has to fill in: a child does not need the machinery, and it does not see this conversation.
-
-What a child has to know about how its work lands, because it cannot commit:
-
-- the commit is made **after it stops**, and the repository's own hooks run on that commit — the tree it leaves has to pass them
-- everything left in the worktree goes into that commit, so it leaves only what belongs there (no scratch files)
-- `Commit:` stays empty: the hash exists only after that commit
-
-The exception is size. When the cycle's `What to build` holds three units or fewer **and** the cycle holds five tickets or fewer, the parent does the work itself: at that size, a round trip through a worktree and a ref costs more than the work.
-
-Two things stay with the parent whatever the size:
-
-- a step that needs context the parent cannot hand over — a hole just found, or work that assumes the parent's uncommitted state (a child sees only `HEAD`)
-- a `<unit-id>.check` ticket: it is the judgment, and the judgment is the parent's
-
-## Step 3: start from the right place
-
-A step with no dependency starts from `HEAD`. A step that depends on an earlier one starts from **that step's ref**: the dependent child starts from the ref, and when the last one merges, the chain comes in with it.
-
-If the dependency is real and the earlier ref is gone (that step was dropped, or its child failed), cut the step again. What a later step needs is a file, and a file that was never merged cannot be depended on.
-
-## Step 4: run in parallel only where the writes cannot meet
-
-Steps whose files do not overlap may run together, as several inputs of one `consult` call or as one child each. Steps that touch the same file are serialised, and the ticket says which of them comes first.
-
-A ticket that changes this skill comes before the tickets whose work it carries: while the skill is wrong, every step carried under it is carried wrong. The plan's step order carries this; its `Depends` names the documents a step needs, not the skill that carries it.
-
-## Step 5: grouping
-
-Steps may be handed to one child together when they are one piece of work: one call, one ref, and the same hash written into both tickets. Group only what would be verified together; grouping steps that are verified apart turns the closure into a guess.
-
-## Step 6: merge and take the ref
-
-Merge one step at a time. The `Verify` runs on the parent's tree, so a step that is not in the tree cannot be demonstrated.
-
-Take the ref or drop it, and say which, in the `Notes`. A ref means a commit that passed the repository's own hooks, which is the shape to take. When the child produced nothing at all (no `ref:` line, a failure, a timeout), do not invent work: bring it into the parent, do it there, and write what happened.
-
-A `Verify` that fails on the merged tree is a hole in **this** step: fix it here. Never adopt a ref whose `Verify` failed as if the step were done.
-
-## Step 7: demonstrate
-
-Run the `Verify`, and look at the values, not at the exit code. The demonstration must leave nothing behind: what may remain is only what you can delete yourself. A child that **writes** leaves its worktree's commit as a ref (003's step 15 and 002's step 7 both show it), so have the child report the text back instead, and only let it write outside the repository. If the reproduction would touch something that outlives the repository — a shared store, a cache, a global setting — get the owner's permission first.
-
-To find out what a child is allowed to do, ask it for the refusal text, not for a file: a refused command shows the rule without touching the tree.
-
-A `Verify` is not loosened after the fact. If it cannot be run, the step is not done.
-
-## Step 8: read the diff before you close it
-
-Before the ticket closes, read the change you are about to close — `git diff` from the commit the step started at — against the ticket and the unit. The parent does this whether it wrote the change or a child did. The judgment is the parent's, and a fresh pair of eyes on the finished work belongs to the cycle's close, not to every step: one reader per step, not two.
-
-What to look for:
-
-- a change the `Todo` does not name
-- a line of the `Acceptance` the change does not cover
-- a document the change contradicts
-- a hole this step would be passing over
-
-A hole found here is this step's: fix it, and run Step 7 again — the `Commit:` names the content the `Verify` judged. Write what you found and what you did with it under the ticket's `Findings`; one line for a step that read clean is a line too.
-
-## Step 9: close the ticket
-
-`Notes` belong to whoever did the work. A child fills in its own `Findings` and `Unplanned` in the ticket, in its worktree, and they come back with the ref: the record is first-hand, not retold. A hole **inside** this step is fixed here, in a new commit, and written under `Unplanned`; a hole **outside** it is a finding for the next cycle to carry over. When someone other than the writer fixes a hole later, they **append** their own lines; nobody edits another hand's account. A fix that is not written down is a fix nobody can find.
-
-`Commit:` takes the hash of the implementation commit: the one whose content the `Verify` judged. Whoever **takes the ref** writes it, because the hash exists only after `consult` has committed, and a child cannot commit at all (`git commit` needs an approval a child has no UI for). A fix the read forced is a commit too, and it is the taker's: the child is gone by then, and the `Verify` runs again on what the taker built. One ticket carries one hash: the **tip** — the last commit whose content the `Verify` judged. When the step changed no code (a demonstration, a check), say that instead of inventing a hash.
-
-## Step 10: clean up the refs
-
-Use the `ref-cleanup` tool: list first, then delete, one at a time. It refuses anything that is not a `consult/` ref. A ref it refuses to delete is not deleted by hand: `git branch -D` is not the tool's job, and the reason it refused is what the owner needs to see.
-
-## Where the holes found here belong
-
-- a hole in **this** step → fix it here, in a new commit, and write it under `Unplanned`
-- a hole in an **earlier** step → do not reopen that ticket: write it under `Findings`, and the cycle's carrying over picks it up
-- a hole in a **later** step → write it in this ticket's `Findings`, where that step's ticket can read it
-
-## The failures the text answers
-
-- **the child returns no ref** (it failed, or timed out) → Step 6: bring the work into the parent, do it there, and write what happened
-- **the child's work is wrong** (a red test committed anyway) → Step 6: a `Verify` that fails on the merged tree is fixed in this step, not adopted
-- **a dependency whose earlier ref is gone** (that step was dropped) → Step 3: cut the step again; a file that was never merged cannot be depended on
-- **a ref that cannot be deleted** (`ref-cleanup` refuses, or git fails) → Step 10: leave it, and put the reason in front of the owner
-- **a hole your own read finds after the `Verify`** → Step 8: fix it here, run Step 7 again, and `Commit:` holds the new tip
+1. **Read the ticket.** `Acceptance`, `Todo` and `Verify`, before anything else.
+   - `Acceptance`: what the step owes its unit
+   - `Todo`: the work, by artifact
+   - `Verify`: what will be run when it closes
+   - a `Verify` that cannot run: show the owner before starting
+     - one whose work is a later step's: the ticket is wrong, and this is the one time to change it
+2. **Decide who does the work.** The parent, or a `consult` child of type `code`.
+   - the axis: how many units the definition holds, and how many tickets this cycle has
+   - three units or fewer and five tickets or fewer: the parent does it, a round trip costs more
+   - 7 units: a child, however many tickets the cycle has
+   - anything else: a child too, it is the default
+   - the parent either way: a step that needs context a child cannot see
+     - a hole just found, or the parent's uncommitted state: a child sees only `HEAD`
+   - the parent either way: a `<unit-id>.check` step, the judgment is the parent's
+3. **Start from the right place.** No dependency: `HEAD`. A dependency: the earlier step's ref.
+   - a dependency whose earlier ref is gone (the step was dropped, or its child failed)
+     - cut the step again: a file that was never merged cannot be depended on
+4. **Decide what runs together.** Only where the writes cannot meet, and only what is checked.
+   - steps whose files overlap are serialised, in the order the ticket gives
+   - a ticket that changes this skill comes before the tickets whose work it carries
+   - several steps to one child: one call, one ref, and the same hash in both tickets
+   - grouping steps that are verified apart turns the closure into a guess
+5. **Hand the work over.** The `consult` tool, a child of type `code`.
+   - it gets the ticket, and the `Notes` it fills
+     - a child does not read this skill: the ticket is what it knows
+   - a child starts from step 3's ref, or from `HEAD`
+   - the commit comes after it stops, and the repository's hooks run on it
+     - leave a tree that passes them
+   - everything left in the worktree goes into that commit: no scratch files
+   - `Commit:` stays empty, the hash exists only after that commit
+6. **Merge one step at a time.** The `Verify` runs on the parent's tree.
+   - a step that is not in the tree cannot be demonstrated
+   - take the ref or drop it, and the `Notes` carry which
+   - a ref means a commit that passed the repository's own hooks: that is the shape to take
+   - the work the parent did itself: the parent commits it, and that commit is the tip
+   - a child that produced nothing (no ref, a failure, a timeout): do the work in the parent
+     - and write what happened, do not invent work
+7. **Run the `Verify`.** On the parent's tree, and read the values, not the exit code.
+   - the types, and what each block holds: `../plan/references/format.md`
+   - the demonstration leaves nothing behind: only what you can delete yourself
+   - a shared store, a cache, a global setting: the owner's permission first
+   - what a child is allowed to do: ask it for the refusal text, not for a file
+   - a `Verify` is not loosened after the fact: if it cannot be run, the step is not done
+   - a `Verify` that fails on the merged tree is a hole in this step: fix it here
+8. **Read the diff.** From the commit the step started at, against the ticket and the unit.
+   - the parent does this whether it wrote the change or a child did
+   - what to look for:
+     - a change the `Todo` does not name
+     - a line of the `Acceptance` the change does not cover
+     - a document the change contradicts
+     - a hole this step would be passing over
+   - a hole found here is this step's: fix it, and run step 7 again
+9. **Write the `Notes`.** The two fields and their shape: `../tickets/references/format.md`.
+   - a hole inside this step: fixed here, and written under `Unplanned`
+   - a hole outside it, earlier or later: `Findings`
+   - a child writes its own in its worktree, and they come back with the ref
+   - the parent appends its own: the take or drop, and what its read found
+10. **Close the ticket.** `Commit:` takes the tip's hash.
+    - the tip is the last commit whose content the `Verify` judged
+    - the parent writes it: the hash exists only after the commit
+      - a child cannot commit: `git commit` needs an approval it has no UI for
+    - a step that changed nothing (a `.check` step): `Commit: なし`, with the reason in the `Notes`
+11. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
+    - it refuses anything that is not a `consult/` ref
+    - a ref it refuses: leave it, and put the reason in front of the owner
+    - do not delete a ref by hand: `git branch -D` is not the tool's job
+12. **Report.** To the owner, after the commit.
+    - read the work again in full, not only the change: the lines around it as well
+    - what changed, and how the whole flow reads now
+    - what you notice looking back: it may need fixing here, in this step
 
 ## How not to do this
 
 - Do not let a child judge its own work: the parent runs the `Verify` and decides what to take
-- Do not close a ticket without a `Commit:`, or with a hash the `Verify` did not judge
-- Do not leave the demonstration's leftovers behind: a written file, a worktree, a ref
+- Do not close a ticket with a hash the `Verify` did not judge
 - Do not fix a hole silently
-- Do not write `Notes` about work you did not do, and do not tidy another hand's account
-- Do not close a diff you have not read
-- Do not count a step as done before it is in the tree and its ref is gone
-- Do not delete a ref by hand
