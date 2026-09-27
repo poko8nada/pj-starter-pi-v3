@@ -133,6 +133,7 @@ Changes: keep
 - `types.json` がコミットされ、clone でも子の worktree でも同じものが読める（`435e20f`、実演で確認）
 - guard が、解決できない `$` を推測せず止める形になった（`21369e5`）
 - 統合の 1 本が単位をまたいで通った — 子が `types.json` を読む、`cat .env` が child-guard に拒まれる、成果が ref で返り `ref_cleanup` で消える。何も残っていない
+- close の段で見つけた README の 5 行を、チケット 09 で直した（`917f75d`）— パス 2 か所、検査の順序、CI の 1 行、`consult/README.md` のパス
 
 ### Bad
 
@@ -141,23 +142,18 @@ Changes: keep
 - `input` にパスを 2 つ渡して子が 2 体走った（1 パス 1 体の仕様を読み違えた）。同じ 2 枚を 2 体が実装し、片方を落とした
 - owner の確認を取らずにレビューの子へ回し、何度も止められた。順序を手順に足した
 - 検証が長引いた — チケット 1・2 だけで 6 回走らせ、うち 2 回は偽のチケットを材料にして「書けない」で返った
+- 3 を owner が落とした — 今は追わない
+- 9 を owner が落とした — 再現しないものは追わない
 - 8 を owner が落とした — 気にしなくてよい
 
 ### Carry over
 
-1. `.pi/skills/` の 6 スキル: owner の確認と、レビューの子、どちらが先かが決まっていない。owner の指摘を反映したあと owner に見せずにレビューへ回し、owner が何度も止めている。順序を決める From: 006.definition
-2. `.pi/skills/*/SKILL.md` の `The review's checklist`: 観点が形（節、欄、型、単位の名前）に寄っていて、owner の指摘への直しが正しいかを見る観点が無い。観点を決め直す From: 006.definition
-3. `tickets/references/format.md`: `Commit: なし（理由）` の適用範囲が `.check` の例示だけになっている。一般則にするか例示を増やすかを決める From: 006.01-tickets-skill
-4. `consult/child/spec.ts`: `input` に置く文書の先頭が `@` のとき、`--` の後ろでも pi がファイル引数として読む。子の起こし方（argv か stdin か）を決める From: 006.02-work-skill
-5. `work/SKILL.md`（step 7）: チケットの `Verify` ブロックの形と `Acceptance` の注記は `tickets/references/format.md` の持ち物だが、実行の段からそこを指していない。参照を足すか、走らせ方に形を含めるかを決める From: 006.02-work-skill
-6. `work/SKILL.md`（step 7）: `read` の合否基準（期待値）をチケットに書く欄が無い。置き場を決める From: 006.02-work-skill
-7. `consult/README.md`（`## Settings`）: `types.json` の場所が「このファイルの隣」としか書かれていない。パスを書くか、この書き方でよいと決める From: 006.03-consult.policy-source
-8. `consult/policy/types.ts`（`loadTypes`）: 読めない理由が権限でも「コミットしてある。復元しろ」と言い切る。原因で分けるか、言い切らない形にする From: 006.03-consult.policy-source
-9. `consult/run/run.ts`（`commitWorktree`）: 子の作業ファイルが ref に入る穴（004 の報告）は 2 回の観測で再現しなかった。再現したら名前を記録して、外し方を決める From: 006.04-consult.ref-content
-10. `consult/child/guard.ts`: 空白での分割はシェルの単語分割ではない（`cat${IFS}.env` が通る）。分割をシェルに寄せるか、この穴を受けて境界の説明を強めるかを決める From: 006.06-secret-guard
-11. `consult/child/guard.ts`: `;` `|` `<` `>` が語に接着した形（`cat .env;ls`、`cat <.env`）は通る。演算子でも切るか、受け入れるかを決める From: 006.06-secret-guard
-12. `consult/child/guard.ts`: 非 bash の `path` は展開しないが、pi は `~` を展開する。見方を揃えるかを決める From: 006.06-secret-guard
-13. `README.md` / `README.ja.md`: 「the formatter runs first」は実物（`lint:fix` → `format`）と逆。文面を直すか、順序を変えるかを決める From: 006.08-readme
-14. `README.md` / `README.ja.md`: 「On every agent turn」は、変えた物が無いターンでは検査が走らないので成立しない。文面を直すか、毎ターン走らせるかを決める From: 006.08-readme
-15. `README.md` / `README.ja.md`: `types.json` のパスが無い（7 と同じ穴） From: 006.08-readme
-16. `README.md` / `README.ja.md`: `.github/workflows/pullfrog.yml` が「入っているもの」に無い。書くか、書かないと決める From: 006.08-readme
+1. `.pi/skills/` の 6 スキル: owner の確認と、レビューの子、どちらが先かが決まっていない。owner の指摘を反映したあと owner に見せずにレビューへ回し、owner が何度も止めている。順序を決める（owner は、ここは次のサイクルで詳しく決めると言っている）From: 006.definition
+2. `.pi/skills/*/SKILL.md` の `The review's checklist`: 観点が形（節、欄、型、単位の名前）に寄っていて、owner の指摘への直しが正しいかを見る観点が無い。観点を決め直す（owner は、ここは次のサイクルで詳しく決めると言っている）From: 006.definition
+3. `consult/child/spec.ts`: `input` に置く文書の先頭が `@` のとき、`--` の後ろでも pi がファイル引数として読む。方針は決まった: 子のプロンプトは stdin で渡す（`buildPiArgs` から task を外し、`runPi` が stdin に書く）From: 006.02-work-skill
+4. `work/SKILL.md`（step 7）: チケットの `Verify` ブロックの形と `Acceptance` の注記は `tickets/references/format.md` の持ち物だが、実行の段からそこを指していない。方針は決まった: step 7 から `../tickets/references/format.md` を指す From: 006.02-work-skill
+5. `work/SKILL.md`（step 7）: `read` の合否基準（期待値）をチケットに書く欄が無い。方針は決まった: チケットの `### read` に「何が返れば合格か」の欄を足す（`test` の `<入力> → <結果>` と同じ役割）From: 006.02-work-skill
+6. `consult/policy/types.ts`（`loadTypes`）: 読めない理由が権限でも「コミットしてある。復元しろ」と言い切る。方針は決まった: 原因で分ける（`ENOENT` のときだけそう言う）From: 006.03-consult.policy-source
+7. `consult/child/guard.ts`: `cat${IFS}.env` が通る（単語分割をシェルに寄せていない）。方針は決まった: **シェルを真似ない**と決め、この穴を `guard.ts` の doc に書く From: 006.06-secret-guard
+8. `consult/child/guard.ts`: `;` `|` `<` `>` が語に接着した形（`cat .env;ls`、`cat <.env`）は通る。方針は 7 と同じ（切らないと決めて、doc に書く）From: 006.06-secret-guard
+9. `consult/child/guard.ts`: 非 bash の `path` は展開しないが、pi は `~` を展開する。方針は 7 と同じ（受けて、`guard.ts` の doc と `consult/README.md` の `## Trust` に書く）From: 006.06-secret-guard
