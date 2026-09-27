@@ -39,6 +39,7 @@ Acceptance:
 
 ### Unplanned
 
-- なし
+- 子（`code`）に渡したが、そのコミットが**フックの typecheck で拒まれた**（`squash.test.ts` の `planSquash(... { ...options, tickets })` に `TS2322`）。設計どおり ref は残らず、作業は丸ごと失われた。親が実装し直した（`--tickets`、空行の `（空）` 表示、テスト 4 件）
+- 自分の `pnpm typecheck` は緑でも、フックの `typecheck:staged`（別の設定で、JSDoc の型を厳しく見る）は赤になる。親も一度同じ形で拒まれ、`repo.hashes.at(-1) ?? repo.base` に直した
 
-Commit:
+Commit: a07c8d0（ex-15 の作業コミット。`test` 13 件・`read` 通過）
