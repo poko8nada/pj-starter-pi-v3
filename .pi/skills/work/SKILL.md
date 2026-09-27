@@ -43,6 +43,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - the commit comes after it stops, and the repository's hooks run on it
      - leave a tree that passes them
    - everything left in the worktree goes into that commit: no scratch files
+   - a test writes into its own temporary directory (`mkdtempSync` and the like), never into the repository: the hook runs the tests in the real tree
    - `Commit:` stays empty, the hash exists only after that commit
 6. **Merge one step at a time.** The `Verify` runs on the parent's tree.
    - a step that is not in the tree cannot be demonstrated
