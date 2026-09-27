@@ -166,7 +166,7 @@ export function loadTypes(dir: string): readonly TypePolicy[] {
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `consult types: could not read ${file}. Copy ${CONFIG_FILE.replace('.json', '.example.json')} and put your own models in it (${detail})`,
+      `consult types: could not read ${file}. It is committed in this repository: restore it, or put your own models in it (${detail})`,
       { cause: error },
     );
   }

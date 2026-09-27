@@ -57,7 +57,7 @@ Whatever has to reach the child reaches it as `task` or `input`. There is no way
 
 ## Settings
 
-`types.json` sits next to this file and is not committed: model ids belong to an account, not to a repository. Copy `types.example.json` and put your own models in it. The file is read on every call, so a change takes effect on the next consult without reloading pi.
+`types.json` sits next to this file and is committed: it is what a clone starts with. Put your own models in it. The file is read on every call, so a change takes effect on the next consult without reloading pi.
 
 ## Parameters
 
