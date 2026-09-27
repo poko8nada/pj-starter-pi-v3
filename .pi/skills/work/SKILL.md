@@ -55,6 +55,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a `read` or a `use`: one `consult` child, of the type the block names
      - the block names the child (`review`), the document, and what it reports: `read` is the verify type, not the child's name
      - the document goes in `input`, the tool's argument: the child is a reading type, and it is not asked to write
+     - the report the block names goes in the `task`: the child gets the document and the question
      - the evidence is the text the child returns: the parent reads it and judges
    - the demonstration leaves nothing behind: only what you can delete yourself
    - a shared store, a cache, a global setting: the owner's permission first
