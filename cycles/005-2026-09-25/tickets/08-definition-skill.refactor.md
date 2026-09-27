@@ -45,4 +45,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: fbab256
