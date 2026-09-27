@@ -41,7 +41,7 @@ pnpm install
 1 サイクル = 1 枚の定義 → スタック → プラン → チケット → その実行 → 反省。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段に「次はこれ」とは書かない。
 
 ```
-definition   1 枚を書く（What / What to build / What to keep / Stack / Carry over / Retro）
+definition   1 枚を書く（What / What to build / What to keep / Stack / Retro）
 stack        何で作るか（土台のランタイム / 出すのか / 足したもの）
 plan         どの順で作るか（step / そのファイル / 何で確かめるか）
 tickets      step ごとにチケットを切り、合意する

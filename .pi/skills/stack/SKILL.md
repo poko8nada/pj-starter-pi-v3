@@ -19,7 +19,7 @@ Read that before writing anything.
    - `### Who`: who acts in it
    - each unit's `Does`: what the product does
    - `## What to keep`: what stays as it is
-   - `## Carry over`: what was left open
+   - the `Retro`'s `Carry over`: what was left open
 2. **Read the stack before it.**
    - the previous `Stack` is the starting point
    - what was decided stays decided until something moves

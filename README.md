@@ -41,7 +41,7 @@ pnpm install
 One cycle is a definition, a stack, a plan, tickets, the work of carrying them out, then a Retro. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
 
 ```
-definition   write the one definition (What / What to build / What to keep / Stack / Carry over / Retro)
+definition   write the one definition (What / What to build / What to keep / Stack / Retro)
 stack        decide what to build with (the runtime it stands on, whether it ships, what is added)
 plan         decide the order (steps, their files, and how each is verified)
 tickets      cut a ticket per step, agree them

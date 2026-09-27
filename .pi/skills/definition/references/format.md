@@ -50,10 +50,6 @@ Changes: keep
 
 Changes: keep
 
-## Carry over
-
-1. <場所>: <状態>。閉じるもの。From: <NNN>.<ticket>
-
 ## Retro
 
 ### Good
@@ -115,20 +111,6 @@ The users therefore differ from product to product.
 - `What to build`, `What to keep` and `Change:` account for every unit
   - what is touched, and what stays
 
-## Carry over
-
-- Numbered from 1, one hole per line
-  - the number is a position, not an identity: `From:` carries that
-  - a line this cycle resolved is not copied: it is done
-    - a unit took it, or it was judged not to be a hole
-- A line has three parts, in this order, and nothing else:
-  - the place: file, section, unit, as narrowly as the hole allows
-  - the state: what is missing, wrong or undecided
-  - what closes it: the thing to decide or do
-    - without this part the next cycle cannot act on the line
-- `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
-  - a copied line keeps its original `From:`
-
 ## Writing
 
 - Do not write what the reader can look up
@@ -142,6 +124,18 @@ The users therefore differ from product to product.
 
 - `Good` and `Bad` are heading 3, one item per line: `- <主題> — <中身>`
 - `Carry over` holds the lines that are still open: the copied ones, and the ones this cycle left
+  - the definition seeds it with the carried lines; the close adds the ones this cycle left
+  - numbered from 1, one hole per line
+    - the number is a position, not an identity: `From:` carries that
+  - a line has three parts, in this order, and nothing else:
+    - the place: file, section, unit, as narrowly as the hole allows
+    - the state: what is missing, wrong or undecided
+    - what closes it: the thing to decide or do
+      - without this part the next cycle cannot act on the line
+  - `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
+    - a copied line keeps its original `From:`
+  - a line this cycle resolved is not copied: it is done
+    - a unit took it, or it was judged not to be a hole
   - copied, not shortened
   - a line the owner drops at the close is not in it: its number and the reason are one `Bad` line
     - the rest is numbered again from 1

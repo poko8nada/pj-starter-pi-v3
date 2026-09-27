@@ -21,7 +21,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
 ## Steps
 
 1. **Read the cycle.**
-   - the definition: every unit's `Then`, and its `## Carry over`
+   - the definition: every unit's `Then`, and the `Retro`'s `Carry over`
    - every ticket's `Notes`: the `Findings` lines are the raw material for `Carry over`
    - the `Retro`'s shape: see `../definition/references/format.md`
    - do not read the `Then`s from memory: the tree holds them

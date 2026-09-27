@@ -165,19 +165,6 @@ Changes: update **フレームを `### Type` と `### Who` の 2 節にした（
 
 Changes: update **欄を `Runtime` / `Deploy` / `Added` に絞り、ハーネスの部品を `Base` から `Added` に移した**
 
-## Carry over
-
-1. `consult` の `types.json` が git 管理外になっている。管理に入れるか、別の渡し方にするかを決める From: 004.01-work-skill
-2. `consult` の子の worktree に `types.json` が無く、実演の「子が起動して返る」が落ちる。渡し方を決める From: 004.03-consult.split
-3. プランの子が承認までに触ったファイルがプランだけかを確かめた記録が無い。確かめる From: 004.02-plan-skill
-4. `consult` の子が残した作業ファイル（`.flat` など）が成果と一緒に ref に入る。どこで外すかを決める From: 004.close
-5. `consult/git-env.ts` が `policy/` `child/` `run/` `tool/` のどれでもない所にある。どの層に置くかを決める From: 004.close
-6. `/tmp` に置いた実演の題材にも lint が当たる。外すか、当てたままにするかを決める From: 004.close
-7. `consult` の guard で `$VAR` が未定義のときの動きが偶然に頼っている。意図した形にするかを決める From: 004.04-secret-guard.rules
-8. `consult` の guard が読む `read` のキー名が確かめられていない。確かめる From: 004.04-secret-guard.rules
-9. `Notes` の項目の形、`Retro` の `###`、`Carry over` のまとまりを機械的に検査する拡張が無い。作るかを決める From: 004.close
-10. 造語を機械的に止める案を採らないと決めた代わりが無い。owner が決める From: 004.close
-
 ## Retro
 
 ### Good
