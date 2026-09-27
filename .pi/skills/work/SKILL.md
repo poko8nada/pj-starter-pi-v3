@@ -86,6 +86,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
     - reviews the unit once, before its commit: a `consult` child of type `review`
       - it gets the unit's diff and the unit's `Then`, and nothing else
       - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
+        - required, whatever else is picked: the owner has seen what this unit answers, and agreed; every change since their look answers the point they made
     - fixes what it reports, and runs the `Verify` of the steps it touched again
     - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>...`
       - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite
