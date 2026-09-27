@@ -4,6 +4,15 @@ Runs a child `pi` and returns its final text. The child does not see this conver
 
 The agent calls it directly: there is no script to run and no CLI, because a tool call carries the arguments, streams the result, and can be cancelled.
 
+## Tools
+
+The extension registers two tools.
+
+| Tool          | What it does                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| `consult`     | Runs a child `pi` with a type's policy and returns its final text.                            |
+| `ref_cleanup` | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted. |
+
 ## Types
 
 The caller picks a type, and the type holds the whole policy: model candidates, tools, environment, spend limits, and role. There is no way to override any of it per call — to change the policy, edit `types.json`.
@@ -87,12 +96,38 @@ Cancelling the call (Esc) propagates through `AbortSignal`, so the child is kill
 
 Plays `Tink` at the start and at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it. Nothing fails if `afplay` is missing.
 
+## ref_cleanup
+
+| Parameter | Required   | Meaning                                          |
+| --------- | ---------- | ------------------------------------------------ |
+| `action`  | yes        | `list` to see the refs, `delete` to remove one   |
+| `name`    | for delete | The ref to delete. It must start with `consult/` |
+
+```
+ref_cleanup({ action: "list" })
+ref_cleanup({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
+```
+
+`list` returns every `consult/` ref with its hash, and nothing else. `delete` removes one ref, and refuses any name that does not start with `consult/` — the rest of the repository is never touched. The name convention is documented under **Taking the ref**.
+
+## The code
+
+```
+index.ts   the entry: registers the two tools, and nothing else
+policy/    what a type is: reading types.json, validating it, resolving a type
+child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard
+run/       running a child: worktree, install, spawn, spend and commit; plus the ref logic
+tool/      the tool faces: parameters, progress, formatting and sound
+```
+
+`run/git-env.ts` is a helper for the checks, not for the tools: it fixes the repository, config and `HOME` that a check's git writes to, so an inherited `GIT_*` cannot steer it.
+
 ## Tests
 
 ```
 pnpm test:run .pi/extensions/consult
 ```
 
-`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. `run/refs.test.ts` covers listing and judging the refs without spawning git. Spawning a real `pi` is not covered; the demonstrations do that.
 
-A check that spawns git fixes where it writes through `git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.
+A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.

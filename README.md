@@ -10,7 +10,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
 - **The cycle mechanism** — six skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets` / `work` / `close`)
-- **Extensions** — `consult` (runs a child `pi` without showing it this conversation), `quality-gate` (checks whatever a turn changed), `ref-cleanup` (lists the refs `consult` leaves behind, and deletes one), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
+- **Extensions** — `consult` (one extension with two tools: `consult`, which runs a child `pi` without showing it this conversation, and `ref_cleanup`, which lists the refs it leaves behind and deletes one), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
 - **The cycle records** — `cycles/`
 
 ## Getting started
@@ -20,7 +20,7 @@ pnpm install
 ```
 
 1. Delete `cycles/` — this starter's own cycles. They do not belong in a clone
-2. Copy `.pi/extensions/consult/types.example.json` to `types.json`, and put your own models in it (`types.json` is not committed)
+2. `types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
 ## Checks

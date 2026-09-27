@@ -10,7 +10,7 @@ English: [README.md](README.md)
 - **ゲート** — commit と push で検査を通す `lefthook` と、ターンごとにそのターンで変えた分だけを検査する `quality-gate`
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
 - **サイクルの仕組み** — `.pi/skills/` の 6 つ（`definition` / `stack` / `plan` / `tickets` / `work` / `close`）
-- **拡張** — `consult`（会話を見せずに子の `pi` を走らせる）/ `quality-gate`（ターンで変えた分を検査する）/ `ref-cleanup`（`consult` が残した ref を一覧し、1 つ消す）/ `sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
+- **拡張** — `consult`（2 つの道具を持つ 1 つの拡張。`consult` は会話を見せずに子の `pi` を走らせ、`ref_cleanup` はそれが残した ref を一覧し、1 つ消す）/ `quality-gate`（ターンで変えた分を検査する）/ `sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
 - **サイクルの記録** — `cycles/`
 
 ## 使い始める
@@ -20,7 +20,7 @@ pnpm install
 ```
 
 1. `cycles/` を消す — このスターター自身のサイクル。clone 先には持ち込まない
-2. `.pi/extensions/consult/types.example.json` を `types.json` にコピーして、自分のモデルを入れる（`types.json` は git 管理外）
+2. `types.json` はリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 
 ## 検査
