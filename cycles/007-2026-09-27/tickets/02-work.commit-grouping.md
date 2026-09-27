@@ -49,4 +49,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: ad53d60（02・03 が同じコミット。`test` 9 件・`cli`（006 をコピーで実演）・`read` 通過）

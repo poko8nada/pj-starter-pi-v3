@@ -32,4 +32,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: ad53d60（02 と同じコミット。`read` 通過）

@@ -32,4 +32,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: なし（単位の `Then` 4 行を実演と `read` で確かめた。コードを変えていない）
