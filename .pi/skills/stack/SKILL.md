@@ -5,16 +5,11 @@ description: Use when a definition is approved. Writes its Stack section, after 
 
 # stack
 
-A definition is approved, and its `Stack` section is still empty.
-
-What a product is built with is decided here, and written into that section.
-
-The section has three parts: the `Runtime` it stands on, the `Deploy`, and the `Added` things.
-
-Every cycle passes through here, even when nothing changes.
-
-The shape of the section is in `../definition/references/format.md`.
-
+A definition is approved, and its `Stack` section is still empty.  
+What a product is built with is decided here, and written into that section.  
+The section has three parts: the `Runtime` it stands on, the `Deploy`, and the `Added` things.  
+Every cycle passes through here, even when nothing changes.  
+The shape of the section is in `../definition/references/format.md`.  
 Read that before writing anything.
 
 ## Steps

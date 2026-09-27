@@ -5,18 +5,12 @@ description: Use when a plan is approved. One ticket per step, agreed with the o
 
 # tickets
 
-A cycle is one set of tickets.
-
-The plan says the steps, and the `Verify` types the owner agreed.
-
-A ticket is one step, and it writes the concrete: what to do, and what to run and look at.
-
-A unit is one build unit from the definition: the smallest thing a `Who` can use.
-
-Its steps are its tickets.
-
-The shape of the file and its field rules are in `references/format.md`.
-
+A cycle is one set of tickets.  
+The plan says the steps, and the `Verify` types the owner agreed.  
+A ticket is one step, and it writes the concrete: what to do, and what to run and look at.  
+A unit is one build unit from the definition: the smallest thing a `Who` can use.  
+Its steps are its tickets.  
+The shape of the file and its field rules are in `references/format.md`.  
 Read that before writing anything.
 
 ## Steps

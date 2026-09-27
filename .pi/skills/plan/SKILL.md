@@ -5,18 +5,12 @@ description: Use after the definition and its Stack. Turns the gaps into steps, 
 
 # plan
 
-A cycle is one plan.
-
-The definition says what the product does.
-
-The plan says in what order it is built.
-
-The owner agrees the plan: the order, the steps and the form.
-
-What a step is made of is the ticket's.
-
-The shape of the file and its field rules are in `references/format.md`.
-
+A cycle is one plan.  
+The definition says what the product does.  
+The plan says in what order it is built.  
+The owner agrees the plan: the order, the steps and the form.  
+What a step is made of is the ticket's.  
+The shape of the file and its field rules are in `references/format.md`.  
 Read that before writing anything.
 
 ## Steps

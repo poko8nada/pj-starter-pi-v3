@@ -5,12 +5,9 @@ description: Use when a cycle starts or closes. Writes the definition, and freez
 
 # definition
 
-A cycle is one definition. Its frame is decided in a dialogue with the owner.
-
-The cycle's work is derived from that frame.
-
-The shape of the file and its field rules are in `references/format.md`.
-
+A cycle is one definition. Its frame is decided in a dialogue with the owner.  
+The cycle's work is derived from that frame.  
+The shape of the file and its field rules are in `references/format.md`.  
 Read that before writing anything.
 
 ## Steps
