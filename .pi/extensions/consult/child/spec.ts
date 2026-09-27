@@ -72,6 +72,9 @@ export function buildPiArgs(options: ConsultOptions): string[] {
   args.push('--extension', CHILD_GUARD);
   // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
   args.push('--no-approve');
+  // 指示の前に `--` を置く。payload（文書）の先頭が `-` だと、pi の引数解析が「知らないオプション」で
+  // 落ちる（2026-09-27、YAML の frontmatter で始まる `work/SKILL.md` を `read` に渡したときに起きた）。
+  args.push('--');
   args.push(options.task);
   return args;
 }

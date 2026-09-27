@@ -152,6 +152,12 @@ describe('buildPiArgs', () => {
   it('指示は最後に置く（フラグとして解釈させない）', () => {
     expect(buildPiArgs(options({ task: '調べる' })).at(-1)).toBe('調べる');
   });
+
+  it('指示の前に `--` を置く（先頭が `-` の文書でもオプションとして読ませない）', () => {
+    const args = buildPiArgs(options({ task: '---\nname: work' }));
+    expect(args.at(-2)).toBe('--');
+    expect(args.at(-1)).toBe('---\nname: work');
+  });
 });
 
 describe('needsIsolation', () => {
