@@ -5,28 +5,17 @@ description: Use when every ticket of a cycle is closed. Judges the cycle, and w
 
 # close
 
-A cycle is one definition, and it is judged as one thing.
-
-Each unit carries its own check, so the inside of a unit has an eye on it.
-
-Nobody has an eye on the seams between units.
-
-When the last ticket closes, the cycle itself still has to be judged.
-
-This skill is that judgment.
-
-Two rules hold the whole way through.
-
-It does not implement: changing the product belongs to the stage that carries a step.
-
-A hole that is this cycle's comes back as a ticket, and it is not fixed here.
-
-It does not invent criteria: the criteria are the units' `Then`s, agreed before the work started.
-
-A criterion that is missing is a hole, not something to add here.
-
-The `Retro`'s shape is in `../definition/references/format.md`.
-
+A cycle is one definition, and it is judged as one thing.  
+Each unit carries its own check, so the inside of a unit has an eye on it.  
+Nobody has an eye on the seams between units.  
+When the last ticket closes, the cycle itself still has to be judged.  
+This skill is that judgment.  
+Two rules hold the whole way through.  
+It does not implement: changing the product belongs to the stage that carries a step.  
+A hole that is this cycle's comes back as a ticket, and it is not fixed here.  
+It does not invent criteria: the criteria are the units' `Then`s, agreed before the work started.  
+A criterion that is missing is a hole, not something to add here.  
+The `Retro`'s shape is in `../definition/references/format.md`.  
 The tickets' `Notes` are in `../tickets/references/format.md`.
 
 ## Steps

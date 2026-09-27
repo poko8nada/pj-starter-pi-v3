@@ -61,4 +61,4 @@ Acceptance:
 - `cycles/005-2026-09-25/tickets/04-close-skill.md` の `form`: 太字の期待値を 12（手順 6）と書いたが、実物は 14（手順 7）
   - なぜ: 書ける手順を数えずに先に凍らせた。検証の子が見つけた。`Verify` が動かない形なので、その場で直した
 
-Commit:
+Commit: 28f011a
