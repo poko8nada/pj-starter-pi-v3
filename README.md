@@ -41,14 +41,14 @@ pnpm install
 One cycle is a definition, a stack, a plan, tickets, the work of carrying them out, then a Retro. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
 
 ```
-definition   write the one definition (What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Carry over / Retro)
-stack        decide what to build with (the harness is the base; only additions are listed)
-plan         decide the order (steps, files, tests)
+definition   write the one definition (What / What to build / What to keep / Stack / Carry over / Retro)
+stack        decide what to build with (the runtime it stands on, whether it ships, what is added)
+plan         decide the order (steps, their files, and how each is verified)
 tickets      cut a ticket per step, agree them
-work         carry each step to done (decide who does it, merge, review, demonstrate, close, clean the refs)
-close        judge the cycle as a whole (one integration across the units, the finished form, where each hole goes, the Retro)
+work         carry each step to done (who does it, where it starts, the merge, the Verify, the diff, the notes, the close, the report)
+close        judge the cycle as a whole (one integration across the units, the review, where each hole goes, the Retro)
 ```
 
 The records stay in `cycles/<NNN-DATE>/`. **A cycle is closed when its `Retro` is there.** Git holds the state, so there is no check box and no status field anywhere.
 
-Most of a definition is frozen by the commit that agrees it. Three sections stay writable: `Stack`, `Remarks` and `Retro`. `Remarks` is where the owner's remarks land while the cycle runs — one line each, `<remark> → <where it lands>`.
+Most of a definition is frozen by the commit that agrees it. Two sections stay writable: `Stack` and `Retro`.

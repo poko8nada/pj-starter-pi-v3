@@ -41,14 +41,14 @@ pnpm install
 1 サイクル = 1 枚の定義 → スタック → プラン → チケット → その実行 → 反省。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段に「次はこれ」とは書かない。
 
 ```
-definition   1 枚を書く（What / Goal / Non-goal / What to build / What to keep / Stack / Remarks / Carry over / Retro）
-stack        何で作るか（ハーネスが土台。足した分だけ）
-plan         どの順で作るか（step / ファイル / テスト）
+definition   1 枚を書く（What / What to build / What to keep / Stack / Carry over / Retro）
+stack        何で作るか（土台のランタイム / 出すのか / 足したもの）
+plan         どの順で作るか（step / そのファイル / 何で確かめるか）
 tickets      step ごとにチケットを切り、合意する
-work         step を 1 つずつ片付ける（誰がやるか / 取り込み / レビュー / 実演 / 閉じる / ref の片付け）
-close        サイクル全体を裁く（単位をまたぐ通しの実演 / 仕上がり / 穴の行き先 / 反省）
+work         step を 1 つずつ片付ける（誰がやるか / 起点 / 取り込み / Verify / diff / Notes / 閉じる / 報告）
+close        サイクル全体を裁く（単位をまたぐ通しの実演 / レビュー / 穴の行き先 / 反省）
 ```
 
 記録は `cycles/<NNN-DATE>/` に残る。**閉じているかは `Retro` の有無で分かる** — 状態は git が持つので、チェックマークも状態欄も無い。
 
-1 枚の大半は、合意したコミットで凍結される。書けるままなのは `Stack` / `Remarks` / `Retro` の 3 節。`Remarks` はサイクル中にオーナーの指摘が着地する場所で、1 行ずつ `<指摘> → <着地先>` と書く。
+1 枚の大半は、合意したコミットで凍結される。書けるままなのは `Stack` / `Retro` の 2 節。

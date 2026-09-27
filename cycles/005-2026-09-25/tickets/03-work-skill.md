@@ -55,6 +55,7 @@ Acceptance:
 - `.pi/skills/work/SKILL.md`（step 7）: `read` / `use` の `Verify` は `review` の子を起こすが、本文は `consult` の `code` の子しか名指ししていない
   - 閉じるには: `read` / `use` の起こし方を `plan/references/format.md` の型の側に書くか、work に書くかを決める
 - `.pi/skills/*/SKILL.md`: 2 桁の step は本文の下げ幅を番号の幅に合わせる（`10. ` なら 4）。揃っていないと oxfmt が本文を切り離す（step 10 以降で起きた）
+- `.pi/skills/*/SKILL.md`: oxfmt は、隣り合う行を 1 段落にまとめ、行末に空白を付けることがある（段落は 1 行ずつ書く。`work` の 9・10 行に残っている）
 
 ### Unplanned
 
