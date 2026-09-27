@@ -11,6 +11,7 @@ English: [README.md](README.md)
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
 - **サイクルの仕組み** — `.pi/skills/` の 6 つ（`definition` / `stack` / `plan` / `tickets` / `work` / `close`）
 - **拡張** — `consult`（2 つの道具を持つ 1 つの拡張。`consult` は会話を見せずに子の `pi` を走らせ、`ref_cleanup` はそれが残した ref を一覧し、1 つ消す）/ `quality-gate`（ターンで変えた分を検査する）/ `sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
+- **CI** — `.github/workflows/pullfrog.yml`（dispatch で agent を走らせる）
 - **サイクルの記録** — `cycles/`
 
 ## 使い始める
@@ -20,7 +21,7 @@ pnpm install
 ```
 
 1. `cycles/` を消す — このスターター自身のサイクル。clone 先には持ち込まない
-2. `types.json` はリポジトリにある。自分のモデルに変えて使う
+2. `.pi/extensions/consult/types.json` がリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 
 ## 検査
@@ -34,7 +35,7 @@ pnpm install
 
 - **commit 時** — 変えた分に format / lint / typecheck / test
 - **push 時** — typecheck / test
-- **エージェントのターンごと** — `lint` と `typecheck` を、そのターンで変えたものに（整形はその前に修正として走る）
+- **エージェントのターンごと** — そのターンで変えた物があるときだけ。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えた物に
 
 ## サイクル
 

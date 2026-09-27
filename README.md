@@ -11,6 +11,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Agent rules** — `AGENTS.md`, read in every session
 - **The cycle mechanism** — six skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets` / `work` / `close`)
 - **Extensions** — `consult` (one extension with two tools: `consult`, which runs a child `pi` without showing it this conversation, and `ref_cleanup`, which lists the refs it leaves behind and deletes one), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
+- **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
 - **The cycle records** — `cycles/`
 
 ## Getting started
@@ -20,7 +21,7 @@ pnpm install
 ```
 
 1. Delete `cycles/` — this starter's own cycles. They do not belong in a clone
-2. `types.json` is in the repository. Put your own models in it
+2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
 ## Checks
@@ -34,7 +35,7 @@ pnpm install
 
 - **On commit** — format, lint, typecheck and test, on what changed
 - **On push** — typecheck and test
-- **On every agent turn** — `lint` and `typecheck`, on whatever that turn changed (the formatter runs first, as a fix)
+- **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck` on what changed
 
 ## The cycle
 
