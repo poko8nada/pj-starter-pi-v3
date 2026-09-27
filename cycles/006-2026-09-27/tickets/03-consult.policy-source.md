@@ -49,10 +49,11 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `consult/README.md`（`## Settings`）: `types.json` の場所が「このファイルの隣」としか書かれていない（実パスは `Tests` の節から推定する）。閉じるには: パスを書くか、この書き方でよいと決める
+- `consult/policy/types.ts`（`loadTypes`）: 読めない理由が権限やディレクトリでも「コミットしてある。復元するか自分のモデルを入れろ」と言い切る。閉じるには: 原因で文面を分けるか、言い切らない形にする
 
 ### Unplanned
 
-- なし
+- `policy/types.test.ts`: 同梱の例がそのまま読めることを確かめるテストがあった（`types.example.json` を読んでいた）。コミットした実物（`types.json`）を読む形に変えた（例を消したため）
 
-Commit:
+Commit: 435e20f
