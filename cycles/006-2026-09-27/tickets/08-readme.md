@@ -32,10 +32,13 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `README.md` / `README.ja.md`: 「the formatter runs first, as a fix」は実物と違う（実物は `lint:fix` → `format` の順）。閉じるには: 文面を実物に合わせるか、順序を変えるかを決める
+- `README.md` / `README.ja.md`: 「On every agent turn」は、変えた物が無いターンでは検査が走らないので成立しない。閉じるには: 文面を直すか、検査を毎ターン走らせるかを決める
+- `README.md` / `README.ja.md`: `types.json` の場所が書かれていない（step 3 の `Findings` と同じ穴）。閉じるには: パスを書くか、この書き方でよいと決める
+- `README.md` / `README.ja.md`: `.github/workflows/pullfrog.yml` が「入っているもの」に無い。閉じるには: 書くか、書かないと決める
 
 ### Unplanned
 
 - なし
 
-Commit:
+Commit: b27c4bf（07 と同じ子のコミット。`form` の「見出し」は 2 枚が日英なので字面ではなく節の数と順で見た。4 ↔ 4、順も同じ）

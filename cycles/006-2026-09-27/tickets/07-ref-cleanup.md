@@ -60,4 +60,4 @@ Acceptance:
 
 - なし
 
-Commit:
+Commit: b27c4bf（ref を取った。`git mv` で移し、振る舞いは変えていない）
