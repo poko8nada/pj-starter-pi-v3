@@ -119,7 +119,7 @@ For each type, what the ticket holds:
   - a document's lines need `read`, `use` or `form`
   - the tests are the ticket's: no case is written here
   - a step that moves the form is proved by the form
-- a step that adds a check writes what it sets up for itself: the paths, the config, the environment
+- a step that adds a check writes what it sets up for itself: the paths, the config
 
 ## Structure
 
