@@ -52,10 +52,13 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `child/guard.ts`: 空白での分割はシェルの単語分割ではない。`cat${IFS}.env` は `${IFS}` が未定義なら `cat.env` になり通る（bash では `cat .env` になる）。閉じるには: 分割をシェルに寄せるか、この穴を受けて境界の説明を強めるかを決める
+- `child/guard.ts`: `;` `|` `<` `>` が語に接着した形（`cat .env;ls`、`cat <.env`）は basename が一致しないので通る。閉じるには: 演算子でも切るか、受け入れるかを決める
+- `child/guard.ts`: `read` / `edit` などの `path` は展開しない。pi 側は `~` を展開する（`normalizePath`）ので、見方がずれうる。閉じるには: 非 bash のパスも展開するかを決める
 
 ### Unplanned
 
-- なし
+- `child/guard.ts`: 「展開しても `$` が残るトークンは止める」まで広げた（`${X:-.env}` と `$'...'` が素通りするのを `read` の検証が見つけた）。あわせて `expandVars` を先、`unquote` を後に変えた（逆順だと `$'\x2eenv'` が `$x2eenv` という変数名になる）
+- `child/guard.ts`: `tool_call` のキー名（`toolName` / `input`）を pi の `types.d.ts` で確かめ、出所をコメントに残した（`PATH_KEYS` の `path` も同じ出所）
 
-Commit:
+Commit: 21369e5
