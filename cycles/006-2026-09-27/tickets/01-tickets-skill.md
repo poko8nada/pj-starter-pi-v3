@@ -22,10 +22,10 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `tickets/references/format.md`: `Commit: なし（理由）` の適用範囲が `.check` 以外の「変更の無い step」にも及ぶかが書かれていない（例示が `a <unit-id>.check` だけ）。閉じるには: 一般則として書くか、例示を増やすかを決める
 
 ### Unplanned
 
-- なし
+- 理由の置き場を `Notes` と書いた（子の成果）→ owner の判断で「同じ行の括弧の中（`Commit: なし（理由）`）」に変えた。`work/SKILL.md` step 10 も同じ形に揃えた（`008d43c`）
 
-Commit:
+Commit: 008d43c
