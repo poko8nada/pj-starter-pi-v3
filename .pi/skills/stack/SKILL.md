@@ -44,14 +44,14 @@ Read that before writing anything.
    - ask the owner before running one
 8. **Write the `Stack`.** The shape is in `../definition/references/format.md`.
    - the field rules are in "The fields"
-9. **The `review` child**, with the checklist below:
-   - the `consult` tool, type `review`
-   - it gets the definition file and this checklist, in one call
-   - fix what comes back, and repeat until it is clean, up to three rounds
-   - what is left after three rounds goes to the owner
-10. **The owner.** Show what was added, and what a trial reported.
-    - a rejection sends you back to step 5
-11. **Commit.** After step 10's yes.
+9. **The owner.** Show what was added, and what a trial reported.
+   - a rejection sends you back to step 5
+10. **The `review` child**, with the checklist below:
+    - the `consult` tool, type `review`
+    - it gets the definition and the previous cycle's definition, in one call
+    - fix what comes back, and repeat until it is clean, up to three rounds
+    - what is left after three rounds goes to the owner
+11. **Commit.** After step 9's yes.
 
 A fact the repository holds is looked up, not asked. Ask only what changes the file.
 
@@ -87,11 +87,11 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 ## The review's checklist
 
-The `review` child of step 9 gets this checklist and the definition file, and nothing else:
+The `review` child of step 10 gets this checklist, the definition and the previous cycle's definition, and nothing else:
 
+- the owner has seen the stack and agreed
+- every change since the owner's look answers their point
 - every unit's `Does` has what it needs, or a reason it needs nothing added
-- nothing is in `Added` that this product did not decide
-- the runtime is the one the repository uses, and `Deploy` is decided
 - the marker is right: `add` on a product's first definition, `keep`, or `update` with its reason
 
 Report findings only, each with its line, marked blocking or not.

@@ -55,10 +55,10 @@ Read that before writing anything.
    - ask what a folder looks like after a file is added
    - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step
 9. **Read it against `references/format.md`**, once, before anyone else sees it.
-10. **The `review` child**, with the checklist below:
-    - fix what comes back, and repeat until it is clean
-    - cap it at three rounds
-11. **The owner.** Show the steps and the form, and the findings with what you did with each.
+10. **The owner.** Show the steps and the form, and hear their points.
+11. **The `review` child**, with the checklist below:
+    - it gets the plan, the definition and `references/format.md`, in one call
+    - fix what comes back, and repeat until it is clean, up to three rounds
 12. **Commit.** The commit is the freeze mark:
     - the plan is not edited afterwards
     - what changes during the cycle is recorded in the ticket that hit it
@@ -71,18 +71,12 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 ## The review's checklist
 
-The `review` child of step 10 gets this, and nothing else:
+The `review` child of step 11 gets this checklist, the plan, the definition and `references/format.md`, and nothing else:
 
-- every unit with a gap is a step
-- a `<unit-id>.refactor` step has no gap: it is there to straighten out
-  - its `Why` names what the build makes worse, and its `What` is the relation
-- together, the steps of a unit carry every `Now` line of it, once
-- every line of `What` is decided by one of the `Verify` types
-- each step can be verified on its own, and its `Depends` is the real dependency
-- every file in `Files` is in `Structure`, and every file in `Structure` belongs to a step
-- nothing is built that the definition does not ask for
-- every field is filled, and `なし` is written where there is nothing
-- a step that moves the form is proved by the form
+- the owner has seen the steps and the form, and agreed
+- every change since the owner's look answers their point
+- every unit with a gap is a step, and together the steps carry every `Now` line once
+- every file in `Files` is in `Structure`, and every line of `What` is decided by a `Verify` type
 
 Report findings only, each with its line, marked blocking or not.
 

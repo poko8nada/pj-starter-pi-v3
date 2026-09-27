@@ -12,7 +12,9 @@ Read that before writing anything.
 
 ## Steps
 
-1. **`Type`.** The owner starts: one line, what this is
+1. **The frame, and whether it moves.** Ask the owner first: do `Type` and `Who` change from the last cycle?
+   - a first definition has nothing before it: it starts from `Type`
+   - the `Type` is the owner's line, one line, what this is
    - the agent does not invent it, and does not move on until the owner has said it
 2. **`Who`.** The agent proposes the actors, picked from the list in `references/format.md`
    - when nothing fits, propose an addition
@@ -24,10 +26,11 @@ Read that before writing anything.
    - it is about this cycle's subject — it is material for the units
    - it is for another subject — it is a candidate for the copy in step 6
    - it is not a hole — it is done
-5. **`What to build`.** Derive the units from the frame, with the owner:
+5. **`What to build` (the draft).** Derive the units from the frame, with the owner:
    - count what the product does, from the `Who`'s side
    - `Now`: the state today, the carried lines that landed here among them
    - `Then`: the ideal
+   - the `Now` / `Then` of each unit are settled with the owner here, before the review
    - a carried line no unit covers: a unit of its own, back to the top of this step
    - a unit the frame cannot explain: a hole, back to step 1
 6. **`Carry over`.** Now that the units exist, read the previous `Retro`'s list against them:
@@ -35,8 +38,9 @@ Read that before writing anything.
    - a line no unit took stays a hole: it is written into this `Retro`'s `Carry over`
 7. **Read it against `references/format.md`**, once, before anyone else sees it
 8. **The `review` child**, with the checklist below
-   - fix what comes back, repeat until it is clean, and cap it at three rounds
-9. **The owner.** Start with `What to build`, the part they have not seen
+   - fix what comes back, repeat until it is clean, and cap it at two rounds
+9. **After the review: the owner.** Report what came back, with your own opinion, and settle the `Now` / `Then` with them
+   - the draft was confirmed in step 5; this is where the review's result is discussed
    - a correction that moves the frame sends you back to step 1
 10. **Commit.** The commit is the freeze mark, and this definition is not edited afterwards
 
@@ -59,17 +63,12 @@ Each unit's `Actor` is one of them.
 
 ## The review's checklist
 
-The `review` child of step 8 gets this, and nothing else:
+The `review` child of step 8 gets this checklist, the definition and the previous cycle's definition, and nothing else:
 
-- the sections are there
-  - an empty field keeps its name, and nothing is written into it that was not decided
-- `Type` is the owner's line; every `Who` is from the list, and has `Does` and `Needs`
-- every unit is written from one of the `Who`'s sides, and its `Actor` is one of them
-  - it is the smallest thing the `Who` can use
+- the owner has seen the units and agreed
+- every change since the owner's look answers their point
+- `Type` is the owner's line, every `Who` is from the list, and every unit is written from one of those sides
 - every open line of the previous `Retro`'s `Carry over` is accounted for
-  - a unit took it, or it is in this `Retro`'s
-  - a line this cycle resolved is not copied
-- labels are English, and the content is Japanese
 
 Report findings only, each with its line, marked blocking or not.
 

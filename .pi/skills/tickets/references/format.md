@@ -32,6 +32,7 @@ Acceptance:
 
 - `review` の子に `.pi/skills/stack/SKILL.md` だけを渡す
   - 手順どおりに `Stack` が書けるか報告させる
+  - 合格: 段が全部あり、各フィールドの決め方が書いてある
 
 ## Notes
 
@@ -57,6 +58,7 @@ Commit:
 - the step's name is the plan's
   - `<unit-id>`, `<unit-id>.<part>`, `<unit-id>.check`, `<unit-id>.refactor`
 - a `step 0` that says なし takes no ticket
+- a ticket the `close` cuts: `ex-<NN>-<step-name>.md`, with the next free number
 
 ## Acceptance
 
@@ -90,6 +92,8 @@ Commit:
     - the happy path / null, undefined, missing / empty / boundary values
     - invalid input / the expected error path / permission / a second call / concurrency
   - the reason sits as a bullet under the artifact, in the same list as the cases
+- a `read` block says what has to come back for the step to pass
+  - the child's report is the evidence, and the pass line is the bar the parent judges against
 
 ## Notes
 
@@ -103,7 +107,8 @@ Commit:
   - not copied: it is closed
 - both belong to whoever did the work
 - `なし` is written when it was looked at and nothing is needed
-- `Commit:` is the last line, and it stays empty until the step is done
+- `Commit:` is the last line, and it names the same unit's one commit
+  - empty at the step's time: it is written when the unit's commit is made
 - a step that changed nothing (a `<unit-id>.check`): `Commit: なし（理由）` — the reason goes in the parentheses, on the same line
 
 ## Writing
