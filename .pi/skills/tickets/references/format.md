@@ -104,6 +104,7 @@ Commit:
 - both belong to whoever did the work
 - `なし` is written when it was looked at and nothing is needed
 - `Commit:` is the last line, and it stays empty until the step is done
+- a step that changed nothing (a `<unit-id>.check`): `Commit: なし`, and the reason in `Notes`
 
 ## Writing
 
