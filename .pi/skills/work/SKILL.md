@@ -91,9 +91,10 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite
       - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
       - the run makes a backup tag first, then `reset --soft` and one commit
-    - writes the hash it printed into every ticket of the unit: `Commit: <hash>`
+    - the script has written the hash into every ticket of the unit: `Commit: <hash>`
+      - read what it printed, and check the tickets
       - a `.check` step keeps `Commit: なし（理由）`: it changed nothing
-    - commits the records: `Commit:` is not part of the squash
+    - commit the tickets: the squash's commit holds the code, not the records
 12. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
