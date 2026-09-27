@@ -184,9 +184,9 @@ describe('needsIsolation', () => {
 });
 
 describe('PARAMETERS', () => {
-  it('項目が type / task / input だけ', () => {
+  it('項目が action / type / task / input / id だけ', () => {
     // 上書きの口（role / tools / worktree）が戻ってきたら気づけるようにする。
-    expect(Object.keys(PARAMETERS.properties)).toEqual(['type', 'task', 'input']);
+    expect(Object.keys(PARAMETERS.properties)).toEqual(['action', 'type', 'task', 'input', 'id']);
   });
 });
 

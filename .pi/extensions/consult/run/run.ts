@@ -106,6 +106,13 @@ export interface RunOptions {
   readonly env: NodeJS.ProcessEnv;
   /** 上限。type が決める */
   readonly limits: Limits;
+  /** 進行の通知。子の出力が届くたびに呼ぶ */
+  readonly onProgress?: (chunk: {
+    readonly stream: 'stdout' | 'stderr';
+    readonly text: string;
+  }) => void;
+  /** 完了のフック。待たずに結果を受け取る口で、返す promise より先に呼ぶ */
+  readonly onDone?: (result: RunResult) => void;
 }
 
 /**
@@ -350,13 +357,16 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       }
       settled = true;
       options.signal?.removeEventListener('abort', onAbort);
-      settle({
+      const outcome: RunResult = {
         stdout: state.stdout,
         stderr: state.stderr,
         code,
         stopped: state.stopped,
         aborted: state.aborted,
-      });
+      };
+      // 待たずに結果を受け取りたい呼び出し側の口。promise の解決より先に呼ぶ。
+      options.onDone?.(outcome);
+      settle(outcome);
     };
 
     // 中断が既に来ていれば即座に止める。来たら子を殺す。
@@ -370,6 +380,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       const text = chunk.toString();
       state.stdout += text;
       state.buffered += text;
+      options.onProgress?.({ stream: 'stdout', text });
       const lines = state.buffered.split('\n');
       state.buffered = lines.pop() ?? '';
       for (const line of lines) {
@@ -377,7 +388,9 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       }
     });
     child.stderr.on('data', (chunk: Buffer) => {
-      state.stderr += chunk.toString();
+      const text = chunk.toString();
+      state.stderr += text;
+      options.onProgress?.({ stream: 'stderr', text });
     });
     child.on('error', (error: Error) => {
       state.stderr += error.message;

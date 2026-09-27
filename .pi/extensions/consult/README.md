@@ -1,8 +1,8 @@
 # consult
 
-Runs a child `pi` and returns its final text. The child does not see this conversation.
+Runs a child `pi` in the background with a type's policy. The child does not see this conversation.
 
-The agent calls it directly: there is no script to run and no CLI, because a tool call carries the arguments, streams the result, and can be cancelled.
+The agent calls it directly: there is no script to run and no CLI, because a tool call carries the arguments. The call returns as soon as the child starts; the child's text arrives later as a message, so the agent can keep working while it runs.
 
 ## Tools
 
@@ -10,7 +10,7 @@ The extension registers two tools.
 
 | Tool          | What it does                                                                                  |
 | ------------- | --------------------------------------------------------------------------------------------- |
-| `consult`     | Runs a child `pi` with a type's policy and returns its final text.                            |
+| `consult`     | Starts a background child `pi` with a type's policy, and lists or stops the running ones.     |
 | `ref_cleanup` | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted. |
 
 ## Types
@@ -78,11 +78,13 @@ Whatever has to reach the child reaches it as `task` or `input`. There is no way
 
 ## Parameters
 
-| Parameter | Required | Meaning                                                                               |
-| --------- | -------- | ------------------------------------------------------------------------------------- |
-| `type`    | yes      | How the child runs. One of the types in `types.json`                                  |
-| `task`    | yes      | What the child should do                                                              |
-| `input`   | no       | Paths to files whose contents are prepended to the child's prompt. One child per path |
+| Parameter | Required   | Meaning                                                                               |
+| --------- | ---------- | ------------------------------------------------------------------------------------- |
+| `action`  | no         | `start` (the default), `list`, or `cancel`                                            |
+| `type`    | for start  | How the child runs. One of the types in `types.json`                                  |
+| `task`    | for start  | What the child should do                                                              |
+| `input`   | no         | Paths to files whose contents are prepended to the child's prompt. One child per path |
+| `id`      | for cancel | The child to stop, as returned by `start` or `list`                                   |
 
 ```
 consult({ type: "review",
@@ -90,7 +92,9 @@ consult({ type: "review",
           task: "What is missing in this definition?" })
 ```
 
-One child per input, all in parallel, and the results come back in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
+`start` returns at once with `started: <id>` and lists what is running. One child per input, all in parallel, and each child finishes into its own message in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
+
+An unknown `action`, or `start` without a `type` and `task`, is refused with the usage.
 
 The file's contents are **prepended to the child's prompt**, not handed over as a separate document: the child sees one message, the payload first and the task after it. An empty file therefore adds nothing, and a child may read the payload as instructions.
 
@@ -98,9 +102,20 @@ The prompt reaches the child on stdin, not as an argument, so a task or payload 
 
 Each input's block is the child's text, then `ref:` when it wrote something, then one `[consult]` line with the model that ran and the spend. The model is there because everything else about the run lives in the tool's `details`, which the calling agent never sees.
 
-## Cancelling
+## Background and stopping
 
-Cancelling the call (Esc) propagates through `AbortSignal`, so the child is killed and its worktree is removed. Ctrl+C is not dependably delivered to the child, so a hard interrupt can leave a worktree behind; `git worktree prune` clears the registration.
+`consult` starts the child and returns at once with `started: <id>`. The parent does not wait: it keeps working while the child runs. When the child finishes, its text (then `ref:` when it wrote something, then the `[consult]` line) arrives as a message, and that message starts the next turn.
+
+**Esc does not stop a child.** The tool call has already returned, so there is no call left to cancel. Ctrl+C is not dependably delivered to the child either, so a hard interrupt can leave a worktree behind; `git worktree prune` clears the registration.
+
+There are two faces for stopping, and one implementation behind them:
+
+| Who       | How                                                                            |
+| --------- | ------------------------------------------------------------------------------ |
+| The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one |
+| The agent | the `consult` tool with `action: "list"` or `action: "cancel"` and an `id`     |
+
+An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
 ## Sound
 
@@ -123,11 +138,11 @@ ref_cleanup({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
 ## The code
 
 ```
-index.ts   the entry: registers the two tools, and nothing else
+index.ts   the entry: registers the tools and the two commands, and nothing else
 policy/    what a type is: reading types.json, validating it, resolving a type
 child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard
 run/       running a child: worktree, install, spawn, spend and commit; plus the ref logic
-tool/      the tool faces: parameters, progress, formatting and sound
+tool/      the tool faces and the running children: parameters, background and control, formatting and sound
 ```
 
 `run/git-env.ts` is a helper for the checks, not for the tools: it fixes the repository, config and `HOME` that a check's git writes to, so an inherited `GIT_*` cannot steer it.
@@ -138,6 +153,6 @@ tool/      the tool faces: parameters, progress, formatting and sound
 pnpm test:run .pi/extensions/consult
 ```
 
-`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. `run/refs.test.ts` covers listing and judging the refs without spawning git. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, and listing and stopping look at the running children. Spawning a real `pi` is not covered; the demonstrations do that.
 
 A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.

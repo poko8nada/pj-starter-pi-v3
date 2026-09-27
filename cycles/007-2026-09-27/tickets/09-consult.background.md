@@ -44,10 +44,10 @@ Acceptance:
 
 ### Findings
 
-- なし
+- `## Types` の `review` の出力は既に 60,000 だった（`types.json` の `limits.output` も 60,000）。直す対象が無かった。
 
 ### Unplanned
 
-- なし
+- `child/spec.test.ts` の `PARAMETERS` の検査（項目が `type` / `task` / `input` だけ）を `action` / `id` を含む形に直した。`pnpm test:run .pi/extensions/consult` を緑に保つため。上書きの口（role / tools / worktree）が戻っていないことは引き続き見ている。
 
 Commit:
