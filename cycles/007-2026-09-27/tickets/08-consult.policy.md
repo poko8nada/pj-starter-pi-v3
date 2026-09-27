@@ -42,4 +42,6 @@ Acceptance:
 
 - なし
 
-Commit:
+- 親: `form` の期待値を直した（チケットの `grep -c "60000\\|60,000"` は `research` の値も数えるので 2 になる。`types.json` の `review` の行を直接読む形にした）。`types.json:22` が `output: 60000`、README の `review` の行が 60,000 で一致
+
+Commit: 887a3ce（07 と同じコミット。`test` 23 件・`form` 通過）

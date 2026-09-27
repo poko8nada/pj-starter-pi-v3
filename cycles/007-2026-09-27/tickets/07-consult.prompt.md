@@ -49,4 +49,6 @@ Acceptance:
 
 - `.pi/extensions/consult/tool/consult.ts` の `runPi` 呼び出し（`task:` の上書きをやめ、`stdin:` を渡す）。チケットの `Files` には無いが、stdin 化に必須
 
-Commit:
+- 親の読み: `task` は `joinPrompt` → stdin で渡り、`buildPiArgs` は task を参照しない（確認）。残る穴: `policy.role` や `policy.tools` の値が `-` や `@` で始まると、同じ引数解析に食われ得る
+
+Commit: 887a3ce（07・08 が同じコミット。`test` 93 件・`read` 通過）
