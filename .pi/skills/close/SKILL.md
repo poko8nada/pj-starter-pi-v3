@@ -43,41 +43,49 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a `Carry over` line that went missing, a `Good` with no value
    - anything else belongs to the next cycle: the `Retro`'s `Carry over`
    - a hole is never fixed silently, and a frozen definition or plan is never rewritten to close it
-4. **Write the `Retro`**, in the definition, in its format: `Good`, `Bad`, `Carry over`.
+4. **The research.** Before the `Retro` is written: the reported holes are classified, and only what is decided to be acted on survives.
+   - collect: the tickets' `Findings`, and what this close itself found
+   - a line that was in focus is a hole in its own step: cut it as an `ex-` ticket and fix it; it is not classified here
+   - one child of type `research` per hole, run in parallel, answers two things, with sources
+     - is it common: independent reports (issues, PRs, docs, articles), two or three at least
+     - is there a standard remedy **in this setting** (a pre-commit hook, the owner's real tree), not in another one
+     - the queries come from the hole's mechanism, in English: `<mechanism> git hook test`, `<symptom> "working tree" repository`, `<tool> issue <symptom>`, `<mechanism> known limitation`
+     - it keeps the queries it used, so the owner can judge the search
+   - the cells say what happens next
+     - common, and a remedy: act: a job for the next cycle
+     - common, no remedy: discuss the impact; a high impact gets a second research pass for a method, then the decision
+     - rare, and a remedy: the weight of the implementation decides
+     - rare, no remedy: decided to ignore, and not written
+   - the owner and the parent settle this, before the `Retro`: the policy comes first
+5. **Write the `Retro`**, in the definition, in its format: `Good`, `Bad`, `Carry over`.
    - `Good`: what this cycle got right, with the value it was read from
      - a `Then` that holds, a `Verify` that passed: the value is the line that showed it
    - `Bad`: what went wrong, including what was left half-done
-   - `Carry over`: two sources, one list
-     - numbered from 1, across both sources
+   - `Carry over`: the holes decided to be acted on: the ones step 4 kept
+     - numbered from 1
+     - each line keeps its parts, its `From:` and its sources
      - the previous `Carry over`'s lines that are still open, copied as written
        - their own `From:` is kept
        - a line this cycle resolved is not copied: it is done
-     - this cycle's: every `Findings` line the tickets left, as it was written
-       - those take `From: <NNN>.<ticket>`
-       - first, re-check each line against the focus criteria of `work` step 9
-         - a line that was in focus is a hole in its own step: cut it as an `ex-` ticket and fix it, do not copy it
-     - `Unplanned` is not copied: its hole was closed in its step
      - copying is not shortening; shortening is how a hole gets lost
-     - the list is grouped: the `high` lines first, then the `low`, one heading each
-     - nothing is dropped for being `low`: the grouping is the order, not a filter
-5. **The owner.** Show them the `Retro`, before the review.
+6. **The owner.** Show them the `Retro`, before the review.
    - they are the only one who can judge `Good` and `Bad`
    - they are the last check on `Carry over`
      - a missing line comes back; a line the owner drops leaves a `Bad` line
    - a rejection sends you back to step 3
-6. **The `review` child**, with the checklist below.
+7. **The `review` child**, with the checklist below.
    - the `consult` tool, type `review`
    - it gets the definition, the tickets, and this checklist, in one call
    - a hole it finds goes to step 3: this step fixes only its own act
    - run the child again after those acts, up to three rounds
    - what is left after three rounds goes to the owner
    - no child, no close: a cycle is not closed without this review
-7. **Commit.** After the owner's yes and the review's last round.
+8. **Commit.** After the owner's yes and the review's last round.
    - that commit closes the cycle, and nothing about that cycle is edited afterwards
 
 ## The review's checklist
 
-The `review` child of step 6 gets this checklist, the definition and the tickets, and nothing else:
+The `review` child of step 7 gets this checklist, the definition and the tickets, and nothing else:
 
 - the owner has seen the `Retro` and agreed
 - every change since the owner's look answers their point

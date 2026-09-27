@@ -81,10 +81,10 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 9. **Write the `Notes`.** The two fields and their shape: `../tickets/references/format.md`.
    - in focus: a hole in a file the `Todo` or the plan's `Files` names, or in the behavior the `Acceptance` or the unit's `Then` states, or in a document, a comment or a test this change makes stale
      - fixed here, and written under `Unplanned`
-   - out of focus: everything else: `Findings`
-     - each line carries why it is out (which of the criteria it misses) and `priority: high|low`
-     - `high`: left alone, the next reader acts on a wrong premise, a flow breaks, a door opens that cannot be closed, or a failure reaches the owner
-     - `low`: the cost stops at tidying, wording or coverage
+   - out of focus, and the cost stops at tidying, wording or coverage: not written
+   - out of focus, anything else: `Findings`, in the shape the format gives
+     - a judgement call: report it, do not drop it
+     - at the `close`, the research decides whether to act
    - a child writes its own in its worktree, and they come back with the ref
    - the parent appends its own: the take or drop, and what its read found
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read.
