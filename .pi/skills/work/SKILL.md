@@ -59,6 +59,8 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a shared store, a cache, a global setting: the owner's permission first
    - what a child is allowed to do: ask it for the refusal text, not for a file
    - a `Verify` is not loosened after the fact: if it cannot be run, the step is not done
+   - a `Verify` that goes through `consult`, when the step changed `consult`'s own code: stop, and ask the owner to reload
+     - the session keeps the code it loaded, and that code is what runs the child
    - a `Verify` that fails on the merged tree is a hole in this step: fix it here
 8. **Read the diff.** From the commit the step started at, against the ticket and the unit.
    - the parent does this whether it wrote the change or a child did
@@ -77,7 +79,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
     - the tip is the last commit whose content the `Verify` judged
     - the parent writes it: the hash exists only after the commit
       - a child cannot commit: `git commit` needs an approval it has no UI for
-    - a step that changed nothing (a `.check` step): `Commit: なし`, with the reason in the `Notes`
+    - a step that changed nothing (a `.check` step): `Commit: なし`, with the reason in the parentheses on the same line
 11. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
