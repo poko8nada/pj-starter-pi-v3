@@ -1,7 +1,7 @@
 /**
- * consult —子 pi を type の policy でバックグラウンドで走らせ、完了したら結果をメッセージで親に渡す道具。
+ * consult_new —子 pi を type の policy でバックグラウンドで走らせ、完了したら結果をメッセージで親に渡す道具。
  *
- * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は type が持つ（`types.json`。git 管理外）。上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次の consult から効く。モデルが使えなければ、type の候補を順に試し、最後は親と同じ設定で走る。
+ * 呼び出し側が選べるのは type の名前だけ。モデル・ツール・環境・上限・役割は type が持つ（`types.json`。git 管理外）。上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次の consult_new から効く。モデルが使えなければ、type の候補を順に試し、最後は親と同じ設定で走る。
  *
  * 起こしたらすぐ `started: <id>` を返し、親は待たない。子ごとの完了で `pi.sendMessage` に本文を渡す。走っている子の一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
  *
@@ -44,7 +44,7 @@ import { compose, playSound, refLabel, result, usageLine } from './render.ts';
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 
-/** consult が使う ctx の面。cwd だけ見れば足りる（テストはこれをそのまま渡せる） */
+/** consult_new が使う ctx の面。cwd だけ見れば足りる（テストはこれをそのまま渡せる） */
 export interface ConsultContext {
   readonly cwd: string;
 }
@@ -97,7 +97,7 @@ type ExecuteArgs = [
 
 /** 知らない action や引数不足のときに添える使い方 */
 export const USAGE =
-  'consult: action is start (default), list, or cancel. start needs type and task; cancel needs id';
+  'consult_new: action is start (default), list, or cancel. start needs type and task; cancel needs id';
 
 interface StartAction {
   readonly action: 'start';
@@ -163,7 +163,7 @@ export interface Consultation {
   readonly labels: string[];
 }
 
-/** consult を最後まで走らせる。テストでは子を起こさない差し替えを渡す */
+/** consult_new を最後まで走らせる。テストでは子を起こさない差し替えを渡す */
 export type ConsultRunner = (
   ctx: ConsultContext,
   options: ConsultOptions,

@@ -12,15 +12,15 @@ export default function (pi: ExtensionAPI) {
   const consult = createRuntime(pi);
 
   pi.registerTool({
-    name: 'consult',
-    label: 'Consult',
+    name: 'consult_new',
+    label: 'Consult new',
     description:
       "Start a child pi in the background with the policy of a type (model, tools, environment, limits, role) and return its id at once. When the child finishes, its text is delivered as a message. The caller picks only the type; the child does not see this conversation. One child per input. An action of 'list' shows the running children, and 'cancel' stops one by id.",
     promptSnippet:
       'Start a background child pi with a type (research / review / trial / code); the result arrives as a message',
     promptGuidelines: [
-      'Use consult when a question is better answered without this conversation in view: reviewing your own work, getting a second opinion, or applying a role you were not given.',
-      'consult starts the child in the background and returns an id. Do not wait for it; the child text arrives later as a consult message. Use action list or cancel to see or stop the running children.',
+      'Use consult_new when a question is better answered without this conversation in view: reviewing your own work, getting a second opinion, or applying a role you were not given.',
+      'consult_new starts the child in the background and returns an id. Do not wait for it; the child text arrives later as a consult message. Use action list or cancel to see or stop the running children.',
       'The types and their limits live in .pi/extensions/consult/types.json. The caller cannot override them; to change the policy, edit that file.',
     ],
     parameters: PARAMETERS,
@@ -39,13 +39,13 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
-    name: 'ref_cleanup',
-    label: 'Ref cleanup',
+    name: 'consult_refs',
+    label: 'Consult refs',
     description:
       "List and delete the refs consult leaves behind. 'list' shows every consult/ ref with its hash; 'delete' removes one, and refuses anything that is not a consult/ ref. Nothing else in the repository is touched.",
     promptSnippet: 'List or delete the refs left by consult (only consult/ refs can be deleted)',
     promptGuidelines: [
-      'Use ref_cleanup after a consult child that wrote something: decide whether to take the ref in or discard it, then delete it in the same breath.',
+      'Use consult_refs after a consult child that wrote something: decide whether to take the ref in or discard it, then delete it in the same breath.',
       'A ref that is not a consult/ ref is never deleted by this tool.',
     ],
     parameters: REF_PARAMETERS,

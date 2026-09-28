@@ -1,5 +1,5 @@
 /**
- * ref_cleanup — `consult` の ref を一覧し、消す道具。
+ * consult_refs — `consult` の ref を一覧し、消す道具。
  *
  * 消す前に一覧を見せる（何が消えるかを先に言う）。消せるのは `consult/` で始まる ref だけ。
  * それ以外は理由つきで拒む。判断と解釈は `../run/refs.ts` が持ち、ここは道具の面だけ。

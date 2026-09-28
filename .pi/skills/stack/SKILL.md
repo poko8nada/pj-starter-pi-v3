@@ -26,7 +26,7 @@ Read that before writing anything.
    - the units this cycle marks `update`, `add` or `drop` are where it moves
 3. **Read the runtime and the language.** They are in the repository.
    - this comes first: the runtime bounds what can be put on it
-4. **Find the facts.** The `consult` tool, type `research`.
+4. **Find the facts.** The `consult_new` tool, type `research`.
    - what this kind of product is built with now, and what each piece costs
    - the units say what is needed: 買い物かごに入れる → a place to hold the state
    - ログインする → authentication; 一覧を表示する → the parts a screen is built from
@@ -47,7 +47,7 @@ Read that before writing anything.
 9. **The owner.** Show what was added, and what a trial reported.
    - a rejection sends you back to step 5
 10. **The `review` child**, with the checklist below:
-    - the `consult` tool, type `review`
+    - the `consult_new` tool, type `review`
     - it gets the definition and the previous cycle's definition, in one call
     - fix what comes back, and repeat until it is clean, up to three rounds
     - what is left after three rounds goes to the owner
@@ -98,11 +98,11 @@ Report findings only, each with its line, marked blocking or not.
 
 ## The trial child
 
-- the `consult` tool, type `trial`
+- the `consult_new` tool, type `trial`
 - it works in its own worktree, with the dependencies installed: this tree is not touched
 - what it writes stays in a ref: its report comes back, the files do not
 - a trial that fails is a result: it takes that candidate off the list
-- drop the ref with `ref_cleanup` when the report comes back, never by hand
+- drop the ref with `consult_refs` when the report comes back, never by hand
 - the package lands in the shared store on the owner's machine: ask first
 
 ## How not to write this

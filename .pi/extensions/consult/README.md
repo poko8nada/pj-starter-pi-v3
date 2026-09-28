@@ -8,10 +8,10 @@ The agent calls it directly: there is no script to run and no CLI, because a too
 
 The extension registers two tools.
 
-| Tool          | What it does                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| `consult`     | Starts a background child `pi` with a type's policy, and lists or stops the running ones.     |
-| `ref_cleanup` | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted. |
+| Tool           | What it does                                                                                  |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| `consult_new`  | Starts a background child `pi` with a type's policy, and lists or stops the running ones.     |
+| `consult_refs` | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted. |
 
 ## Types
 
@@ -88,7 +88,7 @@ Whatever has to reach the child reaches it as `task` or `input`. There is no way
 | `id`      | for cancel | The child to stop, as returned by `start` or `list`                                   |
 
 ```
-consult({ type: "review",
+consult_new({ type: "review",
           input: ["cycles/002-2026-09-22/definition.md"],
           task: "What is missing in this definition?" })
 ```
@@ -105,7 +105,7 @@ Each input's block is the child's text, then `ref:` when it wrote something, the
 
 ## Background and stopping
 
-`consult` starts the child and returns at once with `started: <id>`. The parent does not wait: it keeps working while the child runs. When the child finishes, its text (then `ref:` when it wrote something, then the `[consult]` line) arrives as a message, and that message starts the next turn.
+`consult_new` starts the child and returns at once with `started: <id>`. The parent does not wait: it keeps working while the child runs. When the child finishes, its text (then `ref:` when it wrote something, then the `[consult]` line) arrives as a message, and that message starts the next turn.
 
 **Esc does not stop a child.** The tool call has already returned, so there is no call left to cancel. Ctrl+C is not dependably delivered to the child either, so a hard interrupt can leave a worktree behind; `git worktree prune` clears the registration.
 
@@ -114,7 +114,7 @@ There are two faces for stopping, and one implementation behind them:
 | Who       | How                                                                            |
 | --------- | ------------------------------------------------------------------------------ |
 | The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one |
-| The agent | the `consult` tool with `action: "list"` or `action: "cancel"` and an `id`     |
+| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id` |
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
@@ -122,7 +122,7 @@ An unknown id is refused with a reason, and nothing is stopped. A stopped child 
 
 Plays `Tink` at the start and at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it. Nothing fails if `afplay` is missing.
 
-## ref_cleanup
+## consult_refs
 
 | Parameter | Required   | Meaning                                          |
 | --------- | ---------- | ------------------------------------------------ |
@@ -130,8 +130,8 @@ Plays `Tink` at the start and at the end. It is a signal for the person at the k
 | `name`    | for delete | The ref to delete. It must start with `consult/` |
 
 ```
-ref_cleanup({ action: "list" })
-ref_cleanup({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
+consult_refs({ action: "list" })
+consult_refs({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
 ```
 
 `list` returns every `consult/` ref with its hash, and nothing else. `delete` removes one ref, and refuses any name that does not start with `consult/` — the rest of the repository is never touched. The name convention is documented under **Taking the ref**.

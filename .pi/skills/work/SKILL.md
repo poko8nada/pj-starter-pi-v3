@@ -36,7 +36,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 - only after the unit ends: the commit and the unit review (step 11)
   - nothing is committed or reviewed before the owner has kept the work
 
-2. **Decide who does the work.** The parent, or a `consult` child of type `code`.
+2. **Decide who does the work.** The parent, or a `consult_new` child of type `code`.
    - the axis: how many units the definition holds, and how many tickets this cycle has
    - three units or fewer and five tickets or fewer: the parent does it, a round trip costs more
    - 7 units: a child, however many tickets the cycle has
@@ -53,7 +53,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a ticket that changes this skill comes before the tickets whose work it carries
    - several steps to one child: one call, one ref, and both tickets point at the same unit commit (written at step 11)
    - grouping steps that are verified apart turns the closure into a guess
-5. **Hand the work over.** The `consult` tool, a child of type `code`.
+5. **Hand the work over.** The `consult_new` tool, a child of type `code`.
    - it gets the ticket, and the `Notes` it fills
      - a child does not read this skill: the ticket is what it knows
    - a child starts from step 3's ref, or from `HEAD`
@@ -74,7 +74,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 7. **Run the `Verify`.** On the parent's tree, and read the values, not the exit code.
    - the types, and what each block holds: `../plan/references/format.md`
    - the shape of the block, and its pass line: `../tickets/references/format.md`
-   - a `read` or a `use`: one `consult` child, of the type the block names
+   - a `read` or a `use`: one `consult_new` child, of the type the block names
      - the block names the child (`review`), the document, and what it reports: `read` is the verify type, not the child's name
      - the document goes in `input`, the tool's argument: the child is a reading type, and it is not asked to write
      - the report the block names goes in the `task`: the child gets the document and the question
@@ -83,12 +83,12 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - a shared store, a cache, a global setting: the owner's permission first
    - what a child is allowed to do: ask it for the refusal text, not for a file
    - a `Verify` is not loosened after the fact: if it cannot be run, the step is not done
-   - a `Verify` that goes through `consult`, when the step changed `consult`'s own code: stop, and ask the owner to reload
+   - a `Verify` that goes through `consult_new`, when the step changed `consult`'s own code: stop, and ask the owner to reload
      - the session keeps the code it loaded, and that code is what runs the child
    - a `Verify` that fails on the merged tree is a hole in this step: fix it here
 8. **Read the impact.** From the commit the step started at, against the ticket and the unit.
    - the parent does this whether it wrote the change or a child did
-   - the impact child: a `consult` child of type `review`, with the ticket and this step's commit range
+   - the impact child: a `consult_new` child of type `review`, with the ticket and this step's commit range
      - it names what the change makes stale, by `file:line`: a document or a comment that now contradicts, a test still asserting the old behavior, a behavior that changed with no test on it
      - its reply is material: the parent sorts it in step 9
    - what to look for:
@@ -110,7 +110,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
     - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
 11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
-    - reviews the unit once, before its commit: a `consult` child of type `review`
+    - reviews the unit once, before its commit: a `consult_new` child of type `review`
       - it gets the unit's diff and the unit's `Then`, and nothing else
       - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
         - required, whatever else is picked: the owner has seen what this unit must answer (the plan's step and the ticket), and agreed; every change since their look answers the point they made. For an `in the loop` unit, the owner has also seen the unit's result at a step's stop
@@ -131,7 +131,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - the review, the squash, and the records commit, exactly as above
       - `<base>` is where that ticket's work started, and `--tickets` names it
       - `Commit:` names the squashed commit; the records are their own commit
-12. **Clean up the refs.** The `ref_cleanup` tool: list first, then delete, one at a time.
+12. **Clean up the refs.** The `consult_refs` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
     - do not delete a ref by hand: `git branch -D` is not the tool's job

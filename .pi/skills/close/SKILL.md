@@ -74,7 +74,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a missing line comes back; a line the owner drops leaves a `Bad` line
    - a rejection sends you back to step 3
 7. **The `review` child**, with the checklist below.
-   - the `consult` tool, type `review`
+   - the `consult_new` tool, type `review`
    - it gets the definition, the tickets, and this checklist, in one call
    - a hole it finds goes to step 3: this step fixes only its own act
    - run the child again after those acts, up to three rounds
