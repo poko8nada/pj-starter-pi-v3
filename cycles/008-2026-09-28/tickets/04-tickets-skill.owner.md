@@ -42,4 +42,4 @@ Owner: at the end
 - `.pi/skills/tickets/references/format.md:5`: `止まり方:` を日本語のまま残す例外を足した
   - なぜ: `The shape` に `止まり方:` を足すと「field names are English」と矛盾する。`止まり方:` は既存チケットと `work/SKILL.md` が使う名前で、英語にできない
 
-Commit:
+Commit: 2e24708 + 7494985（単位のレビューでの修正を含む。2e24708 = step 04 の子、7494985 = レビューの blocking（`ex-` の出どころ・レビューの観点）の修正）

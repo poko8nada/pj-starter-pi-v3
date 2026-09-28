@@ -36,4 +36,4 @@ Owner: at the end
 
 - なし
 
-Commit:
+Commit: c83173f + 5d79c90（c83173f = step 05 の子、5d79c90 = 影響読みの blocking 2 件の修正）
