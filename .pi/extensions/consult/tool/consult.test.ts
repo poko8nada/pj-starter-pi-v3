@@ -6,7 +6,7 @@
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createRuntime,
   USAGE,
@@ -20,10 +20,43 @@ import {
   type PiFace,
 } from './consult.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
+import {
+  SOUND_INTERVAL_MS,
+  isSoundEnabled,
+  isSoundRunning,
+  setPlayer,
+  setSoundEnabled,
+  stopSound,
+} from './sound.ts';
 
 // 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
 // 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
+
+// テストでは afplay を起動しない。鳴らす所を記録する物に差し替え、鳴った回数だけを見る。
+const beeps: string[] = [];
+setPlayer(() => {
+  beeps.push('tink');
+});
+
+beforeEach(() => {
+  beeps.length = 0;
+  setSoundEnabled(true);
+});
+
+afterEach(() => {
+  stopSound();
+  setSoundEnabled(true);
+});
+
+/** 背景の then / catch / finally を、偽のタイマーの下でも流す */
+async function settle(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 type CallParams = Parameters<ConsultRuntime['execute']>[1];
 
@@ -216,5 +249,97 @@ describe('知らない action', () => {
     const runtime = createRuntime(pi, run);
 
     await expect(call(runtime, { action: 'nope' })).rejects.toThrow(USAGE);
+  });
+});
+
+describe('音', () => {
+  it('子を 2 体走らせてもタイマーは 1 本 → 5 秒ごとに 1 音', async () => {
+    vi.useFakeTimers();
+    try {
+      const { pi } = fakePi();
+      const { run } = deferredRunner();
+      const runtime = createRuntime(pi, run);
+      await call(runtime, { type: 'research', task: 'a' });
+      await call(runtime, { type: 'review', task: 'b' });
+
+      expect(isSoundRunning()).toBe(true);
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
+      expect(beeps).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
+      expect(beeps).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('子が 0 体になる → タイマーが止まる', async () => {
+    vi.useFakeTimers();
+    try {
+      const { pi } = fakePi();
+      const { run, resolvers } = deferredRunner();
+      const runtime = createRuntime(pi, run);
+      await call(runtime, { type: 'code', task: 'a' });
+      expect(isSoundRunning()).toBe(true);
+
+      for (const resolve of resolvers) {
+        resolve({ text: 'done', details: {} });
+      }
+      await settle();
+
+      expect(runtime.children.size).toBe(0);
+      expect(isSoundRunning()).toBe(false);
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 2);
+      expect(beeps).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('setSoundEnabled(false) → 子が走っていても鳴らない', async () => {
+    vi.useFakeTimers();
+    try {
+      setSoundEnabled(false);
+      const { pi } = fakePi();
+      const { run } = deferredRunner();
+      const runtime = createRuntime(pi, run);
+      await call(runtime, { type: 'code', task: 'a' });
+
+      expect(isSoundRunning()).toBe(true);
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 3);
+      expect(beeps).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('子が 0 体のまま 5 秒経つ → 鳴らない', async () => {
+    vi.useFakeTimers();
+    try {
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 3);
+      expect(isSoundRunning()).toBe(false);
+      expect(beeps).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('/consult-sound → 状態を出し、on / off を切り替える', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const runtime = createRuntime(pi, run);
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.sound('', ctx);
+    expect(notices.at(-1)?.message).toContain('is on');
+    expect(isSoundEnabled()).toBe(true);
+
+    await runtime.commands.sound('off', ctx);
+    expect(isSoundEnabled()).toBe(false);
+
+    await runtime.commands.sound('on', ctx);
+    expect(isSoundEnabled()).toBe(true);
+
+    await runtime.commands.sound('nope', ctx);
+    expect(notices.at(-1)?.type).toBe('error');
   });
 });

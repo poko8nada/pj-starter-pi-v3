@@ -59,6 +59,6 @@ Acceptance:
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/README.md` の code 節にあった「the two commands」が、`/consult-sound` で 3 つになったのに合わせて古くなっていたので、「the commands」に直した
 
 Commit:

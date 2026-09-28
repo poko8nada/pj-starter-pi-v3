@@ -39,7 +39,8 @@ import {
   type ConsultOptions,
 } from '../child/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
-import { compose, playSound, refLabel, result, usageLine } from './render.ts';
+import { compose, refLabel, result, usageLine } from './render.ts';
+import { isSoundEnabled, setSoundEnabled, startSound, stopSound } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -394,7 +395,6 @@ async function consult(
   signal: AbortSignal,
 ): Promise<ConsultOutcome> {
   const { payloads, labels } = consultation;
-  playSound();
   const results = await runForInputs(payloads, (payload, index) => {
     // 「無言で、文脈なしの子を走らせない」（001 の規則）。中身が無い入力は子を起こさない。
     // 投げればこの入力だけが {ok: false, error} になり、他の入力はそのまま走る（runForInputs は allSettled）。
@@ -403,7 +403,6 @@ async function consult(
     }
     return runOneChild(ctx, options, { payload, index, signal });
   });
-  playSound();
 
   const lines: string[] = [];
   const details: Record<string, unknown>[] = [];
@@ -483,6 +482,9 @@ function runInBackground(state: RuntimeState, job: BackgroundJob): void {
     })
     .finally(() => {
       state.children.delete(job.child.id);
+      if (state.children.size === 0) {
+        stopSound();
+      }
     });
 }
 
@@ -505,6 +507,9 @@ function begin(
     controller: new AbortController(),
   };
   state.children.set(child.id, child);
+  if (state.children.size === 1) {
+    startSound();
+  }
   runInBackground(state, { ctx, options, consultation, child });
   const running = [...state.children.values()].map(describeChild).join('\n');
   return result(`started: ${child.id}\n\nrunning now:\n${running}`, {
@@ -534,7 +539,13 @@ export interface ConsultRuntime {
   commands: {
     status(args: string, ctx: CommandContext): Promise<void>;
     cancel(args: string, ctx: CommandContext): Promise<void>;
+    sound(args: string, ctx: CommandContext): Promise<void>;
   };
+}
+
+/** `/consult-sound` に出す 1 行。いま音が鳴るかと、切り替え方を示す */
+function soundStatus(): string {
+  return `consult sound is ${isSoundEnabled() ? 'on' : 'off'}. /consult-sound on|off`;
 }
 
 /**
@@ -563,6 +574,17 @@ export function createRuntime(pi: PiFace, run: ConsultRunner = consult): Consult
         }
         const outcome = control({ action: 'cancel', id }, state.children);
         ctx.ui.notify(outcome.text, outcome.details.cancelled === true ? 'info' : 'error');
+      },
+      sound: async (args, ctx) => {
+        const verb = args.trim().toLowerCase();
+        if (verb !== '' && verb !== 'on' && verb !== 'off') {
+          ctx.ui.notify('consult sound: usage /consult-sound on|off', 'error');
+          return;
+        }
+        if (verb !== '') {
+          setSoundEnabled(verb === 'on');
+        }
+        ctx.ui.notify(soundStatus(), 'info');
       },
     },
   };

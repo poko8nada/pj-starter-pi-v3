@@ -111,16 +111,18 @@ Each input's block is the child's text, then `ref:` when it wrote something, the
 
 There are two faces for stopping, and one implementation behind them:
 
-| Who       | How                                                                            |
-| --------- | ------------------------------------------------------------------------------ |
-| The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one |
-| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id` |
+| Who       | How                                                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one; `/consult-sound on\|off` turns the sound on or off |
+| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id`                                                     |
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
 ## Sound
 
-Plays `Tink` at the start and at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it. Nothing fails if `afplay` is missing.
+While at least one child is running, consult plays `Tink` **once every 5 seconds** — one timer and one sound, however many children are running. It stops when the last child finishes, and there is no sound at the start or at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it.
+
+The sound is **on by default, and the setting lasts for this session only** (it is not written to `types.json`). `/consult-sound on` and `/consult-sound off` turn it on and off, and `/consult-sound` with no argument reports the current state. Nothing fails if `afplay` is missing.
 
 ## consult_refs
 
@@ -139,11 +141,11 @@ consult_refs({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
 ## The code
 
 ```
-index.ts   the entry: registers the tools and the two commands, and nothing else
+index.ts   the entry: registers the tools and the commands, and nothing else
 policy/    what a type is: reading types.json, validating it, resolving a type
 child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard
 run/       running a child: worktree, install, spawn, spend and commit; plus the ref logic
-tool/      the tool faces and the running children: parameters, background and control, formatting and sound
+tool/      the tool faces and the running children: parameters, background and control, formatting, and the sound
 ```
 
 `run/git-env.ts` is a helper for the checks, not for the tools: it fixes the repository, config and `HOME` that a check's git writes to, so an inherited `GIT_*` cannot steer it.
@@ -154,6 +156,6 @@ tool/      the tool faces and the running children: parameters, background and c
 pnpm test:run .pi/extensions/consult
 ```
 
-`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, and listing and stopping look at the running children. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, and the commit and ref rules, plus one test that builds a real repository and worktree. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, listing and stopping look at the running children, and the sound starts and stops with the children. `tool/sound.test.ts` covers the sound itself with a replaced player and fake timers: one timer, one sound every 5 seconds, and nothing while it is off. Spawning a real `pi` is not covered; the demonstrations do that.
 
 A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.

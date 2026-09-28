@@ -38,6 +38,11 @@ export default function (pi: ExtensionAPI) {
     handler: (args, ctx) => consult.commands.cancel(args, ctx),
   });
 
+  pi.registerCommand('consult-sound', {
+    description: 'Turn the consult sound on or off (usage: /consult-sound on|off)',
+    handler: (args, ctx) => consult.commands.sound(args, ctx),
+  });
+
   pi.registerTool({
     name: 'consult_refs',
     label: 'Consult refs',

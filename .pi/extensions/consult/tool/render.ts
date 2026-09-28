@@ -1,25 +1,12 @@
 /**
- * consult の整形と音。
+ * consult の整形。
  *
- * 子が返したイベントと実行結果を、呼び出し側が読める 1 つのテキストにする。ref の名前もここで組む。音はユーザーへの合図で、鳴らなくても走行は続ける。
+ * 子が返したイベントと実行結果を、呼び出し側が読める 1 つのテキストにする。ref の名前もここで組む。
  */
 
-import { spawn } from 'node:child_process';
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../child/spec.ts';
 import type { RunResult } from '../run/run.ts';
-
-/** 開始と終了に鳴らす音。ユーザーへの合図で、エージェントの関心ではない */
-const SOUND_FILE = '/System/Library/Sounds/Tink.aiff';
-
-/** 鳴らない環境（afplay の無い OS、音の無い CI）でも走行は続ける */
-export function playSound(): void {
-  try {
-    spawn('afplay', [SOUND_FILE], { stdio: 'ignore', detached: true }).unref();
-  } catch {
-    // 音は補助。失敗しても本来の仕事を止めない。
-  }
-}
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
 export function result(
