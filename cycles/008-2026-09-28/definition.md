@@ -260,7 +260,17 @@ Changes: keep
 
 ### Good
 
+- 19 枚のチケットが全部閉じた — すべての step が `Verify`（`test` / `read` / `form`）と影響読みを通り、`Commit:` を持った。`.check` の 2 枚は `なし（何も変えない step）` のまま
+- 止まった step の道が書いてあるとおり動いた — 5 step が `Stopped` を書き（09・12・14・17・18）、親はどれも続けられた（09・12 は親がやり直し、14・17・18 はオブジェクトから救出）
+- レビューの子が、テストでは出ない物を当てた — 検証と影響読みで blocking が計 12 件。例えば「1 回目に `--continue` が付かない」「2 回目が中断を見ない」「README の表が two tools のまま」
+- 道具に、フローが要る部品が入った — `consult_resume`（`list` / `run` / `remove`）、worktree の外に置く停止の記録、拒否されたときに作業を残す再走
+
 ### Bad
+
+- 子が自分でコミットした step は ref が作られない — 14・17・18 の 3 連続で「変えた物が無い」と見え、worktree ごと消えた。毎回オブジェクトが残っていたので救えたが、保証はない
+- reload と走っている子でプロセスが落ちる — 1 回（14:08）。`deliver` が古い `pi` を使い、子の未コミットの作業が worktree ごと宙に浮いた
+- 親がやり直した step が 2 つ — 09 と 12（12 は 3 回かかった）。新しいモジュールを書く step にターン上限 60 は短く、どちらもフックにコミットを拒否された
+- 道具を agent が呼べないセッションがある — `consult_resume` と `consult_refs` は reload で登録されたが、走っている agent の道具一覧はセッションを開いた時のまま。最後の worktree と 13 本の ref は owner が消した
 
 ### Carry over
 
@@ -305,4 +315,12 @@ Changes: keep
    - Research:
    - Action: owner がフロー全体を見直す（書き直す）。私は案を出さず、その結果を待つ。材料として、このサイクルの実測（子の数・費用・詰まった所・重かった検査）を渡す
    - Basis: 008 の実測（子 40 体以上、1 体 $0.001〜0.09）。`Carry over` 1（レビューが重い）と 3（並列前提でない）は、この見直しの一部
+
    - From: 008.work
+
+7. 子が自分でコミットすると、ref が作られず作業が失われる
+   - Status: `commitWorktree` は working tree の差分をコミットするので、子が自分で `git commit` していると「変えた物が無い」と見え、ref が作られない。そのまま `finally` が worktree を消すと、そのコミットは宙に浮く（008 で 14・17・18 の 3 連続。いずれもオブジェクトが残っていたので `git cherry-pick` で救えたが、保証はない）
+   - Research:
+   - Action: worktree に base より先のコミットがあれば、それを ref にする（子のコミットをそのまま `consult/<label>` に載せる）。無ければ今までどおり差分をコミットする
+   - Basis: 008 の 3 件。`run/run.ts` の `commitWorktree` は `git status --porcelain` が空なら `no-change` を返すので、子のコミットは見えない。3 件とも本文は `ref: (the child changed nothing)` で、親が `git cherry-pick` で救った
+   - From: 008.close
