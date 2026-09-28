@@ -19,6 +19,8 @@ import {
   type PiFace,
 } from './consult.ts';
 
+// 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
+// 一時物を作らないテストなので `test/tmp.ts` は通さない（書くテストは helper を通す）。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
 
 type CallParams = Parameters<ConsultRuntime['execute']>[1];

@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from './git-env.ts';
 import {
   commitWorktree,
@@ -22,6 +22,7 @@ import {
 import { finalTextFrom, parseEvents } from '../child/spec.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
+// ファイルを書くテストは `test/tmp.ts` の helper に置き場を寄せる。
 
 /** git を差し替えて、コミットと ref 作りの判断だけを試す */
 function recorder(overrides: Record<string, GitOutput> = {}) {
@@ -38,11 +39,7 @@ describe('readPayload', () => {
   let dir = '';
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'consult-test-'));
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    dir = tmpDir();
   });
 
   it('相対パスは cwd から読む', () => {
@@ -149,11 +146,7 @@ describe('readPayloads', () => {
   let dir = '';
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'consult-test-'));
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    dir = tmpDir();
   });
 
   it('1 つでも読めなければ投げる（子を起動する前に落とす）', () => {
@@ -168,11 +161,7 @@ describe('runForInputs', () => {
   let dir = '';
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'consult-test-'));
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    dir = tmpDir();
   });
 
   /** 喋った子の結果 */
@@ -237,11 +226,7 @@ describe('installCommand', () => {
   let dir = '';
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'consult-install-'));
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    dir = tmpDir();
   });
 
   it('`pnpm-lock.yaml` がある → `pnpm install --frozen-lockfile`', () => {
@@ -260,13 +245,8 @@ describe('installCommand', () => {
 });
 
 describe('commitWorktree', () => {
-  const repos: string[] = [];
-
   afterEach(() => {
     vi.unstubAllEnvs();
-    for (const repo of repos.splice(0)) {
-      rmSync(repo, { recursive: true, force: true });
-    }
   });
 
   const changed: GitOutput = { status: 0, stdout: ' M note.md\n', stderr: '' };
@@ -299,9 +279,8 @@ describe('commitWorktree', () => {
   });
 
   it('worktree を消してもブランチは残る（親のツリーも汚れない）', () => {
-    const repo = mkdtempSync(join(tmpdir(), 'consult-repo-'));
-    const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
-    repos.push(repo, home);
+    const repo = tmpDir();
+    const home = tmpDir();
     const run = (args: readonly string[]) => runGit(repo, home, args);
     run(['init', '--quiet']);
     run(['config', 'user.email', 'consult@example.com']);
@@ -322,10 +301,9 @@ describe('commitWorktree', () => {
 
   it('継承した GIT_* を無視する（外の repo を指していても、自分の repo に書く）', () => {
     // 外の repo の代役。ここが書き換わったら、検査は外に届いている。
-    const decoy = mkdtempSync(join(tmpdir(), 'consult-decoy-'));
-    const mine = mkdtempSync(join(tmpdir(), 'consult-repo-'));
-    const home = mkdtempSync(join(tmpdir(), 'consult-home-'));
-    repos.push(decoy, mine, home);
+    const decoy = tmpDir();
+    const mine = tmpDir();
+    const home = tmpDir();
     runGit(decoy, home, ['init', '--quiet']);
     runGit(mine, home, ['init', '--quiet']);
 

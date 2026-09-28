@@ -1,17 +1,19 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { tmpDir } from '../../../../test/tmp.ts';
 import { isSecretPath, judgeToolCall, unquote } from './guard.ts';
 
 /**
  * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
  * 存在しないパスでは判断の意味が変わる（それはそれで 1 つのケース）。
+ *
+ * 置き場は `test/tmp.ts` の helper。テストごとに作り直し、後始末は helper がする。
  */
 let dir = '';
 
-beforeAll(() => {
-  dir = mkdtempSync(join(tmpdir(), 'child-guard-'));
+beforeEach(() => {
+  dir = tmpDir();
   mkdirSync(join(dir, 'sub/dir'), { recursive: true });
   mkdirSync(join(dir, 'keys'), { recursive: true });
   mkdirSync(join(dir, 'node_modules/react'), { recursive: true });
@@ -26,10 +28,6 @@ beforeAll(() => {
   writeFileSync(join(dir, 'id.key.bak'), 'x\n');
   writeFileSync(join(dir, 'node_modules/react/index.js'), 'x\n');
   symlinkSync(join(dir, '.env'), join(dir, 'link-to-env'));
-});
-
-afterAll(() => {
-  rmSync(dir, { recursive: true, force: true });
 });
 
 describe('isSecretPath', () => {

@@ -12,7 +12,7 @@ Owner: at the end
 - `test/tmp.ts`（add）
   - `withTmpDir`（または `tmpDir`）— `mkdtempSync(join(tmpdir(), 'pi-test-'))` で作り、テストの終わりに消す。doc に使い方を書く（何をする物か、どう呼ぶか、後始末は誰がするか）
 - `vitest.config.ts`
-  - `test/` を解決できるようにする（alias か `include` の調整）。不要と判断したら、`Unplanned` ではなく、なぜ触らないかをここ（この項）に書く
+  - 触らない。各テストは helper を相対パスで読む（`import { tmpDir } from '../../../../test/tmp.ts'`）。`test/` は root の下なので、vite も tsc も通常の解決で届く。`alias` にすると `tsconfig.json` の `paths` も要り、計画の `Files` に無いファイルが増える。`include` の調整も要らない（helper はテストではないので収集の対象外）
 - `.pi/extensions/consult/child/guard.test.ts`
   - 一時ファイルを helper に寄せる（本体に書かない）
 - `.pi/extensions/consult/policy/types.test.ts` / `.pi/extensions/consult/run/run.test.ts` / `.pi/extensions/consult/tool/consult.test.ts`

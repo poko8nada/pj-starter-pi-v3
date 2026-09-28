@@ -1,19 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { tmpDir } from '../../../../test/tmp.ts';
 import { BACKUP_TAG, execute, makeGit, main, parseArgs, planSquash } from './squash.mjs';
 
 // git を実際に打つ。書き込む先は毎回の一時ディレクトリ（自分の repo・config・HOME）に固定する。
-
-const repos: string[] = [];
-
-afterEach(() => {
-  for (const dir of repos.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
+// 置き場は `test/tmp.ts` の helper。後始末は helper がする。
 
 interface Repo {
   readonly dir: string;
@@ -46,8 +39,7 @@ function gitEnv(home: string): NodeJS.ProcessEnv {
 
 /** 試験用のリポジトリ。チケットのコミットの上に、step のコミットを数件置く */
 function makeRepo(overrides: { steps?: number } = {}): Repo {
-  const dir = mkdtempSync(join(tmpdir(), 'squash-'));
-  repos.push(dir);
+  const dir = tmpDir();
   const home = join(dir, 'home');
   mkdirSync(home, { recursive: true });
   const env = gitEnv(home);
