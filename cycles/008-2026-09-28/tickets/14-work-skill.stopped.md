@@ -29,6 +29,7 @@ Owner: at the end
 
 ### Unplanned
 
-- なし
+- `.pi/skills/work/SKILL.md:107`: 止まった子の `Notes` は ref ではなく、残った worktree に残る、と足した
+  - なぜ: チケットの `Todo` には無いが、step 09 の `Findings` が「107 行は ref 無し・worktree 残りで返る道を知らない（step 14 の担当）」と送っていた。step 14 はこのチケット
 
 Commit:

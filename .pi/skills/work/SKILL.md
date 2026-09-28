@@ -105,10 +105,19 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - a judgement call: report it, do not drop it
      - at the `close`, the research decides whether to act
    - a child writes its own in its worktree, and they come back with the ref
+     - a child that stopped comes back without a ref: what it wrote stays in the worktree it left
    - the parent appends its own: the take or drop, and what its read found
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read. For an `in the loop` unit, the owner's 残す comes first.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
     - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
+    - a step that stopped: the ticket is not closed, and its `Commit: なし（理由）` carries the stop
+      - write the reason in the ticket's `Stopped`: the six `../tickets/references/format.md` names — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left
+      - a child that stopped sends the reason in its reply, and the worktree it left holds it too (`consult_resume`'s `list` reads it); the parent writes the ticket
+      - read the reason, and pick one, before the flow moves on:
+        - (a) fix the instruction, and run the step again
+        - (b) `consult_resume` with a `research` child
+        - (c) `consult_resume` with a `code` child
+        - (d) leave the ticket open, and hand it to `close`
 11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
     - reviews the unit once, before its commit: a `consult_new` child of type `review`
       - it gets the unit's diff and the unit's `Then`, and nothing else
@@ -138,6 +147,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 13. **Report.** To the owner, once, when the cycle's work is done: this is the `at the end` unit's movement.
     - read the work again in full, not only the change: the lines around it as well
     - what changed, and how the whole flow reads now
+    - a step that stopped: report it, with the reason the ticket holds and the call it took (step 10)
     - stop here: the owner reads it, and the cycle goes to `close`
     - what you notice looking back: it may need fixing here, in the step that carries it
 
