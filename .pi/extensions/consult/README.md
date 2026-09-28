@@ -146,7 +146,7 @@ consult_refs({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
 index.ts   the entry: registers the tools and the commands, and nothing else
 policy/    what a type is: reading types.json, validating it, resolving a type
 child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard
-run/       running a child: worktree, install, spawn, spend and commit; plus the ref logic
+run/       running a child: worktree, install, spawn, spend and commit, the one more run after a stop or a rejection, what a stopped run leaves behind, and the ref logic
 tool/      the tool faces and the running children: parameters, background and control, formatting, and the sound
 ```
 
