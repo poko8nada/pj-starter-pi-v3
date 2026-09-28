@@ -51,9 +51,17 @@ Owner: at the end
 
 - なし
 
+- （親がやり直した。子が 2 回止まった後の 3 回目）
+  - `run/resume.ts`: `parseWorktreeList`（`git worktree list --porcelain`）/ `stoppedWorktrees`（`consult-XXXX/wt` の形を記録と一緒に拾う）/ `removeStopped`（worktree を外し、親ごと消す）
+  - `tool/resume.ts`: `list`（id・居場所・理由・変えたファイル）/ `run`（その worktree で `attemptAndCommit` を走らせ、既定で `--continue`。型は呼ぶ側）/ `remove`。id 無し・知らない id・型無し・知らない action は理由付きで断る
+  - `index.ts` に `consult_resume` を登録（説明と 3 つの guideline）
+  - 検査: `run/resume.test.ts`（実物の git と worktree で 6 件、macOS の symlink は実パスで比較）と `tool/resume.test.ts`（口の 6 件）。**`run` の道は本物の `pi` が要るので検査していない**（周辺は `retry.test.ts` と `spec.test.ts` が覆う）
+  - 未対応: `list` は「いま走っている子」を除外しない（`consult.ts` の `state.children` は worktree のパスを持たない）。走っている物は `consult_new` の `action: "list"` で見える
+
 ### Unplanned
 
-- なし
+- `run/resume.ts` と `tool/resume.ts` を新しく作った（チケットの `Todo` どおり）。`tool/consult.ts` / `tool/render.ts` の共通化はしていない（`compose` と `refLabel` を借りただけ）
+  - なぜ: 1 回目・2 回目の子が結果組み立ての共通化で行数に当たって失敗している。008 では借りる形にした（重複は残る）
 
 ### Stopped
 
