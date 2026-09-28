@@ -284,3 +284,10 @@ Changes: keep
    - Action: `work` と `tickets` の手順を、並列を前提に抜本的に書き直す（同時に走らせる条件、検証のタイミング、閉じ方、`Depends` との関係）
    - Basis: 008 の `work` 段で、依存の無い 3 step（`01` / `06` / `16`）を並列に流した。手順の側に並列の規則が無く、判断が親に残った
    - From: 008.work
+
+4. reload が、走っている子の完了通知でプロセスごと落とす
+   - Status: `consult` の `deliver`（`tool/consult.ts:471`）が、`createRuntime(pi)` で掴んだ古い `pi` を保持したまま `pi.sendMessage` を呼ぶ。reload のあと、走っていた子が終わるときに「This extension ctx is stale after session replacement or reload」で uncaughtException になり、pi が終了する（008 で実際に起きた。子 1 体の作業が worktree ごと宙に浮き、未コミットのまま取り出せなくなった）
+   - Research:
+   - Action: どちらかを決めて直す。(a) 拡張が reload 後に古い `pi` を捨てる（配送を譲る、または session 系のイベントで新しい `pi` を受け直す）。(b) 手順側で「子が 0 体のときだけ reload する」を `work` / `close` の規則に書く。私は (a) が本筋だと思う（規則で避けるより、落ちない形にする）
+   - Basis: 008 の crash（2026-09-28 14:08。`tool/consult.ts:471` の `deliver` → `pi.sendMessage`）。`docs/extensions.md` の「Do not use a captured pi or command ctx after ... `ctx.reload()`」。`work/SKILL.md:86` の reload の規則は「子が走っている間は reload するな」と言っていない
+   - From: 008.work

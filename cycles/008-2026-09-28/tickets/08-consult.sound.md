@@ -56,6 +56,15 @@ Acceptance:
 ### Findings
 
 - なし
+- （この step の実行中に起きた、別の穴）: 親プロセスが crash した。`work/SKILL.md` の指示で reload したあと、走っていた `review` の子（この step の影響読み）の完了通知で `deliver`（`tool/consult.ts:471`）が古い `pi` を使い、「This extension ctx is stale after session replacement or reload」で uncaughtException。未コミットの子の create の作業は worktree ごと宙に浮いた（`git worktree list` に `consult-ZH2ntR/wt` が残る）。詳細と直しの方向は定義の `Carry over` 4 本目に書いた。この step の変更（音）自体は、`test`・`read`・owner の `look` の 3 つとも通った
+
+- （影響読み `consult-2` の指摘と、親の修正）
+  - blocking（直した）: タイマーを止める口が子の `finally`（`size === 0`）の 1 か所だけで、`session_shutdown` が無かった → reload / セッション差し替えで古いインスタンスの timer が鳴り続ける。`index.ts` に `pi.on('session_shutdown', () => stopSound())` を足した
+  - 直した: `README.md:112` の「two faces for stopping」を「stopping a child」にし、停止の表から `/consult-sound` を外した（音の制御は停止ではない。Sound の節にある）
+  - 直した: `sound.test.ts:5` のコメント（「既定へ戻す」は `player` には当たらない）を正確にした
+  - 未対応: チケットの `Verify` の「4 ケース」は実際は 10 件（`sound.test.ts` 5 + `consult.test.ts` の音 5）。`sound.test.ts` の追加も `Unplanned` に無い
+  - 未対応: timer はモジュールに 1 本、子の数は runtime ごとの `state.children`。runtime が 2 つあると、先に 0 体になった側が止める（production は 1 つなので実害は薄い）
+  - 未対応: cancel は `controller.abort()` だけで `stopSound()` を呼ばない（runner が settle するまで鳴る）。この経路のテストは無い。`startSound` は 0→1 の遷移でしか呼ばれない
 
 ### Unplanned
 

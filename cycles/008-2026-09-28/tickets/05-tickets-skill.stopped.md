@@ -26,6 +26,11 @@ Owner: at the end
 ### Findings
 
 - なし
+- （影響読み `consult-4` の指摘と、親の修正）
+  - blocking（直した）: `work/SKILL.md:100` の「The two fields」が古い（`Notes` は `Stopped` で 3 つになった）→ 「The fields」に直した
+  - blocking（直した）: 止まった step の `Commit: なし（理由）` は、続きが通って commit できても `squash.mjs` が埋めない（空の `Commit:` しか埋めない）→ `format.md` に「続きが終わったら、理由は unit の commit の hash に置き換わる」を足した。`squash.mjs` 側が `なし（理由）` を書き換えるかは次のサイクルで見る
+  - 直した: `Stopped` の項目を、定義の unit 10 と同じ 6 つに揃えた（子の最後の本文、worktree の id を足した）。止まらなかった step ではこの節を書かない、も明記
+  - 未対応: 転記するのが誰かが未定（子の記録は worktree の外に道具が置くが、ticket に移す主体が無い）。`close` の checklist が `Stopped` を素通りさせる（step 17 の担当）。`Stopped` は凍った ticket に後から書くので、凍結の規則にその 1 行が無い（`Carry over` 2 本目）
 
 ### Unplanned
 
