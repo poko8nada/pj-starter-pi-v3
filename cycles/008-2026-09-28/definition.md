@@ -270,7 +270,7 @@ Changes: keep
 - 子が自分でコミットした step は ref が作られない — 14・17・18 の 3 連続で「変えた物が無い」と見え、worktree ごと消えた。毎回オブジェクトが残っていたので救えたが、保証はない
 - reload と走っている子でプロセスが落ちる — 1 回（14:08）。`deliver` が古い `pi` を使い、子の未コミットの作業が worktree ごと宙に浮いた
 - 親がやり直した step が 2 つ — 09 と 12（12 は 3 回かかった）。新しいモジュールを書く step にターン上限 60 は短く、どちらもフックにコミットを拒否された
-- 道具を agent が呼べないセッションがある — `consult_resume` と `consult_refs` は reload で登録されたが、走っている agent の道具一覧はセッションを開いた時のまま。最後の worktree と 13 本の ref は owner が消した
+- 道具を agent が呼べないセッションがある — `consult_resume` と `consult_refs` は reload で登録されたが、走っている agent の道具一覧はセッションを開いた時のまま。最後の worktree と 13 本の ref は owner が消した（Close の step 9 の担当。owner の call は「消す」。2026-09-28）
 
 ### Carry over
 
@@ -324,4 +324,18 @@ Changes: keep
    - Research:
    - Action: worktree に base より先のコミットがあれば、それを ref にする（子のコミットをそのまま `consult/<label>` に載せる）。無ければ今までどおり差分をコミットする
    - Basis: 008 の 3 件。`run/run.ts` の `commitWorktree` は `git status --porcelain` が空なら `no-change` を返すので、子のコミットは見えない。3 件とも本文は `ref: (the child changed nothing)` で、親が `git cherry-pick` で救った
+   - From: 008.close
+
+8. 拒否の 2 回目で、worktree が残らなかった
+   - Status: step 12 の停止で、`attemptAndCommit` の「2 回目も通らなければ worktree を残す」道が働かず、worktree が消えた（`12-consult.resume.md:85`）。unit 2 の `Then`（「2 回目も通らなければ worktree が残り」）を割り得る。007 の `Carry over`（フック拒否で子の作業が消える）の残りでもある
+   - Research:
+   - Action: `attemptAndCommit` の `kept` の道を実物で 1 回確かめ、なぜ残らなかったかを追う（worktree を消す `finally` との順序、例外の道）
+   - Basis: `12-consult.resume.md:85` と `:86`（owner の call: 続ける）。008 で worktree が残った停止は 1 件も無い
+   - From: 008.close
+
+9. `definition` スキルの 3 つの穴（008 の unit 12 が `Carry over` 候補として残した物）
+   - Status: プレースホルダのドット無し（N-3）、`add` の名前の形と初回の定義の例外（N-5）、チェックリストの入れ子（N-6）。`16-definition-skill.units.md:50` が「`Carry over` 候補」と名指ししたまま、008 の `Carry over` に 1 本も無かった
+   - Research:
+   - Action: 3 つのうち直す物を決め、`definition/references/format.md` を直す
+   - Basis: `16-definition-skill.units.md:50`。008 の Close のレビュー（`consult-2`）が指摘
    - From: 008.close
