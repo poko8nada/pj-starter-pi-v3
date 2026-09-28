@@ -111,7 +111,7 @@ For each type, what the ticket holds:
   - an empty field is one that is not decided yet
 - every step has an `Owner:` line, `step 0` included: `in the loop` or `at the end`
   - a step takes the value of the unit in its name; `step 0` takes `at the end`
-    - a `<unit-id>.refactor` step takes the value of the unit in its name too (`at the end` in an `in the loop` unit's case: see the vertical-slice rule)
+    - a `<unit-id>.refactor` step takes the value of the unit in its name
   - the value is the owner's, proposed per unit when the plan is made
     - the default proposal is `at the end`
     - a value decided before the plan is written is used as it is
