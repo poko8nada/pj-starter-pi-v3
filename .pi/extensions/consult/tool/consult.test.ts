@@ -5,6 +5,7 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   createRuntime,
@@ -18,9 +19,10 @@ import {
   type ConsultSendOptions,
   type PiFace,
 } from './consult.ts';
+import { tmpDir } from '../../../../test/tmp.ts';
 
 // 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
-// 一時物を作らないテストなので `test/tmp.ts` は通さない（書くテストは helper を通す）。
+// 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
 
 type CallParams = Parameters<ConsultRuntime['execute']>[1];
@@ -110,7 +112,7 @@ describe('start', () => {
     const runtime = createRuntime(pi, run);
 
     await expect(
-      call(runtime, { type: 'review', task: 'x', input: ['missing.md'] }),
+      call(runtime, { type: 'review', task: 'x', input: [join(tmpDir(), 'missing.md')] }),
     ).rejects.toThrow(/could not read the input file/);
     expect(signals).toHaveLength(0);
     expect(runtime.children.size).toBe(0);
