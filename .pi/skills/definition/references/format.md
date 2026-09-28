@@ -85,6 +85,7 @@ The users therefore differ from product to product.
   - the test: can the `Who` finish it there and see a result?
     - if another unit is needed before a result shows, it is too big
     - if the `Who` cannot tell it from the unit next to it, it is too small
+  - （下の 3 つは別の製品（買い物かご）の例。granularity の見方だけを示す）
   - `カートに入れる` is a unit
   - `買い物ができる` is three units
   - `ボタンを押す` is a part of a unit
@@ -96,10 +97,9 @@ The users therefore differ from product to product.
   - one meaning for every reader
   - values and the check belong to the plan
   - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
-- A unit is a real thing. For this product that is an extension, a skill, a gate or a document
-  - the `カートに入れる` example above shows the granularity: one action, one result
-  - a function is not a unit: it is written `ユニット名.機能`, inside the unit it belongs to
-- The name is `ユニット名.機能`: the unit is the real thing, and the function is what it does
+- A unit is a real thing. For this product, that is an extension, a skill, a gate or a document (the smallest thing the `Who` can use)
+  - a function is not a unit: a change to one is written `ユニット名.機能`, inside the unit it belongs to
+- The name of a unit that moves is `ユニット名.機能`; a unit that stays keeps its name, and a name leaves the list only by a `drop`
 - A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
 
 ## Markers
