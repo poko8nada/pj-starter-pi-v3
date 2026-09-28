@@ -197,6 +197,26 @@ describe('execute', () => {
   });
 });
 
+describe('渡されたハッシュの形', () => {
+  it('短いハッシュを渡すと 1 コミットにまとまる', () => {
+    const repo = makeRepo();
+    const done = execute(makeGit(repo.dir), options(repo));
+
+    expect(done.squash).toMatch(/^[0-9a-f]{7,}$/);
+    // チケットのコミット + まとめた 1 本
+    expect(repo.git(['log', '--format=%h']).stdout.trim().split('\n')).toHaveLength(2);
+  });
+
+  it('フルのハッシュを渡しても同じように 1 コミットにまとまる', () => {
+    const repo = makeRepo();
+    const full = repo.hashes.map((hash) => repo.git(['rev-parse', hash]).stdout.trim());
+    const done = execute(makeGit(repo.dir), { ...options(repo), hashes: full });
+
+    expect(done.squash).toMatch(/^[0-9a-f]{7,}$/);
+    expect(repo.git(['log', '--format=%h']).stdout.trim().split('\n')).toHaveLength(2);
+  });
+});
+
 describe('backup tag', () => {
   it('2 回続けて run してもタグは 1 本で、直近の書き換え前を指す', () => {
     const repo = makeRepo();

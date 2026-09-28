@@ -103,6 +103,16 @@ export function commitsInRange(run, base) {
 }
 
 /**
+ * 渡されたハッシュを、git が一覧に使う形（短縮）へ揃える。
+ * 短い形もフルの形も受ける（`rev-parse` がどちらも解決する）。
+ */
+function abbreviateHashes(run, hashes) {
+  return hashes.map((hash) =>
+    must(run, ['rev-parse', '--short', hash], `ハッシュが引けない（${hash}）`).trim(),
+  );
+}
+
+/**
  * 予定を組む。何も変えない
  *
  * @param {(args: string[]) => { status: number, stdout: string, stderr: string }} run
@@ -114,13 +124,16 @@ export function planSquash(run, { base, hashes, cycleDir, tickets = [] }) {
   if (range.length === 0) {
     throw new Error(`潰す対象が 0 件（${base}..HEAD が空）`);
   }
-  if (range.join(' ') !== hashes.join(' ')) {
+  // 渡されたハッシュは短い形もフルの形もありうる。1 回だけ git の形（短縮）に揃え、
+  // 一覧との照合と HEAD との照合の両方で同じ物を使う。
+  const abbreviated = abbreviateHashes(run, hashes);
+  if (range.join(' ') !== abbreviated.join(' ')) {
     throw new Error(
-      `一覧が base..HEAD と違う\n  base..HEAD: ${range.join(' ')}\n  引数:       ${hashes.join(' ')}`,
+      `一覧が base..HEAD と違う\n  base..HEAD: ${range.join(' ')}\n  引数:       ${abbreviated.join(' ')}`,
     );
   }
-  if (head !== hashes.at(-1)) {
-    throw new Error(`HEAD（${head}）が一覧の最後（${hashes.at(-1)}）と違う`);
+  if (head !== abbreviated.at(-1)) {
+    throw new Error(`HEAD（${head}）が一覧の最後（${abbreviated.at(-1)}）と違う`);
   }
   const subjects = must(run, ['log', '--format=%s', `${base}..HEAD`], '題名が引けない')
     .trim()
@@ -132,7 +145,7 @@ export function planSquash(run, { base, hashes, cycleDir, tickets = [] }) {
     subject: first,
     body: rest.map((subject) => `- ${subject}`).join('\n'),
   };
-  return { range, subjects, message, tickets: planTickets(cycleDir, hashes, tickets) };
+  return { range, subjects, message, tickets: planTickets(cycleDir, abbreviated, tickets) };
 }
 
 /**
