@@ -23,6 +23,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
 1. **Read the cycle.**
    - the definition: every unit's `Then`, and the `Retro`'s `Carry over`
    - every ticket's `Notes`: the `Findings` lines are the raw material for `Carry over`
+   - every ticket's state: a ticket with no `Commit:`, or a `Stopped` section, is still open; it is a hole, and step 4 reads its reason
    - the `Retro`'s shape: see `../definition/references/format.md`
    - do not read the `Then`s from memory: the tree holds them
 2. **Run one integration across the units.**
@@ -36,6 +37,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
 3. **Send each hole where it belongs.** One place each, and the reason beside it.
    - a hole that breaks a `Then` belongs to this cycle: cut a ticket for it
      - the ticket is named `ex-<NN>-<step-name>.md`, with the next free number: that is `../tickets/references/format.md`'s `Names`
+     - a hole an open ticket already holds is not cut again: step 4 reads its `Stopped`, and the owner decides its fate there
      - the cycle waits for that work, and step 1 is where it resumes
      - the judgment came from the criteria, so cutting needs no new agreement
        - only a criterion that moves does
@@ -44,7 +46,13 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - anything else belongs to the next cycle: the `Retro`'s `Carry over`
    - a hole is never fixed silently, and a frozen definition or plan is never rewritten to close it
 4. **The research.** Before the `Retro` is written: the reported holes are classified, and only what is decided to be acted on survives.
-   - collect: the tickets' `Findings`, and what this close itself found
+   - collect: the tickets' `Findings`, the tickets that are still open, and what this close itself found
+   - a ticket that is still open (no `Commit:`, a `Stopped` section) is a hole, and it is not re-cut: read its `Stopped` reason
+     - the parent and the owner decide its fate, before the `Retro`: 続ける / 落とす / 持ち越す
+       - 続ける: the cycle waits (step 3): `work` takes it back, or `consult_resume` runs the child on in the same worktree; the worktree stays, and step 1 is where the close resumes
+       - 落とす: the ticket is dropped, the reason is one `Bad` line, and its worktree is removed at step 9
+       - 持ち越す: it is one `Carry over` line at step 5, copied with its `Stopped` reason, and its worktree is kept at step 9; a worktree the owner calls stale is removed too, and the line says so
+     - a `Stopped` reason with no worktree id leaves nothing to resume or remove: say so, and do not invent one
    - a line that was in focus is a hole in its own step: cut it as an `ex-` ticket and fix it; it is not classified here
    - one child of type `research` per hole, run in parallel, answers two things, with sources
      - is it common: independent reports (issues, PRs, docs, articles), two or three at least
@@ -82,6 +90,11 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - no child, no close: a cycle is not closed without this review
 8. **Commit.** After the owner's yes and the review's last round.
    - that commit closes the cycle, and nothing about that cycle is edited afterwards
+9. **The worktrees.** After the commit: what the stopped children left is removed or kept, as step 4 decided.
+   - `consult_resume` with `list`: every worktree `consult` left, with its id, its place, the reason it stopped, and the files the child changed
+   - `remove`, one at a time, by the id `list` gave: the worktree of a ticket decided 落とす, and any worktree no open ticket names (that one is a leftover from step 2, and a finding)
+   - a worktree decided 持ち越す stays; its id is already beside that ticket's `Stopped` reason
+   - the id comes from `list`, not from memory; a worktree a call kept is not removed here
 
 ## The review's checklist
 
@@ -91,6 +104,8 @@ The `review` child of step 7 gets this checklist, the definition and the tickets
 - every change since the owner's look answers their point
 - the units' `Then`s are satisfied by what is in the tree, and nothing is built that the definition does not promise
 - a hole written in the tickets' `Notes` is closed, or it is in the `Retro`'s `Carry over`
+- every open ticket is explained: the `Stopped` reason was read, and the owner's call (続ける / 落とす / 持ち越す) is written
+- every worktree `consult` left is explained: removed, or kept with the ticket and the call that keeps it
 
 Report findings only, each with its line, marked blocking or not.
 
@@ -101,3 +116,4 @@ Report findings only, each with its line, marked blocking or not.
 - Do not fix a hole silently, and do not write the fix into a frozen definition or plan
 - Do not close a cycle without the review, or before the owner has judged `Good` and `Bad`
 - Do not shorten `Carry over`: a line left out is a hole nobody will find again
+- Do not leave an open ticket or a stopped child's worktree unexplained: the ticket is a hole the owner calls (続ける / 落とす / 持ち越す), and its worktree follows that call
