@@ -63,6 +63,11 @@ Owner: at the end
     - （直した）`tool/resume.test.ts` に `resumeArgs` の検査（`--continue` と `--no-session` を渡す）を足し、テストの頭の説明が実態と違っていたので直した
     - 未対応（blocking として残す）: `run` を本物の `pi` で走らせる検査が無い（`runPi` を起こす所）。argv は `resumeArgs` で覆ったが、走らせて `ref` ができる所は未検査
     - 未対応: `list` はいま走っている子の worktree を除外しない（チケットの `Todo` が名指し）。`execute` が runtime を受け取らず、`state.children` も worktree のパスを持たないので、いまの形では口が無い
+    - （影響読み `consult-3` の指摘と、親の修正）
+      - blocking（直した）: `README.md:9` が「two tools」のままで、道具の表にも `consult_resume` が無かった → 「three tools」と表の 1 行を足した
+      - 直した: Tests 節に `run/resume.test.ts` と `tool/resume.test.ts` を足した。`README.md:133` の「記録から始まる」を実態（task があればそれ、無ければ止まった理由）に直した。`run/resume.ts` の頭のコメントが持っていない `run` を語っていたので直した
+      - 未対応（blocking として残す）: `list` が走っている子の worktree を除外しない。`remove` は生きた worktree も `--force` で消せるので、走っている子の作業を失い得る
+      - 未対応: `run` は `runWithFallback` を通さずモデル候補の 1 番目しか使わない（`consult_new` と形が違う）。打ち切りの回数を本文に出していない。ref 名の番号が常に 0 なので、同じ秒に 2 つ走らせると `git branch` が衝突して worktree が残る
 
 ### Unplanned
 

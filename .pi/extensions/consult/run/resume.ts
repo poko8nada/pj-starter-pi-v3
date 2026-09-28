@@ -2,8 +2,7 @@
  * 止まった子の worktree を扱う。
  *
  * `list` は `git worktree list --porcelain` から、consult が作った物だけを拾い、記録（`stopped.json`）を読む。
- * `run` はその worktree をそのまま `cwd` にして子を走らせる（`createWorktree` は呼ばない。依存は既に入っている）。
- * `remove` は worktree と、その親（記録もそこにある）を消す。
+ * `remove` は worktree と、その親（記録もそこにある）を消す。子を走らせる道（`run`）は `tool/resume.ts` にある。
  *
  * worktree の形は `run/run.ts` の `createWorktree` が決める: `<tmp>/consult-XXXX/wt`。親の名前が id。
  */

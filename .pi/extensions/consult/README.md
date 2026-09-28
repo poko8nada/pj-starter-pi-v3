@@ -6,12 +6,13 @@ The agent calls it directly: there is no script to run and no CLI, because a too
 
 ## Tools
 
-The extension registers two tools.
+The extension registers three tools.
 
-| Tool           | What it does                                                                                  |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| `consult_new`  | Starts a background child `pi` with a type's policy, and lists or stops the running ones.     |
-| `consult_refs` | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted. |
+| Tool             | What it does                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `consult_new`    | Starts a background child `pi` with a type's policy, and lists or stops the running ones.           |
+| `consult_resume` | Lists the worktrees a stopped child left, runs a child again in one, or deletes one and its record. |
+| `consult_refs`   | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted.       |
 
 ## Types
 
@@ -130,7 +131,7 @@ A child that stopped leaves its worktree behind (a limit it could not work past,
 | `run`    | runs a child again **in that worktree** (no new worktree, no install), always passing `--continue`; the caller picks the type, so a look is `research` and a fix is `code` |
 | `remove` | deletes the worktree and its record                                                                                                                                        |
 
-`--continue` does not carry the conversation: children run with `--no-session`, so a session that ended is never resumed and the second child starts from the task and the record. What carries over is the worktree, its changes, and the git history in it.
+`--continue` does not carry the conversation: children run with `--no-session`, so a session that ended is never resumed, and the second child starts from the task you give it (or the reason it stopped, when you give none). What carries over is the worktree, its changes, and the git history in it.
 
 ## Sound
 
@@ -170,6 +171,6 @@ tool/      the tool faces and the running children: parameters, background and c
 pnpm test:run .pi/extensions/consult
 ```
 
-`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, the commit and ref rules, and the summing of runs, plus one test that builds a real repository and worktree. `run/retry.test.ts` covers the one more run after a limit stop or a rejected commit and the body it produces, using a real repository and a hook that rejects. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, listing and stopping look at the running children, and the sound starts and stops with the children. `tool/sound.test.ts` covers the sound itself with a replaced player and fake timers: one timer, one sound every 5 seconds, and nothing while it is off. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, the commit and ref rules, and the summing of runs, plus one test that builds a real repository and worktree. `run/retry.test.ts` covers the one more run after a limit stop or a rejected commit and the body it produces, using a real repository and a hook that rejects. `run/resume.test.ts` covers the list and the removal of the worktrees a stopped child left, with a real repository and a real worktree. `tool/resume.test.ts` covers the resume face: `list`, `remove` and the refusal paths, plus the argv the `run` builds. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, listing and stopping look at the running children, and the sound starts and stops with the children. `tool/sound.test.ts` covers the sound itself with a replaced player and fake timers: one timer, one sound every 5 seconds, and nothing while it is off. Spawning a real `pi` is not covered; the demonstrations do that.
 
 A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.
