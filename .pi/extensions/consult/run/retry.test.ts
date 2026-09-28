@@ -70,10 +70,17 @@ describe('attemptAndCommit', () => {
     });
     expect(outcome.attempts).toBe(2);
     expect(outcome.work.kind).toBe('committed');
+    expect(outcome.run.stdout).toBe('fixed');
     expect(notes[0]).toBeUndefined();
     expect(notes[1]).toContain('the hook said no');
     expect(outcome.kept).toBeUndefined();
     expect(existsSync(stoppedPath(worktree))).toBe(false);
+    // ref はリポジトリ側に作られる。親が取り込める形になっている
+    const refs = execFileSync('git', ['branch', '--list', 'consult/code-1'], {
+      cwd: worktree.dir,
+      encoding: 'utf8',
+    });
+    expect(refs).toContain('consult/code-1');
   });
 
   it('2 回とも拒否されたら worktree を残し、記録を worktree の外に置く', async () => {
@@ -89,11 +96,34 @@ describe('attemptAndCommit', () => {
     expect(outcome.attempts).toBe(2);
     expect(outcome.work.kind).toBe('failed');
     expect(outcome.kept).toBe(worktree.dir);
+    expect(outcome.run.stdout).toBe('tried');
+    expect(outcome.stoppedAt).toBeDefined();
     expect(existsSync(worktree.dir)).toBe(true);
     expect(existsSync(join(worktree.parent, 'stopped.json'))).toBe(true);
     const record = readFileSync(stoppedPath(worktree), 'utf8');
     expect(record).toContain('always no');
     expect(record).toContain('work.txt');
+  });
+
+  it('中断されていれば、拒否されても 2 回目は走らない', async () => {
+    hook('echo "no" >&2; exit 1');
+    const controller = new AbortController();
+    controller.abort();
+    let calls = 0;
+    const outcome = await attemptAndCommit({
+      label: 'code-1',
+      worktree,
+      signal: controller.signal,
+      runOnce: () => {
+        calls += 1;
+        writeFileSync(join(worktree.dir, 'work.txt'), 'two\n', 'utf8');
+        return Promise.resolve(result('aborted child'));
+      },
+    });
+    expect(calls).toBe(1);
+    expect(outcome.attempts).toBe(1);
+    expect(outcome.work.kind).toBe('failed');
+    expect(outcome.kept).toBe(worktree.dir);
   });
 
   it('変えた物が無ければ 1 回で終わる', async () => {

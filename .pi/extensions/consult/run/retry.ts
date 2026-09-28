@@ -17,6 +17,8 @@ import { writeStopped } from './stopped.ts';
 /** 上限。拒否に対する再走は 1 回だけ */
 const MAX_ATTEMPTS = 2;
 
+const aborted = (signal: AbortSignal | undefined): boolean => signal?.aborted === true;
+
 /** 2 回目の子に渡す続きの指示。フックの出力をそのまま見せる */
 export function continuation(reason: string): string {
   return [
@@ -42,14 +44,16 @@ export interface RetryOutcome {
 export async function attemptAndCommit(options: {
   readonly label: string;
   readonly worktree: Worktree;
+  /** 中断の口。既に中断されていれば、再走はしない */
+  readonly signal?: AbortSignal;
   readonly runOnce: (continuation: string | undefined) => Promise<RunResult>;
 }): Promise<RetryOutcome> {
   const git = worktreeGit(options.worktree);
   let run = await options.runOnce(undefined);
   let work = commitWorktree(options.label, git);
   let attempts = 1;
-  // 拒否への再走は 1 回だけ（上限 2）。上限が 2 なので、ループではなく分岐 1 つで書く。
-  if (work.kind === 'failed' && attempts < MAX_ATTEMPTS) {
+  // 拒否への再走は 1 回だけ（上限 2）。中断が来ていれば走らせない（同じ AbortController なので、走らせても止まる）。
+  if (!aborted(options.signal) && work.kind === 'failed' && attempts < MAX_ATTEMPTS) {
     attempts += 1;
     run = await options.runOnce(continuation(work.error));
     work = commitWorktree(options.label, git);

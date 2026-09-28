@@ -112,6 +112,7 @@ export async function runOneChild(
         : await attemptAndCommit({
             label: refLabel(options.type, index),
             worktree: prepared.worktree,
+            ...(signal === undefined ? {} : { signal }),
             runOnce,
           });
     keepsWorktree = retry?.kept !== undefined;

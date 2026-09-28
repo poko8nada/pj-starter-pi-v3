@@ -371,7 +371,9 @@ export function runPi(options: RunOptions): Promise<RunResult> {
 
     // 中断が既に来ていれば即座に止める。来たら子を殺す。
     if (options.signal?.aborted === true) {
+      // 既に中断されている（再走のときなど）。spawn 済みの子をここで殺す
       state.aborted = true;
+      killChild(child);
     } else {
       options.signal?.addEventListener('abort', onAbort, { once: true });
     }

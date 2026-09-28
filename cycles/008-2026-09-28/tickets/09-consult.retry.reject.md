@@ -48,6 +48,13 @@ Owner: at the end
   - 子が書いた `run/retry.ts` / `run/stopped.ts` 相当はやり直しで書き直した
   - 未対応: `readStopped` を読む道（`consult_resume` の `list`）は step 12 で作るので、いまは書いた記録を読む利用者がいない
 
+- （`read` の検証 `consult-8` の指摘と、親の修正）
+  - blocking（直した）: 2 回目の再走が中断を見ない。`runPi` は「既に aborted な signal」のとき子を殺さないので、1 回目を中断→拒否→2 回目は最後まで走り得る。`run/run.ts:373` で spawn 済みの子を殺し、`attemptAndCommit` は中断済みなら再走しない（`signal` を渡す）。テストも足した
+  - （直した）`Verify` の `test` の 1・2 行目に assertion を足した（子の最後の本文、時刻、`ref` が本当に在ること）
+  - 未対応: `Verify` の 4 行目（残った worktree が `git worktree list` に出る）— このテストのリポジトリは `git init` 直下で worktree ではないので、確かめるには本物の `git worktree add` が要る
+  - 未対応（送り）: `Verify` の 5 行目（子が 0 体のまま `--continue` が失敗する → 新しい会話で走る）は step 12（`consult.resume`）が持つフォールバックの話なので、step 09 の `Verify` からは外したい
+  - 未対応: `Verify` の `test` の 3 行目（`consult.test.ts` の cancel）は 2 回目の再走を見ていない。`retry.test.ts` の「中断されていれば再走しない」が新しい
+
 ### Unplanned
 
 - `run/child.ts` を新しく作った（`prepare` と `runOneChild` を `tool/consult.ts` から移した）。`consult.ts` の行数上限のため。動きは変えていない
