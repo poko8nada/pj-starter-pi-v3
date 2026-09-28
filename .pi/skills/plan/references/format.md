@@ -22,7 +22,7 @@ Section and field names are English; the content is Japanese.
 - Owner: in the loop / at the end
 - What:
   - いまの 1 行 → それはどうなるか
-- 見せ方: `in the loop` のときだけ。何を 1 つ見せるか（起動する・画面を撮る・差分を見せる）
+- Show: `in the loop` のときだけ。何を 1 つ見せるか（起動する・画面を撮る・差分を見せる）
 - Depends: 何を待つか
 - Action: build / verify
 - Files: 触るファイル。テストは書かない。調べた依存先（この step が変える物を語っている文書・コメント・テスト）も入れる
@@ -32,7 +32,7 @@ Section and field names are English; the content is Japanese.
 
 - Owner: in the loop / at the end
 - What: 単位の `Then` を全部、1 回で確かめる
-- 見せ方: `in the loop` のときだけ、何を 1 つ見せるか
+- Show: `in the loop` のときだけ、何を 1 つ見せるか
 - Depends: その単位の最後の step
 - Action: verify
 - Files: なし
@@ -44,7 +44,7 @@ Section and field names are English; the content is Japanese.
 - Why: このビルドで、構造がどう悪くなるか（1 行）
 - What:
   - `Why` の 1 行 → 既存をどう直すか
-- 見せ方: `in the loop` のときだけ、何を 1 つ見せるか
+- Show: `in the loop` のときだけ、何を 1 つ見せるか
 - Depends: 原因になった step
 - Action: build
 - Files: 直すファイル（既存）
@@ -123,7 +123,7 @@ For each type, what the ticket holds:
   - the number of the definition's lines is not a relation
     - a reader of this plan does not open the definition
   - together, the steps of a unit carry every `Now` line of it, once
-- an `in the loop` step has a `見せ方` line, and an `at the end` step has none
+- an `in the loop` step has a `Show:` line, and an `at the end` step has none
   - it names the one thing to show, and how: 起動する・画面を撮る・差分を見せる
 - an `in the loop` unit is cut into vertical slices
   - 「見せられる大きさ」: 1 つの操作が端から端まで動き、owner が見て 1 つの判断（残す / 直す / 捨てる）を下せる。見せる物は 1 つ
