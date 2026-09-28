@@ -27,6 +27,12 @@ Owner: at the end
 ### Findings
 
 - なし
+- （影響読み `consult-34` の指摘。すべて非 blocking、未対応）
+  - 一番大きい穴: helper を名指しする規則は `work/SKILL.md` にしか無く、テストを実際に書くのは子。子に届く `tickets/SKILL.md` の test ケースを書く段には helper の名指しが無い（`work/SKILL.md:41`、`tickets/SKILL.md:26`）
+  - 守らせる口が無い: 強制は step 01 の 1 回きりの `git grep` だけで、hook にも check にもなっていない
+  - `work/SKILL.md:46` と `:100` の非対称（46 は `test/tmp.ts`, `tmpDir()`、100 は `test/tmp.ts` のみ）
+  - 生の `mkdtempSync` が非テストに 2 か所残る（`vitest.setup.ts:11,28`、`consult/run/run.ts:8,49`）。規則の唯一の抜け道
+  - `vitest.setup.test.ts:13` は `pi-test-home-` の prefix を固定しており、setup を helper に寄せると落ちる
 
 ### Unplanned
 
