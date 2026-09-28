@@ -38,6 +38,12 @@ Owner: at the end
 ### Findings
 
 - なし
+- （影響読み `consult-40` の指摘と、親の修正）
+  - blocking（直した）: `tool/consult.ts` のエラー文面が `consult:` のままで、`USAGE`（`consult_new:` に改名済み）と自己矛盾していた → 12 か所を `consult_new:` に揃えた（`c743fee`）
+  - 未対応: `tool/render.ts:43,46`、`tool/consult.ts:283`、`policy/types.ts:56` の `consult …` は、拡張名として読めば正しい。どこまでを道具名とみなすかがチケットに書いていない（owner の判断）。`[consult]` 行は README が書式として名指ししているのでそのまま
+  - 未対応（前からの矛盾、この step がその行を書き換えた）: `tool/consult.ts:4` の「`types.json` は git 管理外」は、README `:78` / `types.ts:180` / `types.test.ts:36`（コミット済み前提）と食い違う
+  - 未対応: 改名（登録名）はテストの無い振る舞いの変化。`index.ts` を import するテストは無い
+  - 未対応: チケット `:19` は `tool/refs.ts` の `description` / `promptGuidelines` を直せと言うが、それらは `index.ts:44-49` にある（Todo の指す場所が実物と違う）
 
 ### Unplanned
 
