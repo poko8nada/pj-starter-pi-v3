@@ -13,7 +13,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { buildPiArgs, parseEvents } from '../child/spec.ts';
+import { buildPiArgs, parseEvents, type ConsultOptions } from '../child/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { gitEnv, runPi } from '../run/run.ts';
 import { removeStopped, stoppedWorktrees, type StoppedWorktree } from '../run/resume.ts';
@@ -37,6 +37,15 @@ export const PARAMETERS = Type.Object({
 });
 
 export type Params = Static<typeof PARAMETERS>;
+
+/**
+ * 子に渡す argv。既定で `--continue`（同じ worktree の続き）。
+ *
+ * 子は `--no-session` で走るので、会話は引き継がれない。引き継ぐのは worktree と、その中の変更と履歴。
+ */
+export function resumeArgs(options: ConsultOptions): string[] {
+  return [...buildPiArgs(options), '--continue'];
+}
 
 interface Ctx {
   readonly cwd: string;
@@ -87,10 +96,11 @@ async function runResult(
     ...(signal === undefined ? {} : { signal }),
     runOnce: (note) =>
       runPi({
-        piArgs: [...buildPiArgs(options), ...(note === undefined ? [] : ['--continue'])],
+        piArgs: resumeArgs(options),
         stdin: note === undefined ? task : `${task}\n\n${note}`,
         cwd: entry.dir,
         env: gitEnv(),
+        ...(signal === undefined ? {} : { signal }),
         limits: policy.limits,
       }),
   });

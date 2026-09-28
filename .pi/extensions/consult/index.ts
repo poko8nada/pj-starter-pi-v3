@@ -54,7 +54,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_resume',
     label: 'Consult resume',
     description:
-      "Work with the worktrees a stopped child left behind: 'list' shows them with the reason they stopped, 'run' continues one in its own worktree (with `--continue`, so a session that exists is resumed), 'remove' deletes one and its record. The caller picks the type for run.",
+      "Work with the worktrees a stopped child left behind: 'list' shows them with the reason they stopped, 'run' continues one in its own worktree (always passing `--continue`; children run without a session, so what carries over is the worktree and its changes), 'remove' deletes one and its record. The caller picks the type for run.",
     promptSnippet: 'List, continue or remove the worktrees a stopped consult child left behind',
     promptGuidelines: [
       'Use consult_resume with action: "list" when a consult child stopped (a limit, a wrong turn, a crash): the worktree is still there, with the reason it stopped next to it.',
@@ -64,6 +64,7 @@ export default function (pi: ExtensionAPI) {
     parameters: RESUME_PARAMETERS,
     execute: resumeExecute,
   });
+
   pi.registerTool({
     name: 'consult_refs',
     label: 'Consult refs',

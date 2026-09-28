@@ -127,7 +127,7 @@ A child that stopped leaves its worktree behind (a limit it could not work past,
 | Action   | What it does                                                                                                                                                               |
 | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `list`   | every worktree consult left, with its id, its place, the reason it stopped, and the files the child changed                                                                |
-| `run`    | runs a child again **in that worktree** (no new worktree, no install) with `--continue` by default; the caller picks the type, so a look is `research` and a fix is `code` |
+| `run`    | runs a child again **in that worktree** (no new worktree, no install), always passing `--continue`; the caller picks the type, so a look is `research` and a fix is `code` |
 | `remove` | deletes the worktree and its record                                                                                                                                        |
 
 `--continue` does not carry the conversation: children run with `--no-session`, so a session that ended is never resumed and the second child starts from the task and the record. What carries over is the worktree, its changes, and the git history in it.

@@ -2,16 +2,21 @@
  * `consult_resume` の口。
  *
  * git は本物（`run/resume.test.ts` と同じ形の worktree を作る）。`run` は本物の `pi` を起こすので、ここでは
- * `list` と `remove` と、断る道を確かめる。`run` の中身（`--continue` の組み立てとコミット）は
- * `run/retry.test.ts` と `child/spec.test.ts` が覆っている。
+ *  `list` と `remove` と、断る道、`run` が渡す argv（`resumeArgs`）を確かめる。本物の `pi` を起こす所
+ * （`runPi`）は検査しない。
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { gitEnv } from '../run/run.ts';
-import { execute, type Params } from './resume.ts';
+import { loadTypes, resolveType } from '../policy/types.ts';
+import { execute, resumeArgs, type Params } from './resume.ts';
+
+/** この拡張の根（`tool/` の 1 つ上）。型は `types.json` から読む */
+const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const git = (cwd: string, args: readonly string[]): void => {
   execFileSync('git', [...args], { cwd, env: gitEnv() });
@@ -62,6 +67,13 @@ describe('consult_resume', () => {
     expect(text).toContain(parent);
     expect(text).toContain('the hook said no');
     expect(text).toContain('2 run(s)');
+  });
+
+  it('run は既定で --continue を渡す（子は --no-session なので会話は引き継がない）', () => {
+    const policy = resolveType(loadTypes(EXTENSION_DIR), 'code');
+    const args = resumeArgs({ type: policy.name, task: 'continue', policy });
+    expect(args).toContain('--continue');
+    expect(args).toContain('--no-session');
   });
 
   it('止まった物が無ければそう言う', async () => {

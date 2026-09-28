@@ -57,6 +57,12 @@ Owner: at the end
   - `index.ts` に `consult_resume` を登録（説明と 3 つの guideline）
   - 検査: `run/resume.test.ts`（実物の git と worktree で 6 件、macOS の symlink は実パスで比較）と `tool/resume.test.ts`（口の 6 件）。**`run` の道は本物の `pi` が要るので検査していない**（周辺は `retry.test.ts` と `spec.test.ts` が覆う）
   - 未対応: `list` は「いま走っている子」を除外しない（`consult.ts` の `state.children` は worktree のパスを持たない）。走っている物は `consult_new` の `action: "list"` で見える
+  - （検証 `consult-2` の指摘と、親の修正）
+    - blocking（直した）: `--continue` が再走のときしか付いていなかった（受入 1 行目・README・道具の説明は「既定」と言う）→ `resumeArgs` が常に付ける。`runPi` に `signal` を渡していなかったのも直した（中断で走っている子が殺されない）
+    - 修正: `README.md:130` と `index.ts:57` の「セッションが再開される」という書き方をやめ、「常に `--continue` を渡す。子は `--no-session` なので引き継ぐのは worktree とその変更」に直した
+    - （直した）`tool/resume.test.ts` に `resumeArgs` の検査（`--continue` と `--no-session` を渡す）を足し、テストの頭の説明が実態と違っていたので直した
+    - 未対応（blocking として残す）: `run` を本物の `pi` で走らせる検査が無い（`runPi` を起こす所）。argv は `resumeArgs` で覆ったが、走らせて `ref` ができる所は未検査
+    - 未対応: `list` はいま走っている子の worktree を除外しない（チケットの `Todo` が名指し）。`execute` が runtime を受け取らず、`state.children` も worktree のパスを持たないので、いまの形では口が無い
 
 ### Unplanned
 
