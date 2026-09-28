@@ -35,6 +35,9 @@ Read that before writing anything.
    - it gets the unit's tickets and the plan, in one call
    - fix what comes back, and repeat until it is clean, up to three rounds
 10. **After the last unit: commit.** The commit is the freeze mark.
+11. **A step that stopped: do not close it.** The ticket stays open, with the reason in `Stopped:`.
+    - the reason's shape is in `references/format.md`
+    - `Commit: なし（理由）`: the step's commit was not made, and the reason goes in the parentheses
 
 A fact the repository holds is looked up, not asked.
 
