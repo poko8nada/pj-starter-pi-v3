@@ -118,6 +118,8 @@ There are two faces for stopping a child, and one implementation behind them:
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
+A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If they reject it, consult runs the child once more **in the same worktree**, with `--continue` and the hook output as its task; if they reject it again, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it survives even if the worktree is removed later.
+
 ## Sound
 
 While at least one child is running, consult plays `Tink` **once every 5 seconds** — one timer and one sound, however many children are running. It stops when the last child finishes, and there is no sound at the start or at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it.
