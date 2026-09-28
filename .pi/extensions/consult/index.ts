@@ -7,6 +7,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { PARAMETERS, createRuntime } from './tool/consult.ts';
 import { stopSound } from './tool/sound.ts';
+import { PARAMETERS as RESUME_PARAMETERS, execute as resumeExecute } from './tool/resume.ts';
 import { PARAMETERS as REF_PARAMETERS, execute as refExecute } from './tool/refs.ts';
 
 export default function (pi: ExtensionAPI) {
@@ -49,6 +50,20 @@ export default function (pi: ExtensionAPI) {
     stopSound();
   });
 
+  pi.registerTool({
+    name: 'consult_resume',
+    label: 'Consult resume',
+    description:
+      "Work with the worktrees a stopped child left behind: 'list' shows them with the reason they stopped, 'run' continues one in its own worktree (with `--continue`, so a session that exists is resumed), 'remove' deletes one and its record. The caller picks the type for run.",
+    promptSnippet: 'List, continue or remove the worktrees a stopped consult child left behind',
+    promptGuidelines: [
+      'Use consult_resume with action: "list" when a consult child stopped (a limit, a wrong turn, a crash): the worktree is still there, with the reason it stopped next to it.',
+      'Use action: "run" with an id and a type to continue that work in place: the same worktree, the same changes, one more child. It commits the result like consult_new does.',
+      'Use action: "remove" when the left work is not wanted: the worktree and its record go away.',
+    ],
+    parameters: RESUME_PARAMETERS,
+    execute: resumeExecute,
+  });
   pi.registerTool({
     name: 'consult_refs',
     label: 'Consult refs',
