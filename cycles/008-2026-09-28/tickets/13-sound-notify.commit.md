@@ -51,9 +51,10 @@ Owner: in the loop
 ### Findings
 
 - なし
+- （owner の `look`）: 2026-09-28、コミット `0a4348f` で `Pop` が鳴るのを owner が確認した（鳴るのは `tool_execution_end` の `bash` 出力が `[main abc1234] …` の形のとき）。owner の判断は「残す」
 
 ### Unplanned
 
 - テストの差し替え口として `handleToolExecutionEnd` / `isCommitResult` / `PiPort` / `CtxPort` / `parseConfig` / `setPlayer` を export した（Todo は「差し替えられる形にする」までだった）
 
-Commit:
+Commit: cea0a3b（子の実装）
