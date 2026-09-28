@@ -5,19 +5,11 @@
  * （`.git/hooks/pre-commit`）で拒否を作る。
  */
 import { execFileSync } from 'node:child_process';
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { RunResult, Worktree } from './run.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { tmpDir } from '../../../../test/tmp.ts';
+import { gitEnv, type RunResult, type Worktree } from './run.ts';
 import { attemptAndCommit, continuation } from './retry.ts';
 import { stoppedPath } from './stopped.ts';
 
@@ -28,20 +20,19 @@ describe('attemptAndCommit', () => {
   let worktree: Worktree;
 
   beforeEach(() => {
-    parent = mkdtempSync(join(tmpdir(), 'consult-retry-'));
+    parent = tmpDir();
     const dir = join(parent, 'wt');
     mkdirSync(dir, { recursive: true });
-    execFileSync('git', ['init', '--quiet', dir]);
-    execFileSync('git', ['config', 'user.email', 'consult@example.com'], { cwd: dir });
-    execFileSync('git', ['config', 'user.name', 'consult'], { cwd: dir });
+    execFileSync('git', ['init', '--quiet', dir], { env: gitEnv() });
+    execFileSync('git', ['config', 'user.email', 'consult@example.com'], {
+      cwd: dir,
+      env: gitEnv(),
+    });
+    execFileSync('git', ['config', 'user.name', 'consult'], { cwd: dir, env: gitEnv() });
     writeFileSync(join(dir, 'work.txt'), 'one\n', 'utf8');
-    execFileSync('git', ['add', '-A'], { cwd: dir });
-    execFileSync('git', ['commit', '--quiet', '-m', 'base'], { cwd: dir });
+    execFileSync('git', ['add', '-A'], { cwd: dir, env: gitEnv() });
+    execFileSync('git', ['commit', '--quiet', '-m', 'base'], { cwd: dir, env: gitEnv() });
     worktree = { parent, dir, cwd: dir };
-  });
-
-  afterEach(() => {
-    rmSync(parent, { recursive: true, force: true });
   });
 
   const hook = (body: string): void => {
@@ -78,6 +69,7 @@ describe('attemptAndCommit', () => {
     // ref はリポジトリ側に作られる。親が取り込める形になっている
     const refs = execFileSync('git', ['branch', '--list', 'consult/code-1'], {
       cwd: worktree.dir,
+      env: gitEnv(),
       encoding: 'utf8',
     });
     expect(refs).toContain('consult/code-1');

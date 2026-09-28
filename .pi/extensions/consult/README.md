@@ -50,7 +50,7 @@ Uncommitted changes are invisible to the child, and anything it writes leaves wi
 
 ## Taking the ref
 
-When the child finishes, consult commits what it left behind and creates a branch `consult/<type>-<date>-<time>-<n>`. The commit runs the repository's own hooks, so **a ref means a commit that passed them**. Nothing is committed when the child changed nothing, and no ref is made when the hooks reject the commit (the failure is reported and the work is not kept).
+When the child finishes, consult commits what it left behind and creates a branch `consult/<type>-<date>-<time>-<n>`. The commit runs the repository's own hooks, so **a ref means a commit that passed them**. Nothing is committed when the child changed nothing. When the hooks reject the commit, the child is run once more in the same worktree with the hook output as its task, and the work is kept only if they reject it again.
 
 The parent decides what to do with the ref: cherry-pick it, take part of it, or drop it. consult never touches the parent's tree.
 
@@ -118,7 +118,7 @@ There are two faces for stopping a child, and one implementation behind them:
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
-A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If they reject it, consult runs the child once more **in the same worktree**, with `--continue` and the hook output as its task; if they reject it again, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it survives even if the worktree is removed later.
+A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If they reject it, consult runs the child once more **in the same worktree**, with `--continue` and the hook output as its task; if they reject it again, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it is still there while the worktree is.
 
 ## Sound
 

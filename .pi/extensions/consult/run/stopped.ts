@@ -35,7 +35,13 @@ export function readStopped(worktree: Worktree): StoppedRecord | undefined {
   if (!existsSync(path)) {
     return undefined;
   }
-  const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    // 途中で切れた記録。親を止めない
+    return undefined;
+  }
   if (typeof parsed !== 'object' || parsed === null) {
     return undefined;
   }

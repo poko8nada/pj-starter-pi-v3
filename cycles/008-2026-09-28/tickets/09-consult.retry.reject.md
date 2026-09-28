@@ -55,6 +55,16 @@ Owner: at the end
   - 未対応（送り）: `Verify` の 5 行目（子が 0 体のまま `--continue` が失敗する → 新しい会話で走る）は step 12（`consult.resume`）が持つフォールバックの話なので、step 09 の `Verify` からは外したい
   - 未対応: `Verify` の `test` の 3 行目（`consult.test.ts` の cancel）は 2 回目の再走を見ていない。`retry.test.ts` の「中断されていれば再走しない」が新しい
 
+- （影響読み `consult-9` の指摘と、親の修正）
+  - blocking（直した）: `README.md:53` が「拒否されたら作業は残らない」のままだった → 121 行と同じ（1 回だけ再走、2 回目で残す）に直した
+  - blocking（直した）: `retry.test.ts` が `mkdtempSync(join(tmpdir(), …))` と環境を継承した `execFileSync('git')` を使っていた（step 01 の規則に反する）→ 共有 helper `test/tmp.ts` の `tmpDir()` と `run.ts` の `gitEnv()` に直した
+  - 直した: `stopped.ts` の `JSON.parse` を try/catch で包んだ（途中で切れた記録で親を止めない、というコメントどおりに）
+  - 直した: `README.md:121` の「worktree を消しても記録は残る」は誤り（`removeWorktree` は親ごと消す）→ 「worktree が在る間は残る」に直した
+  - blocking（未対応・owner の判断が要る）: `child/spec.ts:64` の `--no-session` のせいで、pi は `--continue` を見ずに新しい会話で走る（`docs/sessions.md:52`）。つまり 2 回目の子が引き継ぐのはペイロード＋task＋フック出力だけ。「同じ worktree で `--continue`」は字面どおりで、step 12 が前提にしている「直前の会話を引き継ぐ」は成立しない。`--no-session` を外すか、会話の引き継ぎを諦めるかは決めていない
+  - 未対応: `README.md:149`（`run/` の説明）と `:161`（Tests の列挙）に `retry` / `stopped` / `child` が入っていない
+  - 未対応: `work/SKILL.md:107`（「子の記録は ref で戻る」）は ref 無し・worktree 残りで返る道を知らない（step 14 の担当）。`close/SKILL.md:34` の「残り物は finding」も同じ（step 15 の担当）
+  - 未対応: 親への本文の組み立て（`consult.ts:315-321` の `worktree kept:` 以下）を確かめるテストが無い。`kept` は id ではなくパス（step 12 の id の定義待ち）
+
 ### Unplanned
 
 - `run/child.ts` を新しく作った（`prepare` と `runOneChild` を `tool/consult.ts` から移した）。`consult.ts` の行数上限のため。動きは変えていない
