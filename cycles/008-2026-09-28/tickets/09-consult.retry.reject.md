@@ -60,7 +60,7 @@ Owner: at the end
   - blocking（直した）: `retry.test.ts` が `mkdtempSync(join(tmpdir(), …))` と環境を継承した `execFileSync('git')` を使っていた（step 01 の規則に反する）→ 共有 helper `test/tmp.ts` の `tmpDir()` と `run.ts` の `gitEnv()` に直した
   - 直した: `stopped.ts` の `JSON.parse` を try/catch で包んだ（途中で切れた記録で親を止めない、というコメントどおりに）
   - 直した: `README.md:121` の「worktree を消しても記録は残る」は誤り（`removeWorktree` は親ごと消す）→ 「worktree が在る間は残る」に直した
-  - blocking（未対応・owner の判断が要る）: `child/spec.ts:64` の `--no-session` のせいで、pi は `--continue` を見ずに新しい会話で走る（`docs/sessions.md:52`）。つまり 2 回目の子が引き継ぐのはペイロード＋task＋フック出力だけ。「同じ worktree で `--continue`」は字面どおりで、step 12 が前提にしている「直前の会話を引き継ぐ」は成立しない。`--no-session` を外すか、会話の引き継ぎを諦めるかは決めていない
+  - blocking（owner の判断: 008 はこのまま進め、定義の `Carry over` 5 本目に送った）: `child/spec.ts:64` の `--no-session` のせいで、pi は `--continue` を見ずに新しい会話で走る（`docs/sessions.md:52`）。つまり 2 回目の子が引き継ぐのはペイロード＋task＋フック出力だけ。「同じ worktree で `--continue`」は字面どおりで、step 12 が前提にしている「直前の会話を引き継ぐ」は成立しない。`--no-session` を外すか、会話の引き継ぎを諦めるかは決めていない
   - 未対応: `README.md:149`（`run/` の説明）と `:161`（Tests の列挙）に `retry` / `stopped` / `child` が入っていない
   - 未対応: `work/SKILL.md:107`（「子の記録は ref で戻る」）は ref 無し・worktree 残りで返る道を知らない（step 14 の担当）。`close/SKILL.md:34` の「残り物は finding」も同じ（step 15 の担当）
   - 未対応: 親への本文の組み立て（`consult.ts:315-321` の `worktree kept:` 以下）を確かめるテストが無い。`kept` は id ではなくパス（step 12 の id の定義待ち）

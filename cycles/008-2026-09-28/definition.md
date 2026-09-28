@@ -291,3 +291,17 @@ Changes: keep
    - Action: どちらかを決めて直す。(a) 拡張が reload 後に古い `pi` を捨てる（配送を譲る、または session 系のイベントで新しい `pi` を受け直す）。(b) 手順側で「子が 0 体のときだけ reload する」を `work` / `close` の規則に書く。私は (a) が本筋だと思う（規則で避けるより、落ちない形にする）
    - Basis: 008 の crash（2026-09-28 14:08。`tool/consult.ts:471` の `deliver` → `pi.sendMessage`）。`docs/extensions.md` の「Do not use a captured pi or command ctx after ... `ctx.reload()`」。`work/SKILL.md:86` の reload の規則は「子が走っている間は reload するな」と言っていない
    - From: 008.work
+
+5. 子の再走の `--continue` が、効いていない
+   - Status: `child/spec.ts:64` が `--no-session` を渡すので、pi は `--continue` を見ずに新しい会話で走る（`docs/sessions.md:52`「An ephemeral session cannot be resumed after Pi exits.」）。2 回目の子が引き継ぐのはペイロード＋task＋フック出力だけで、直前の会話ではない。008 では字面（同じ worktree でもう 1 回、フックの出力が渡る）が満たされるので、そのまま進めた（owner の判断）
+   - Research:
+   - Action: 子に会話を引き継がせるか（2 回目だけ `--no-session` を外す）、会話は引き継がないと決めて「resume」の意味を「同じ worktree での続き」に定義し直すか。step 12（`consult.resume`）の設計はここに依存する
+   - Basis: 008 の step 09（`run/child.ts:96` が `--continue` を足す）と `child/spec.ts:64`。影響読み `consult-9` の指摘（チケット `09-consult.retry.reject.md` の `Findings`）
+   - From: 008.work
+
+6. サイクルのフローそのものが重い（owner と一緒に見直す）
+   - Status: owner の言葉「そもそもフローが大変なので、見直すって一緒に」（008 の step 09 のやり取り）。1 step ごとに子を出し、検証（`test`・`read`・影響読み）と単位レビューが積み重なり、サイクル 1 回で子が数十体・数十ドルになる
+   - Research:
+   - Action: スキルを書き換える前に、owner と一緒にフローの見直しをする（どの段を残し、どの検査をどこへ寄せ、何を 1 回で済ませるか）
+   - Basis: 008 の実測（子 40 体以上、1 体 $0.001〜0.09）。`Carry over` 1（レビューが重い）と 3（並列前提でない）は、この見直しの一部
+   - From: 008.work
