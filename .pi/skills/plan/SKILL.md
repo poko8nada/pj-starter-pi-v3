@@ -58,11 +58,15 @@ Read that before writing anything.
    - ask what a folder looks like after a file is added
    - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step
 9. **Read it against `references/format.md`**, once, before anyone else sees it.
-10. **The owner.** Show the steps and the form, and hear their points.
-11. **The `review` child**, with the checklist below:
+10. **Ask the owner's value, per unit.** For each unit, propose `Owner: in the loop` or `Owner: at the end`, and let the owner decide:
+    - the asking may come after the plan is written; a value decided before the writing is used as it is
+    - the default proposal is `at the end`
+    - an `in the loop` unit's steps are cut by the rule in `references/format.md`
+11. **The owner.** Show the steps and the form, and hear their points.
+12. **The `review` child**, with the checklist below:
     - it gets the plan, the definition and `references/format.md`, in one call
     - fix what comes back, and repeat until it is clean, up to three rounds
-12. **Commit.** The commit is the freeze mark:
+13. **Commit.** The commit is the freeze mark:
     - the plan is not edited afterwards
     - what changes during the cycle is recorded in the ticket that hit it
 
@@ -74,12 +78,14 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 ## The review's checklist
 
-The `review` child of step 11 gets this checklist, the plan, the definition and `references/format.md`, and nothing else:
+The `review` child of step 12 gets this checklist, the plan, the definition and `references/format.md`, and nothing else:
 
 - the owner has seen the steps and the form, and agreed
 - every change since the owner's look answers their point
 - every unit with a gap is a step, and together the steps carry every `Now` line once
 - every file in `Files` is in `Structure`, and every line of `What` is decided by a `Verify` type
+- every step has an `Owner:` line, `step 0` included
+- every `in the loop` step has a `見せ方` line, and no `at the end` step has one
 
 Report findings only, each with its line, marked blocking or not.
 

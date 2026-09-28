@@ -13,13 +13,16 @@ Section and field names are English; the content is Japanese.
 
 ### step 0: prepare
 
+- Owner: at the end
 - Install: 何を入れるか。無ければ なし
 - Cleanup: 何を消すか、何を動かすか。無ければ なし
 
 ### step N: <unit-id> または <unit-id>.<part>
 
+- Owner: in the loop / at the end
 - What:
   - いまの 1 行 → それはどうなるか
+- 見せ方: `in the loop` のときだけ。何を 1 つ見せるか（起動する・画面を撮る・差分を見せる）
 - Depends: 何を待つか
 - Action: build / verify
 - Files: 触るファイル。テストは書かない。調べた依存先（この step が変える物を語っている文書・コメント・テスト）も入れる
@@ -27,7 +30,9 @@ Section and field names are English; the content is Japanese.
 
 ### step N: <unit-id>.check
 
+- Owner: in the loop / at the end
 - What: 単位の `Then` を全部、1 回で確かめる
+- 見せ方: `in the loop` のときだけ、何を 1 つ見せるか
 - Depends: その単位の最後の step
 - Action: verify
 - Files: なし
@@ -35,9 +40,11 @@ Section and field names are English; the content is Japanese.
 
 ### step N: <unit-id>.refactor
 
+- Owner: in the loop / at the end
 - Why: このビルドで、構造がどう悪くなるか（1 行）
 - What:
   - `Why` の 1 行 → 既存をどう直すか
+- 見せ方: `in the loop` のときだけ、何を 1 つ見せるか
 - Depends: 原因になった step
 - Action: build
 - Files: 直すファイル（既存）
@@ -102,6 +109,11 @@ For each type, what the ticket holds:
 - `step 0` is always there, with `Install` and `Cleanup`, and `なし` when there is nothing
   - `なし` is written when it was looked at and nothing is needed
   - an empty field is one that is not decided yet
+- every step has an `Owner:` line, `step 0` included: `in the loop` or `at the end`
+  - a step takes the value of the unit in its name; `step 0` takes `at the end`
+  - the value is the owner's, proposed per unit when the plan is made
+    - the default proposal is `at the end`
+    - a value decided before the plan is written is used as it is
 - the name after the colon is a unit's id, or `<unit-id>.<part>`
   - a unit that was split is closed by `<unit-id>.check`
   - `<unit-id>.refactor` is a step with no unit
@@ -111,6 +123,11 @@ For each type, what the ticket holds:
   - the number of the definition's lines is not a relation
     - a reader of this plan does not open the definition
   - together, the steps of a unit carry every `Now` line of it, once
+- an `in the loop` step has a `見せ方` line, and an `at the end` step has none
+  - it names the one thing to show, and how: 起動する・画面を撮る・差分を見せる
+- an `in the loop` unit is cut into vertical slices
+  - 「見せられる大きさ」: 1 つの操作が端から端まで動き、owner が見て 1 つの判断（残す / 直す / 捨てる）を下せる。見せる物は 1 つ
+  - 内部だけの step（列を足す、設定を変える、リファクタ）は単独にせず、見せられる切片に付ける
 - a `<unit-id>.refactor` has no gap and no `Then`
   - `Why` is what the build makes worse, and `What` is the relation
 - `Action` is `build` when something is produced, and `verify` when the step only checks
