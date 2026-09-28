@@ -2,7 +2,8 @@
 
 `cycles/<NNN-YYYY-MM-DD>/tickets/<NN>-<step-name>.md`.
 
-Section and field names are English; the content is Japanese.
+Section and field names are English; the content is Japanese.  
+`止まり方:` is the one field name that stays Japanese.
 
 ## The shape
 
@@ -12,6 +13,10 @@ Section and field names are English; the content is Japanese.
 Acceptance:
 
 - <この step が満たすもの>
+
+Owner: in the loop / at the end
+
+止まり方: `in the loop` のときだけ。どこで止まるか。何を見せるか。何をもって終わりか: <何をもって終わりか>
 
 ## Todo
 
@@ -54,13 +59,24 @@ Acceptance:
 Commit:
 ```
 
+## Owner
+
+- `Owner:` is on every ticket, with the plan's `Owner:` value: `in the loop` or `at the end`
+- `止まり方:` is on an `in the loop` ticket only, in one line
+  - where it stops: this step's end, and not before
+  - what it shows: the one thing the plan's `Show:` names
+  - what ends it: `何をもって終わりか: …`, and the owner's call: 残す / 直す / 捨てる
+- an `at the end` ticket has no `止まり方:`
+
 ## Names
 
 - one ticket per step, named `<NN>-<step-name>.md` with the step's number
-  - `01-tickets-skill.md`, `02-stack-skill.md`
-- the heading is the step's name, without the definition's number: `# tickets-skill`
-- the step's name is the plan's
-  - `<unit-id>`, `<unit-id>.<part>`, `<unit-id>.check`, `<unit-id>.refactor`
+  - `03-work-skill.owner.md`, `09-consult.retry.reject.md`
+- the heading is the step's name, without the definition's number: `# work-skill.owner`
+- the step's name is the plan's, and the ticket uses it as it is
+  - `<unit-id>` — the unit's name, `ユニット名.機能`
+  - `<unit-id>.<part>` — a split step, `ユニット名.機能.部品`。3 つ目の `部品` が `何するか`
+  - `<unit-id>.check`, `<unit-id>.refactor` — いまの形のまま
 - a `step 0` that says なし takes no ticket
 - a ticket the `close` cuts: `ex-<NN>-<step-name>.md`, with the next free number
 

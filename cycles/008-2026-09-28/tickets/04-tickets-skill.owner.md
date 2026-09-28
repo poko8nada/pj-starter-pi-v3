@@ -32,6 +32,7 @@ Owner: at the end
 
 ### Unplanned
 
-- なし
+- `.pi/skills/tickets/references/format.md:5`: `止まり方:` を日本語のまま残す例外を足した
+  - なぜ: `The shape` に `止まり方:` を足すと「field names are English」と矛盾する。`止まり方:` は既存チケットと `work/SKILL.md` が使う名前で、英語にできない
 
 Commit:

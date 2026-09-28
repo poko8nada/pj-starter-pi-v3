@@ -19,19 +19,22 @@ Read that before writing anything.
    - the tickets of a unit are cut together, and shown as one set
    - a `<unit-id>.refactor` step belongs to the unit in its name
 2. **Write the `Acceptance`.** The step's target, from the plan's `What`.
-3. **Write the `Todo`.** The concrete work, by artifact.
+3. **Write the `Owner:` and the `止まり方:`.** From the plan's `Owner:` and `Show:`.
+   - `Owner:` on every step, with the plan's value: `in the loop` or `at the end`
+   - `止まり方:` only on an `in the loop` step: where it stops, what it shows, and what ends it, in one line
+4. **Write the `Todo`.** The concrete work, by artifact.
    - a file the plan's `Files` does not name: stop and show the owner
-4. **Write `Verify`.** One block per type the plan named.
+5. **Write `Verify`.** One block per type the plan named.
    - it runs when the step closes, not later
-5. **Write the cases.** For a step that has `test`, walk the categories.
+6. **Write the cases.** For a step that has `test`, walk the categories.
    - write each case, or the reason it does not apply
-6. **Read it against `references/format.md`**, once, before anyone else sees it.
-7. **The owner.** Show the unit's tickets, and hear their points.
+7. **Read it against `references/format.md`**, once, before anyone else sees it.
+8. **The owner.** Show the unit's tickets, and hear their points.
    - the owner looks before the review child: nothing goes under review that the owner has not seen
-8. **The `review` child**, with the checklist below:
+9. **The `review` child**, with the checklist below:
    - it gets the unit's tickets and the plan, in one call
    - fix what comes back, and repeat until it is clean, up to three rounds
-9. **After the last unit: commit.** The commit is the freeze mark.
+10. **After the last unit: commit.** The commit is the freeze mark.
 
 A fact the repository holds is looked up, not asked.
 
@@ -44,7 +47,7 @@ A fact the repository holds is looked up, not asked.
 
 ## The review's checklist
 
-The `review` child of step 8 gets this checklist, the unit's tickets and the plan, and nothing else:
+The `review` child of step 9 gets this checklist, the unit's tickets and the plan, and nothing else:
 
 - the owner has seen the tickets and agreed
 - every change since the owner's look answers their point
