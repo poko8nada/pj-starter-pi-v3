@@ -277,3 +277,10 @@ Changes: keep
    - Action: 全スキルの凍結の規則を棚卸しし、何が違うかを並べて、どれが良いかを決める（定義・プラン・チケットの凍結点と、凍ったあとに書ける物の一覧を 1 か所に置く）
    - Basis: `definition/SKILL.md` の `What is frozen`、`plan/SKILL.md` の `What is frozen`、`tickets/SKILL.md` の各段。008 では、凍結した定義の `Carry over` に後から書いてよいかの判断で迷った（`Retro` は後から書く物だが、それがどのスキルにも明記されていない）
    - From: 008.tickets
+
+3. `work` と `tickets` の手順が、1 step ずつ直列に進める前提になっている
+   - Status: `work/SKILL.md` は step を 1 つずつ閉じる形で書かれ、`tickets/SKILL.md` も 1 枚ずつ読む前提。並列に走らせると、どこまでを同時に流し、いつ検証し、どう閉じるかが手順から読めない（008 の `work` 段では親がその場で判断した）
+   - Research:
+   - Action: `work` と `tickets` の手順を、並列を前提に抜本的に書き直す（同時に走らせる条件、検証のタイミング、閉じ方、`Depends` との関係）
+   - Basis: 008 の `work` 段で、依存の無い 3 step（`01` / `06` / `16`）を並列に流した。手順の側に並列の規則が無く、判断が親に残った
+   - From: 008.work

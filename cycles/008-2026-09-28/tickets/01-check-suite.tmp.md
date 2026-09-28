@@ -45,9 +45,12 @@ Owner: at the end
 ### Findings
 
 - なし
+- （影響読み `consult-21` の指摘と、親の修正）
+  - `consult.test.ts` の「本体を見ない」というコメントに対し、`input: ['missing.md']` が本体 root の `cwd` で解決されていた（本体 root に `missing.md` があると落ちる）→ 引数を helper の一時ディレクトリの絶対パスに変え、コメントも実態に合わせた
+  - 未対応（この step の外）: `work/SKILL.md` の helper 名指しは step 2 が直す。「相対パスで書くテストを止める口」は step 2 の規則とレビューの観点。`vitest.setup.ts` の生の `mkdtempSync` と、テストが `cwd` を本体にして git を起動し得る穴（007 の ex-17）は、この step の範囲外
 
 ### Unplanned
 
 - なし
 
-Commit:
+Commit: d8da652 + a4d26b2（並列で走らせたので 1 つにまとめない。`squash.mjs` は `HEAD` が一覧の最後であることを要求するため、混ざった単位には使えない）

@@ -37,6 +37,11 @@ Owner: at the end
 
 ### Unplanned
 
-- なし
+- `.pi/skills/definition/references/format.md` の `## Units`: 「A unit is a real thing」を、この製品の場合だと分かる形にし、上の `カートに入れる` の例が granularity の見方だと添えた。古い例と新しい規則が食い違って読めたため（チケットが名指ししたファイルの中なので、この step で直した）
+- （影響読み `consult-23` の指摘と、親の修正）
+  - 同じ `## Units` に unit の定義が 2 つ並び、`カートに入れる` の例が「unit だ」と言い続けていた → 例に「別の製品の物で granularity の見方」と前置きし、新しい定義を「この製品では実物（＝ `Who` が使える最小の物）」と書き直した
+  - 動く unit の名前と、動かない unit の名前（`What to keep`）と、消える名前（`drop`）の関係が 1 行で読めなかった → 1 行にまとめた
+  - `.pi/skills/tickets/SKILL.md:11` の「unit は `Who` が使える最小の物」が、新しい定義と食い違って読めた → この製品では実物だ、と 1 文足した（`tickets` の担当 step 4 が同じファイルを後で触るが、その前に置いた）
+  - 未対応: `## The shape` のプレースホルダ（`<unit-id>`）はドット無しのまま。`keep` / `drop` の名前の扱いは上の 1 行で読めるようにした
 
-Commit:
+Commit: e5b91b0 + 697628c + 2d57c1d（並列で走らせたので 1 つにまとめない。`squash.mjs` は `HEAD` が一覧の最後であることを要求するため、混ざった単位には使えない）
