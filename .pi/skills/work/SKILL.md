@@ -97,7 +97,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - a document, a comment or a test the change makes stale
      - a hole this step would be passing over
    - a hole this step's own change made is this step's: fix it, and run step 7 again
-9. **Write the `Notes`.** The two fields and their shape: `../tickets/references/format.md`.
+9. **Write the `Notes`.** The fields and their shape: `../tickets/references/format.md`.
    - in focus: a hole in a file the `Todo` or the plan's `Files` names, or in the behavior the `Acceptance` or the unit's `Then` states, or in a document, a comment or a test this change makes stale
      - fixed here, and written under `Unplanned`
    - out of focus, and the cost stops at tidying, wording or coverage: not written

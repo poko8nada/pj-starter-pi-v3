@@ -58,12 +58,15 @@ Owner: in the loop / at the end
 
 ### Stopped
 
-止まった step のときだけ。理由の 4 つ:
+止まった step のときだけ。理由の 6 つ（親が続きをやるのに要る物）:
 
 - 落ちた検査の出力: <落ちた検査の出力をそのまま>
 - 変えたファイル: <変えたファイルのパス>
+- 子の最後の本文: <子が最後に返した本文>
 - 走った回数: <何回目で止まったか>
 - 時刻: <止まった時刻>
+- worktree の id: <残った worktree の id>
+- 止まらなかった step では、この節を書かない
 
 Commit:
 ```
@@ -137,8 +140,9 @@ Commit:
 - both belong to whoever did the work
 - `なし` is written when it was looked at and nothing is needed
 - `Stopped`: a step that stopped, and why. The ticket is not closed: it stays open
-  - the four: the output of the check that failed, the files changed, how many times it ran, and the time
+  - the six: the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left
   - written as it was found, and kept: not tidied or shortened
+  - when the step is later finished, the reason is replaced by the unit's commit hash (the line then reads `Commit: <hash>`)
 - `Commit:` is the last line, and it names the same unit's one commit
   - empty at the step's time: it is written when the unit's commit is made
 - a step that changed nothing (a `<unit-id>.check`): `Commit: なし（理由）` — the reason goes in the parentheses, on the same line
