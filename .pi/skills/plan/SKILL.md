@@ -39,6 +39,7 @@ Read that before writing anything.
      - what the walk finds goes into that step's `Files` and `What`: a step does not leave a dependent it has seen out
    - if none: no refactor step
 5. **Write the refactor step.** For each thing the build makes worse:
+   - an `in the loop` unit has none: its internal work is attached to a slice (step 3), so a refactor step only exists for an `at the end` unit
    - the name is `<unit-id>.refactor`: the unit whose build needs it
    - `Why` is the worse thing, in one line, with the names of the place
    - `What` is the relation, the same as a unit's: the `Why` line, and what it becomes

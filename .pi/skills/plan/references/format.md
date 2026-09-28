@@ -111,6 +111,7 @@ For each type, what the ticket holds:
   - an empty field is one that is not decided yet
 - every step has an `Owner:` line, `step 0` included: `in the loop` or `at the end`
   - a step takes the value of the unit in its name; `step 0` takes `at the end`
+    - a `<unit-id>.refactor` step takes the value of the unit in its name too (`at the end` in an `in the loop` unit's case: see the vertical-slice rule)
   - the value is the owner's, proposed per unit when the plan is made
     - the default proposal is `at the end`
     - a value decided before the plan is written is used as it is
@@ -128,6 +129,7 @@ For each type, what the ticket holds:
 - an `in the loop` unit is cut into vertical slices
   - 「見せられる大きさ」: 1 つの操作が端から端まで動き、owner が見て 1 つの判断（残す / 直す / 捨てる）を下せる。見せる物は 1 つ
   - 内部だけの step（列を足す、設定を変える、リファクタ）は単独にせず、見せられる切片に付ける
+    - an `in the loop` unit has no standalone `<unit-id>.refactor` step: a refactor belongs to an `at the end` unit
 - a `<unit-id>.refactor` has no gap and no `Then`
   - `Why` is what the build makes worse, and `What` is the relation
 - `Action` is `build` when something is produced, and `verify` when the step only checks
