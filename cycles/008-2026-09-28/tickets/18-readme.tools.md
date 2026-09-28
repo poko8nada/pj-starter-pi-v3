@@ -38,4 +38,7 @@ Owner: at the end
 - `README.md` / `README.ja.md` の Extensions: 3 つの道具を親の 1 行の中ではなく、子の箇条書き（`consult_new` / `consult_resume` / `consult_refs`）として並べた
   - なぜ: Todo は「Extensions の行」を書き換えると言うが、Verify の `git grep -c` は一致する「行数」を数える。1 行のままだと 1 にしかならず、`3 以上` を満たせない。1 道具 1 行にして満たした
 
-Commit:
+- （親の取り込みについて）: この子は worktree で自分でコミットしたため、`commitWorktree` から見ると「変えた物が無い」になり、ref が作られなかった（本文は `ref: (the child changed nothing)`）。worktree が消えるとそのコミットは宙に浮く。今回はオブジェクトが残っていたので `git cherry-pick efca3bd` で取り込んだ（`320a2c8`）。**道具側の穴**: 子が自分でコミットしたときに ref を作る道が無い（次のサイクルで見る）
+- （子が書いた指摘のうち古い物）: `consult/README.md` の Tools 節が「two tools」という指摘は、step 12 の影響読みで親が直し済み（`f573a1f`）
+
+Commit: 320a2c8（子が worktree で作ったコミット `efca3bd` を親が取り込んだ物）
