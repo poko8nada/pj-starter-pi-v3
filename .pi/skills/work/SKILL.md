@@ -7,18 +7,35 @@ description: Use when the tickets are agreed. Carries one step to done, and clos
 
 Carry a step to done: the tickets say what to do and how it will be checked.
 This is how that work is done, and how it closes.  
-A cycle is the unit of this work: unless the owner says otherwise, carry every ticket of it to done, and report once, at the end.  
+A cycle is the unit of this work: unless the owner says otherwise, carry every ticket of it to done.  
+The unit's `Owner:` decides the way: `at the end` carries the unit through, and reports once, at the end (step 13); `in the loop` stops at each step's end, and the owner decides before the flow moves on (step 1).  
 A step is one ticket, one implementation, a `Verify` on the parent's tree, and one closure.  
 The parent owns the judgment. A child may do the work; it does not judge it.
 
 ## Steps
 
-1. **Read the ticket.** `Acceptance`, `Todo` and `Verify`, before anything else.
+1. **Read the ticket.** `Acceptance`, `Todo`, `Verify` and `Owner`, before anything else.
    - `Acceptance`: what the step owes its unit
    - `Todo`: the work, by artifact
    - `Verify`: what will be run when it closes
+   - `Owner`: `in the loop` or `at the end`, from the plan; it decides the way this unit runs
+     - `in the loop`: the step stops at its end, and the owner decides; the way is below
+     - `at the end`: no stop and no `止まり方`; carry the unit through, and report once, at the end (step 13)
    - a `Verify` that cannot run: show the owner before starting
      - one whose work is a later step's: the ticket is wrong, and this is the one time to change it
+
+**The `in the loop` unit.** The owner decides at every step boundary, not once at the end.
+
+- where it stops: the ticket's `止まり方` names it; at this step's end, and not before
+- what it shows: the one thing the `止まり方` names — the product running, a screen, or the diff
+- the owner's call, and one of the three: 残す (keep) / 直す (fix) / 捨てる (drop)
+  - 残す: the step is kept; go on to the next step
+  - 直す: the fix repeats inside this ticket — change, show again, hear again; this is the loop
+  - 捨てる: drop the change, and re-cut the step with the owner
+- what ends it: the ticket's `止まり方` says; the `Acceptance` holds, the `Verify` passed, and the diff is read (step 10)
+- only after it ends: the commit and the review (step 11)
+  - nothing is committed or reviewed before the owner has kept the work
+
 2. **Decide who does the work.** The parent, or a `consult` child of type `code`.
    - the axis: how many units the definition holds, and how many tickets this cycle has
    - three units or fewer and five tickets or fewer: the parent does it, a round trip costs more
@@ -117,7 +134,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner
     - do not delete a ref by hand: `git branch -D` is not the tool's job
-13. **Report.** To the owner, once, when the cycle's work is done.
+13. **Report.** To the owner, once, when the cycle's work is done: this is the `at the end` unit's movement.
     - read the work again in full, not only the change: the lines around it as well
     - what changed, and how the whole flow reads now
     - stop here: the owner reads it, and the cycle goes to `close`
