@@ -26,10 +26,14 @@ Owner: at the end
 ### Findings
 
 - なし
+- （`read` の検証 `consult-9` の指摘。合格条件 4 つは満たしていた）
+  - 未対応: `:113` の `Commit: なし（理由）` を、あとから (a)〜(c) で片付いたときに誰が hash に書き換えるかがどこにも無い（`format.md:146` は書き換わると言う）
+  - 未対応: `:108` の「止まった子の `Notes` は残った worktree に残る」を読む段が無い。`close` の `list` も理由と変えたファイルしか見ないので、子の `Findings` は宙に浮く
+  - 未対応: `:113` の「止まった」の定義が無い（`Verify` が落ちただけの step と、子が死んだ step の関係）
 
 ### Unplanned
 
 - `.pi/skills/work/SKILL.md:107`: 止まった子の `Notes` は ref ではなく、残った worktree に残る、と足した
   - なぜ: チケットの `Todo` には無いが、step 09 の `Findings` が「107 行は ref 無し・worktree 残りで返る道を知らない（step 14 の担当）」と送っていた。step 14 はこのチケット
 
-Commit:
+Commit: e1ca9fe（子が worktree で作ったコミットを親が取り込んだ物）
