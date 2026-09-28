@@ -6,6 +6,7 @@
 
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { PARAMETERS, createRuntime } from './tool/consult.ts';
+import { stopSound } from './tool/sound.ts';
 import { PARAMETERS as REF_PARAMETERS, execute as refExecute } from './tool/refs.ts';
 
 export default function (pi: ExtensionAPI) {
@@ -41,6 +42,11 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand('consult-sound', {
     description: 'Turn the consult sound on or off (usage: /consult-sound on|off)',
     handler: (args, ctx) => consult.commands.sound(args, ctx),
+  });
+
+  // reload / セッションの差し替えで古いインスタンスが残っても、始めたタイマーが鳴り続けないように閉じる
+  pi.on('session_shutdown', () => {
+    stopSound();
   });
 
   pi.registerTool({

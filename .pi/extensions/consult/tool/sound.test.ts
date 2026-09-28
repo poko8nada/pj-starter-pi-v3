@@ -2,7 +2,7 @@
  * 音そのものを、差し替えた player と偽のタイマーで確かめる。
  *
  * afplay は起動しない。`setPlayer` に記録するだけの関数を渡し、実際に鳴る所をテストから外す。
- * `sound.ts` はモジュールに 1 つの状態を持つので、各テストの前に既定へ戻す。
+ * `sound.ts` はモジュールに 1 つの状態（enabled、timer、player）を持つ。各テストの前に enabled と timer を既定へ戻し、player はテストごとに差し替える。
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

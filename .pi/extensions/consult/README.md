@@ -109,12 +109,12 @@ Each input's block is the child's text, then `ref:` when it wrote something, the
 
 **Esc does not stop a child.** The tool call has already returned, so there is no call left to cancel. Ctrl+C is not dependably delivered to the child either, so a hard interrupt can leave a worktree behind; `git worktree prune` clears the registration.
 
-There are two faces for stopping, and one implementation behind them:
+There are two faces for stopping a child, and one implementation behind them:
 
-| Who       | How                                                                                                                                |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one; `/consult-sound on\|off` turns the sound on or off |
-| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id`                                                     |
+| Who       | How                                                                            |
+| --------- | ------------------------------------------------------------------------------ |
+| The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one |
+| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id` |
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
