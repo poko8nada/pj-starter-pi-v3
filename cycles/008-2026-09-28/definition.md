@@ -339,3 +339,10 @@ Changes: keep
    - Action: 3 つのうち直す物を決め、`definition/references/format.md` を直す
    - Basis: `16-definition-skill.units.md:50`。008 の Close のレビュー（`consult-2`）が指摘
    - From: 008.close
+
+10. `consult_resume` の面が、`consult_new` と揃っていない（008 の Close のレビュー `consult-3` が見つけた 4 件）
+    - Status: (A) `run` の本文に `consult runs: N` と `files:` が出ない（`tool/resume.ts:107` が summary を渡さず、kept でもファイル一覧を出さない。`list` には出る）。(B) kept の通知は worktree の `id` ではなくパス（`stopped.json` に id が無い。dir から導出できるので復帰は可能）。(C) `consult/README.md:126` が「limit で止まった子は worktree を残す」と広く読める（実際に残るのは 2 回目もフックに拒否されたときだけ）。(D) `work/SKILL.md:17` の read 一覧に `止まり方` が無い（`:21-37` には読む道がある）
+    - Research:
+    - Action: 4 件を直すか捨てるかを決める（A・C は文面と引数の受け渡し、B は id を記録に足すか、D は列挙に 1 語）
+    - Basis: 008 の Close のレビュー（`consult-3`、blocking は 0 でこれだけが残った）。Definition の `Then` の主面（`consult_new`）は満たされている
+    - From: 008.close
