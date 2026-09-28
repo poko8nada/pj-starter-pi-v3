@@ -1,6 +1,7 @@
 # sound-notify
 
-Plays a system sound and sends a cmux notification when pi needs your attention.
+Plays a system sound and sends a cmux notification when pi needs your attention,
+or when a `git commit` lands.
 
 ## Install
 
@@ -19,19 +20,24 @@ notifications.
 
 ## Notifications
 
-| Trigger           | pi hook                                         | Sound | cmux subtitle |
-| ----------------- | ----------------------------------------------- | ----- | ------------- |
-| Permission prompt | `ui_prompt_start` (title matches /permission/i) | Blow  | Permission    |
-| Any other dialog  | `ui_prompt_start`                               | Ping  | Question      |
-| Turn complete     | `agent_settled`                                 | Glass | Done          |
+| Trigger           | pi hook                                                     | Sound | cmux subtitle |
+| ----------------- | ----------------------------------------------------------- | ----- | ------------- |
+| Permission prompt | `ui_prompt_start` (title matches /permission/i)             | Blow  | Permission    |
+| Any other dialog  | `ui_prompt_start`                                           | Ping  | Question      |
+| Turn complete     | `agent_settled`                                             | Glass | Done          |
+| Commit            | `tool_execution_end` (bash output has `[main abc1234] ...`) | Pop   | -             |
 
 - `agent_settled` fires once per turn, after retries, auto-compaction, and queued
   follow-ups have all finished. It does not fire per `agent_end`.
 - `ui_prompt_start` fires around `ctx.ui.select/confirm/input/editor/custom`.
   Nested prompts are coalesced; sequential dialogs fire separately.
+- `tool_execution_end` plays the commit sound only for the `bash` tool when the
+  result contains git's commit summary line (`[main abc1234] subject`, matched
+  as `[<ref> <hash>]`). Failed commands and other tools stay silent.
 - Sounds are skipped when `ctx.hasUI` is false (print / JSON mode) to avoid
   noise in CI and piped runs.
-- The cmux title is `pi`; the subtitle and body say which kind it is.
+- The cmux title is `pi`; the subtitle and body say which kind it is. The commit
+  sound sends no cmux notification.
 - Notifications need the `cmux` command on `PATH`. Without it the sound still
   plays and the notification is skipped, with no error.
 
@@ -44,7 +50,16 @@ in this directory (it is not committed):
 {
   "enabled": true,
   "notifications": true,
-  "sounds": { "permission": "Blow", "question": "Ping", "done": "Glass" }
+  "sounds": { "permission": "Blow", "question": "Ping", "done": "Glass", "commit": "Pop" }
+}
+```
+
+To change only the commit sound, put just that key (the rest keep their
+defaults):
+
+```json
+{
+  "sounds": { "commit": "Basso" }
 }
 ```
 
@@ -53,6 +68,7 @@ in this directory (it is not committed):
 | `enabled`       | `false` stops the sound and the notification                                 |
 | `notifications` | `false` keeps the sound and drops the cmux notification                      |
 | `sounds`        | System sound name per kind, resolved as `/System/Library/Sounds/<name>.aiff` |
+| `sounds.commit` | Sound for a `git commit` (default `Pop`)                                     |
 
 The file is read once when the extension loads, so run `/reload` after editing
 it. It sits next to the loaded copy: this directory for a project-local install,

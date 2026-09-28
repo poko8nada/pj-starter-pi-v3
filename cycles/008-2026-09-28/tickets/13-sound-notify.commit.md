@@ -54,6 +54,6 @@ Owner: in the loop
 
 ### Unplanned
 
-- なし
+- テストの差し替え口として `handleToolExecutionEnd` / `isCommitResult` / `PiPort` / `CtxPort` / `parseConfig` / `setPlayer` を export した（Todo は「差し替えられる形にする」までだった）
 
 Commit:
