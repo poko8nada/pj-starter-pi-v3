@@ -83,5 +83,6 @@ Owner: at the end
 - 時刻: 2026-09-28 15:14
 - worktree の id: なし（保持されず消えた。`git worktree list` に残っているのは crash 時の `consult-ZH2ntR/wt` だけ）
   - 未対応（次のサイクルで見る）: 拒否で 2 回目も通らなかったのに worktree が残っていない。step 10 の「残す」道（`attemptAndCommit` の `kept`）が効いていない可能性がある
+  - owner の call: 続ける（親がやり直し、`Commit:` に 4 本の hash が入った。2026-09-28）
 
 Commit: 50b80d2 + f63ae9d + 9884188 + f573a1f（親の 3 回目。50b80d2 = `consult_resume` の実装、f63ae9d = 検査と README、9884188 = 検証の blocking（`--continue` が常に付く・`signal` が子に届く）、f573a1f = 影響読みの blocking（道具の表）と記録）
