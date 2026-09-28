@@ -50,7 +50,7 @@ Uncommitted changes are invisible to the child, and anything it writes leaves wi
 
 ## Taking the ref
 
-When the child finishes, consult commits what it left behind and creates a branch `consult/<type>-<date>-<time>-<n>`. The commit runs the repository's own hooks, so **a ref means a commit that passed them**. Nothing is committed when the child changed nothing. When the hooks reject the commit, the child is run once more in the same worktree with the hook output as its task, and the work is kept only if they reject it again.
+When the child finishes, consult commits what it left behind and creates a branch `consult/<type>-<date>-<time>-<n>`. The commit runs the repository's own hooks, so **a ref means a commit that passed them**. Nothing is committed when the child changed nothing. When the child stops at a limit, or the hooks reject the commit, it is run once more in the same worktree (see below), and the work is kept only when that second run fails the same way.
 
 The parent decides what to do with the ref: cherry-pick it, take part of it, or drop it. consult never touches the parent's tree.
 
@@ -118,7 +118,7 @@ There are two faces for stopping a child, and one implementation behind them:
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
 
-A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If the child stops at a limit before it finishes, or the hooks reject the commit, consult runs the child once more **in the same worktree**, with `--continue`: the hook output is its task, or the reason it stopped. The work of a stopped run is committed together with the continuation, so a ref is never the half-finished shape. If the second run fails the same way, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed; when the child stopped at a limit, the reply also says so, with the number of runs. The spend of both runs is summed into the one `[consult]` line. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it is still there while the worktree is.
+A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If the child stops at a limit before it finishes, or the hooks reject the commit, consult runs the child once more **in the same worktree**, with `--continue`: the hook output is its task, or the reason it stopped. The work of a stopped run is not committed on its own: the continuation is committed with it when one runs. If the second run stops at the limit as well, or an abort comes before the continuation, the ref holds what the child managed, and the reply says it stopped early. If the second run fails the same way, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed; when the child stopped at a limit, the reply also says so, with the number of runs. The spend of both runs is summed into the one `[consult]` line. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it is still there while the worktree is.
 
 ## Sound
 
