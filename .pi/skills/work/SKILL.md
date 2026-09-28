@@ -43,7 +43,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - the commit comes after it stops, and the repository's hooks run on it
      - leave a tree that passes them
    - everything left in the worktree goes into that commit: no scratch files
-   - a test writes into its own temporary directory (`mkdtempSync` and the like), never into the repository: the hook runs the tests in the real tree
+   - a test writes into its own temporary directory through the shared helper (`test/tmp.ts`, `tmpDir()`), never into the repository: the hook runs the tests in the real tree
    - `Commit:` stays empty, the hash exists only after that commit
 6. **Merge one step at a time.** The `Verify` runs on the parent's tree.
    - a step that is not in the tree cannot be demonstrated
@@ -97,6 +97,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
       - it gets the unit's diff and the unit's `Then`, and nothing else
       - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
         - required, whatever else is picked: the owner has seen what this unit answers, and agreed; every change since their look answers the point they made
+        - tests write into their own temporary directory through the shared helper (`test/tmp.ts`), never into the repository
     - fixes what it reports, and runs the `Verify` of the steps it touched again
     - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...]`
       - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
