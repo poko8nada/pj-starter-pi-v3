@@ -1,0 +1,41 @@
+# consult.retry.limit
+
+Acceptance:
+
+- 上限で打ち切られると結果が途中のまま届き、打ち切りは本文の 1 行だけで判断に使う所に来ない、が解ける: 上限で止まったら同じループが 1 回走り、それでも止まれば打ち切りと回数が本文に明示される
+- 上限と使用量が 1 回ごとに数えられていない、が解ける: 上限は 1 回ごと、使用量は合算して 1 回分として報告される
+
+Owner: at the end
+
+## Todo
+
+- `.pi/extensions/consult/run/run.ts`
+  - 上限で止まった（`stopped`）ときの分岐 — `consult.retry.reject` と同じループに入れる（続きを指示する文を足して、同じ worktree・`--continue` で 1 回だけ）
+  - 使用量の合算 — 複数回走った分を足して 1 回分として返す
+  - 上限の数え方 — 1 回ごとに数える（合計はそのぶん多い）ことを doc に書く
+- `.pi/extensions/consult/tool/consult.ts`
+  - 本文の組み立て — 打ち切られたことと走った回数を明示する行（`consult stopped early` の行の隣に、回数と、続きを走らせたかどうか）
+- `.pi/extensions/consult/run/run.test.ts`（update）
+  - 上限で止まる場合の再走、合算、本文の表示を確かめる
+
+## Verify
+
+### test
+
+- `pnpm test consult`（4 ケース）
+  - 上限で打ち切られる → もう 1 回走り、2 回目が通れば `ref` ができる（happy）
+  - 2 回とも打ち切られる → 本文に打ち切りと回数が出る（error）
+  - 2 回走ったときの使用量 → 合算されている（happy）
+  - 打ち切り（`stopped`）と拒否（`failed`）が両方起きる → 走った回数の合計が本文に出る（error）
+
+## Notes
+
+### Findings
+
+- なし
+
+### Unplanned
+
+- なし
+
+Commit:
