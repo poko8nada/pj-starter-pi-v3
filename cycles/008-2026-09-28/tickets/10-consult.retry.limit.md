@@ -36,6 +36,11 @@ Owner: at the end
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/retry.ts`: 上限で止まったときの再走を、拒否の再走と同じ `attemptAndCommit` に入れた（上限で止まった回はコミットせず、続きと合わせて 1 回だけコミットする）
+  - なぜ: チケットの `Todo` は `run/run.ts` を名指しするが、step 09 が再走のループを `run/retry.ts`（`MAX_ATTEMPTS = 2`）に置いた。同じループに入れるにはそちらが正しい。途中の仕事をコミットすると、同じ `consult/<label>` の ref をもう一度作る所で落ちる
+- `.pi/extensions/consult/tool/render.ts`: `compose` が、打ち切りの行の隣に走った回数と続きの有無を出すようにした
+  - なぜ: 本文は `tool/consult.ts` が組み立てるのではなく `tool/render.ts` の `compose` が組む。行を打ち切りの行の隣に置くにはそちらが要る
+- `.pi/extensions/consult/run/retry.test.ts`: 上限の再走と本文の表示の検査をここに置いた（`run.test.ts` には合算と `compose` の検査を置いた）
+  - なぜ: 再走のループが `retry.ts` にあるので、その検査は隣に置くのが自然。チケットが名指しする `run.test.ts` だけでは、走らせた回数と本文の検査がループから離れる
 
 Commit:

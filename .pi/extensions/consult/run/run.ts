@@ -104,7 +104,11 @@ export interface RunOptions {
   readonly cwd: string;
   readonly signal?: AbortSignal;
   readonly env: NodeJS.ProcessEnv;
-  /** 上限。type が決める */
+  /**
+   * 上限。type が決める。
+   *
+   * 子のプロセス 1 回ごとに数え直す。続けて走らせた分（拒否や打ち切りのあとの再走）は、合計でその回数だけ上限を使う。
+   */
   readonly limits: Limits;
   /** 進行の通知。子の出力が届くたびに呼ぶ */
   readonly onProgress?: (chunk: {
@@ -405,4 +409,35 @@ export function runPi(options: RunOptions): Promise<RunResult> {
     // 指示は stdin から渡す。argv に載せると、先頭が `-` や `@` の文書がオプションやファイル引数として読まれる。
     child.stdin.end(options.stdin);
   });
+}
+
+/** 行単位の出力を、行の切れ目を保ったまま繋ぐ。詰めると最後の行が壊れる */
+function appendLines(parts: readonly string[]): string {
+  return parts.map((part) => (part === '' || part.endsWith('\n') ? part : part + '\n')).join('');
+}
+
+/**
+ * 続けて走らせた子の結果を、1 回分にまとめる。
+ *
+ * 上限（`limits`）は子のプロセスごとに数え直すので、2 回走れば合計で 2 回分の上限を使う。使用量は
+ * その分を足し合わせて 1 回分として報告する。`stopped` は最後の回のものだけを持つ（そこで止まったかを
+ * 見る）。中断はどれかの回で起きたら残す。
+ *
+ * イベントは行単位なので、詰めると最後の行が壊れる。行の切れ目を保って繋ぐ。
+ */
+export function combineRuns(runs: readonly RunResult[]): RunResult {
+  const last = runs[runs.length - 1];
+  if (last === undefined) {
+    throw new Error('combineRuns needs at least one run');
+  }
+  if (runs.length === 1) {
+    return last;
+  }
+  return {
+    stdout: appendLines(runs.map((run) => run.stdout)),
+    stderr: appendLines(runs.map((run) => run.stderr)),
+    code: last.code,
+    stopped: last.stopped,
+    aborted: runs.some((run) => run.aborted),
+  };
 }

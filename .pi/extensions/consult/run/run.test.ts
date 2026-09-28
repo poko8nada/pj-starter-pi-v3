@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from './git-env.ts';
 import {
+  combineRuns,
   commitWorktree,
   createWorktree,
   gitEnv,
@@ -19,7 +20,8 @@ import {
   type GitOutput,
   type RunResult,
 } from './run.ts';
-import { finalTextFrom, parseEvents } from '../child/spec.ts';
+import { finalTextFrom, parseEvents, usageFrom } from '../child/spec.ts';
+import { compose } from '../tool/render.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
 // ファイルを書くテストは `test/tmp.ts` の helper に置き場を寄せる。
@@ -362,5 +364,68 @@ describe('runForInputs: 同期で投げるコールバック', () => {
       { ok: false, error: '空の入力' },
     ]);
     expect(started).toBe(0);
+  });
+});
+
+/** combineRuns に渡す 1 回分の結果 */
+function combinedRun(stdout: string, extra: Partial<RunResult> = {}): RunResult {
+  return { stdout, stderr: '', code: 0, aborted: false, ...extra };
+}
+
+/** message_end 1 つ分。使用量を足すのを見る */
+function spentEvent(input: number, output: number): string {
+  return [
+    '{"type":"message_end","message":{"role":"assistant","usage":{"input":',
+    input,
+    ',"output":',
+    output,
+    '}}}',
+    '\n',
+  ].join('');
+}
+
+describe('combineRuns', () => {
+  it('2 回走った使用量を 1 回分に足す', () => {
+    const merged = combineRuns([combinedRun(spentEvent(10, 20)), combinedRun(spentEvent(3, 4))]);
+    expect(usageFrom(parseEvents(merged.stdout))).toMatchObject({
+      turns: 2,
+      input: 13,
+      output: 24,
+    });
+  });
+
+  it('止まったのは最後の回だけ見る（続きが通れば打ち切りにしない）', () => {
+    const stopped = combinedRun('', { stopped: 'turn limit reached (1)' });
+    expect(combineRuns([stopped, combinedRun('')]).stopped).toBeUndefined();
+    expect(combineRuns([combinedRun(''), stopped]).stopped).toBe('turn limit reached (1)');
+  });
+
+  it('1 回分はそのまま返す', () => {
+    const only = combinedRun('x');
+    expect(combineRuns([only])).toBe(only);
+  });
+});
+
+describe('compose: 打ち切りの行', () => {
+  const stopped: RunResult = {
+    stdout:
+      '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"half"}],"usage":{"output":1}}}\n',
+    stderr: '',
+    code: 0,
+    stopped: 'turn limit reached (2)',
+    aborted: false,
+  };
+
+  it('回数と、続きを走らせたかを、打ち切りの行の隣に出す', () => {
+    const body = compose(parseEvents(stopped.stdout), stopped, { attempts: 2, continued: true });
+    expect(body).toContain('consult stopped early: turn limit reached (2)');
+    expect(body).toContain('consult runs: 2');
+    expect(body.indexOf('consult stopped early')).toBeLessThan(body.indexOf('consult runs:'));
+  });
+
+  it('上限で止まっていなければ、回数の行は出ない', () => {
+    const finished: RunResult = { ...stopped, stopped: undefined };
+    const body = compose(parseEvents(finished.stdout), finished, { attempts: 1, continued: false });
+    expect(body).not.toContain('consult runs:');
   });
 });

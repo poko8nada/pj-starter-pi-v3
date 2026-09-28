@@ -2,7 +2,7 @@
  * 拒否されたコミットと、同じ worktree での 1 回だけの再走。
  *
  * 子は走らせない（`runOnce` は引数なので、記録するだけの関数を渡す）。git は本物を使い、フック
- * （`.git/hooks/pre-commit`）で拒否を作る。
+ * （`.git/hooks/pre-commit`）で拒否を作る。上限で止まった子は `RunResult.stopped` を付けて返す。
  */
 import { execFileSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -12,8 +12,29 @@ import { tmpDir } from '../../../../test/tmp.ts';
 import { gitEnv, type RunResult, type Worktree } from './run.ts';
 import { attemptAndCommit, continuation } from './retry.ts';
 import { stoppedPath } from './stopped.ts';
+import { parseEvents, usageFrom } from '../child/spec.ts';
+import { compose } from '../tool/render.ts';
 
 const result = (text: string): RunResult => ({ stdout: text, stderr: '', code: 0, aborted: false });
+
+/** 上限で止まった子の結果。出力トークン数は合算を見るために回ごとに変える */
+function stoppedRun(output: number, text = 'half'): RunResult {
+  return {
+    stdout: `{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"${text}"}],"usage":{"input":1,"output":${output}}}}\n`,
+    stderr: '',
+    code: 0,
+    stopped: 'turn limit reached (2)',
+    aborted: false,
+  };
+}
+
+/** 組み立てた結果を、親に届く本文にする（`consult.ts` と同じ形） */
+function body(outcome: Awaited<ReturnType<typeof attemptAndCommit>>): string {
+  return compose(parseEvents(outcome.run.stdout), outcome.run, {
+    attempts: outcome.attempts,
+    continued: outcome.continued,
+  });
+}
 
 describe('attemptAndCommit', () => {
   let parent: string;
@@ -35,9 +56,9 @@ describe('attemptAndCommit', () => {
     worktree = { parent, dir, cwd: dir };
   });
 
-  const hook = (body: string): void => {
+  const hook = (script: string): void => {
     const path = join(worktree.dir, '.git', 'hooks', 'pre-commit');
-    writeFileSync(path, `#!/bin/sh\n${body}\n`, 'utf8');
+    writeFileSync(path, `#!/bin/sh\n${script}\n`, 'utf8');
     chmodSync(path, 0o755);
   };
 
@@ -61,7 +82,8 @@ describe('attemptAndCommit', () => {
     });
     expect(outcome.attempts).toBe(2);
     expect(outcome.work.kind).toBe('committed');
-    expect(outcome.run.stdout).toBe('fixed');
+    // 走った回の本文は合わされる（同じ子が 2 回走っている）
+    expect(outcome.run.stdout).toContain('fixed');
     expect(notes[0]).toBeUndefined();
     expect(notes[1]).toContain('the hook said no');
     expect(outcome.kept).toBeUndefined();
@@ -88,7 +110,7 @@ describe('attemptAndCommit', () => {
     expect(outcome.attempts).toBe(2);
     expect(outcome.work.kind).toBe('failed');
     expect(outcome.kept).toBe(worktree.dir);
-    expect(outcome.run.stdout).toBe('tried');
+    expect(outcome.run.stdout).toContain('tried');
     expect(outcome.stoppedAt).toBeDefined();
     expect(existsSync(worktree.dir)).toBe(true);
     expect(existsSync(join(worktree.parent, 'stopped.json'))).toBe(true);
@@ -137,5 +159,81 @@ describe('attemptAndCommit', () => {
     const note = continuation('these lines are the hooks');
     expect(note).toContain('these lines are the hooks');
     expect(note).toContain('Fix what they report');
+  });
+
+  it('上限で止まったら、同じ worktree でもう 1 回走り、2 回目が通れば ref ができる', async () => {
+    const notes: (string | undefined)[] = [];
+    const outcome = await attemptAndCommit({
+      label: 'code-1',
+      worktree,
+      runOnce: (note) => {
+        notes.push(note);
+        if (note === undefined) {
+          // 1 回目は上限で途中まで。
+          writeFileSync(join(worktree.dir, 'work.txt'), 'half\n', 'utf8');
+          return Promise.resolve(stoppedRun(5));
+        }
+        // 続き。ここで初めてコミットされる（途中の姿を ref にしない）。
+        writeFileSync(join(worktree.dir, 'work.txt'), 'done\n', 'utf8');
+        return Promise.resolve(result('done'));
+      },
+    });
+    expect(outcome.attempts).toBe(2);
+    expect(outcome.continued).toBe(true);
+    expect(outcome.work.kind).toBe('committed');
+    expect(outcome.kept).toBeUndefined();
+    expect(notes[0]).toBeUndefined();
+    expect(notes[1]).toContain('stopped at the limit');
+  });
+
+  it('2 回とも打ち切られたら、本文に打ち切りと回数が出る', async () => {
+    const outcome = await attemptAndCommit({
+      label: 'code-1',
+      worktree,
+      runOnce: (note) => {
+        writeFileSync(join(worktree.dir, 'work.txt'), 'half\n', 'utf8');
+        return Promise.resolve(stoppedRun(note === undefined ? 5 : 7));
+      },
+    });
+    expect(outcome.attempts).toBe(2);
+    expect(outcome.work.kind).toBe('committed');
+    const text = body(outcome);
+    expect(text).toContain('consult stopped early: turn limit reached (2)');
+    expect(text).toContain('consult runs: 2');
+  });
+
+  it('2 回走った使用量は、合算して 1 回分として報告される', async () => {
+    const outcome = await attemptAndCommit({
+      label: 'code-1',
+      worktree,
+      runOnce: (note) => {
+        writeFileSync(join(worktree.dir, 'work.txt'), `${note ?? 'first'}\n`, 'utf8');
+        return Promise.resolve(stoppedRun(note === undefined ? 5 : 7));
+      },
+    });
+    expect(outcome.attempts).toBe(2);
+    expect(usageFrom(parseEvents(outcome.run.stdout))).toMatchObject({
+      turns: 2,
+      input: 2,
+      output: 12,
+    });
+  });
+
+  it('打ち切りと拒否が両方起きたら、走った回数の合計が本文に出る', async () => {
+    hook('echo "always no" >&2; exit 1');
+    const outcome = await attemptAndCommit({
+      label: 'code-1',
+      worktree,
+      runOnce: () => {
+        writeFileSync(join(worktree.dir, 'work.txt'), 'half\n', 'utf8');
+        return Promise.resolve(stoppedRun(5));
+      },
+    });
+    expect(outcome.attempts).toBe(2);
+    expect(outcome.work.kind).toBe('failed');
+    expect(outcome.kept).toBe(worktree.dir);
+    const text = body(outcome);
+    expect(text).toContain('consult stopped early');
+    expect(text).toContain('consult runs: 2');
   });
 });

@@ -23,14 +23,37 @@ export function usageLine(events: unknown[]): string {
   return `${modelFrom(events) ?? '(model unknown)'} / ${usage.turns} turns / in ${usage.input} out ${usage.output}${cost}`;
 }
 
+/**
+ * 再走の要約。`compose` が、打ち切りの行の隣に「何回走ったか」と「続きを走らせたか」を出す。
+ */
+export interface RetrySummary {
+  /** 走らせた回数（1 か 2） */
+  readonly attempts: number;
+  /** 続きの子を走らせたか */
+  readonly continued: boolean;
+}
+
+/** 打ち切りの 1 行の隣に置く 1 行。回数と、続きを走らせたかを見せる */
+function stoppedRunsLine(retry: RetrySummary): string {
+  const tail = retry.continued
+    ? ' (continued once in the same worktree; the last run stopped at the limit)'
+    : ' (not continued; it stopped at the limit)';
+  return `consult runs: ${retry.attempts}${tail}`;
+}
+
 /** 結果を 1 つのテキストにする。止まった理由も本文に含める */
-export function compose(events: unknown[], run: RunResult): string {
+export function compose(events: unknown[], run: RunResult, retry?: RetrySummary): string {
   const lines: string[] = [];
   if (run.aborted) {
     lines.push('consult was cancelled.', '');
   }
   if (run.stopped !== undefined) {
-    lines.push(`consult stopped early: ${run.stopped}`, '');
+    // 打ち切りは 1 行だと見落とされる。何回走ったかまで、隣に出して判断に使えるようにする。
+    lines.push(`consult stopped early: ${run.stopped}`);
+    if (retry !== undefined) {
+      lines.push(stoppedRunsLine(retry));
+    }
+    lines.push('');
   }
   const text = finalTextFrom(events);
   if (text !== '') {
