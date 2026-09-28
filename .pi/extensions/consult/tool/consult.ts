@@ -176,12 +176,12 @@ function asInputArray(value: unknown): string[] {
     return [];
   }
   if (!Array.isArray(value)) {
-    throw new Error(`consult: input must be an array of paths. ${USAGE}`);
+    throw new Error(`consult_new: input must be an array of paths. ${USAGE}`);
   }
   const inputs: string[] = [];
   for (const item of value) {
     if (typeof item !== 'string') {
-      throw new Error(`consult: input must be an array of paths. ${USAGE}`);
+      throw new Error(`consult_new: input must be an array of paths. ${USAGE}`);
     }
     inputs.push(item);
   }
@@ -191,7 +191,7 @@ function asInputArray(value: unknown): string[] {
 /** 引数を検証して操作にする。知らない形は使い方つきで投げる */
 export function parseConsultAction(raw: unknown): ConsultAction {
   if (typeof raw !== 'object' || raw === null) {
-    throw new Error(`consult: the arguments are not an object. ${USAGE}`);
+    throw new Error(`consult_new: the arguments are not an object. ${USAGE}`);
   }
   const { action, type, task, input, id } = raw as {
     action?: unknown;
@@ -208,26 +208,26 @@ export function parseConsultAction(raw: unknown): ConsultAction {
       typeof task !== 'string' ||
       task.trim() === ''
     ) {
-      throw new Error(`consult: start needs a non-empty type and task. ${USAGE}`);
+      throw new Error(`consult_new: start needs a non-empty type and task. ${USAGE}`);
     }
     if (id !== undefined) {
-      throw new Error(`consult: start does not take id. ${USAGE}`);
+      throw new Error(`consult_new: start does not take id. ${USAGE}`);
     }
     return { action: 'start', type, task, input: asInputArray(input) };
   }
   if (verb === 'list') {
     if (type !== undefined || task !== undefined || input !== undefined || id !== undefined) {
-      throw new Error(`consult: list takes no other argument. ${USAGE}`);
+      throw new Error(`consult_new: list takes no other argument. ${USAGE}`);
     }
     return { action: 'list' };
   }
   if (verb === 'cancel') {
     if (typeof id !== 'string' || id.trim() === '') {
-      throw new Error(`consult: cancel needs a non-empty id. ${USAGE}`);
+      throw new Error(`consult_new: cancel needs a non-empty id. ${USAGE}`);
     }
     return { action: 'cancel', id };
   }
-  throw new Error(`consult: unknown action: ${JSON.stringify(verb)}. ${USAGE}`);
+  throw new Error(`consult_new: unknown action: ${JSON.stringify(verb)}. ${USAGE}`);
 }
 
 /** 子 1 体を一覧に出す 1 行。task は最初の行だけ */
@@ -250,7 +250,7 @@ export function control(
     return {
       text:
         running.length === 0
-          ? 'consult: no child is running.'
+          ? 'consult_new: no child is running.'
           : running.map(describeChild).join('\n'),
       details: {
         action: 'list',
@@ -261,13 +261,13 @@ export function control(
   const child = children.get(action.id);
   if (child === undefined) {
     return {
-      text: `consult: no such child: ${action.id}`,
+      text: `consult_new: no such child: ${action.id}`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
   child.controller.abort();
   return {
-    text: `consult: cancelled ${child.id} (${child.type})`,
+    text: `consult_new: cancelled ${child.id} (${child.type})`,
     details: { action: 'cancel', id: child.id, cancelled: true },
   };
 }
@@ -556,7 +556,7 @@ export function createRuntime(pi: PiFace, run: ConsultRunner = consult): Consult
         const id = args.trim();
         if (id === '') {
           ctx.ui.notify(
-            'consult: /consult-cancel needs an id. Usage: /consult-cancel <id>',
+            'consult_new: /consult-cancel needs an id. Usage: /consult-cancel <id>',
             'error',
           );
           return;
