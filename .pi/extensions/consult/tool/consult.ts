@@ -13,33 +13,11 @@ import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import {
-  commitWorktree,
-  createWorktree,
-  gitEnv,
-  installDependencies,
-  isGitRepo,
-  readPayloads,
-  removeWorktree,
-  runForInputs,
-  runPi,
-  runWithFallback,
-  worktreeGit,
-  type CommitOutcome,
-  type InstallOutcome,
-  type RunResult,
-  type Worktree,
-} from '../run/run.ts';
-import {
-  buildPiArgs,
-  isBlank,
-  joinPrompt,
-  needsIsolation,
-  parseEvents,
-  type ConsultOptions,
-} from '../child/spec.ts';
+import { readPayloads, runForInputs } from '../run/run.ts';
+import { runOneChild } from '../run/child.ts';
+import { isBlank, parseEvents, type ConsultOptions } from '../child/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
-import { compose, refLabel, result, usageLine } from './render.ts';
+import { compose, result, usageLine } from './render.ts';
 import { isSoundEnabled, setSoundEnabled, startSound, stopSound } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
@@ -289,96 +267,6 @@ export function completionMessage(
   };
 }
 
-/**
- * 実行場所を用意する。payload は読み終わっている前提。隔離するかは type の `environment` が決める（ツールから推測しない）。
- */
-interface Prepared {
-  readonly cwd: string;
-  readonly worktree?: Worktree;
-}
-
-function prepare(ctx: ConsultContext, options: ConsultOptions): Prepared {
-  const base = ctx.cwd;
-  if (!needsIsolation(options.policy)) {
-    return { cwd: base };
-  }
-  if (!isGitRepo(base)) {
-    // git 管理外では worktree を作れない。隔離できないまま実ツリーで書かせない。
-    throw new Error(
-      'this type needs isolation but the directory is not a git repository. Use a type whose environment is "tree", or run inside a repository',
-    );
-  }
-  const worktree = createWorktree(base);
-  return { cwd: worktree.dir, worktree };
-}
-
-/** 子 1 体分の仕事。work は書き込む type のときだけ入る */
-interface ChildResult {
-  readonly run: RunResult;
-  readonly install?: InstallOutcome;
-  readonly work?: CommitOutcome;
-}
-
-/** 子 1 体分の走らせ方 */
-interface ChildJob {
-  readonly payload: string | undefined;
-  readonly index: number;
-  readonly signal: AbortSignal | undefined;
-}
-
-/**
- * 子 1 体分を走らせる。
- *
- * worktree の用意から後片付けまでを 1 つにまとめる。中断でも例外でも片付ける。
- */
-async function runOneChild(
-  ctx: ConsultContext,
-  options: ConsultOptions,
-  job: ChildJob,
-): Promise<ChildResult> {
-  const { payload, index, signal } = job;
-  // 子ごとに用意する。隔離する type なら、子ごとに別の worktree になる。
-  const prepared = prepare(ctx, options);
-  try {
-    // 依存を入れる。無いと子もフックも何も確かめられない。
-    const install =
-      prepared.worktree === undefined ? undefined : installDependencies(prepared.worktree);
-    if (install?.kind === 'failed') {
-      // 環境の失敗。setup の誤り（設定）とは区別して、この子の状態にする。
-      throw new Error(`could not install dependencies (${install.command}): ${install.error}`);
-    }
-    // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
-    const run = await runWithFallback(options.policy.models, (model) =>
-      runPi({
-        piArgs: buildPiArgs({
-          ...options,
-          policy: { ...options.policy, models: model === undefined ? [] : [model] },
-        }),
-        stdin: joinPrompt(payload, options.task),
-        cwd: prepared.cwd,
-        signal,
-        env: gitEnv(),
-        limits: options.policy.limits,
-      }),
-    );
-    // 書き込む type は、子が残した変更をコミットして ref にする。親は取り込まない。
-    const work =
-      prepared.worktree === undefined
-        ? undefined
-        : commitWorktree(refLabel(options.type, index), worktreeGit(prepared.worktree));
-    return {
-      run,
-      ...(install === undefined ? {} : { install }),
-      ...(work === undefined ? {} : { work }),
-    };
-  } finally {
-    // 中断でも例外でも、必ず片付ける。ブランチはリポジトリ側に残る。
-    if (prepared.worktree !== undefined) {
-      removeWorktree(prepared.worktree);
-    }
-  }
-}
-
 /** 入力を先に全部読む。1 つでも読めなければ投げる（子を 1 体も起動しない） */
 function prepareConsultation(inputs: readonly string[], cwd: string): Consultation {
   if (inputs.length === 0) {
@@ -414,7 +302,7 @@ async function consult(
       details.push({ input: label, error: entry.error });
       continue;
     }
-    const { run, install, work } = entry.value;
+    const { run, install, work, retry } = entry.value;
     const events = parseEvents(run.stdout);
     lines.push(compose(events, run));
     if (work !== undefined) {
@@ -424,6 +312,13 @@ async function consult(
         lines.push('', 'ref: (the child changed nothing)');
       } else {
         lines.push('', `ref: (not created) the commit was rejected: ${work.error}`);
+        if (retry?.kept !== undefined) {
+          lines.push(
+            `worktree kept: ${retry.kept}`,
+            `attempts: ${retry.attempts}${retry.stoppedAt === undefined ? '' : `, stopped at ${retry.stoppedAt}`}`,
+            ...(retry.files === undefined ? [] : [`files: ${retry.files.join(', ')}`]),
+          );
+        }
       }
     }
     // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。`details` は agent には渡らないので、モデルをここに出さないと見えない。

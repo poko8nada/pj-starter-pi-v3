@@ -43,9 +43,14 @@ Owner: at the end
 ### Findings
 
 - なし
+- （この step は子がターン上限で止まり、コミットもフックに拒否されて ref が作られなかった。親がやり直した）
+  - 子は `consult.ts` が 494 行（上限 480）になって lint に落ちた。親は `run/child.ts` を切り出して 491 行（コードは 480 以下）に戻した
+  - 子が書いた `run/retry.ts` / `run/stopped.ts` 相当はやり直しで書き直した
+  - 未対応: `readStopped` を読む道（`consult_resume` の `list`）は step 12 で作るので、いまは書いた記録を読む利用者がいない
 
 ### Unplanned
 
-- なし
+- `run/child.ts` を新しく作った（`prepare` と `runOneChild` を `tool/consult.ts` から移した）。`consult.ts` の行数上限のため。動きは変えていない
+- `run/stopped.ts` の `readStopped` は、記録の形を自前で確かめて組み立てる（壊れた記録で親を止めない）
 
 Commit:
