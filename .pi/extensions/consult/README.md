@@ -120,6 +120,18 @@ An unknown id is refused with a reason, and nothing is stopped. A stopped child 
 
 A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If the child stops at a limit before it finishes, or the hooks reject the commit, consult runs the child once more **in the same worktree**, with `--continue`: the hook output is its task, or the reason it stopped. The work of a stopped run is not committed on its own: the continuation is committed with it when one runs. If the second run stops at the limit as well, or an abort comes before the continuation, the ref holds what the child managed, and the reply says it stopped early. If the second run fails the same way, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed; when the child stopped at a limit, the reply also says so, with the number of runs. The spend of both runs is summed into the one `[consult]` line. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it is still there while the worktree is.
 
+## Resuming a stopped child
+
+A child that stopped leaves its worktree behind (a limit it could not work past, a commit the hooks rejected twice, a crash). `consult_resume` works with those:
+
+| Action   | What it does                                                                                                                                                               |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`   | every worktree consult left, with its id, its place, the reason it stopped, and the files the child changed                                                                |
+| `run`    | runs a child again **in that worktree** (no new worktree, no install) with `--continue` by default; the caller picks the type, so a look is `research` and a fix is `code` |
+| `remove` | deletes the worktree and its record                                                                                                                                        |
+
+`--continue` does not carry the conversation: children run with `--no-session`, so a session that ended is never resumed and the second child starts from the task and the record. What carries over is the worktree, its changes, and the git history in it.
+
 ## Sound
 
 While at least one child is running, consult plays `Tink` **once every 5 seconds** — one timer and one sound, however many children are running. It stops when the last child finishes, and there is no sound at the start or at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it.
