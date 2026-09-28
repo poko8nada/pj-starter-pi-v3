@@ -56,5 +56,7 @@ The `review` child of step 9 gets this checklist, the unit's tickets and the pla
 - every change since the owner's look answers their point
 - one ticket per step, in the plan's order, and a `step 0` with なし has none
 - the `Acceptance` is the step's target, and its `Todo` and `Verify` decide every line of it
+- every ticket has `Owner:`, with the plan's value (`in the loop` or `at the end`); an `in the loop` ticket has `止まり方:`, and an `ex-` ticket has neither `in the loop` nor `止まり方:`
+- the ticket's name and heading are the plan's step name, as it is
 
 Report findings only, each with its line, marked blocking or not.

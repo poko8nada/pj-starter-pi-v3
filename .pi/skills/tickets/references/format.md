@@ -79,6 +79,7 @@ Commit:
   - what it shows: the one thing the plan's `Show:` names
   - what ends it: `何をもって終わりか: …`, and the owner's call: 残す / 直す / 捨てる
 - an `at the end` ticket has no `止まり方:`
+- an `ex-` ticket (the `close` cuts it, and no plan step exists): `Owner: at the end`, and no `止まり方:` — it has no step to stop at
 
 ## Names
 
