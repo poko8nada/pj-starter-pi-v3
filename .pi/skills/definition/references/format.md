@@ -96,7 +96,9 @@ The users therefore differ from product to product.
   - one meaning for every reader
   - values and the check belong to the plan
   - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
-- The name is the ID of the thing: two nouns, at most one hyphen
+- A unit is a real thing: an extension, a skill, a gate, a document
+  - a function is not a unit: it is written `ユニット名.機能`, inside the unit it belongs to
+- The name is `ユニット名.機能`: the unit is the real thing, and the function is what it does
 - A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
 
 ## Markers
@@ -104,6 +106,7 @@ The users therefore differ from product to product.
 - A unit in `What to build` carries `Change: update / add / drop` on its own line
   - `Now` is why it moves
   - a `keep` unit is not here: it goes in `What to keep`, with `From: <NNN>`
+  - a name leaves the list only by a `drop`: an `update` keeps the unit's name
 - The frame ends with `Changes: keep`, or with `Changes: update **理由**`
   - `### Type` and `### Who`
 - `## Stack` ends with `Changes: add` on a product's first definition

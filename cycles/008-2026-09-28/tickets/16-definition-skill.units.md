@@ -31,7 +31,9 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- 場所: `.pi/skills/definition/references/format.md` の `## Units`（`カートに入れる` is a unit などの granularity の例）と `.pi/skills/tickets/SKILL.md:11`
+  - 状態: 関数（`カートに入れる`）を unit と呼ぶ古い例が残り、新しい「unit は実物、機能は unit にしない」（`ユニット名.機能`）と食い違って読める
+  - 閉じるもの: unit / function の言い回しを granularity の例と全スキルで揃えるかを決める
 
 ### Unplanned
 

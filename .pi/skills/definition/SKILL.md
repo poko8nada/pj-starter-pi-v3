@@ -24,25 +24,29 @@ Read that before writing anything.
    - the previous cycle is the folder before this one: `cycles/<NNN-1>/definition.md`
    - one line at a time:
    - it is about this cycle's subject — it is material for the units
-   - it is for another subject — it is a candidate for the copy in step 6
+   - it is for another subject — it is a candidate for the copy in step 7
    - it is not a hole — it is done
-5. **`What to build` (the draft).** Derive the units from the frame, with the owner:
+5. **The previous units.** Read the previous cycle's `What to build` and `What to keep` first: those names are this cycle's starting list
+   - `What to build` holds the units that moved; `What to keep` holds the units that stayed
+   - a name grows only by an `add`, and shrinks only by a `drop`
+   - an `update` keeps the unit's name, and is written `ユニット名.機能`
+6. **`What to build` (the draft).** Derive the units from the frame and the previous names, with the owner:
    - count what the product does, from the `Who`'s side
    - `Now`: the state today, the carried lines that landed here among them
    - `Then`: the ideal
    - the `Now` / `Then` of each unit are settled with the owner here, before the review
    - a carried line no unit covers: a unit of its own, back to the top of this step
    - a unit the frame cannot explain: a hole, back to step 1
-6. **`Carry over`.** Now that the units exist, read the previous `Retro`'s list against them:
+7. **`Carry over`.** Now that the units exist, read the previous `Retro`'s list against them:
    - a line a unit took is not copied: it is done
    - a line no unit took stays a hole: it is written into this `Retro`'s `Carry over`
-7. **Read it against `references/format.md`**, once, before anyone else sees it
-8. **The `review` child**, with the checklist below
+8. **Read it against `references/format.md`**, once, before anyone else sees it
+9. **The `review` child**, with the checklist below
    - fix what comes back, repeat until it is clean, and cap it at two rounds
-9. **After the review: the owner.** Report what came back, with your own opinion, and settle the `Now` / `Then` with them
-   - the draft was confirmed in step 5; this is where the review's result is discussed
-   - a correction that moves the frame sends you back to step 1
-10. **Commit.** The commit is the freeze mark, and this definition is not edited afterwards
+10. **After the review: the owner.** Report what came back, with your own opinion, and settle the `Now` / `Then` with them
+    - the draft was confirmed in step 6; this is where the review's result is discussed
+    - a correction that moves the frame sends you back to step 1
+11. **Commit.** The commit is the freeze mark, and this definition is not edited afterwards
 
 Bring a recommended answer to every question.
 
@@ -63,11 +67,13 @@ Each unit's `Actor` is one of them.
 
 ## The review's checklist
 
-The `review` child of step 8 gets this checklist, the definition and the previous cycle's definition, and nothing else:
+The `review` child of step 9 gets this checklist, the definition and the previous cycle's definition, and nothing else:
 
 - the owner has seen the units and agreed
 - every change since the owner's look answers their point
 - `Type` is the owner's line, every `Who` is from the list, and every unit is written from one of those sides
+  - the names are carried over from the previous `What to build` and `What to keep`
+  - a name grows only by an `add`, and shrinks only by a `drop`
 - every open line of the previous `Retro`'s `Carry over` is accounted for
 
 Report findings only, each with its line, marked blocking or not.
