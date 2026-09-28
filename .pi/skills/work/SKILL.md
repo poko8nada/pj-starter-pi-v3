@@ -69,7 +69,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - drop it, or ask the child why it is there: do not carry it in silently
    - a ref means a commit that passed the repository's own hooks: that is the shape to take
    - the work the parent did itself: the parent commits it, and that commit is the tip
-   - a child that produced nothing (no ref, a failure, a timeout): do the work in the parent
+   - a child that produced nothing (no ref, a failure, or a timeout): step 10's four options decide what happens; doing the work in the parent is what (a) turns into when the instruction was wrong
      - and write what happened, do not invent work
 7. **Run the `Verify`.** On the parent's tree, and read the values, not the exit code.
    - the types, and what each block holds: `../plan/references/format.md`
@@ -105,7 +105,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - a judgement call: report it, do not drop it
      - at the `close`, the research decides whether to act
    - a child writes its own in its worktree, and they come back with the ref
-     - a child that stopped comes back without a ref: what it wrote stays in the worktree it left
+     - a child that stopped comes back without a ref: what it wrote stays in the worktree it left, when the worktree was kept; when it was not (a stop with no record of one), only the reply holds the reason, and step 10's (b) and (c) have nothing to resume
    - the parent appends its own: the take or drop, and what its read found
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read. For an `in the loop` unit, the owner's 残す comes first.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
@@ -119,27 +119,25 @@ The parent owns the judgment. A child may do the work; it does not judge it.
         - (c) `consult_resume` with a `code` child
         - (d) leave the ticket open, and hand it to `close`
 11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
-    - reviews the unit once, before its commit: a `consult_new` child of type `review`
-      - it gets the unit's diff and the unit's `Then`, and nothing else
-      - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
-        - required, whatever else is picked: the owner has seen what this unit must answer (the plan's step and the ticket), and agreed; every change since their look answers the point they made. For an `in the loop` unit, the owner has also seen the unit's result at a step's stop
-        - tests write into their own temporary directory through the shared helper (`test/tmp.ts`), never into the repository
-    - fixes what it reports, and runs the `Verify` of the steps it touched again
-      - for an `in the loop` unit, those fixes are shown to the owner before the unit's commit
-    - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...]`
-      - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
-      - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite or fill
-      - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
-      - the run points the one backup tag (`squash-backup`) at what it is about to rewrite, then `reset --soft` and one commit
-      - the next unit overwrites that tag: there is nothing to delete, and `git reset --hard squash-backup` is the undo
-    - the script has written the hash into every ticket of the unit: `Commit: <hash>`
-      - read what it printed, and check the tickets
-      - a `.check` step keeps `Commit: なし（理由）`: it changed nothing
-    - commit the tickets: the squash's commit holds the code, not the records
-    - an `ex-` ticket the `close` cut is its own unit: the same shape end to end
-      - the review, the squash, and the records commit, exactly as above
-      - `<base>` is where that ticket's work started, and `--tickets` names it
-      - `Commit:` names the squashed commit; the records are their own commit
+
+- a ticket that stopped and was finished later (a)–(c): write the unit's hash into its `Commit:`, and drop its `Stopped` section, so `close` does not read it as still open
+- a step left open by (d): the unit does not finish, its siblings' `Commit:` stay empty, and `close` reads the unit as open — that is what (d) chooses - reviews the unit once, before its commit: a `consult_new` child of type `review`
+  - it gets the unit's diff and the unit's `Then`, and nothing else
+  - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
+    - required, whatever else is picked: the owner has seen what this unit must answer (the plan's step and the ticket), and agreed; every change since their look answers the point they made. For an `in the loop` unit, the owner has also seen the unit's result at a step's stop
+    - tests write into their own temporary directory through the shared helper (`test/tmp.ts`), never into the repository - fixes what it reports, and runs the `Verify` of the steps it touched again
+  - for an `in the loop` unit, those fixes are shown to the owner before the unit's commit - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...]`
+  - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
+  - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite or fill
+  - it refuses a dirty tree, a list that does not match `base..HEAD`, and a `HEAD` that is not the list's last
+  - the run points the one backup tag (`squash-backup`) at what it is about to rewrite, then `reset --soft` and one commit
+  - the next unit overwrites that tag: there is nothing to delete, and `git reset --hard squash-backup` is the undo - the script has written the hash into every ticket of the unit: `Commit: <hash>`
+  - read what it printed, and check the tickets
+  - a `.check` step keeps `Commit: なし（理由）`: it changed nothing - commit the tickets: the squash's commit holds the code, not the records - an `ex-` ticket the `close` cut is its own unit: the same shape end to end
+  - the review, the squash, and the records commit, exactly as above
+  - `<base>` is where that ticket's work started, and `--tickets` names it
+  - `Commit:` names the squashed commit; the records are their own commit
+
 12. **Clean up the refs.** The `consult_refs` tool: list first, then delete, one at a time.
     - it refuses anything that is not a `consult/` ref
     - a ref it refuses: leave it, and put the reason in front of the owner

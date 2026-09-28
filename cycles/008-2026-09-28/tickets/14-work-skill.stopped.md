@@ -30,6 +30,11 @@ Owner: at the end
   - 未対応: `:113` の `Commit: なし（理由）` を、あとから (a)〜(c) で片付いたときに誰が hash に書き換えるかがどこにも無い（`format.md:146` は書き換わると言う）
   - 未対応: `:108` の「止まった子の `Notes` は残った worktree に残る」を読む段が無い。`close` の `list` も理由と変えたファイルしか見ないので、子の `Findings` は宙に浮く
   - 未対応: `:113` の「止まった」の定義が無い（`Verify` が落ちただけの step と、子が死んだ step の関係）
+  - （影響読み `consult-10` の指摘と、親の修正）
+    - blocking（直した）: step 6（`:72`）の「no ref / failure / timeout → 親がやる」が新しい step 10 の 4 択と二重だった → 「4 択が決める。親がやるのは (a) のとき」に直した
+    - blocking（直した）: `:108` の「書いた物は worktree に残る」は反例あり（step 12 の停止では worktree が消えた）→ 「worktree が残ったとき。消えていれば本文が理由を持つだけ（(b)(c) に続ける物が無い）」に直した
+    - blocking（直した）: `Commit: なし（理由）` を unit の hash に戻す手が無かった → step 11 に「(a)〜(c) で片付いたら hash を書いて `Stopped` 節を落とす」と、(d) の帰結（unit が終わらない・兄弟の `Commit:` も空のまま・close が unit ごと開いていると読む）を足した
+    - 未対応: 止まった unit の兄弟チケットが close に穴として渡る筋の是非。`in the loop` の owner の 捨てる と (d) の関係。`Todo` の行番号（`:107` と書いたが、足した行は `:108`）
 
 ### Unplanned
 
