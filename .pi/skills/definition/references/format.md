@@ -96,7 +96,8 @@ The users therefore differ from product to product.
   - one meaning for every reader
   - values and the check belong to the plan
   - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
-- A unit is a real thing: an extension, a skill, a gate, a document
+- A unit is a real thing. For this product that is an extension, a skill, a gate or a document
+  - the `カートに入れる` example above shows the granularity: one action, one result
   - a function is not a unit: it is written `ユニット名.機能`, inside the unit it belongs to
 - The name is `ユニット名.機能`: the unit is the real thing, and the function is what it does
 - A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
