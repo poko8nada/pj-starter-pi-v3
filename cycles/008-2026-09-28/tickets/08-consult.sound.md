@@ -70,4 +70,4 @@ Acceptance:
 
 - `.pi/extensions/consult/README.md` の code 節にあった「the two commands」が、`/consult-sound` で 3 つになったのに合わせて古くなっていたので、「the commands」に直した
 
-Commit:
+Commit: 90270b5 + fee7efd（90270b5 = 子の実装、fee7efd = 影響読みの blocking（`session_shutdown` でタイマーを閉じる）と README の修正）

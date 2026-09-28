@@ -49,4 +49,4 @@ Owner: at the end
 
 - なし
 
-Commit:
+Commit: 4726d7c + c743fee（4726d7c = 子の実装、c743fee = 影響読みの修正（道具自身のメッセージを新しい名前に））

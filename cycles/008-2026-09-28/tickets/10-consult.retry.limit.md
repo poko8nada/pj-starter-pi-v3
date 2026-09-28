@@ -50,4 +50,4 @@ Owner: at the end
 - `.pi/extensions/consult/run/retry.test.ts`: 上限の再走と本文の表示の検査をここに置いた（`run.test.ts` には合算と `compose` の検査を置いた）
   - なぜ: 再走のループが `retry.ts` にあるので、その検査は隣に置くのが自然。チケットが名指しする `run.test.ts` だけでは、走らせた回数と本文の検査がループから離れる
 
-Commit:
+Commit: 0c33129 + efec87e（0c33129 = 子の実装を親が衝突を解いて取り込んだ物、efec87e = 影響読みの blocking（README の文面））

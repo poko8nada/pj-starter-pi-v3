@@ -37,4 +37,4 @@ Owner: at the end
 
 - なし
 
-Commit:
+Commit: c8c1b0d + 76b2c1b（c8c1b0d = 子の実装、76b2c1b = 影響読みの修正）

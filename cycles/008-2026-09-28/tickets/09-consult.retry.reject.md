@@ -70,4 +70,4 @@ Owner: at the end
 - `run/child.ts` を新しく作った（`prepare` と `runOneChild` を `tool/consult.ts` から移した）。`consult.ts` の行数上限のため。動きは変えていない
 - `run/stopped.ts` の `readStopped` は、記録の形を自前で確かめて組み立てる（壊れた記録で親を止めない）
 
-Commit:
+Commit: 5220f3a + 0414b98 + 7c86017 + 7280adb（5220f3a = 親がやり直した実装、0414b98 = README、7c86017 = 検証の blocking（中断なら再走しない）、7280adb = 影響読みの blocking（README と共有 helper））
