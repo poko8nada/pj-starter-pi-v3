@@ -97,9 +97,9 @@ The users therefore differ from product to product.
   - one meaning for every reader
   - values and the check belong to the plan
   - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
-- A unit is a real thing. For this product, that is an extension, a skill, a gate or a document (the smallest thing the `Who` can use)
-  - a function is not a unit: a change to one is written `ユニット名.機能`, inside the unit it belongs to
-- The name of a unit that moves is `ユニット名.機能`; a unit that stays keeps its name, and a name leaves the list only by a `drop`
+- For this product (the harness), the units are extensions, skills, gates and documents (the smallest thing the `Who` can use)
+  - a function is not a unit, in any product: a change to one is written `ユニット名.機能`, inside the unit it belongs to
+- A unit keeps its name; a change to it is written `ユニット名.機能`. A name leaves the list only by a `drop`
 - A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
 
 ## Markers
