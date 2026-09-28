@@ -55,4 +55,14 @@ Owner: at the end
 
 - なし
 
-Commit:
+### Stopped
+
+- 落ちた検査の出力: lefthook の pre-commit。typecheck 3 件（`tool/resume.test.ts:21` に無い export `ResumeRunner`、`:72` の `job` が暗黙 any、`:148` の params に `action` が無い）と lint 3 件（`tool/resume.test.ts:141` / `:152` の関数を外へ、`tool/render.ts:91` の `result` が外の名前を隠す）
+- 変えたファイル: `.pi/extensions/consult/index.ts`、`run/resume.ts`、`run/resume.test.ts`、`run/stopped.ts`、`tool/consult.ts`、`tool/render.ts`、`tool/resume.ts`、`tool/resume.test.ts`（コミットが拒否されたので作業ごと失われた）
+- 子の最後の本文: 「Now I have a clear picture. Let me implement. Starting with the shared result block and the stop-record readout.」
+- 走った回数: 2（1 回目がターン上限 60 で打ち切り、続きの 2 回目もコミットがフックに拒否された）
+- 時刻: 2026-09-28 15:14
+- worktree の id: なし（保持されず消えた。`git worktree list` に残っているのは crash 時の `consult-ZH2ntR/wt` だけ）
+  - 未対応（次のサイクルで見る）: 拒否で 2 回目も通らなかったのに worktree が残っていない。step 10 の「残す」道（`attemptAndCommit` の `kept`）が効いていない可能性がある
+
+Commit: なし（ターン上限で止まり、コミットがフックに拒否された）
