@@ -20,7 +20,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - `Verify`: what will be run when it closes
    - `Owner`: `in the loop` or `at the end`, from the plan; it decides the way this unit runs
      - `in the loop`: the step stops at its end, and the owner decides; the way is below
-     - `at the end`: no stop and no `止まり方`; carry the unit through, and report once, at the end (step 13)
+     - `at the end`: no stop and no `止まり方`; carry the unit through. A cycle reports once at the end (step 13), whatever the unit's values are
    - a `Verify` that cannot run: show the owner before starting
      - one whose work is a later step's: the ticket is wrong, and this is the one time to change it
 
@@ -30,10 +30,10 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 - what it shows: the one thing the `止まり方` names — the product running, a screen, or the diff
 - the owner's call, and one of the three: 残す (keep) / 直す (fix) / 捨てる (drop)
   - 残す: the step is kept; go on to the next step
-  - 直す: the fix repeats inside this ticket — change, show again, hear again; this is the loop
+  - 直す: the fix repeats inside this ticket — change, show again, hear again; this is the loop. If it does not converge, the owner decides (drop, or re-cut the step)
   - 捨てる: drop the change, and re-cut the step with the owner
 - what ends it: the ticket's `止まり方` says; the `Acceptance` holds, the `Verify` passed, and the diff is read (step 10)
-- only after it ends: the commit and the review (step 11)
+- only after the unit ends: the commit and the unit review (step 11)
   - nothing is committed or reviewed before the owner has kept the work
 
 2. **Decide who does the work.** The parent, or a `consult` child of type `code`.
@@ -106,16 +106,17 @@ The parent owns the judgment. A child may do the work; it does not judge it.
      - at the `close`, the research decides whether to act
    - a child writes its own in its worktree, and they come back with the ref
    - the parent appends its own: the take or drop, and what its read found
-10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read.
+10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read. For an `in the loop` unit, the owner's 残す comes first.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
     - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
 11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
     - reviews the unit once, before its commit: a `consult` child of type `review`
       - it gets the unit's diff and the unit's `Then`, and nothing else
       - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
-        - required, whatever else is picked: the owner has seen what this unit answers, and agreed; every change since their look answers the point they made
+        - required, whatever else is picked: the owner has seen what this unit must answer (the plan's step and the ticket), and agreed; every change since their look answers the point they made. For an `in the loop` unit, the owner has also seen the unit's result at a step's stop
         - tests write into their own temporary directory through the shared helper (`test/tmp.ts`), never into the repository
     - fixes what it reports, and runs the `Verify` of the steps it touched again
+      - for an `in the loop` unit, those fixes are shown to the owner before the unit's commit
     - squashes the unit's commits into one: `.pi/skills/work/scripts/squash.mjs <cycle-dir> <base-hash> <hash>... [--tickets <name>...]`
       - name the unit's tickets: their empty `Commit:` is filled with the new hash, so no ticket is left blank
       - dry first: it prints what it will squash, the message, and the ticket lines it will rewrite or fill

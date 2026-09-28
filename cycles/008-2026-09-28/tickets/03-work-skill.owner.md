@@ -29,6 +29,9 @@ Owner: at the end
 ### Findings
 
 - なし
+- （影響読み `consult-39` の指摘と、親の修正）
+  - 直した物（すべて 1 行ずつ）: `at the end` の説明が「step 13 は `at the end` の物」に読めた → サイクルは値によらず 1 回報告する、と直した。`直す` のループに出口が無かった → 収束しなければ owner が決める（捨てる / 切り直す）。`only after it ends` の it が step か unit か読めなかった → unit と明記。step 10 の done の定義が `in the loop` と合わなかった → `in the loop` は owner の 残す が先、と足した。step 11 の必須観点「owner が見て同意した」が `at the end` で成立しない → 対象を「何を答えなければならないか（プランの step とチケット）」にし、`in the loop` では結果も見る、と足した。レビューの修正が owner 未見のままコミットされ得た → `in the loop` ではコミット前に見せる、と足した
+  - 未対応（この step の外）: チケットの `止まり方` 欄そのもの（`tickets/references/format.md`）は step 04 が作る。Acceptance 3 行目が「チケットの `read` に書いてある」としているので、成果物が 03 と 04 に分かれる（plan の段で見えたはずの穴）。`README.md:49` の work 行は step 18。owner の step ごとの判断をチケットに書く場所も step 04。
 
 ### Unplanned
 
