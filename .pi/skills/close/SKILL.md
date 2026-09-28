@@ -47,7 +47,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - a hole is never fixed silently, and a frozen definition or plan is never rewritten to close it
 4. **The research.** Before the `Retro` is written: the reported holes are classified, and only what is decided to be acted on survives.
    - collect: the tickets' `Findings`, the tickets that are still open, and what this close itself found
-   - a ticket that is still open (no `Commit:`, a `Stopped` section) is a hole, and it is not re-cut: read its `Stopped` reason
+   - a ticket that is still open (it has a `Stopped` section: a step that stopped shows as `Commit: なし（理由）`, so an empty `Commit:` is not the signal) is a hole, and it is not re-cut: read its `Stopped` reason
      - the parent and the owner decide its fate, before the `Retro`: 続ける / 落とす / 持ち越す
        - 続ける: the cycle waits (step 3): `work` takes it back, or `consult_resume` runs the child on in the same worktree; the worktree stays, and step 1 is where the close resumes
        - 落とす: the ticket is dropped, the reason is one `Bad` line, its worktree is removed at step 9, and the ticket is closed as dropped: write `Commit: なし（owner が落とした。理由は Stopped のとおり）` into it, so the next close does not read it as still open
@@ -93,8 +93,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
 9. **The worktrees.** After the commit: what the stopped children left is removed or kept, as step 4 decided. Nothing is decided here — what this step finds that step 4 did not decide goes back to step 4, before the commit.
    - `consult_resume` with `list`: every worktree `consult` left, with its id, its place, the reason it stopped, and the files the child changed
    - `remove`, one at a time, by the id `list` gave: the worktree of a ticket decided 落とす, and any worktree no open ticket and no `Carry over` line names (a `Carry over` line keeps its worktree alive across cycles)
-   - a worktree decided 持ち越す stays; its id is beside that ticket's `Stopped` reason, and in the `Carry over` line
-   - the id comes from `list`, not from memory; a worktree a call kept is not removed here
+   - a worktree decided 持ち越す stays — unless the owner called it stale, which step 4 decided to remove; its id is beside that ticket's `Stopped` reason, and in the `Carry over` line
+   - the id comes from `list`, not from memory; never remove a worktree on memory alone
 
 ## The review's checklist
 

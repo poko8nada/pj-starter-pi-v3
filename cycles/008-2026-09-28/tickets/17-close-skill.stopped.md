@@ -30,6 +30,10 @@ Owner: at the end
   - blocking（直した）: 「落とす」でチケットの状態が更新されない（`Stopped` が残り `Commit:` も空なので、次の close でまた穴として拾われる）→ `Commit: なし（owner が落とした。理由は Stopped のとおり）` を書く、と足した
   - blocking（直した）: 「持ち越す」worktree が次のサイクルの削除条件（「開いたチケットが名指さない物」）で消える → `Carry over` 行が名指す id を削除から除く、と足した
   - 未対応: 「続ける」ときの記録先が無い（`Bad` / `Carry over` は他の 2 つにしか無い）。決定者の書き分けが `:40` と `:51` で違う。開いている判定が `:26` と `:50` で別の形（実際に効くのは `Stopped` があるか）。step 9 は worktree だけを見て、止まった子が残した `consult/` ref を見ていない
+  - （影響読み `consult-8` の指摘と、親の修正）
+    - blocking（直した）: step 4 の「stale と言われた 持ち越す worktree は消す」が step 9 に無かった → step 9 の 持ち越す の行に例外を足した
+    - 直した: `:50` の「開いている = `Commit:` が空」という書き方を実物に直した（`Stopped` 節があるか。止まった step は `Commit: なし（理由）` を持つ）。`:97` の「a call kept は消さない」は `:95` の削除を打ち消して読めたので「記憶で消さない」に直した
+    - 未対応: 持ち越す の `Carry over` 行が `Status` / `Research` / `Action` / `Basis` / `From:` の形を満たすか不明（`Stopped` の 6 項目をどのラベルに写すか）。開いているチケットにも `research` の子が付く（`:57`）が、`common` / `remedy` のセルは当てはまらない。step 7 の checklist は「removed」を実行前に確かめさせる（削除は step 9。child には `list` の出力が渡らない）。`remove` は生きた worktree も消せる（step 12 の未対応を持ち込んでいる）
 
 ### Unplanned
 
