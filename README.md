@@ -10,7 +10,10 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
 - **The cycle mechanism** — six skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets` / `work` / `close`)
-- **Extensions** — `consult` (one extension with two tools: `consult_new`, which runs a child `pi` without showing it this conversation, and `consult_refs`, which lists the refs it leaves behind and deletes one), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
+- **Extensions** — `consult` (one extension with three tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
+  - `consult_new` — runs a child `pi` without showing it this conversation
+  - `consult_resume` — lists the worktrees a stopped child left, runs a child in one, and removes it when it is no longer needed
+  - `consult_refs` — lists the refs it leaves behind and deletes one
 - **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
 - **The cycle records** — `cycles/`
 

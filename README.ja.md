@@ -10,7 +10,10 @@ English: [README.md](README.md)
 - **ゲート** — commit と push で検査を通す `lefthook` と、ターンごとにそのターンで変えた分だけを検査する `quality-gate`
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
 - **サイクルの仕組み** — `.pi/skills/` の 6 つ（`definition` / `stack` / `plan` / `tickets` / `work` / `close`）
-- **拡張** — `consult`（2 つの道具を持つ 1 つの拡張。`consult_new` は会話を見せずに子の `pi` を走らせ、`consult_refs` はそれが残した ref を一覧し、1 つ消す）/ `quality-gate`（ターンで変えた分を検査する）/ `sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
+- **拡張** — `consult`（3 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
+  - `consult_new` — 会話を見せずに子の `pi` を走らせる
+  - `consult_resume` — 止まった子が残した worktree を一覧し、その 1 つで子を走らせ、要らなくなったら消す
+  - `consult_refs` — それが残した ref を一覧し、1 つ消す
 - **CI** — `.github/workflows/pullfrog.yml`（dispatch で agent を走らせる）
 - **サイクルの記録** — `cycles/`
 

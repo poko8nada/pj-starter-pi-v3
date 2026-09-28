@@ -28,10 +28,14 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- 拡張の README の道具表が、登録された道具の数に追随していない: `.pi/extensions/consult/README.md` の「The extension registers two tools.」と 2 行の表がそのままで、`consult_resume` を道具として数えていない（本文には「Resuming a stopped child」の節がある）
+  - なぜ外か: このチケットと計画の `Files` は `README.md` / `README.ja.md` だけ。`consult/README.md` は step 7 と step 12 の `Files` で、step 12 の「`consult/README.md` が追随している」はここを指す
+  - 観測: `consult/index.ts` の `registerTool` は 3 つ（`consult_new` / `consult_resume` / `consult_refs`）。README の Tools の表は 2 行。`git grep -n "registers two tools" .pi/extensions/consult/README.md` が 1 件
+  - この環境の条件: ルートの README は 3 つ、consult の README は 2 つと言う。step 19 の検査は名前（`ref_cleanup`、道具としての `consult`）しか見ないので、この数の食い違いはすり抜ける
 
 ### Unplanned
 
-- なし
+- `README.md` / `README.ja.md` の Extensions: 3 つの道具を親の 1 行の中ではなく、子の箇条書き（`consult_new` / `consult_resume` / `consult_refs`）として並べた
+  - なぜ: Todo は「Extensions の行」を書き換えると言うが、Verify の `git grep -c` は一致する「行数」を数える。1 行のままだと 1 にしかならず、`3 以上` を満たせない。1 道具 1 行にして満たした
 
 Commit:
