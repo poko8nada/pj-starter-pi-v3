@@ -34,6 +34,8 @@ export interface RunRecord {
   readonly files?: readonly string[];
   readonly turns?: number;
   readonly spend?: string;
+  /** 届け先のセッションが無かったときの、完了の知らせ。次に起動したセッションが読む */
+  readonly notice?: string;
 }
 
 /** 記録を置く unit の名前。worktree が無ければ親の木を指す固定の名前 */
@@ -107,6 +109,7 @@ export function parseRun(line: string): RunRecord | undefined {
     ...(isPaths(fields.files) ? { files: fields.files } : {}),
     ...(typeof fields.turns === 'number' ? { turns: fields.turns } : {}),
     ...(typeof fields.spend === 'string' ? { spend: fields.spend } : {}),
+    ...(typeof fields.notice === 'string' ? { notice: fields.notice } : {}),
   };
 }
 

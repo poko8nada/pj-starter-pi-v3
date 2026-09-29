@@ -9,6 +9,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import type { RunRecord } from '../run/log.ts';
 
 /** 子が 1 体以上走っている間の、1 音の間隔 */
 export const SOUND_INTERVAL_MS = 5000;
@@ -79,4 +80,17 @@ export function stopSound(): void {
 /** タイマーが動いているか。テストが読む */
 export function isSoundRunning(): boolean {
   return timer !== undefined;
+}
+
+/**
+ * 走っている子の記録だけを返す。
+ *
+ * 記録から数えるのは、reload をまたいだ子も見えるようにするため。`ended` が無く、pid が生きている物
+ * が走っている（親が死んでも子は detach されて残るので、親の記憶では判定できない）。
+ */
+export function runningChildren(
+  records: readonly RunRecord[],
+  alive: (pid: number) => boolean,
+): RunRecord[] {
+  return records.filter((record) => record.ended === undefined && alive(record.pid));
 }

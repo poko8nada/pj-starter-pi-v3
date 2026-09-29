@@ -13,7 +13,8 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import type { Static } from 'typebox';
 import { runOneChild, type ChildJob } from '../run/child.ts';
 import { findWorktree, rootFor } from '../run/worktree.ts';
-import { appendRun } from '../run/log.ts';
+import { appendRun, type RunRecord } from '../run/log.ts';
+import type { Delivery } from '../run/delivery.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
   USAGE as RUN_USAGE,
@@ -213,6 +214,8 @@ interface RuntimeState {
   readonly pi: PiFace;
   readonly run: ConsultRunner;
   readonly children: Map<string, RunningChild>;
+  /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
+  readonly delivery?: Delivery;
   counter: number;
 }
 
@@ -231,51 +234,57 @@ function failureOutcome(error: unknown): ConsultOutcome {
 }
 
 /** 完了を親のメッセージにする */
-function deliver(pi: PiFace, child: RunningChild, outcome: ConsultOutcome): void {
+function deliver(
+  state: RuntimeState,
+  child: RunningChild,
+  outcome: ConsultOutcome,
+  record: RunRecord,
+): void {
   const built = completionMessage(child, outcome);
-  pi.sendMessage(built.message, built.options);
+  if (state.delivery === undefined) {
+    // delivery を組んでいない（テストの runtime など）。今まで通り直接渡す
+    state.pi.sendMessage(built.message, built.options);
+    return;
+  }
+  state.delivery.send(built.message, built.options, record);
+}
+
+/**
+ * 走っている子の記録を閉じる 1 行。
+ *
+ * 落ちた子も閉じる（開いたままにすると、いつまでも「走っている」と見える）。届け先が無かったときの
+ * 控え（`notice`）にもこの記録を使う。
+ */
+function closeRecord(job: BackgroundJob, root: string, report: ChildReport | undefined): RunRecord {
+  const record: RunRecord = {
+    child: job.child.id,
+    role: job.options.type,
+    pid: job.child.pid ?? 0,
+    started: job.child.startedAt,
+    ended: Date.now(),
+    state: report?.state ?? 'error',
+    files: report === undefined ? [] : [...report.files],
+    turns: report?.turns ?? 0,
+    spend: report?.spend ?? '',
+    ...(report?.reason === undefined ? {} : { reason: report.reason }),
+    ...(job.job.worktree === undefined ? {} : { worktree: job.job.worktree.id }),
+  };
+  appendRun(root, record);
+  return record;
 }
 
 /** 子を起こし、完了でメッセージを送る。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
-  // 終わりの 1 行。走っている行に重ねる形で足す（読む側は子ごとに最後の行を取る）
-  const end = (outcome: ConsultOutcome): void => {
-    const report = outcome.report;
-    if (report === undefined) {
-      return;
-    }
-    appendRun(rootFor(job.ctx.cwd), {
-      child: job.child.id,
-      role: job.options.type,
-      pid: job.child.pid ?? 0,
-      started: job.child.startedAt,
-      ended: Date.now(),
-      state: report.state,
-      files: [...report.files],
-      turns: report.turns,
-      spend: report.spend,
-      ...(report.reason === undefined ? {} : { reason: report.reason }),
-      ...(report.worktree === undefined ? {} : { worktree: report.worktree }),
-    });
-  };
+  const root = rootFor(job.ctx.cwd);
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
-      deliver(state.pi, job.child, outcome);
-      end(outcome);
+      const record = closeRecord(job, root, outcome.report);
+      deliver(state, job.child, outcome, record);
     })
     .catch((error: unknown) => {
-      // 落ちた子も記録を閉じる。開いたままにすると、いつまでも「走っている」と見える
-      appendRun(rootFor(job.ctx.cwd), {
-        child: job.child.id,
-        role: job.options.type,
-        pid: job.child.pid ?? 0,
-        started: job.child.startedAt,
-        ended: Date.now(),
-        state: 'error',
-        ...(job.job.worktree === undefined ? {} : { worktree: job.job.worktree.id }),
-      });
-      deliver(state.pi, job.child, failureOutcome(error));
+      const record = closeRecord(job, root, undefined);
+      deliver(state, job.child, failureOutcome(error), record);
     })
     .finally(() => {
       state.children.delete(job.child.id);
@@ -362,8 +371,18 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ children を共有する。
  * テストは `pi` と `run` を差し替えて、子を起こさずに確かめられる。
  */
-export function createRuntime(pi: PiFace, run: ConsultRunner = consult): ConsultRuntime {
-  const state: RuntimeState = { pi, run, children: new Map(), counter: 0 };
+export function createRuntime(
+  pi: PiFace,
+  run: ConsultRunner = consult,
+  delivery?: Delivery,
+): ConsultRuntime {
+  const state: RuntimeState = {
+    pi,
+    run,
+    children: new Map(),
+    counter: 0,
+    ...(delivery === undefined ? {} : { delivery }),
+  };
   return {
     children: state.children,
     run: async (...args: RunExecuteArgs) => {

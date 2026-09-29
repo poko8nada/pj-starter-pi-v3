@@ -6,16 +6,39 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RunRecord } from '../run/log.ts';
 import {
   SOUND_INTERVAL_MS,
   isSoundEnabled,
   isSoundRunning,
   playSound,
+  runningChildren,
   setPlayer,
   setSoundEnabled,
   startSound,
   stopSound,
 } from './sound.ts';
+
+describe('runningChildren', () => {
+  const base: RunRecord = { child: 'consult-1', role: 'review', pid: 42, started: 1000 };
+
+  it('終わっていない子（pid が生きている）→ 走っている', () => {
+    expect(runningChildren([base], () => true)).toHaveLength(1);
+  });
+
+  it('終わった子は、pid が生きていても走っていない', () => {
+    const done: RunRecord = { ...base, ended: 2000, state: 'done' };
+    expect(runningChildren([done], () => true)).toHaveLength(0);
+  });
+
+  it('pid が死んでいれば、終了行が無くても走っていない（親ごと落ちた子）', () => {
+    expect(runningChildren([base], () => false)).toHaveLength(0);
+  });
+
+  it('走っている子が居なければ 0（音を戻す判断に使う）', () => {
+    expect(runningChildren([], () => true)).toHaveLength(0);
+  });
+});
 
 describe('sound', () => {
   const played: string[] = [];

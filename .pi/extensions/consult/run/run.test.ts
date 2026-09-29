@@ -7,6 +7,7 @@ import {
   stateOf,
   reasonOf,
   type GitRun,
+  spawnOptions,
   gitEnv,
   installCommand,
   modelAttempts,
@@ -273,6 +274,15 @@ describe('runForInputs: 同期で投げるコールバック', () => {
 function combinedRun(stdout: string, extra: Partial<RunResult> = {}): RunResult {
   return { stdout, stderr: '', code: 0, aborted: false, ...extra };
 }
+
+describe('spawnOptions', () => {
+  it('子は detach して起こす（親が落ちても作業が残る）', () => {
+    const options = spawnOptions('/tmp/x', {});
+    expect(options.detached).toBe(true);
+    expect(options.cwd).toBe('/tmp/x');
+    expect(options.stdio).toEqual(['pipe', 'pipe', 'pipe']);
+  });
+});
 
 describe('stateOf / reasonOf', () => {
   it('code 0 → done（理由は出さない）', () => {

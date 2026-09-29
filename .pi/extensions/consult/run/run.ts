@@ -237,6 +237,24 @@ export function worktreeGit(path: string): GitRun {
   };
 }
 
+/** 子の起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
+export interface PiSpawnOptions {
+  readonly cwd: string;
+  readonly env: NodeJS.ProcessEnv;
+  readonly stdio: ['pipe', 'pipe', 'pipe'];
+  readonly detached: true;
+}
+
+/**
+ * 子の起動オプション。
+ *
+ * `detached: true` が要る: pi のプロセスが落ちても子は走り続け、残った作業は worktree に残る（完了の
+ * 知らせは届かないが、記録を読めば分かる）。
+ */
+export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOptions {
+  return { cwd, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true };
+}
+
 /**
  * 子を 1 回起動する。
  *
@@ -283,11 +301,7 @@ function consumeLine(line: string, state: RunState, child: ReturnType<typeof spa
 
 export function runPi(options: RunOptions): Promise<RunResult> {
   return new Promise((settle) => {
-    const child = spawn('pi', [...options.piArgs], {
-      cwd: options.cwd,
-      env: options.env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
+    const child = spawn('pi', [...options.piArgs], spawnOptions(options.cwd, options.env));
     const state: RunState = {
       stdout: '',
       stderr: '',

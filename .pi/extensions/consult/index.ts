@@ -4,16 +4,60 @@
  * 走っている子の管理は `tool/consult.ts` の `createRuntime` が 1 か所で持ち、道具の `action` とコマンドの両方が同じ `control` を呼ぶ。
  */
 
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { createRuntime } from './tool/consult.ts';
-import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
+import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
+import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool, latest } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
-import { stopSound } from './tool/sound.ts';
+import { runningChildren, startSound, stopSound } from './tool/sound.ts';
+import { createDelivery } from './run/delivery.ts';
+import { pidAlive, readRuns } from './run/log.ts';
+import { rootFor } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
+/**
+ * 前のセッション（reload の前）の子がまだ走っていれば、そのことを知らせて音を戻す。
+ *
+ * 子は detach されて親の記憶の外でも生きているので、判定は記録（log.jsonl）と pid で行う。
+ */
+function announceRunningChildren(ctx: ExtensionContext): void {
+  const running = runningChildren(latest(readRuns(rootFor(ctx.cwd))), pidAlive);
+  if (running.length === 0) {
+    return;
+  }
+  ctx.ui.notify(
+    `consult: ${running.length} child(ren) are still running from an earlier session (see consult_children)`,
+    'info',
+  );
+  startSound();
+}
+
+/** 人が使う口。子の一覧と停止、音の切り替え */
+function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
+  pi.registerCommand('consult-status', {
+    description: 'List the consult children that are still running',
+    handler: (args, ctx) => consult.commands.status(args, ctx),
+  });
+  pi.registerCommand('consult-cancel', {
+    description: 'Stop a running consult child (usage: /consult-cancel <id>)',
+    handler: (args, ctx) => consult.commands.cancel(args, ctx),
+  });
+  pi.registerCommand('consult-sound', {
+    description: 'Turn the consult sound on or off (usage: /consult-sound on|off)',
+    handler: (args, ctx) => consult.commands.sound(args, ctx),
+  });
+}
+
 export default function (pi: ExtensionAPI) {
-  const consult = createRuntime(pi);
+  // 完了の届け先は 1 本。reload で捨てられても、古い delivery は記録へ回すだけ（新しいセッションが読む）
+  const delivery = createDelivery(() => rootFor(process.cwd()));
+  delivery.attach(pi);
+  const consult = createRuntime(pi, undefined, delivery);
+
+  // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
+  pi.on('session_start', (_event, ctx) => {
+    announceRunningChildren(ctx);
+  });
 
   pi.registerTool({
     name: 'consult_run',
@@ -60,23 +104,12 @@ export default function (pi: ExtensionAPI) {
     execute: worktreeExecute,
   });
 
-  pi.registerCommand('consult-status', {
-    description: 'List the consult children that are still running',
-    handler: (args, ctx) => consult.commands.status(args, ctx),
-  });
-
-  pi.registerCommand('consult-cancel', {
-    description: 'Stop a running consult child (usage: /consult-cancel <id>)',
-    handler: (args, ctx) => consult.commands.cancel(args, ctx),
-  });
-
-  pi.registerCommand('consult-sound', {
-    description: 'Turn the consult sound on or off (usage: /consult-sound on|off)',
-    handler: (args, ctx) => consult.commands.sound(args, ctx),
-  });
+  registerCommands(pi, consult);
 
   // reload / セッションの差し替えで古いインスタンスが残っても、始めたタイマーが鳴り続けないように閉じる
   pi.on('session_shutdown', () => {
+    // 子は detach されているので殺さない。届け先を手放すだけ（以後の完了は記録に回る）
+    delivery.detach();
     stopSound();
   });
 
