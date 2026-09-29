@@ -1,8 +1,10 @@
 import { readdirSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { basename, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from './git-env.ts';
+import { gitEnv } from './run.ts';
 import {
   branchFor,
   createWorktree,
@@ -15,6 +17,23 @@ import {
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす（後始末も helper がする）。
 const ROOT_KEY = 'CONSULT_ROOT';
+
+/**
+ * worktree に git を打つ。だめなときは投げる。
+ *
+ * `runGit` は `GIT_DIR` / `GIT_WORK_TREE` を repo 用に固定するので worktree の中では使えない
+ * （cwd を worktree にしても、repo の作業木を見てしまう。実際にこの検査で嵌まった）。
+ */
+function gitInWorktree(path: string, args: readonly string[]): void {
+  const result = spawnSync('git', [...args], {
+    cwd: path,
+    encoding: 'utf8',
+    env: gitEnv(process.env),
+  });
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed: ${(result.stderr || '').trim()}`);
+  }
+}
 
 /** base のコミットを 1 つ持つリポジトリ */
 function repo(): { readonly dir: string; readonly home: string } {
@@ -167,13 +186,42 @@ describe('removeWorktree', () => {
     expect(listWorktrees(dir)).toEqual([]);
   });
 
-  it('ブランチは消えるまで残る（親のツリーは汚れない）', () => {
+  it('ブランチは、取り込み済みなら一緒に消える（親のツリーは汚れない）', () => {
     const { dir, home } = repo();
     createWorktree(dir, '1-a');
-    removeWorktree(dir, '1-a');
+    // 子が何も書いていない（ブランチは base のまま = 親に取り込み済み）
+    expect(removeWorktree(dir, '1-a')).toBe('removed');
 
-    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout).toContain(branchFor('1-a'));
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout.trim()).toBe('');
     expect(runGit(dir, home, ['status', '--porcelain']).stdout.trim()).toBe('');
+  });
+
+  it('未マージのブランチは残す（仕事を消さない）', () => {
+    const { dir, home } = repo();
+    const made = createWorktree(dir, '1-a');
+    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    // worktree で 1 つコミットする = 親に取り込まれていない仕事。
+    // `runGit` は repo 用に GIT_DIR を固定するので、worktree は `-C` で指す
+    gitInWorktree(made.path, ['add', '-A']);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+
+    expect(removeWorktree(dir, '1-a')).toBe('removed-branch-kept');
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout).toContain(branchFor('1-a'));
+    // 仕事はブランチに残っている
+    expect(runGit(dir, home, ['log', '--oneline', branchFor('1-a')]).stdout).toContain(
+      "the child's work",
+    );
+  });
+
+  it('未マージでも force ならブランチも消える（捨てる）', () => {
+    const { dir, home } = repo();
+    const made = createWorktree(dir, '1-a');
+    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    gitInWorktree(made.path, ['add', '-A']);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+
+    expect(removeWorktree(dir, '1-a', { force: true })).toBe('removed');
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout.trim()).toBe('');
   });
 });
 

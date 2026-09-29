@@ -1,8 +1,11 @@
 import { writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
+import { gitEnv } from '../run/run.ts';
+import { findWorktree } from '../run/worktree.ts';
 import { execute } from './worktree.ts';
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす。
@@ -27,6 +30,18 @@ function repo(): { readonly dir: string; readonly home: string } {
   run(['add', '-A']);
   run(['commit', '--quiet', '-m', 'base']);
   return { dir, home };
+}
+
+/** worktree に git を打つ（`runGit` は repo 用に GIT_DIR を固定するので使えない） */
+function gitInWorktree(path: string, args: readonly string[]): void {
+  const result = spawnSync('git', [...args], {
+    cwd: path,
+    encoding: 'utf8',
+    env: gitEnv(process.env),
+  });
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed: ${(result.stderr || '').trim()}`);
+  }
 }
 
 function text(outcome: { content: readonly { type: string; text?: string }[] }): string {
@@ -77,6 +92,30 @@ describe('consult_worktree', () => {
     expect(text(await call({ action: 'remove', id: '2-b' }, dir))).toContain('変更が残っている');
     expect(text(await call({ action: 'remove', id: '2-b', force: true }, dir))).toContain('消した');
     expect(text(await call({ action: 'remove', id: '2-b' }, dir))).toContain('無い');
+  });
+
+  it('remove → worktree と、取り込み済みのブランチを消す', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+
+    const body = text(outcome);
+    expect(body).toContain('消した: 2-b');
+    expect(body).toContain('ブランチも消した');
+    expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('未マージなら → ブランチは残したと返す（仕事を消さない）', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const path = findWorktree(dir, '2-b')?.path ?? '';
+    writeFileSync(join(path, 'note.md'), 'the child wrote this\n');
+    gitInWorktree(path, ['add', '-A']);
+    gitInWorktree(path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(text(outcome)).toContain('ブランチは未マージなので残した');
+    expect(outcome.details['outcome']).toBe('removed-branch-kept');
   });
 
   it('知らない action → エラー', async () => {

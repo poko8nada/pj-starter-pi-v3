@@ -34,7 +34,10 @@ export const PARAMETERS = Type.Object({
     }),
   ),
   force: Type.Optional(
-    Type.Boolean({ description: 'Remove even when changes are left in the worktree' }),
+    Type.Boolean({
+      description:
+        'Remove even when changes are left in the worktree, and delete the branch even when it is not merged',
+    }),
   ),
 });
 
@@ -92,7 +95,10 @@ function rowLine(row: WorktreeRow, busy: boolean): string {
 
 function removeText(outcome: RemoveOutcome, id: string): string {
   if (outcome === 'removed') {
-    return `消した: ${id}`;
+    return `消した: ${id}（ブランチも消した）`;
+  }
+  if (outcome === 'removed-branch-kept') {
+    return `消した: ${id}（ブランチは未マージなので残した。取り込むか、force で捨てる）`;
   }
   if (outcome === 'missing') {
     return `無い: ${id}`;

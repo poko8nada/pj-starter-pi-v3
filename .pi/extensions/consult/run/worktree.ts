@@ -31,7 +31,13 @@ export interface WorktreeRow extends Worktree {
   readonly dirty: boolean;
 }
 
-export type RemoveOutcome = 'removed' | 'missing' | 'busy' | 'dirty';
+export type RemoveOutcome =
+  | 'removed'
+  /** worktree は消えたが、ブランチは取り込み済みでなかったので残した */
+  | 'removed-branch-kept'
+  | 'missing'
+  | 'busy'
+  | 'dirty';
 
 function git(
   cwd: string,
@@ -182,7 +188,8 @@ export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree
 /**
  * 作業場を消す。子が動いているときは消さない（busy）。
  *
- * 変更が残っているときは `force` を要求する。登録を消してから入れ物を消す（順序を逆にすると登録が残る）。
+ * 変更が残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を消す
+ * （順序を逆にすると登録が残る）。ブランチも片付けるが、未マージなら `force` 無しでは残す。
  */
 export function removeWorktree(
   cwd: string,
@@ -201,5 +208,11 @@ export function removeWorktree(
   }
   git(cwd, ['worktree', 'remove', '--force', found.path]);
   rmSync(found.root, { recursive: true, force: true });
-  return 'removed';
+  // ブランチも片付ける。`-d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、
+  // 未マージの仕事をここで消さない。捨てると決めたときだけ `-D`
+  const branch =
+    options.force === true
+      ? git(cwd, ['branch', '-D', found.branch])
+      : git(cwd, ['branch', '-d', found.branch]);
+  return branch.status === 0 ? 'removed' : 'removed-branch-kept';
 }
