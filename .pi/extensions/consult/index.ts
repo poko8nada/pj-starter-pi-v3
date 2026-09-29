@@ -9,7 +9,7 @@ import { PARAMETERS, createRuntime } from './tool/consult.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { stopSound } from './tool/sound.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
-import { PARAMETERS as REF_PARAMETERS, execute as refExecute } from './tool/refs.ts';
+import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
 export default function (pi: ExtensionAPI) {
   const consult = createRuntime(pi);
@@ -83,17 +83,18 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
-    name: 'consult_refs',
-    label: 'Consult refs',
+    name: 'consult_commit',
+    label: 'Consult commit',
     description:
-      "List and delete the refs consult leaves behind. 'list' shows every consult/ ref with its hash; 'delete' removes one, and refuses anything that is not a consult/ ref. Nothing else in the repository is touched.",
-    promptSnippet: 'List or delete the refs left by consult (only consult/ refs can be deleted)',
+      "Commit the work a child left in its worktree, on that worktree's branch: consult_commit{worktree}. The message is made here (consult(<unit>): the child's work), so the log stays countable. Returns committed: <hash>, rejected: <hook output> (the work is left in place), or no change. Merging into your branch is a plain git command, run by you.",
+    promptSnippet: "Commit a child's work in its worktree (by unit id)",
     promptGuidelines: [
-      'Use consult_refs after a consult child that wrote something: decide whether to take the ref in or discard it, then delete it in the same breath.',
-      'A ref that is not a consult/ ref is never deleted by this tool.',
+      'Use consult_commit when a child that writes has finished and you have judged its work: one call commits the whole worktree.',
+      'You never need the tmp path; the tool finds the worktree from the unit id.',
+      'A rejected commit leaves the work in place; read the output, fix it, and call again, or discard the worktree with consult_worktree.',
+      'Take the commit into your branch yourself with git merge --no-ff <branch>; consult does not merge.',
     ],
-    parameters: REF_PARAMETERS,
-
-    execute: refExecute,
+    parameters: COMMIT_PARAMETERS,
+    execute: commitExecute,
   });
 }

@@ -1,15 +1,12 @@
-import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { runGit } from './git-env.ts';
 import {
   changedFiles,
   stateOf,
   reasonOf,
   type GitRun,
-  commitWorktree,
   gitEnv,
   installCommand,
   modelAttempts,
@@ -17,7 +14,6 @@ import {
   readPayloads,
   runForInputs,
   runWithFallback,
-  type GitOutput,
   type RunResult,
 } from './run.ts';
 import { finalTextFrom, parseEvents } from '../child/spec.ts';
@@ -27,15 +23,6 @@ import { compose } from '../tool/render.ts';
 // ファイルを書くテストは `test/tmp.ts` の helper に置き場を寄せる。
 
 /** git を差し替えて、コミットと ref 作りの判断だけを試す */
-function recorder(overrides: Record<string, GitOutput> = {}) {
-  const calls: string[][] = [];
-  const git = (args: readonly string[]): GitOutput => {
-    calls.push([...args]);
-    const key = args[0] ?? '';
-    return overrides[key] ?? { status: 0, stdout: '', stderr: '' };
-  };
-  return { git, calls };
-}
 
 describe('readPayload', () => {
   let dir = '';
@@ -243,70 +230,6 @@ describe('installCommand', () => {
 
   it('どちらも無い → 何もしない', () => {
     expect(installCommand(dir)).toBeUndefined();
-  });
-});
-
-describe('commitWorktree', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  const changed: GitOutput = { status: 0, stdout: ' M note.md\n', stderr: '' };
-
-  it('変更あり → コミットされ、ブランチが返る', () => {
-    const { git, calls } = recorder({
-      status: changed,
-      show: { status: 0, stdout: 'abc123 the child work\n note.md | 1 +\n', stderr: '' },
-    });
-    const outcome = commitWorktree('demo', git);
-    expect(outcome.kind).toBe('committed');
-    expect(outcome).toMatchObject({ ref: 'consult/demo' });
-    expect(calls.map((args) => args[0])).toEqual(['status', 'add', 'commit', 'branch', 'show']);
-    expect(calls[3]).toEqual(['branch', 'consult/demo', 'HEAD']);
-  });
-
-  it('変更なし → ブランチを作らない', () => {
-    const { git, calls } = recorder();
-    expect(commitWorktree('demo', git)).toEqual({ kind: 'no-change' });
-    expect(calls.map((args) => args[0])).toEqual(['status']);
-  });
-
-  it('フックが落ちたらブランチを作らない', () => {
-    const { git, calls } = recorder({
-      status: changed,
-      commit: { status: 1, stdout: '', stderr: 'lint failed' },
-    });
-    expect(commitWorktree('demo', git)).toEqual({ kind: 'failed', error: 'lint failed' });
-    expect(calls.map((args) => args[0])).toEqual(['status', 'add', 'commit']);
-  });
-
-  it('継承した GIT_* を無視する（外の repo を指していても、自分の repo に書く）', () => {
-    // 外の repo の代役。ここが書き換わったら、検査は外に届いている。
-    const decoy = tmpDir();
-    const mine = tmpDir();
-    const home = tmpDir();
-    runGit(decoy, home, ['init', '--quiet']);
-    runGit(mine, home, ['init', '--quiet']);
-
-    // フックが載せる形: 継承した GIT_* が、外の repo（decoy）を指している
-    vi.stubEnv('GIT_DIR', join(decoy, '.git'));
-    vi.stubEnv('GIT_WORK_TREE', decoy);
-
-    runGit(mine, home, ['config', 'user.email', 'mine@example.com']);
-    expect(runGit(mine, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
-      'mine@example.com',
-    );
-    expect(runGit(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe('');
-
-    // 裏取り: 置き場を決めない呼び方なら、同じ汚れで外の decoy に届く。この検査は空振りできない
-    spawnSync('git', ['config', 'user.email', 'leaked@example.com'], {
-      cwd: mine,
-      encoding: 'utf8',
-      env: process.env,
-    });
-    expect(runGit(decoy, home, ['config', '--local', 'user.email']).stdout.trim()).toBe(
-      'leaked@example.com',
-    );
   });
 });
 

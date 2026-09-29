@@ -233,39 +233,6 @@ export function worktreeGit(path: string): GitRun {
   };
 }
 
-/** コミットの結果。`ref` は作ったブランチ名 */
-export type CommitOutcome =
-  | { readonly kind: 'no-change' }
-  | { readonly kind: 'committed'; readonly ref: string; readonly stat: string }
-  | { readonly kind: 'failed'; readonly error: string };
-
-/**
- * 子が残した変更をコミットして、ブランチを作る。
- *
- * フック（リポジトリの検査）はここで走る。落ちたらブランチを作らない。「ref ができた = 検査を通った」を崩さないためで、`--no-verify` は使わない。
- */
-export function commitWorktree(label: string, git: GitRun): CommitOutcome {
-  if (git(['status', '--porcelain']).stdout.trim() === '') {
-    return { kind: 'no-change' };
-  }
-  git(['add', '-A']);
-  const committed = git(['commit', '-m', `consult(${label}): the child's work`]);
-  if (committed.status !== 0) {
-    return { kind: 'failed', error: (committed.stderr || committed.stdout).trim() };
-  }
-  const ref = `consult/${label}`;
-  const branch = git(['branch', ref, 'HEAD']);
-  if (branch.status !== 0) {
-    return { kind: 'failed', error: (branch.stderr || branch.stdout).trim() };
-  }
-  const stat = git(['show', '--stat', '--oneline', 'HEAD'])
-    .stdout.trim()
-    .split('\n')
-    .slice(0, 3)
-    .join('\n');
-  return { kind: 'committed', ref, stat };
-}
-
 /**
  * 子を 1 回起動する。
  *
