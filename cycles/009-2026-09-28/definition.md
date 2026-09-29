@@ -24,6 +24,8 @@ Changes: keep
 このサイクルは **consult の作り直しだけ**をやる。作る形の全体は `consult-redesign.md`（リポジトリ直下、実装が終わったら削除する一時ファイル）に書いてある。以下の `Then` はそこから写した。
 このサイクルは `consult` の**中の契約を総取り替え**する。名前と、実証済みの器官（`child/guard.ts`、`tool/sound.ts`、`run/git-env.ts`、`vitest` の検査一式）は残す。3 つの道具（`consult_new` / `consult_resume` / `consult_refs`）と、ref・diff・`stopped.json`・`kept` の契約は持ち込まない。
 
+unit 11（`consult.workspace.remove`）は **owner の承認（2026-09-29）で追加**した。step 7 の実演で、worktree を消してもブランチが残り、片付けが人（owner）の手作業になることが分かったため。
+
 ### 1. consult.roles
 
 - Change: update
@@ -157,6 +159,20 @@ Changes: keep
 - Then:
   - ルートの `README.md` / `README.ja.md` の consult の説明が 4 つの道具（`consult_run` / `consult_children` / `consult_worktree` / `consult_commit`）と、worktree が明示しない限り残る設計に追随している
   - 消えた名前（`consult_new` / `consult_resume` / `consult_refs`）が残っていない
+
+### 11. consult.workspace.remove
+
+- Change: update
+- Actor: agent
+- Does: worktree を消すとき、取り込み済みのブランチも一緒に片付ける
+- Now:
+  - `consult_worktree{action: remove}` は worktree だけ消し、ブランチを残す。片付けが親（人）の手作業になり、unit ごとに 1 回残る（009 の step 7 の実演で実際に起きた）
+  - agent からは `git branch -d` を打てない（権限の規則が拒否する）。道具の中の `git` なら打てる
+- Then:
+  - `consult_worktree{action: remove, id, force?}` が worktree を消したあと、**ブランチも消す**
+  - 既定は「HEAD に取り込み済みのときだけ」。未マージならブランチを残し、その理由を返す（未マージの仕事を消さない）
+  - `force: true` は未マージでも消す（捨てると決めたとき）
+  - 「worktree は明示しない限り残る」はそのままで、消す口も `consult_worktree` のまま
 
 ## What to keep
 

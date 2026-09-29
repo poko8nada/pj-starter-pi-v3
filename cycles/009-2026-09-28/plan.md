@@ -105,6 +105,20 @@
 - Files: `.pi/extensions/consult/run/delivery.ts`, `.pi/extensions/consult/run/child.ts`, `.pi/extensions/consult/index.ts`, `.pi/extensions/consult/tool/sound.ts`
 - Verify: test
 
+### step 7b: consult.workspace.remove
+
+- Owner: at the end
+- What:
+  - `consult_worktree{action: remove}` は worktree だけ消し、ブランチを残す（片付けが人に残り、agent は `git branch -d` を打てない）→ worktree を消したあと、**HEAD に取り込み済みのブランチも消す**
+  - 未マージのブランチは残し、その理由を返す（未マージの仕事を消さない）。`force: true` のときだけ未マージでも消す（捨てる）
+  - （`Then` より）「worktree は明示しない限り残る」はそのまま。消す口が `consult_worktree{action: remove}` だけであることも変わらない
+- Depends: 2
+- Action: build
+- Files: `.pi/extensions/consult/run/worktree.ts`, `.pi/extensions/consult/tool/worktree.ts`
+- Verify: test
+
+> owner の承認（2026-09-29）で追加。step 8 の前に置く（README とスキルが「ブランチは残る物」を前提に書かれないように）。
+
 ### step 8: consult.docs
 
 - Owner: at the end
