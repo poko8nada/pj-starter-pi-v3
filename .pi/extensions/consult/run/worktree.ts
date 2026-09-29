@@ -18,15 +18,19 @@ import { gitEnv } from './run.ts';
 /** consult の作業場をまとめる場所 */
 export const CONSULT_ROOT = '/tmp/pi-consult';
 
-/** 1 つの作業場。`root` は unit の入れ物（記録をここに置く） */
+/** 1 つの作業場。`unitDir` は unit のディレクトリ（記録と会話ファイルをここに置く） */
 export interface Worktree {
   readonly id: string;
   readonly branch: string;
+  /** worktree の実体。`<unitDir>/wt` */
   readonly path: string;
-  readonly root: string;
+  /** unit のディレクトリ（`<runRoot>/<id>`）。記録と会話ファイルがここに住む */
+  readonly unitDir: string;
 }
 
 export interface WorktreeRow extends Worktree {
+  /** 実行の根（`<project>-<stamp>`）。1 回の実行に複数の unit が同居しうる */
+  readonly runRoot: string;
   /** コミットしていない変更があるか */
   readonly dirty: boolean;
 }
@@ -88,11 +92,6 @@ export function topLevel(cwd: string): string {
   return result.stdout.trim();
 }
 
-/**
- * 作業場の root。
- *
- * 既に consult の worktree があれば、その root を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。
- */
 /** 実体のパスに揃える。無い場合はそのまま返す（比較の文字列を作るだけなので、投げない） */
 function resolveReal(path: string): string {
   try {
@@ -102,13 +101,19 @@ function resolveReal(path: string): string {
   }
 }
 
+/**
+ * 実行の根（runRoot）。
+ *
+ * 既に consult の worktree があれば、その実行の根を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。
+ */
+
 export function rootFor(cwd: string): string {
   const base = resolveReal(consultRoot());
   // git は /private/tmp のように実体のパスを返す（macOS の /tmp は symlink）。文字列で比べると、
   // 同じ置き場を別物と見て、呼ぶたびに新しい root を作ってしまう（記録を読む側が迷子になる）。
   const existing = parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`));
   if (existing !== undefined) {
-    return existing.root;
+    return existing.runRoot;
   }
   const dir = join(base, `${basename(topLevel(cwd))}-${stamp()}`);
   mkdirSync(dir, { recursive: true });
@@ -144,8 +149,10 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
       id: branch.slice(prefix.length),
       branch: branch.slice('refs/heads/'.length),
       path,
-      // 置き場の根。worktree のパスは <root>/<unit>/wt なので、unit の入れ物が並ぶ所まで 2 つ上がる
-      root: dirname(dirname(path)),
+      // 実行の根（runRoot）と unit のディレクトリ（unitDir）を分けて持つ。
+      // worktree のパスは <runRoot>/<unit>/wt なので、1 つ上が unit、もう 1 つ上が実行の根
+      runRoot: dirname(dirname(path)),
+      unitDir: dirname(path),
       dirty: status.stdout.trim() !== '',
     });
   }
@@ -172,17 +179,17 @@ export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree
   if (existing !== undefined) {
     return existing;
   }
-  const root = rootFor(cwd);
-  const path = join(root, id, 'wt');
+  const runRoot = rootFor(cwd);
+  const path = join(runRoot, id, 'wt');
   const branch = branchFor(id);
   const result = git(cwd, ['worktree', 'add', '-b', branch, path, base]);
   if (result.status !== 0) {
-    rmSync(join(root, id), { recursive: true, force: true });
+    rmSync(join(runRoot, id), { recursive: true, force: true });
     throw new Error(
       `could not create the worktree ${id}: ${(result.stderr || result.error || '').trim()}`,
     );
   }
-  return { id, branch, path, root: join(root, id) };
+  return { id, branch, path, unitDir: join(runRoot, id) };
 }
 
 /**
@@ -207,7 +214,7 @@ export function removeWorktree(
     return 'dirty';
   }
   git(cwd, ['worktree', 'remove', '--force', found.path]);
-  rmSync(found.root, { recursive: true, force: true });
+  rmSync(found.unitDir, { recursive: true, force: true });
   // ブランチも片付ける。`-d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、
   // 未マージの仕事をここで消さない。捨てると決めたときだけ `-D`
   const branch =

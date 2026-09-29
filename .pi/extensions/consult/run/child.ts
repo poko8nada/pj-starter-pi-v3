@@ -70,7 +70,7 @@ export function prepare(
 
 /** 子のセッションのファイル。worktree ごとに 1 つで、同じパスを指すと続きになる */
 export function sessionFile(worktree: Worktree): string {
-  return join(worktree.root, 'session');
+  return join(worktree.unitDir, 'session');
 }
 
 /**

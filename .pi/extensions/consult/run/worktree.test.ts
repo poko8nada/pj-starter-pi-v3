@@ -1,6 +1,6 @@
-import { readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from './git-env.ts';
@@ -145,8 +145,8 @@ describe('listWorktrees / findWorktree', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const root = rootFor(dir);
-    // root の中は unit の入れ物だけ。台帳は無い
-    expect([...new Set(listWorktrees(dir).map((row) => row.root))]).toEqual([root]);
+    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その親
+    expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
 });
 
@@ -213,6 +213,22 @@ describe('removeWorktree', () => {
     );
   });
 
+  it('remove が消すのは unit のディレクトリだけ（同じ実行の別 unit は残る）', () => {
+    const { dir } = repo();
+    const first = createWorktree(dir, '1-a');
+    const second = createWorktree(dir, '1-b');
+    // 同じ実行の根に同居している
+    expect(dirname(second.unitDir)).toBe(dirname(first.unitDir));
+
+    expect(removeWorktree(dir, '1-a')).toBe('removed');
+
+    // 1-a の unit は消え、実行の根と 1-b の unit は残る
+    expect(existsSync(first.unitDir)).toBe(false);
+    expect(existsSync(dirname(second.unitDir))).toBe(true);
+    expect(existsSync(second.unitDir)).toBe(true);
+    expect(findWorktree(dir, '1-b')).toBeDefined();
+  });
+
   it('未マージでも force ならブランチも消える（捨てる）', () => {
     const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
@@ -230,8 +246,11 @@ describe('unitRoot', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
 
-    expect(unitRoot(dir, '1-a')).toBe(made.root);
-    expect(made.root).not.toBe(made.path);
-    expect(made.path.startsWith(made.root)).toBe(true);
+    expect(unitRoot(dir, '1-a')).toBe(made.unitDir);
+    expect(made.unitDir).not.toBe(made.path);
+    expect(made.path.startsWith(made.unitDir)).toBe(true);
+    // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の親
+    expect(made.path).toBe(join(made.unitDir, 'wt'));
+    expect(dirname(made.unitDir)).toBe(rootFor(dir));
   });
 });

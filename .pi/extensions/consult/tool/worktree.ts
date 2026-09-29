@@ -8,10 +8,12 @@
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
+import { pidAlive, readRuns } from '../run/log.ts';
 import {
   createWorktree,
   listWorktrees,
   removeWorktree,
+  rootFor,
   type RemoveOutcome,
   type WorktreeRow,
 } from '../run/worktree.ts';
@@ -86,6 +88,22 @@ function parseAction(
   );
 }
 
+/**
+ * その unit で子が走っているか。
+ *
+ * 記録（`log.jsonl`）で見る: 終わりの行が無く、pid が生きている行があれば走っている。親の記憶ではなく
+ * 記録を見るので、reload をまたいだ子にも効く（その記録はこの unit のもの）。
+ */
+export function runningIn(
+  runRoot: string,
+  id: string,
+  alive: (pid: number) => boolean = pidAlive,
+): boolean {
+  return readRuns(runRoot).some(
+    (run) => run.worktree === id && run.ended === undefined && alive(run.pid),
+  );
+}
+
 function rowLine(row: WorktreeRow, busy: boolean): string {
   const state = [row.dirty ? 'changed' : 'clean', busy ? 'a child is running' : '']
     .filter((part) => part !== '')
@@ -104,7 +122,7 @@ function removeText(outcome: RemoveOutcome, id: string): string {
     return `無い: ${id}`;
   }
   if (outcome === 'busy') {
-    return `消さない: ${id} で子が動いている`;
+    return `消さない: ${id} で子が走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
   }
   return `消さない: ${id} に変更が残っている（force を付ければ消す）`;
 }
@@ -126,12 +144,19 @@ export async function execute(...args: ExecuteArgs) {
     );
   }
   if (action.action === 'remove') {
-    const outcome = removeWorktree(cwd, action.id, { force: action.force });
+    const outcome = removeWorktree(cwd, action.id, {
+      force: action.force,
+      busy: runningIn(rootFor(cwd), action.id),
+    });
     return result(removeText(outcome, action.id), { action: 'remove', outcome });
   }
   const rows = listWorktrees(cwd);
   if (rows.length === 0) {
     return result('作業場は無い。', { action: 'list', rows });
   }
-  return result(rows.map((row) => rowLine(row, false)).join('\n'), { action: 'list', rows });
+  const runRoot = rootFor(cwd);
+  return result(rows.map((row) => rowLine(row, runningIn(runRoot, row.id))).join('\n'), {
+    action: 'list',
+    rows,
+  });
 }

@@ -22,7 +22,7 @@ const WORKTREE: Worktree = {
   id: '2-a',
   branch: 'consult/2-a',
   path: '/tmp/pi-consult/demo/2-a/wt',
-  root: '/tmp/pi-consult/demo/2-a',
+  unitDir: '/tmp/pi-consult/demo/2-a',
 };
 
 describe('prepare', () => {

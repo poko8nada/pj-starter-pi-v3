@@ -207,7 +207,28 @@ Changes: keep
 
 ### Good
 
+- consult の中の契約を、1 サイクルで総取り替えできた。3 道具 → 4 道具、`input` なし、worktree は明示しない限り残る
+  - 値: 実演の `5696a4b`（子の `DEMO.md` が merge で親のブランチに入った）と、close の統合（置き場 → 子 → 記録 → commit → 片付けの 5 シームが全部緑）
+- 「テストが緑でも実物で壊れている」を、実演と統合が当てた。このサイクルで見つかった本物の不具合は 4 件で、どれもテストだけでは出なかった
+  - 値: root の 1 段ずれと `/tmp` の文字列比較（デモで `consult_children` が「no children」）／塊の見出し `## consult undefined`（完了メッセージ）／検査の `runGit` が worktree を扱えない（07b の検査）／ルート README の検査名（consult-7）
+- レビューが軽くなった。008 は子 1 体が 8〜33 ターンかかり、close では 19 枚を 1 体に渡してターン上限に当たった
+  - 値: 009 の review の子は 5 体、最大 3 ターン、計 $0.02。観点を 1 枚のチェックリストに絞ったのが効いた
+- 4 つの道具の契約が、型と検査で決まる形になった。`readOnly` が場所を決め、`consult_commit` がメッセージを持ち、diff を運ばない
+  - 値: 削除された契約（`consult_new` / `consult_resume` / `consult_refs` / `input` / ref / `stopped.json` / `kept`）が、木と README の両方から消えている（form の grep が 0 件）
+- 子が親のプロセスに従属しない。reload をまたいでも、記録と一覧は生きている
+  - 値: 完了メッセージが実際に届いた（`consult-1` の塊）／reload 後に `consult_children` が走っている子（`consult-2`）を pid つきで出した
+- owner の判断が step の途中で入り、手戻りが小さかった（pi の 0.87.1 へ上げる、7b の追加、E と D を落とす、掃除は「自然に」）
+  - 値: どれも 1 step 以内で吸収できた（7b は定義・プラン・チケットを追加して 3 コミット）
+
 ### Bad
+
+- step 3（consult.run）で何度も往復した。大きな refactor で edit が対象を見失い、quality-gate に 1 回引っかかった
+- 「消える器官を import しているファイルが連鎖で壊れる」形を、step 2・3・5・6 で繰り返した（resume 一式 / `tool/consult.ts` / refs 一式 / resume 参照）。消える物を先に grep する習慣が抜けた
+- step 7 の実演で、テストが緑なのに実物が壊れていた（root の 1 段ずれ + `/tmp` と `/private/tmp` の文字列比較）。テストは同じ分に収まるので見えず、分が変わった実演で初めて出た
+- チケットが想定していなかった実装を 2 つ、step の途中で足した（記録の書き手＝pid は spawn 直後にしか分からない／`stack` の子の受け渡し）。どちらも検査が拾ったが、Todo の段で見えていなかった
+- `Worktree.root` が unit のディレクトリを指している（`unitRoot` と同じ物）。名前が紛らわしく、今回のスコープでは直さなかった
+- 完了メッセージを待つ間、私は「作業枠が尽きた」と何度も言った。実際にはそんな枠は無く、owner の指摘で取り下げた。ターンと信頼を無駄にした
+- `Carry over` の「置き場の寿命」は owner が落とした（置き場は `/tmp` で決め）。設計の時に「寿命は macOS の 3 日 TTL に任せる」と明文化していなかったのが穴だった
 
 ### Carry over
 
@@ -217,6 +238,7 @@ Changes: keep
    - Research:
    - Action: レビュワーを使うスキルを棚卸しし、レビューの内容（観点）と、使うタイミング・本数を決め直す
    - Basis: 008 の実測: 1 体あたり 8〜33 ターン、$0.04〜0.09。review の子の上限は 40 ターン / 出力 60k（`.pi/extensions/consult/types.json`）
+     - 009 の実測: review の子は 5 体で最大 3 ターン、計 $0.02。逆に重かったのは research の子（2 体で 10・19 ターン、計 $0.09）
    - From: 008.tickets
 
 2. 凍結の規則が、スキルごとに違って見える
@@ -248,3 +270,17 @@ Changes: keep
    - Action: 3 つのうち直す物を決め、`definition/references/format.md` を直す
    - Basis: `16-definition-skill.units.md:50`。008 の Close のレビュー（`consult-2`）が指摘
    - From: 008.close
+
+6. 実体の無い worktree と、そのブランチの掃除（自然に、明示のアクションを足さずに）
+   - Status: `/tmp` が掃除された後や、手で `git worktree prune` した後に、git の登録だけが残り（`prunable`）、そのブランチ `consult/<unit-id>` も残る。`consult_worktree` は git の登録を読むので、実体の無い行がゴーストとして並ぶ
+   - Research: 009 の close のリサーチ（独立の報告 5 件以上）: git のメーリングリスト（2019 の 2 つのパッチ、Eric Sunshine のレビュー）、git-switchboard #14 / viwo #113 / agent-orchestrator #2045 / git-worktree-runner #182 / desktop #22605。手当て: `git for-each-ref %(worktreepath)`（git 2.23+、git 自身のテスト t6302 が同じ使い方）で「どの worktree にも checkout されていない枝」を列挙できる。prune 後は「元 worktree があった枝」と「最初から無い枝」の区別が消えるので、残る手掛かりは命名規約 `consult/*` だけ
+   - Action: 新しい action は足さない。`remove` の中で（+ セッションの境目に 1 回）掃除する: ①実体の無い登録を `git worktree prune` で落とす ②worktree が無く HEAD にマージ済みの `consult/*` を消す ③未マージは消さずに列挙する ④消した物を返す（黙って消さない）。`list` は読むだけのまま
+   - Basis: 009 の close の統合（`consult/demo-1` と `close-1` の枝が、worktree を消した後に残った／`remove` が `missing` で終わると枝に触らない）
+   - From: 009.close
+
+7. `Worktree.root` の名前（unit のディレクトリを root と呼んでいる）
+   - Status: `Worktree.root` は `unitRoot` と同じ物（`<root>/<unit-id>`）を指し、置き場の根（stamp の所）ではない。`sessionFile(worktree)` が `join(root, 'session')` で unit ごとの会話ファイルを作るため、unit の側を root と呼んでいる
+   - Research:
+   - Action: 改名する（置き場の根と unit のディレクトリを別の名前にする）。step 1〜7 の広い範囲に触れるので、次のサイクルでやる
+   - Basis: 009 の 07 の Findings（名前が紛らわしいと記録した）
+   - From: 009.close

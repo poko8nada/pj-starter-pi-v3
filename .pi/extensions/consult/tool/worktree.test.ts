@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
 import { gitEnv } from '../run/run.ts';
+import { appendRun } from '../run/log.ts';
 import { findWorktree } from '../run/worktree.ts';
 import { execute } from './worktree.ts';
 
@@ -116,6 +117,56 @@ describe('consult_worktree', () => {
     const outcome = await call({ action: 'remove', id: '2-b' }, dir);
     expect(text(outcome)).toContain('ブランチは未マージなので残した');
     expect(outcome.details['outcome']).toBe('removed-branch-kept');
+  });
+
+  it('子が走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const made = findWorktree(dir, '2-b');
+    // 走っている記録を書く（終わりの行が無く、pid は自分 = 生きている）
+    appendRun(made?.runRoot ?? '', {
+      child: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      worktree: '2-b',
+    });
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(text(outcome)).toContain('子が走っている');
+    expect(outcome.details['outcome']).toBe('busy');
+    expect(findWorktree(dir, '2-b')).toBeDefined();
+  });
+
+  it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const made = findWorktree(dir, '2-b');
+    appendRun(made?.runRoot ?? '', {
+      child: 'consult-9',
+      role: 'code',
+      pid: 999_999,
+      started: 1,
+      worktree: '2-b',
+    });
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('list が、走っている子の居る unit に印を付ける', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const made = findWorktree(dir, '2-b');
+    appendRun(made?.runRoot ?? '', {
+      child: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      worktree: '2-b',
+    });
+
+    expect(text(await call({ action: 'list' }, dir))).toContain('a child is running');
   });
 
   it('知らない action → エラー', async () => {
