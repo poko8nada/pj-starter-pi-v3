@@ -69,6 +69,7 @@ function stamp(now: Date = new Date()): string {
     '-',
     pad(now.getHours()),
     pad(now.getMinutes()),
+    pad(now.getSeconds()),
   ].join('');
 }
 
@@ -86,16 +87,27 @@ export function topLevel(cwd: string): string {
  *
  * 既に consult の worktree があれば、その root を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。
  */
+/** 実体のパスに揃える。無い場合はそのまま返す（比較の文字列を作るだけなので、投げない） */
+function resolveReal(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+}
+
 export function rootFor(cwd: string): string {
-  const base = consultRoot();
-  const existing = parseWorktrees(cwd).find((row) => row.path.startsWith(`${base}/`));
+  const base = resolveReal(consultRoot());
+  // git は /private/tmp のように実体のパスを返す（macOS の /tmp は symlink）。文字列で比べると、
+  // 同じ置き場を別物と見て、呼ぶたびに新しい root を作ってしまう（記録を読む側が迷子になる）。
+  const existing = parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`));
   if (existing !== undefined) {
     return existing.root;
   }
   const dir = join(base, `${basename(topLevel(cwd))}-${stamp()}`);
   mkdirSync(dir, { recursive: true });
-  // /tmp は macOS で /private/tmp に解決される。git が返すパスと比べられるように、実体のパスで持つ
-  return realpathSync(dir);
+  // 実体のパスで持つ（git が返すパスと、そのまま比べられるように）
+  return resolveReal(dir);
 }
 
 /** 置き場の大元。テストは `CONSULT_ROOT` で自分の一時ディレクトリに逃がす */
@@ -126,7 +138,8 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
       id: branch.slice(prefix.length),
       branch: branch.slice('refs/heads/'.length),
       path,
-      root: dirname(path),
+      // 置き場の根。worktree のパスは <root>/<unit>/wt なので、unit の入れ物が並ぶ所まで 2 つ上がる
+      root: dirname(dirname(path)),
       dirty: status.stdout.trim() !== '',
     });
   }

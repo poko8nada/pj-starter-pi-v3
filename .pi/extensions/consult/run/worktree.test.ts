@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { readdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
@@ -36,6 +36,34 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+describe('rootFor', () => {
+  it('worktree を作った後でも、同じ root を返す（実体のパスで比べる）', () => {
+    const { dir } = repo();
+    createWorktree(dir, '1-a');
+    const made = rootFor(dir);
+    const root = process.env[ROOT_KEY] ?? '';
+
+    // 時刻を飛ばして 2 回目を呼ぶ。実体のパスで比べていないと、既存の置き場を見つけられず、
+    // ここで別の名前の置き場ができてしまう（記録を読む側が迷子になる）
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
+      const before = readdirSync(root).length;
+      expect(rootFor(dir)).toBe(made);
+      expect(readdirSync(root)).toHaveLength(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('worktree が無ければ新しく 1 つ作る', () => {
+    const { dir } = repo();
+    expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(0);
+    expect(rootFor(dir).endsWith('/')).toBe(false);
+    expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(1);
+  });
 });
 
 describe('createWorktree', () => {
@@ -98,8 +126,8 @@ describe('listWorktrees / findWorktree', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const root = rootFor(dir);
-    // root の中は unit の入れ物と worktree だけ。台帳は無い
-    expect([...new Set(listWorktrees(dir).map((row) => row.root))]).toEqual([join(root, '1-a')]);
+    // root の中は unit の入れ物だけ。台帳は無い
+    expect([...new Set(listWorktrees(dir).map((row) => row.root))]).toEqual([root]);
   });
 });
 
