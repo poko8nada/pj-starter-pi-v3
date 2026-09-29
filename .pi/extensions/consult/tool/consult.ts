@@ -184,6 +184,7 @@ async function consult(
     turns: usage.turns,
     turnsLimit: options.policy.limits.turns,
     spend: `${usage.cost.toFixed(4)} usd`,
+    ...(job.id === undefined ? {} : { id: job.id }),
     ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
     ...(reason === undefined ? {} : { reason }),
   };
@@ -322,6 +323,7 @@ function beginRun(
   const root = rootFor(ctx.cwd);
   const job: ChildJob = {
     task: request.task,
+    id: child.id,
     signal: child.controller.signal,
     ...(worktree === undefined ? {} : { worktree }),
     continueSession: request.continue ?? policy.continueByDefault,

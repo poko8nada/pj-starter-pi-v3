@@ -29,6 +29,8 @@ export interface ChildJob {
   readonly worktree?: Worktree;
   /** 同じ worktree の会話の続きから始めるか */
   readonly continueSession?: boolean;
+  /** 親が振った id。塊に載せて、親がどの子か見分けられるようにする */
+  readonly id?: string;
   /** 子のプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための口 */
   readonly onStarted?: (pid: number) => void;
 }

@@ -39,8 +39,10 @@ export interface ChildReport {
 /** 塊を 1 つのテキストにする。先頭に置いて、子の本文が続く */
 export function reportBlock(report: ChildReport): string {
   const where = report.worktree === undefined ? 'parent tree' : `worktree ${report.worktree}`;
+  // id は親が振る物で、無いこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
+  const label = report.id ?? 'consult';
   const lines = [
-    `## consult ${report.id} — ${report.role} / ${report.state}`,
+    `## ${label} — ${report.role} / ${report.state}`,
     '',
     `- place: ${where}`,
     `- turns: ${report.turns} / ${report.turnsLimit}`,
