@@ -1,37 +1,142 @@
 # consult
 
-Runs a child `pi` in the background with a type's policy. The child does not see this conversation.
+Runs a child `pi` in the background, with a role and a place. The child does not see this conversation.
 
-The agent calls it directly: there is no script to run and no CLI, because a tool call carries the arguments. The call returns as soon as the child starts; the child's text arrives later as a message, so the agent can keep working while it runs.
+The agent calls it directly: there is no script to run and no CLI, because a tool call carries the arguments. A call returns as soon as the child starts; the child's text arrives later as a message, so the agent can keep working while it runs.
 
 ## Tools
 
-The extension registers three tools.
+The extension registers four tools.
 
-| Tool             | What it does                                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------------------- |
-| `consult_new`    | Starts a background child `pi` with a type's policy, and lists or stops the running ones.           |
-| `consult_resume` | Lists the worktrees a stopped child left, runs a child again in one, or deletes one and its record. |
-| `consult_refs`   | Lists the refs `consult` leaves behind, and deletes one. Only `consult/` refs can be deleted.       |
+| Tool               | What it does                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| `consult_run`      | Runs **one** child, with a role and (for a role that writes) a worktree. Returns `started: <id>`.         |
+| `consult_children` | Lists the children of this project, and stops one. Reads a record, so it still shows a reload's children. |
+| `consult_worktree` | Makes, lists, or removes a unit worktree — and, on `remove`, the branch too.                              |
+| `consult_commit`   | Commits the work a child left in its worktree, on that worktree's branch.                                 |
 
-## Types
+## Roles
 
-The caller picks a type, and the type holds the whole policy: model candidates, tools, environment, spend limits, and role. There is no way to override any of it per call — to change the policy, edit `types.json`.
+The caller picks a role, and the role holds the whole policy: model candidates, tools, whether the child writes, spend limits, and the words it works under. There is no way to override any of it per call — to change the policy, edit `types.json`.
 
-| Type       | Tools                                           | Environment | Turns | Output tokens |
-| ---------- | ----------------------------------------------- | ----------- | ----- | ------------- |
-| `research` | read, ls, find, grep, web_search, fetch_content | the tree    | 40    | 60,000        |
-| `review`   | read, ls, find, grep, web_search                | the tree    | 40    | 60,000        |
-| `trial`    | plus writing                                    | a worktree  | 50    | 120,000       |
-| `code`     | plus writing                                    | a worktree  | 60    | 120,000       |
+| Role       | Tools                                           | Place                 | Turns | Output tokens | `continue` by default |
+| ---------- | ----------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
+| `research` | read, ls, find, grep, web_search, fetch_content | the parent's tree     | 40    | 60,000        | no                    |
+| `review`   | read, ls, find, grep, web_search                | the parent's tree     | 40    | 60,000        | no                    |
+| `trial`    | plus bash, and writing                          | a worktree (required) | 60    | 120,000       | yes                   |
+| `code`     | plus bash, and writing                          | a worktree (required) | 80    | 120,000       | yes                   |
 
-The limits are enforced while the child runs, and neither the caller nor the child can raise them. They are counted once per run: when consult runs the child again after a stop or a rejected commit, that run gets the limit afresh. Normal use finishes far below them.
+`readOnly` decides the place: a read-only role may be given a worktree, and runs in the parent's tree when it is not. A role that writes has no such choice — without a worktree the call is refused, and consult never makes one on its own.
 
-**A type's output is sized for one document's work** — reading it, judging it, and editing its lines. That is the unit a child gets: one document. A child that rewrites a whole document spends its budget emitting lines nobody asked it to change, and on a long document it runs out before it writes anything; the fix is to edit the lines, not to raise the number.
+The limits are enforced while the child runs, and neither the caller nor the child can raise them. A run gets the limit afresh: `continue` starts a new child process, so the second stretch has its own. Normal use finishes far below them.
+
+**A role's output is sized for one document's work** — reading it, judging it, and editing its lines. That is the unit a child gets: one document. A child that rewrites a whole document spends its budget emitting lines nobody asked it to change, and on a long document it runs out before it writes anything; the fix is to edit the lines, not to raise the number.
+
+## `consult_run`
+
+| Parameter  | Required     | Meaning                                                                                          |
+| ---------- | ------------ | ------------------------------------------------------------------------------------------------ |
+| `role`     | yes          | How the child runs. One of the roles in `types.json`                                             |
+| `task`     | yes          | What the child should do. **Name any file it must read** — the child has `read` itself           |
+| `worktree` | for a writer | The unit id to run in (see `consult_worktree`). Omitted for a read-only role = the parent's tree |
+| `continue` | no           | Reopen the same conversation in that worktree. Defaults to the role's `continueByDefault`        |
+
+```
+consult_run({ role: "review", task: "What is missing in cycles/002-2026-09-22/definition.md?" })
+consult_run({ role: "code", task: "Fix the failing check in run/log.ts", worktree: "8-consult.docs" })
+```
+
+**One call is one child.** Two children mean two calls; both run at once, and each finishes into its own message. There is no `input` parameter: the child reads what it needs, and the path goes in `task`.
+
+The call returns `started: <id>` with what is running at that moment. `id` is what `consult_children` and the commands take.
+
+The task reaches the child on stdin, not as an argument, so a task that begins with `-` or `@` stays text.
+
+## `consult_children`
+
+| Parameter | Required     | Meaning                                         |
+| --------- | ------------ | ----------------------------------------------- |
+| `action`  | no           | `list` (the default), or `cancel`               |
+| `id`      | for `cancel` | The child to stop, as returned by `consult_run` |
+
+A row carries the id, the role, the place (a worktree id, or `parent`), how long it has been going, its turns, and its spend. A child that is still running shows `running (pid <n>)`; a finished one shows how it ended (`done`, `turn-limit`, `error`, `aborted`) and, when it did not end well, the reason.
+
+The list is read from a record on disk (`<root>/<unit-id>/log.jsonl`), so **it still shows children a previous session started** — a child is not tied to the pi process that started it. `cancel` can only stop a child **this** session started: a child from an earlier session is named in the reply and left alone.
+
+## `consult_worktree`
+
+| Parameter | Required       | Meaning                                                                           |
+| --------- | -------------- | --------------------------------------------------------------------------------- |
+| `action`  | no             | `new`, `list` (the default), or `remove`                                          |
+| `id`      | for new/remove | The unit id, e.g. `8-consult.docs`                                                |
+| `base`    | no             | What to branch from, for `new`. Defaults to the parent's `HEAD` (never `main`)    |
+| `force`   | no             | Remove even when changes are left, and delete the branch even when it is unmerged |
+
+`new` returns the id, the branch, the place, and the base:
+
+| What   | Where                                                                                     |
+| ------ | ----------------------------------------------------------------------------------------- |
+| `id`   | the unit id, as given                                                                     |
+| branch | `consult/<unit-id>`                                                                       |
+| `path` | `/tmp/pi-consult/<project>-<YYYYMMDD-HHMMSS>/<unit-id>/wt` — the place the child works in |
+| `base` | what it branched from: `HEAD`, or the `base` you passed                                   |
+| record | `<root>/<unit-id>/` — the child's record (`log.jsonl`) and its session                    |
+
+**A worktree stays until it is removed.** It is the record of what the child did, and the child's work is the only thing in it: uncommitted changes are invisible to the parent's tree, and anything the child writes stays there.
+
+`remove` deletes the worktree and then its branch:
+
+- the branch is deleted **when it is already merged** into the current `HEAD` (or has an upstream that has it) — that is what `git branch -d` refuses otherwise
+- an **unmerged** branch is kept, and the reply says so: take it in (`git merge --no-ff consult/<unit-id>`), or discard it with `force`
+- a worktree a child is running in is refused, and so is one with changes left, unless `force`
+
+Before a child starts in a fresh worktree, consult installs the dependencies there: `pnpm install --frozen-lockfile` when `pnpm-lock.yaml` is there, `npm ci` when `package-lock.json` is. Without them, neither the child nor the repository's hooks can check anything, and `trial` cannot add a library to try it. If that install fails, the child fails (an environment failure, not a bad setting).
+
+## `consult_commit`
+
+| Parameter  | Required | Meaning                               |
+| ---------- | -------- | ------------------------------------- |
+| `worktree` | yes      | The unit id of the worktree to commit |
+
+The reply is one of three:
+
+- `committed: <hash>` — the commit is on the worktree's branch, and its hash is what the ticket's `Commit:` wants
+- `rejected: <hook output>` — the repository's hooks refused it. **The work is left in place**: read the output, fix it in the worktree, and call again
+- `no change` — the child left nothing to commit
+
+The message is made here — `consult(<unit>): the child's work` — so the log stays countable and the caller cannot slip a different one in. Committing runs the repository's own hooks, so a commit means one that passed them.
+
+**consult does not merge.** Taking the commit into your branch is a plain git command, run by the parent:
+
+```
+git merge --no-ff consult/<unit-id>
+```
+
+The branch may then be removed with `consult_worktree{action: "remove", id: ...}`; the commit stays reachable from the merge, and `git log --first-parent` shows one line per unit.
+
+## What comes back
+
+A finished child arrives as a message that starts with a block:
+
+```
+## consult-1 — code / done
+
+- place: worktree 8-consult.docs
+- turns: 12 / 80
+- spend: 0.0123 usd
+- files: run/log.ts, tool/children.ts
+```
+
+then the child's last text, then one `[consult]` line with the model that ran and the spend.
+
+- `state` is one of `done`, `turn-limit`, `error`, `aborted`. `reason` is there when it is not `done`
+- `files` are the paths the child changed (`git status --porcelain` in its worktree), so a read-only child has none
+- **no diff is carried.** The parent reads `git -C <the worktree> diff` itself when it wants one
+- **before its last turn, the child is asked to report.** The extension tells it "the next turn is your last; report what you have and what is unfinished", so a child that runs out of turns still says where it got to
 
 ## Model candidates
 
-Each type lists its models in the order to try. The last attempt is the parent's own settings (no `--model`).
+Each role lists its models in the order to try. The last attempt is the parent's own settings (no `--model`).
 
 ```
 1st candidate → 2nd candidate → the parent's settings
@@ -40,20 +145,6 @@ Each type lists its models in the order to try. The last attempt is the parent's
 The child moves to the next candidate when it produced nothing at all (`usage.output` is 0). That covers a model that cannot be used: an unknown id, a missing key, a rate limit. pi does not fail on an unknown id — it warns, the API call fails, and the child still exits 0, so the exit code cannot be the signal.
 
 It does not move on when the child produced something and then failed: that is a task failure, not a model failure. It does not move on when the call was cancelled.
-
-## Environment
-
-`tree` runs the child in the real tree. Read-only types use it: there is nothing to isolate.
-
-`worktree` runs the child in a temporary worktree created from `HEAD`. Before the child starts, consult installs the dependencies in it: `pnpm install --frozen-lockfile` when `pnpm-lock.yaml` is there, `npm ci` when `package-lock.json` is. Without them, neither the child nor the repository's hooks can check anything, and `trial` cannot add a library to try it.
-
-Uncommitted changes are invisible to the child, and anything it writes leaves with the worktree. If the dependencies cannot be installed, that child fails (it is an environment failure, not a bad setting).
-
-## Taking the ref
-
-When the child finishes, consult commits what it left behind and creates a branch `consult/<type>-<date>-<time>-<n>`. The commit runs the repository's own hooks, so **a ref means a commit that passed them**. Nothing is committed when the child changed nothing. When the child stops at a limit, or the hooks reject the commit, it is run once more in the same worktree (see below), and the work is kept only when that second run fails the same way.
-
-The parent decides what to do with the ref: cherry-pick it, take part of it, or drop it. consult never touches the parent's tree.
 
 ## Trust
 
@@ -72,66 +163,22 @@ The real boundary is therefore the host and the OS, not this guard: the guard ho
 
 What the child does read is `AGENTS.md` and user/global extensions. A `GIT_*` environment from a hook (lefthook sets `GIT_INDEX_FILE`) is stripped before git and the child start, so a caller's git context cannot leak into either.
 
-Whatever has to reach the child reaches it as `task` or `input`. There is no way to hand the child a skill: the parent reads the procedure and passes it.
-
-## Settings
-
-`types.json` sits next to this file (`.pi/extensions/consult/types.json`) and is committed: it is what a clone starts with. Put your own models in it. The file is read on every call, so a change takes effect on the next consult without reloading pi.
-
-## Parameters
-
-| Parameter | Required   | Meaning                                                                               |
-| --------- | ---------- | ------------------------------------------------------------------------------------- |
-| `action`  | no         | `start` (the default), `list`, or `cancel`                                            |
-| `type`    | for start  | How the child runs. One of the types in `types.json`                                  |
-| `task`    | for start  | What the child should do                                                              |
-| `input`   | no         | Paths to files whose contents are prepended to the child's prompt. One child per path |
-| `id`      | for cancel | The child to stop, as returned by `start` or `list`                                   |
-
-```
-consult_new({ type: "review",
-          input: ["cycles/002-2026-09-22/definition.md"],
-          task: "What is missing in this definition?" })
-```
-
-`start` returns at once with `started: <id>` and lists what is running. One child per input, all in parallel, and each child finishes into its own message in the order of the inputs. A path that cannot be read fails the call before any child starts. Without `input`, one child runs with no payload.
-
-An unknown `action`, or `start` without a `type` and `task`, is refused with the usage.
-
-The file's contents are **prepended to the child's prompt**, not handed over as a separate document: the child sees one message, the payload first and the task after it. An empty file therefore adds nothing, and a child may read the payload as instructions.
-
-The prompt reaches the child on stdin, not as an argument, so a task or payload that begins with `-` or `@` stays text.
-
-Each input's block is the child's text, then `ref:` when it wrote something, then one `[consult]` line with the model that ran and the spend. The model is there because everything else about the run lives in the tool's `details`, which the calling agent never sees.
+Whatever has to reach the child reaches it as `task`. There is no way to hand the child a skill or a file: the parent reads the procedure and passes it, and a file worth reading is named in `task`.
 
 ## Background and stopping
 
-`consult_new` starts the child and returns at once with `started: <id>`. The parent does not wait: it keeps working while the child runs. When the child finishes, its text (then `ref:` when it wrote something, then the `[consult]` line) arrives as a message, and that message starts the next turn.
+A child is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. What a reload replaces is the delivery — the pipe that a finished child's message comes back through. A session's delivery is dropped at `session_shutdown`; a child that finishes after that is written to the record instead, and the next session shows it in `consult_children`.
 
-**Esc does not stop a child.** The tool call has already returned, so there is no call left to cancel. Ctrl+C is not dependably delivered to the child either, so a hard interrupt can leave a worktree behind; `git worktree prune` clears the registration.
+**Esc does not stop a child.** The tool call has already returned, so there is no call left to cancel. Use `consult_children{action: "cancel", id}` (or `/consult-cancel <id>`).
 
 There are two faces for stopping a child, and one implementation behind them:
 
 | Who       | How                                                                            |
 | --------- | ------------------------------------------------------------------------------ |
 | The user  | `/consult-status` lists the running children; `/consult-cancel <id>` stops one |
-| The agent | the `consult_new` tool with `action: "list"` or `action: "cancel"` and an `id` |
+| The agent | the `consult_children` tool with `action: "cancel"` and an `id`                |
 
-An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is removed by the same code that cleans up a normal finish.
-
-A child that writes is committed in its own worktree, and that commit runs the repository's hooks. If the child stops at a limit before it finishes, or the hooks reject the commit, consult runs the child once more **in the same worktree**, with `--continue`: the hook output is its task, or the reason it stopped. The work of a stopped run is not committed on its own: the continuation is committed with it when one runs. If the second run stops at the limit as well, or an abort comes before the continuation, the ref holds what the child managed, and the reply says it stopped early. If the second run fails the same way, the worktree is **kept** (the normal cleanup is skipped) and the reply names its path, how many times it ran, the time, and the files the child changed; when the child stopped at a limit, the reply also says so, with the number of runs. The spend of both runs is summed into the one `[consult]` line. The record of the stop sits next to the worktree (`stopped.json`), outside it, so it is still there while the worktree is.
-
-## Resuming a stopped child
-
-A child that stopped leaves its worktree behind (a limit it could not work past, a commit the hooks rejected twice, a crash). `consult_resume` works with those:
-
-| Action   | What it does                                                                                                                                                               |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list`   | every worktree consult left, with its id, its place, the reason it stopped, and the files the child changed                                                                |
-| `run`    | runs a child again **in that worktree** (no new worktree, no install), always passing `--continue`; the caller picks the type, so a look is `research` and a fix is `code` |
-| `remove` | deletes the worktree and its record                                                                                                                                        |
-
-`--continue` does not carry the conversation: children run with `--no-session`, so a session that ended is never resumed, and the second child starts from the task you give it (or the reason it stopped, when you give none). What carries over is the worktree, its changes, and the git history in it.
+An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is left in place (with its changes) so the parent can decide.
 
 ## Sound
 
@@ -139,27 +186,17 @@ While at least one child is running, consult plays `Tink` **once every 5 seconds
 
 The sound is **on by default, and the setting lasts for this session only** (it is not written to `types.json`). `/consult-sound on` and `/consult-sound off` turn it on and off, and `/consult-sound` with no argument reports the current state. Nothing fails if `afplay` is missing.
 
-## consult_refs
+## Settings
 
-| Parameter | Required   | Meaning                                          |
-| --------- | ---------- | ------------------------------------------------ |
-| `action`  | yes        | `list` to see the refs, `delete` to remove one   |
-| `name`    | for delete | The ref to delete. It must start with `consult/` |
-
-```
-consult_refs({ action: "list" })
-consult_refs({ action: "delete", name: "consult/review-2026-09-27-101500-1" })
-```
-
-`list` returns every `consult/` ref with its hash, and nothing else. `delete` removes one ref, and refuses any name that does not start with `consult/` — the rest of the repository is never touched. The name convention is documented under **Taking the ref**.
+`types.json` sits next to this file (`.pi/extensions/consult/types.json`) and is committed: it is what a clone starts with. Put your own models in it. The file is read on every call, so a change takes effect on the next consult without reloading pi.
 
 ## The code
 
 ```
 index.ts   the entry: registers the tools and the commands, and nothing else
-policy/    what a type is: reading types.json, validating it, resolving a type
-child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard
-run/       running a child: worktree, install, spawn, spend and commit, the one more run after a stop or a rejection, what a stopped run leaves behind, and the ref logic
+policy/    what a role is: reading types.json, validating it, resolving a role
+child/     the child pi: assembling its arguments, parsing its JSONL, the secret guard, the budget nudge
+run/       running a child: the worktree, the install, the spawn, the record, the delivery, and the report
 tool/      the tool faces and the running children: parameters, background and control, formatting, and the sound
 ```
 
@@ -171,6 +208,6 @@ tool/      the tool faces and the running children: parameters, background and c
 pnpm test:run .pi/extensions/consult
 ```
 
-`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, the switch decision, and the type policy. `run/run.test.ts` covers reading inputs, the install command, the commit and ref rules, and the summing of runs, plus one test that builds a real repository and worktree. `run/retry.test.ts` covers the one more run after a limit stop or a rejected commit and the body it produces, using a real repository and a hook that rejects. `run/resume.test.ts` covers the list and the removal of the worktrees a stopped child left, with a real repository and a real worktree. `tool/resume.test.ts` covers the resume face: `list`, `remove` and the refusal paths, plus the argv the `run` builds. `run/refs.test.ts` covers listing and judging the refs without spawning git. `tool/consult.test.ts` covers the background face with a fake API: starting returns an id, the completion message carries the child's text, listing and stopping look at the running children, and the sound starts and stops with the children. `tool/sound.test.ts` covers the sound itself with a replaced player and fake timers: one timer, one sound every 5 seconds, and nothing while it is off. Spawning a real `pi` is not covered; the demonstrations do that.
+`child/spec.test.ts` and `policy/types.test.ts` cover the pure parts: pi argument assembly, JSONL parsing, spend accounting, the model attempt order, and the role policy. `child/budget.test.ts` covers when the child is nudged to report. `run/run.test.ts` covers reading files, the install command, the child's spawn options, and the state a run ends in, plus one test that builds a real repository. `run/worktree.test.ts` covers the place, the branch, and the removal (including that an unmerged branch is kept), with a real repository and worktrees. `run/log.test.ts` covers the record: appending, reading it back, skipping a broken line, and judging whether a process is still alive. `run/delivery.test.ts` covers the delivery: it sends to the session that is attached, writes to the record instead when it is not, and does not fall over when a new session attaches after the old one let go. `tool/commit.test.ts` covers the commit face with a replaced git: the three answers, the message it makes, and that it never merges. `tool/children.test.ts` covers the list and the cancel, with a real repository and a record on disk. `tool/consult.test.ts` covers the background face with a fake API: running returns an id, the completion message carries the block and the child's text, and the sound starts and stops with the children. `tool/sound.test.ts` covers the sound itself with a replaced player and fake timers: one timer, one sound every 5 seconds, and nothing while it is off. Spawning a real `pi` is not covered; the demonstrations do that.
 
-A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.
+A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. That helper cannot drive a _worktree_ (`GIT_DIR` / `GIT_WORK_TREE` are fixed to the repository), so the checks that commit inside one spawn git with `gitEnv()` and the worktree as the cwd. A hook (this repository runs its checks from one, and `consult` commits a child's work from inside a worktree) must not be able to steer a check's writes.
