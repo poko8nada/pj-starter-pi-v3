@@ -38,10 +38,22 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- `git branch -d` が「取り込み済みか」の判定そのものだったので、`branchMerged` を別に作らなかった
+  - なぜ外か: チケットの Todo は `branchMerged(cwd, branch)`（`git merge-base --is-ancestor`）を上げていた
+  - 観測: `git branch -d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、同じ判定を 2 回書くことになる。ローカルのブランチ（upstream 無し）では「HEAD に取り込み済み」と同じ
+  - 実装: `-d`（既定）/ `-D`（`force`）を撃ち、`status === 0` なら `removed`、そうでなければ `removed-branch-kept` を返す
+- **検査の `runGit` は worktree の中で使えない** ことが分かった（この unit の検査で嵌まった）
+  - なぜ外か: `runGit` は `GIT_DIR` / `GIT_WORK_TREE` / `GIT_INDEX_FILE` を **repo 用に固定**する。cwd を worktree にしても、repo の作業木を見てしまう
+  - 観測: 「未マージのブランチは残す」の検査が出す `dirty` が取れなかった。worktree で `git add` / `git commit` をしても、実際には repo の側を見ていて何も起きていなかった
+  - 実装: 両方の検査ファイルに `gitInWorktree(path, args)` を置いた（`gitEnv(process.env)` + `cwd: path`）。実物のコード（`worktreeGit(path)`）は元からこの形で、デモの `consult_commit` が実証している
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/worktree.test.ts`: 既存の「ブランチは消えるまで残る」を、3 つの検査（取り込み済み → 消える / 未マージ → 残る / `force` → 消える）に置き換えた
+  - なぜ: 面が変わったため（古い検査は「ブランチを残す」を固定していた）
+- `.pi/extensions/consult/tool/worktree.test.ts`: `remove` の文言（ブランチも消した / 未マージなので残した）の検査と、worktree 用の `gitInWorktree` を足した
+  - なぜ: チケットの `Verify` が両方の検査ファイルを上げているため
+- `.pi/extensions/consult/run/worktree.ts`: `removed-branch-kept` を `RemoveOutcome` に足した
+  - なぜ: 「worktree は消えたがブランチは残した」を親に伝える必要があった
 
-Commit:
+Commit: d8b1fb9
