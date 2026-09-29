@@ -49,10 +49,17 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- `ref-cleanup` 拡張は既に無かった（`.pi/extensions/` は consult / quality-gate / sound-notify のみ）
+  - なぜ外か: 設計は「consult の ref は消える」と言い、008 で作った `ref-cleanup` が残っていれば新しい `consult/<unit>` ブランチを消しうる
+  - 観測: 探索しても無い。だから衝突しない。`ls .pi/extensions/` が 3 つだけだった
+- チケットが消すと言っていた `tool/refs.test.ts` は存在しなかった（消したのは 3 つ: `run/refs.ts` / `tool/refs.ts` / `run/refs.test.ts`）
+  - 観測: `ls tool/refs* run/refs*` で 3 つだけ。無いファイルを `git rm` するとコマンド全体が落ちるので、分けて消した
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/run.test.ts`: `commitWorktree` の検査（3 つ）と、それだけが使っていた補助（`recorder` / `spawnSync` / `runGit` / `vi` / `afterEach` / `GitOutput` の取り込み）を外した
+  - なぜ: 面が消えたため（検査の総数は 2 減ったが、道具の検査 8 つを `tool/commit.test.ts` に置いたので実質は増えている）
+- `.pi/extensions/consult/tool/commit.ts`: `execute` の `details` を `{ worktree, outcome }` にした（親が id と結果を機械で読めるように）
+  - なぜ: `details` は agent には渡らないが、呼び出し側とテストの読み口になるため
 
-Commit:
+Commit: aa9b64b
