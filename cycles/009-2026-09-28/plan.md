@@ -102,7 +102,7 @@
 - Show: worktree を 1 つ作り、子を 1 体走らせ、`consult_commit` を呼び、親のブランチへ merge する所までを 1 回で実演する
 - Depends: 6
 - Action: build
-- Files: `.pi/extensions/consult/run/delivery.ts`, `.pi/extensions/consult/run/child.ts`, `.pi/extensions/consult/index.ts`
+- Files: `.pi/extensions/consult/run/delivery.ts`, `.pi/extensions/consult/run/child.ts`, `.pi/extensions/consult/index.ts`, `.pi/extensions/consult/tool/sound.ts`
 - Verify: test
 
 ### step 8: consult.docs
