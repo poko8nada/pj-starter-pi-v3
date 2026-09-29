@@ -50,10 +50,22 @@ Acceptance:
 
 ### Findings
 
-- なし
+- 「子が走っている」の判定は**記録**（`log.jsonl`）から取った。親の記憶（runtime の Map）ではなく
+  - なぜ: `tool/worktree.ts` は runtime を持たない独立した `execute`。記録なら、その unit の行（`worktree` が一致し、終わりの行が無く、pid が生きている）だけで判定でき、reload をまたいだ子にも効く
+  - 実装: `tool/worktree.ts` の `runningIn(runRoot, id, alive = pidAlive)`（export。検査が alive を差し替えられる）
+  - この環境の条件: 記録の「走っている行」は step 6 の `onStarted` が spawn 直後に書くので、走っている間は必ず存在する
+- 検査の `WorktreeRow.root` の期待値（「root は unit の入れ物」と書いていたコメント）が、実は**1 段ずれを固定していた**
+  - 7b で `parseWorktrees` だけを直した時に、この検査を「実行の根」に合わせて書き換えた（今回の修正で `runRoot` に改名）
+- 命名: `unitRoot(cwd, id)` は `<runRoot>/<id>` を返し、`Worktree.unitDir` と同じ物。**本体では使われていない**（呼び手は検査だけ）
+  - 今は残した（道具は `rootFor` を直接使う）。要らなければ次のサイクルで落とせる
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/child.ts`: `sessionFile` を `worktree.unitDir` に合わせた（`Files` に無かったが、型の改名に追随する必要があった）
+  - なぜ: `Worktree.root` を消したため（コンパイルが通らない）
+- `.pi/extensions/consult/run/worktree.ts`: `Worktree` のコメント、`rootFor` の doc、「実体のパスに揃える」の位置を整えた
+  - なぜ: `runRoot` と `unitDir` を導入したので、何を返す関数かを書く必要があった
+- `.pi/extensions/consult/run/child.test.ts`: 検査の `WORKTREE` 固定値を `unitDir` に合わせた
+  - なぜ: 同じ改名のため
 
-Commit:
+Commit: 1ade68a
