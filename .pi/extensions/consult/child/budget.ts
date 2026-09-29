@@ -4,12 +4,12 @@
  * 親は `CONSULT_TURNS` で上限を渡す（`run/child.ts` が env に足す）。`turnIndex` は 0 から数えるので、
  * `上限 - 1` が最後の 1 つ手前になる。
  *
- * この版の pi（0.85.1）は `turn_end` から値を返せないため、促しは「そのターンで道具を止める」形で渡す。
- * 止めるのは 1 度だけ（止め続けるとループになる）。ここが働かなくても、子は上限で pi 側から打ち切られる。
- * この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
+ * この版の pi（0.87.1 以降）は `turn_end` から値を返せる。そこを 1 度だけ使って、最後の 1 つ手前で
+ * 「次が最後のターン」と伝え、その 1 ターンを報告に使わせる（`continue: true`）。
+ * ここが働かなくても、子は上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
  */
 
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
+import type { ExtensionAPI, TurnEndEventResult } from '@earendil-works/pi-coding-agent';
 
 /** 次が最後のターンになる番号。上限が読めない（1 以下・数でない）ときは何もしない */
 export function lastTurn(turns: number | undefined): number | undefined {
@@ -32,21 +32,42 @@ export function turnsFrom(value: string | undefined): number | undefined {
 export const LAST_TURN_MESSAGE =
   '次が最後のターンです。ここまでに分かったこと・やったことと、終わっていないことを報告して終えてください。';
 
+/**
+ * 促しを出すときの 1 つ分。出す必要がなければ undefined。
+ *
+ * 純粋な形にしてあるのは、子を実際に走らせずに「いつ出すか」を試せるようにするため。
+ */
+export function nudge(
+  limit: number | undefined,
+  sent: boolean,
+  turnIndex: number,
+): TurnEndEventResult | undefined {
+  if (limit === undefined || sent || turnIndex < limit) {
+    return undefined;
+  }
+  return {
+    entries: [
+      {
+        type: 'custom_message',
+        customType: 'consult-budget',
+        content: LAST_TURN_MESSAGE,
+        display: true,
+      },
+    ],
+    continue: true,
+  };
+}
+
 export default function (pi: ExtensionAPI) {
   const limit = lastTurn(turnsFrom(process.env.CONSULT_TURNS));
-  let turns = 0;
-  let told = false;
-  // この版の pi（0.85.1）では `turn_end` から値を返せない（`ExtensionHandler<TurnEndEvent>`）。
-  // だからターンは数えるだけにして、報告の促しは次の `tool_call` を止める形で渡す。
-  // 道具を止めれば子は本文で応えるしかない。そこで報告して終わる。
+  let sent = false;
   pi.on('turn_end', (event) => {
-    turns = event.turnIndex + 1;
-  });
-  pi.on('tool_call', () => {
-    if (limit === undefined || told || turns < limit) {
+    const result = nudge(limit, sent, event.turnIndex);
+    if (result === undefined) {
       return {};
     }
-    told = true;
-    return { block: true, reason: LAST_TURN_MESSAGE };
+    // 1 度だけ。無条件の続行はループになる。
+    sent = true;
+    return result;
   });
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LAST_TURN_MESSAGE, lastTurn, turnsFrom } from './budget.ts';
+import { LAST_TURN_MESSAGE, lastTurn, nudge, turnsFrom } from './budget.ts';
 
 // ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（consult の道具の検査が扱う）。
 
@@ -34,6 +34,32 @@ describe('turnsFrom', () => {
     expect(turnsFrom('0')).toBeUndefined();
     expect(turnsFrom('-5')).toBeUndefined();
     expect(turnsFrom('2.5')).toBeUndefined();
+  });
+});
+
+describe('nudge', () => {
+  it('上限の手前 → custom_message を 1 つ提案し、1 ターン続ける', () => {
+    const result = nudge(39, false, 39);
+    expect(result?.continue).toBe(true);
+    expect(result?.entries).toHaveLength(1);
+    expect(result?.entries?.[0]).toMatchObject({
+      type: 'custom_message',
+      customType: 'consult-budget',
+      content: LAST_TURN_MESSAGE,
+      display: true,
+    });
+  });
+
+  it('まだ手前 → 何もしない（ターンを消費しない）', () => {
+    expect(nudge(39, false, 38)).toBeUndefined();
+  });
+
+  it('一度出したら出さない（無条件の続行はループになる）', () => {
+    expect(nudge(39, true, 39)).toBeUndefined();
+  });
+
+  it('上限が読めない → 何もしない（促さず、pi の打ち切りに任せる）', () => {
+    expect(nudge(undefined, false, 999)).toBeUndefined();
   });
 });
 

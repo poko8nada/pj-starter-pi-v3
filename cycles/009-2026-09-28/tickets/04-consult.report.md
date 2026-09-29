@@ -57,6 +57,7 @@ Owner: at the end
   - 実装した形: `turn_end` でターンを数えるだけにし、促しは**次の `tool_call` を止める**形で渡す（`{ block: true, reason }`。0.85.1 で動くことは guard が実証している）。道具を止めれば子は本文で応えるしかなく、そこで報告して終わる
   - 意図（「上限で切られる前に報告させる」）は保つ。ただし**そのターンに道具を呼ばなければ促しは出ない**（暗い側面）。親の硬い上限は変わらず働く
   - この環境の条件: 本物の `pi` CLI（PATH）は 0.87.1 なので、動作と型が食い違う。**0.87.1 へ上げれば設計どおりの形に戻せる**（依存の更新は Stack の変更なので owner の判断が要る）
+  - **owner の判断（このあと）**: 上げたうえで後方互換を無視してよい、と。`@earendil-works/pi-coding-agent` を devDependency に **^0.87.1** で入れ（peer は `*` のまま）、`budget.ts` を設計どおりの形（`turn_end` で `custom_message` を 1 つ提案し `continue: true`）に書き直した。判定は純粋な `nudge(limit, sent, turnIndex)` に切り出して、子を走らせずに試せるようにした
 
 ### Unplanned
 
