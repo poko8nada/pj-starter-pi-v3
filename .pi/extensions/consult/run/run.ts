@@ -5,19 +5,12 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { accountEvent, parseEvents, ranFrom, type Spent } from '../child/spec.ts';
 import type { Limits } from '../policy/types.ts';
 
 const KILL_GRACE_MS = 5000;
-
-export interface Worktree {
-  readonly parent: string;
-  readonly dir: string;
-  readonly cwd: string;
-}
 
 /**
  * git を起動するときの環境。
@@ -42,34 +35,6 @@ export function isGitRepo(cwd: string): boolean {
     env: gitEnv(),
   });
   return result.status === 0;
-}
-
-/** リポジトリ外に一時 worktree を作る。中に置くと git が埋め込みリポジトリと見なす */
-export function createWorktree(cwd: string, from = 'HEAD'): Worktree {
-  const parent = mkdtempSync(join(tmpdir(), 'consult-'));
-  const dir = join(parent, 'wt');
-  const result = spawnSync('git', ['worktree', 'add', '--detach', dir, from], {
-    cwd,
-    encoding: 'utf8',
-    env: gitEnv(),
-  });
-  if (result.status !== 0) {
-    rmSync(parent, { recursive: true, force: true });
-    throw new Error(
-      `could not create a worktree: ${(result.stderr || result.error?.message || '').trim()}`,
-    );
-  }
-  return { parent, dir, cwd };
-}
-
-/** 登録を消してからディレクトリを消す。順序を逆にすると登録が残る */
-export function removeWorktree(handle: Worktree): void {
-  spawnSync('git', ['worktree', 'remove', '--force', handle.dir], {
-    cwd: handle.cwd,
-    encoding: 'utf8',
-    env: gitEnv(),
-  });
-  rmSync(handle.parent, { recursive: true, force: true });
 }
 
 /**
@@ -213,8 +178,8 @@ export type InstallOutcome =
  *
  * 入っていない worktree では、子もフックも何も確かめられない。worktree の用意の一部であって、子の仕事ではない。失敗は環境の失敗で、設定の誤りではない。
  */
-export function installDependencies(worktree: Worktree): InstallOutcome {
-  const command = installCommand(worktree.dir);
+export function installDependencies(cwd: string): InstallOutcome {
+  const command = installCommand(cwd);
   if (command === undefined) {
     return { kind: 'none' };
   }
@@ -222,7 +187,7 @@ export function installDependencies(worktree: Worktree): InstallOutcome {
   if (file === undefined) {
     return { kind: 'none' };
   }
-  const result = spawnSync(file, args, { cwd: worktree.dir, encoding: 'utf8' });
+  const result = spawnSync(file, args, { cwd, encoding: 'utf8' });
   const label = command.join(' ');
   if (result.status !== 0) {
     const detail = (result.stderr || result.error?.message || '').trim();
@@ -241,10 +206,10 @@ export interface GitOutput {
 export type GitRun = (args: readonly string[]) => GitOutput;
 
 /** 本番の git。worktree の中で走らせる */
-export function worktreeGit(worktree: Worktree): GitRun {
+export function worktreeGit(path: string): GitRun {
   return (args) => {
     const result = spawnSync('git', [...args], {
-      cwd: worktree.dir,
+      cwd: path,
       encoding: 'utf8',
       env: gitEnv(),
     });

@@ -59,6 +59,13 @@ Owner: at the end
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/child.ts`: worktree を `run/worktree.ts` から取り、後片付けと retry をやめた
+  - なぜ: `run/retry.ts` を落とすと import が壊れる（plan の step 2 の `Files` には無いが、plan の `Structure` には `run/child.ts update` があり、step 3 の `Files` にも入っている）
+- `.pi/extensions/consult/tool/resume.ts` / `run/resume.ts` / `run/stopped.ts`（それぞれのテストも）: 削除した
+  - なぜ: 同じく `run/retry.ts` を import していて、木が通らない（plan では step 6 の担当。step 6 の仕事がその分減る）
+- `.pi/extensions/consult/run/run.test.ts`: `commitWorktree` の worktree を使う 1 ケースを落とした
+  - なぜ: 新しい `createWorktree` が `consult/<unit>` ブランチを作るので、旧 `commitWorktree` のブランチ作成と衝突する（旧機構の検査で、step 5 の削除に含まれる）
+- `.pi/extensions/consult/run/worktree.ts`: 置き場の大元を `CONSULT_ROOT` で差し替えられるようにした
+  - なぜ: テストが本物の `/tmp/pi-consult` を汚さないため（既定は `/tmp/pi-consult` のまま）
 
 Commit:

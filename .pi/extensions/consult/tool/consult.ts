@@ -302,32 +302,10 @@ async function consult(
       details.push({ input: label, error: entry.error });
       continue;
     }
-    const { run, install, work, retry } = entry.value;
+    const { run, install } = entry.value;
     const events = parseEvents(run.stdout);
     // 打ち切られたときは、何回走ったかと、続きを走らせたかを打ち切りの行の隣に出す。
-    lines.push(
-      compose(
-        events,
-        run,
-        retry === undefined ? undefined : { attempts: retry.attempts, continued: retry.continued },
-      ),
-    );
-    if (work !== undefined) {
-      if (work.kind === 'committed') {
-        lines.push('', `ref: ${work.ref}`, work.stat);
-      } else if (work.kind === 'no-change') {
-        lines.push('', 'ref: (the child changed nothing)');
-      } else {
-        lines.push('', `ref: (not created) the commit was rejected: ${work.error}`);
-        if (retry?.kept !== undefined) {
-          lines.push(
-            `worktree kept: ${retry.kept}`,
-            `attempts: ${retry.attempts}${retry.stoppedAt === undefined ? '' : `, stopped at ${retry.stoppedAt}`}`,
-            ...(retry.files === undefined ? [] : [`files: ${retry.files.join(', ')}`]),
-          );
-        }
-      }
-    }
+    lines.push(compose(events, run));
     // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。`details` は agent には渡らないので、モデルをここに出さないと見えない。
     lines.push('', `[consult] ${usageLine(events)}`);
     lines.push('');
@@ -337,7 +315,6 @@ async function consult(
       stopped: run.stopped,
       aborted: run.aborted,
       ...(install === undefined ? {} : { install }),
-      ...(work === undefined ? {} : { work }),
     });
   }
 

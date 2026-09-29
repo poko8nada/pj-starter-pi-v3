@@ -7,16 +7,13 @@ import { runGit } from './git-env.ts';
 import {
   combineRuns,
   commitWorktree,
-  createWorktree,
   gitEnv,
   installCommand,
   modelAttempts,
   readPayload,
   readPayloads,
-  removeWorktree,
   runForInputs,
   runWithFallback,
-  worktreeGit,
   type GitOutput,
   type RunResult,
 } from './run.ts';
@@ -278,27 +275,6 @@ describe('commitWorktree', () => {
     });
     expect(commitWorktree('demo', git)).toEqual({ kind: 'failed', error: 'lint failed' });
     expect(calls.map((args) => args[0])).toEqual(['status', 'add', 'commit']);
-  });
-
-  it('worktree を消してもブランチは残る（親のツリーも汚れない）', () => {
-    const repo = tmpDir();
-    const home = tmpDir();
-    const run = (args: readonly string[]) => runGit(repo, home, args);
-    run(['init', '--quiet']);
-    run(['config', 'user.email', 'consult@example.com']);
-    run(['config', 'user.name', 'consult']);
-    writeFileSync(join(repo, 'README.md'), 'base\n');
-    run(['add', '-A']);
-    run(['commit', '--quiet', '-m', 'base']);
-
-    const worktree = createWorktree(repo);
-    writeFileSync(join(worktree.dir, 'note.md'), 'the child wrote this\n');
-    const outcome = commitWorktree('demo', worktreeGit(worktree));
-    removeWorktree(worktree);
-
-    expect(outcome.kind).toBe('committed');
-    expect(run(['branch', '--list', 'consult/*']).stdout).toContain('consult/demo');
-    expect(run(['status', '--porcelain']).stdout.trim()).toBe('');
   });
 
   it('継承した GIT_* を無視する（外の repo を指していても、自分の repo に書く）', () => {

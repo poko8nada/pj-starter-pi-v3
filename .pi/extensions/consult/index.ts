@@ -7,7 +7,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { PARAMETERS, createRuntime } from './tool/consult.ts';
 import { stopSound } from './tool/sound.ts';
-import { PARAMETERS as RESUME_PARAMETERS, execute as resumeExecute } from './tool/resume.ts';
+import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
 import { PARAMETERS as REF_PARAMETERS, execute as refExecute } from './tool/refs.ts';
 
 export default function (pi: ExtensionAPI) {
@@ -17,7 +17,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_new',
     label: 'Consult new',
     description:
-      "Start a child pi in the background with the policy of a type (model, tools, environment, limits, role) and return its id at once. When the child finishes, its text is delivered as a message. The caller picks only the type; the child does not see this conversation. One child per input. An action of 'list' shows the running children, and 'cancel' stops one by id.",
+      "Start a child pi in the background with the policy of a type (model, tools, readOnly, continueByDefault, limits, role) and return its id at once. When the child finishes, its text is delivered as a message. The caller picks only the type; the child does not see this conversation. One child per input. An action of 'list' shows the running children, and 'cancel' stops one by id.",
     promptSnippet:
       'Start a background child pi with a type (research / review / trial / code); the result arrives as a message',
     promptGuidelines: [
@@ -28,6 +28,20 @@ export default function (pi: ExtensionAPI) {
     parameters: PARAMETERS,
 
     execute: (...args) => consult.execute(...args),
+  });
+
+  pi.registerTool({
+    name: 'consult_worktree',
+    label: 'Consult worktree',
+    description:
+      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and refuses while a child runs in it. A worktree stays until it is removed.",
+    promptSnippet: 'Make, list or remove a unit worktree (it stays until removed)',
+    promptGuidelines: [
+      'Use consult_worktree with action: "new" and a unit id before starting a child that writes: the child runs in that worktree.',
+      'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the child did.',
+    ],
+    parameters: WORKTREE_PARAMETERS,
+    execute: worktreeExecute,
   });
 
   pi.registerCommand('consult-status', {
@@ -48,21 +62,6 @@ export default function (pi: ExtensionAPI) {
   // reload / セッションの差し替えで古いインスタンスが残っても、始めたタイマーが鳴り続けないように閉じる
   pi.on('session_shutdown', () => {
     stopSound();
-  });
-
-  pi.registerTool({
-    name: 'consult_resume',
-    label: 'Consult resume',
-    description:
-      "Work with the worktrees a stopped child left behind: 'list' shows them with the reason they stopped, 'run' continues one in its own worktree (always passing `--continue`; children run without a session, so what carries over is the worktree and its changes), 'remove' deletes one and its record. The caller picks the type for run.",
-    promptSnippet: 'List, continue or remove the worktrees a stopped consult child left behind',
-    promptGuidelines: [
-      'Use consult_resume with action: "list" when a consult child stopped (a limit, a wrong turn, a crash): the worktree is still there, with the reason it stopped next to it.',
-      'Use action: "run" with an id and a type to continue that work in place: the same worktree, the same changes, one more child. It commits the result like consult_new does.',
-      'Use action: "remove" when the left work is not wanted: the worktree and its record go away.',
-    ],
-    parameters: RESUME_PARAMETERS,
-    execute: resumeExecute,
   });
 
   pi.registerTool({

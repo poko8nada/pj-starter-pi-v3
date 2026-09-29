@@ -1,23 +1,20 @@
 /**
  * 子 1 体分の仕事。
  *
- * 実行場所の用意から、走らせて、コミットし、後片付けするところまで。中断でも例外でも片付ける。
- * 2 回目も通らなかった worktree は消さずに残す（親が続きをやれるように。記録は `retry.ts` が外に置く）。
+ * 実行場所を用意し、走らせて、結果を返す。**worktree は消さない**（既定で残る。消すのは `consult_worktree{action: remove}` だけ）。
+ * コミットは道具（`consult_commit`）が分けて行うので、ここでは触らない。道具は retry しない（止まったら親が決める）。
  */
+
 import {
-  createWorktree,
   gitEnv,
   installDependencies,
   isGitRepo,
-  removeWorktree,
   runPi,
   runWithFallback,
-  type CommitOutcome,
   type InstallOutcome,
   type RunResult,
-  type Worktree,
 } from './run.ts';
-import { attemptAndCommit, type RetryOutcome } from './retry.ts';
+import { createWorktree, type Worktree } from './worktree.ts';
 import { buildPiArgs, joinPrompt, needsIsolation } from '../child/spec.ts';
 import { refLabel } from '../tool/render.ts';
 import type { ConsultOptions } from '../child/spec.ts';
@@ -29,29 +26,27 @@ interface Prepared {
 }
 
 /**
- * 実行場所を用意する。payload は読み終わっている前提。隔離するかは type の `environment` が決める（ツールから推測しない）。
+ * 実行場所を用意する。隔離するかは type の `readOnly` が決める（ツールから推測しない）。
  */
-export function prepare(ctx: ConsultContext, options: ConsultOptions): Prepared {
+export function prepare(ctx: ConsultContext, options: ConsultOptions, id: string): Prepared {
   const base = ctx.cwd;
   if (!needsIsolation(options.policy)) {
     return { cwd: base };
   }
   if (!isGitRepo(base)) {
-    // git 管理外では worktree を作れない。隔離できないまま実ツリーで書かせない。
+    // git 管理外では worktree を作れない。書き込むロールを隔離できないまま実ツリーで走らせない。
     throw new Error(
-      'this type needs isolation but the directory is not a git repository. Use a type whose environment is "tree", or run inside a repository',
+      'this type writes, but the directory is not a git repository. Run inside a repository, or use a read-only type',
     );
   }
-  const worktree = createWorktree(base);
-  return { cwd: worktree.dir, worktree };
+  const worktree = createWorktree(base, id);
+  return { cwd: worktree.path, worktree };
 }
 
-/** 子 1 体分の仕事。work は書き込む type のときだけ入る */
+/** 子 1 体分の仕事 */
 export interface ChildResult {
   readonly run: RunResult;
   readonly install?: InstallOutcome;
-  readonly work?: CommitOutcome;
-  readonly retry?: RetryOutcome;
 }
 
 /** 子 1 体分の走らせ方 */
@@ -64,7 +59,8 @@ export interface ChildJob {
 /**
  * 子 1 体分を走らせる。
  *
- * worktree の用意から後片付けまでを 1 つにまとめる。中断でも例外でも片付ける。
+ * 候補のモデルを順に試し、全部落ちたら最後に親と同じ設定で走る（`runWithFallback`）。
+ * 何が残ったかは worktree を見れば分かるので、ここでは何も片付けない。
  */
 export async function runOneChild(
   ctx: ConsultContext,
@@ -72,62 +68,26 @@ export async function runOneChild(
   job: ChildJob,
 ): Promise<ChildResult> {
   const { payload, index, signal } = job;
-  // 子ごとに用意する。隔離する type なら、子ごとに別の worktree になる。
-  const prepared = prepare(ctx, options);
-  // 2 回目も通らなかった worktree は、親が続きをやれるように残す（後片付けで消さない）
-  let keepsWorktree = false;
-  try {
-    // 依存を入れる。無いと子もフックも何も確かめられない。
-    const install =
-      prepared.worktree === undefined ? undefined : installDependencies(prepared.worktree);
-    if (install?.kind === 'failed') {
-      // 環境の失敗。setup の誤り（設定）とは区別して、この子の状態にする。
-      throw new Error(`could not install dependencies (${install.command}): ${install.error}`);
-    }
-    // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
-    const runOnce = (note: string | undefined) =>
-      runWithFallback(options.policy.models, (model) =>
-        runPi({
-          piArgs: [
-            ...buildPiArgs({
-              ...options,
-              policy: { ...options.policy, models: model === undefined ? [] : [model] },
-            }),
-            ...(note === undefined ? [] : ['--continue']),
-          ],
-          stdin:
-            note === undefined
-              ? joinPrompt(payload, options.task)
-              : joinPrompt(payload, `${options.task}\n\n${note}`),
-          cwd: prepared.cwd,
-          signal,
-          env: gitEnv(),
-          limits: options.policy.limits,
-        }),
-      );
-    // 書き込む type は、子が残した変更をコミットして ref にする。フックに拒否されたら、同じ worktree でもう 1 回だけ走らせる。
-    const retry =
-      prepared.worktree === undefined
-        ? undefined
-        : await attemptAndCommit({
-            label: refLabel(options.type, index),
-            worktree: prepared.worktree,
-            ...(signal === undefined ? {} : { signal }),
-            runOnce,
-          });
-    keepsWorktree = retry?.kept !== undefined;
-    const run = retry === undefined ? await runOnce(undefined) : retry.run;
-    const work = retry?.work;
-    return {
-      run,
-      ...(install === undefined ? {} : { install }),
-      ...(work === undefined ? {} : { work }),
-      ...(retry === undefined ? {} : { retry }),
-    };
-  } finally {
-    // 中断でも例外でも片付ける。ただし 2 回目も通らなかった worktree は残す。記録は `run/retry.ts` が外に置く。
-    if (prepared.worktree !== undefined && !keepsWorktree) {
-      removeWorktree(prepared.worktree);
-    }
+  const prepared = prepare(ctx, options, refLabel(options.type, index));
+  // 依存を入れる。無いと子もフックも何も確かめられない。
+  const install = prepared.worktree === undefined ? undefined : installDependencies(prepared.cwd);
+  if (install?.kind === 'failed') {
+    // 環境の失敗。setup の誤り（設定）とは区別して、この子の状態にする。
+    throw new Error(`could not install dependencies (${install.command}): ${install.error}`);
   }
+  // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空なら親と同じ）。
+  const run = await runWithFallback(options.policy.models, (model) =>
+    runPi({
+      piArgs: buildPiArgs({
+        ...options,
+        policy: { ...options.policy, models: model === undefined ? [] : [model] },
+      }),
+      stdin: joinPrompt(payload, options.task),
+      cwd: prepared.cwd,
+      signal,
+      env: gitEnv(),
+      limits: options.policy.limits,
+    }),
+  );
+  return { run, ...(install === undefined ? {} : { install }) };
 }
