@@ -69,6 +69,8 @@ Each unit's `Actor` is one of them.
 
 The `review` child of step 9 gets this checklist, the definition and the previous cycle's definition, and nothing else:
 
+- hand it over with `consult_run{role: 'review', task}`: name those files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
+
 - the owner has seen the units and agreed
 - every change since the owner's look answers their point
 - `Type` is the owner's line, every `Who` is from the list, and every unit is written from one of those sides

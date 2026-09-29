@@ -141,10 +141,13 @@ Commit:
 - both belong to whoever did the work
 - `なし` is written when it was looked at and nothing is needed
 - `Stopped`: a step that stopped, and why. The ticket is not closed: it stays open
+  - **the parent writes it**: only the parent saw the `Verify` fail. A child reports its own reason in its reply, and the record holds the row (`consult_children`); neither writes the ticket
   - the six: the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left
   - written as it was found, and kept: not tidied or shortened
   - when the step is later finished, the reason is replaced by the unit's commit hash (the line then reads `Commit: <hash>`)
 - `Commit:` is the last line, and it names the same unit's one commit
+  - a unit may have been written by several children in several worktrees: the unit's end squashes them into one, and `work` says how (`work/SKILL.md`, step 11)
+  - it is the hash `consult_commit` made in the worktree: `committed: <hash>`
   - empty at the step's time: it is written when the unit's commit is made
 - a step that changed nothing (a `<unit-id>.check`): `Commit: なし（理由）` — the reason goes in the parentheses, on the same line
 - a stopped step: the commit is not made, so `Commit: なし（理由）` — the reason goes in the parentheses, on the same line

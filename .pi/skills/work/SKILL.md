@@ -36,7 +36,7 @@ The parent owns the judgment. A child may do the work; it does not judge it.
 - only after the unit ends: the commit and the unit review (step 11)
   - nothing is committed or reviewed before the owner has kept the work
 
-2. **Decide who does the work.** The parent, or a `consult_new` child of type `code`.
+2. **Decide who does the work.** The parent, or a `consult_run` child with the `code` role.
    - the axis: how many units the definition holds, and how many tickets this cycle has
    - three units or fewer and five tickets or fewer: the parent does it, a round trip costs more
    - 7 units: a child, however many tickets the cycle has
@@ -44,19 +44,19 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - the parent either way: a step that needs context a child cannot see
      - a hole just found, or the parent's uncommitted state: a child sees only `HEAD`
    - the parent either way: a `<unit-id>.check` step, the judgment is the parent's
-3. **Start from the right place.** No dependency: `HEAD`. A dependency: the earlier step's ref.
-   - a dependency whose earlier ref is gone (the step was dropped, or its child failed)
+3. **Start from the right place.** No dependency: `HEAD`. A dependency: the worktree and the commit the earlier step left (its branch is `consult/<unit-id>`).
+   - a dependency whose earlier work is gone (the step was dropped, or its child produced nothing)
      - cut the step again: a file that was never merged cannot be depended on
 4. **Decide what runs together.** Only where the writes cannot meet, and only what is checked.
    - the child is the one step 2 picked: what it carries is decided here
    - steps whose files overlap are serialised, in the order the ticket gives
    - a ticket that changes this skill comes before the tickets whose work it carries
-   - several steps to one child: one call, one ref, and both tickets point at the same unit commit (written at step 11)
+   - several steps to one child: one call, one worktree, and both tickets point at the same unit commit (written at step 11)
    - grouping steps that are verified apart turns the closure into a guess
-5. **Hand the work over.** The `consult_new` tool, a child of type `code`.
+5. **Hand the work over.** The `consult_run` tool, a child with the `code` role, in the worktree of the ticket's unit (`consult_worktree`, if there is none yet).
    - it gets the ticket, and the `Notes` it fills
      - a child does not read this skill: the ticket is what it knows
-   - a child starts from step 3's ref, or from `HEAD`
+   - the child works in its own worktree (its base is the parent's `HEAD`); nothing of it touches the parent's tree
    - the commit comes after it stops, and the repository's hooks run on it
      - leave a tree that passes them
    - everything left in the worktree goes into that commit: no scratch files
@@ -64,31 +64,31 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - `Commit:` stays empty, the hash exists only after that commit
 6. **Merge one step at a time.** The `Verify` runs on the parent's tree.
    - a step that is not in the tree cannot be demonstrated
-   - take the ref or drop it, and the `Notes` carry which
-   - read what the ref brings before taking it: a file the ticket does not name is not taken
+   - take the commit or drop it, and the `Notes` carry which
+   - read what the commit brings before taking it: a file the ticket does not name is not taken
      - drop it, or ask the child why it is there: do not carry it in silently
-   - a ref means a commit that passed the repository's own hooks: that is the shape to take
+   - a commit means it passed the repository's own hooks: `consult_commit` refuses and says why when they reject it
    - the work the parent did itself: the parent commits it, and that commit is the tip
-   - a child that produced nothing (no ref, a failure, or a timeout): step 10's four options decide what happens; doing the work in the parent is what (a) turns into when the instruction was wrong
+   - a child that produced nothing (no commit, a failure, or a timeout): step 10's four options decide what happens; doing the work in the parent is what (a) turns into when the instruction was wrong
      - and write what happened, do not invent work
 7. **Run the `Verify`.** On the parent's tree, and read the values, not the exit code.
    - the types, and what each block holds: `../plan/references/format.md`
    - the shape of the block, and its pass line: `../tickets/references/format.md`
-   - a `read` or a `use`: one `consult_new` child, of the type the block names
+   - a `read` or a `use`: one `consult_run` child, with the role the block names
      - the block names the child (`review`), the document, and what it reports: `read` is the verify type, not the child's name
-     - the document goes in `input`, the tool's argument: the child is a reading type, and it is not asked to write
-     - the report the block names goes in the `task`: the child gets the document and the question
+     - **the document goes in the `task`**: the child has `read` itself, and the tool takes no `input`
+     - the report the block names goes in the `task` too: the child reads the document and answers the question
      - the evidence is the text the child returns: the parent reads it and judges
    - the demonstration leaves nothing behind: only what you can delete yourself
    - a shared store, a cache, a global setting: the owner's permission first
    - what a child is allowed to do: ask it for the refusal text, not for a file
    - a `Verify` is not loosened after the fact: if it cannot be run, the step is not done
-   - a `Verify` that goes through `consult_new`, when the step changed `consult`'s own code: stop, and ask the owner to reload
+   - a `Verify` that goes through `consult_run`, when the step changed `consult`'s own code: stop, and ask the owner to reload
      - the session keeps the code it loaded, and that code is what runs the child
    - a `Verify` that fails on the merged tree is a hole in this step: fix it here
 8. **Read the impact.** From the commit the step started at, against the ticket and the unit.
    - the parent does this whether it wrote the change or a child did
-   - the impact child: a `consult_new` child of type `review`, with the ticket and this step's commit range
+   - the impact child: a `consult_run` child with the `review` role, with the ticket and this step's commit range
      - it names what the change makes stale, by `file:line`: a document or a comment that now contradicts, a test still asserting the old behavior, a behavior that changed with no test on it
      - its reply is material: the parent sorts it in step 9
    - what to look for:
@@ -104,24 +104,24 @@ The parent owns the judgment. A child may do the work; it does not judge it.
    - out of focus, anything else: `Findings`, in the shape the format gives
      - a judgement call: report it, do not drop it
      - at the `close`, the research decides whether to act
-   - a child writes its own in its worktree, and they come back with the ref
-     - a child that stopped comes back without a ref: what it wrote stays in the worktree it left, when the worktree was kept; when it was not (a stop with no record of one), only the reply holds the reason, and step 10's (b) and (c) have nothing to resume
+   - a child writes its own in its worktree, and they come back in its report
+     - a child that stopped comes back without a commit: what it wrote stays in the worktree it left
    - the parent appends its own: the take or drop, and what its read found
 10. **Finish the ticket.** Its work is done when the `Verify` passed and the diff is read. For an `in the loop` unit, the owner's 残す comes first.
     - `Commit:` stays empty here: it is written at the unit's end (step 11)
     - a step that changed nothing (a `.check` step): `Commit: なし（理由）`, the reason in the parentheses on the same line
     - a step that stopped: the ticket is not closed, and its `Commit: なし（理由）` carries the stop
       - write the reason in the ticket's `Stopped`: the six `../tickets/references/format.md` names — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left
-      - a child that stopped sends the reason in its reply, and the worktree it left holds it too (`consult_resume`'s `list` reads it); the parent writes the ticket
+      - a child that stopped sends the reason in its reply, and the record shows the row too (`consult_children`); the parent writes the ticket
       - read the reason, and pick one, before the flow moves on:
         - (a) fix the instruction, and run the step again
-        - (b) `consult_resume` with a `research` child
-        - (c) `consult_resume` with a `code` child
+        - (b) `consult_run{role: 'research', worktree, continue: true}` — read what it left, and report
+        - (c) `consult_run{role: 'code', worktree, continue: true}` — finish it
         - (d) leave the ticket open, and hand it to `close`
 11. **The unit's end.** When every step of the unit is verified and its diff read, the parent:
 
 - a ticket that stopped and was finished later (a)–(c): write the unit's hash into its `Commit:`, and drop its `Stopped` section, so `close` does not read it as still open
-- a step left open by (d): the unit does not finish, its siblings' `Commit:` stay empty, and `close` reads the unit as open — that is what (d) chooses - reviews the unit once, before its commit: a `consult_new` child of type `review`
+- a step left open by (d): the unit does not finish, its siblings' `Commit:` stay empty, and `close` reads the unit as open — that is what (d) chooses - reviews the unit once, before its commit: a `consult_run` child with the `review` role
   - it gets the unit's diff and the unit's `Then`, and nothing else
   - viewpoints: 2〜4, the files named, findings only, up to three rounds inside this one stage
     - required, whatever else is picked: the owner has seen what this unit must answer (the plan's step and the ticket), and agreed; every change since their look answers the point they made. For an `in the loop` unit, the owner has also seen the unit's result at a step's stop
@@ -138,10 +138,9 @@ The parent owns the judgment. A child may do the work; it does not judge it.
   - `<base>` is where that ticket's work started, and `--tickets` names it
   - `Commit:` names the squashed commit; the records are their own commit
 
-12. **Clean up the refs.** The `consult_refs` tool: list first, then delete, one at a time.
-    - it refuses anything that is not a `consult/` ref
-    - a ref it refuses: leave it, and put the reason in front of the owner
-    - do not delete a ref by hand: `git branch -D` is not the tool's job
+12. **Clean up the worktrees.** The `consult_worktree` tool: list first, then remove, one at a time — `remove` takes the branch too.
+    - it removes what the list named, never on memory
+    - a worktree a child is still running in is refused: leave it, and put the reason in front of the owner
 13. **Report.** To the owner, once, when the cycle's work is done: this is the `at the end` unit's movement.
     - read the work again in full, not only the change: the lines around it as well
     - what changed, and how the whole flow reads now

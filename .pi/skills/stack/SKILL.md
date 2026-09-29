@@ -26,7 +26,7 @@ Read that before writing anything.
    - the units this cycle marks `update`, `add` or `drop` are where it moves
 3. **Read the runtime and the language.** They are in the repository.
    - this comes first: the runtime bounds what can be put on it
-4. **Find the facts.** The `consult_new` tool, type `research`.
+4. **Find the facts.** The `consult_run` tool, with the `research` role.
    - what this kind of product is built with now, and what each piece costs
    - the units say what is needed: 買い物かごに入れる → a place to hold the state
    - ログインする → authentication; 一覧を表示する → the parts a screen is built from
@@ -47,8 +47,9 @@ Read that before writing anything.
 9. **The owner.** Show what was added, and what a trial reported.
    - a rejection sends you back to step 5
 10. **The `review` child**, with the checklist below:
-    - the `consult_new` tool, type `review`
+    - the `consult_run` tool, with the `review` role
     - it gets the definition and the previous cycle's definition, in one call
+    - hand it over with `consult_run{role: 'review', task}`: name those two files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
     - fix what comes back, and repeat until it is clean, up to three rounds
     - what is left after three rounds goes to the owner
 11. **Commit.** After step 9's yes.
@@ -89,6 +90,8 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 The `review` child of step 10 gets this checklist, the definition and the previous cycle's definition, and nothing else:
 
+- hand it over with `consult_run{role: 'review', task}`: name those two files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
+
 - the owner has seen the stack and agreed
 - every change since the owner's look answers their point
 - every unit's `Does` has what it needs, or a reason it needs nothing added
@@ -98,11 +101,12 @@ Report findings only, each with its line, marked blocking or not.
 
 ## The trial child
 
-- the `consult_new` tool, type `trial`
+- the `consult_run` tool, with the `trial` role, in a worktree of its own (`consult_worktree{action: 'new'}` first)
+- it is given the candidate to try in the `task`: what to add, and which files it should read — the tool takes no `input`
 - it works in its own worktree, with the dependencies installed: this tree is not touched
-- what it writes stays in a ref: its report comes back, the files do not
+- what it writes stays in that worktree: its report comes back, the files do not — `consult_commit` puts them on the branch `consult/<unit-id>`
 - a trial that fails is a result: it takes that candidate off the list
-- drop the ref with `consult_refs` when the report comes back, never by hand
+- remove the worktree with `consult_worktree{action: 'remove'}` when the report comes back — it takes the branch too, and keeps an unmerged one unless `force`
 - the package lands in the shared store on the owner's machine: ask first
 
 ## How not to write this

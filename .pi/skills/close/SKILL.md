@@ -32,7 +32,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - a value one unit makes and the next consumes, a file two units write, a shape they share
    - the criteria are the units' `Then`s and nothing else
      - a run that needs another criterion has found a hole
-   - the run leaves nothing it made: a ref, a worktree, a file, a tag. A leftover is a finding
+   - the run leaves nothing it made: a branch, a worktree, a file, a tag. A leftover is a finding
      - `squash-backup` is not a leftover: it is the last unit's undo point, overwritten by the next squash
 3. **Send each hole where it belongs.** One place each, and the reason beside it.
    - a hole that breaks a `Then` belongs to this cycle: cut a ticket for it
@@ -49,7 +49,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
    - collect: the tickets' `Findings`, the tickets that are still open, and what this close itself found
    - a ticket that is still open (it has a `Stopped` section: a step that stopped shows as `Commit: なし（理由）`, so an empty `Commit:` is not the signal) is a hole, and it is not re-cut: read its `Stopped` reason
      - the parent and the owner decide its fate, before the `Retro`: 続ける / 落とす / 持ち越す
-       - 続ける: the cycle waits (step 3): `work` takes it back, or `consult_resume` runs the child on in the same worktree; the worktree stays, and step 1 is where the close resumes
+       - 続ける: the cycle waits (step 3): `work` takes it back, or `consult_run{continue: true}` runs the child on in the same worktree; the worktree stays, and step 1 is where the close resumes
        - 落とす: the ticket is dropped, the reason is one `Bad` line, its worktree is removed at step 9, and the ticket is closed as dropped: write `Commit: なし（owner が落とした。理由は Stopped のとおり）` into it, so the next close does not read it as still open
        - 持ち越す: it is one `Carry over` line at step 5, copied with its `Stopped` reason, and its worktree is kept at step 9; a worktree the owner calls stale is removed too, and the line says so
      - a `Stopped` reason with no worktree id leaves nothing to resume or remove: say so, and do not invent one
@@ -82,7 +82,7 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
      - a missing line comes back; a line the owner drops leaves a `Bad` line
    - a rejection sends you back to step 3
 7. **The `review` child**, with the checklist below.
-   - the `consult_new` tool, type `review`
+   - the `consult_run` tool, with the `review` role
    - it gets the definition, the tickets, and this checklist, in one call
    - a hole it finds goes to step 3: this step fixes only its own act
    - run the child again after those acts, up to three rounds
@@ -91,8 +91,8 @@ The tickets' `Notes` are in `../tickets/references/format.md`.
 8. **Commit.** After the owner's yes and the review's last round.
    - that commit closes the cycle, and nothing about that cycle is edited afterwards
 9. **The worktrees.** After the commit: what the stopped children left is removed or kept, as step 4 decided. Nothing is decided here — what this step finds that step 4 did not decide goes back to step 4, before the commit.
-   - `consult_resume` with `list`: every worktree `consult` left, with its id, its place, the reason it stopped, and the files the child changed
-   - `remove`, one at a time, by the id `list` gave: the worktree of a ticket decided 落とす, and any worktree no open ticket and no `Carry over` line names (a `Carry over` line keeps its worktree alive across cycles)
+   - `consult_worktree{action: 'list'}`: every worktree `consult` left, with its id, its place, the reason it stopped, and the files the child changed
+   - `consult_worktree{action: 'remove'}`, one at a time, by the id `list` gave: the worktree of a ticket decided 落とす, and any worktree no open ticket and no `Carry over` line names (a `Carry over` line keeps its worktree alive across cycles)
    - a worktree decided 持ち越す stays — unless the owner called it stale, which step 4 decided to remove; its id is beside that ticket's `Stopped` reason, and in the `Carry over` line
    - the id comes from `list`, not from memory; never remove a worktree on memory alone
 

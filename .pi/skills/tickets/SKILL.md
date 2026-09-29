@@ -52,6 +52,8 @@ A fact the repository holds is looked up, not asked.
 
 The `review` child of step 9 gets this checklist, the unit's tickets and the plan, and nothing else:
 
+- hand it over with `consult_run{role: 'review', task}`: name those files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
+
 - the owner has seen the tickets and agreed
 - every change since the owner's look answers their point
 - one ticket per step, in the plan's order, and a `step 0` with なし has none

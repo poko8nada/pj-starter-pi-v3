@@ -83,6 +83,8 @@ A fact the repository holds is looked up, not asked. Ask only what changes the f
 
 The `review` child of step 12 gets this checklist, the plan, the definition and `references/format.md`, and nothing else:
 
+- hand it over with `consult_run{role: 'review', task}`: name those files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
+
 - the owner has seen the steps and the form, and agreed; every change since their look answers the point they made
 - every unit with a gap is a step, and together the steps carry every `Now` line once
 - every file in `Files` is in `Structure`, and every line of `What` is decided by a `Verify` type
