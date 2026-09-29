@@ -46,7 +46,10 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- 後続の step が持ち主の依存先 3 つ: `.pi/extensions/consult/index.ts:20`（道具の説明文が `environment` と言っている）→ step 2（`index.ts`）／`.pi/extensions/consult/run/child.ts:32` のコメントと `:42` のエラー文（`Use a type whose environment is "tree"`）→ step 3（`run/child.ts`）／`.pi/extensions/consult/README.md:19`（ポリシーの説明が `environment`）→ step 8（`consult.docs`）
+  - なぜ外か: この step の `Files`（`types.json` / `policy/types.ts` / `child/spec.ts`）のどれでもなく、plan の `Files` でも別の step の担当になっている
+  - 観測: `grep -rn "environment" .pi/extensions/consult` が 3 ファイル・4 箇所。テストと typecheck は緑（型で壊れていない）
+  - この環境の条件: 型はもう `readOnly` なので、残るのは文字列と説明文だけ。守っているのは step の境界（`Files` の外は触らない）
 
 ### Unplanned
 

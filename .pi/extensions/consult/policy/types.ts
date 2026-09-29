@@ -1,16 +1,13 @@
 /**
  * type の定義と設定の読み込み。
  *
- * type は子の走り方の一式（モデル候補・ツール・環境・上限・役割）を持つ。呼び出し側が選べるのは type の名前だけ。上書きの口は作らない。
+ * type は子の走り方の一式（モデル候補・ツール・書き込みの可否・続きの既定・上限・役割）を持つ。呼び出し側が選べるのは type の名前だけ。上書きの口は作らない。
  *
  * 壊れた設定は setup の誤りなので投げる。子を走らせてから気づくのでは遅い。読み込みは呼び出しごと。設定を変えたら、次の consult から効く。
  */
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-/** 子をどこで走らせるか。`tree` は実ツリー、`worktree` は隔離した作業ツリー */
-export type Environment = 'tree' | 'worktree';
 
 export interface Limits {
   /** ターン数の上限 */
@@ -24,7 +21,10 @@ export interface TypePolicy {
   /** 試す順の pi のモデル。空なら親と同じ設定で走る */
   readonly models: readonly string[];
   readonly tools: readonly string[];
-  readonly environment: Environment;
+  /** 書き込みを許すか。false のロールは worktree が要る（隔離してから走らせる） */
+  readonly readOnly: boolean;
+  /** `consult_run` の `continue` を省いたときの既定 */
+  readonly continueByDefault: boolean;
   readonly limits: Limits;
   /** システムプロンプトへの追記。無ければ素の子 */
   readonly role?: string;
@@ -102,9 +102,9 @@ function parseTools(value: unknown, where: string): string[] {
   return tools;
 }
 
-function parseEnvironment(value: unknown, where: string): Environment {
-  if (value !== 'tree' && value !== 'worktree') {
-    fail(`${where} must be "tree" or "worktree"`);
+function parseBoolean(value: unknown, where: string): boolean {
+  if (typeof value !== 'boolean') {
+    fail(`${where} must be true or false`);
   }
   return value;
 }
@@ -124,7 +124,8 @@ function parseType(value: unknown, where: string): TypePolicy {
     name: asString(raw.name, `${where}.name`),
     models: asStringArray(raw.models, `${where}.models`),
     tools: parseTools(raw.tools, `${where}.tools`),
-    environment: parseEnvironment(raw.environment, `${where}.environment`),
+    readOnly: parseBoolean(raw.readOnly, `${where}.readOnly`),
+    continueByDefault: parseBoolean(raw.continueByDefault, `${where}.continueByDefault`),
     limits: parseLimits(raw.limits, `${where}.limits`),
     ...(role === undefined ? {} : { role }),
   };

@@ -20,7 +20,8 @@ function aType(overrides: Record<string, unknown> = {}): Record<string, unknown>
     name: 'review',
     models: [],
     tools: ['read'],
-    environment: 'tree',
+    readOnly: true,
+    continueByDefault: false,
     limits: { turns: 20, output: 20000 },
     ...overrides,
   };
@@ -100,8 +101,13 @@ describe('parseTypes', () => {
     );
   });
 
-  it('`environment` が `tree` / `worktree` 以外 → 投げる', () => {
-    expect(() => parseTypes(config(aType({ environment: 'sandbox' })))).toThrow(/environment/);
+  it('`readOnly` が true / false 以外 → 投げる', () => {
+    expect(() => parseTypes(config(aType({ readOnly: 'yes' })))).toThrow(/readOnly/);
+    expect(() => parseTypes(config(aType({ continueByDefault: 1 })))).toThrow(/continueByDefault/);
+    expect(() => parseTypes(config(aType({ readOnly: undefined })))).toThrow(/readOnly/);
+    expect(() => parseTypes(config(aType({ continueByDefault: undefined })))).toThrow(
+      /continueByDefault/,
+    );
   });
 
   it('`limits` が無い → 投げる', () => {

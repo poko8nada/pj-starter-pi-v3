@@ -27,7 +27,8 @@ function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
     name: 'review',
     models: [],
     tools: ['read', 'ls'],
-    environment: 'tree',
+    readOnly: true,
+    continueByDefault: false,
     limits: LIMITS,
     ...overrides,
   };
@@ -174,12 +175,12 @@ describe('buildPiArgs', () => {
 });
 
 describe('needsIsolation', () => {
-  it('`environment` が `worktree` → 隔離する', () => {
-    expect(needsIsolation(policy({ environment: 'worktree' }))).toBe(true);
+  it('`readOnly` が false → 隔離する', () => {
+    expect(needsIsolation(policy({ readOnly: false }))).toBe(true);
   });
 
-  it('`environment` が `tree` → 隔離しない', () => {
-    expect(needsIsolation(policy({ environment: 'tree' }))).toBe(false);
+  it('`readOnly` が true → 隔離しない', () => {
+    expect(needsIsolation(policy({ readOnly: true }))).toBe(false);
   });
 });
 

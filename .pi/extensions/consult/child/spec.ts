@@ -17,12 +17,12 @@ import type { Limits, TypePolicy } from '../policy/types.ts';
 const CHILD_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 
 /**
- * 隔離が要るか。type の `environment` が決める。
+ * 隔離が要るか。type の `readOnly` が決める（`false` は書き込むので、worktree で走らせる）
  *
  * ツールから推測しない。試すための type は、書き込むツールを持っていても実ツリーを汚してよいわけではない。逆に書き込むツールを持たない type でも隔離したいことはある。決めるのは 1 箇所だけにする。
  */
 export function needsIsolation(policy: TypePolicy): boolean {
-  return policy.environment === 'worktree';
+  return !policy.readOnly;
 }
 
 export interface ConsultOptions {

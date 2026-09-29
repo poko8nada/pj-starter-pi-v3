@@ -7,7 +7,8 @@
         "commandcode/meta/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["read", "ls", "find", "grep", "web_search", "fetch_content"],
-      "environment": "tree",
+      "readOnly": true,
+      "continueByDefault": false,
       "limits": { "turns": 40, "output": 60000 },
       "role": "調べた事実を返す。意見や提案を足さない"
     },
@@ -18,7 +19,8 @@
         "commandcode/meta/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["read", "ls", "find", "grep", "web_search"],
-      "environment": "tree",
+      "readOnly": true,
+      "continueByDefault": false,
       "limits": { "turns": 40, "output": 60000 },
       "role": "判定を返す。直さない。根拠を示す"
     },
@@ -29,9 +31,10 @@
         "commandcode/meta/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
-      "environment": "worktree",
-      "limits": { "turns": 50, "output": 120000 },
-      "role": "試して結果を報告する。作り込まない"
+      "readOnly": false,
+      "continueByDefault": true,
+      "limits": { "turns": 60, "output": 120000 },
+      "role": "試して結果を報告する。作り込まない。終わらなければ、どこまでやったかと止まった理由を報告して終える"
     },
     {
       "name": "code",
@@ -40,9 +43,10 @@
         "commandcode/meta/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
-      "environment": "worktree",
-      "limits": { "turns": 60, "output": 120000 },
-      "role": "実装する。依頼の範囲だけを変える"
+      "readOnly": false,
+      "continueByDefault": true,
+      "limits": { "turns": 80, "output": 120000 },
+      "role": "実装する。依頼の範囲だけを変える。終わらなければ、どこまでやったかと止まった理由を報告して終える"
     }
   ]
 }
