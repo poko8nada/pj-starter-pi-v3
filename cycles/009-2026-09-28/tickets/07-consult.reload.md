@@ -59,6 +59,16 @@ Owner: in the loop
   - なぜ: 設計の 4 道具はエージェント向け。コマンドは人が見る口で、`ConsultRuntime.commands` が既に担っている（チケットは触るなと言っていない）
 - 起動時の読み込みは拡張の読み込み時ではなく `session_start` で行う
   - なぜ: 置き場（root）はセッションの cwd から決まる。拡張の読み込み時には cwd を渡す口が無い
+- **実演（owner の `in the loop`）がバグを 2 つ当てた**: `consult_children` が「no children」と言い、記録（`log.jsonl`）には 2 行あった
+  - 原因 1: `parseWorktrees` が `root: dirname(path)` としていた。worktree のパスは `<root>/<unit>/wt` なので、これは unit のディレクトリを「root」と呼んでいた（1 段ずれ）
+  - 原因 2: `rootFor` が `/tmp/pi-consult`（拡張側）と `/private/tmp/...`（git が返す実体のパス）を文字列で比べていた。既存の置き場を見つけられず、呼ぶたびに別の root を作っていた
+  - 直した物: `parseWorktrees` の `root` を 2 段上に、`rootFor` を実体のパスでの比較（`resolveReal`）に、`stamp()` を秒まで（**今は `_pj-starter-pi-v3-20260929-151405` の形**）
+  - 検査: `run/worktree.test.ts` に「worktree を作った後でも同じ root を返す（実体のパスで比べる）」を追加。**時刻を 2030 年に飛ばして 2 回目を呼ぶ**ので、既存の置き場を見つけられなければ別の名前の置き場ができて落ちる（直す前なら確実に落ちる形）
+  - この環境の条件: 実演の子（15:11）と、その後の読み（15:12）で分が変わり、`consult_children` が空になった。既存のテストは同じ分に収まるため見えていなかった
+- `Worktree.root` は unit のディレクトリ（`unitRoot` と同じ物）を指し、置き場の根（stamp の所）ではない。名前が紛らわしい
+  - なぜ外か: `sessionFile(worktree)` が `join(root, 'session')` で unit ごとの会話ファイルを作るため、unit の側を root と呼んでいる
+  - このまま残す（`root` の改名は step 1〜7 の広い範囲に触れる）。次のサイクルでなら安全に直せる
+- 実演で通った筋（記録として）: worktree `demo-1` → 子 `consult-1`（`code`・pid 66624・detach）→ 子は worktree の中だけに `DEMO.md` を書いた（親のツリーは無傷）→ `consult_commit` が `bce4f609` → `git merge --no-ff` が `5696a4b`（`DEMO.md` が main に入った）
 
 ### Unplanned
 
@@ -72,5 +82,11 @@ Owner: in the loop
   - なぜ: 走っている子の判定を、親の記憶ではなく記録（と pid）から取るため
 - `.pi/extensions/consult/run/run.test.ts`: `spawnOptions` の検査（`detached: true`）を足した
   - なぜ: 子を起こさずに確かめられる形が要った
+- `.pi/extensions/consult/run/worktree.ts`: 実演が当てた 2 つのバグを直した（`parseWorktrees` の `root` を 2 段上に、`rootFor` の比較を実体のパスに、`stamp()` を秒まで）。`resolveReal` を足した
+  - なぜ: チケットの止まり方（実演）で見つかったため。`Verify` の 6 ケースより後で出た不具合で、設計（`<root>/<unit-id>/log.jsonl`）を初めて実物で通した時に出た
+- `.pi/extensions/consult/run/worktree.test.ts`: `rootFor` の検査 2 つを足し、`parseWorktrees` の `root` の期待値を直した
+  - なぜ: 1 段ずれを検査が固定していたため（既存の 2 つは「unit のディレクトリを root と呼ぶ」前提で書かれていた）
 
 Commit: d0a9927
+
+実演で見つかった不具合の修正: `30fa6fa`（`run/worktree.ts` の root の扱い 2 件）
