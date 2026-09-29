@@ -37,10 +37,19 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- `read` 検証（`review` の子 `consult-2`、2 ターン、$0.0045）は合格。4 道具の引数と戻り値、worktree の 3 規約（残る・置き場・ブランチ）が全部書いてあると報告された
+  - 子が拾った穴 1 つ: `new` の戻り表に `id` と `base` の行が無く、`base` は既定値しか書いていなかった。表の「place」という行名も、道具が実際に出す `path:` と食い違っていた
+  - 直した物: 表に `id` / `base` を足し、行名を `path` に合わせ、説明を「子が働く場所」とした
+  - 子の見積り: 7 つのうち欠けは 0。上の 1 つは「7 つには数えないが小さな穴」として自分から報告してきた
+- **`consult_children` の root 修正が実物で証明された**: デモでは「no children」になった同じ呼び出しが、この step では走っている `consult-2`（`parent`、pid 84024）を正しく出した
+  - こちらは `30fa6fa`（reload 済み）が効いている。step 7b の修正（未マージのブランチを残す等）は reload 前の物なので、次の reload で入る
+- 子が返した塊の見出しはまだ `## consult undefined` だった（`561f778` の修正が reload 前のため）。テストでは固定済みで、reload 後に実物でも直る
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/README.md` の「The code」「Tests」の節を、step 1〜7b で変わったファイル構成（`child/budget.ts`・`run/log.ts`・`run/delivery.ts`・`tool/children.ts`・`tool/commit.ts` 等）に合わせて書き直した
+  - なぜ: チケットの Todo は道具の節と worktree の節を上げていたが、コードの地図もすでに古かった
+- `.pi/extensions/consult/README.md` の「Trust」の「`task` または `input`」を「`task` だけ」に直した
+  - なぜ: `input` が消えたため（読ませたいファイルは `task` にパスを書く）
 
-Commit:
+Commit: 2251b24
