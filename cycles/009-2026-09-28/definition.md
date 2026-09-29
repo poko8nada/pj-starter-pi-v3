@@ -226,7 +226,7 @@ Changes: keep
 - 「消える器官を import しているファイルが連鎖で壊れる」形を、step 2・3・5・6 で繰り返した（resume 一式 / `tool/consult.ts` / refs 一式 / resume 参照）。消える物を先に grep する習慣が抜けた
 - step 7 の実演で、テストが緑なのに実物が壊れていた（root の 1 段ずれ + `/tmp` と `/private/tmp` の文字列比較）。テストは同じ分に収まるので見えず、分が変わった実演で初めて出た
 - チケットが想定していなかった実装を 2 つ、step の途中で足した（記録の書き手＝pid は spawn 直後にしか分からない／`stack` の子の受け渡し）。どちらも検査が拾ったが、Todo の段で見えていなかった
-- `Worktree.root` が unit のディレクトリを指している（`unitRoot` と同じ物）。名前が紛らわしく、今回のスコープでは直さなかった
+- `Then` を壊す穴（`remove` が実行の根ごと消し、`busy` がどこからも真にならない）を、**名前の話として `Carry over` に置いた**。`Then` と突き合わせていれば `ex-` の判断ができていた。close で owner の問い（「これについて説明して」）が発覚させ、`ex-11` で直した（312 tests）
 - 完了メッセージを待つ間、私は「作業枠が尽きた」と何度も言った。実際にはそんな枠は無く、owner の指摘で取り下げた。ターンと信頼を無駄にした
 - `Carry over` の「置き場の寿命」は owner が落とした（置き場は `/tmp` で決め）。設計の時に「寿命は macOS の 3 日 TTL に任せる」と明文化していなかったのが穴だった
 
@@ -276,11 +276,4 @@ Changes: keep
    - Research: 009 の close のリサーチ（独立の報告 5 件以上）: git のメーリングリスト（2019 の 2 つのパッチ、Eric Sunshine のレビュー）、git-switchboard #14 / viwo #113 / agent-orchestrator #2045 / git-worktree-runner #182 / desktop #22605。手当て: `git for-each-ref %(worktreepath)`（git 2.23+、git 自身のテスト t6302 が同じ使い方）で「どの worktree にも checkout されていない枝」を列挙できる。prune 後は「元 worktree があった枝」と「最初から無い枝」の区別が消えるので、残る手掛かりは命名規約 `consult/*` だけ
    - Action: 新しい action は足さない。`remove` の中で（+ セッションの境目に 1 回）掃除する: ①実体の無い登録を `git worktree prune` で落とす ②worktree が無く HEAD にマージ済みの `consult/*` を消す ③未マージは消さずに列挙する ④消した物を返す（黙って消さない）。`list` は読むだけのまま
    - Basis: 009 の close の統合（`consult/demo-1` と `close-1` の枝が、worktree を消した後に残った／`remove` が `missing` で終わると枝に触らない）
-   - From: 009.close
-
-7. `Worktree.root` の名前（unit のディレクトリを root と呼んでいる）
-   - Status: `Worktree.root` は `unitRoot` と同じ物（`<root>/<unit-id>`）を指し、置き場の根（stamp の所）ではない。`sessionFile(worktree)` が `join(root, 'session')` で unit ごとの会話ファイルを作るため、unit の側を root と呼んでいる
-   - Research:
-   - Action: 改名する（置き場の根と unit のディレクトリを別の名前にする）。step 1〜7 の広い範囲に触れるので、次のサイクルでやる
-   - Basis: 009 の 07 の Findings（名前が紛らわしいと記録した）
    - From: 009.close
