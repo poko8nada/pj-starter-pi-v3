@@ -104,7 +104,7 @@ export async function runOneChild(
       stdin: joinPrompt(undefined, task),
       cwd: prepared.cwd,
       signal,
-      env: gitEnv(),
+      env: { ...gitEnv(), CONSULT_TURNS: String(options.policy.limits.turns) },
       limits: options.policy.limits,
     }),
   );

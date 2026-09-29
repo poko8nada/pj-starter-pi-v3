@@ -5,7 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from './git-env.ts';
 import {
-  combineRuns,
+  changedFiles,
+  stateOf,
+  reasonOf,
+  type GitRun,
   commitWorktree,
   gitEnv,
   installCommand,
@@ -17,7 +20,7 @@ import {
   type GitOutput,
   type RunResult,
 } from './run.ts';
-import { finalTextFrom, parseEvents, usageFrom } from '../child/spec.ts';
+import { finalTextFrom, parseEvents } from '../child/spec.ts';
 import { compose } from '../tool/render.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
@@ -348,37 +351,52 @@ function combinedRun(stdout: string, extra: Partial<RunResult> = {}): RunResult 
   return { stdout, stderr: '', code: 0, aborted: false, ...extra };
 }
 
-/** message_end 1 つ分。使用量を足すのを見る */
-function spentEvent(input: number, output: number): string {
-  return [
-    '{"type":"message_end","message":{"role":"assistant","usage":{"input":',
-    input,
-    ',"output":',
-    output,
-    '}}}',
-    '\n',
-  ].join('');
+describe('stateOf / reasonOf', () => {
+  it('code 0 → done（理由は出さない）', () => {
+    const run = combinedRun('x');
+    expect(stateOf(run)).toBe('done');
+    expect(reasonOf(run)).toBeUndefined();
+  });
+
+  it('止められた → aborted（上限の印より先に見る）', () => {
+    const run = combinedRun('', { stopped: 'turn limit reached (1)', aborted: true });
+    expect(stateOf(run)).toBe('aborted');
+    expect(reasonOf(run)).toBe('stopped by the parent');
+  });
+
+  it('上限で止まった → turn-limit とその理由', () => {
+    const run = combinedRun('', { stopped: 'turn limit reached (40)' });
+    expect(stateOf(run)).toBe('turn-limit');
+    expect(reasonOf(run)).toBe('turn limit reached (40)');
+  });
+
+  it('code が 0 でない → error。理由は stderr の最初の行', () => {
+    const run = combinedRun('', { code: 1, stderr: '\n boom happened \nmore\n' });
+    expect(stateOf(run)).toBe('error');
+    expect(reasonOf(run)).toBe('boom happened');
+  });
+
+  it('code が 0 でないが stderr が空 → exit の番号を理由にする', () => {
+    expect(reasonOf(combinedRun('', { code: 130 }))).toBe('exit 130');
+  });
+});
+
+/** status --porcelain が返す文字列をそのまま返す、差し替え用の git */
+function gitWith(stdout: string): GitRun {
+  return () => ({ status: 0, stdout, stderr: '' });
 }
 
-describe('combineRuns', () => {
-  it('2 回走った使用量を 1 回分に足す', () => {
-    const merged = combineRuns([combinedRun(spentEvent(10, 20)), combinedRun(spentEvent(3, 4))]);
-    expect(usageFrom(parseEvents(merged.stdout))).toMatchObject({
-      turns: 2,
-      input: 13,
-      output: 24,
-    });
+describe('changedFiles', () => {
+  it('status --porcelain の行から、印の 2 文字を外してパスだけ取る', () => {
+    expect(changedFiles(gitWith(' M a.ts\n?? b/c.ts\n M d.ts\n'))).toEqual([
+      'a.ts',
+      'b/c.ts',
+      'd.ts',
+    ]);
   });
 
-  it('止まったのは最後の回だけ見る（続きが通れば打ち切りにしない）', () => {
-    const stopped = combinedRun('', { stopped: 'turn limit reached (1)' });
-    expect(combineRuns([stopped, combinedRun('')]).stopped).toBeUndefined();
-    expect(combineRuns([combinedRun(''), stopped]).stopped).toBe('turn limit reached (1)');
-  });
-
-  it('1 回分はそのまま返す', () => {
-    const only = combinedRun('x');
-    expect(combineRuns([only])).toBe(only);
+  it('何も無ければ空（読んだだけの子はファイルを名乗らない）', () => {
+    expect(changedFiles(gitWith(''))).toEqual([]);
   });
 });
 

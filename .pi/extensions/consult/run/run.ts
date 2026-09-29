@@ -205,6 +205,18 @@ export interface GitOutput {
 
 export type GitRun = (args: readonly string[]) => GitOutput;
 
+/**
+ * 子が触ったファイル。worktree の git が言う分だけ（読んだだけのファイルは入らない）。
+ *
+ * 親に渡す塊に入れるのはパスだけ。diff は運ばない。
+ */
+export function changedFiles(git: GitRun): string[] {
+  return git(['status', '--porcelain'])
+    .stdout.split('\n')
+    .map((line) => line.slice(3).trim())
+    .filter((path) => path !== '');
+}
+
 /** 本番の git。worktree の中で走らせる */
 export function worktreeGit(path: string): GitRun {
   return (args) => {
@@ -377,32 +389,36 @@ export function runPi(options: RunOptions): Promise<RunResult> {
 }
 
 /** 行単位の出力を、行の切れ目を保ったまま繋ぐ。詰めると最後の行が壊れる */
-function appendLines(parts: readonly string[]): string {
-  return parts.map((part) => (part === '' || part.endsWith('\n') ? part : part + '\n')).join('');
-}
+
+/** 子の終わり方。理由は done のときだけ無い */
+export type ChildState = 'done' | 'turn-limit' | 'error' | 'aborted';
 
 /**
- * 続けて走らせた子の結果を、1 回分にまとめる。
+ * 走り終えた子がどう終わったか。
  *
- * 上限（`limits`）は子のプロセスごとに数え直すので、2 回走れば合計で 2 回分の上限を使う。使用量は
- * その分を足し合わせて 1 回分として報告する。`stopped` は最後の回のものだけを持つ（そこで止まったかを
- * 見る）。中断はどれかの回で起きたら残す。
- *
- * イベントは行単位なので、詰めると最後の行が壊れる。行の切れ目を保って繋ぐ。
+ * `aborted`（親が止めた）を先に見る。止めたときに上限の印も立っていることがあり、それは理由にならない。
  */
-export function combineRuns(runs: readonly RunResult[]): RunResult {
-  const last = runs[runs.length - 1];
-  if (last === undefined) {
-    throw new Error('combineRuns needs at least one run');
+export function stateOf(run: RunResult): ChildState {
+  if (run.aborted) {
+    return 'aborted';
   }
-  if (runs.length === 1) {
-    return last;
+  if (run.stopped !== undefined) {
+    return 'turn-limit';
   }
-  return {
-    stdout: appendLines(runs.map((run) => run.stdout)),
-    stderr: appendLines(runs.map((run) => run.stderr)),
-    code: last.code,
-    stopped: last.stopped,
-    aborted: runs.some((run) => run.aborted),
-  };
+  return run.code === 0 ? 'done' : 'error';
+}
+
+/** 終わり方に添える理由。done なら undefined（出す必要がない） */
+export function reasonOf(run: RunResult): string | undefined {
+  if (run.aborted) {
+    return 'stopped by the parent';
+  }
+  if (run.stopped !== undefined) {
+    return run.stopped;
+  }
+  if (run.code === 0) {
+    return undefined;
+  }
+  const line = run.stderr.split('\n').find((entry) => entry.trim() !== '');
+  return line === undefined ? `exit ${run.code}` : line.trim();
 }

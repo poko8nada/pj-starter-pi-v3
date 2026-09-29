@@ -20,9 +20,10 @@ import {
   parseRunRequest,
   type RunRequest,
 } from './run.ts';
-import { parseEvents, type ConsultOptions } from '../child/spec.ts';
+import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
+import { parseEvents, usageFrom, type ConsultOptions } from '../child/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
-import { compose, result, usageLine } from './render.ts';
+import { compose, reportBlock, result, usageLine, type ChildReport } from './render.ts';
 import { isSoundEnabled, setSoundEnabled, startSound, stopSound } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
@@ -225,14 +226,36 @@ async function consult(
 ): Promise<ConsultOutcome> {
   const { run, install } = await runOneChild(ctx, options, job);
   const events = parseEvents(run.stdout);
-  // 診断は本文と混ぜないが、呼び出し側が読める場所に 1 行だけ置く。`details` は agent には渡らないので、モデルをここに出さないと見えない。
-  const lines = [compose(events, run), '', `[consult] ${usageLine(events)}`];
+  const usage = usageFrom(events);
+  const state = stateOf(run);
+  const reason = reasonOf(run);
+  const files = job.worktree === undefined ? [] : changedFiles(worktreeGit(job.worktree.path));
+  const report: ChildReport = {
+    role: options.type,
+    state,
+    files,
+    turns: usage.turns,
+    turnsLimit: options.policy.limits.turns,
+    spend: `${usage.cost.toFixed(4)} usd`,
+    ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
+    ...(reason === undefined ? {} : { reason }),
+  };
+  // 塊を先頭に置く。親は本文の前に、どう終わったか・どこを触ったかを見る。
+  const lines = [
+    reportBlock(report),
+    '',
+    '---',
+    '',
+    compose(events, run),
+    '',
+    `[consult] ${usageLine(events)}`,
+  ];
   return {
     text: lines.join('\n').trimEnd(),
     details: {
       type: options.type,
-      stopped: run.stopped,
-      aborted: run.aborted,
+      state,
+      files,
       ...(install === undefined ? {} : { install }),
     },
   };

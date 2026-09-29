@@ -6,7 +6,7 @@
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../child/spec.ts';
-import type { RunResult } from '../run/run.ts';
+import type { ChildState, RunResult } from '../run/run.ts';
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
 export function result(
@@ -14,6 +14,43 @@ export function result(
   details: Record<string, unknown> = {},
 ): AgentToolResult<Record<string, unknown>> {
   return { content: [{ type: 'text', text }], details };
+}
+
+/**
+ * 親に渡す塊。子 1 体分の素性・場所・終わり方・触った物・使った量。
+ *
+ * diff は入れない（親が見る物ではないし、行数だけでも意味がない）。重い物を運ばないのがこの塊の役目。
+ */
+export interface ChildReport {
+  readonly id?: string;
+  readonly role: string;
+  /** worktree の id。親の木で走ったとき（読むだけ）は無い */
+  readonly worktree?: string;
+  readonly state: ChildState;
+  /** 終わり方が done でないときの理由。本文から拾った 1 行 */
+  readonly reason?: string;
+  /** 子が触ったファイル（git が言う分）。読んだだけのファイルは入らない */
+  readonly files: readonly string[];
+  readonly turns: number;
+  readonly turnsLimit: number;
+  readonly spend: string;
+}
+
+/** 塊を 1 つのテキストにする。先頭に置いて、子の本文が続く */
+export function reportBlock(report: ChildReport): string {
+  const where = report.worktree === undefined ? 'parent tree' : `worktree ${report.worktree}`;
+  const lines = [
+    `## consult ${report.id} — ${report.role} / ${report.state}`,
+    '',
+    `- place: ${where}`,
+    `- turns: ${report.turns} / ${report.turnsLimit}`,
+    `- spend: ${report.spend}`,
+    `- files: ${report.files.length === 0 ? '(none)' : report.files.join(', ')}`,
+  ];
+  if (report.reason !== undefined && report.reason !== '') {
+    lines.push(`- reason: ${report.reason}`);
+  }
+  return lines.join('\n');
 }
 
 /** 消費量を 1 行にする。診断で、結果の本文とは混ぜない */

@@ -17,6 +17,13 @@ import type { Limits, TypePolicy } from '../policy/types.ts';
 const CHILD_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 
 /**
+ * 子に読ませる budget。上限の手前で子に報告を促す。
+ *
+ * 親が `CONSULT_TURNS` で上限を渡す（run/child.ts）。子だけがこれを読む。
+ */
+const CHILD_BUDGET = fileURLToPath(new URL('./budget.ts', import.meta.url));
+
+/**
  * 隔離が要るか。type の `readOnly` が決める（`false` は書き込むので、worktree で走らせる）
  *
  * ツールから推測しない。試すための type は、書き込むツールを持っていても実ツリーを汚してよいわけではない。逆に書き込むツールを持たない type でも隔離したいことはある。決めるのは 1 箇所だけにする。
@@ -83,8 +90,8 @@ export function buildPiArgs(options: ConsultOptions): string[] {
     args.push('--append-system-prompt', policy.role);
   }
   args.push('--tools', policy.tools.join(','));
-  // 子にだけ guard を読ませる。親の設定には触らない（親はこの関数を通らない）。
-  args.push('--extension', CHILD_GUARD);
+  // 子にだけ guard と budget を読ませる。親の設定には触らない（親はこの関数を通らない）。
+  args.push('--extension', CHILD_GUARD, '--extension', CHILD_BUDGET);
   // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
   args.push('--no-approve');
   return args;

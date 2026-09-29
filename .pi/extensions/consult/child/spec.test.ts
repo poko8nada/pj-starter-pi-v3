@@ -97,8 +97,8 @@ describe('buildPiArgs: child-guard', () => {
     expect(path.length).toBeGreaterThan('/child-guard.ts'.length);
   });
 
-  it('-e は 1 回だけ入る', () => {
-    expect(buildPiArgs(options()).filter((arg) => arg === '--extension')).toHaveLength(1);
+  it('-e は guard と budget の 2 回（子にだけ読ませる）', () => {
+    expect(buildPiArgs(options()).filter((arg) => arg === '--extension')).toHaveLength(2);
   });
 
   it('--tools が空配列でも -e の位置が崩れない', () => {
