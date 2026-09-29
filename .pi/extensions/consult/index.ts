@@ -6,12 +6,30 @@
 
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { PARAMETERS, createRuntime } from './tool/consult.ts';
+import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { stopSound } from './tool/sound.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
 import { PARAMETERS as REF_PARAMETERS, execute as refExecute } from './tool/refs.ts';
 
 export default function (pi: ExtensionAPI) {
   const consult = createRuntime(pi);
+
+  pi.registerTool({
+    name: 'consult_run',
+    label: 'Consult run',
+    description:
+      'Run one child pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one child; call it again for another. The child reads the files it needs itself, so name them in task. A writing role needs a worktree (consult_worktree); a read-only role runs in the parent tree when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
+    promptSnippet:
+      'Run one background child pi with a role (research / review / trial / code) and a place',
+    promptGuidelines: [
+      'Use consult_run when a question or a piece of work is better done without this conversation in view: a review, a second opinion, or a role you were not given.',
+      'One call is one child. For several, call it several times; it is background work, so do not wait.',
+      'Pass the unit id in worktree for a role that writes; make the worktree first with consult_worktree.',
+      'The policy (models, tools, readOnly, continueByDefault, limits, role) lives in .pi/extensions/consult/types.json; the caller cannot override it.',
+    ],
+    parameters: RUN_PARAMETERS,
+    execute: (...args) => consult.run(...args),
+  });
 
   pi.registerTool({
     name: 'consult_new',

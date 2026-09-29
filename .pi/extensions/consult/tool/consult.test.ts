@@ -5,7 +5,6 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createRuntime,
@@ -19,7 +18,6 @@ import {
   type ConsultSendOptions,
   type PiFace,
 } from './consult.ts';
-import { tmpDir } from '../../../../test/tmp.ts';
 import {
   SOUND_INTERVAL_MS,
   isSoundEnabled,
@@ -59,9 +57,13 @@ async function settle(): Promise<void> {
 }
 
 type CallParams = Parameters<ConsultRuntime['execute']>[1];
+type RunParams = Parameters<ConsultRuntime['run']>[1];
 
 function call(runtime: ConsultRuntime, params: CallParams) {
   return runtime.execute('call', params, undefined, undefined, toolCtx);
+}
+function startChild(runtime: ConsultRuntime, params: RunParams) {
+  return runtime.run('call', params, undefined, undefined, toolCtx);
 }
 
 /** 道具の戻り値の本文を取る */
@@ -103,13 +105,13 @@ function fakeCommandContext(): {
 /** 完了をテストが決める子。signal と resolve を記録する */
 function deferredRunner(): {
   run: ConsultRunner;
-  signals: AbortSignal[];
+  signals: (AbortSignal | undefined)[];
   resolvers: ((outcome: ConsultOutcome) => void)[];
 } {
-  const signals: AbortSignal[] = [];
+  const signals: (AbortSignal | undefined)[] = [];
   const resolvers: ((outcome: ConsultOutcome) => void)[] = [];
-  const run: ConsultRunner = (_ctx, _options, _consultation, signal) => {
-    signals.push(signal);
+  const run: ConsultRunner = (_ctx, _options, job) => {
+    signals.push(job.signal);
     return new Promise<ConsultOutcome>((resolve) => {
       resolvers.push(resolve);
     });
@@ -124,13 +126,13 @@ function flush(): Promise<void> {
   });
 }
 
-describe('start', () => {
-  it('start（type: review, task: …）→ id が返り、その時点で子は終わっていない', async () => {
+describe('run', () => {
+  it('review を 1 体起こす → id が返り、その時点で子は終わっていない', async () => {
     const { pi, calls } = fakePi();
-    const { run, signals, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const { run: runner, signals, resolvers } = deferredRunner();
+    const runtime = createRuntime(pi, runner);
 
-    const result = await call(runtime, { type: 'review', task: '判定する' });
+    const result = await startChild(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-1');
     expect(runtime.children.size).toBe(1);
@@ -139,14 +141,26 @@ describe('start', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('入力が読めなければ、子を起こさずに拒む', async () => {
+  it('書き込むロール（code）で worktree を省くと、子を起こさずに拒む', async () => {
     const { pi } = fakePi();
-    const { run, signals } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const { run: runner, signals } = deferredRunner();
+    const runtime = createRuntime(pi, runner);
+
+    await expect(startChild(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
+      /needs a worktree/,
+    );
+    expect(signals).toHaveLength(0);
+    expect(runtime.children.size).toBe(0);
+  });
+
+  it('知らない worktree の id → 子を起こさずに拒む', async () => {
+    const { pi } = fakePi();
+    const { run: runner, signals } = deferredRunner();
+    const runtime = createRuntime(pi, runner);
 
     await expect(
-      call(runtime, { type: 'review', task: 'x', input: [join(tmpDir(), 'missing.md')] }),
-    ).rejects.toThrow(/could not read the input file/);
+      startChild(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
+    ).rejects.toThrow(/no such worktree/);
     expect(signals).toHaveLength(0);
     expect(runtime.children.size).toBe(0);
   });
@@ -157,11 +171,11 @@ describe('完了の通知', () => {
     const { pi, calls } = fakePi();
     const { run, resolvers } = deferredRunner();
     const runtime = createRuntime(pi, run);
-    await call(runtime, { type: 'code', task: '直す' });
+    await startChild(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
       text: 'the child text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
-      details: { type: 'code' },
+      details: { type: 'review' },
     };
     resolvers[0]?.(outcome);
     await flush();
@@ -182,8 +196,8 @@ describe('list', () => {
     const { pi } = fakePi();
     const { run, resolvers } = deferredRunner();
     const runtime = createRuntime(pi, run);
-    await call(runtime, { type: 'research', task: 'a' });
-    await call(runtime, { type: 'review', task: 'b' });
+    await startChild(runtime, { role: 'research', task: 'a' });
+    await startChild(runtime, { role: 'review', task: 'b' });
 
     resolvers[0]?.({ text: 'done', details: {} });
     await flush();
@@ -218,7 +232,7 @@ describe('cancel', () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
     const runtime = createRuntime(pi, run);
-    await call(runtime, { type: 'code', task: 'a' });
+    await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('consult-1', ctx);
@@ -231,7 +245,7 @@ describe('cancel', () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
     const runtime = createRuntime(pi, run);
-    await call(runtime, { type: 'code', task: 'a' });
+    await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('consult-999', ctx);
@@ -259,8 +273,8 @@ describe('音', () => {
       const { pi } = fakePi();
       const { run } = deferredRunner();
       const runtime = createRuntime(pi, run);
-      await call(runtime, { type: 'research', task: 'a' });
-      await call(runtime, { type: 'review', task: 'b' });
+      await startChild(runtime, { role: 'research', task: 'a' });
+      await startChild(runtime, { role: 'review', task: 'b' });
 
       expect(isSoundRunning()).toBe(true);
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
@@ -278,7 +292,7 @@ describe('音', () => {
       const { pi } = fakePi();
       const { run, resolvers } = deferredRunner();
       const runtime = createRuntime(pi, run);
-      await call(runtime, { type: 'code', task: 'a' });
+      await startChild(runtime, { role: 'review', task: 'a' });
       expect(isSoundRunning()).toBe(true);
 
       for (const resolve of resolvers) {
@@ -302,7 +316,7 @@ describe('音', () => {
       const { pi } = fakePi();
       const { run } = deferredRunner();
       const runtime = createRuntime(pi, run);
-      await call(runtime, { type: 'code', task: 'a' });
+      await startChild(runtime, { role: 'review', task: 'a' });
 
       expect(isSoundRunning()).toBe(true);
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 3);

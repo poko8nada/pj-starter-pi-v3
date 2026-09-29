@@ -185,9 +185,9 @@ describe('needsIsolation', () => {
 });
 
 describe('PARAMETERS', () => {
-  it('項目が action / type / task / input / id だけ', () => {
-    // 上書きの口（role / tools / worktree）が戻ってきたら気づけるようにする。
-    expect(Object.keys(PARAMETERS.properties)).toEqual(['action', 'type', 'task', 'input', 'id']);
+  it('項目が action / id だけ（子を起こすのは consult_run）', () => {
+    // 上書きの口（role / tools / worktree / input）が戻ってきたら気づけるようにする。
+    expect(Object.keys(PARAMETERS.properties)).toEqual(['action', 'id']);
   });
 });
 

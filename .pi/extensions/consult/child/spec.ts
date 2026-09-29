@@ -31,6 +31,12 @@ export interface ConsultOptions {
   /** 子への指示。argv には載せず、標準入力へ流す（run.ts） */
   readonly task: string;
   readonly policy: TypePolicy;
+  /**
+   * 子のセッションのファイル。worktree ごとに 1 つ。
+   *
+   * 同じパスを指し直すとその会話の続きから始まる。未指定なら `--no-session`（遣い捨て）。
+   */
+  readonly sessionPath?: string;
 }
 
 /**
@@ -61,7 +67,13 @@ export function joinPrompt(payload: string | undefined, task: string): string {
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
   const { policy } = options;
-  const args = ['--mode', 'json', '-p', '--no-session'];
+  const args = ['--mode', 'json', '-p'];
+  if (options.sessionPath === undefined) {
+    args.push('--no-session');
+  } else {
+    // 同じパスを指すとその会話の続きになる（worktree ごとに 1 つ）
+    args.push('--session', options.sessionPath);
+  }
   const model = policy.models[0];
   if (model !== undefined) {
     args.push('--model', model);
