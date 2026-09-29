@@ -52,10 +52,18 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- 設計の穴を 1 つ、自分のテストが当てた: `prepare` が「読むだけのロールに worktree を渡しても無視する」形になっていた（`ctx.cwd` を返していた）
+  - なぜ外か: 設計（`consult-redesign.md` §3）は「readOnly の子も worktree を指せる（残った worktree にレビューを直接送り込む）」と言っている
+  - 観測: `run/child.test.ts` の「読むだけのロールに worktree を渡す」が落ちた。実装は `worktree !== undefined` を先に見る形に直して緑
+  - この環境の条件: 型は `worktree?` を持っていたので、コンパイルでは見えない穴だった
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/run/run.ts`: `installDependencies` の引数を `Worktree` から `cwd: string` に変えた
+  - なぜ: `Worktree` の形が `run/worktree.ts` の物（`path`）に変わったため（plan では step 5 のファイル）
+- `.pi/extensions/consult/run/run.test.ts`: worktree を使う検査を新しい `run/worktree.ts` の形に合わせた
+  - なぜ: 同じ型の変更で既存の検査が古くなったため（step 2 で一部、ここで残り）
+- `.pi/extensions/consult/tool/consult.test.ts`: `start` の検査を `run`（`consult_run` の runtime）に書き換え、worktree 必須の 2 ケースを足した
+  - なぜ: `consult_new` の `start` を `consult_run` へ移したため
 
-Commit:
+Commit: 4a45e37
