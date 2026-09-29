@@ -10,10 +10,12 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
 - **The cycle mechanism** — six skills in `.pi/skills/` (`definition` / `stack` / `plan` / `tickets` / `work` / `close`)
-- **Extensions** — `consult` (one extension with three tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
-  - `consult_new` — runs a child `pi` without showing it this conversation
-  - `consult_resume` — lists the worktrees a stopped child left, runs a child in one, and removes it when it is no longer needed
-  - `consult_refs` — lists the refs it leaves behind and deletes one
+- **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you) (`.pi/extensions/`)
+  - `consult_run` — runs one child `pi` with a role and a place, without showing it this conversation
+  - `consult_children` — lists the children of this project and stops one; it reads a record, so the list survives a reload
+  - `consult_worktree` — makes, lists, or removes a unit worktree; a worktree stays until it is removed, and `remove` takes its branch too
+  - `consult_commit` — commits the work a child left in its worktree; you merge it yourself with `git merge --no-ff consult/<unit-id>`
+  - the places: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, on the branch `consult/<unit-id>`, cut from the parent's `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
 - **The cycle records** — `cycles/`
 
@@ -36,9 +38,9 @@ pnpm install
 | `pnpm typecheck`                    | `tsc --noEmit`               |
 | `pnpm format` / `pnpm format:check` | Format, or verify the format |
 
-- **On commit** — format, lint, typecheck and test, on what changed
+- **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
 - **On push** — typecheck and test
-- **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck` on what changed
+- **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
 
 ## The cycle
 
