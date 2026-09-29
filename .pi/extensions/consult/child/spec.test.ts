@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { PARAMETERS } from '../tool/consult.ts';
 import {
   accountEvent,
   buildPiArgs,
@@ -181,13 +180,6 @@ describe('needsIsolation', () => {
 
   it('`readOnly` が true → 隔離しない', () => {
     expect(needsIsolation(policy({ readOnly: true }))).toBe(false);
-  });
-});
-
-describe('PARAMETERS', () => {
-  it('項目が action / id だけ（子を起こすのは consult_run）', () => {
-    // 上書きの口（role / tools / worktree / input）が戻ってきたら気づけるようにする。
-    expect(Object.keys(PARAMETERS.properties)).toEqual(['action', 'id']);
   });
 });
 

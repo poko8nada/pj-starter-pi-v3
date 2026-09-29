@@ -29,6 +29,8 @@ export interface ChildJob {
   readonly worktree?: Worktree;
   /** 同じ worktree の会話の続きから始めるか */
   readonly continueSession?: boolean;
+  /** 子のプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための口 */
+  readonly onStarted?: (pid: number) => void;
 }
 
 /** 子 1 体分の仕事 */
@@ -106,6 +108,7 @@ export async function runOneChild(
       signal,
       env: { ...gitEnv(), CONSULT_TURNS: String(options.policy.limits.turns) },
       limits: options.policy.limits,
+      ...(job.onStarted === undefined ? {} : { onStarted: job.onStarted }),
     }),
   );
   return { run, ...(install === undefined ? {} : { install }) };

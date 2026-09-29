@@ -60,6 +60,8 @@ export interface RunResult {
   readonly stopped?: string;
   /** 中断されたか */
   readonly aborted: boolean;
+  /** 子のプロセス。走っている子を外から見分けるための印 */
+  readonly pid?: number;
 }
 
 export interface RunOptions {
@@ -75,6 +77,8 @@ export interface RunOptions {
    * 子のプロセス 1 回ごとに数え直す。続けて走らせた分（拒否や打ち切りのあとの再走）は、合計でその回数だけ上限を使う。
    */
   readonly limits: Limits;
+  /** 子のプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
+  readonly onStarted?: (pid: number) => void;
   /** 進行の通知。子の出力が届くたびに呼ぶ */
   readonly onProgress?: (chunk: {
     readonly stream: 'stdout' | 'stderr';
@@ -294,6 +298,11 @@ export function runPi(options: RunOptions): Promise<RunResult> {
     };
     let settled = false;
 
+    // 起きたことを先に伝える。走っている子の記録を、終わりを待たずに書けるように
+    if (child.pid !== undefined) {
+      options.onStarted?.(child.pid);
+    }
+
     const onAbort = () => {
       state.aborted = true;
       killChild(child);
@@ -311,6 +320,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
         code,
         stopped: state.stopped,
         aborted: state.aborted,
+        ...(child.pid === undefined ? {} : { pid: child.pid }),
       };
       // 待たずに結果を受け取りたい呼び出し側の口。promise の解決より先に呼ぶ。
       options.onDone?.(outcome);

@@ -10,10 +10,10 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
-import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { runOneChild, type ChildJob } from '../run/child.ts';
-import { findWorktree } from '../run/worktree.ts';
+import { findWorktree, rootFor } from '../run/worktree.ts';
+import { appendRun } from '../run/log.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
   USAGE as RUN_USAGE,
@@ -41,14 +41,6 @@ export interface CommandContext {
   };
 }
 
-/** 道具のパラメータ。子を起こすのは consult_run。ここは一覧と停止だけ（step 6 で consult_children へ移る） */
-export const PARAMETERS = Type.Object({
-  action: Type.Optional(
-    Type.String({ description: 'list to show the running children, cancel to stop one' }),
-  ),
-  id: Type.Optional(Type.String({ description: 'The child to stop (only for action=cancel)' })),
-});
-
 /** consult_run の引数。params は consult_run の物 */
 type RunExecuteArgs = [
   toolCallId: string,
@@ -57,28 +49,6 @@ type RunExecuteArgs = [
   onUpdate: AgentToolUpdateCallback<unknown> | undefined,
   ctx: ConsultContext,
 ];
-
-type Params = Static<typeof PARAMETERS>;
-
-/**
- * pi が渡す引数。位置で渡される 5 つを 1 つのタプルにまとめる。本体では params と ctx しか使わないので、間に 3 つ挟まる形を避けられる。
- */
-type ExecuteArgs = [
-  toolCallId: string,
-  params: Params,
-  signal: AbortSignal | undefined,
-  onUpdate: AgentToolUpdateCallback<unknown> | undefined,
-  ctx: ConsultContext,
-];
-
-/** 知らない action や引数不足のときに添える使い方 */
-export const USAGE =
-  'consult_new: action is list or cancel. cancel needs id (children are started with consult_run)';
-
-/** 道具が受ける操作 */
-export type ConsultAction =
-  | { readonly action: 'list' }
-  | { readonly action: 'cancel'; readonly id: string };
 
 /** 走っている子を止める操作。道具の action とコマンドが同じ形を使う */
 export type ControlAction =
@@ -117,12 +87,16 @@ export interface RunningChild {
   readonly task: string;
   readonly startedAt: number;
   readonly controller: AbortController;
+  /** 子のプロセス。走っている間だけ入る（実行の記録に書く） */
+  pid?: number;
 }
 
 /** 子の完了で親に届ける本文と診断 */
 export interface ConsultOutcome {
   readonly text: string;
   readonly details: Record<string, unknown>;
+  /** 実行の記録に書く塊。走らせた子だけが持つ（失敗の結果などは持たない） */
+  readonly report?: ChildReport;
 }
 
 /** 子 1 体を最後まで走らせる。テストでは子を起こさない差し替えを渡す */
@@ -131,34 +105,6 @@ export type ConsultRunner = (
   options: ConsultOptions,
   job: ChildJob,
 ) => Promise<ConsultOutcome>;
-
-/** 引数を検証して操作にする。知らない形は使い方つきで投げる */
-export function parseConsultAction(raw: unknown): ControlAction {
-  if (typeof raw !== 'object' || raw === null) {
-    throw new Error(`consult_new: the arguments are not an object. ${USAGE}`);
-  }
-  const { action, id } = raw as { action?: unknown; id?: unknown };
-  const verb = action === undefined ? 'list' : action;
-  if (verb === 'start') {
-    // 子を起こすのは consult_run。ここは一覧と停止だけの面になる（一覧と停止も consult_children へ移る途中）。
-    throw new Error(
-      `consult_new: start moved to consult_run (role, task, worktree, continue). ${USAGE}`,
-    );
-  }
-  if (verb === 'list') {
-    if (id !== undefined) {
-      throw new Error(`consult_new: list takes no other argument. ${USAGE}`);
-    }
-    return { action: 'list' };
-  }
-  if (verb === 'cancel') {
-    if (typeof id !== 'string' || id.trim() === '') {
-      throw new Error(`consult_new: cancel needs a non-empty id. ${USAGE}`);
-    }
-    return { action: 'cancel', id };
-  }
-  throw new Error(`consult_new: unknown action: ${JSON.stringify(verb)}. ${USAGE}`);
-}
 
 /** 子 1 体を一覧に出す 1 行。task は最初の行だけ */
 function describeChild(child: RunningChild): string {
@@ -252,6 +198,7 @@ async function consult(
   ];
   return {
     text: lines.join('\n').trimEnd(),
+    report,
     details: {
       type: options.type,
       state,
@@ -291,12 +238,43 @@ function deliver(pi: PiFace, child: RunningChild, outcome: ConsultOutcome): void
 
 /** 子を起こし、完了でメッセージを送る。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
+  // 終わりの 1 行。走っている行に重ねる形で足す（読む側は子ごとに最後の行を取る）
+  const end = (outcome: ConsultOutcome): void => {
+    const report = outcome.report;
+    if (report === undefined) {
+      return;
+    }
+    appendRun(rootFor(job.ctx.cwd), {
+      child: job.child.id,
+      role: job.options.type,
+      pid: job.child.pid ?? 0,
+      started: job.child.startedAt,
+      ended: Date.now(),
+      state: report.state,
+      files: [...report.files],
+      turns: report.turns,
+      spend: report.spend,
+      ...(report.reason === undefined ? {} : { reason: report.reason }),
+      ...(report.worktree === undefined ? {} : { worktree: report.worktree }),
+    });
+  };
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
       deliver(state.pi, job.child, outcome);
+      end(outcome);
     })
     .catch((error: unknown) => {
+      // 落ちた子も記録を閉じる。開いたままにすると、いつまでも「走っている」と見える
+      appendRun(rootFor(job.ctx.cwd), {
+        child: job.child.id,
+        role: job.options.type,
+        pid: job.child.pid ?? 0,
+        started: job.child.startedAt,
+        ended: Date.now(),
+        state: 'error',
+        ...(job.job.worktree === undefined ? {} : { worktree: job.job.worktree.id }),
+      });
       deliver(state.pi, job.child, failureOutcome(error));
     })
     .finally(() => {
@@ -332,11 +310,23 @@ function beginRun(
     startedAt: Date.now(),
     controller: new AbortController(),
   };
+  const root = rootFor(ctx.cwd);
   const job: ChildJob = {
     task: request.task,
     signal: child.controller.signal,
     ...(worktree === undefined ? {} : { worktree }),
     continueSession: request.continue ?? policy.continueByDefault,
+    // 起きたら、まず「走っている」1 行を記録に足す。reload をまたいでも一覧に出るように
+    onStarted: (pid) => {
+      child.pid = pid;
+      appendRun(root, {
+        child: child.id,
+        role: policy.name,
+        pid,
+        started: child.startedAt,
+        ...(worktree === undefined ? {} : { worktree: worktree.id }),
+      });
+    },
   };
   state.children.set(child.id, child);
   if (state.children.size === 1) {
@@ -352,20 +342,9 @@ function beginRun(
   });
 }
 
-async function executeAction(
-  state: RuntimeState,
-  args: ExecuteArgs,
-): Promise<AgentToolResult<Record<string, unknown>>> {
-  const [, params] = args;
-  const action = parseConsultAction(params);
-  const outcome = control(action, state.children);
-  return result(outcome.text, outcome.details);
-}
-
 export interface ConsultRuntime {
   readonly children: ReadonlyMap<string, RunningChild>;
   run(...args: RunExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
-  execute(...args: ExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
   control(action: ControlAction): ControlOutcome;
   commands: {
     status(args: string, ctx: CommandContext): Promise<void>;
@@ -391,7 +370,6 @@ export function createRuntime(pi: PiFace, run: ConsultRunner = consult): Consult
       const [, params, , , ctx] = args;
       return beginRun(state, ctx, parseRunRequest(params));
     },
-    execute: (...args) => executeAction(state, args),
     control: (action) => control(action, state.children),
     commands: {
       status: async (_args, ctx) => {

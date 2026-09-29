@@ -5,7 +5,8 @@
  */
 
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { PARAMETERS, createRuntime } from './tool/consult.ts';
+import { createRuntime } from './tool/consult.ts';
+import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { stopSound } from './tool/sound.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
@@ -32,20 +33,17 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
-    name: 'consult_new',
-    label: 'Consult new',
+    name: 'consult_children',
+    label: 'Consult children',
     description:
-      "Start a child pi in the background with the policy of a type (model, tools, readOnly, continueByDefault, limits, role) and return its id at once. When the child finishes, its text is delivered as a message. The caller picks only the type; the child does not see this conversation. One child per input. An action of 'list' shows the running children, and 'cancel' stops one by id.",
-    promptSnippet:
-      'Start a background child pi with a type (research / review / trial / code); the result arrives as a message',
+      'Show the children of this project, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children a previous session started (after a reload). cancel only stops a child this session started; one from an earlier session is named in the reply and left alone.',
+    promptSnippet: 'List the consult children (and stop one) — works across reloads',
     promptGuidelines: [
-      'Use consult_new when a question is better answered without this conversation in view: reviewing your own work, getting a second opinion, or applying a role you were not given.',
-      'consult_new starts the child in the background and returns an id. Do not wait for it; the child text arrives later as a consult message. Use action list or cancel to see or stop the running children.',
-      'The types and their limits live in .pi/extensions/consult/types.json. The caller cannot override them; to change the policy, edit that file.',
+      'Use consult_children to see what is still running before you wait or act: one call lists every child of this project, including ones from before a reload.',
+      'Use action: cancel with the id to stop one; a child started by a previous session cannot be stopped, and says so.',
     ],
-    parameters: PARAMETERS,
-
-    execute: (...args) => consult.execute(...args),
+    parameters: CHILDREN_PARAMETERS,
+    execute: createChildrenTool(consult),
   });
 
   pi.registerTool({

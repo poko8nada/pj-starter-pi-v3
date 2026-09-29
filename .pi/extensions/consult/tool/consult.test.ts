@@ -8,7 +8,6 @@ import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createRuntime,
-  USAGE,
   type CommandContext,
   type ConsultContext,
   type ConsultMessage,
@@ -56,12 +55,8 @@ async function settle(): Promise<void> {
   await Promise.resolve();
 }
 
-type CallParams = Parameters<ConsultRuntime['execute']>[1];
 type RunParams = Parameters<ConsultRuntime['run']>[1];
 
-function call(runtime: ConsultRuntime, params: CallParams) {
-  return runtime.execute('call', params, undefined, undefined, toolCtx);
-}
 function startChild(runtime: ConsultRuntime, params: RunParams) {
   return runtime.run('call', params, undefined, undefined, toolCtx);
 }
@@ -191,43 +186,7 @@ describe('完了の通知', () => {
   });
 });
 
-describe('list', () => {
-  it('2 体走っている → 走っている子だけが返る', async () => {
-    const { pi } = fakePi();
-    const { run, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, run);
-    await startChild(runtime, { role: 'research', task: 'a' });
-    await startChild(runtime, { role: 'review', task: 'b' });
-
-    resolvers[0]?.({ text: 'done', details: {} });
-    await flush();
-
-    const result = await call(runtime, { action: 'list' });
-    const text = textOf(result);
-    expect(text).toContain('consult-2');
-    expect(text).not.toContain('consult-1');
-  });
-
-  it('0 体 → 空の一覧', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
-
-    const result = await call(runtime, { action: 'list' });
-    expect(textOf(result)).toContain('no child is running');
-  });
-});
-
 describe('cancel', () => {
-  it('知らない id → 拒む', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
-
-    const result = await call(runtime, { action: 'cancel', id: 'consult-999' });
-    expect(textOf(result)).toContain('no such child: consult-999');
-  });
-
   it('/consult-cancel <id> → その id が止まる', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
@@ -253,16 +212,6 @@ describe('cancel', () => {
     expect(notices[0]?.message).toContain('no such child: consult-999');
     expect(notices[0]?.type).toBe('error');
     expect(signals[0]?.aborted).toBe(false);
-  });
-});
-
-describe('知らない action', () => {
-  it('action が知らない値 → 使い方を出して拒む', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
-
-    await expect(call(runtime, { action: 'nope' })).rejects.toThrow(USAGE);
   });
 });
 
