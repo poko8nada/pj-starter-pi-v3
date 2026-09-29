@@ -51,10 +51,22 @@ Owner: at the end
 
 ### Findings
 
-- なし
+- 自動チェックが設計の前提を壊した: リポジトリの pi ライブラリは **0.85.1**（`node_modules/@earendil-works/pi-coding-agent` → `@earendil-works/pi-coding-agent@0.85.1`）
+  - その版では `turn_end` のハンドラは値を返せない（`on(event: "turn_end", handler: ExtensionHandler<TurnEndEvent>)`。R は undefined）
+  - 一方、設計書（§6）とドキュメント（0.87.1）は「`custom_message` を提案し `continue: true` を返す」形を前提にしていた
+  - 実装した形: `turn_end` でターンを数えるだけにし、促しは**次の `tool_call` を止める**形で渡す（`{ block: true, reason }`。0.85.1 で動くことは guard が実証している）。道具を止めれば子は本文で応えるしかなく、そこで報告して終わる
+  - 意図（「上限で切られる前に報告させる」）は保つ。ただし**そのターンに道具を呼ばなければ促しは出ない**（暗い側面）。親の硬い上限は変わらず働く
+  - この環境の条件: 本物の `pi` CLI（PATH）は 0.87.1 なので、動作と型が食い違う。**0.87.1 へ上げれば設計どおりの形に戻せる**（依存の更新は Stack の変更なので owner の判断が要る）
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/child/spec.ts`: `buildPiArgs` が子に `budget.ts` も渡すようにした（`--extension` が 2 つ）
+  - なぜ: `child/budget.ts` を子だけに読ませるため
+- `.pi/extensions/consult/run/child.ts`: `runOneChild` が env に `CONSULT_TURNS`（上限）を足すようにした
+  - なぜ: 子の拡張は親の設定（types.json）を読めない。上限を渡す口が必要だった
+- `.pi/extensions/consult/tool/consult.ts`: runner が塊（`reportBlock`）を本文の先頭に置き、`details` に `state` / `files` を入れるようにした
+  - なぜ: 設計の「親は塊を先に見る」を満たす場所は他になかった
+- `.pi/extensions/consult/child/spec.test.ts` / `.pi/extensions/consult/run/run.test.ts`: 期待値を新しい面に合わせた（`-e` は 2 つ。消えた `combineRuns` の検査 3 つは `stateOf` / `reasonOf` / `changedFiles` に置き換えた）
+  - なぜ: 面が変わったため（検査の総数は減らしていない）
 
-Commit:
+Commit: b74d82f
