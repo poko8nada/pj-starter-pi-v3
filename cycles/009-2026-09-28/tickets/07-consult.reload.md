@@ -47,10 +47,30 @@ Owner: in the loop
 
 ### Findings
 
-- なし
+- 受け入れ条件の「完了ハンドラが delivery を通す」は、実装では `tool/consult.ts` の `deliver` / `runInBackground` にあった（チケットは `run/child.ts` を指していた）
+  - なぜ外か: 完了のハンドラ（`pi.sendMessage`）を握っているのは runtime で、`child.ts` は子プロセスを起こすだけ
+  - 実装: `deliver(state, child, outcome, record)` が `state.delivery.send(...)` を通す。delivery が無い場合（テストの runtime）は今まで通り直接渡す
+- `detached: true` を入れるのに、`stdio` の型を文字列の組で持つ必要があった（`PiSpawnOptions`）
+  - なぜ: `SpawnOptions` を通すと `child.stdout` が `Readable | null` になり、既存の 3 か所（`child.stdout.on` 等）が型で落ちる
+  - 観測: `pnpm typecheck:staged` が `TS18047: 'child.stdout' is possibly 'null'` を 3 つ出した
+- delivery の root は**必要になったとき**に引く（`() => rootFor(process.cwd())`）
+  - なぜ: `rootFor` は置き場のディレクトリを作る。拡張を読み込んだだけで `/tmp/pi-consult/...` を作らないため
+- 人が使う口（`/consult-status` / `/consult-cancel` / `/consult-sound`）は残した
+  - なぜ: 設計の 4 道具はエージェント向け。コマンドは人が見る口で、`ConsultRuntime.commands` が既に担っている（チケットは触るなと言っていない）
+- 起動時の読み込みは拡張の読み込み時ではなく `session_start` で行う
+  - なぜ: 置き場（root）はセッションの cwd から決まる。拡張の読み込み時には cwd を渡す口が無い
 
 ### Unplanned
 
-- なし
+- `.pi/extensions/consult/index.ts`: `registerCommands` と `announceRunningChildren` を切り出し、6 つの import を足した
+  - なぜ: `max-lines-per-function`（80 行）に当たったため（読み込み時の配線が増えた）
+- `.pi/extensions/consult/run/run.ts`: `PiSpawnOptions` を足した
+  - なぜ: 上記のとおり、stdio の型を保つため
+- `.pi/extensions/consult/run/log.ts`: `RunRecord.notice` を足した（届け先が無かった完了の知らせ）
+  - なぜ: `log.jsonl` に回した知らせを、次のセッションが読めるように
+- `.pi/extensions/consult/tool/sound.ts`: `runningChildren(records, alive)` を足した。`sound.test.ts` にその検査（4 ケース）
+  - なぜ: 走っている子の判定を、親の記憶ではなく記録（と pid）から取るため
+- `.pi/extensions/consult/run/run.test.ts`: `spawnOptions` の検査（`detached: true`）を足した
+  - なぜ: 子を起こさずに確かめられる形が要った
 
-Commit:
+Commit: d0a9927
