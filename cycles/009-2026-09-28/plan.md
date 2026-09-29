@@ -121,7 +121,7 @@
 - Owner: at the end
 - What:
   - `work` / `close` / `plan` / `tickets` / `definition` / `stack` が、`consult_new`・ref・diff・`stopped.json`・`consult_resume`・`kept` を前提にしている → 4 つの道具と worktree の設計に一致する
-  - （`Then` より）チケットの規約（結果をチケットに書かせる、`Stopped` を書くのは親、`Commit:` は worktree のコミットのハッシュ）は**スキル側の `task` / `input`** に置く（型と道具には無い）
+  - （`Then` より）チケットの規約（結果をチケットに書かせる、`Stopped` を書くのは親、`Commit:` は worktree のコミットのハッシュ）は**スキル側の `task`** に置く（型と道具には無い。読ませたいファイルも `task` にパスを書く）
 - Depends: 8
 - Action: build
 - Files: `.pi/skills/work/SKILL.md`, `.pi/skills/close/SKILL.md`, `.pi/skills/tickets/SKILL.md`, `.pi/skills/tickets/references/format.md`, `.pi/skills/plan/SKILL.md`, `.pi/skills/definition/SKILL.md`, `.pi/skills/stack/SKILL.md`

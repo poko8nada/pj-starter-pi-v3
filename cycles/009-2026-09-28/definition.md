@@ -144,7 +144,7 @@ Changes: keep
   - `work` / `close` / `plan` / `tickets` が、`consult_new`・ref・diff・`stopped.json`・`consult_resume`・`kept` を前提にしている
 - Then:
   - スキルの本文が 4 つの道具と worktree の設計に一致している
-  - チケットやサイクルの規約（結果をチケットに書かせる等）は**スキル側の `task` / `input`**にある（型と道具には無い）
+  - チケットやサイクルの規約（結果をチケットに書かせる等）は**スキル側の `task`**にある（型と道具には無い。道具は `input` を持たないので、読ませたいファイルも `task` に書く）
   - `Stopped` を書くのは親（`Verify` の結果を知っているのは親だけ）、`Commit:` のハッシュは worktree のコミットの物、という対応が書いてある
 
 ### 10. readme.consult
