@@ -65,7 +65,7 @@ Changes: keep
   - `consult_new{type, task, input}` が毎回新しい worktree を作る。行き先を指せない
   - 子は `--no-session` で走るので、続きが無い
 - Then:
-  - `consult_run{role, task, input?, worktree?, continue?}` が子を 1 体起こし、`started: <id>` をすぐ返す（親は待たない）
+  - `consult_run{role, task, worktree?, continue?}` が子を 1 体起こし、`started: <id>` をすぐ返す（親は待たない）。`input` を引数に持たない（読ませたいファイルは `task` にパスを書く）。1 呼び出しで走るのは必ず 1 体で、複数欲しいときは道具を複数回呼ぶ
   - `worktree` を指せば同じ worktree で走る。存在しない id はエラー。`readOnly: false` で省略もエラー（暗黙に作らない）
   - `continue` を省くとロールの `continueByDefault`。true なら同じ会話の続き
   - 子のセッションは worktree ごとに 1 つ（`--session <root>/<unit-id>/session`）
@@ -79,7 +79,7 @@ Changes: keep
   - コミットは道具の内側（`commitWorktree`）が差分から作り、フックに拒否されると「変えた物が無い」と見える（008 で 3 回、作業が宙に浮いた）
   - 親は worktree のパスを知らないとコミットできない
 - Then:
-  - `consult_commit{worktree, message?}` が worktree でコミットし、`committed: <hash>` / `rejected: <フックの出力>` / `no change` を返す
+  - `consult_commit{worktree}` が worktree でコミットし、`committed: <hash>` / `rejected: <フックの出力>` / `no change` を返す
   - 親は id だけで呼べる（tmp のパスを知らない）
   - フック拒否は理由として返り、作業は worktree に残っている
   - メッセージの型は道具が持ち、merge はしない（main 側は CLI）
@@ -105,7 +105,7 @@ Changes: keep
   - 打ち切りは「turn limit reached」の 1 行で、子自身の状況が無い
   - 親が子に diff を用意して渡す（`/tmp/*.diff`）
 - Then:
-  - 戻る塊は `id / role / worktree / state（done | stopped + reason）/ verdict / files / turns / spend`
+  - 戻る塊は `id / role / worktree / state（done | stopped + reason）/ files / turns / spend` と、子の最後の本文
   - diff は渡さない（親が要るなら `git -C <path> diff`）
   - **最後の 1 ターン前に、子が自動で状況を報告する**（`turn_end` で `custom_message` を差し込み、`continue: true` を返す）。`stopped: turn-limit` には子自身の報告が付く
   - ありえる戻り値は 6 つで全部（done / done+files なし / turn-limit / hook-rejected / error / aborted）。止まった次の手は 2 択（同じ worktree に `continue: true` で送り直す / 何もしない）
