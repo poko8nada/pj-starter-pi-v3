@@ -7,143 +7,95 @@ Section and field names are English; the content is Japanese.
 ## The shape
 
 ```md
-# <プロダクト名>
+# Definition
 
-## What
+## Product
 
-### Type
+<プロダクト名>
 
-何であるか
+### What
 
-Changes: keep
+<何であるか。何をするか>
 
 ### Who
 
-- <id>: 誰か
-  - Does: その製品で何をするか
-  - Needs: その製品に何を必要としているか
+- <id>: <誰か>
+  - Does: <その人が何をするか>
+  - Needs: <その人が何を必要としているか>
 
-Changes: keep
+### Users can do
 
-## What to build
-
-### 1. <unit-id>
-
-- Change: update / add / drop
-- Actor: <`Who` の id>
-- Does: 何をするか（行動）
-- Now:
-  - いまの状態と、理想と違うところ（1 行 1 つ）
-- Then:
-  - どうなっているべきか（理想）
-
-## What to keep
-
-- <unit-id> From: <NNN>
+- <unit-id>: <Who が、xxx する>
+  - .<feature>: <説明>
+- <unit-id>: <Who が、xxx する>
 
 ## Stack
 
-- Runtime: <ランタイムと言語の名前>
-- Deploy: <出すのか、出すならどこへどう>
-- Added:
-  - <足したもの、1 行 1 つ>
-
-Changes: keep
-
-## Retro
-
-### Good
-
-### Bad
-
-### Carry over
+- Ground:
+  - Language: <言語>
+  - Runtime: <本番で動く土台>
+  - Package manager: <パッケージマネージャ>
+  - Deploy: <出すのか、どこへいつ。出さないなら なし>
+- Checks:
+  - Typechecker: <物>
+  - Test runner: <物>
+  - Linter: <物>
+  - Formatter: <物>
+  - Git hooks: <物>
+- Agent:
+  - Host: <物>
+  - Schema: <物>
+- Product:
+  - <役割>: <物>
 ```
 
-## Who
-
-`Who` is the product's users: the roles that act in the product.
-
-Pick them from this list.
-
-- people:
-  - owner / administrator / operator / moderator / staff / member / user / customer
-  - subscriber / guest / visitor / author / editor / reader / viewer / buyer / seller
-  - player / student / teacher
-- developers, for a library, a framework, an API or a CLI:
-  - developer / integrator / plugin author
-- not a person: another service / the side that sends a webhook / agent / an organisation or a team
-
-The assumption the list rests on: this harness is general-purpose for anything web.
-
-The users therefore differ from product to product.
-
-## Units
-
-- `Actor` is a `Who` id
-- **`Does` is one action. A unit is the smallest thing the `Who` can use**
-  - so one action is one result they can get
-  - the test: can the `Who` finish it there and see a result?
-    - if another unit is needed before a result shows, it is too big
-    - if the `Who` cannot tell it from the unit next to it, it is too small
-  - （下の 3 つは別の製品（買い物かご）の例。granularity の見方だけを示す）
-  - `カートに入れる` is a unit
-  - `買い物ができる` is three units
-  - `ボタンを押す` is a part of a unit
-- `Now` is the state today, one line per bullet: what is not the ideal yet
-  - for an `add`: what does not exist yet
-  - `カートに入れる` today: 商品ページに、入れるボタンだけがある
-    - カートの画面はまだ無い
-- `Then` is the ideal, as a state. Not an action, not a step
-  - one meaning for every reader
-  - values and the check belong to the plan
-  - `カートに入れる` then: 商品ページで押すと、カートに入り、ヘッダの件数が増える
-- For this product (the harness), the units are extensions, skills, gates and documents (the smallest thing the `Who` can use)
-  - a function is not a unit, in any product: a change to one is written `ユニット名.機能`, inside the unit it belongs to
-- A unit keeps its name; a change to it is written `ユニット名.機能`. A name leaves the list only by a `drop`
-- A `drop` unit has no `Actor` / `Does` / `Now` / `Then`
+A section with nothing in it is left out. A field that is not decided yet keeps its name and stays empty — the empty field is the thing still to decide.
 
 ## Markers
 
-- A unit in `What to build` carries `Change: update / add / drop` on its own line
-  - `Now` is why it moves
-  - a `keep` unit is not here: it goes in `What to keep`, with `From: <NNN>`
-  - a name leaves the list only by a `drop`: an `update` keeps the unit's name
-- The frame ends with `Changes: keep`, or with `Changes: update **理由**`
-  - `### Type` and `### Who`
-- `## Stack` ends with `Changes: add` on a product's first definition
-  - and with `keep`, or `update **理由**`, after it
-- `What to build`, `What to keep` and `Change:` account for every unit
-  - what is touched, and what stays
+- **Every line of the definition is one item.** A product's name, a line of `What`, a `Who` item, a unit or a feature under `Users can do`, a line of the `Stack` — all of them are items.
+- A line that moved ends with `**add**`, `**update**` or `**drop**`, in bold. A line without a marker is a line that did not move.
+- Only the markers that mean something for that item are used: a name that leaves is a `**drop**`, and a thing that cannot leave never carries one.
+- `add` is an item that did not exist before. `update` moves the content of an item and leaves its name alone.
+
+## Who
+
+`Who` is the product's users: the roles that act in the product. Pick them from this list.
+
+- **people**: owner / administrator / operator / moderator / staff / member / user / customer / subscriber / guest / visitor / author / editor / reader / viewer / buyer / seller / player / student / teacher
+- **developers**, for a library, a framework, an API or a CLI: developer / integrator / plugin author
+- **not a person**: another service / the side that sends a webhook / agent / a team
+
+The list rests on one assumption: this harness is general-purpose for anything web. The users therefore differ from product to product. When nothing in the list fits, propose an addition.
+
+## Users can do
+
+- A unit is the smallest thing that stands alone, that the `Who` uses, and that gives a result. For a product of this harness, that is an extension, a skill, a gate or a document.
+- A feature (`.xxx`) is a part that is inside that unit and does not stand alone.
+- The description is written from the `Who`'s side: `<Who> が、xxx する`. The id stays the name of the thing, not the description.
+- Internal work is not a unit. Aligning, refactoring and syncing are not things the `Who` can use; when they happen, the unit they touch moves.
+- A feature's line has no rule about the `Who`. Write the feature itself.
+
+## Stack
+
+- The groups are `Ground`, `Checks`, `Agent` and `Product`. A group with nothing in it is left out.
+- A line is `role: thing`. The role comes from the patterns below.
+- The order starts at `Ground`. It is decided first, and it bounds the rest.
+- A product built from this starter always carries `Checks` and `Agent`, and starts `Ground`'s `Language`, `Runtime` and `Package manager` from the starter's defaults.
+- `Deploy` says whether the product ships and where: `なし` when it does not. An empty `Deploy` is not decided yet, which is not the same as `なし`.
+
+### The roles
+
+- **Ground**: Language / Runtime / Package manager / Deploy
+  - `Runtime` is the ground the product runs on in production: `Node`, `Cloudflare Workers (workerd)`, `Browser`. The runtime that runs the tooling is not written.
+- **Checks**: Typechecker / Test runner / Linter / Formatter / Git hooks / Build
+- **Agent**: Host / Schema
+- **Product**: Full-stack framework / Web framework / View / Router / Styling / State / Data / Auth / Server / API / Job / Mail / Search / Payments / Analytics / i18n
+
+When nothing in the list fits, propose an addition.
 
 ## Writing
 
-- Do not write what the reader can look up
-- No tables: they break with long text
-- A field whose content cannot be written yet keeps its name and stays empty
-  - it is what still has to be decided
-- `Carry over` copies holes as they were written
-- The order of work is the plan's, and the error paths are the tests': not here
-
-## Retro
-
-- `Good` and `Bad` are heading 3, one item per line: `- <主題> — <中身>`
-- `Carry over` holds the lines that are still open: the copied ones, and the ones this cycle left
-  - the definition seeds it with the carried lines; the close adds the ones this cycle left
-  - numbered from 1, one hole per line
-    - the number is a position, not an identity: `From:` carries that
-  - a line is a heading, then labelled bullets, in this order:
-    - `Status`: what is wrong, missing or undecided, and how it shows
-    - `Research`: how common it is, and whether a standard remedy exists in this setting
-    - `Action`: what to do, in the next cycle: without it the line cannot be acted on
-    - `Basis`: the sources: URLs, issue numbers
-    - `From: <NNN>.<ticket>` closes the line: the cycle that first left it, and the ticket in it
-  - the lines are the holes the `close` decided to act on: the research and the owner's call come first
-    - a hole decided to be ignored is not written
-    - each line keeps its sources
-    - a copied line keeps its original `From:`
-  - a line this cycle resolved is not copied: it is done
-    - a unit took it, or it was judged not to be a hole
-  - copied, not shortened
-  - a line the owner drops at the close is not in it: its number and the reason are one `Bad` line
-    - the rest is numbered again from 1
-    - `- <番号> を owner が落とした — <理由>`
+- Do not write what the reader can look up.
+- Keep a table short: a wide one breaks with long text.
+- Do not write the cycle's work here. This file is the product.
