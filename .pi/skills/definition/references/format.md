@@ -7,7 +7,7 @@ Section and field names are English; the content is Japanese.
 ## The shape
 
 ```md
-# Definition
+# Definition <NNN>
 
 ## Product
 

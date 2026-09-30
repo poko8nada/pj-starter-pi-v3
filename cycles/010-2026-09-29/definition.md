@@ -1,4 +1,4 @@
-# Definition
+# Definition 010
 
 ## Product
 
@@ -22,12 +22,14 @@
 - consult: エージェントが、子を走らせ、その作業場と結果を扱える
   - .run: ロールと作業場を指して、子を 1 体走らせられる
   - .children: 走っている子を見て、止められる
-  - .worktree: unit ごとの作業場を作り、一覧し、片付けられる
+  - .worktree: unit ごとの作業場を作り、一覧し、片付けられる **update**
+    - 実体の消えた登録と、どの作業場にも checkout されていないブランチも片付けられる（`remove` で、そしてセッションの始めに 1 回）
   - .commit: 終わったチケットを、その作業場でコミットできる
   - .roles: ロールごとのモデル・道具・上限・続きの既定を決められる
   - .report: 子の結果と最後の本文を、次の判断に要る形で受け取れる
   - .reload: reload をまたいでも、子の作業と一覧をそのまま引き継げる
-  - .docs: consult の道具と契約を読める
+  - .docs: consult の道具と契約を読める **update**
+    - README が、`remove` で何が消え、何が残るかを書いている
 - quality-gate: エージェントが、そのターンで変えた分の検査をその場で受け取れる
 - sound-notify: owner が、pi が助けを求めていることと、commit が通ったことに気づける
   - .permission: 許可を求められたことに気づける

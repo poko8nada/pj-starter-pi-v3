@@ -17,20 +17,33 @@ The definition is the anchor of the cycle. The plan, the tickets and the close r
 
 Read that file before writing. It holds the sections, the marker rules, the `Who` list, and the `Stack`'s roles.
 
+## What goes to adr
+
+Every part of this file can raise a decision.
+
+- `What` — what the product does is redefined; it becomes another thing
+- `Who` — an actor joins or leaves, or one does not fit the list (then the list gains a role)
+- `Users can do` — a unit is added or dropped; a unit's capability moves in a way that is expensive to undo; two units would share one name, or one unit would stand for two things
+- `Stack` — a runtime, a framework, a library or a deploy with real alternatives; a cost: a licence, a service, a running cost
+
+And outside the file: a `Decision: proposed` entry the last `close` left, waiting for the owner's call.
+
+The bar is in the `adr` skill; these are the shapes it takes here.
+
 ## Procedure
 
 ### 1. Read what is behind the cycle
 
 - the last definition, in full: the frame, the `Users can do` map, the Stack
-- the last cycle's `Retro`: the holes it left open
+- this cycle's `adr.md`: the entries the last `close` left as `Decision: proposed`
 
 ### 2. Collect the cycle's points
 
-The owner's request, and the carried holes. A point is a change to a unit, to the frame, or to the Stack — or a question that has to be answered before any of those can be written.
+The owner's request, and the `proposed` entries the last `close` left. A point is a change to a unit, to the frame, or to the Stack — or a question that has to be answered before any of those can be written.
 
 ### 3. Decide the points that need a decision
 
-A fork, a change to something already recorded, or the owner's call goes to `adr` — one entry per point. Its `Decision` is where the agreement is recorded; nothing else records it.
+Each point in `## What goes to adr` above is one `adr` entry. Its `Decision` is where the agreement is recorded; nothing else records it.
 
 ### 4. Write the definition
 
