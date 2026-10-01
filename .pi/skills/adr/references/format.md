@@ -11,7 +11,7 @@ Section and field names are English; the content is Japanese.
 
 ## <NN>: <Product | unit-id | Stack>
 
-### <definition の呼び名>
+### <NN>-<m>: <definition の呼び名>
 
 1. Agenda:
    - Title: <何が問いか>
@@ -27,11 +27,11 @@ Section and field names are English; the content is Japanese.
 
 ## The tree
 
-- A parent (`##`) is where the thing lives: `Product`, a unit's id, or `Stack`. The number goes on the parent.
-- A child (`###`) is the name the definition gives that part: `Who`, `.worktree`, `Product`.
+- A parent (`##`) groups the points that live in one place: `Product`, a unit's id, or `Stack`. Its number is the group.
+- A child (`###`) is one entry: `### <NN>-<m>` plus the name the definition gives that part, for example `### 02-1: .worktree`.
 - The tree mirrors the definition's parts, not its heading levels. `Users can do` is a container, so it is not a parent here.
 - One entry is one point. Do not mix two.
-- One parent can hold several children: `### .worktree` and `### .docs`.
+- One parent can hold several children: `### 02-1: .worktree` and `### 02-2: .docs`.
 
 ## The parts
 
@@ -43,7 +43,7 @@ Section and field names are English; the content is Japanese.
   - nothing that had to be looked up: that is `Research`
 - `3. Research:` — the type (`triage`, `compare`, `mechanism`), or `なし`.
 - `4. Trial:` — what was tried, or `なし`.
-- `5. Decision:` — the result, in bold: `proposed`, `accepted` or `rejected`.
+- `5. Decision:` — the result, in bold: `proposed`, `accepted` or `rejected`. The reason it went that way is the last line of the `Highlight`.
 
 ## The research types
 
@@ -82,3 +82,4 @@ A `trial` child runs in a worktree, because the `trial` role writes.
 - Do not write what the reader can look up.
 - Keep a table short: a wide one breaks with long text.
 - `Highlight` is the context; `Research` is what was looked up. Do not mix them.
+- Bold is scarce: the `Decision` result, and one line in each of `Highlight`, `Research` and `Trial` — the one that leads to the result, or the most important finding. A page of bold hides what matters.
