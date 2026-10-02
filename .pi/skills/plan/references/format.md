@@ -1,155 +1,130 @@
 # The plan's format
 
-`cycles/<NNN-YYYY-MM-DD>/plan.md`.
+`cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md`.
 
 Section and field names are English; the content is Japanese.
 
 ## The shape
 
 ````md
-# PLAN <NNN>
+# PLAN `<plan id>`
 
-## Steps
-
-### step 0: prepare
-
-- Owner: at the end
-- Install: 何を入れるか。無ければ なし
-- Cleanup: 何を消すか、何を動かすか。無ければ なし
-
-### step N: <unit-id> または <unit-id>.<part>
-
-- Owner: in the loop / at the end
-- What:
-  - いまの 1 行 → それはどうなるか
-- Show: `in the loop` のときだけ。何を 1 つ見せるか（起動する・画面を撮る・差分を見せる）
-- Depends: 何を待つか
-- Action: build / verify
-- Files: 触るファイル。テストは書かない。調べた依存先（この step が変える物を語っている文書・コメント・テスト）も入れる
-- Verify: <型>
-
-### step N: <unit-id>.check
-
-- Owner: in the loop / at the end
-- What: 単位の `Then` を全部、1 回で確かめる
-- Show: `in the loop` のときだけ、何を 1 つ見せるか
-- Depends: その単位の最後の step
-- Action: verify
-- Files: なし
-- Verify: <型>
-
-### step N: <unit-id>.refactor
-
-- Owner: in the loop / at the end
-- Why: このビルドで、構造がどう悪くなるか（1 行）
-- What:
-  - `Why` の 1 行 → 既存をどう直すか
-- Show: `in the loop` のときだけ、何を 1 つ見せるか
-- Depends: 原因になった step
-- Action: build
-- Files: 直すファイル（既存）
-- Verify: <型>
-
-## Structure
+## Files
 
 ```text
-src/
-  features/
-    cart/
-      CartButton.tsx   add
-      useCart.ts       add
-  lib/
-    money.ts           update
-  old/
-    cart.ts            drop
+<unit の根>/
+  <dir>/
+    <file>                update
+    <file>
+<unit の外のファイル>
 ```
 
-## What to keep
+## Slices
 
-- なし
+1. <スライス名>
+   - I/O:
+     ```ts
+     <型のコード、または関数の署名1行>
+     ```
+   - Verify:
+     - <型>: <コマンド / 相手 / 場所>
+       - <ケース、または何を見るか>
+   - Steps:
+     1. `<file>`: <何をどうするか>
+        - Outside: design の `<Boundary の項目>`。<そこでどうするか>
+2. <スライス名>
+
+## Notes
+
+### Slice 1: <スライス名>
+
+- Findings:
+- Unplanned:
+- Commit:
 ````
 
-## The Verify types
+## One plan is one worktree
 
-For each type, what the ticket holds:
+- The plan is one worktree, one branch and one merge. The plan id is the name the design gave it.
+- A child reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
 
-- `test`: a machine runs the tests, and reads the pass or the fail
-  - the file, the command, and the cases
-- `api`: a request is sent to the interface, and the response is read
-  - the request, and the response that is expected
-- `browser`: a person walks the screens, and reports what was seen
-  - the URL, the steps, and what is seen
-- `visual`: a screenshot of the screens is compared against the agreed look
-  - the screen, and the look
-- `compat`: the same walk on another browser or width
-  - which browser or width
-- `a11y`: the screens are walked with a screen reader
-  - or the tree, the contrast and the labels are checked
-  - the screen, and what is walked or checked
-- `cli`: a command is run, and its output is read
-  - the command, and the output that is expected
-- `perf`: a machine reads the time or the load of the product while it runs
-  - what is measured, and the number
-- `data`: rows are written into the store and read back, and a migration runs forward and back
-  - the rows, the store, and the migration
-- `security`: a request that should be refused is sent, and the refusal is read
-  - the request, and the refusal
-- `form`: a machine checks the length, the counts, or compares two files
-  - the files, the command, and the number
-- `read`: a child reads a document and reports
-  - which child, which document, and what it reports
-- `use`: a child uses the document, and reports
-  - which child, which document, and what it does with it
-- `look`: a person reads a value: a screen, a log, a DB, a file
-  - where the value is read, and what it should be
+## Files
 
-## Steps
+- The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
+- Walk the relations before writing it: what imports the thing that changes, calls it, renders it, migrates with it, seeds with it, documents it, checks it. A follower that is not written is a follower that gets missed.
+- A file whose structure does not follow the project's rules, and that this plan touches anyway, is fixed in the same plan. The step carries the reason: what the build makes worse.
 
-- the title is `# PLAN <NNN>`, with the cycle's number
-- `step 0` is always there, with `Install` and `Cleanup`, and `なし` when there is nothing
-  - `なし` is written when it was looked at and nothing is needed
-  - an empty field is one that is not decided yet
-- every step has an `Owner:` line, `step 0` included: `in the loop` or `at the end`
-  - a step takes the value of the unit in its name; `step 0` takes `at the end`
-    - a `<unit-id>.refactor` step takes the value of the unit in its name
-  - the value is the owner's, proposed per unit when the plan is made
-    - the default proposal is `at the end`
-    - a value decided before the plan is written is used as it is
-- the name after the colon is a unit's id, or `<unit-id>.<part>`
-  - a unit that was split is closed by `<unit-id>.check`
-  - `<unit-id>.refactor` is a step with no unit
-- the step numbers are the order of work
-- `Depends` names the step, or the steps, to wait for, or `なし`
-- `What` is the relation: one line per `Now` line, and what it becomes
-  - the number of the definition's lines is not a relation
-    - a reader of this plan does not open the definition
-  - together, the steps of a unit carry every `Now` line of it, once
-- an `in the loop` step has a `Show:` line, and an `at the end` step has none
-  - it names the one thing to show, and how: 起動する・画面を撮る・差分を見せる
-- an `in the loop` unit is cut into vertical slices
-  - 「見せられる大きさ」: 1 つの操作が端から端まで動き、owner が見て 1 つの判断（残す / 直す / 捨てる）を下せる。見せる物は 1 つ
-  - 内部だけの step（列を足す、設定を変える、リファクタ）は単独にせず、見せられる切片に付ける
-    - an `in the loop` unit has no standalone `<unit-id>.refactor` step: a refactor belongs to an `at the end` unit
-- a `<unit-id>.refactor` has no gap and no `Then`
-  - `Why` is what the build makes worse, and `What` is the relation
-- `Action` is `build` when something is produced, and `verify` when the step only checks
-  - a `<unit-id>.check` is always `verify`
-- `Verify` is the types that decide every line of `What`, from the list above
-  - a document's lines need `read`, `use` or `form`
-  - the tests are the ticket's: no case is written here
-  - a step that moves the form is proved by the form
-- a step that adds a check writes what it sets up for itself: the paths, the config
+## Slices
 
-## Structure
+- One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Cut where a child can finish and a check can run.
+- One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the design's condition, named, and what to do there.
+- The steps are numbered; the order is the order of the work.
 
-- the form, not a file list: the folders nested, one line per folder with its files under it
-- only the files this plan changes
-- one marker per line: `add`, `update` or `drop`
-- test files do not appear: the ticket decides them
-- `What to keep` is not part of it
+## I/O
+
+- `I/O` sits in the slice that moves it. It holds the shapes, as code, and the signatures of functions whose inputs or outputs move, as one line.
+- Look at every input and output the slice touches. Write the ones that move; leave the ones that do not.
+
+### The type rules
+
+- A state is a discriminated union. Never a combination of optionals.
+- A `switch` over a union is exhaustive: the last branch assigns to `never`. No `default`.
+- Fields are `readonly`, arrays are `readonly T[]`, and an argument object is not written to.
+- A constraint the compiler cannot check — a brand, a template literal built from a runtime string, a value that must be validated — has one factory, and the check lives inside it.
+- A failure is a state or a throw. Never a silent success.
+
+## Verify
+
+`Verify` names one type from this list, and its content. Pick the types that decide the work; do not invent a check.
+
+- `test` — a machine runs the tests: the file, the command, and the cases
+  - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
+  - the result is a value, an error type or a state
+- `api` — a request is sent to the interface, and the response is read
+- `browser` — a person walks the screens, and reports what was seen
+- `visual` — a screenshot of the screens is compared against the agreed look
+- `compat` — the same walk on another browser or width
+- `a11y` — the screens are walked with a screen reader, or the tree, the contrast and the labels are checked
+- `cli` — a command is run, and its output is read
+- `perf` — a machine reads the time or the load of the product while it runs
+- `data` — rows are written into the store and read back, and a migration runs forward and back
+- `security` — a request that should be refused is sent, and the refusal is read
+- `form` — a machine checks a length, a count, or compares two files
+- `read` — a child reads a document and reports: which child, which document, and what it reports
+- `use` — a child uses the document, and reports what it does with it
+- `look` — a person reads a value: a screen, a log, a DB, a file
+
+### The walk
+
+For every slice that moves an input or an output, walk the shape and write a case for each line, or the reason it does not apply:
+
+- every branch of a union
+- every optional, present and absent
+- empty and missing
+- the boundary values
+- invalid input
+- the expected error path
+- permission
+- a second call
+- concurrency
+
+**A boundary with no answer is a hole in the plan.** When the shape cannot say what happens, the shape is not decided: stop, decide it — an `adr` entry when it meets the bar in the `adr` skill — and write the plan after.
+
+## Notes
+
+- `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.
+- `Findings`: a hole the work could not close — the place, the state, and what closes it.
+- `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
+- `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
+- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
+- **The parent writes it.** Only the parent saw the check fail. A child reports its reason in its reply, and never writes the plan: the plan sits in the parent's tree, and a record written in a worktree rides into the merge.
+- The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
+- The commits are not squashed: `Commit` is the slice's own commit.
 
 ## Writing
 
-- Do not write what the reader can look up
-- No tables: they break with long text
-- A field whose content cannot be written yet keeps its name and stays empty
+- A file name is written from the project root. The tree, the steps and the checks use the same name.
+- Do not write what the reader can look up.
+- Keep a table short: a wide one breaks with long text.
+- A field whose content cannot be written yet keeps its name and stays empty.
+- Do not copy the design or the ADR. Name them where they bite.

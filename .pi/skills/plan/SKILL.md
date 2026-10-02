@@ -1,108 +1,88 @@
 ---
 name: plan
-description: Use after the definition and its Stack. Turns the gaps into steps, and freezes it.
+description: Use when the design is agreed and one of its plans has to become work — after the cut is settled and a plan is ready to be handed to a child. It writes `cycles/<NNN>/plan/<plan id>.md`, holding the files, the slices, the shapes and the checks.
 ---
 
 # plan
 
-A cycle is one plan.  
-The definition says what the product does.  
-The plan says in what order it is built.  
-The owner agrees the plan: the order, the steps and the form.  
-What a step is made of is the ticket's.  
-The shape of the file and its field rules are in `references/format.md`.  
-Read that before writing anything.
+One plan is one worktree: a branch and a merge. It is written from the cycle's design and ADR, and it is what the work is done from — a child reads the plan, and nothing else, to do the work.
 
-## Steps
-
-1. **Read `What to build`.** The units are the work.
-2. **Take the gaps.** For each unit, the gap between its `Now` and its `Then`:
-   - the `Now` lines: the state today
-   - the `Then` lines: the state after the build
-   - an empty gap: the unit is not in the plan
-3. **Split what is too big.** A step is one child's work:
-   - an `in the loop` unit's steps are cut into vertical slices: the 「見せられる大きさ」 definition is in `references/format.md`
-     - the owner's value is asked in step 10, so a cut made before that is revisited when the value comes back
-   - its `Verify` is a few types, and it runs when the step closes, not later
-   - when one child cannot finish it in one go, split it into `<unit-id>.<part>`
-   - the parts divide the unit's `Now` lines: together they cover every line once
-   - the parts stand in order, and each `Depends` is the part before it
-   - a unit that is split is closed by a `<unit-id>.check` step
-     - one run that proves every `Then` of it
-4. **Read the existing code.** The gaps land in a repository that is already there:
-   - read what is around where they land
-   - ask: does this build make one name stand for two things?
-     - the file, the folder or the value that would take a second job
-     - a reader who would read it two ways
-   - walk the dependents of what each step changes: who states this in prose, in a comment or in a test
-     - a document, a comment, another skill, a check, a test that names the thing the step changes
-     - what the walk finds goes into that step's `Files` and `What`: a step does not leave a dependent it has seen out
-   - if none: no refactor step
-5. **Write the refactor step.** For each thing the build makes worse:
-   - an `in the loop` unit has none: its internal work is attached to a slice (step 3), so a refactor step only exists for an `at the end` unit
-   - the name is `<unit-id>.refactor`: the unit whose build needs it
-   - `Why` is the worse thing, in one line, with the names of the place
-   - `What` is the relation, the same as a unit's: the `Why` line, and what it becomes
-   - it comes before the work when it has to: an early number, `Depends: なし`
-   - otherwise it comes after the step that made it necessary, and `Depends` names it
-   - a deletion or a move that no unit needs is not a step: it is one line in `step 0`'s `Cleanup`
-   - the cost is the owner's call: a tidy-up takes time
-6. **Order the steps.** The numbers are the implementation order:
-   - a step that fixes a skill comes before the steps its work is carried under
-   - two steps that touch the same file cannot run together: the later one depends on the earlier
-   - a step that uses what an earlier step produced depends on it
-   - otherwise: `Depends: なし`
-7. **Fill the fields.** With the owner where a field is a decision:
-   - `Files`: the files it touches, including the dependents the walk in step 4 found. The tests are the ticket's
-   - `Verify`: the types that decide every line of `What`
-     - take each line of `What`, and ask which type gives a verdict on it
-     - a line with no type: stop and propose the type to the owner
-8. **Draw the form.** `Structure`: the tree after the gaps are filled, one marker per line:
-   - ask what a folder looks like after a file is added
-   - when it stops standing for one thing, the tidy-up is a `<unit-id>.refactor` step
-9. **Read it against `references/format.md`**, once, before anyone else sees it.
-10. **Ask the owner's value, per unit.** For each unit, propose `Owner: in the loop` or `Owner: at the end`, and let the owner decide:
-    - the asking may come after the plan is written; a value decided before the writing is used as it is
-    - the default proposal is `at the end`
-    - an `in the loop` unit's steps are cut by the rule in `references/format.md`
-11. **The owner.** Show the steps and the form, and hear their points.
-12. **The `review` child**, with the checklist below:
-    - it gets the plan, the definition and `references/format.md`, in one call
-    - fix what comes back, and repeat until it is clean, up to three rounds
-13. **Commit.** The commit is the freeze mark:
-    - the plan is not edited afterwards
-    - what changes during the cycle is recorded in the ticket that hit it
-
-A fact the repository holds is looked up, not asked. Ask only what changes the file.
+**The discussion does not happen here.** A fork the plan meets — a shape that has no answer, a file whose structure has to be fixed, a boundary that costs — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/plan.md`, following `references/format.md`.
+`cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md`, in the shape `references/format.md` gives.
 
-## The review's checklist
+Read that file before writing. It holds the sections, the slice, the `I/O`, the type rules, the checks and the record.
 
-The `review` child of step 12 gets this checklist, the plan, the definition and `references/format.md`, and nothing else:
+## What goes to adr
 
-- hand it over with `consult_run{role: 'review', task}`: name those files in the `task`, and paste this checklist into it too — a child does not read the skills, so the parent passes the text. The tool takes no `input`; the `review` role reads, so it runs in the parent's tree with no worktree
+- **a shape with no answer** — the walk found a boundary the shape cannot state: a failure path with no state, an optional whose meaning is undecided. The shape is decided before the plan is written, and the entry records it when it meets the bar
+- **a reversal** — a shape, a boundary or a layout already accepted, now changed by this plan
+- **a file or folder layout** — a refactor this plan touches that moves, renames, or changes what stands where
+- **the owner pays** — a new dependency, a service, a permission the plan needs
+- **the owner's call** — a trade-off this plan would make the owner live with
 
-- the owner has seen the steps and the form, and agreed; every change since their look answers the point they made
-- every unit with a gap is a step, and together the steps carry every `Now` line once
-- every file in `Files` is in `Structure`, and every line of `What` is decided by a `Verify` type
-- every step has an `Owner:` line (`step 0` included), and `Show:` only on the `in the loop` steps
+The plan keeps its own business: the steps, the order inside the plan, the names, the test cases, and the record.
 
-Report findings only, each with its line, marked blocking or not.
+The bar is in the `adr` skill; these are the shapes it takes here.
 
-## What is frozen
+## Procedure
 
-- **The definition** — freezes at its own commit
-  - A correction that moves it goes back to the `definition` stage
-- **The plan** — freezes at the commit that agrees it, and is not reopened
-- **The tickets** — freeze at the commit that agrees them
-  - Revised only before that step starts, with the reason and the owner's agreement
+### 1. Read what the plan carries
 
-## How not to do this
+- the design's section for this plan: the head sentence, `ADR`, `Scope`, `Boundary`
+- the entries the plan's `ADR` names, in full
 
-- Do not write a step that no `Then` asks for
-- Do not write the tests here: they are the ticket's
-- Do not add a file without asking what the folder looks like after
-- Do not ignore what the build makes worse in the structure
+### 2. Walk the relations, and write `Files`
+
+Walk what the change touches: what imports it, calls it, renders it, documents it, checks it. Write the tree: what changes, with a marker, and what follows, without one.
+
+A file whose structure does not follow the project's rules, and that the plan touches anyway, is fixed in this plan — the step says why.
+
+### 3. Cut the work into slices
+
+One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Inside a slice, one step is one file: what to do in it.
+
+### 4. Write the `I/O` of each slice
+
+Look at every input and output the slice touches, and write the ones that move: the shapes, and the signatures. The rules for the shapes are in `references/format.md`.
+
+### 5. Walk the shapes, and write the cases
+
+For each shape, walk its boundaries and write a case, or the reason it does not apply. The walk is in `references/format.md`.
+
+**A boundary with no answer is a hole in the plan.** Stop, and decide the shape before writing on.
+
+### 6. Write the checks
+
+Every slice carries one `Verify`: a type from the closed list, and its content — the file, the command and the cases for a `test`; the child and the document for a `read`. A check that is not runnable is a hole: fix it, or say why it does not apply.
+
+### 7. Write the record
+
+`## Notes`, one `### Slice N` per slice, with the fields empty. The parent fills them as the work goes; a child never writes the plan.
+
+### 8. Show the owner
+
+One plan: the files, the slices, the shapes, the checks. They read it, and answer.
+
+### A change after this
+
+A new `adr` entry records it. The plan is edited to match, and git holds the diff.
+
+## What is not here
+
+| what                                            | where           |
+| ----------------------------------------------- | --------------- |
+| the product's picture                           | the definition  |
+| the options, the research, the decision         | the cycle's ADR |
+| the cut into plans, their order, their boundary | the design      |
+| the work, and what it leaves behind             | the work        |
+| whether the cycle delivered                     | the close       |
+
+## How not to write this
+
+- Do not copy the design or the ADR: name them where they bite, and write what the reader has to do
+- Do not invent a check: the types are a closed list
+- Do not leave a hole: a boundary with no answer stops the plan
+- Do not let a child write the plan: a record written in a worktree rides into the merge
