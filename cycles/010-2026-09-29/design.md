@@ -1,48 +1,16 @@
 # DESIGN 010
 
-## Plans
+## `worktree-cleanup`
 
-### `plan/consult.md`
+実装に要る入力は同じ（ADR 02-1 / 02-2 と consult のソース）で、分けると同じ入力を子に読ませることになる。並列にする利得が無いので、1つの worktree にする。
 
-- Carries:
-  - ADR 02-1: consult.worktree
-  - ADR 02-2: consult.docs
-- Targets:
-  ```text
-  .pi/extensions/consult/
-    run/
-      worktree.ts                update
-      worktree.test.ts           update
-    tool/
-      worktree.ts                update
-      worktree.test.ts           update
-    index.ts                     update
-    README.md                    update
-  README.md                      update
-  README.ja.md                   update
-  ```
-- Types:
-  - ADR 02-1:
-    | Type            | I/O | Example                                 | Reason                             |
-    | --------------- | --- | --------------------------------------- | ---------------------------------- |
-    | `RemoveOptions` | In  | `{ force: true }`                       | `force` と `busy` を名前付きにする |
-    | `CleanupReport` | Out | `{ pruned: [], branches: [] }`          | 掃除が返す形                       |
-    | `ConsultBranch` | Out | `consult/3-stack.formatter`             | 名前空間に縛る                     |
-    | `OrphanBranch`  | Out | `{ state: 'kept', reason: 'unmerged' }` | 処分は二択。第三の状態を作らない   |
-    | `reason`        | Out | `'unmerged'`                            | 現状は未マージのみ                 |
-    ```ts
-    export type RemoveOptions = {
-      readonly force?: boolean;
-      readonly busy?: boolean;
-    };
-    export type ConsultBranch = `consult/${string}`;
-    export type OrphanBranch =
-      | { readonly state: 'removed'; readonly branch: ConsultBranch }
-      | { readonly state: 'kept'; readonly branch: ConsultBranch; readonly reason: 'unmerged' };
-    export type CleanupReport = {
-      readonly pruned: readonly string[];
-      readonly branches: readonly OrphanBranch[];
-    };
-    ```
-- Granularity: 同じ unit の `.worktree` + `.docs` を `plan/consult.md` 1枚に載せる。同じ worktree・同じ子がやり、doc は実装の従属物だから
-- Blocked by: なし
+- ADR: 02-1, 02-2
+- Scope:
+  - consult.worktree: 実体の無い worktree の登録と、どの作業場にも checkout されていない取り込み済みの枝を片付ける
+  - consult.docs: 片付けた物と、残す物（未マージ）を説明に足す
+- Boundary:
+  - Plans: なし
+  - External:
+    - `git`: worktree の登録を消し、どの作業場にも checkout されていない枝を列挙する
+      - Version: `2.23+`（`%(worktreepath)` を使うため）
+      - Contract: `prune` の後は枝の出所が消えるので、`consult/*` の命名に頼る

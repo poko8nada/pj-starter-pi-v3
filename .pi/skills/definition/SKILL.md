@@ -7,7 +7,7 @@ description: Use when a cycle starts, or when a recorded part of the definition 
 
 A cycle has one definition. It is the product's picture as this cycle leaves it: what the product is, who uses it, what it can do, and what it stands on.
 
-The definition is the anchor of the cycle. The plan, the tickets and the close read it, and nothing else says what the product is. A reader who wants the whole shape opens this one file.
+The definition is the anchor of the cycle. The design, the plan and the close read it, and nothing else says what the product is. A reader who wants the whole shape opens this one file.
 
 **The discussion does not happen here.** A point that needs a decision — a fork, a change to the frame or to a unit, or a call only the owner can make — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
 
@@ -62,12 +62,12 @@ A new `adr` entry records it. The definition is edited to match, and git holds t
 
 ## What is not here
 
-| what                                  | where           |
-| ------------------------------------- | --------------- |
-| the options, the research, the trials | the cycle's ADR |
-| the order of the work                 | the plan        |
-| the concrete work and the tests       | the tickets     |
-| whether the cycle delivered           | the close       |
+| what                                                 | where           |
+| ---------------------------------------------------- | --------------- |
+| the options, the research, the trials                | the cycle's ADR |
+| the cut into plans and the order                     | the design      |
+| the files, the dependencies, the types and the steps | the plan        |
+| whether the cycle delivered                          | the close       |
 
 ## How not to write this
 

@@ -110,13 +110,25 @@
 ### design
 
 - （`plan` → `tickets` をやめる）。子に渡す単位は `plan/<name>.md`
-- 形は `design.md`
-- **plan mdの枚数 = worktreeの数 = 並行の数**
-- **planのスコープは1 unit の内側で閉じる**。最小は dot 付きの機能（`.worktree`）、最大は `consult` のような unit
-- **plan id は unit id。** 1 unit = 1 worktree = 1 plan md（`plan/consult.md`）。unit をまたぐ物は1枚にしない。順序が要るなら直列化する
-- 直列化の欄名は `Blocked by`。意味は「その plan md がマージされるまで始められない」。
-- 同じ unit の機能は同じ1枚に載る（例: `consult.worktree` + `consult.docs` は `plan/consult.md` の1枚）。docは実装に影響を受けるので分離できない
-- plan md の worktree id は、その基底名（`plan/<id>.md` ↔ worktree `<id>`）。
-- `Targets` はツリーで書く（変える物に太字マーカー）、新設は `add` で出す
+- **1 plan = 1 worktree = 1 マージ**。plan md の枚数 = worktree の数 = 子の数
+- **plan id は変える物の名前**（例: `worktree-cleanup`）。unit 名ではない。plan は unit をまたげる（例: 整形具の入れ替えは check-suite と quality-gate と commit-gate に触る）
+- **分け方の条件**: 分けるのは、入力が別で並列に進められる時だけ。実装に要る入力が同じ（同じ ADR とソース、同じ境界面）なら、unit が違っても同じ worktree にする（子は続きの会話で動けるので、入力の読み直しが無くトークンが効く）。また、次のどれかが当てはまったら分けない:
+  1. 検査: 片方をマージした枝で lint / typecheck / test が通らない → 1つにまとめる
+  2. スライス: 片方をマージした枝が単独で使える形になっていない → 1つにまとめる
+  3. 同じファイル: 触るファイルが重なる plan は並列にできない → 直列にするか、1つにまとめる
+  4. 複数への依存: 複数の plan の結果に依存する物は、独立の plan にして、依存する plan の全部の後ろに置く
+- **不変（どの plan でも）**:
+  - 説明は、それが述べる振る舞いより先にマージしない
+  - 1つのファイルは1つの plan が持つ
+- `design.md` の構造: `# DESIGN <NNN>` の下に、plan ごとの節 `## \`<plan id>\``
+  - 節の頭に1文で、なぜこの plan か（入力の同一性、当てはまる条件、依存があるなら「全部の後ろ」など）。規則そのものは写さない（規則はスキルにある）。依存を書く所はここだけ
+  - `ADR`: 関わる entry
+  - `Scope`: この plan が変える物（definition の単位と機能）
+  - `Boundary`: この plan の外の面。`Plans`（他の plan）と `External`（外の物）の2項目。無いときは `なし` と書いて項目は残す
+    - **`External`（決定）**: 親 = 外の物 + この変更がそれに求める物（1行。子の条件だけだと、なぜその外の物が出ているか読めない）。子 = **条件だけ**、種類は `Version` / `Env` / `Contract` / `Data` / `Path` / `Limit`（閉じる。足りなければ追加を提案）。`Command` / `API` は書かない（コードを読めば分かる）
+    - **`Plans`（決定）**: 他の plan との**接点**。他の plan が決めた物のうち、この plan が使う・説明する物。順序の理由（なぜ独立で、なぜ最後尾か）は節の頭の1文にある（ここには書かない）
+- design が持つ物: 節の頭の1文、`ADR`、`Scope`、`Boundary` だけ。ファイルのツリー・内部依存・`Types`・段は plan の責務
+- 段の切り方はどの plan でも同じ規則（その段の検査が1本通れば終われる）。スキルに1回書き、design には書かない
+- 依存の洗いは広くやる（`research` の子を並列で使ってよい）
 
 ### plan

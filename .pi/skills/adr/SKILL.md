@@ -7,9 +7,9 @@ description: Use when the work meets a choice that is expensive to undo, that ch
 
 One cycle has one ADR: `cycles/<NNN-YYYY-MM-DD>/adr.md`. It is where a decision is made and left.
 
-The other md are written from what is decided here. The definition says what the product is, the plan says the order, and the tickets say the work; none of them argues. The argument lives in the ADR.
+The other md are written from what is decided here. The definition says what the product is, the design says the cut, and the plan says the work; none of them argues. The argument lives in the ADR.
 
-**A point does not wait for a stage.** The ADR fires from wherever the work is — the definition, the plan, the tickets, the work, or the close.
+**A point does not wait for a stage.** The ADR fires from wherever the work is — the definition, the design, the plan, the work, or the close.
 
 ## The file
 
@@ -20,7 +20,7 @@ Read that file before writing. It holds the tree, the parts, the research types,
 ## What needs an entry
 
 - **expensive to undo** — a data shape, a public name, a file or folder layout, a dependency, an interface with the outside
-- **the product's promise changes** — a line of the definition's `Users can do`, or a ticket's `Acceptance`; not the code inside
+- **the product's promise changes** — a line of the definition's `Users can do`; not the code inside
 - **the owner pays** — a new dependency, a service, a licence, a running cost, a migration
 - **a reversal** — something already accepted, now to be changed
 - **the owner's call** — the product's direction (what to build, what to drop), a trade-off the owner lives with
