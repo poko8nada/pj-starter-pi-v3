@@ -48,7 +48,17 @@ The plan id is the name of the change (`worktree-cleanup`), not the unit's id. A
 - the head sentence: why this plan — the input it shares, the condition that applies, and what it waits for
 - `ADR`, `Scope` (what it changes), `Boundary` (the interface with other plans, and the outside)
 
-### 5. Show the owner
+### 5. Propose where each plan runs, and ask the owner
+
+The default is a worktree: a branch, a child, a merge. A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base instead: the parent does it in its own tree, and the changes land as they are made.
+
+Propose one place per plan, with the reason. The owner answers, and the answer can be any of three:
+
+- as proposed
+- left to you: they take no side, and the proposal stands
+- the other one: a plan that meets the worktree conditions, and the owner wants to be in it → the base
+
+### 6. Show the owner
 
 One list of plans, each with its scope and its boundary. They read the cut, and answer.
 

@@ -45,7 +45,7 @@ Section and field names are English; the content is Japanese.
 
 ## One plan is one worktree
 
-- The plan is one worktree, one branch and one merge. The plan id is the name the design gave it.
+- The plan is one worktree, one branch and one merge — unless the design says `base`: then the parent does the work in its own tree, with no branch and no merge. The plan id is the name the design gave it.
 - A child reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
 
 ## Files
@@ -57,6 +57,7 @@ Section and field names are English; the content is Japanese.
 ## Slices
 
 - One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Cut where a child can finish and a check can run.
+- A `base` plan is cut where the owner can look and decide: its check carries the look (`look`, `browser`, `use`), and their answer closes the slice.
 - One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the design's condition, named, and what to do there.
 - The steps are numbered; the order is the order of the work.
 

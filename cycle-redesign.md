@@ -123,11 +123,12 @@
 - `design.md` の構造: `# DESIGN <NNN>` の下に、plan ごとの節 `## \`<plan id>\``
   - 節の頭に1文で、なぜこの plan か（入力の同一性、当てはまる条件、依存があるなら「全部の後ろ」など）。規則そのものは写さない（規則はスキルにある）。依存を書く所はここだけ
   - `ADR`: 関わる entry
+  - `Where`: 走らせる場所。既定は `worktree`。owner の目が要る物（ブラウザ・画面・目視）は `base`（親がベースのツリーでやり、枝もマージも無い）。**plan ごとに提案して owner に聞く**（そのまま / 任せる / 条件は worktree だが介入したいので base）
   - `Scope`: この plan が変える物（definition の単位と機能）
   - `Boundary`: この plan の外の面。`Plans`（他の plan）と `External`（外の物）の2項目。無いときは `なし` と書いて項目は残す
     - **`External`（決定）**: 親 = 外の物 + この変更がそれに求める物（1行。子の条件だけだと、なぜその外の物が出ているか読めない）。子 = **条件だけ**、種類は `Version` / `Env` / `Contract` / `Data` / `Path` / `Limit`（閉じる。足りなければ追加を提案）。`Command` / `API` は書かない（コードを読めば分かる）
     - **`Plans`（決定）**: 他の plan との**接点**。他の plan が決めた物のうち、この plan が使う・説明する物。順序の理由（なぜ独立で、なぜ最後尾か）は節の頭の1文にある（ここには書かない）
-- design が持つ物: 節の頭の1文、`ADR`、`Scope`、`Boundary` だけ。ファイルのツリー・内部依存・`Types`・段は plan の責務
+- design が持つ物: 節の頭の1文、`ADR`、`Where`、`Scope`、`Boundary` だけ。ファイルのツリー・内部依存・`Types`・段は plan の責務
 - 段の切り方はどの plan でも同じ規則（その段の検査が1本通れば終われる）。スキルに1回書き、design には書かない
 - 依存の洗いは広くやる（`research` の子を並列で使ってよい）
 
@@ -135,9 +136,10 @@
 
 - plan md は `cycles/<NNN>/plan/<plan id>.md`。1 plan = 1 worktree = 1 マージ
 - plan は design / ADR を読んで書く。**実装する子が plan だけで実装できる**ように書く。design の `Boundary` などを写さない（層が違う。写しは必ずずれる）
-- 構造: `Files` / `Slices` / `Notes`（`Relations` の節は持たない）
+- 構造: `Files` / `Slices` / `Notes`（`Relations` の節は持たない）。`Where` は書かない（design が持つ）
 - `Files` = 変える物（`add` / `update` / `drop`）と、関係する物（マーカー無し）のツリー。名前はプロジェクトルートからのパス（省略形を使わない）
 - `Slices` > `Steps`（番号付き）:
+  - `base` の plan は親がベースのツリーでやる（枝もマージも無い）。スライスは owner が見て判断できる所で切る（`Verify` に `look` / `browser` / `use`）
   - 1 スライス = `Verify` 1本（内容は複数でよい）。切り方は「1体の子が1回で閉じられるか（その回の検査が1本通るか）」
   - 1 step = 1ファイルの「何をどうするか」
   - `I/O` は導入するスライスの中。触る関数の In / Out を全部見て、**動く物だけ**書く（型のコードと、関数の署名1行）

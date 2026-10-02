@@ -31,7 +31,7 @@ The bar is in the `adr` skill; these are the shapes it takes here.
 
 ### 1. Read what the plan carries
 
-- the design's section for this plan: the head sentence, `ADR`, `Scope`, `Boundary`
+- the design's section for this plan: the head sentence, `ADR`, `Where`, `Scope`, `Boundary`
 - the entries the plan's `ADR` names, in full
 
 ### 2. Walk the relations, and write `Files`
@@ -43,6 +43,8 @@ A file whose structure does not follow the project's rules, and that the plan to
 ### 3. Cut the work into slices
 
 One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Inside a slice, one step is one file: what to do in it.
+
+The place is the design's: a `base` plan is cut where the owner can look and decide, and the parent does it.
 
 ### 4. Write the `I/O` of each slice
 

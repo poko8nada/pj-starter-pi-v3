@@ -14,6 +14,7 @@ Section and field names are English; the content is Japanese.
 <なぜこの plan か>
 
 - ADR: <NN>-<m>, <NN>-<m>
+- Where: worktree | base（owner が見る）
 - Scope:
   - <unit>.<feature>: <変える物>
 - Boundary:
@@ -45,6 +46,13 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 - One sentence, before the fields: why this plan. The input it shares, the condition that applies, and what it waits for, when it depends on several plans.
 - The rules are not repeated here. This line says this plan.
+
+## Where
+
+- The default is a worktree: a branch, a child, a merge.
+- A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base: the parent does it in its own tree, and the changes land as they are made. No branch and no merge.
+- Propose one place per plan with the reason, and record the owner's answer. `worktree`, or `base` with what the owner watches.
+- A base plan lands in the parent's tree as it goes, so a plan that follows it stands on its changes: keep the files apart, or order the two.
 
 ## Scope
 
