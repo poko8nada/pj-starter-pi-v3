@@ -140,7 +140,7 @@
 - `Files` = 変える物（`add` / `update` / `drop`）と、関係する物（マーカー無し）のツリー。名前はプロジェクトルートからのパス（省略形を使わない）
 - `Slices` > `Steps`（番号付き）:
   - `base` の plan は親がベースのツリーでやる（枝もマージも無い）。スライスは owner が見て判断できる所で切る（`Verify` に `look` / `browser` / `use`）
-  - 1 スライス = `Verify` 1本（内容は複数でよい）。切り方は「1体の子が1回で閉じられるか（その回の検査が1本通るか）」
+  - 1 スライス = 1つの閉じ方（その検査が通れば閉じる）。「1体の子が1回で運べる大きさ」は目安で、1回の実行と1対1ではない
   - **最後のスライスは統合スライス**（worktree の完了を測る。組み合わせた時に壊れる物を捕まえる。`cli` / `test` など）。名前は `統合: <plan が届ける物>`
   - 1 step = 1ファイルの「何をどうするか」
   - `I/O` は導入するスライスの中。触る関数の In / Out を全部見て、**動く物だけ**書く（型のコードと、関数の署名1行）
@@ -172,9 +172,21 @@
   - 直す: `code` の子を `continue` で走らせ、plan md の `### Review` を読ませて直させる（親は task に所見を写さない）
   - Acceptance: 親が plan の検査を全部回し直す（統合スライス含む）。壊れていればそこで捕まる。plan md の `### Acceptance` に書く
   - マージ: `git merge --no-ff consult/<plan id>` → `consult_worktree remove <plan id>`
-- 子がコミットする（メッセージの形はスキルで決める）。`consult_commit` はフォールバック（子がコミットせずに終わったとき）
-- 止まったら親が確認し、`continue` で続き（worktree では常に `continue`）
-- `polish` ロールは作らない（レビュワーが plan md に書き、`code` が直す）
+- 子がコミットする。`consult_commit` はフォールバック（子がコミットせずに終わったとき）
+- コミットメッセージ: `consult(<plan id>): <短い英語>`（**件名は英語**。スライス名は日本語なので、英語に直す）
+  - 誰が何を: スライス = その子 / 修正のラウンド = `code` の続き / 受け入れ = 親（worktree で `## Acceptance` を書いた後）/ マージ = 親（git の既定）
+- 渡し方: **スライスを指定しない**。`code` の子に plan md を渡し、スライスを順に、できるところまでやらせる。止まったら親が読んで `continue`（続きから）
+  - task の形: plan md のパス / スライスを順にできるところまで / 各スライスは Steps → Verify → コミット → 記録 / 終われなければ `Stopped` を書いて止まる
+- **子は検査が通ってからコミットする**。だから `Commit:` が埋まっている = そのスライスの検査が通った、と読める
+- **`base` の plan**: 親がベースのツリーでやり、**スライスごとに owner に見せて、明示的な OK を待つ**。OK が出たらコミットして記録し、次のスライスへ（**OK の前にコミットしない**）
+  - 検査は `look` / `browser` / `use` を含む。owner の答えは 残す / 直す / 捨てる
+  - Review は `review` の子を親のツリーで（diff は `<base hash>..HEAD`）。修正のラウンドは親
+  - `## Acceptance` の `Merge` は `なし`
+- レビューの task: plan md のパス / 観点3つ（`Stale` / `Unlisted` / `Gaps`）/ `## Review` の `### Round N` に書く / コードは変えない。Round 1 は `continue: false`、Round 2 以降は `continue: true`（`fixed:` の所だけ見る）
+- 修正の task: `## Review` の `fixed:` が無い所を、採用して直すか残すか。採用したら `fixed:` を足す。直したら検査を回し、`consult(<plan id>): round N fixes` でコミット
+- 不採用（`fixed:` 無し）は理由を書かない（印が無い = 不採用）
+- `Findings` の引き渡し: `close` が plan の `Findings` と `## Review` の残りを読む（**何を受け取って `adr` の `proposed` に落とすかの条件は `close` の設計で改めて議論**）
+- マージできなかった plan は**臨機応変**（捨てる / 残す、plan を見直し、そのツリーのどのコミットまでリセットしてどこから再開するか）。これも後で議論
 
 ## consult のロール（許可）
 

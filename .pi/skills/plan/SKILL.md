@@ -42,7 +42,7 @@ A file whose structure does not follow the project's rules, and that the plan to
 
 ### 3. Cut the work into slices
 
-One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Inside a slice, one step is one file: what to do in it.
+One slice is one closing: work that ends when its check passes. A child may carry several in one run. Inside a slice, one step is one file: what to do in it.
 
 The place is the design's: a `base` plan is cut where the owner can look and decide, and the parent does it.
 

@@ -56,7 +56,8 @@ Section and field names are English; the content is Japanese.
 
 ## Slices
 
-- One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Cut where a child can finish and a check can run.
+- One slice is one closing: work that ends when its check passes. A child may carry several in one run; the size is a hint, not a handoff.
+- The child commits only after the check passes: a filled `Commit` means that slice's check passed.
 - A `base` plan is cut where the owner can look and decide: its check carries the look (`look`, `browser`, `use`), and their answer closes the slice.
 - One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the design's condition, named, and what to do there.
 - The last slice is the integration slice: its check covers what the plan delivers as a whole, not one file. Its name is `統合: <what the plan delivers>`.
