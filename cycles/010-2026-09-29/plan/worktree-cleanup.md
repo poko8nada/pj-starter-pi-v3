@@ -109,6 +109,13 @@ README.ja.md
      1. `.pi/extensions/consult/README.md`: `consult_worktree` に、消す物・残す物（未マージは残す）・返す物を足す
      2. `README.md`: 道具の1行が現物と食い違っていないか確かめ、食い違うなら直す
      3. `README.ja.md`: 同じことを日本語側で確かめ、食い違うなら直す
+5. 統合: ゴーストと取り込み済みの枝がある状態から `remove` が片付ける
+   - Verify:
+     - cli: `consult_worktree remove <id>` を、実体の無い登録と、取り込み済み / 未マージの枝がある状態で走らせる
+       - 出力が消した物・残した物を言い、その後の一覧にゴーストが出ない（happy）
+       - 2 回目は何も消さない（happy）
+   - Steps:
+     1. `.pi/extensions/consult/run/worktree.test.ts`: その状態を作り、`remove` の後の一覧と報告を確かめる
 
 ## Notes
 
@@ -135,3 +142,23 @@ README.ja.md
 - Findings:
 - Unplanned:
 - Commit:
+
+### Slice 5: 統合: ゴーストと取り込み済みの枝がある状態から `remove` が片付ける
+
+- Findings:
+- Unplanned:
+- Commit:
+
+## Review
+
+### Round 1
+
+- Stale:
+- Unlisted:
+- Gaps:
+
+## Acceptance
+
+- Ran:
+- Findings:
+- Merge:

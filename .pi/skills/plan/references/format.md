@@ -59,6 +59,7 @@ Section and field names are English; the content is Japanese.
 - One slice is one closing: work that ends when its check passes, sized so that a child can carry it in one run. Cut where a child can finish and a check can run.
 - A `base` plan is cut where the owner can look and decide: its check carries the look (`look`, `browser`, `use`), and their answer closes the slice.
 - One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the design's condition, named, and what to do there.
+- The last slice is the integration slice: its check covers what the plan delivers as a whole, not one file. Its name is `統合: <what the plan delivers>`.
 - The steps are numbered; the order is the order of the work.
 
 ## I/O
@@ -118,9 +119,22 @@ For every slice that moves an input or an output, walk the shape and write a cas
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
 - `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
-- **The parent writes it.** Only the parent saw the check fail. A child reports its reason in its reply, and never writes the plan: the plan sits in the parent's tree, and a record written in a worktree rides into the merge.
+- **The child writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the child runs the check and sees it fail. The parent writes the plan md only at the acceptance, from the worktree.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - The commits are not squashed: `Commit` is the slice's own commit.
+
+## Review
+
+- The reviewer writes here, and the fixing child answers here. One `### Round N` per round, three rounds at most.
+- A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over).
+- A finding is one bullet; what fixed it is a bullet under it: `fixed: <what was done>`. Only an adopted finding carries one; one without it is left, and the acceptance reads it.
+- `なし` when the viewpoint found nothing.
+- Round 1 is a new conversation; the rounds after it continue the reviewer's own, and look at the `fixed` lines only.
+
+## Acceptance
+
+- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (`なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
+- A `Findings` line is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
 

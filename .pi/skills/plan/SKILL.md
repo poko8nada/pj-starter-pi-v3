@@ -62,7 +62,7 @@ Every slice carries one `Verify`: a type from the closed list, and its content â
 
 ### 7. Write the record
 
-`## Notes`, one `### Slice N` per slice, with the fields empty. The parent fills them as the work goes; a child never writes the plan.
+`## Notes`, one `### Slice N` per slice, with the fields empty; a child fills its own slice's record as the work goes. `## Review` and `## Acceptance` are written by the reviewer and by the parent.
 
 ### 8. Show the owner
 
@@ -87,4 +87,4 @@ A new `adr` entry records it. The plan is edited to match, and git holds the dif
 - Do not copy the design or the ADR: name them where they bite, and write what the reader has to do
 - Do not invent a check: the types are a closed list
 - Do not leave a hole: a boundary with no answer stops the plan
-- Do not let a child write the plan: a record written in a worktree rides into the merge
+- Do not write the plan from the parent's side while a worktree is live: the child writes its slice's record, and the parent writes at the acceptance

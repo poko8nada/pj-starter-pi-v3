@@ -141,6 +141,7 @@
 - `Slices` > `Steps`（番号付き）:
   - `base` の plan は親がベースのツリーでやる（枝もマージも無い）。スライスは owner が見て判断できる所で切る（`Verify` に `look` / `browser` / `use`）
   - 1 スライス = `Verify` 1本（内容は複数でよい）。切り方は「1体の子が1回で閉じられるか（その回の検査が1本通るか）」
+  - **最後のスライスは統合スライス**（worktree の完了を測る。組み合わせた時に壊れる物を捕まえる。`cli` / `test` など）。名前は `統合: <plan が届ける物>`
   - 1 step = 1ファイルの「何をどうするか」
   - `I/O` は導入するスライスの中。触る関数の In / Out を全部見て、**動く物だけ**書く（型のコードと、関数の署名1行）
   - `Verify` は旧フローの14型（`test` / `api` / `browser` / `visual` / `compat` / `a11y` / `cli` / `perf` / `data` / `security` / `form` / `read` / `use` / `look`）から選び、中身を具体的に書く（検査をでっち上げない）
@@ -149,8 +150,12 @@
 - `Notes` は `## Notes` に置き、スライスごとの節 `### Slice N: <名前>` を持つ（名前は `## Slices` のまま）:
   - `Findings` = 閉じられなかった穴 / `Unplanned` = 見つけてその場で直した穴 / `Commit` = そのスライスのコミット / `Stopped` = 止まったときだけ（旧 tickets の6つ）
   - 進み具合はこれで読む: `Commit` が埋まっていれば終わり、`Stopped` があれば途中、どちらも無ければ未着手
-  - **親が書く**（`Verify` が落ちたのを見たのは親だけ）。子は自分の本文で理由を返す
-  - 子に plan md を書かせない（worktree のコミットに記録が混ざる）
+  - **子が自分のスライスの記録を書く**（worktree の plan md。`Stopped` も子が書く。検査が落ちたのを見るのは子）
+  - 親が plan md に書くのは受け入れの時だけ（worktree に `cd` して書く）
+  - `## Review`（レビュワーが書く）と `## Acceptance`（親が書く）は、**レベル2の節**として `## Notes` の外に持つ
+- `## Review` = `### Round N`（上限3）。観点は英語の見出し `Stale`（この変更が古くした物）/ `Unlisted`（plan の `Files` が名指ししていない変更）/ `Gaps`（スライスが跨だ穴）。**採用した物だけ `code` の子が `fixed:` を足す**（付かない物は不採用で、Acceptance が読む）
+  - レビュワーは Round 1 が**新しい会話**（実装者の文脈を持ち込まない）、Round 2 以降は **`continue`**（`fixed` の所だけ見て収束させる）
+- `## Acceptance` = `Ran`（親が回した検査）/ `Findings`（無ければ `なし`）/ `Merge`（base の plan は `なし`）。`Findings` があれば**修正指示として `code` に渡し**、直したらもう一度回して書き直す
 - squash しない。`Commit:` はスライスごとのコミットのハッシュ
 - 条件は plan スキルの手順に置く（plan md には書かない）:
   - ツリーを書く前にリレーションを歩く（この変更を語る物・呼ぶ物を落とさない）
@@ -159,3 +164,37 @@
     - ケースはそのスライスの `Verify` に、それを決める型（`test`）の下に置く
     - **答えの無い境界は plan の穴。** 形が答えを持っていないときは、plan を書く前に形を決める（`adr` の基準に当たるなら entry を立てる）
 - スライスの切り方はどの plan でも同じ規則。スキルに1回書き、design には書かない
+
+### work
+
+- 流れ: スライス全部（最後は統合スライス）→ Review → `code` の続きが直す → Acceptance → マージ
+  - Review: `review` の子を worktree で走らせ、plan md の `### Review` に所見を書かせる。観点は3つ: この変更が古くした物（doc / comment / test）/ plan の `Files` が名指ししていない変更 / スライスが跨いだ穴（`Verify` が覆っていない所）
+  - 直す: `code` の子を `continue` で走らせ、plan md の `### Review` を読ませて直させる（親は task に所見を写さない）
+  - Acceptance: 親が plan の検査を全部回し直す（統合スライス含む）。壊れていればそこで捕まる。plan md の `### Acceptance` に書く
+  - マージ: `git merge --no-ff consult/<plan id>` → `consult_worktree remove <plan id>`
+- 子がコミットする（メッセージの形はスキルで決める）。`consult_commit` はフォールバック（子がコミットせずに終わったとき）
+- 止まったら親が確認し、`continue` で続き（worktree では常に `continue`）
+- `polish` ロールは作らない（レビュワーが plan md に書き、`code` が直す）
+
+## consult のロール（許可）
+
+フローの外の実装。スキルを作り切った後で、1つの作業として設計・実装する。
+
+- ロールに許可の一覧を持たせる（`types.json`）:
+  - `paths`: このロールが**書いてよいパス**（読むのは自由）。道具別にはしない。**空 = すべて許可**（いまの振る舞い）
+  - `bash`: 使ってよいコマンド（単純な前方一致の一覧）。**空 = すべて許可**。破壊的な物はグローバル側のパーミッションが止めるので、パーサは作らない
+- **呼び出し側は狭められる。広げられない**: `consult_run` のパラメータに `paths` / `bash` を足し、ロールの許可と**交差**を取る（実効 = ロール ∩ 呼び出し）。親が plan の `Files` のマーカー付きの物から作って渡す（extension はサイクルの言葉を知らない。渡されるのはただの glob）
+- **強制は extension**: 子に許可 extension を読み込ませ、`tool_call` をブロックする（`edit` / `write` の `path` が `paths` の外、`bash` が一覧の外なら断る）
+- **セッションを (worktree, ロール) ごとにする**（いまは worktree ごとに1つ）。`continue` の意味をロールごとに閉じるため（レビュワーの収束ループ、実装者の文脈を混ぜない）
+- `readOnly` の名前を変える。この真偽が決めているのは1つだけ: **worktree（隔離）が要るか**（`child/spec.ts` の `needsIsolation`、`tool/consult.ts` の「書くロールは worktree が要る」、`policy/types.ts` の解釈。他に使い道は無い）→ **`isolated: true | false`**（`research` / `review` は `false`、`trial` / `code` は `true`）。`paths` とは独立（場所の話と、書ける物の話）
+- 例（レビュワー。plan md にだけ書ける）:
+  ```json
+  {
+    "name": "review",
+    "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
+    "isolated": false,
+    "paths": ["cycles/**/plan/*.md"],
+    "bash": ["git diff", "git status"]
+  }
+  ```
+- 一般化: `code` の `paths` を plan の `Files` のマーカー付きの物にすれば、「plan の外を触らない」が機械で守られる（親が plan から作って子に渡す）
