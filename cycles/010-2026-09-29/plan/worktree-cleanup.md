@@ -141,12 +141,14 @@ README.ja.md
   - `cleanWorktrees` を切り出し `session_start` から静かに呼ぶ形にした、開始時にゴーストを残さないため（失敗は握って続ける）
 - Unplanned:
   - なし
-- Commit:
+- Commit: 4ba1571
 
 ### Slice 4: 説明を合わせる
 
 - Findings:
+  - `consult_worktree` に消す物・残す物（未マージは残す）・返す物を足し子の読合せで合格した、説明を現物に合わせるため（`pi -p` 検証は PASS）
 - Unplanned:
+  - `README.md` / `README.ja.md` の1行は確かめて直さなかった、要約として食い違っていないため
 - Commit:
 
 ### Slice 5: 統合: ゴーストと取り込み済みの枝がある状態から `remove` が片付ける
