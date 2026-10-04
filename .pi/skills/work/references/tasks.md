@@ -8,8 +8,8 @@ A child does not read this skill. What it knows is the task and the plan md, so 
 Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md.
 Work its slices in order, as far as you can.
 For each slice: its Steps, then its Verify, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes.
-A finding is one bullet, with `left: <why>` under it.
-Say what you did and why in each line you write. If you cannot finish, write where you stopped (Stopped) and stop.
+A finding is a hole you could not close: one bullet for the hole, and `left: <why>` under it. What you did, and why, goes in the commit message. `Unplanned` is only for a hole you found and fixed here. Write なし when there is none.
+If you cannot finish, write where you stopped (Stopped) and stop.
 ```
 
 - The parent passes `worktree` (for a worktree plan) and `continue: true` after the first run. The role's own permissions (`types.json`) are what the child works under.
