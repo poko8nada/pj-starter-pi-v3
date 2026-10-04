@@ -122,7 +122,7 @@ README.ja.md
 ### Slice 1: 一覧がゴーストを出さない
 
 - Findings:
-  - `parseWorktrees` が `prunable` 行の登録を落とすようにした、ゴーストを一覧に出さないため
+  - なし
 - Unplanned:
   - なし
 - Commit: b368134
@@ -130,7 +130,7 @@ README.ja.md
 ### Slice 2: `remove` が片付ける
 
 - Findings:
-  - `remove` を prune→再確認→worktree 削除→孤児枝掃除にし報告を返す形にした、黙って残さず消した物を言うため（git 2.55.0 で `%(worktreepath)` を確認し `consult/*` で見分ける）
+  - なし
 - Unplanned:
   - `branchFor` の戻りを `ConsultBranch` にし lint の影を直した、検査を通すため
 - Commit: 5e0c3c6
@@ -138,7 +138,7 @@ README.ja.md
 ### Slice 3: セッションの開始時に静かに1回走らせる
 
 - Findings:
-  - `cleanWorktrees` を切り出し `session_start` から静かに呼ぶ形にした、開始時にゴーストを残さないため（失敗は握って続ける）
+  - なし
 - Unplanned:
   - なし
 - Commit: 4ba1571
@@ -146,15 +146,15 @@ README.ja.md
 ### Slice 4: 説明を合わせる
 
 - Findings:
-  - `consult_worktree` に消す物・残す物（未マージは残す）・返す物を足し子の読合せで合格した、説明を現物に合わせるため（`pi -p` 検証は PASS）
+  - なし
 - Unplanned:
-  - `README.md` / `README.ja.md` の1行は確かめて直さなかった、要約として食い違っていないため
+  - なし
 - Commit: 7c70a8a
 
 ### Slice 5: 統合: ゴーストと取り込み済みの枝がある状態から `remove` が片付ける
 
 - Findings:
-  - ゴースト・取り込み済み・未マージ混在から `remove` 一発で片付く統合検査を足した、報告と一覧で終わりを示すため（CLI は無いので run 呼び出しで検証）
+  - なし
 - Unplanned:
   - なし
 - Commit: 2da8516
@@ -169,8 +169,14 @@ README.ja.md
 - Gaps: `removeWorktree` が `missing`／`dirty`／`busy` で `branches: []` のまま返す（`run/worktree.ts:351-359`）ときの孤児枝の扱いを、Slice2・5 の Verify（removed 経路の掃除報告のみ）が覆っていない。
   - fixed: 枝の掃除を `busy` 以外の全経路（`missing`／`dirty` を含む）で走らせて報告する形に直し、`missing`／`dirty`／`busy` の3経路を検査で固定した（`missing` の `force` はその枝を捨てる）。`removeText` も掃除の内訳を言う
 
+### Round 2
+
+- Stale: なし（`index.ts` の説明と `README.md`／`README.ja.md` の1行・`.pi/extensions/consult/README.md` 表1行がいずれも「取り込み済みは消し、未マージは残す」に変わり、`run/worktree.ts:317`・`tool/worktree.ts:143-146` の `kept`／`unmerged` と一致。本文の busy 例外追記も `run/worktree.ts:351-352` の `emptyCleanup` と一致）
+- Unlisted: なし
+- Gaps: なし（`run/worktree.ts:359`・`362` で `missing`／`dirty` が `sweepBranches` を返し、`busy` のみ `351-352` で空報告。`run/worktree.test.ts` の dirty 掃除・missing sweep・missing の force 捨て・busy 不掃除、`tool/worktree.test.ts` の missing／dirty 内訳とゴースト remove の文言で固定。`removeText:115-142` が `missing`／`dirty` も `tail` を付ける）
+
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: worktree で typecheck / plan の検査（`run/worktree.test.ts` + `tool/worktree.test.ts` の50件）/ 全体のテスト（342件）/ slice 4 の `read` 検査（`review` の子が説明と `removeText` の一致を報告、合格）
+- Findings: なし
 - Merge:
