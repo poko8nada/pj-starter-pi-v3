@@ -33,6 +33,8 @@ The stage keeps its own business: a name, a local order, where a file goes, the 
 
 One entry, one point. Place it in the tree: the `##` is where the thing lives (`Product`, a unit, `Stack`), and the `###` is the name the definition gives it (`Who`, `.worktree`, `Product`).
 
+A new cycle's first points are the previous `close.md`'s `Triage` lines that go to `proposed`: read that file, and place each as an entry with `Decision: proposed`. Their origin is that close, and that close did no research for them.
+
 ### 2. Write the Agenda
 
 - `Title:` — what is in question, in one line

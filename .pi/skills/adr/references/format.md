@@ -71,7 +71,7 @@ A `trial` child runs in a worktree, because the `trial` role writes.
 
 ## Decision
 
-- `proposed` — not decided yet. Only a `close` leaves one, for the next cycle, and it does no research.
+- `proposed` — not decided yet. A `close` leaves it in `close.md`'s `Triage`, and the next cycle's ADR places it here as an entry. That close did no research for it.
 - `accepted` — decided. Write the result into the md it belongs to: a marker in the definition, or a line of the design or the plan.
 - `rejected` — weighed and not taken. No md changes.
 - An entry raised in this cycle is decided in this cycle. It does not end as `proposed`.
