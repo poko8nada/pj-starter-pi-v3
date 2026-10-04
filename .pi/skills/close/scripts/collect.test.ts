@@ -80,6 +80,14 @@ describe('collectPlan', () => {
     expect(items.some((item) => item.finding.includes('session が残る'))).toBe(false);
   });
 
+  it('`なし` に注記が続いても穴として拾わない', () => {
+    const withNote = plan.replace(
+      '- Unlisted: なし',
+      '- Unlisted: なし — 名指ししていない変更は無い（現物と Files を突合した）',
+    );
+    expect(collectPlan(withNote).some((item) => item.finding.startsWith('なし'))).toBe(false);
+  });
+
   it('残り物が無ければ空', () => {
     expect(collectPlan('# PLAN empty-plan\n\n## Notes\n\n### Slice 1: x\n\n- Findings:\n')).toEqual(
       [],

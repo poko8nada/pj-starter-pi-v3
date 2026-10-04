@@ -143,7 +143,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 - The reviewer writes here, and the fixing child answers here. One `### Round N` per round, three rounds at most.
 - A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over).
 - A finding is one bullet. What the fixing child did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
-- `なし` when the viewpoint found nothing.
+- `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.
 - Round 1 is a new conversation; the rounds after it continue the reviewer's own, and look at the `fixed` lines only.
 
 ## Acceptance

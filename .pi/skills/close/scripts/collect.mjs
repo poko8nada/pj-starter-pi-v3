@@ -26,6 +26,8 @@ const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Merge|Stale|Unlisted|Gap
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 
 const isBullet = (line) => /^\s*- /.test(line);
+/** `なし` は穴ではない。後ろに注記（`なし — 理由`）が続いても穴ではない */
+const isNone = (text) => text.startsWith('なし');
 const indentOf = (line) => line.length - line.trimStart().length;
 const bulletText = (line) => line.replace(/^\s*- /, '').trim();
 
@@ -79,14 +81,14 @@ function readField(lines, field) {
         fieldIndent = indentOf(line);
         last = null;
         const inline = label[2].trim();
-        if (inField && inline && inline !== 'なし') {
+        if (inField && inline && !isNone(inline)) {
           last = { finding: inline, handling: null };
           items.push(last);
         }
         continue;
       }
       if (!inField || indentOf(line) <= fieldIndent) continue;
-      if (text === 'なし') continue;
+      if (isNone(text)) continue;
       const handling = text.match(HANDLINGS);
       if (handling && last) {
         last.handling = `${handling[1]}: ${handling[2].trim()}`;
@@ -114,7 +116,7 @@ function readRound(lines) {
   for (const line of lines) {
     if (!isBullet(line)) continue;
     const text = bulletText(line);
-    if (!text || text === 'なし') continue;
+    if (!text || isNone(text)) continue;
     const handling = text.match(HANDLINGS);
     if (handling) {
       if (last) last.handling = `${handling[1]}: ${handling[2].trim()}`;
@@ -124,7 +126,7 @@ function readRound(lines) {
     if (label) {
       last = null;
       const inline = label[2].trim();
-      if (inline && inline !== 'なし') {
+      if (inline && !isNone(inline)) {
         last = { finding: inline, handling: null };
         items.push(last);
       }
