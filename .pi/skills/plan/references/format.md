@@ -116,7 +116,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 ## Notes
 
 - `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.
-- `Findings`: a hole the work could not close — the place, the state, what closes it, and what was done about it and why (usually: left for the close, and why it could not be closed here).
+- `Findings`: one bullet per hole the work could not close — the place, the state, what closes it. Under it, `left: <why>` says why it could not be closed here. `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
 - `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
@@ -134,8 +134,8 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 ## Acceptance
 
-- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (each line says what was found and what was done about it and why; `なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
-- A `Findings` line is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
+- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
+- A `Findings` line without a `fixed:` is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
 

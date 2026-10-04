@@ -8,6 +8,7 @@ A child does not read this skill. What it knows is the task and the plan md, so 
 Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md.
 Work its slices in order, as far as you can.
 For each slice: its Steps, then its Verify, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes.
+A finding is one bullet, with `left: <why>` under it.
 Say what you did and why in each line you write. If you cannot finish, write where you stopped (Stopped) and stop.
 ```
 

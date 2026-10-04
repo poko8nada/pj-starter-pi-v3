@@ -193,13 +193,19 @@
 ### close
 
 - トリガー: 全部の plan が終わっている（マージ済みか、owner が捨てた）。開いた plan は `work` の仕事で、`close` には来ない
+- フロー: ①トリガー確認 → ②読む（ADR の `accepted` / definition / design / plan の記録）→ ③統合テスト → ④集める → ⑤仕分け（owner）→ ⑥`close.md` を書く → ⑦owner の確認 → ⑧閉じるコミット → ⑨残り物の片付け。**レビュワーは置かない**
 - 裁く基準: definition の `Users can do` / design / 各 plan の受け入れ（基準に無い物は足さない。凍った物は書き換えない）
-- 記録は `cycles/<NNN>/close.md`（集めた所見 + それぞれの行き先と理由 + `Good` / `Bad`）。`Retro` の置き場はここ（definition には無い）
+- 記録は `cycles/<NNN>/close.md`（集めた所見 + それぞれの行き先と理由）。`Retro` の置き場はここ（definition には無い）。`Good` / `Bad` は置かない（読む人がおらず、中身は `Collected` と `Acceptance` にあるため）
+  - `## Collected` の形: plan ごとに `### <plan id>`、1件1行の**通し番号付き**リスト `N. 場所 / 穴 / どうしたか: 理由`。**スクリプトの出力をそのまま貼る**（人が写さない）
+  - `## Triage` の形: 節の頭に `owner 確認済み。`、1件1行 `N: 行き先 [plan 名]: 理由`（矢印は使わない）。行き先は `ex-plan` / `proposed` / `dropped`
+  - `ex-plan` の plan が穴を閉じたら、その行の末尾に **`done`** を付ける（`proposed` / `dropped` には付けない）
+  - スクリプトの並び: 設計の plan が先（ファイル名順）、`ex-` の plan が後（ファイル名順）。だから `ex-` を足しても番号がずれない
 - 収集は機械: `scripts/collect.mjs` が plan md の所見の行を抜いて一覧にする（判断はしない）
 - 仕分けは人: 親が分けて owner が確かめる（`ex-` plan / 次の ADR の `proposed` / 捨てる）。根拠が要る穴だけ `research` の子を使う
 - `Findings` の引き渡し: `close` が残り物を次の `adr.md` に `proposed` で置く（仕掛けは要議論）
-- 統合: **design が名前を付けた引き継ぎだけ**を歩く（`Boundary.Plans`）。ベースの上で、使う側の目で（`use` / `browser` / `cli`）。全部 `なし` なら何もしない。全体の型検査とテストの回し直しはしない（フックと受け入れがやっているため）
 - サイクルの物を壊す穴: **owner に概要と直し方を説明・提案し、OK なら plan md を直接書く**（design は足さない。名前は `ex-<何を直すか>`）。その plan の work を回し、終わったら close に戻る
+- 統合テストは `close` の責務: design の `Boundary.Plans` が名指しした受け渡しが対象。**先に探す**（`test/integration/` にあれば更新。無ければ書く）。ケースも `close` が決める（ハッピーパス + 最も起きる可能性があるエラーパス）。**最小**（網羅しない）。赤なら穴。親がベースで書いて、閉じるコミットに含める
+- 「`close` は実装しない」を正確に: **製品を変えない**。ただし統合テストは `close` が持つ
 
 ## consult のロール（許可）
 
