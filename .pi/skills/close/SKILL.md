@@ -24,6 +24,7 @@ Two rules hold the whole way through.
 ### 1. Check the trigger
 
 - every plan is done: its `Commit:` is filled and its work is merged, or the owner dropped it (the record sits in the parent's plan md)
+  - merged: every hash in the plan's `## Notes` `Commit:` is an ancestor of `HEAD` (`git merge-base --is-ancestor <commit> HEAD`); a `Commit:` of `なし` is skipped. The log holds the merge itself (`git log --merges --grep "consult/<plan id>"`)
 - a plan that is still open is the work skill's business, not this close's
 
 ### 2. Read the cycle
