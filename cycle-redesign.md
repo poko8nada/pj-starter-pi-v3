@@ -111,7 +111,7 @@
 
 - （`plan` → `tickets` をやめる）。子に渡す単位は `plan/<name>.md`
 - **1 plan = 1 worktree = 1 マージ**。plan md の枚数 = worktree の数 = 子の数
-- **plan id は変える物の名前**（例: `worktree-cleanup`）。unit 名ではない。plan は unit をまたげる（例: 整形具の入れ替えは check-suite と quality-gate と commit-gate に触る）
+- **plan id は変える物の名前**（例: `worktree-cleanup`）。unit 名ではない。形はケバブケースの英語。plan は unit をまたげる（例: 整形具の入れ替えは check-suite と quality-gate と commit-gate に触る）。**後から切る plan（`close` や `work` の途中で見つけた穴）は先頭に `ex-`**（例: `ex-session-start`）。旧フローの `ex-` チケットと同じ意味
 - **分け方の条件**: 分けるのは、入力が別で並列に進められる時だけ。実装に要る入力が同じ（同じ ADR とソース、同じ境界面）なら、unit が違っても同じ worktree にする（子は続きの会話で動けるので、入力の読み直しが無くトークンが効く）。また、次のどれかが当てはまったら分けない:
   1. 検査: 片方をマージした枝で lint / typecheck / test が通らない → 1つにまとめる
   2. スライス: 片方をマージした枝が単独で使える形になっていない → 1つにまとめる
@@ -171,22 +171,35 @@
   - Review: `review` の子を worktree で走らせ、plan md の `### Review` に所見を書かせる。観点は3つ: この変更が古くした物（doc / comment / test）/ plan の `Files` が名指ししていない変更 / スライスが跨いだ穴（`Verify` が覆っていない所）
   - 直す: `code` の子を `continue` で走らせ、plan md の `### Review` を読ませて直させる（親は task に所見を写さない）
   - Acceptance: 親が plan の検査を全部回し直す（統合スライス含む）。壊れていればそこで捕まる。plan md の `### Acceptance` に書く
-  - マージ: `git merge --no-ff consult/<plan id>` → `consult_worktree remove <plan id>`
+  - マージ: `git merge --no-ff consult/<plan id>`（競合はその場で解く）→ ベースで型検査とテストを1回（赤ならマージを戻して plan 内で直す）→ `consult_worktree remove <plan id>`
+  - 順番の制約は1つだけ: 依存先（design の `Boundary.Plans`）が未マージなら待つ。それ以外は決めない（終わった plan から入れる）。外しても緑 gate が捕まえるので、先に順番を決め切る必要はない
 - 子がコミットする。`consult_commit` はフォールバック（子がコミットせずに終わったとき）
 - コミットメッセージ: `consult(<plan id>): <短い英語>`（**件名は英語**。スライス名は日本語なので、英語に直す）
   - 誰が何を: スライス = その子 / 修正のラウンド = `code` の続き / 受け入れ = 親（worktree で `## Acceptance` を書いた後）/ マージ = 親（git の既定）
 - 渡し方: **スライスを指定しない**。`code` の子に plan md を渡し、スライスを順に、できるところまでやらせる。止まったら親が読んで `continue`（続きから）
   - task の形: plan md のパス / スライスを順にできるところまで / 各スライスは Steps → Verify → コミット → 記録 / 終われなければ `Stopped` を書いて止まる
 - **子は検査が通ってからコミットする**。だから `Commit:` が埋まっている = そのスライスの検査が通った、と読める
+- 止まった plan: 子が `Stopped` を書いて止まる。親が読む。**ただ尽きただけなら親がそのまま `continue`**（owner は呼ばない）。**詰まったら owner と決める**: 続ける（plan md の書き換えはしない）/ 落とす（親が自分の plan md に `Stopped` + 理由を書いてベースでコミットし、worktree を消す。マージしない）
+  - plan 自体が間違っているなら、ADR を切って owner と直す（合意なしに plan を書き換えない）
 - **`base` の plan**: 親がベースのツリーでやり、**スライスごとに owner に見せて、明示的な OK を待つ**。OK が出たらコミットして記録し、次のスライスへ（**OK の前にコミットしない**）
   - 検査は `look` / `browser` / `use` を含む。owner の答えは 残す / 直す / 捨てる
   - Review は `review` の子を親のツリーで（diff は `<base hash>..HEAD`）。修正のラウンドは親
   - `## Acceptance` の `Merge` は `なし`
 - レビューの task: plan md のパス / 観点3つ（`Stale` / `Unlisted` / `Gaps`）/ `## Review` の `### Round N` に書く / コードは変えない。Round 1 は `continue: false`、Round 2 以降は `continue: true`（`fixed:` の所だけ見る）
-- 修正の task: `## Review` の `fixed:` が無い所を、採用して直すか残すか。採用したら `fixed:` を足す。直したら検査を回し、`consult(<plan id>): round N fixes` でコミット
-- 不採用（`fixed:` 無し）は理由を書かない（印が無い = 不採用）
-- `Findings` の引き渡し: `close` が plan の `Findings` と `## Review` の残りを読む（**何を受け取って `adr` の `proposed` に落とすかの条件は `close` の設計で改めて議論**）
+- 修正の task: `## Review` の `fixed:` / `left:` が無い所を、採用して直すか残すか。採用したら `fixed:`、残すなら `left: <理由>` を足す。直したら検査を回し、`consult(<plan id>): round N fixes` でコミット
+- 所見は全部「対応と理由付き」に（書くのはその場のエージェント）: `Notes` の `Findings` / `Review` の残り（採用は `fixed:`、残すは `left: <理由>`）/ `Acceptance` の `Findings`
 - マージできなかった plan は**臨機応変**（捨てる / 残す、plan を見直し、そのツリーのどのコミットまでリセットしてどこから再開するか）。これも後で議論
+
+### close
+
+- トリガー: 全部の plan が終わっている（マージ済みか、owner が捨てた）。開いた plan は `work` の仕事で、`close` には来ない
+- 裁く基準: definition の `Users can do` / design / 各 plan の受け入れ（基準に無い物は足さない。凍った物は書き換えない）
+- 記録は `cycles/<NNN>/close.md`（集めた所見 + それぞれの行き先と理由 + `Good` / `Bad`）。`Retro` の置き場はここ（definition には無い）
+- 収集は機械: `scripts/collect.mjs` が plan md の所見の行を抜いて一覧にする（判断はしない）
+- 仕分けは人: 親が分けて owner が確かめる（`ex-` plan / 次の ADR の `proposed` / 捨てる）。根拠が要る穴だけ `research` の子を使う
+- `Findings` の引き渡し: `close` が残り物を次の `adr.md` に `proposed` で置く（仕掛けは要議論）
+- 統合: **design が名前を付けた引き継ぎだけ**を歩く（`Boundary.Plans`）。ベースの上で、使う側の目で（`use` / `browser` / `cli`）。全部 `なし` なら何もしない。全体の型検査とテストの回し直しはしない（フックと受け入れがやっているため）
+- サイクルの物を壊す穴: **owner に概要と直し方を説明・提案し、OK なら plan md を直接書く**（design は足さない。名前は `ex-<何を直すか>`）。その plan の work を回し、終わったら close に戻る
 
 ## consult のロール（許可）
 

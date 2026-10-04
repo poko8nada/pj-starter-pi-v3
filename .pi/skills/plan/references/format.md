@@ -116,7 +116,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 ## Notes
 
 - `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.
-- `Findings`: a hole the work could not close — the place, the state, and what closes it.
+- `Findings`: a hole the work could not close — the place, the state, what closes it, and what was done about it and why (usually: left for the close, and why it could not be closed here).
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
 - `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
@@ -128,13 +128,13 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 - The reviewer writes here, and the fixing child answers here. One `### Round N` per round, three rounds at most.
 - A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over).
-- A finding is one bullet; what fixed it is a bullet under it: `fixed: <what was done>`. Only an adopted finding carries one; one without it is left, and the acceptance reads it.
+- A finding is one bullet. What the fixing child did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing.
 - Round 1 is a new conversation; the rounds after it continue the reviewer's own, and look at the `fixed` lines only.
 
 ## Acceptance
 
-- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (`なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
+- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (each line says what was found and what was done about it and why; `なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
 - A `Findings` line is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
