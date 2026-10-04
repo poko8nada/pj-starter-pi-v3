@@ -33,7 +33,7 @@
    - → (b)。口を増やさない。`list` は読むだけのまま
    - セッションの開始時にも 1 回走らせる。冪等（prune は no-op、remove は missing、枝は列挙してから消す）。worktree を持つ枝（走っている子）と未マージの枝は触らないので、前のセッションの子が走っていても安全
 3. Research:
-   - 独立の報告 5 件以上。git のメーリングリスト（2019 の 2 つのパッチ、Eric Sunshine のレビュー）、git-switchboard #14、viwo #113、agent-orchestrator #2045、git-worktree-runner #182、desktop #22605
+   - triage: 独立の報告 5 件以上。git のメーリングリスト（2019 の 2 つのパッチ、Eric Sunshine のレビュー）、git-switchboard #14、viwo #113、agent-orchestrator #2045、git-worktree-runner #182、desktop #22605
    - 手当て: `git for-each-ref --format='%(worktreepath)'`（git 2.23+）で「どの worktree にも checkout されていない枝」を列挙できる（git 自身のテスト t6302 が同じ使い方）
    - `prune` の後は「元 worktree があった枝」と「最初から無い枝」の区別が消える。残る手掛かりは命名規約 `consult/*` だけ
 4. Trial: なし

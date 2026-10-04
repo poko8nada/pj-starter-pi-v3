@@ -23,7 +23,7 @@
   - .run: ロールと作業場を指して、子を 1 体走らせられる
   - .children: 走っている子を見て、止められる
   - .worktree: unit ごとの作業場を作り、一覧し、片付けられる **update** (ADR 02-1)
-  - .commit: 終わったチケットを、その作業場でコミットできる
+  - .commit: 終わった plan を、その作業場でコミットできる
   - .roles: ロールごとのモデル・道具・上限・続きの既定を決められる
   - .report: 子の結果と最後の本文を、次の判断に要る形で受け取れる
   - .reload: reload をまたいでも、子の作業と一覧をそのまま引き継げる
@@ -44,12 +44,12 @@
   - .test: テストを回せる
 - agent-rules: エージェントが、毎セッション同じ規則を読む
 - readme: owner が、このスターターの使い方を読める
+- adr-skill: エージェントが、決めるべきことを調べ、決めて記録できる
 - definition-skill: エージェントが、1 サイクル分の定義を書ける
-- stack-skill: エージェントが、何で作るかを決めて書ける
-- plan-skill: エージェントが、作業の順序と形を決めて書ける
-- tickets-skill: エージェントが、step ごとのチケットを切れる
-- work-skill: エージェントが、チケットを 1 つずつ片付けられる
-- close-skill: エージェントが、サイクル全体を裁ける
+- design-skill: エージェントが、サイクルを plan に切り、どこで走らせるかを決められる
+- plan-skill: エージェントが、1 plan 分の作業の形と順序を決めて書ける
+- work-skill: エージェントが、plan を 1 つずつ片付けられる
+- close-skill: エージェントが、サイクルを裁き、統合テストを書いて閉じられる
 
 ## Stack
 
@@ -68,4 +68,3 @@
   - Host: `@earendil-works/pi-coding-agent`
   - Schema: typebox
 - Product:
-  - (ここからプロダクトが足す)

@@ -2,7 +2,7 @@
 
 ## `worktree-cleanup`
 
-実装に要る入力は同じ（ADR 02-1 / 02-2 と consult のソース）で、分けると同じ入力を子に読ませることになる。並列にする利得が無いので、1つの worktree にする。
+実装に要る入力（ADR 02-1 / 02-2 と consult のソース）が同じで、分けると並列の利得が無いので、1つの worktree にする。
 
 - ADR: 02-1, 02-2
 - Where: worktree

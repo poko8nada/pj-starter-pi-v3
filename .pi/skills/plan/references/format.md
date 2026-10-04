@@ -41,6 +41,20 @@ Section and field names are English; the content is Japanese.
 - Findings:
 - Unplanned:
 - Commit:
+
+## Review
+
+### Round 1
+
+- Stale:
+- Unlisted:
+- Gaps:
+
+## Acceptance
+
+- Ran:
+- Findings:
+- Merge:
 ````
 
 ## One plan is one worktree
@@ -81,7 +95,7 @@ Section and field names are English; the content is Japanese.
 `Verify` names one type from this list, and its content. Pick the types that decide the work; do not invent a check.
 
 - `test` — a machine runs the tests: the file, the command, and the cases
-  - a case is `<入力> → <結果>`, marked `(happy)` or `(error)`
+  - a case is `<入力> → <結果>`, marked with the walk's line: `(happy)`, `(error)`, `(empty)`, `(boundary values)`
   - the result is a value, an error type or a state
 - `api` — a request is sent to the interface, and the response is read
 - `browser` — a person walks the screens, and reports what was seen
