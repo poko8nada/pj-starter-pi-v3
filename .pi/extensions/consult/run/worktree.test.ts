@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,6 +122,29 @@ describe('createWorktree', () => {
     const { dir } = repo();
     expect(() => createWorktree(dir, 'a b')).toThrow(/could not create the worktree/);
     expect(listWorktrees(dir)).toHaveLength(0);
+  });
+});
+
+describe('listWorktrees のゴースト', () => {
+  it('実体がある登録 → 一覧に出る', () => {
+    const { dir } = repo();
+    createWorktree(dir, '1-a');
+
+    expect(listWorktrees(dir).map((row) => row.id)).toEqual(['1-a']);
+    expect(findWorktree(dir, '1-a')).toBeDefined();
+  });
+
+  it('実体の無い path の登録 → 一覧に出ない', () => {
+    const { dir } = repo();
+    const made = createWorktree(dir, '1-a');
+    rmSync(made.path, { recursive: true, force: true });
+
+    expect(listWorktrees(dir)).toEqual([]);
+    expect(findWorktree(dir, '1-a')).toBeUndefined();
+  });
+
+  it('git が断る（リポジトリでない）→ 空の一覧', () => {
+    expect(listWorktrees(tmpDir())).toEqual([]);
   });
 });
 

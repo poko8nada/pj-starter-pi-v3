@@ -140,6 +140,9 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
     if (path === undefined || branch === undefined) {
       continue;
     }
+    if (lines.some((line) => line === 'prunable' || line.startsWith('prunable '))) {
+      continue;
+    }
     const prefix = 'refs/heads/consult/';
     if (!branch.startsWith(prefix)) {
       continue;

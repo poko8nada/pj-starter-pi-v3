@@ -122,7 +122,9 @@ README.ja.md
 ### Slice 1: 一覧がゴーストを出さない
 
 - Findings:
+  - `parseWorktrees` が `prunable` 行の登録を落とすようにした、ゴーストを一覧に出さないため
 - Unplanned:
+  - なし
 - Commit:
 
 ### Slice 2: `remove` が片付ける
