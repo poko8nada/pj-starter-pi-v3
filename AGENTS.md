@@ -1,11 +1,8 @@
 # AGENTS.md
 
-## The cycle
+**Work happens in "cycles". One cycle is ADR, definition and stack, plan, work and close**
 
-- Work happens in cycles. One cycle is one definition, then stack, plan, tickets, work and close
-- Each stage is a skill in `.pi/skills/`, and that skill says how to run it.
-
-## Implementation Rules
+## Rules
 
 ### Functions
 
@@ -17,7 +14,13 @@
 ### Errors
 
 - The default approach is to `throw`. Throw an err including a `kind` prop.
-- Catch err at the outermost layer or I/O, and convert them into logs or responses based on their `kind`.
+- Catch err at the outer layer or I/O, and convert them into logs or responses based on their `kind`.
 - Catch err mid-process only when recovering or when re-throwing with added context.
 - Empty `catch` blocks, suppressing err, and throwing raw strings are prohibited.
-- Since input parsing, validation and etc. treat failures as part of the normal execution flow.
+- Since input parsing, validation etc. treat failures as part of the normal execution flow.
+
+### Tests
+
+- A test does not touch the real thing:
+  - A DB, an external API, this repo's tree, `HOME` or credentials, the shared store, a daemon.
+  - It writes under a temporary directory, and its doubles live in `test/`.
