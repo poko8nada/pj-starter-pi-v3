@@ -157,7 +157,7 @@ README.ja.md
   - ゴースト・取り込み済み・未マージ混在から `remove` 一発で片付く統合検査を足した、報告と一覧で終わりを示すため（CLI は無いので run 呼び出しで検証）
 - Unplanned:
   - なし
-- Commit:
+- Commit: 2da8516
 
 ## Review
 
