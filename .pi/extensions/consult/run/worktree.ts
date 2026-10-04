@@ -326,6 +326,19 @@ function emptyCleanup(): CleanupReport {
 }
 
 /**
+ * 掃除だけを単独で呼べる形（`removeWorktree` の中と同じ物を使う）。
+ *
+ * 実体の無い登録を `prune` で落とし、どの作業場にも checkout されていない `consult/*` のうち
+ * 取り込み済みを消す。未マージは残して報告する。走っている子の作業場は checkout 中なので触らない
+ * （登録も枝も残る）。git が断ったら例外にする。
+ */
+export function cleanWorktrees(cwd: string): CleanupReport {
+  const pruned = pruneWorktrees(cwd);
+  const branches = sweepBranches(cwd);
+  return { pruned, branches };
+}
+
+/**
  * 作業場を消す。子が動いているときは消さない（busy）。掃除もしない。
  *
  * 順序は prune → 登録の再確認（prune で消えた登録は `missing` になる）。変更が残っているときは

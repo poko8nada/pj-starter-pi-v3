@@ -133,12 +133,14 @@ README.ja.md
   - `remove` を prune→再確認→worktree 削除→孤児枝掃除にし報告を返す形にした、黙って残さず消した物を言うため（git 2.55.0 で `%(worktreepath)` を確認し `consult/*` で見分ける）
 - Unplanned:
   - `branchFor` の戻りを `ConsultBranch` にし lint の影を直した、検査を通すため
-- Commit:
+- Commit: 5e0c3c6
 
 ### Slice 3: セッションの開始時に静かに1回走らせる
 
 - Findings:
+  - `cleanWorktrees` を切り出し `session_start` から静かに呼ぶ形にした、開始時にゴーストを残さないため（失敗は握って続ける）
 - Unplanned:
+  - なし
 - Commit:
 
 ### Slice 4: 説明を合わせる

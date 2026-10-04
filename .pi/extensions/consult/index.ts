@@ -11,7 +11,7 @@ import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { runningChildren, startSound, stopSound } from './tool/sound.ts';
 import { createDelivery } from './run/delivery.ts';
 import { pidAlive, readRuns } from './run/log.ts';
-import { rootFor } from './run/worktree.ts';
+import { cleanWorktrees, rootFor } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
@@ -57,6 +57,12 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     announceRunningChildren(ctx);
+    // ゴーストの登録と取り込み済みの孤児枝を静かに 1 回掃除する。失敗は握って続ける（開始を止めない）
+    try {
+      cleanWorktrees(ctx.cwd);
+    } catch (error) {
+      void error;
+    }
   });
 
   pi.registerTool({

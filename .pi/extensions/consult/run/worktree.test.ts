@@ -7,6 +7,7 @@ import { runGit } from './git-env.ts';
 import { gitEnv } from './run.ts';
 import {
   branchFor,
+  cleanWorktrees,
   createWorktree,
   findWorktree,
   listWorktrees,
@@ -335,6 +336,43 @@ describe('removeWorktree', () => {
 
     expect(() => removeWorktree(dir, '1-a')).toThrow(/could not remove the worktree/);
     expect(findWorktree(dir, '1-a')).toBeDefined();
+  });
+});
+
+describe('cleanWorktrees', () => {
+  it('掃除してから 2 回目を呼ぶ → 何も消さない', () => {
+    const { dir } = repo();
+    const made = createWorktree(dir, '1-a');
+    rmSync(made.path, { recursive: true, force: true });
+
+    const first = cleanWorktrees(dir);
+    expect(first.pruned).toContain(made.path);
+    expect(first.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
+    expect(listWorktrees(dir)).toEqual([]);
+
+    expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
+  });
+
+  it('掃除する物が無い → 何も消さない', () => {
+    const { dir } = repo();
+    expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
+  });
+
+  it('走っている子の作業場 → 消さず、その枝も消さない', () => {
+    const { dir, home } = repo();
+    // 取り込み済み（prune されれば枝も消える状態）だが、作業場があるので触らない
+    const made = createWorktree(dir, '1-a');
+
+    expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
+    expect(findWorktree(dir, '1-a')).toBeDefined();
+    expect(existsSync(made.path)).toBe(true);
+    expect(runGit(dir, home, ['branch', '--list', branchFor('1-a')]).stdout).toContain(
+      branchFor('1-a'),
+    );
+  });
+
+  it('git が断る → 例外', () => {
+    expect(() => cleanWorktrees(tmpDir())).toThrow();
   });
 });
 
