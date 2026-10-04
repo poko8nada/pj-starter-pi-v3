@@ -45,7 +45,7 @@ The texts handed to children are in `references/tasks.md`.
 ### 5. The acceptance
 
 - the parent runs the plan's checks (the integration slice included) and the whole typecheck and test, in the worktree (or the base)
-- write `## Acceptance`: `Ran`, `Findings` (`なし` when there is nothing), `Merge`
+- write `## Acceptance`: `Ran` and `Findings` (`なし` when there is nothing). The merge's commit is not written there: the acceptance is committed before the merge
 - a `Findings` line is a fix instruction for a `code` child; when it is fixed, the acceptance runs again and is written again
 - commit it in the worktree: `consult(<plan id>): acceptance`
 

@@ -54,7 +54,6 @@ Section and field names are English; the content is Japanese.
 
 - Ran:
 - Findings:
-- Merge:
 ````
 
 ## One plan is one worktree
@@ -148,7 +147,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 ## Acceptance
 
-- The parent writes it, after the review's fixes: `Ran` (the checks that were run), `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing), `Merge` (the merge's commit; `なし` for a `base` plan).
+- The parent writes it, after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
 - A `Findings` line without a `fixed:` is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
