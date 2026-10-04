@@ -12,7 +12,7 @@ The extension registers four tools.
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
 | `consult_run`      | Runs **one** child, with a role and (for a role that writes) a worktree. Returns `started: <id>`.         |
 | `consult_children` | Lists the children of this project, and stops one. Reads a record, so it still shows a reload's children. |
-| `consult_worktree` | Makes, lists, or removes a unit worktree — and, on `remove`, the branch too.                              |
+| `consult_worktree` | Makes, lists, or removes a unit worktree — and, on `remove`, its merged branch (an unmerged one is kept). |
 | `consult_commit`   | Commits the work a child left in its worktree, on that worktree's branch.                                 |
 
 ## Roles
@@ -93,6 +93,10 @@ The list is read from a record on disk (`<root>/<unit-id>/log.jsonl`), so **it s
 - the branch is deleted **when it is already merged** into the current `HEAD` (or has an upstream that has it) — that is what `git branch -d` refuses otherwise
 - an **unmerged** branch is kept, and the reply says so: take it in (`git merge --no-ff consult/<unit-id>`), or discard it with `force`
 - a worktree a child is running in is refused, and so is one with changes left, unless `force`
+
+`remove` first prunes registrations whose path is gone: a pruned registration reads as missing, and the reply names the pruned paths. It then sweeps the other `consult/*` branches that are checked out nowhere — a merged one is deleted, an unmerged one is kept — and the reply names what was deleted and what was kept. A call refused for a running child is the one exception: it touches nothing. The reply carries the cleanup report: the pruned paths, and for each orphan branch whether it was removed or kept (`unmerged`).
+
+`list` never shows a registration with no real path. The same sweep runs once quietly at `session_start`; a failure there is swallowed so the session still starts.
 
 Before a child starts in a fresh worktree, consult installs the dependencies there: `pnpm install --frozen-lockfile` when `pnpm-lock.yaml` is there, `npm ci` when `package-lock.json` is. Without them, neither the child nor the repository's hooks can check anything, and `trial` cannot add a library to try it. If that install fails, the child fails (an environment failure, not a bad setting).
 

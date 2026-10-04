@@ -11,7 +11,7 @@ import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { runningChildren, startSound, stopSound } from './tool/sound.ts';
 import { createDelivery } from './run/delivery.ts';
 import { pidAlive, readRuns } from './run/log.ts';
-import { rootFor } from './run/worktree.ts';
+import { cleanWorktrees, rootFor } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
@@ -57,6 +57,12 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     announceRunningChildren(ctx);
+    // ゴーストの登録と取り込み済みの孤児枝を静かに 1 回掃除する。失敗は握って続ける（開始を止めない）
+    try {
+      cleanWorktrees(ctx.cwd);
+    } catch (error) {
+      void error;
+    }
   });
 
   pi.registerTool({
@@ -94,7 +100,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_worktree',
     label: 'Consult worktree',
     description:
-      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and refuses while a child runs in it. A worktree stays until it is removed.",
+      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and takes its merged branch (an unmerged one is kept), refusing while a child runs in it. A worktree stays until it is removed.",
     promptSnippet: 'Make, list or remove a unit worktree (it stays until removed)',
     promptGuidelines: [
       'Use consult_worktree with action: "new" and a unit id before starting a child that writes: the child runs in that worktree.',

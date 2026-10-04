@@ -14,7 +14,7 @@ import {
   listWorktrees,
   removeWorktree,
   rootFor,
-  type RemoveOutcome,
+  type RemoveResult,
   type WorktreeRow,
 } from '../run/worktree.ts';
 
@@ -111,20 +111,39 @@ function rowLine(row: WorktreeRow, busy: boolean): string {
   return `${row.id}  ${row.branch}  ${row.path}  (${state})`;
 }
 
-function removeText(outcome: RemoveOutcome, id: string): string {
-  if (outcome === 'removed') {
-    return `消した: ${id}（ブランチも消した）`;
-  }
-  if (outcome === 'removed-branch-kept') {
-    return `消した: ${id}（ブランチは未マージなので残した。取り込むか、force で捨てる）`;
-  }
-  if (outcome === 'missing') {
-    return `無い: ${id}`;
-  }
-  if (outcome === 'busy') {
+export function removeText(id: string, removed: RemoveResult): string {
+  if (removed.outcome === 'busy') {
     return `消さない: ${id} で子が走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
   }
-  return `消さない: ${id} に変更が残っている（force を付ければ消す）`;
+  const own = removed.cleanup.branches.find((entry) => entry.branch === `consult/${id}`);
+  // `removed` のときは自分の枝の運命を前置きが言うので、掃除の内訳からは外す（二重に言わない）
+  const swept =
+    removed.outcome === 'removed'
+      ? removed.cleanup.branches.filter((entry) => entry.branch !== `consult/${id}`)
+      : removed.cleanup.branches;
+  const extras: string[] = [];
+  if (removed.cleanup.pruned.length > 0) {
+    extras.push(`登録を掃除した: ${removed.cleanup.pruned.join(', ')}`);
+  }
+  const gone = swept.filter((entry) => entry.state === 'removed').map((entry) => entry.branch);
+  if (gone.length > 0) {
+    extras.push(`消した枝: ${gone.join(', ')}`);
+  }
+  const kept = swept.filter((entry) => entry.state === 'kept').map((entry) => entry.branch);
+  if (kept.length > 0) {
+    extras.push(`残した枝（未マージ）: ${kept.join(', ')}`);
+  }
+  const tail = extras.length > 0 ? `（${extras.join('。')}）` : '';
+  if (removed.outcome === 'missing') {
+    return `無い: ${id}${tail}`;
+  }
+  if (removed.outcome === 'dirty') {
+    return `消さない: ${id} に変更が残っている（force を付ければ消す）${tail}`;
+  }
+  if (own?.state === 'kept') {
+    return `消した: ${id}（ブランチは未マージなので残した。取り込むか、force で捨てる）${tail}`;
+  }
+  return `消した: ${id}（ブランチも消した）${tail}`;
 }
 
 export async function execute(...args: ExecuteArgs) {
@@ -144,11 +163,15 @@ export async function execute(...args: ExecuteArgs) {
     );
   }
   if (action.action === 'remove') {
-    const outcome = removeWorktree(cwd, action.id, {
+    const removed = removeWorktree(cwd, action.id, {
       force: action.force,
       busy: runningIn(rootFor(cwd), action.id),
     });
-    return result(removeText(outcome, action.id), { action: 'remove', outcome });
+    return result(removeText(action.id, removed), {
+      action: 'remove',
+      outcome: removed.outcome,
+      cleanup: removed.cleanup,
+    });
   }
   const rows = listWorktrees(cwd);
   if (rows.length === 0) {

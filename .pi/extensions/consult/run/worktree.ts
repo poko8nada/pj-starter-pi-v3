@@ -35,13 +35,28 @@ export interface WorktreeRow extends Worktree {
   readonly dirty: boolean;
 }
 
-export type RemoveOutcome =
-  | 'removed'
-  /** worktree は消えたが、ブランチは取り込み済みでなかったので残した */
-  | 'removed-branch-kept'
-  | 'missing'
-  | 'busy'
-  | 'dirty';
+export type RemoveOutcome = 'removed' | 'missing' | 'busy' | 'dirty';
+
+export type RemoveOptions = {
+  readonly force?: boolean;
+  readonly busy?: boolean;
+};
+
+export type RemoveResult = {
+  readonly outcome: RemoveOutcome;
+  readonly cleanup: CleanupReport;
+};
+
+export type ConsultBranch = `consult/${string}`;
+
+export type OrphanBranch =
+  | { readonly state: 'removed'; readonly branch: ConsultBranch }
+  | { readonly state: 'kept'; readonly branch: ConsultBranch; readonly reason: 'unmerged' };
+
+export type CleanupReport = {
+  readonly pruned: readonly string[];
+  readonly branches: readonly OrphanBranch[];
+};
 
 function git(
   cwd: string,
@@ -57,7 +72,7 @@ function git(
 }
 
 /** worktree のブランチ名。unit の id がそのまま入る */
-export function branchFor(id: string): string {
+export function branchFor(id: string): ConsultBranch {
   return `consult/${id}`;
 }
 
@@ -140,6 +155,9 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
     if (path === undefined || branch === undefined) {
       continue;
     }
+    if (lines.some((line) => line === 'prunable' || line.startsWith('prunable '))) {
+      continue;
+    }
     const prefix = 'refs/heads/consult/';
     if (!branch.startsWith(prefix)) {
       continue;
@@ -192,34 +210,164 @@ export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree
   return { id, branch, path, unitDir: join(runRoot, id) };
 }
 
+/** `git worktree list --porcelain` の出力から、実体の無い登録のパスを抜く（純粋） */
+export function prunablePathsIn(output: string): string[] {
+  const pruned: string[] = [];
+  for (const block of output.split('\n\n')) {
+    const lines = block.split('\n');
+    const path = lines.find((line) => line.startsWith('worktree '))?.slice('worktree '.length);
+    if (path === undefined) {
+      continue;
+    }
+    if (lines.some((line) => line === 'prunable' || line.startsWith('prunable '))) {
+      pruned.push(path);
+    }
+  }
+  return pruned;
+}
+
+/** 実体の無い登録のパス（`prune` の前後で比べる元） */
+function listPrunablePaths(cwd: string): string[] {
+  const result = git(cwd, ['worktree', 'list', '--porcelain']);
+  if (result.status !== 0) {
+    return [];
+  }
+  return prunablePathsIn(result.stdout);
+}
+
 /**
- * 作業場を消す。子が動いているときは消さない（busy）。
+ * 実体の無い登録を `prune` で落とす。消えたパスを返す。
  *
- * 変更が残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を消す
- * （順序を逆にすると登録が残る）。ブランチも片付けるが、未マージなら `force` 無しでは残す。
+ * 失敗したら例外を投げる（`createWorktree` と同じ形。成功として扱わない）。
  */
-export function removeWorktree(
-  cwd: string,
-  id: string,
-  options: { readonly force?: boolean; readonly busy?: boolean } = {},
-): RemoveOutcome {
+function pruneWorktrees(cwd: string): string[] {
+  const before = listPrunablePaths(cwd);
+  const result = git(cwd, ['worktree', 'prune']);
+  if (result.status !== 0) {
+    throw new Error(
+      `could not prune the worktrees: ${(result.stderr || result.error || '').trim()}`,
+    );
+  }
+  return before;
+}
+
+/** `for-each-ref` の出力から、どの作業場にも checkout されていない `consult/*` を抜く（純粋） */
+export function orphanBranchesIn(output: string): ConsultBranch[] {
+  const branches: ConsultBranch[] = [];
+  for (const line of output.split('\n')) {
+    if (line.trim() === '') {
+      continue;
+    }
+    const space = line.indexOf(' ');
+    const ref = space === -1 ? line : line.slice(0, space);
+    const at = space === -1 ? '' : line.slice(space + 1).trim();
+    if (at !== '') {
+      continue;
+    }
+    const prefix = 'refs/heads/consult/';
+    if (!ref.startsWith(prefix)) {
+      continue;
+    }
+    const unit = ref.slice(prefix.length);
+    if (unit !== '') {
+      branches.push(`consult/${unit}`);
+    }
+  }
+  return branches;
+}
+
+/** どの作業場にも checkout されていない `consult/*`。`%(worktreepath)` が空の物（git 2.23+） */
+function listOrphanBranches(cwd: string): ConsultBranch[] {
+  const result = git(cwd, [
+    'for-each-ref',
+    '--format=%(refname) %(worktreepath)',
+    'refs/heads/consult/*',
+  ]);
+  if (result.status !== 0) {
+    throw new Error(
+      `could not list the orphan branches: ${(result.stderr || result.error || '').trim()}`,
+    );
+  }
+  return orphanBranchesIn(result.stdout);
+}
+
+/**
+ * 枝の掃除。取り込み済み → 消して `removed`、未マージ → 残して `kept` / `unmerged`。
+ *
+ * `forceBranch` だけは `force` の対象として捨て（`-D`）、`removed` として報告に入れる。
+ * `-d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、未マージの仕事をここで消さない。
+ */
+function sweepBranches(cwd: string, forceBranch?: ConsultBranch): OrphanBranch[] {
+  const report: OrphanBranch[] = [];
+  for (const branch of listOrphanBranches(cwd)) {
+    if (forceBranch !== undefined && branch === forceBranch) {
+      const deleted = git(cwd, ['branch', '-D', branch]);
+      if (deleted.status !== 0) {
+        throw new Error(
+          `could not delete the branch ${branch}: ${(deleted.stderr || deleted.error || '').trim()}`,
+        );
+      }
+      report.push({ state: 'removed', branch });
+      continue;
+    }
+    const deleted = git(cwd, ['branch', '-d', branch]);
+    if (deleted.status === 0) {
+      report.push({ state: 'removed', branch });
+    } else {
+      report.push({ state: 'kept', branch, reason: 'unmerged' });
+    }
+  }
+  return report;
+}
+
+/** 空の掃除報告（何も触っていないとき） */
+function emptyCleanup(): CleanupReport {
+  return { pruned: [], branches: [] };
+}
+
+/**
+ * 掃除だけを単独で呼べる形（`removeWorktree` の中と同じ物を使う）。
+ *
+ * 実体の無い登録を `prune` で落とし、どの作業場にも checkout されていない `consult/*` のうち
+ * 取り込み済みを消す。未マージは残して報告する。走っている子の作業場は checkout 中なので触らない
+ * （登録も枝も残る）。git が断ったら例外にする。
+ */
+export function cleanWorktrees(cwd: string): CleanupReport {
+  const pruned = pruneWorktrees(cwd);
+  const branches = sweepBranches(cwd);
+  return { pruned, branches };
+}
+
+/**
+ * 作業場を消す。子が動いているときは消さない（busy）。掃除もしない。
+ *
+ * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。枝の掃除は
+ * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児の枝は片付ける）。変更が
+ * 残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を
+ * 消す（順序を逆にすると登録が残る）。枝の運命は掃除が決める（この関数は自分の枝を直接消さない）。
+ * `prune` と `worktree remove` の失敗は例外にする（成功として扱わない）。
+ */
+export function removeWorktree(cwd: string, id: string, options: RemoveOptions = {}): RemoveResult {
+  if (options.busy === true) {
+    return { outcome: 'busy', cleanup: emptyCleanup() };
+  }
+  const pruned = pruneWorktrees(cwd);
+  // `force` はこの unit の枝だけを捨てる印。実体が無くても、枝が残っていれば効かせる
+  const forceBranch = options.force === true ? branchFor(id) : undefined;
   const found = findWorktree(cwd, id);
   if (found === undefined) {
-    return 'missing';
-  }
-  if (options.busy === true) {
-    return 'busy';
+    return { outcome: 'missing', cleanup: { pruned, branches: sweepBranches(cwd, forceBranch) } };
   }
   if (found.dirty && options.force !== true) {
-    return 'dirty';
+    return { outcome: 'dirty', cleanup: { pruned, branches: sweepBranches(cwd) } };
   }
-  git(cwd, ['worktree', 'remove', '--force', found.path]);
+  const removed = git(cwd, ['worktree', 'remove', '--force', found.path]);
+  if (removed.status !== 0) {
+    throw new Error(
+      `could not remove the worktree ${id}: ${(removed.stderr || removed.error || '').trim()}`,
+    );
+  }
   rmSync(found.unitDir, { recursive: true, force: true });
-  // ブランチも片付ける。`-d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、
-  // 未マージの仕事をここで消さない。捨てると決めたときだけ `-D`
-  const branch =
-    options.force === true
-      ? git(cwd, ['branch', '-D', found.branch])
-      : git(cwd, ['branch', '-d', found.branch]);
-  return branch.status === 0 ? 'removed' : 'removed-branch-kept';
+  const branches = sweepBranches(cwd, forceBranch);
+  return { outcome: 'removed', cleanup: { pruned, branches } };
 }
