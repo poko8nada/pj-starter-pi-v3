@@ -339,6 +339,54 @@ describe('removeWorktree', () => {
   });
 });
 
+describe('removeWorktree の統合', () => {
+  it('ゴーストと取り込み済み・未マージの枝がある状態から remove が片付ける', () => {
+    const { dir, home } = repo();
+    const target = createWorktree(dir, '1-t');
+    runGit(dir, home, ['branch', 'consult/9-merged', 'HEAD']);
+    const unmerged = createWorktree(dir, '1-u');
+    writeFileSync(join(unmerged.path, 'note.md'), 'the child wrote this\n');
+    gitInWorktree(unmerged.path, ['add', '-A']);
+    gitInWorktree(unmerged.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    rmSync(unmerged.path, { recursive: true, force: true });
+    runGit(dir, home, ['worktree', 'prune']);
+    const ghost = createWorktree(dir, '1-g');
+    rmSync(ghost.path, { recursive: true, force: true });
+
+    const result = removeWorktree(dir, '1-t');
+    expect(result.outcome).toBe('removed');
+    expect(result.cleanup.pruned).toContain(ghost.path);
+    // 消した物（取り込み済み）と残した物（未マージ）を報告する
+    const byBranch = new Map(result.cleanup.branches.map((entry) => [entry.branch, entry]));
+    expect(byBranch.get(branchFor('1-t'))).toEqual({ state: 'removed', branch: branchFor('1-t') });
+    expect(byBranch.get(branchFor('1-g'))).toEqual({ state: 'removed', branch: branchFor('1-g') });
+    expect(byBranch.get('consult/9-merged')).toEqual({
+      state: 'removed',
+      branch: 'consult/9-merged',
+    });
+    expect(byBranch.get(branchFor('1-u'))).toEqual({
+      state: 'kept',
+      branch: branchFor('1-u'),
+      reason: 'unmerged',
+    });
+    // その後の一覧にゴーストが出ない
+    expect(listWorktrees(dir)).toEqual([]);
+    expect(runGit(dir, home, ['worktree', 'list', '--porcelain']).stdout).not.toContain('prunable');
+    expect(existsSync(target.path)).toBe(false);
+    // 取り込み済みの枝は消え、未マージの枝は残る
+    const branches = runGit(dir, home, ['branch', '--list', 'consult/*']).stdout;
+    expect(branches).not.toContain(branchFor('1-t'));
+    expect(branches).not.toContain(branchFor('1-g'));
+    expect(branches).not.toContain('consult/9-merged');
+    expect(branches).toContain(branchFor('1-u'));
+    // 2 回目は何も消さない
+    expect(removeWorktree(dir, '1-t')).toEqual({
+      outcome: 'missing',
+      cleanup: { pruned: [], branches: [] },
+    });
+  });
+});
+
 describe('cleanWorktrees', () => {
   it('掃除してから 2 回目を呼ぶ → 何も消さない', () => {
     const { dir } = repo();

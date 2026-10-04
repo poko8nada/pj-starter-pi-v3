@@ -149,12 +149,14 @@ README.ja.md
   - `consult_worktree` に消す物・残す物（未マージは残す）・返す物を足し子の読合せで合格した、説明を現物に合わせるため（`pi -p` 検証は PASS）
 - Unplanned:
   - `README.md` / `README.ja.md` の1行は確かめて直さなかった、要約として食い違っていないため
-- Commit:
+- Commit: 7c70a8a
 
 ### Slice 5: 統合: ゴーストと取り込み済みの枝がある状態から `remove` が片付ける
 
 - Findings:
+  - ゴースト・取り込み済み・未マージ混在から `remove` 一発で片付く統合検査を足した、報告と一覧で終わりを示すため（CLI は無いので run 呼び出しで検証）
 - Unplanned:
+  - なし
 - Commit:
 
 ## Review
