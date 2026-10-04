@@ -20,10 +20,10 @@
         "opencode-go/muse-spark-1.3-contributor:xhigh",
         "opencode-go/deepseek-v4.1-flash:high"
       ],
-      "tools": ["read", "ls", "find", "grep", "web_search", "quick_edit", "target_edit"],
+      "tools": ["bash", "read", "ls", "find", "grep", "web_search", "quick_edit", "target_edit"],
       "isolated": false,
       "paths": ["cycles/*/plan/*.md"],
-      "bash": [],
+      "bash": ["git diff", "git status", "git log"],
       "continueByDefault": false,
       "limits": { "turns": 40, "output": 60000 },
       "role": "判定を返す。直さない。根拠を示す"
