@@ -7,7 +7,7 @@ import { runGit } from '../run/git-env.ts';
 import { gitEnv } from '../run/run.ts';
 import { appendRun } from '../run/log.ts';
 import { findWorktree } from '../run/worktree.ts';
-import { execute } from './worktree.ts';
+import { execute, removeText } from './worktree.ts';
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす。
 const ROOT_KEY = 'CONSULT_ROOT';
@@ -116,7 +116,11 @@ describe('consult_worktree', () => {
 
     const outcome = await call({ action: 'remove', id: '2-b' }, dir);
     expect(text(outcome)).toContain('ブランチは未マージなので残した');
-    expect(outcome.details['outcome']).toBe('removed-branch-kept');
+    expect(outcome.details['outcome']).toBe('removed');
+    expect(outcome.details['cleanup']).toEqual({
+      pruned: [],
+      branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
+    });
   });
 
   it('子が走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
@@ -172,5 +176,37 @@ describe('consult_worktree', () => {
   it('知らない action → エラー', async () => {
     const { dir } = repo();
     await expect(call({ action: 'drop', id: '2-b' }, dir)).rejects.toThrow(/unknown action/);
+  });
+});
+
+describe('removeText', () => {
+  it('消した物（枝）・掃除した登録を言う', () => {
+    expect(
+      removeText('2-b', {
+        outcome: 'removed',
+        cleanup: { pruned: [], branches: [{ state: 'removed', branch: 'consult/2-b' }] },
+      }),
+    ).toContain('ブランチも消した');
+  });
+
+  it('残した物（未マージは残す）を言う', () => {
+    expect(
+      removeText('2-b', {
+        outcome: 'removed',
+        cleanup: {
+          pruned: [],
+          branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
+        },
+      }),
+    ).toContain('ブランチは未マージなので残した');
+  });
+
+  it('無い登録でも掃除した物があれば言う', () => {
+    expect(
+      removeText('2-b', {
+        outcome: 'missing',
+        cleanup: { pruned: ['/tmp/pi-consult/proj/2-b/wt'], branches: [] },
+      }),
+    ).toContain('登録を掃除した');
   });
 });

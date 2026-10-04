@@ -125,12 +125,14 @@ README.ja.md
   - `parseWorktrees` が `prunable` 行の登録を落とすようにした、ゴーストを一覧に出さないため
 - Unplanned:
   - なし
-- Commit:
+- Commit: b368134
 
 ### Slice 2: `remove` が片付ける
 
 - Findings:
+  - `remove` を prune→再確認→worktree 削除→孤児枝掃除にし報告を返す形にした、黙って残さず消した物を言うため（git 2.55.0 で `%(worktreepath)` を確認し `consult/*` で見分ける）
 - Unplanned:
+  - `branchFor` の戻りを `ConsultBranch` にし lint の影を直した、検査を通すため
 - Commit:
 
 ### Slice 3: セッションの開始時に静かに1回走らせる
