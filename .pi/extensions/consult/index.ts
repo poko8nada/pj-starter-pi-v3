@@ -100,7 +100,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_worktree',
     label: 'Consult worktree',
     description:
-      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and refuses while a child runs in it. A worktree stays until it is removed.",
+      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and takes its merged branch (an unmerged one is kept), refusing while a child runs in it. A worktree stays until it is removed.",
     promptSnippet: 'Make, list or remove a unit worktree (it stays until removed)',
     promptGuidelines: [
       'Use consult_worktree with action: "new" and a unit id before starting a child that writes: the child runs in that worktree.',

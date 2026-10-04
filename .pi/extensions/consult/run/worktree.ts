@@ -341,9 +341,10 @@ export function cleanWorktrees(cwd: string): CleanupReport {
 /**
  * 作業場を消す。子が動いているときは消さない（busy）。掃除もしない。
  *
- * 順序は prune → 登録の再確認（prune で消えた登録は `missing` になる）。変更が残っているときは
- * `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を消す
- * （順序を逆にすると登録が残る）。枝の運命は掃除が決める（この関数は自分の枝を直接消さない）。
+ * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。枝の掃除は
+ * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児の枝は片付ける）。変更が
+ * 残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を
+ * 消す（順序を逆にすると登録が残る）。枝の運命は掃除が決める（この関数は自分の枝を直接消さない）。
  * `prune` と `worktree remove` の失敗は例外にする（成功として扱わない）。
  */
 export function removeWorktree(cwd: string, id: string, options: RemoveOptions = {}): RemoveResult {
@@ -351,12 +352,14 @@ export function removeWorktree(cwd: string, id: string, options: RemoveOptions =
     return { outcome: 'busy', cleanup: emptyCleanup() };
   }
   const pruned = pruneWorktrees(cwd);
+  // `force` はこの unit の枝だけを捨てる印。実体が無くても、枝が残っていれば効かせる
+  const forceBranch = options.force === true ? branchFor(id) : undefined;
   const found = findWorktree(cwd, id);
   if (found === undefined) {
-    return { outcome: 'missing', cleanup: { pruned, branches: [] } };
+    return { outcome: 'missing', cleanup: { pruned, branches: sweepBranches(cwd, forceBranch) } };
   }
   if (found.dirty && options.force !== true) {
-    return { outcome: 'dirty', cleanup: { pruned, branches: [] } };
+    return { outcome: 'dirty', cleanup: { pruned, branches: sweepBranches(cwd) } };
   }
   const removed = git(cwd, ['worktree', 'remove', '--force', found.path]);
   if (removed.status !== 0) {
@@ -365,7 +368,6 @@ export function removeWorktree(cwd: string, id: string, options: RemoveOptions =
     );
   }
   rmSync(found.unitDir, { recursive: true, force: true });
-  const forceBranch = options.force === true ? branchFor(id) : undefined;
   const branches = sweepBranches(cwd, forceBranch);
   return { outcome: 'removed', cleanup: { pruned, branches } };
 }

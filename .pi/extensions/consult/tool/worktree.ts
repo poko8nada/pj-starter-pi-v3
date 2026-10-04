@@ -115,29 +115,31 @@ export function removeText(id: string, removed: RemoveResult): string {
   if (removed.outcome === 'busy') {
     return `消さない: ${id} で子が走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
   }
-  if (removed.outcome === 'dirty') {
-    return `消さない: ${id} に変更が残っている（force を付ければ消す）`;
-  }
-  const pruned =
-    removed.cleanup.pruned.length > 0 ? `登録を掃除した: ${removed.cleanup.pruned.join(', ')}` : '';
-  if (removed.outcome === 'missing') {
-    return pruned === '' ? `無い: ${id}` : `無い: ${id}（${pruned}）`;
-  }
   const own = removed.cleanup.branches.find((entry) => entry.branch === `consult/${id}`);
-  const others = removed.cleanup.branches.filter((entry) => entry.branch !== `consult/${id}`);
-  const othersRemoved = others.filter((entry) => entry.state === 'removed');
-  const othersKept = others.filter((entry) => entry.state === 'kept');
+  // `removed` のときは自分の枝の運命を前置きが言うので、掃除の内訳からは外す（二重に言わない）
+  const swept =
+    removed.outcome === 'removed'
+      ? removed.cleanup.branches.filter((entry) => entry.branch !== `consult/${id}`)
+      : removed.cleanup.branches;
   const extras: string[] = [];
-  if (pruned !== '') {
-    extras.push(pruned);
+  if (removed.cleanup.pruned.length > 0) {
+    extras.push(`登録を掃除した: ${removed.cleanup.pruned.join(', ')}`);
   }
-  if (othersRemoved.length > 0) {
-    extras.push(`ついでに消した枝: ${othersRemoved.map((entry) => entry.branch).join(', ')}`);
+  const gone = swept.filter((entry) => entry.state === 'removed').map((entry) => entry.branch);
+  if (gone.length > 0) {
+    extras.push(`消した枝: ${gone.join(', ')}`);
   }
-  if (othersKept.length > 0) {
-    extras.push(`残した枝（未マージ）: ${othersKept.map((entry) => entry.branch).join(', ')}`);
+  const kept = swept.filter((entry) => entry.state === 'kept').map((entry) => entry.branch);
+  if (kept.length > 0) {
+    extras.push(`残した枝（未マージ）: ${kept.join(', ')}`);
   }
   const tail = extras.length > 0 ? `（${extras.join('。')}）` : '';
+  if (removed.outcome === 'missing') {
+    return `無い: ${id}${tail}`;
+  }
+  if (removed.outcome === 'dirty') {
+    return `消さない: ${id} に変更が残っている（force を付ければ消す）${tail}`;
+  }
   if (own?.state === 'kept') {
     return `消した: ${id}（ブランチは未マージなので残した。取り込むか、force で捨てる）${tail}`;
   }

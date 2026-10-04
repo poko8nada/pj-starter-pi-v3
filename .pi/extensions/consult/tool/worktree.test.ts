@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -158,6 +158,19 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
+  it('実体の無い登録の remove → 掃除した枝を言い、一覧にゴーストが出ない', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const made = findWorktree(dir, '2-b');
+    rmSync(made?.path ?? '', { recursive: true, force: true });
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(text(outcome)).toContain('無い: 2-b');
+    expect(text(outcome)).toContain('登録を掃除した');
+    expect(text(outcome)).toContain('消した枝: consult/2-b');
+    expect(text(await call({ action: 'list' }, dir))).toContain('作業場は無い');
+  });
+
   it('list が、走っている子の居る unit に印を付ける', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
@@ -208,5 +221,26 @@ describe('removeText', () => {
         cleanup: { pruned: ['/tmp/pi-consult/proj/2-b/wt'], branches: [] },
       }),
     ).toContain('登録を掃除した');
+  });
+
+  it('無い登録でも、残した枝（未マージ）を言う', () => {
+    expect(
+      removeText('2-b', {
+        outcome: 'missing',
+        cleanup: {
+          pruned: [],
+          branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
+        },
+      }),
+    ).toContain('残した枝（未マージ）: consult/2-b');
+  });
+
+  it('変更が残る断りでも、掃除した物を言う', () => {
+    expect(
+      removeText('2-b', {
+        outcome: 'dirty',
+        cleanup: { pruned: [], branches: [{ state: 'removed', branch: 'consult/9-merged' }] },
+      }),
+    ).toContain('消した枝: consult/9-merged');
   });
 });

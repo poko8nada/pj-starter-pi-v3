@@ -163,9 +163,11 @@ README.ja.md
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
+- Stale: `index.ts:103` と `README.md:16`／`README.ja.md:16` の「remove はブランチも一緒に消す」が無条件削除に読め、`run/worktree.ts:317`・`tool/worktree.ts:141-142` の未マージ保持（`kept`／`unmerged`）と食い違うまま残っている。
+  - fixed: 道具の説明と README の1行を「取り込み済みは消し、未マージは残す」と明示する形に直した（`.pi/extensions/consult/README.md` の表の1行も同じ読みなので直した）
+- Unlisted: なし
+- Gaps: `removeWorktree` が `missing`／`dirty`／`busy` で `branches: []` のまま返す（`run/worktree.ts:351-359`）ときの孤児枝の扱いを、Slice2・5 の Verify（removed 経路の掃除報告のみ）が覆っていない。
+  - fixed: 枝の掃除を `busy` 以外の全経路（`missing`／`dirty` を含む）で走らせて報告する形に直し、`missing`／`dirty`／`busy` の3経路を検査で固定した（`missing` の `force` はその枝を捨てる）。`removeText` も掃除の内訳を言う
 
 ## Acceptance
 

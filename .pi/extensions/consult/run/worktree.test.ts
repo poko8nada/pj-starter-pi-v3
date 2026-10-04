@@ -237,6 +237,21 @@ describe('removeWorktree', () => {
     expect(listWorktrees(dir)).toHaveLength(1);
   });
 
+  it('変更が残っていても、孤児の枝は掃除される（作業場は残す）', () => {
+    const { dir, home } = repo();
+    const made = createWorktree(dir, '1-a');
+    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    // 取り込み済みの孤児枝（実体を持たない枝）を 1 つ作る
+    runGit(dir, home, ['branch', 'consult/9-merged', 'HEAD']);
+
+    const result = removeWorktree(dir, '1-a');
+    expect(result.outcome).toBe('dirty');
+    expect(result.cleanup.pruned).toEqual([]);
+    expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: 'consult/9-merged' }]);
+    expect(findWorktree(dir, '1-a')).toBeDefined();
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout).toContain(branchFor('1-a'));
+  });
+
   it('変更が残っていても force なら消える', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
@@ -281,14 +296,38 @@ describe('removeWorktree', () => {
   });
 
   it('実体の無い登録（ゴースト）→ prune で消え、missing と pruned にそのパス', () => {
-    const { dir } = repo();
+    const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
     rmSync(made.path, { recursive: true, force: true });
 
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('missing');
     expect(result.cleanup.pruned).toContain(made.path);
+    // 掃除は missing でも走る（取り込み済みの枝は消える）
+    expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
     expect(listWorktrees(dir)).toEqual([]);
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout.trim()).toBe('');
+  });
+
+  it('実体の無い登録でも、force なら未マージの枝を捨てる', () => {
+    const { dir, home } = repo();
+    const made = createWorktree(dir, '1-a');
+    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    gitInWorktree(made.path, ['add', '-A']);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    rmSync(made.path, { recursive: true, force: true });
+
+    const kept = removeWorktree(dir, '1-a');
+    expect(kept.outcome).toBe('missing');
+    expect(kept.cleanup.pruned).toContain(made.path);
+    expect(kept.cleanup.branches).toEqual([
+      { state: 'kept', branch: branchFor('1-a'), reason: 'unmerged' },
+    ]);
+
+    const discarded = removeWorktree(dir, '1-a', { force: true });
+    expect(discarded.outcome).toBe('missing');
+    expect(discarded.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
+    expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout.trim()).toBe('');
   });
 
   it('remove が消すのは unit のディレクトリだけ（同じ実行の別 unit は残る）', () => {
@@ -379,10 +418,13 @@ describe('removeWorktree の統合', () => {
     expect(branches).not.toContain(branchFor('1-g'));
     expect(branches).not.toContain('consult/9-merged');
     expect(branches).toContain(branchFor('1-u'));
-    // 2 回目は何も消さない
+    // 2 回目は何も消さない（未マージの枝を残したと言うだけ）
     expect(removeWorktree(dir, '1-t')).toEqual({
       outcome: 'missing',
-      cleanup: { pruned: [], branches: [] },
+      cleanup: {
+        pruned: [],
+        branches: [{ state: 'kept', branch: branchFor('1-u'), reason: 'unmerged' }],
+      },
     });
   });
 });

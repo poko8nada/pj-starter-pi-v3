@@ -13,7 +13,7 @@ English: [README.md](README.md)
 - **拡張** — `consult`（4 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）（`.pi/extensions/`）
   - `consult_run` — ロールと行き先を指して、子の `pi` を 1 体だけ走らせる。この会話は見せない
   - `consult_children` — このプロジェクトの子を一覧し、1 体止める。記録を読むので reload をまたいでも出る
-  - `consult_worktree` — unit の worktree を作り、一覧し、消す。明示しない限り残り、`remove` はブランチも一緒に消す
+  - `consult_worktree` — unit の worktree を作り、一覧し、消す。明示しない限り残り、`remove` は取り込み済みのブランチも一緒に消す（未マージは残す）
   - `consult_commit` — 子が worktree に残した仕事をコミットする。親のブランチへの取り込みは `git merge --no-ff consult/<unit-id>` を自分で打つ
   - 置き場: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、base は親の `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`（dispatch で agent を走らせる）
