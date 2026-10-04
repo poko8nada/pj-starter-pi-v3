@@ -179,4 +179,4 @@ README.ja.md
 
 - Ran: worktree で typecheck / plan の検査（`run/worktree.test.ts` + `tool/worktree.test.ts` の50件）/ 全体のテスト（342件）/ slice 4 の `read` 検査（`review` の子が説明と `removeText` の一致を報告、合格）
 - Findings: なし
-- Merge:
+- Merge: 444735a
