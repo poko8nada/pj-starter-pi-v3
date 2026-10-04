@@ -4,10 +4,11 @@
  * `consult` が子の起動引数に `-e <このファイル>` を入れる。子だけがこれを読む
  * （pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない）。
  *
+ * 親が渡した役割の許可（`CONSULT_POLICY`）を規則にする。書く道具は許可されたパスだけ、bash は許可された接頭辞だけ。読みは縛らない。
+ *
  * 判定は**解決後の絶対パス**で行う。bash のトークンは先に変数展開する。
  * `$VAR` / `${VAR}` は `process.env` から引く（未定義は空。bash と同じ）。
- * 展開しても `$` や backtick が残るトークン（`$(...)`、`$((...))`、`$'...'`、`$1`、`$?`、`${X:-default}`）
- * は、中身を推測せず止める。値が決まらないものを通さない（fail-closed）。
+ * 展開しても `$` や backtick が残るトークン（`$(...)`、`$((...))`、`$'...'`、`$1`、`$?`、`${X:-default}`）は、中身を推測せず止める。値が決まらないものを通さない（fail-closed）。
  *
  * **シェルは真似ない。** 止める側に倒すのは「値が決まらない `$`」までで、それ以外のシェルの
  * 流儀（単語分割、演算子、`~` の展開）は追わない。その線の外に残る穴が 3 つ:
@@ -22,7 +23,7 @@
  */
 
 import { realpathSync } from 'node:fs';
-import { basename, isAbsolute, resolve } from 'node:path';
+import { basename, isAbsolute, matchesGlob, relative, resolve } from 'node:path';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 /** 秘密とみなす名前。git が無視する全部ではなく、名前で決める */
@@ -145,11 +146,117 @@ function pathsFrom(name: string, input: unknown): string[] {
   return paths;
 }
 
-/** 1 つの道具呼び出しを通すか拒むか。拒むときは「読めない」を含む文を返す */
+/** 親が渡す役割の許可。`CONSULT_POLICY` の中身 */
+export type Limits =
+  | { readonly state: 'open' }
+  | { readonly state: 'broken' }
+  | { readonly state: 'set'; readonly paths: readonly string[]; readonly bash: readonly string[] };
+
+/** 何も渡されていない（consult 以外から起動された） */
+export const OPEN: Limits = { state: 'open' };
+
+/** 文字列の配列か。違えば undefined */
+function asPatterns(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  return value.every((item) => typeof item === 'string') ? value : undefined;
+}
+
+/**
+ * 親が渡した許可を読む。読めなければ `broken`（親のバグ）。
+ *
+ * `broken` は書く道具と bash を止める。読むのは通す（調べられなくすると、子が理由を報告できなくなる）。
+ */
+export function parseLimits(text: string | undefined): Limits {
+  if (text === undefined || text.trim() === '') {
+    return OPEN;
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return { state: 'broken' };
+  }
+  const paths = asPatterns(at(raw, 'paths'));
+  const bash = asPatterns(at(raw, 'bash'));
+  if (paths === undefined || bash === undefined) {
+    return { state: 'broken' };
+  }
+  return { state: 'set', paths, bash };
+}
+
+/**
+ * 書ける所か。パターンは cwd（worktree）からの相対で、ファイル・ディレクトリ・glob。
+ *
+ * 解決してから相対に直すので、`../` で外に出るパスはどのパターンにも合わない。
+ */
+export function pathAllowed(target: string, cwd: string, patterns: readonly string[]): boolean {
+  if (patterns.length === 0) {
+    return true;
+  }
+  const absolute = isAbsolute(target) ? target : resolve(cwd, target);
+  const under = relative(cwd, absolute);
+  if (under.startsWith('..')) {
+    return false;
+  }
+  return patterns.some(
+    (pattern) =>
+      under === pattern || under.startsWith(`${pattern}/`) || matchesGlob(under, pattern),
+  );
+}
+
+/** 打てるコマンドか。接頭辞が語として一致するかだけを見る（シェルは解さない） */
+export function commandAllowed(command: string, prefixes: readonly string[]): boolean {
+  if (prefixes.length === 0) {
+    return true;
+  }
+  const trimmed = command.trim();
+  return prefixes.some((prefix) => trimmed === prefix || trimmed.startsWith(`${prefix} `));
+}
+
+/** 書く道具。`edit` と、ホストが用意する `quick_edit` / `target_edit`。`powershell` は対象外（この機械では使わない） */
+const WRITE_TOOLS: ReadonlySet<string> = new Set(['edit', 'quick_edit', 'target_edit', 'write']);
+
+/** 役割の許可の判定 */
+function judgeLimits(
+  name: string,
+  input: unknown,
+  cwd: string,
+  limits: Limits,
+): { block?: true; reason?: string } {
+  if (limits.state === 'open') {
+    return {};
+  }
+  const writes = WRITE_TOOLS.has(name);
+  const runs = name === 'bash';
+  if (!writes && !runs) {
+    return {};
+  }
+  if (limits.state === 'broken') {
+    return { block: true, reason: '書けない: 親の許可を読めなかった（child-guard）' };
+  }
+  if (runs) {
+    const command = str(input, 'command');
+    if (command !== undefined && !commandAllowed(command, limits.bash)) {
+      return { block: true, reason: `打てない: ${command} は許可されていない（child-guard）` };
+    }
+    return {};
+  }
+  for (const path of pathsFrom(name, input)) {
+    if (!pathAllowed(path, cwd, limits.paths)) {
+      return { block: true, reason: `書けない: ${path} は許可されていない（child-guard）` };
+    }
+  }
+  return {};
+}
+
+/** 1 つの道具呼び出しを通すか拒むか。拒むときは理由の文を返す */
 export function judgeToolCall(
   name: string,
   input: unknown,
   cwd: string,
+  limits: Limits = OPEN,
 ): { block?: true; reason?: string } {
   for (const path of pathsFrom(name, input)) {
     if (path.includes(UNRESOLVED)) {
@@ -159,10 +266,12 @@ export function judgeToolCall(
       return { block: true, reason: `読めない: ${path} は秘密として扱う（child-guard）` };
     }
   }
-  return {};
+  return judgeLimits(name, input, cwd, limits);
 }
 
 export default function (pi: ExtensionAPI) {
+  // 親が渡した許可を、起動時に 1 度だけ読む（子が後から書き換えても効かない）。
+  const limits = parseLimits(process.env.CONSULT_POLICY);
   pi.on('tool_call', (event, ctx) => {
     try {
       // pi の `tool_call` が渡すキーは `toolName` と `input`。
@@ -171,7 +280,7 @@ export default function (pi: ExtensionAPI) {
       // `name` / `arguments` は控え（古い名前のため）。
       const name = str(event, 'name') ?? str(event, 'toolName') ?? '';
       const input = at(event, 'input') ?? at(event, 'arguments');
-      return judgeToolCall(name, input, ctx.cwd);
+      return judgeToolCall(name, input, ctx.cwd, limits);
     } catch {
       // pi は投げた handler を捕まえない（止まらずに走ってしまう）。fail-closed で止める。
       return { block: true, reason: '読めない: child-guard の判定に失敗した' };

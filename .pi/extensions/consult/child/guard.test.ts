@@ -2,7 +2,15 @@ import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { isSecretPath, judgeToolCall, unquote } from './guard.ts';
+import {
+  commandAllowed,
+  isSecretPath,
+  judgeToolCall,
+  parseLimits,
+  pathAllowed,
+  unquote,
+  type Limits,
+} from './guard.ts';
 
 /**
  * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
@@ -202,5 +210,97 @@ describe('judgeToolCall', () => {
 
   it('引数が空でも落ちない', () => {
     expect(judgeToolCall('read', {}, dir)).toEqual({});
+  });
+});
+
+describe('parseLimits', () => {
+  it('何も渡されていない → 制限なし', () => {
+    expect(parseLimits(undefined)).toEqual({ state: 'open' });
+    expect(parseLimits('  ')).toEqual({ state: 'open' });
+  });
+
+  it('親が渡した JSON → その値', () => {
+    expect(parseLimits('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}')).toEqual({
+      state: 'set',
+      paths: ['cycles/*/plan/*.md'],
+      bash: ['git'],
+    });
+  });
+
+  it('壊れた JSON / 形が違う → broken', () => {
+    expect(parseLimits('{')).toEqual({ state: 'broken' });
+    expect(parseLimits('{"paths":"x","bash":[]}')).toEqual({ state: 'broken' });
+    expect(parseLimits('{"paths":[1],"bash":[]}')).toEqual({ state: 'broken' });
+    expect(parseLimits('{"paths":[]}')).toEqual({ state: 'broken' });
+  });
+});
+
+describe('pathAllowed', () => {
+  it('空の一覧 → どこでも書ける', () => {
+    expect(pathAllowed('src/a.ts', '/w', [])).toBe(true);
+  });
+
+  it('ファイルはそのまま、ディレクトリは下の全部', () => {
+    expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
+    expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
+    expect(pathAllowed('src/b.ts', '/w', ['src/a.ts'])).toBe(false);
+    expect(pathAllowed('other/a.ts', '/w', ['src'])).toBe(false);
+  });
+
+  it('glob が効く（review は plan md だけ書ける）', () => {
+    expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
+    expect(pathAllowed('cycles/010-2026-09-29/design.md', '/w', ['cycles/*/plan/*.md'])).toBe(
+      false,
+    );
+  });
+
+  it('worktree の外に出るパスは通さない', () => {
+    expect(pathAllowed('../other/x.md', '/w', ['x.md'])).toBe(false);
+    expect(pathAllowed('/etc/hosts', '/w', ['etc'])).toBe(false);
+  });
+});
+
+describe('commandAllowed', () => {
+  it('空の一覧 → 何でも打てる', () => {
+    expect(commandAllowed('rm -rf /', [])).toBe(true);
+  });
+
+  it('接頭辞は語として一致する（git は git status を通す）', () => {
+    expect(commandAllowed('git status', ['git'])).toBe(true);
+    expect(commandAllowed('git', ['git'])).toBe(true);
+    expect(commandAllowed('gitfoo', ['git'])).toBe(false);
+    expect(commandAllowed('pnpm run test:run', ['pnpm run test:run'])).toBe(true);
+    expect(commandAllowed('pnpm install', ['pnpm run test:run'])).toBe(false);
+  });
+});
+
+describe('judgeToolCall + 役割の許可', () => {
+  const limits: Limits = { state: 'set', paths: ['cycles/*/plan/*.md'], bash: ['git'] };
+
+  it('書く道具は許可された所だけ', () => {
+    expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
+    expect(judgeToolCall('edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
+    expect(judgeToolCall('write', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
+    // ホストの編集道具も書く道具として扱う（この環境の `edit` はこれらに置き換わっている）
+    expect(judgeToolCall('quick_edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
+    expect(judgeToolCall('target_edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
+    expect(judgeToolCall('quick_edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
+  });
+
+  it('読むのは縛らない', () => {
+    expect(judgeToolCall('read', { path: 'src/a.ts' }, dir, limits)).toEqual({});
+    expect(judgeToolCall('grep', { path: 'src' }, dir, limits)).toEqual({});
+  });
+
+  it('bash は許可された接頭辞だけ', () => {
+    expect(judgeToolCall('bash', { command: 'git status' }, dir, limits)).toEqual({});
+    expect(judgeToolCall('bash', { command: 'rm -rf src' }, dir, limits).block).toBe(true);
+  });
+
+  it('親の許可が壊れている → 書く道具と bash を止める（読むのは通す）', () => {
+    const broken: Limits = { state: 'broken' };
+    expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, broken).block).toBe(true);
+    expect(judgeToolCall('bash', { command: 'git status' }, dir, broken).block).toBe(true);
+    expect(judgeToolCall('read', { path: 'src/a.ts' }, dir, broken)).toEqual({});
   });
 });

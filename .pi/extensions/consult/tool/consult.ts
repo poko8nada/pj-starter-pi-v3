@@ -2,7 +2,7 @@
  * consult の runtime — 走っている子を 1 か所で持ち、完了を親に届ける。
  *
  * 子を起こすのは `consult_run`（`tool/run.ts` の面）から。1 呼び出し = 1 体で、行き先の worktree と、続きを使うかを親が指す。
- * 設定（モデル・ツール・readOnly・続きの既定・上限・役割）は types.json が持ち、上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
+ * 設定（モデル・ツール・isolated・paths・bash・続きの既定・上限・役割）は types.json が持ち、上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
  *
  * 起こしたらすぐ `started: <id>` を返し、親は待たない。子ごとの完了で `pi.sendMessage` に本文を渡す。走っている子の一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
  */
@@ -302,13 +302,13 @@ function beginRun(
   request: RunRequest,
 ): AgentToolResult<Record<string, unknown>> {
   const policy = resolveType(loadTypes(EXTENSION_DIR), request.role);
-  // 行き先を決める。書き込むロールは worktree が要る（暗黙に作らない）。
+  // 行き先を決める。隔離するロールは worktree が要る（暗黙に作らない）。
   const worktree =
     request.worktree === undefined ? undefined : findWorktree(ctx.cwd, request.worktree);
   if (request.worktree !== undefined && worktree === undefined) {
     throw new Error(`consult_run: no such worktree: ${request.worktree}. ${RUN_USAGE}`);
   }
-  if (!policy.readOnly && worktree === undefined) {
+  if (policy.isolated && worktree === undefined) {
     throw new Error(`consult_run: ${policy.name} writes, so it needs a worktree. ${RUN_USAGE}`);
   }
   const options: ConsultOptions = { type: policy.name, task: request.task, policy };

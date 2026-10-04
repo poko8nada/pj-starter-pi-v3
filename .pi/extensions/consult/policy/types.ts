@@ -21,8 +21,21 @@ export interface TypePolicy {
   /** 試す順の pi のモデル。空なら親と同じ設定で走る */
   readonly models: readonly string[];
   readonly tools: readonly string[];
-  /** 書き込みを許すか。false のロールは worktree が要る（隔離してから走らせる） */
-  readonly readOnly: boolean;
+  /** 隔離するか。true のロールは worktree が要る（親のツリーを汚させない） */
+  readonly isolated: boolean;
+  /**
+   * 書ける所。空は全部。読みは縛らない。
+   *
+   * エントリは、ファイル、ディレクトリ、または glob（`cycles/<NNN>/plan/<plan id>.md`）。
+   * 子の cwd（worktree）からの相対で当てる。
+   */
+  readonly paths: readonly string[];
+  /**
+   * 打てるコマンドの接頭辞。空は全部。
+   *
+   * 先頭が一致するかだけを見る（`git` は `git status` を通す）。シェルは解さない。
+   */
+  readonly bash: readonly string[];
   /** `consult_run` の `continue` を省いたときの既定 */
   readonly continueByDefault: boolean;
   readonly limits: Limits;
@@ -41,6 +54,8 @@ export const KNOWN_TOOLS: ReadonlySet<string> = new Set([
   'read',
   'write',
   'edit',
+  'quick_edit',
+  'target_edit',
   'bash',
   'grep',
   'find',
@@ -109,6 +124,11 @@ function parseBoolean(value: unknown, where: string): boolean {
   return value;
 }
 
+/** 空を許す文字列の配列。`paths` と `bash` は「空 = 全部」なので、空を弾かない */
+function parsePatterns(value: unknown, where: string): string[] {
+  return asStringArray(value, where);
+}
+
 function parseLimits(value: unknown, where: string): Limits {
   const raw = asRecord(value, where);
   return {
@@ -124,7 +144,9 @@ function parseType(value: unknown, where: string): TypePolicy {
     name: asString(raw.name, `${where}.name`),
     models: asStringArray(raw.models, `${where}.models`),
     tools: parseTools(raw.tools, `${where}.tools`),
-    readOnly: parseBoolean(raw.readOnly, `${where}.readOnly`),
+    isolated: parseBoolean(raw.isolated, `${where}.isolated`),
+    paths: parsePatterns(raw.paths, `${where}.paths`),
+    bash: parsePatterns(raw.bash, `${where}.bash`),
     continueByDefault: parseBoolean(raw.continueByDefault, `${where}.continueByDefault`),
     limits: parseLimits(raw.limits, `${where}.limits`),
     ...(role === undefined ? {} : { role }),

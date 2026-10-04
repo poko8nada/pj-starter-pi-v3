@@ -29,7 +29,7 @@ The texts handed to children are in `references/tasks.md`.
 
 ### 3. Run the slices
 
-- hand the plan md to one `code` child in the worktree: the slices in order, as far as it can. The task is in `references/tasks.md`; pass `paths` as the plan's `Files` plus the plan md
+- hand the plan md to one `code` child in the worktree: the slices in order, as far as it can. The task is in `references/tasks.md`
 - the child runs each slice's check, commits after it passes, and writes that slice's record
 - when it stops: read its report and the worktree's plan md. When it only ran out (the work is sound), continue it (`continue: true`) without calling the owner. When it is blocked, decide with the owner: continue it (the plan is not rewritten) or drop it (write `Stopped` and the reason in the parent's plan md, commit it in the base, remove the worktree, no merge)
   - a plan that is itself wrong is revised through the ADR, with the owner; an agreed plan is never rewritten to keep going

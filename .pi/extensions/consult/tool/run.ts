@@ -17,7 +17,7 @@ export const PARAMETERS = Type.Object({
   worktree: Type.Optional(
     Type.String({
       description:
-        'The unit id of the worktree to run in. A writing role needs it; a read-only role runs in the parent tree when it is omitted',
+        'The unit id of the worktree to run in. An isolated role needs it; one that is not runs in the parent tree when it is omitted',
     }),
   ),
   continue: Type.Optional(

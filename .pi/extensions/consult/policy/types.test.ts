@@ -20,7 +20,9 @@ function aType(overrides: Record<string, unknown> = {}): Record<string, unknown>
     name: 'review',
     models: [],
     tools: ['read'],
-    readOnly: true,
+    isolated: false,
+    paths: [],
+    bash: [],
     continueByDefault: false,
     limits: { turns: 20, output: 20000 },
     ...overrides,
@@ -95,19 +97,40 @@ describe('parseTypes', () => {
     expect(() => parseTypes(config(aType({ tools: [] })))).toThrow(/must not be empty/);
   });
 
+  it('ホストの編集道具（quick_edit / target_edit）も名前として通る', () => {
+    const [type] = parseTypes(config(aType({ tools: ['read', 'quick_edit', 'target_edit'] })));
+    expect(type?.tools).toEqual(['read', 'quick_edit', 'target_edit']);
+  });
+
   it('未知のツール名 → 投げる', () => {
     expect(() => parseTypes(config(aType({ tools: ['read', 'reed'] })))).toThrow(
       /unknown tool: reed/,
     );
   });
 
-  it('`readOnly` が true / false 以外 → 投げる', () => {
-    expect(() => parseTypes(config(aType({ readOnly: 'yes' })))).toThrow(/readOnly/);
+  it('`isolated` が true / false 以外 → 投げる', () => {
+    expect(() => parseTypes(config(aType({ isolated: 'yes' })))).toThrow(/isolated/);
     expect(() => parseTypes(config(aType({ continueByDefault: 1 })))).toThrow(/continueByDefault/);
-    expect(() => parseTypes(config(aType({ readOnly: undefined })))).toThrow(/readOnly/);
+    expect(() => parseTypes(config(aType({ isolated: undefined })))).toThrow(/isolated/);
     expect(() => parseTypes(config(aType({ continueByDefault: undefined })))).toThrow(
       /continueByDefault/,
     );
+  });
+
+  it('`paths` / `bash` は空を許す（空 = 全部）', () => {
+    const [type] = parseTypes(config(aType({ paths: [], bash: [] })));
+    expect(type?.paths).toEqual([]);
+    expect(type?.bash).toEqual([]);
+  });
+
+  it('`paths` / `bash` のエントリが文字列でない → 投げる', () => {
+    expect(() => parseTypes(config(aType({ paths: [1] })))).toThrow(/paths\[0\]/);
+    expect(() => parseTypes(config(aType({ bash: ['git', ''] })))).toThrow(/bash\[1\]/);
+  });
+
+  it('`paths` / `bash` が無い → 投げる', () => {
+    expect(() => parseTypes(config(aType({ paths: undefined })))).toThrow(/paths/);
+    expect(() => parseTypes(config(aType({ bash: undefined })))).toThrow(/bash/);
   });
 
   it('`limits` が無い → 投げる', () => {

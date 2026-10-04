@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prepare, sessionFile } from './child.ts';
+import { childEnv, prepare, sessionFile } from './child.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 
@@ -7,13 +7,15 @@ import type { Worktree } from './worktree.ts';
 
 const CONTEXT = { cwd: '/tmp/parent' } as const;
 
-function policy(readOnly: boolean): TypePolicy {
+function policy(isolated: boolean): TypePolicy {
   return {
-    name: readOnly ? 'review' : 'code',
+    name: isolated ? 'code' : 'review',
     models: [],
-    tools: readOnly ? ['read'] : ['read', 'edit'],
-    readOnly,
-    continueByDefault: !readOnly,
+    tools: isolated ? ['read', 'edit'] : ['read'],
+    isolated,
+    paths: [],
+    bash: [],
+    continueByDefault: isolated,
     limits: { turns: 20, output: 20000 },
   };
 }
@@ -26,38 +28,49 @@ const WORKTREE: Worktree = {
 };
 
 describe('prepare', () => {
-  it('読むだけのロール → 親の木で走る（worktree は要らない）', () => {
-    expect(prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(true) })).toEqual({
+  it('隔離しないロール → 親の木で走る（worktree は要らない）', () => {
+    expect(prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false) })).toEqual({
       cwd: '/tmp/parent',
     });
   });
 
-  it('読むだけのロールに worktree を渡す → その worktree で走る（レビューを直接送り込む道）', () => {
+  it('隔離しないロールに worktree を渡す → その worktree で走る（レビューを直接送り込む道）', () => {
     const prepared = prepare(
       CONTEXT,
-      { type: 'review', task: 'x', policy: policy(true) },
+      { type: 'review', task: 'x', policy: policy(false) },
       WORKTREE,
     );
     expect(prepared.cwd).toBe(WORKTREE.path);
     expect(prepared.worktree).toBe(WORKTREE);
   });
 
-  it('書き込むロール → worktree が要る', () => {
-    const prepared = prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(false) }, WORKTREE);
+  it('隔離するロール → worktree が要る', () => {
+    const prepared = prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true) }, WORKTREE);
     expect(prepared.cwd).toBe(WORKTREE.path);
   });
 
-  it('書き込むロールで worktree が無い → 親の木で書かせずに投げる', () => {
-    expect(() => prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(false) })).toThrow(
+  it('隔離するロールで worktree が無い → 親の木で書かせずに投げる', () => {
+    expect(() => prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true) })).toThrow(
       /needs a worktree/,
     );
   });
 });
 
+describe('childEnv', () => {
+  it('親が解決した上限と許可だけを載せる（子は types.json を読まない）', () => {
+    const env = childEnv({ ...policy(false), paths: ['cycles/*/plan/*.md'], bash: ['git'] });
+    expect(env.CONSULT_TURNS).toBe('20');
+    expect(env.CONSULT_POLICY).toBe('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}');
+  });
+});
+
 describe('sessionFile', () => {
-  it('worktree ごとに 1 つ。同じパスを指すとその会話の続きになる', () => {
-    expect(sessionFile(WORKTREE)).toBe('/tmp/pi-consult/demo/2-a/session');
+  it('(worktree, ロール) ごとに 1 つ。同じパスを指すとその会話の続きになる', () => {
+    expect(sessionFile(WORKTREE, 'code')).toBe('/tmp/pi-consult/demo/2-a/session-code');
+    expect(sessionFile(WORKTREE, 'review')).toBe('/tmp/pi-consult/demo/2-a/session-review');
+    // ロールが違えば別の会話になる（同じ worktree に別のロールを送っても混ざらない）
+    expect(sessionFile(WORKTREE, 'code')).not.toBe(sessionFile(WORKTREE, 'review'));
     // worktree の外（入れ物の中）に置く。リポジトリを汚さない
-    expect(sessionFile(WORKTREE).startsWith(WORKTREE.path)).toBe(false);
+    expect(sessionFile(WORKTREE, 'code').startsWith(WORKTREE.path)).toBe(false);
   });
 });

@@ -19,14 +19,18 @@ The extension registers four tools.
 
 The caller picks a role, and the role holds the whole policy: model candidates, tools, whether the child writes, spend limits, and the words it works under. There is no way to override any of it per call — to change the policy, edit `types.json`.
 
-| Role       | Tools                                           | Place                 | Turns | Output tokens | `continue` by default |
-| ---------- | ----------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
-| `research` | read, ls, find, grep, web_search, fetch_content | the parent's tree     | 40    | 60,000        | no                    |
-| `review`   | read, ls, find, grep, web_search                | the parent's tree     | 40    | 60,000        | no                    |
-| `trial`    | plus bash, and writing                          | a worktree (required) | 60    | 120,000       | yes                   |
-| `code`     | plus bash, and writing                          | a worktree (required) | 80    | 120,000       | yes                   |
+| Role       | Tools                                                     | Place                 | Turns | Output tokens | `continue` by default |
+| ---------- | --------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
+| `research` | read, ls, find, grep, web_search, fetch_content           | the parent's tree     | 40    | 60,000        | no                    |
+| `review`   | read, ls, find, grep, web_search, quick_edit, target_edit | the parent's tree     | 40    | 60,000        | no                    |
+| `trial`    | plus bash, and writing                                    | a worktree (required) | 60    | 120,000       | yes                   |
+| `code`     | plus bash, and writing                                    | a worktree (required) | 80    | 120,000       | yes                   |
 
-`readOnly` decides the place: a read-only role may be given a worktree, and runs in the parent's tree when it is not. A role that writes has no such choice — without a worktree the call is refused, and consult never makes one on its own.
+`isolated` decides the place: a role that is not isolated may be given a worktree, and runs in the parent's tree when it is not. An isolated role has no such choice — without a worktree the call is refused, and consult never makes one on its own.
+
+`paths` and `bash` are the role's permissions, enforced inside the child: a write tool (`edit`, `quick_edit`, `target_edit`, `write`) may only touch a path the role allows, and `bash` may only run a command that starts with one of the role's prefixes. Reading is not limited. An empty list means no limit. A path is written from the child's cwd (its worktree): a file, a directory, or a glob (`cycles/*/plan/*.md`).
+
+The parent resolves the policy and hands it to the child on the way in; the child never reads `types.json`. The child's guard holds even where the host has no permission config — the real boundary is still the host and the OS (see Trust).
 
 The limits are enforced while the child runs, and neither the caller nor the child can raise them. A run gets the limit afresh: `continue` starts a new child process, so the second stretch has its own. Normal use finishes far below them.
 
@@ -34,12 +38,12 @@ The limits are enforced while the child runs, and neither the caller nor the chi
 
 ## `consult_run`
 
-| Parameter  | Required     | Meaning                                                                                          |
-| ---------- | ------------ | ------------------------------------------------------------------------------------------------ |
-| `role`     | yes          | How the child runs. One of the roles in `types.json`                                             |
-| `task`     | yes          | What the child should do. **Name any file it must read** — the child has `read` itself           |
-| `worktree` | for a writer | The unit id to run in (see `consult_worktree`). Omitted for a read-only role = the parent's tree |
-| `continue` | no           | Reopen the same conversation in that worktree. Defaults to the role's `continueByDefault`        |
+| Parameter  | Required             | Meaning                                                                                                     |
+| ---------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `role`     | yes                  | How the child runs. One of the roles in `types.json`                                                        |
+| `task`     | yes                  | What the child should do. **Name any file it must read** — the child has `read` itself                      |
+| `worktree` | for an isolated role | The unit id to run in (see `consult_worktree`). Omitted for a role that is not isolated = the parent's tree |
+| `continue` | no                   | Reopen the same conversation in that worktree. Defaults to the role's `continueByDefault`                   |
 
 ```
 consult_run({ role: "review", task: "What is missing in cycles/002-2026-09-22/definition.md?" })

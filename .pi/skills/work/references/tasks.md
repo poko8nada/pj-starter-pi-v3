@@ -12,7 +12,7 @@ A finding is one bullet, with `left: <why>` under it.
 Say what you did and why in each line you write. If you cannot finish, write where you stopped (Stopped) and stop.
 ```
 
-- The parent passes `worktree` (for a worktree plan), `continue: true` after the first run, and `paths` as the plan's `Files` plus the plan md.
+- The parent passes `worktree` (for a worktree plan) and `continue: true` after the first run. The role's own permissions (`types.json`) are what the child works under.
 - The check comes before the commit: a filled `Commit` means that slice's check passed.
 
 ## The review (a `review` child)
@@ -33,7 +33,7 @@ Write your answer in ### Round <N+1>, same viewpoints. Write なし if nothing i
 ```
 
 - Round 1 runs in a new conversation (`continue: false`); the rounds after it continue the reviewer's own.
-- The parent passes `paths` as the plan md alone: the reviewer writes the record, and nothing else.
+- The reviewer's role allows it to write only `cycles/*/plan/*.md`: it writes the record, and nothing else.
 
 ## The fixes (the `code` child, continued)
 

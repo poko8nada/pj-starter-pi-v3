@@ -211,21 +211,21 @@
 
 フローの外の実装。スキルを作り切った後で、1つの作業として設計・実装する。
 
-- ロールに許可の一覧を持たせる（`types.json`）:
-  - `paths`: このロールが**書いてよいパス**（読むのは自由）。道具別にはしない。**空 = すべて許可**（いまの振る舞い）
-  - `bash`: 使ってよいコマンド（単純な前方一致の一覧）。**空 = すべて許可**。破壊的な物はグローバル側のパーミッションが止めるので、パーサは作らない
-- **呼び出し側は狭められる。広げられない**: `consult_run` のパラメータに `paths` / `bash` を足し、ロールの許可と**交差**を取る（実効 = ロール ∩ 呼び出し）。親が plan の `Files` のマーカー付きの物から作って渡す（extension はサイクルの言葉を知らない。渡されるのはただの glob）
-- **強制は extension**: 子に許可 extension を読み込ませ、`tool_call` をブロックする（`edit` / `write` の `path` が `paths` の外、`bash` が一覧の外なら断る）
-- **セッションを (worktree, ロール) ごとにする**（いまは worktree ごとに1つ）。`continue` の意味をロールごとに閉じるため（レビュワーの収束ループ、実装者の文脈を混ぜない）
-- `readOnly` の名前を変える。この真偽が決めているのは1つだけ: **worktree（隔離）が要るか**（`child/spec.ts` の `needsIsolation`、`tool/consult.ts` の「書くロールは worktree が要る」、`policy/types.ts` の解釈。他に使い道は無い）→ **`isolated: true | false`**（`research` / `review` は `false`、`trial` / `code` は `true`）。`paths` とは独立（場所の話と、書ける物の話）
+- ロールに許可の一覧を持たせる（`types.json` が**唯一の源**）:
+  - `paths`: このロールが**書いてよいパス**（読むのは自由）。道具別にはしない。**空 = すべて許可**。ファイル / ディレクトリ / glob（`cycles/*/plan/*.md`）で、子の cwd（worktree）からの相対
+  - `bash`: 打ってよいコマンドの**接頭辞**。**空 = すべて許可**。先頭が語として一致するかだけを見る（シェルは解さない）
+- **解決するのは親だけ**。親（policy）が `types.json` から引いて、`CONSULT_TURNS` と同じ形で `CONSULT_POLICY`（JSON 文字列）として子に渡す。**子は `types.json` を読まない**（決定点を1つに保つ）
+- **強制は子の guard**（`child/guard.ts`）: 起動時に `CONSULT_POLICY` を1度だけ読み、`tool_call` をブロックする（`edit` / `write` の `path` が `paths` の外、`bash` が接頭辞の外なら断る）。読むのは縛らない。壊れた JSON は書く道具と bash を止める（fail-closed）
+- **呼び出し側の絞り込みはしない**（`consult_run` に `paths` / `bash` は足さない）。plan の `Files` を守っているかは、Review の `Unlisted` とマージ gate が見る
+- **セッションを (worktree, ロール) ごとにする**（`<unitDir>/session-<role>`）。`continue` の意味をロールごとに閉じるため（レビュワーの収束ループ、実装者の文脈を混ぜない）
+- `readOnly` の名前を変える。この真偽が決めているのは1つだけ: **worktree（隔離）が要るか** → **`isolated: true | false`**（`research` / `review` は `false`、`trial` / `code` は `true`）。`paths` とは独立（場所の話と、書ける物の話）
 - 例（レビュワー。plan md にだけ書ける）:
   ```json
   {
     "name": "review",
-    "tools": ["bash", "read", "ls", "find", "grep", "edit", "write"],
+    "tools": ["read", "ls", "find", "grep", "web_search", "edit"],
     "isolated": false,
-    "paths": ["cycles/**/plan/*.md"],
-    "bash": ["git diff", "git status"]
+    "paths": ["cycles/*/plan/*.md"],
+    "bash": []
   }
   ```
-- 一般化: `code` の `paths` を plan の `Files` のマーカー付きの物にすれば、「plan の外を触らない」が機械で守られる（親が plan から作って子に渡す）
