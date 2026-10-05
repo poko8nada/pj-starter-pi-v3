@@ -188,6 +188,8 @@ There are two faces for stopping a child, and one implementation behind them:
 
 An unknown id is refused with a reason, and nothing is stopped. A stopped child is killed through its `AbortSignal`, and its worktree is left in place (with its changes) so the parent can decide.
 
+A child that wrote its report but does not exit is stopped after 30 seconds of quiet and its last text is still delivered as `done`.
+
 ## Sound
 
 While at least one child is running, consult plays `Tink` **once every 5 seconds** — one timer and one sound, however many children are running. It stops when the last child finishes, and there is no sound at the start or at the end. It is a signal for the person at the keyboard, and it plays in this process, so the child cannot see or control it.

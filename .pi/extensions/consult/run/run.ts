@@ -60,6 +60,8 @@ export interface RunResult {
   readonly stopped?: string;
   /** 中断されたか */
   readonly aborted: boolean;
+  /** `agent_end` を見たか（報告の後に終わらない子を止めた印） */
+  readonly ended: boolean;
   /** 子のプロセス。走っている子を外から見分けるための印 */
   readonly pid?: number;
 }
@@ -79,6 +81,8 @@ export interface RunOptions {
   readonly limits: Limits;
   /** 子のプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
   readonly onStarted?: (pid: number) => void;
+  /** `agent_end` の後の猶予。静かなら子を止める（既定 30 秒） */
+  readonly watchdogMs?: number;
   /** 進行の通知。子の出力が届くたびに呼ぶ */
   readonly onProgress?: (chunk: {
     readonly stream: 'stdout' | 'stderr';
@@ -271,7 +275,7 @@ function killChild(child: ReturnType<typeof spawn>): void {
 }
 
 /** 走行中の状態。届いた行を数え、上限と中断を見る */
-interface RunState {
+export interface RunState {
   stdout: string;
   stderr: string;
   buffered: string;
@@ -279,11 +283,75 @@ interface RunState {
   aborted: boolean;
   readonly spent: Spent;
   readonly limits: Limits;
+  /** `agent_end` を見た時刻。来ていなければ空 */
+  endedAt?: number;
+  /** 最後に出力があった時刻。初期値は起動の時刻 */
+  lastOutputAt: number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * 1 イベントを state に反映する純関数。子の停止はしない。
+ *
+ * 壊れた入力（record でない物）は無視する。上限で止まった後のイベントは数えない。
+ * `agent_end`（`type === 'agent_end'`）を見たら `endedAt` を入れる。有効なイベントのたびに `lastOutputAt` を進める。
+ * 報告後の出力は時計だけ進め、上限には数えない（`ended` を `done` で閉じるため）。
+ */
+export function applyEvent(state: RunState, event: unknown, now: number): void {
+  if (state.stopped !== undefined) {
+    return;
+  }
+  if (!isRecord(event)) {
+    return;
+  }
+  state.lastOutputAt = now;
+  if (event.type === 'agent_end') {
+    if (state.endedAt === undefined) {
+      state.endedAt = now;
+    }
+    return;
+  }
+  if (state.endedAt !== undefined) {
+    return;
+  }
+  const reason = accountEvent(state.spent, event, state.limits);
+  if (reason === undefined) {
+    return;
+  }
+  state.stopped = reason;
+}
+
+/**
+ * 静かになった子を止めてよいか。`agent_end` があり、`lastOutputAt` から `quietMs` 静かなら true。
+ *
+ * 猶予ちょうど（`now - lastOutputAt === quietMs`）は true。
+ */
+export function watchdogDue(
+  endedAt: number | undefined,
+  lastOutputAt: number,
+  now: number,
+  quietMs: number,
+): boolean {
+  if (endedAt === undefined) {
+    return false;
+  }
+  return now - lastOutputAt >= quietMs;
 }
 
 /** 1 行を数える。上限を超えたら理由を記録し、子を殺す */
-function consumeLine(line: string, state: RunState, child: ReturnType<typeof spawn>): void {
-  if (line.trim() === '' || state.stopped !== undefined) {
+function consumeLine(
+  line: string,
+  state: RunState,
+  child: ReturnType<typeof spawn>,
+  now: number,
+): void {
+  if (line.trim() === '') {
+    return;
+  }
+  if (state.stopped !== undefined) {
     return;
   }
   let event: unknown;
@@ -292,89 +360,170 @@ function consumeLine(line: string, state: RunState, child: ReturnType<typeof spa
   } catch {
     return; // 解析できない行はイベントではない。
   }
-  const reason = accountEvent(state.spent, event, state.limits);
-  if (reason !== undefined) {
-    state.stopped = reason;
-    killChild(child);
+  applyEvent(state, event, now);
+  if (state.stopped === undefined) {
+    return;
   }
+  killChild(child);
+}
+
+export const DEFAULT_WATCHDOG_MS = 30000;
+
+/** 起動直後の状態。`lastOutputAt` は起動の時刻。 */
+function initialRunState(limits: Limits, startedAt: number): RunState {
+  return {
+    stdout: '',
+    stderr: '',
+    buffered: '',
+    aborted: false,
+    spent: { turns: 0, output: 0 },
+    limits,
+    lastOutputAt: startedAt,
+  };
+}
+
+/** 終了の塊。`ended` は `agent_end` を見たか。 */
+function runOutcome(state: RunState, ending: { code: number; pid?: number }): RunResult {
+  return {
+    stdout: state.stdout,
+    stderr: state.stderr,
+    code: ending.code,
+    stopped: state.stopped,
+    aborted: state.aborted,
+    ended: state.endedAt !== undefined,
+    ...(ending.pid === undefined ? {} : { pid: ending.pid }),
+  };
+}
+
+/** 走っている子と見張りの時計。`settled` が立ったら何もしない。 */
+interface LiveRun {
+  readonly state: RunState;
+  readonly child: ReturnType<typeof spawn>;
+  readonly quietMs: number;
+  readonly onProgress?: RunOptions['onProgress'];
+  settled: boolean;
+  watchdog?: NodeJS.Timeout;
+}
+
+/** 見張りの時計を止める。無ければ何もしない。 */
+function clearWatchdog(live: LiveRun): void {
+  if (live.watchdog === undefined) {
+    return;
+  }
+  clearTimeout(live.watchdog);
+  live.watchdog = undefined;
+}
+
+/** `agent_end` の後だけ時計を動かす。出力が来たら呼び直して戻す。 */
+function armWatchdog(live: LiveRun): void {
+  clearWatchdog(live);
+  if (live.state.endedAt === undefined) {
+    return;
+  }
+  if (live.settled) {
+    return;
+  }
+  live.watchdog = setTimeout(() => {
+    live.watchdog = undefined;
+    if (live.settled) {
+      return;
+    }
+    const now = Date.now();
+    if (!watchdogDue(live.state.endedAt, live.state.lastOutputAt, now, live.quietMs)) {
+      armWatchdog(live);
+      return;
+    }
+    killChild(live.child);
+  }, live.quietMs);
+}
+
+/** stdout の届きを足し、行を数え、時計を戻す。 */
+function consumeStdout(live: LiveRun, input: { text: string; now: number }): void {
+  live.state.stdout += input.text;
+  live.state.buffered += input.text;
+  live.state.lastOutputAt = input.now;
+  live.onProgress?.({ stream: 'stdout', text: input.text });
+  const lines = live.state.buffered.split('\n');
+  live.state.buffered = lines.pop() ?? '';
+  for (const line of lines) {
+    consumeLine(line, live.state, live.child, input.now);
+  }
+  armWatchdog(live);
+}
+
+/** stderr の届きを足す。見張りの時計は触らない。 */
+function appendStderr(live: LiveRun, text: string): void {
+  live.state.stderr += text;
+  live.onProgress?.({ stream: 'stderr', text });
+}
+
+/** 終了を 1 回だけ配る。2 回目は捨てる。 */
+function finishLive(
+  live: LiveRun,
+  input: {
+    code: number;
+    signal?: AbortSignal;
+    onAbort: () => void;
+    onDone?: RunOptions['onDone'];
+    settle: (result: RunResult) => void;
+  },
+): void {
+  if (live.settled) {
+    return;
+  }
+  live.settled = true;
+  clearWatchdog(live);
+  input.signal?.removeEventListener('abort', input.onAbort);
+  const outcome = runOutcome(live.state, { code: input.code, pid: live.child.pid });
+  input.onDone?.(outcome);
+  input.settle(outcome);
 }
 
 export function runPi(options: RunOptions): Promise<RunResult> {
   return new Promise((settle) => {
     const child = spawn('pi', [...options.piArgs], spawnOptions(options.cwd, options.env));
-    const state: RunState = {
-      stdout: '',
-      stderr: '',
-      buffered: '',
-      aborted: false,
-      spent: { turns: 0, output: 0 },
-      limits: options.limits,
+    const live: LiveRun = {
+      state: initialRunState(options.limits, Date.now()),
+      child,
+      quietMs: options.watchdogMs ?? DEFAULT_WATCHDOG_MS,
+      ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+      settled: false,
     };
-    let settled = false;
-
-    // 起きたことを先に伝える。走っている子の記録を、終わりを待たずに書けるように
+    const onAbort = () => {
+      live.state.aborted = true;
+      killChild(child);
+    };
+    const finish = (code: number) => {
+      finishLive(live, {
+        code,
+        signal: options.signal,
+        onAbort,
+        onDone: options.onDone,
+        settle,
+      });
+    };
     if (child.pid !== undefined) {
       options.onStarted?.(child.pid);
     }
-
-    const onAbort = () => {
-      state.aborted = true;
-      killChild(child);
-    };
-
-    const finish = (code: number) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      options.signal?.removeEventListener('abort', onAbort);
-      const outcome: RunResult = {
-        stdout: state.stdout,
-        stderr: state.stderr,
-        code,
-        stopped: state.stopped,
-        aborted: state.aborted,
-        ...(child.pid === undefined ? {} : { pid: child.pid }),
-      };
-      // 待たずに結果を受け取りたい呼び出し側の口。promise の解決より先に呼ぶ。
-      options.onDone?.(outcome);
-      settle(outcome);
-    };
-
-    // 中断が既に来ていれば即座に止める。来たら子を殺す。
     if (options.signal?.aborted === true) {
-      // 既に中断されている（再走のときなど）。spawn 済みの子をここで殺す
-      state.aborted = true;
+      live.state.aborted = true;
       killChild(child);
     } else {
       options.signal?.addEventListener('abort', onAbort, { once: true });
     }
-
     child.stdout.on('data', (chunk: Buffer) => {
-      const text = chunk.toString();
-      state.stdout += text;
-      state.buffered += text;
-      options.onProgress?.({ stream: 'stdout', text });
-      const lines = state.buffered.split('\n');
-      state.buffered = lines.pop() ?? '';
-      for (const line of lines) {
-        consumeLine(line, state, child);
-      }
+      consumeStdout(live, { text: chunk.toString(), now: Date.now() });
     });
     child.stderr.on('data', (chunk: Buffer) => {
-      const text = chunk.toString();
-      state.stderr += text;
-      options.onProgress?.({ stream: 'stderr', text });
+      appendStderr(live, chunk.toString());
     });
     child.on('error', (error: Error) => {
-      state.stderr += error.message;
+      live.state.stderr += error.message;
       finish(1);
     });
     child.on('close', (code: number | null) => {
       finish(code ?? 0);
     });
-
-    // 指示は stdin から渡す。argv に載せると、先頭が `-` や `@` の文書がオプションやファイル引数として読まれる。
     child.stdin.end(options.stdin);
   });
 }
@@ -388,10 +537,14 @@ export type ChildState = 'done' | 'turn-limit' | 'error' | 'aborted';
  * 走り終えた子がどう終わったか。
  *
  * `aborted`（親が止めた）を先に見る。止めたときに上限の印も立っていることがあり、それは理由にならない。
+ * `ended`（`agent_end` を見た）は `done` にする。報告の後に子が終わらなくても、本文は配達できる。
  */
 export function stateOf(run: RunResult): ChildState {
   if (run.aborted) {
     return 'aborted';
+  }
+  if (run.ended) {
+    return 'done';
   }
   if (run.stopped !== undefined) {
     return 'turn-limit';
@@ -403,6 +556,9 @@ export function stateOf(run: RunResult): ChildState {
 export function reasonOf(run: RunResult): string | undefined {
   if (run.aborted) {
     return 'stopped by the parent';
+  }
+  if (run.ended) {
+    return undefined;
   }
   if (run.stopped !== undefined) {
     return run.stopped;
