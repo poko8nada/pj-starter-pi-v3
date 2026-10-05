@@ -55,9 +55,9 @@ A section with nothing in it is left out. A field that is not decided yet keeps 
 
 - **Every line of the definition is one item.** A product's name, a line of `What`, a `Who` item, a unit or a feature under `Users can do`, a line of the `Stack` — all of them are items.
 - A line that moved ends with `**add**`, `**update**` or `**drop**`, in bold. A line without a marker is a line that did not move.
-- A moved line names its cause after the marker: `**update** (ADR 02-1)`. One entry writes the lines it moves; a line touched by several entries names each one.
+- A moved line names its cause after the marker: `**update** (ADR 02-1)`. One entry writes the lines it moves; a line touched by several entries names each one. The cause is this cycle's ADR entry that moved it; a change with no entry does not mark the definition.
 - Only the markers that mean something for that item are used: a name that leaves is a `**drop**`, and a thing that cannot leave never carries one.
-- `add` is an item that did not exist before. `update` moves the content of an item and leaves its name alone.
+- `add` is an item that did not exist before. `update` moves the content of an item and leaves its name alone: the wording, or the thing behind it (a skill's files, an extension's behavior). A unit whose files moved in this cycle carries `update` even when its wording stands.
 
 ## Who
 

@@ -52,4 +52,25 @@
    - mechanism: pi の拡張イベントに `session_compact` がある（型は `SessionCompactEvent`。`reason: manual | threshold | overflow` と `willRetry` を持つ）。`session_compact_failed` と `session_before_compact` もある（`dist/core/extensions/types.d.ts`）
    - mechanism: `on("session_compact", handler)` として登録できる（同じファイルの `on()` 一覧）
 4. Trial: なし
-5. Decision: **proposed**
+5. Decision: **accepted**
+
+## 04: second-opinion
+
+### 04-1: second-opinion
+
+1. Agenda:
+   - Title: いまの会話そのものに、別の目（一貫性・妥当性・穴・別案）が欲しい。`consult` は「この会話を見せない」設計なので使えない
+   - Proposal: `second-opinion` を新しい拡張として作る（consult の一部をコピーして持つ。モジュールは共有しない）。ツール（エージェント用）とコマンド（owner 用）で、直近の会話を材料に、**同期**で判定を返す
+2. Highlight:
+   - `consult` は子にこの会話を見せない（子は自分でファイルを読む）。だから「いまの会話を判定させる」は埋まっていない穴
+   - 捕まえたい失敗が実在する: 011 の作業中、親（メイン）が意見を何度も変え、owner が「一貫していない」と指摘した。同じモデルの自己点検は自分の推論に引きずられる
+   - 検討した形: `consult` のロールを増やす（会話を渡す口が無い）/ consult とモジュールを共有する（別の物なのでコピーにする）/ 背景で走らせる（同じターンで使えないので同期にする）
+   - **別モデル + 会話だけを見る + 同期**が価値の中心。小さく保つ（読みだけ・worktree 無し・有限の窓）
+   - 決めた形: 子は完全新規（`--no-session`）/ 窓は直近20件（結果も含める。長い発言は切る。この拡張自身の以前の結果は除く）/ 道具の結果は pi がすでに切っているのでそのまま渡す / 答えは5項目（`Consistent` / `Holes` / `Alternative` / `Cannot judge` / `Read`。無い欄は `なし`、全体15行以内）
+3. Research:
+   - mechanism: pi の拡張イベントから会話が取れる。`on("context")` は `messages: AgentMessage[]`（システム文を除く）、`on("message_end")` は1件ずつ、`on("agent_end")` は全件、`on("input")` は owner の入力（`dist/core/extensions/types.d.ts`）
+   - mechanism: 道具の引数と結果は `AgentMessage` の中に分かれて入る（`tool_use` / `tool_result`）。結果は pi 側ですでに切り詰められている（`read` は 2000行 / 50KB、`grep` は大きい物は索引）ので、そのまま渡せる
+   - mechanism: コマンドは `registerCommand(name, { handler: (args, ctx) })` で、引数は文字列1つ。ツールの任意引数は typebox の `Type.Optional`（`dist/core/extensions/types.d.ts`）
+   - mechanism: 子の起動は consult と同じ手（`--mode json -p` / `--tools` / `--no-session` / `--extension` / `--no-approve`）。読みだけ + web を持たせ、親と別モデルにする
+4. Trial: なし
+5. Decision: **accepted**
