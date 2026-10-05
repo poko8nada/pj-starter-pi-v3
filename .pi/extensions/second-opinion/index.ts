@@ -228,6 +228,7 @@ export default function (pi: ExtensionAPI) {
       'Pass focus to ask about one thing, messages to change how many recent messages are judged (default 8).',
     ],
     parameters: PARAMETERS,
+    annotations: { readOnlyHint: true },
     execute: (...args: ExecuteArgs) =>
       runOpinion(portOf(args[4]), toRequest(args[1])).then((body) => result(body)),
   });
