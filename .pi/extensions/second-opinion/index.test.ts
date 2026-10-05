@@ -2,9 +2,9 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../test/tmp.ts';
-import { DEFAULT_QUESTION } from './answer.ts';
+import { DEFAULT_QUESTION } from './tool/answer.ts';
 import { type RunResult } from './run/run.ts';
-import { ownerMessage, recordMessage, type AgentMessage, type Held } from './conversation.ts';
+import { ownerMessage, recordMessage, type AgentMessage, type Held } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
 import { bodyOf, collectMessage, parseCommandArgs, runOpinion, toRequest } from './index.ts';
 

@@ -16,7 +16,7 @@ import type {
 } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { opinionTask } from './answer.ts';
+import { opinionTask } from './tool/answer.ts';
 import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './child/spec.ts';
 import {
   ownerMessage,
@@ -24,7 +24,7 @@ import {
   windowFrom,
   type AgentMessage,
   type Held,
-} from './conversation.ts';
+} from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
 import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } from './run/run.ts';
 
