@@ -7,11 +7,11 @@ import type {
   ToolExecutionEndEvent,
 } from '@earendil-works/pi-coding-agent';
 
-/** 通知の種類。種類ごとに音を出し分ける（commit を除いて文言も） */
-type NotifyKind = 'permission' | 'question' | 'done' | 'commit';
+/** 通知の種類。種類ごとに音を出し分ける（commit・compact を除いて文言も） */
+type NotifyKind = 'permission' | 'question' | 'done' | 'commit' | 'compact';
 
-/** cmux へ文言を送る種類。commit は音だけにする */
-type NotificationKind = Exclude<NotifyKind, 'commit'>;
+/** cmux へ文言を送る種類。commit と compact は音だけにする */
+type NotificationKind = Exclude<NotifyKind, 'commit' | 'compact'>;
 
 interface SoundNotifyConfig {
   enabled: boolean;
@@ -31,7 +31,7 @@ export type CtxPort = Pick<ExtensionContext, 'hasUI'>;
 
 const DEFAULT_CONFIG: SoundNotifyConfig = {
   enabled: true,
-  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop' },
+  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop', compact: 'Glass' },
   notifications: true,
 };
 
@@ -78,6 +78,7 @@ export function parseConfig(parsed: unknown): SoundNotifyConfig {
       question: readString(sounds.question, DEFAULT_CONFIG.sounds.question),
       done: readString(sounds.done, DEFAULT_CONFIG.sounds.done),
       commit: readString(sounds.commit, DEFAULT_CONFIG.sounds.commit),
+      compact: readString(sounds.compact, DEFAULT_CONFIG.sounds.compact),
     },
   };
 }
@@ -142,8 +143,8 @@ function dispatch(pi: PiPort, ctx: CtxPort, kind: NotifyKind, config: SoundNotif
   }
 
   const tasks: Promise<void>[] = [player(pi, config.sounds[kind])];
-  // commit は音だけ。cmux 通知は入力待ち・ターン完了の合図に限る。
-  if (config.notifications && kind !== 'commit') {
+  // commit と compact は音だけ。cmux 通知は入力待ち・ターン完了の合図に限る。
+  if (config.notifications && kind !== 'commit' && kind !== 'compact') {
     tasks.push(sendNotification(pi, kind));
   }
 
@@ -184,6 +185,11 @@ export function handleToolExecutionEnd(
   }
 }
 
+/** 圧縮が終わったときだけ compact の音を鳴らす */
+export function handleSessionCompact(pi: PiPort, ctx: CtxPort, config: SoundNotifyConfig): void {
+  dispatch(pi, ctx, 'compact', config);
+}
+
 export default function (pi: ExtensionAPI) {
   const config = loadConfig();
 
@@ -200,5 +206,10 @@ export default function (pi: ExtensionAPI) {
   // コミット完了: bash が git commit の出力を返したときに 1 音
   pi.on('tool_execution_end', async (event, ctx) => {
     handleToolExecutionEnd(pi, ctx, event, config);
+  });
+
+  // 圧縮完了: 圧縮が終わったときに 1 音（失敗は鳴らさない）
+  pi.on('session_compact', async (_event, ctx) => {
+    handleSessionCompact(pi, ctx, config);
   });
 }
