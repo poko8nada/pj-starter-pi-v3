@@ -367,7 +367,7 @@ function consumeLine(
   killChild(child);
 }
 
-const DEFAULT_WATCHDOG_MS = 30000;
+export const DEFAULT_WATCHDOG_MS = 30000;
 
 /** 起動直後の状態。`lastOutputAt` は起動の時刻。 */
 function initialRunState(limits: Limits, startedAt: number): RunState {

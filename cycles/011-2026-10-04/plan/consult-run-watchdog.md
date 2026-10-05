@@ -127,6 +127,17 @@
   - 「静か」の定義が層で割れていて未 cover。`consumeStdout` は空行・壊れた行も含め stdout チャンク毎に `lastOutputAt` を進める（`run.ts:440` が `consumeLine` の早期 return より前）が、単位レベルの `applyEvent` は非 record 入力で `lastOutputAt` を進めないことがテストで固定されている。一方 `stderr` は猶予を延ばさない（`appendStderr` は時計を触らない、`run.ts:451-454`）。空行・壊行・`agent_end` 後の `stderr` が猶予に効くかは Verify のどこも主張しない。
     fixed: 非recordは時計を進めない単体テストを拡充し、壊行/空行は進むこと（`broken` mode 生存）と `stderr` は延ばさないこと（`stderr` mode で `done`）を統合テストで固定。
 
+### Round 2
+
+- Stale:
+  - なし（`fixed:` 2件を検証。`applyEvent` は報告後を上限に数えず、先に `stopped` が立てば `endedAt` を入れないので、`ended:true + stopped` は `runPi` の経路で共存しない。単体・優先度・`compose(ended:true)` のテストあり。`tool/render.ts` を変えないのは、その状態が到達不能になったためで許容）
+  - なし（Slice 1 の Verify 一文は as-built の「`reasonOf` は理由なし（`undefined`）」に直り、実装とテスト名に一致）
+- Unlisted:
+  - なし（変更は `run.ts` / `run.test.ts` / `.pi/test/pi` のみで、いずれも `## Files` に named）
+- Gaps:
+  - 既定猶予 30000 の値が未 cover。`watchdogMs` を省略した既定経路のテスト（`run.test.ts:712-723`）は `exit`（即時正常終了）なので watchdog が発火せず、既定値が何でも通る。`DEFAULT_WATCHDOG_MS = 30000` は非 export で、`??` 分岐を通ることは示すが 30000 であることは主張しない
+    fixed: `DEFAULT_WATCHDOG_MS` を export して 30000 のテストを追加。既存の省略テストと合わせ値と経路を cover（30秒の実待ちはしない）。
+
 ## Acceptance
 
 - Ran:
