@@ -66,7 +66,7 @@
    - 捕まえたい失敗が実在する: 011 の作業中、親（メイン）が意見を何度も変え、owner が「一貫していない」と指摘した。同じモデルの自己点検は自分の推論に引きずられる
    - 検討した形: `consult` のロールを増やす（会話を渡す口が無い）/ consult とモジュールを共有する（別の物なのでコピーにする）/ 背景で走らせる（同じターンで使えないので同期にする）
    - **別モデル + 会話だけを見る + 同期**が価値の中心。小さく保つ（読みだけ・worktree 無し・有限の窓）
-   - 決めた形: 子は完全新規（`--no-session`）/ 窓は直近20件（結果も含める。長い発言は切る。この拡張自身の以前の結果は除く）/ 道具の結果は pi がすでに切っているのでそのまま渡す / 答えは5項目（`Consistent` / `Holes` / `Alternative` / `Cannot judge` / `Read`。無い欄は `なし`、全体15行以内）
+   - 決めた形: 子は完全新規（`--no-session`）/ 窓は直近20件（結果も含める。長い発言は切る。この拡張自身の以前の結果は除く）/ 道具の結果は pi がすでに切っているのでそのまま渡す / 答えは5項目（`Consistent` / `Holes` / `Alternative` / `Cannot judge` / `Read`。無い欄は `なし`）
 3. Research:
    - mechanism: pi の拡張イベントから会話が取れる。`on("context")` は `messages: AgentMessage[]`（システム文を除く）、`on("message_end")` は1件ずつ、`on("agent_end")` は全件、`on("input")` は owner の入力（`dist/core/extensions/types.d.ts`）
    - mechanism: 道具の引数と結果は `AgentMessage` の中に分かれて入る（`tool_use` / `tool_result`）。結果は pi 側ですでに切り詰められている（`read` は 2000行 / 50KB、`grep` は大きい物は索引）ので、そのまま渡せる

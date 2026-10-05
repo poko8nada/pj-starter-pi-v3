@@ -46,7 +46,7 @@ The child's text, unedited, in this shape:
 ...
 ```
 
-A missing section reads `なし`. The whole answer stays within 15 lines.
+A missing section reads `なし`.
 
 ## Settings
 

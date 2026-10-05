@@ -15,12 +15,11 @@ describe('DEFAULT_QUESTION', () => {
     expect(DEFAULT_QUESTION).toContain('別案');
   });
 
-  it('答えの形は5項目で、無い欄はなし、15行以内', () => {
+  it('答えの形は5項目で、無い欄はなし', () => {
     for (const heading of ['Consistent', 'Holes', 'Alternative', 'Cannot judge', 'Read']) {
       expect(DEFAULT_QUESTION).toContain(heading);
     }
     expect(DEFAULT_QUESTION).toContain('なし');
-    expect(DEFAULT_QUESTION).toContain('15行');
   });
 });
 
