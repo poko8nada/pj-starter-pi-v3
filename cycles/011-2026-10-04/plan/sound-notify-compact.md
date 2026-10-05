@@ -87,4 +87,7 @@
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm run test:run .pi/extensions/sound-notify/index.test.ts` → 14 passed
+  - `pnpm run typecheck` → 緑
+  - `pnpm run test:run` → 20 files / 352 passed
+- Findings: なし
