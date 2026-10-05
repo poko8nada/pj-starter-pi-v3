@@ -6,9 +6,9 @@ The child sees only the recent conversation (as text), never this project's file
 
 ## Tools
 
-| Tool      | What it does                                                                     |
-| --------- | -------------------------------------------------------------------------------- |
-| `opinion` | Judges the recent conversation with another model. Returns the child text as-is. |
+| Tool             | What it does                                                                     |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `second_opinion` | Judges the recent conversation with another model. Returns the child text as-is. |
 
 | Parameter  | Required | Meaning                                                            |
 | ---------- | -------- | ------------------------------------------------------------------ |
@@ -16,17 +16,17 @@ The child sees only the recent conversation (as text), never this project's file
 | `messages` | no       | How many recent messages to judge (default 20)                     |
 
 ```
-opinion({ focus: "Is this plan consistent?" })
-opinion({ messages: 5 })
+second_opinion({ focus: "Is this plan consistent?" })
+second_opinion({ messages: 5 })
 ```
 
 ## Commands
 
-`/opinion` is the same judgment for the owner. A leading number is the message count, the rest is the question. The answer arrives as a message in the conversation.
+`/second_opinion` is the same judgment for the owner. A leading number is the message count, the rest is the question. The answer arrives as a message in the conversation.
 
 ```
-/opinion
-/opinion 10 Is this consistent?
+/second_opinion
+/second_opinion 10 Is this consistent?
 ```
 
 ## What comes back

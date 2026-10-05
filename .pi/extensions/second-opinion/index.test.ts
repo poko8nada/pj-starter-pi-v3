@@ -6,7 +6,14 @@ import { DEFAULT_QUESTION } from './tool/answer.ts';
 import { type RunResult } from './run/run.ts';
 import { ownerMessage, recordMessage, type AgentMessage, type Held } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
-import { bodyOf, collectMessage, parseCommandArgs, runOpinion, toRequest } from './index.ts';
+import extensionDefault, {
+  bodyOf,
+  collectMessage,
+  parseCommandArgs,
+  runOpinion,
+  toRequest,
+  TOOL_NAME,
+} from './index.ts';
 
 // 子を走らせない分だけを試す（文字列の組み立て）。子の起動は Slice 4 の統合で扱う。
 
@@ -252,5 +259,45 @@ describe('runOpinion: 子へのモデル', () => {
       'opinion',
     );
     expect(args[args.indexOf('--model') + 1]).toBe(role.models[0]);
+  });
+});
+
+describe('registration: 道具とコマンドの名前', () => {
+  it('TOOL_NAME は second_opinion', () => {
+    expect(TOOL_NAME).toBe('second_opinion');
+  });
+
+  it('registerTool と registerCommand に second_opinion を渡す', () => {
+    let toolName: string | undefined;
+    let commandName: string | undefined;
+    const pi = {
+      registerTool: (tool: { name: string }) => {
+        toolName = tool.name;
+      },
+      registerCommand: (name: string) => {
+        commandName = name;
+      },
+      on: () => {},
+      sendMessage: () => {},
+    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の登録だけを試すための、意図的な狭い形
+    extensionDefault(pi as never);
+    expect(toolName).toBe('second_opinion');
+    expect(commandName).toBe('second_opinion');
+  });
+
+  it('コマンドの description が second_opinion を指す', () => {
+    let commandDescription = '';
+    const pi = {
+      registerTool: () => {},
+      registerCommand: (_name: string, command: { description: string }) => {
+        commandDescription = command.description;
+      },
+      on: () => {},
+      sendMessage: () => {},
+    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の登録だけを試すための、意図的な狭い形
+    extensionDefault(pi as never);
+    expect(commandDescription).toContain('second_opinion');
   });
 });

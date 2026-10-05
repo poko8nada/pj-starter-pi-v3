@@ -29,7 +29,7 @@ import { loadTypes, resolveType } from './policy/types.ts';
 import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } from './run/run.ts';
 
 /** 道具とコマンドの名前 */
-export const TOOL_NAME = 'opinion';
+export const TOOL_NAME = 'second_opinion';
 
 /** 窓の既定の件数 */
 export const DEFAULT_MESSAGES = 20;
@@ -192,7 +192,7 @@ export default function (pi: ExtensionAPI) {
     promptSnippet:
       'Judge the recent conversation (consistency, holes, alternatives) with another model',
     promptGuidelines: [
-      'Use opinion when the conversation itself needs another eye: a second model reads the recent messages and judges them.',
+      'Use second_opinion when the conversation itself needs another eye: a second model reads the recent messages and judges them.',
       'Pass focus to ask about one thing, messages to change how many recent messages are judged (default 20).',
     ],
     parameters: PARAMETERS,
@@ -202,7 +202,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand(TOOL_NAME, {
     description:
-      'Judge the recent conversation with another model (usage: /opinion [messages] [question])',
+      'Judge the recent conversation with another model (usage: /second_opinion [messages] [question])',
     handler: async (args, ctx) => {
       const body = await runOpinion(portOf(ctx), held, parseCommandArgs(args));
       pi.sendMessage({ customType: 'second-opinion-answer', content: body, display: true });
