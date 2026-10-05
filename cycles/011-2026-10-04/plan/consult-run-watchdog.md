@@ -138,7 +138,19 @@
   - 既定猶予 30000 の値が未 cover。`watchdogMs` を省略した既定経路のテスト（`run.test.ts:712-723`）は `exit`（即時正常終了）なので watchdog が発火せず、既定値が何でも通る。`DEFAULT_WATCHDOG_MS = 30000` は非 export で、`??` 分岐を通ることは示すが 30000 であることは主張しない
     fixed: `DEFAULT_WATCHDOG_MS` を export して 30000 のテストを追加。既存の省略テストと合わせ値と経路を cover（30秒の実待ちはしない）。
 
+### Round 3
+
+- Stale:
+  - なし
+- Unlisted:
+  - なし
+- Gaps:
+  - なし（`fixed:` 1件を検証。`DEFAULT_WATCHDOG_MS` は export され 30000 に固定（`run.ts:370`、`run.test.ts:7,713-715`）。既存の省略テスト（`run.test.ts:717-728`）と合わせ値と経路を cover し、30秒の実待ちなし）
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm run test:run .pi/extensions/consult/run/run.test.ts` → 58 passed
+  - `pnpm run typecheck` → 緑
+  - `pnpm run test:run` → 20 files / 370 passed
+- Findings: なし
