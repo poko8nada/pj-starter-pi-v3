@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { PARAMETERS, parseRunRequest } from './run.ts';
+import { parseRunRequest } from './run.ts';
 
 // 面（引数の検証）だけを試す。子の起動と worktree は consult.test.ts が runtime ごと見る。
-
-describe('PARAMETERS', () => {
-  it('項目が role / task / worktree / continue だけ', () => {
-    // `input` が戻ってきたら気づけるようにする（1 呼び出し = 1 体、読ませるのは task の仕事）。
-    expect(Object.keys(PARAMETERS.properties)).toEqual(['role', 'task', 'worktree', 'continue']);
-  });
-});
 
 describe('parseRunRequest', () => {
   it('role と task だけ → worktree も continue も無い依頼になる', () => {

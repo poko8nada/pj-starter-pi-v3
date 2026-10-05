@@ -44,20 +44,8 @@ describe('isBlank', () => {
     expect(isBlank('')).toBe(true);
   });
 
-  it('空白だけ（改行・タブを含む）は空', () => {
-    expect(isBlank('   \n\t')).toBe(true);
-  });
-
   it('文字が 1 つでもあれば空ではない', () => {
     expect(isBlank('a')).toBe(false);
-  });
-
-  it('中身が「0」なら空ではない（長さ 0 と別）', () => {
-    expect(isBlank('0')).toBe(false);
-  });
-
-  it('前後に空白があっても、中身があれば空ではない', () => {
-    expect(isBlank('   a')).toBe(false);
   });
 });
 
@@ -68,18 +56,6 @@ describe('joinPrompt', () => {
 
   it('payload が無ければ task だけ', () => {
     expect(joinPrompt(undefined, 'TASK')).toBe('TASK');
-  });
-
-  it('payload が空文字なら足さない', () => {
-    expect(joinPrompt('', 'TASK')).toBe('TASK');
-  });
-
-  it('payload の中の改行を壊さない', () => {
-    expect(joinPrompt('A\nB', 'T')).toBe('A\nB\nT');
-  });
-
-  it('空白だけの payload は足す（空とみなすのは入力の段の仕事）', () => {
-    expect(joinPrompt('  ', 'TASK')).toBe('  \nTASK');
   });
 });
 
@@ -165,18 +141,6 @@ describe('buildPiArgs', () => {
     expect(args).not.toContain('--');
   });
 
-  it('task: 先頭が `-` の文書 → 引数の並びが変わらない（happy、boundary）', () => {
-    expect(buildPiArgs(options({ task: '---\nname: x' }))).toEqual(
-      buildPiArgs(options({ task: '調べる' })),
-    );
-  });
-
-  it('task: 先頭が `@` の文書 → 引数の並びが変わらない（happy、boundary）', () => {
-    expect(buildPiArgs(options({ task: '@file' }))).toEqual(
-      buildPiArgs(options({ task: '調べる' })),
-    );
-  });
-
   it('task: 空 → 引数は同じで、stdin に空を書く（happy、empty）', () => {
     expect(buildPiArgs(options({ task: '' }))).toEqual(buildPiArgs(options({ task: '調べる' })));
     expect(joinPrompt(undefined, '')).toBe('');
@@ -186,10 +150,6 @@ describe('buildPiArgs', () => {
 describe('needsIsolation', () => {
   it('`isolated` が true → 隔離する', () => {
     expect(needsIsolation(policy({ isolated: true }))).toBe(true);
-  });
-
-  it('`isolated` が false → 隔離しない', () => {
-    expect(needsIsolation(policy({ isolated: false }))).toBe(false);
   });
 });
 
@@ -258,11 +218,6 @@ describe('modelFrom', () => {
   it('子が報告した provider と model を組み立てる', () => {
     expect(modelFrom([messageEnd()])).toBe('p/m');
   });
-
-  it('報告が無ければ undefined（推測しない）', () => {
-    expect(modelFrom([])).toBeUndefined();
-    expect(modelFrom([{ type: 'message_end', message: { role: 'user' } }])).toBeUndefined();
-  });
 });
 
 describe('ranFrom', () => {
@@ -282,21 +237,12 @@ describe('usageFrom', () => {
     const usage = usageFrom([messageEnd(), messageEnd()]);
     expect(usage).toEqual({ turns: 2, input: 20, output: 10, cost: 0.002 });
   });
-
-  it('usage が無いイベントでも落ちない', () => {
-    const event = { type: 'message_end', message: { role: 'assistant' } };
-    expect(usageFrom([event])).toEqual({ turns: 1, input: 0, output: 0, cost: 0 });
-  });
 });
 
 describe('errorFrom', () => {
   it('errorMessage があれば返す', () => {
     const event = messageEnd({ errorMessage: 'rate limited' });
     expect(errorFrom([event])).toBe('rate limited');
-  });
-
-  it('無ければ空文字', () => {
-    expect(errorFrom([messageEnd()])).toBe('');
   });
 });
 

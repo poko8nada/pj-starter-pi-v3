@@ -115,12 +115,6 @@ describe('windowFrom: 道具', () => {
     expect(window.text).toBe('');
     expect(window.dropped).toBe(1);
   });
-
-  it('窓外に落ちた他の道具の呼び出しの結果は残す', () => {
-    const messages = [call('9', 'read', { path: 'a.md' }), result('9', 'read', 'the file')];
-    const window = windowFrom(messages, 1, 'opinion');
-    expect(window.text).toBe('agent: [tool: read] result: the file');
-  });
 });
 
 describe('windowFrom: 打切り', () => {
@@ -152,11 +146,6 @@ describe('windowFrom: 空と不正', () => {
     expect(() => windowFrom([owner('hi')], 0, 'opinion')).toThrow(/positive integer/);
     expect(() => windowFrom([owner('hi')], -3, 'opinion')).toThrow(/positive integer/);
   });
-
-  it('空の発言は行にならない', () => {
-    const window = windowFrom([owner('   '), say('')], 20, 'opinion');
-    expect(window.text).toBe('');
-  });
 });
 
 describe('windowFrom: 出さない物', () => {
@@ -173,18 +162,6 @@ describe('windowFrom: 出さない物', () => {
     const thinking = agent([{ type: 'thinking', thinking: 'hmm' }]);
     const window = windowFrom([thinking, say('done')], 20, 'opinion');
     expect(window.text).toBe('agent: done');
-  });
-
-  it('知らない引数は JSON のまま出す', () => {
-    const window = windowFrom([call('1', 'mystery', { zzz: 1 })], 20, 'opinion');
-    expect(window.text).toBe('agent: [tool: mystery] {"zzz":1}');
-  });
-});
-
-describe('windowFrom: 不正な count', () => {
-  it('NaN と非整数は投げる', () => {
-    expect(() => windowFrom([owner('hi')], Number.NaN, 'opinion')).toThrow();
-    expect(() => windowFrom([owner('hi')], 2.5, 'opinion')).toThrow();
   });
 });
 

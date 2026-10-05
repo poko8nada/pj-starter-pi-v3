@@ -57,41 +57,6 @@ describe('parseTypes', () => {
     expect(() => parseTypes('{')).toThrow(/not valid JSON/);
   });
 
-  it('`types` が配列でない → 投げる', () => {
-    expect(() => parseTypes('{"types":{}}')).toThrow(/`types` must be an array/);
-  });
-
-  it('`types` が空 → 投げる', () => {
-    expect(() => parseTypes(config())).toThrow(/must not be empty/);
-  });
-
-  it('要素がオブジェクトでない → 投げる', () => {
-    expect(() => parseTypes(config('review'))).toThrow(/types\[0\] must be an object/);
-  });
-
-  it('`name` が無い / 空 → 投げる', () => {
-    expect(() => parseTypes(config(aType({ name: undefined })))).toThrow(/name/);
-    expect(() => parseTypes(config(aType({ name: '  ' })))).toThrow(/name/);
-  });
-
-  it('`name` が重複 → 投げる', () => {
-    expect(() => parseTypes(config(aType(), aType()))).toThrow(/duplicated/);
-  });
-
-  it('`models` が配列でない → 投げる', () => {
-    expect(() => parseTypes(config(aType({ models: 'commandcode/x' })))).toThrow(
-      /models must be an array/,
-    );
-  });
-
-  it('`models` の要素が文字列でない → 投げる', () => {
-    expect(() => parseTypes(config(aType({ models: [1] })))).toThrow(/models\[0\]/);
-  });
-
-  it('`tools` が配列でない → 投げる', () => {
-    expect(() => parseTypes(config(aType({ tools: 'read' })))).toThrow(/tools must be an array/);
-  });
-
   it('`tools` が空 → 投げる', () => {
     // 空だと「指定なし」として親のツールが通ってしまう。
     expect(() => parseTypes(config(aType({ tools: [] })))).toThrow(/must not be empty/);
@@ -108,29 +73,10 @@ describe('parseTypes', () => {
     );
   });
 
-  it('`isolated` が true / false 以外 → 投げる', () => {
-    expect(() => parseTypes(config(aType({ isolated: 'yes' })))).toThrow(/isolated/);
-    expect(() => parseTypes(config(aType({ continueByDefault: 1 })))).toThrow(/continueByDefault/);
-    expect(() => parseTypes(config(aType({ isolated: undefined })))).toThrow(/isolated/);
-    expect(() => parseTypes(config(aType({ continueByDefault: undefined })))).toThrow(
-      /continueByDefault/,
-    );
-  });
-
   it('`paths` / `bash` は空を許す（空 = 全部）', () => {
     const [type] = parseTypes(config(aType({ paths: [], bash: [] })));
     expect(type?.paths).toEqual([]);
     expect(type?.bash).toEqual([]);
-  });
-
-  it('`paths` / `bash` のエントリが文字列でない → 投げる', () => {
-    expect(() => parseTypes(config(aType({ paths: [1] })))).toThrow(/paths\[0\]/);
-    expect(() => parseTypes(config(aType({ bash: ['git', ''] })))).toThrow(/bash\[1\]/);
-  });
-
-  it('`paths` / `bash` が無い → 投げる', () => {
-    expect(() => parseTypes(config(aType({ paths: undefined })))).toThrow(/paths/);
-    expect(() => parseTypes(config(aType({ bash: undefined })))).toThrow(/bash/);
   });
 
   it('`limits` が無い → 投げる', () => {

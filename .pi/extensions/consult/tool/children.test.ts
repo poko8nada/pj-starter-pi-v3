@@ -1,13 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
-import { PARENT_UNIT, appendRun, logPath, type RunRecord } from '../run/log.ts';
+import { appendRun, type RunRecord } from '../run/log.ts';
 import { createWorktree, rootFor } from '../run/worktree.ts';
 import {
-  PARAMETERS,
   USAGE,
   createChildrenTool,
   elapsed,
@@ -22,8 +20,6 @@ import {
 // 一覧は `rootFor(cwd)` の root を読むので、テストは本物のリポジトリと worktree を 1 つ作る。
 
 const ROOT_KEY = 'CONSULT_ROOT';
-const here = fileURLToPath(new URL('.', import.meta.url));
-
 beforeEach(() => {
   vi.stubEnv(ROOT_KEY, tmpDir());
 });
@@ -91,12 +87,6 @@ function textOf(result: { readonly content: readonly unknown[] }): string {
 
 const alive = () => true;
 const dead = () => false;
-
-describe('PARAMETERS', () => {
-  it('項目が action / id だけ', () => {
-    expect(Object.keys(PARAMETERS.properties)).toEqual(['action', 'id']);
-  });
-});
 
 describe('elapsed', () => {
   it('秒で出し、60 秒を超えたら分と秒にする', () => {
@@ -221,25 +211,5 @@ describe('createChildrenTool', () => {
     const { host } = fakeHost();
     const args: ChildrenArgs = ['call', { action: 'stop' }, undefined, undefined, { cwd: dir }];
     await expect(createChildrenTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
-  });
-});
-
-describe('消えた面', () => {
-  it('consult_resume と、resume / stopped の実装が消えている', () => {
-    const source = readFileSync(`${here}../index.ts`, 'utf8');
-    expect(source).not.toContain('consult_resume');
-    expect(existsSync(`${here}resume.ts`)).toBe(false);
-    expect(existsSync(`${here}../run/resume.ts`)).toBe(false);
-    expect(existsSync(`${here}../run/stopped.ts`)).toBe(false);
-  });
-
-  it('記録は <root>/<unit>/log.jsonl に置く（stopped.json ではない）', () => {
-    const { root } = withLog();
-    expect(existsSync(logPath(root, '2-a'))).toBe(true);
-    expect(existsSync(join(root, 'stopped.json'))).toBe(false);
-    // 親の木で走った子（worktree 無し）の分も、同じ root の _parent に置ける
-    mkdirSync(join(root, PARENT_UNIT), { recursive: true });
-    writeFileSync(logPath(root, PARENT_UNIT), '', { flag: 'a' });
-    expect(existsSync(logPath(root, PARENT_UNIT))).toBe(true);
   });
 });

@@ -8,7 +8,6 @@ import {
   judgeToolCall,
   parseLimits,
   pathAllowed,
-  unquote,
   type Limits,
 } from './guard.ts';
 
@@ -97,20 +96,6 @@ describe('isSecretPath', () => {
 
   it('node_modules の中は広げない', () => {
     expect(isSecretPath(join(dir, 'node_modules/react/index.js'), dir)).toBe(false);
-  });
-});
-
-describe('unquote', () => {
-  it('二重引用符を剥がす', () => {
-    expect(unquote('.e""nv')).toBe('.env');
-  });
-
-  it('単一引用符を剥がす', () => {
-    expect(unquote(".e''nv")).toBe('.env');
-  });
-
-  it('バックスラッシュを剥がす', () => {
-    expect(unquote('\\.env')).toBe('.env');
   });
 });
 

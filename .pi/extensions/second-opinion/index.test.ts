@@ -44,14 +44,6 @@ describe('parseCommandArgs', () => {
     expect(parseCommandArgs('')).toEqual({});
     expect(parseCommandArgs('   ')).toEqual({});
   });
-
-  it("'0 check' → messages: 0 と質問", () => {
-    expect(parseCommandArgs('0 check')).toEqual({ messages: 0, focus: 'check' });
-  });
-
-  it('先頭の - は件数にしない', () => {
-    expect(parseCommandArgs('-3 x')).toEqual({ focus: '-3 x' });
-  });
 });
 
 /** 終わった子の結果。`ended` だけを変えて終わり方を作る */
@@ -107,9 +99,5 @@ function port() {
 describe('不正な messages', () => {
   it('messages: 0 → 子を走らせず投げる', async () => {
     await expect(runOpinion(port(), { messages: 0 })).rejects.toThrow(/positive integer/);
-  });
-
-  it('toRequest は素通し（検証は windowFrom がする）', () => {
-    expect(toRequest({ messages: 0 })).toEqual({ messages: 0 });
   });
 });

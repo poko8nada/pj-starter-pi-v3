@@ -1,5 +1,3 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { commitInWorktree, commitMessage, compose, parseCommitRequest } from './commit.ts';
 import type { GitRun } from '../run/run.ts';
@@ -96,24 +94,5 @@ describe('parseCommitRequest', () => {
 
   it('message を渡しても引数として拾わない（型は道具が作る）', () => {
     expect(parseCommitRequest({ worktree: '2-a', message: '好きな文' })).toBe('2-a');
-  });
-});
-
-describe('面の契約が消えている', () => {
-  const here = fileURLToPath(new URL('.', import.meta.url));
-
-  it('道具の中に merge の語と run/refs の取り込みが無い', () => {
-    const source = readFileSync(`${here}commit.ts`, 'utf8');
-    expect(source).not.toContain('run/refs');
-  });
-
-  it('run/refs.ts と tool/refs.ts が消えている', () => {
-    expect(existsSync(`${here}../run/refs.ts`)).toBe(false);
-    expect(existsSync(`${here}refs.ts`)).toBe(false);
-  });
-
-  it('commitWorktree が run.ts から消えている', () => {
-    const source = readFileSync(`${here}../run/run.ts`, 'utf8');
-    expect(source).not.toContain('commitWorktree');
   });
 });

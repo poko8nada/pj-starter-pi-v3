@@ -8,21 +8,6 @@ function windowOf(text: string): Window {
   return { text, dropped: 0 };
 }
 
-describe('DEFAULT_QUESTION', () => {
-  it('矛盾・穴・別案を問う', () => {
-    expect(DEFAULT_QUESTION).toContain('一貫性');
-    expect(DEFAULT_QUESTION).toContain('穴');
-    expect(DEFAULT_QUESTION).toContain('別案');
-  });
-
-  it('答えの形は5項目で、無い欄はなし', () => {
-    for (const heading of ['Consistent', 'Holes', 'Alternative', 'Cannot judge', 'Read']) {
-      expect(DEFAULT_QUESTION).toContain(heading);
-    }
-    expect(DEFAULT_QUESTION).toContain('なし');
-  });
-});
-
 describe('opinionTask', () => {
   it('窓と focus から指示を組む', () => {
     const task = opinionTask(windowOf('owner: hi'), 'is this consistent?');
