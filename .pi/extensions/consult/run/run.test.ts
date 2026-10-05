@@ -320,6 +320,14 @@ describe('stateOf / reasonOf', () => {
   it('code が 0 でないが stderr が空 → exit の番号を理由にする', () => {
     expect(reasonOf(combinedRun('', { code: 130 }))).toBe('exit 130');
   });
+
+  it('上限で止まっても本文は失われない（促しを無視しても取れる）', () => {
+    const stdout =
+      '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"half"}],"usage":{"output":1}}}\n';
+    const run = combinedRun(stdout, { stopped: 'turn limit reached (40)' });
+    expect(stateOf(run)).toBe('turn-limit');
+    expect(finalTextFrom(parseEvents(run.stdout))).toBe('half');
+  });
 });
 
 /** status --porcelain が返す文字列をそのまま返す、差し替え用の git */

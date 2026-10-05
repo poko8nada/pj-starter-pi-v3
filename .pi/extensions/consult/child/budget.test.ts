@@ -4,6 +4,18 @@ import { LAST_TURN_MESSAGE, lastTurn, nudge, registerBudget, turnsFrom } from '.
 
 // ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（consult の道具の検査が扱う）。
 
+/** 偽 pi に登録し、指定の turnIndex で turn_end を起こす */
+function fireWith(turns: number | undefined, turnIndex: number): TurnEndEventResult | undefined {
+  let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
+  const pi = {
+    on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
+      handler = next;
+    },
+  };
+  registerBudget(pi, turns);
+  return handler?.({ turnIndex });
+}
+
 describe('lastTurn', () => {
   it('上限 40 → 38 番（促しの後に 1 ターン残る）', () => {
     expect(lastTurn(40)).toBe(38);
@@ -77,6 +89,26 @@ describe('registerBudget', () => {
     expect(first && 'continue' in first ? first.continue : undefined).toBe(true);
     const second = handler?.({ turnIndex: 38 });
     expect(second).toEqual({});
+  });
+});
+
+describe('budget: env から促しまで', () => {
+  it("env '40' → 38 で促す（env から促しまでの 1 本）", () => {
+    const turns = turnsFrom('40');
+    expect(lastTurn(turns)).toBe(38);
+    const result = fireWith(turns, 38);
+    expect(result && 'continue' in result ? result.continue : undefined).toBe(true);
+    expect(result && 'entries' in result ? result.entries : undefined).toHaveLength(1);
+  });
+
+  it('同じ並びで 37 → 促しは出ない', () => {
+    expect(fireWith(turnsFrom('40'), 37)).toEqual({});
+  });
+
+  it('上限が読めない → 促しは出ない', () => {
+    expect(fireWith(turnsFrom(''), 38)).toEqual({});
+    expect(fireWith(turnsFrom('x'), 38)).toEqual({});
+    expect(fireWith(turnsFrom(undefined), 38)).toEqual({});
   });
 });
 
