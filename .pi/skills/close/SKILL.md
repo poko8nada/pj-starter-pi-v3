@@ -78,6 +78,6 @@ Two rules hold the whole way through.
 
 - Do not implement: a hole that breaks the criteria goes back as an `ex-` plan, and the cycle waits
 - Do not invent criteria: the definition, the design and the acceptances are the whole of it
-- Do not fix a hole silently, and do not write the fix into a frozen definition, design or plan
+- Do not fix a hole silently, and do not write the fix into the definition, the design or a plan: they are the cycle's record
 - Do not re-run the whole suite: the merge gate already did, and the close is not a second acceptance
 - Do not copy by hand what the script collects: a line left out is a hole nobody finds again

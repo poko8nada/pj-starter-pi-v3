@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
  */
 
 /** 節や観点の見出し（穴ではない行） */
-const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Merge|Stale|Unlisted|Gaps):\s*(.*)$/;
+const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 
@@ -73,6 +73,12 @@ function readField(lines, field) {
   let inField = false;
   let fieldIndent = 0;
   for (const line of lines) {
+    const bare = line.trim().replace(/^-\s*/, '');
+    const bareHandling = bare.match(HANDLINGS);
+    if (inField && bareHandling && last) {
+      last.handling = `${bareHandling[1]}: ${bareHandling[2].trim()}`;
+      continue;
+    }
     if (isBullet(line)) {
       const text = bulletText(line);
       const label = text.match(LABELS);
@@ -114,14 +120,14 @@ function readRound(lines) {
   /** @type {Leftover | null} */
   let last = null;
   for (const line of lines) {
-    if (!isBullet(line)) continue;
-    const text = bulletText(line);
-    if (!text || isNone(text)) continue;
-    const handling = text.match(HANDLINGS);
+    const handling = line.trim().replace(/^-\s*/, '').match(HANDLINGS);
     if (handling) {
       if (last) last.handling = `${handling[1]}: ${handling[2].trim()}`;
       continue;
     }
+    if (!isBullet(line)) continue;
+    const text = bulletText(line);
+    if (!text || isNone(text)) continue;
     const label = text.match(LABELS);
     if (label) {
       last = null;

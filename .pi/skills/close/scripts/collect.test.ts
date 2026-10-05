@@ -43,7 +43,6 @@ const plan = `# PLAN worktree-cleanup
     - fixed: session_start で握りつぶした
   - remove の後も session のファイルが残る
     - left: 次のサイクルで扱う
-- Merge: def5678
 `;
 
 describe('collectPlan', () => {
@@ -118,5 +117,19 @@ describe('collectCycle', () => {
 
   it('残り物が無ければ なし', () => {
     expect(collectCycle(tmpDir())).toBe('なし');
+  });
+});
+
+describe('対応の行は `-` が無くても拾う', () => {
+  it('Review の fixed: は `-` 無しでも閉じていると見る', () => {
+    const text = `## Review\n\n### Round 1\n\n- Stale:\n  - 古いコメントが残る\n    fixed: 直した\n`;
+    expect(collectPlan(text)).toEqual([]);
+  });
+
+  it('Notes の left: は `-` 無しでも残り物として拾う', () => {
+    const text = `## Notes\n\n### Slice 1: x\n\n- Findings:\n  - 穴\n    left: 次のサイクルで扱う\n- Unplanned:\n- Commit: abc1234\n`;
+    expect(collectPlan(text)).toEqual([
+      { place: 'Slice 1 (x)', finding: '穴', handling: 'left: 次のサイクルで扱う' },
+    ]);
   });
 });

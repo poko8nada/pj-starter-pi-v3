@@ -52,7 +52,7 @@ The texts handed to children are in `references/tasks.md`.
 ### 6. The merge
 
 - in the parent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there (a plan that cannot merge is not done: see below)
-- one constraint rules the order: a plan whose dependency (the design's `Boundary.Plans`) has not merged yet waits. Nothing else fixes the order: a done plan merges when it is done
+- one constraint rules the order: a plan that waits for another (the head sentence's "what it waits for") has not merged yet. Nothing else fixes the order: a done plan merges when it is done
 - then run the whole typecheck and test on the base: the merge counts as done only when they are green
 - red means the combination is broken: undo the merge (`git reset --hard ORIG_HEAD`), keep the worktree, and fix it in the plan (its child continues); merge again when it is green
 - green means done: `consult_worktree remove <plan id>`

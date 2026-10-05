@@ -137,7 +137,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 - `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
 - **The child writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the child runs the check and sees it fail. The parent writes the plan md only at the acceptance, from the worktree.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
-- The commits are not squashed: `Commit` is the slice's own commit.
+- `Commit` is the slice's own commit, and it is not rewritten.
 
 ## Review
 
