@@ -102,6 +102,12 @@ describe('nudge', () => {
     expect(nudge(18, false, 17)).toBeUndefined();
   });
 
+  it('上限を過ぎても促す（turnIndex > limit も弾かない）', () => {
+    const result = nudge(18, false, 19);
+    expect(result?.continue).toBe(true);
+    expect(result?.entries).toHaveLength(1);
+  });
+
   it('一度出したら出さない（無条件の続行はループになる）', () => {
     expect(nudge(18, true, 18)).toBeUndefined();
   });

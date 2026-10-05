@@ -1,9 +1,9 @@
 /**
- * second-opinion 拡張の入口。道具 `opinion` とコマンド `/opinion` の登録だけを行う。
+ * second-opinion 拡張の入口。道具 `second_opinion` とコマンド `/second_opinion` の登録だけを行う。
  *
- * 会話は `message_end`（agent 側）と `input`（owner の入力）で貯める。`message_end` の
- * user は `input` と重なるので貯めない。道具もコマンドも、その場で子を1体走らせ、
- * 子の本文をそのまま返す（道具）・会話へ出す（コマンド）。
+ * 会話は reload 時の `context` から写し、以後は `message_end`（agent 側）と `input`（owner の入力）で足す。
+ * `message_end` の user は `input` と重なるので貯めない。道具もコマンドも、その場で子を1体走らせ、
+ * 子の本文を返す（打ち切られれば注を添えて）・会話へ出す（コマンド）。
  */
 
 import { dirname } from 'node:path';
@@ -246,7 +246,7 @@ export default function (pi: ExtensionAPI) {
     name: TOOL_NAME,
     label: 'Second opinion',
     description:
-      'Judge the recent conversation with another model: consistency, holes and alternatives. Returns the child text as-is.',
+      'Judge the recent conversation with another model: consistency, holes and alternatives. Returns the child text, with a cut-off note appended when the child did not finish cleanly.',
     promptSnippet:
       'Judge the recent conversation (consistency, holes, alternatives) with another model',
     promptGuidelines: [

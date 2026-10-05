@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../test/tmp.ts';
 import { DEFAULT_QUESTION } from './tool/answer.ts';
 import { type RunResult } from './run/run.ts';
-import { ownerMessage, recordMessage, type AgentMessage, type Held } from './tool/conversation.ts';
+import {
+  ownerMessage,
+  recordMessage,
+  seedHeld,
+  type AgentMessage,
+  type Held,
+} from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
 import { readRuns } from './run/log.ts';
 import { opinionRoot } from './run/root.ts';
@@ -84,6 +90,24 @@ function fakeEnv(bin: string, text: string): NodeJS.ProcessEnv {
     FAKE_PI_TEXT: text,
     CONSULT_ROOT: tmpDir(),
   };
+}
+
+/** 打ち切り子を置く。`agent_end` を出さず `message_end` を21件出し、turn limit で止まる */
+function placeCutoffWrapper(bin: string, stdinFile: string): void {
+  const line =
+    '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"cut-body"}],"usage":{"output":1}}}';
+  const script = [
+    '#!/bin/sh',
+    `tee "${stdinFile}" > /dev/null`,
+    'i=0',
+    'while [ "$i" -lt 21 ]; do',
+    `  printf '%s\\n' '${line}'`,
+    '  i=$((i + 1))',
+    'done',
+    'exit 0',
+  ].join('\n');
+  writeFileSync(join(bin, 'pi'), `${script}\n`);
+  chmodSync(join(bin, 'pi'), 0o755);
 }
 
 /** 引数と stdin を記録して偽の pi に渡す wrapper の `pi` を置く */
@@ -295,6 +319,22 @@ describe('runOpinion: 打ち切りの注', () => {
   it('cut 付きの子 → 返る本文が注で終わる', async () => {
     const body = bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }));
     expect(formatBody(body).endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
+  });
+
+  it('打ち切りの子を走らせる → 注付きで本文が返る (spawn 経路)', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeCutoffWrapper(bin, join(bin, 'stdin.txt'));
+    const body = await runOpinion(
+      {
+        cwd: dir,
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, CONSULT_ROOT: tmpDir() },
+      },
+      heldOf('hi'),
+      {},
+    );
+    expect(body).toContain('cut-body');
+    expect(body.endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
   });
 });
 
@@ -675,5 +715,191 @@ describe('統合: 実用で1回使える', () => {
     const runs = readRuns(opinionRoot(dir, { CONSULT_ROOT: logRoot }));
     expect(runs.length).toBeGreaterThanOrEqual(1);
     expect(runs.every((record) => record.state === 'error')).toBe(true);
+  });
+});
+
+describe('input: owner の入力が窓に入る', () => {
+  it('偽 pi の input を起こす → その発言で子の窓が埋まる', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'input-body';
+      process.env.CONSULT_ROOT = tmpDir();
+      const handlers = new Map<string, (event: { text: string }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { text: string }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の input だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('input')?.({ text: 'owner-said-this' });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(result.content[0]?.text).toBe('input-body');
+      expect(readFileSync(stdinFile, 'utf8')).toContain('owner-said-this');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('command: /second_opinion の handler', () => {
+  it('handler を呼ぶ → 子を走らせ会話へ出す', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'command-body';
+      process.env.CONSULT_ROOT = tmpDir();
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type Handler = (args: string, ctx: { cwd: string }) => Promise<void>;
+      let handler: Handler | undefined;
+      const sent: { customType: string; content: string; display: boolean }[] = [];
+      const pi = {
+        registerTool: () => {},
+        registerCommand: (_name: string, command: { handler: Handler }) => {
+          handler = command.handler;
+        },
+        on: (event: string, next: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, next);
+        },
+        sendMessage: (message: { customType: string; content: string; display: boolean }) => {
+          sent.push(message);
+        },
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi のコマンドだけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('context')?.({ messages: [ownerMessage('command-topic', 3)] });
+      if (handler === undefined) {
+        throw new Error('handler was not registered');
+      }
+      await handler('', { cwd: dir });
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).toMatchObject({
+        customType: 'second-opinion-answer',
+        content: 'command-body',
+        display: true,
+      });
+      expect(readFileSync(stdinFile, 'utf8')).toContain('command-topic');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('runOpinion: 自分の道具は窓に入れない', () => {
+  it('TOOL_NAME の呼び出しと結果 → 窓から除く', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const toolCall: AgentMessage = {
+      role: 'assistant',
+      content: [{ type: 'toolCall', id: '9', name: TOOL_NAME, arguments: { focus: 'check' } }],
+      api: 'test',
+      provider: 'test',
+      model: 'test',
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+      stopReason: 'stop',
+      timestamp: 2,
+    };
+    const toolResult: AgentMessage = {
+      role: 'toolResult',
+      toolCallId: '9',
+      toolName: TOOL_NAME,
+      content: [{ type: 'text', text: 'leaked-verdict' }],
+      isError: false,
+      timestamp: 3,
+    };
+    const held: Held = { messages: [], seen: new Set() };
+    seedHeld(
+      [ownerMessage('real-topic', 1), toolCall, toolResult, ownerMessage('follow-up', 4)],
+      held,
+    );
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'filtered-body') }, held, {});
+    expect(body).toBe('filtered-body');
+    const stdin = readFileSync(stdinFile, 'utf8');
+    expect(stdin).toContain('real-topic');
+    expect(stdin).toContain('follow-up');
+    expect(stdin).not.toContain('leaked-verdict');
+    expect(stdin).not.toContain(`[tool: ${TOOL_NAME}]`);
   });
 });

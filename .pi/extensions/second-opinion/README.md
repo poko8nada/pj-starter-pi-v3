@@ -6,9 +6,9 @@ The child sees only the recent conversation (as text), never this project's file
 
 ## Tools
 
-| Tool             | What it does                                                                     |
-| ---------------- | -------------------------------------------------------------------------------- |
-| `second_opinion` | Judges the recent conversation with another model. Returns the child text as-is. |
+| Tool             | What it does                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `second_opinion` | Judges the recent conversation with another model. Returns the child text (plus a cut-off note when the child did not finish cleanly). |
 
 | Parameter  | Required | Meaning                                                            |
 | ---------- | -------- | ------------------------------------------------------------------ |
@@ -48,6 +48,8 @@ The child's text, unedited, in this shape:
 
 A missing section reads `なし`.
 
+When the child was cut off (turn limit, error, abort) after writing its answer, the answer still comes back with a note appended on a blank line: `(打ち切られました: <reason>)`.
+
 ## Settings
 
 `types.json` sits next to this file and holds the single `opinion` role: another model's candidates, read-only tools (`read`, `ls`, `find`, `grep`, `web_search`, `fetch_content`), no isolation, and the spend limits (20 turns, 8000 output tokens). The window (default 20 messages, 4000 chars per message, 2000 per tool result) and the default question live in `tool/conversation.ts` and `tool/answer.ts`. The file is read on every call, so a change takes effect on the next opinion without reloading pi.
@@ -58,6 +60,6 @@ A missing section reads `なし`.
 index.ts          the entry: registers the tool and the command, holds the conversation, and nothing else
 policy/           what the role is: reading types.json, validating it, resolving the role
 child/            the child pi: assembling its arguments, parsing its JSONL, the secret guard, the budget nudge
-run/              running a child: the spawn, the record-free synchronous wait, and the report
+run/              running a child: the spawn, the synchronous wait, the run record, and the report
 tool/             the tool face: keeping the last N messages and rendering them as text, the default question and the prompt assembly
 ```

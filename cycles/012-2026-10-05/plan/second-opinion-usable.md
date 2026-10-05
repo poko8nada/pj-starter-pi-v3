@@ -250,65 +250,102 @@
 ### Slice 1: `conversation.ts` と `answer.ts` を `tool/` に移す（01-8）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 245035a
 
 ### Slice 2: 道具とコマンドの名前を拡張に合わせる（01-1）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 3bfaaff
 
 ### Slice 3: reload をまたいでも会話を材料にする（01-2）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 0b7ac2a
 
 ### Slice 4: 実行中の様子を出す（01-3）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 810d94a
 
 ### Slice 5: 打ち切られても最後の本文を返す（01-4）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: aca6edf
 
 ### Slice 6: 促しを上限の2つ前に出す（01-5）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 2919c3b
 
 ### Slice 7: ターン数を窓に見合う値にする（01-6）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 39acf43
 
 ### Slice 8: 子の記録を残す（01-7）
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - parseRun は未知の `state` を `undefined` にする（写し元の consult は欄を落として読むが、Verify の invalid input に合わせ厳格化）
+- Commit: 14b3e5d
 
 ### Slice 9: 統合: 実用で1回使える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 646fc54
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - index.ts 冒頭コメントが「道具 opinion とコマンド /opinion」のまま — `TOOL_NAME` は `second_opinion` に変わり (3bfaaff)、貯め方も `message_end` と `input` の2つだけと書くが `pi.on('context', seedHeld)` が足されている (0b7ac2a, index.ts:2-6,272-274)。
+    fixed: 冒頭コメントを `second_opinion`・`/second_opinion`・`context` 写し・打ち切り注つき返却に直した
+  - `Returns the child text as-is.` が古い — Slice 5 で `cut` ありは `formatBody` が `\n\n(打ち切られました: <cut>)` を添える (index.ts:140-145) のに、`README.md:11` と道具 `description` (index.ts:249) が無条件のまま。
+    fixed: 道具 `description` と README の表・What comes back に打ち切り注の旨を足した
+  - `README.md:61` の `run/ ... record-free synchronous wait` が古い — Slice 8 で `onStarted`/`onDone` から `appendRun` する (index.ts:179-194) のに記録なしのまま。
+    fixed: `run/` の行を synchronous wait と run record を持つ旨に直した
 - Unlisted:
+  - なし
 - Gaps:
+  - `/second_opinion` コマンドの `handler` を呼ぶ検査がない — 登録の名前/`description` と道具 `execute` 経路のみで、`sendMessage({customType:'second-opinion-answer',...})` (index.ts:263-270) とコマンド経路の振る舞いが未 exercise。
+    fixed: 偽 pi で handler を呼び、`second-opinion-answer` の送信と子の窓入りを試す検査を足した
+  - `runOpinion` で打ち切り子を走らせる検査がない — `runOpinion: 打ち切りの注` の2件目は `bodyOf` と `formatBody` の直結で、偽 pi は `exit`(done) のみ。`runOpinion → formatBody` の注付き返却が spawn 経路で未 exercise (index.test.ts:295-298)。
+    fixed: `agent_end` なしで `message_end` 21件出す打ち切り子 wrapper を置き、`runOpinion` の注付き返却を spawn 経路で試した（`formatBody` 外しで赤になることを確認）
+  - `nudge` の上限超過後 (`turnIndex > limit`) が未 exercise — 実装は `turnIndex < limit` のみ弾くため `nudge(18,false,19)` は促す (child/budget.ts:45) が、検査は `18` happy と `17` boundary のみ。
+    fixed: `nudge(18,false,19)` が促す検査を足した
+  - `pi.on('input', ...)` の owner 入力経路を偽 pi で起こす検査がない — `context` seed と `message_end` はあるが、`ownerMessage(Date.now()) → held → 子の窓` の end-to-end がない (index.ts:278-280)。
+    fixed: 偽 pi で `input` を起こし、`execute` の子の窓に入ることを試す検査を足した
 - Unproven:
+  - `runOpinion: 打ち切りの注 / cut 付きの子 → 返る本文が注で終わる` (index.test.ts:295-298) は `runOpinion` を呼ばない — `runOpinion` から `formatBody` を外しても緑のまま。
+    fixed: 上の spawn 経路の検査で配線を証明した（`formatBody` 外しで赤になることを確認）
+  - 自道具除外と `TOOL_NAME` の配線が未証明 — `tool/conversation.test.ts` は旧名 `'opinion'` で generic に試すだけで、`index.test.ts` の held は owner のみ。`runOpinion` の `windowFrom(..., TOOL_NAME)` (index.ts:158) を別名に変えても全テストが緑のまま。
+    fixed: `TOOL_NAME` 名の呼び出しと結果を含む held で `runOpinion` を走らせ、窓から除かれる検査を足した（別名化で赤になることを確認）
 
 ## Acceptance
 
