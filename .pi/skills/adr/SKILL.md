@@ -21,6 +21,7 @@ Read that file before writing. It holds the tree, the parts, the research types,
 
 - **expensive to undo** — a data shape, a public name, a file or folder layout, a dependency, an interface with the outside
 - **the product's promise changes** — a line of the definition's `Users can do`; not the code inside
+- **the product's behavior changes** — what it can do, or what a person sees while it does it
 - **the owner pays** — a new dependency, a service, a licence, a running cost, a migration
 - **a reversal** — something already accepted, now to be changed
 - **the owner's call** — the product's direction (what to build, what to drop), a trade-off the owner lives with

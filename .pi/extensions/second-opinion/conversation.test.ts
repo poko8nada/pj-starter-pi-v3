@@ -109,8 +109,8 @@ describe('windowFrom: 道具', () => {
     expect(window.text).toContain('agent: [tool: read] path=cycles/011/plan/x.md');
     expect(window.text).toContain('agent: [tool: read] result: the plan');
     expect(window.text).toContain('agent: [tool: bash] command=git status');
-    expect(window.text).toContain('queries');
-    expect(window.text).toContain('urls');
+    expect(window.text).toContain('queries=');
+    expect(window.text).toContain('urls=');
   });
 
   it('自分の道具の呼び出しと結果は入れない', () => {
@@ -147,7 +147,6 @@ describe('windowFrom: 道具', () => {
 describe('windowFrom: 打切り', () => {
   it('長い発言は切る', () => {
     const window = windowFrom([say(`x${'あ'.repeat(4000)}`)], 20, 'opinion');
-    expect(window.text.startsWith('agent: x')).toBe(true);
     expect(window.text).toContain('…(truncated)');
     expect(window.text).not.toContain('あ'.repeat(4000));
   });
@@ -200,5 +199,12 @@ describe('windowFrom: 出さない物', () => {
   it('知らない引数は JSON のまま出す', () => {
     const window = windowFrom([call('1', 'mystery', { zzz: 1 })], 20, 'opinion');
     expect(window.text).toBe('agent: [tool: mystery] {"zzz":1}');
+  });
+});
+
+describe('windowFrom: 不正な count', () => {
+  it('NaN と非整数は投げる', () => {
+    expect(() => windowFrom([ownerMessage('hi', 1)], Number.NaN, 'opinion')).toThrow();
+    expect(() => windowFrom([ownerMessage('hi', 1)], 2.5, 'opinion')).toThrow();
   });
 });

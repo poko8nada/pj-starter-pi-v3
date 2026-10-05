@@ -7,6 +7,7 @@
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  control,
   createRuntime,
   type CommandContext,
   type ConsultContext,
@@ -304,5 +305,43 @@ describe('音', () => {
 
     await runtime.commands.sound('nope', ctx);
     expect(notices.at(-1)?.type).toBe('error');
+  });
+});
+
+describe('control: list', () => {
+  it('子が 0 体なら、そう言う（空文字を返さない）', () => {
+    const outcome = control({ action: 'list' }, new Map());
+    expect(outcome.text).toContain('no child is running');
+  });
+});
+
+describe('commands: 引数と空の一覧', () => {
+  it('/consult-cancel に id が無ければ、使い方を出して止めない', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const runtime = createRuntime(pi, run);
+    const { ctx, notices } = fakeCommandContext();
+    await runtime.commands.cancel('', ctx);
+    expect(notices[0]?.message).toContain('needs an id');
+    expect(notices[0]?.type).toBe('error');
+  });
+
+  it('/consult-sound に不正な引数 → 使い方を出す', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const runtime = createRuntime(pi, run);
+    const { ctx, notices } = fakeCommandContext();
+    await runtime.commands.sound('nope', ctx);
+    expect(notices[0]?.message).toContain('usage');
+    expect(notices[0]?.type).toBe('error');
+  });
+
+  it('/consult-status は子が 0 体なら、そう言う', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const runtime = createRuntime(pi, run);
+    const { ctx, notices } = fakeCommandContext();
+    await runtime.commands.status('', ctx);
+    expect(notices[0]?.message).toContain('no child is running');
   });
 });

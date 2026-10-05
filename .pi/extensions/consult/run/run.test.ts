@@ -722,3 +722,37 @@ describe('runPi: watchdog', () => {
     expect(stateOf(run)).toBe('done');
   });
 });
+
+describe('compose: aborted', () => {
+  it('取り消された run は、そう出す', () => {
+    const run = combinedRun('', { aborted: true });
+    expect(compose([], run)).toContain('consult was cancelled');
+  });
+});
+
+describe('runPi: 上限で殺す', () => {
+  it('output を越えたら stopped にして止める', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('exit'),
+      limits: { turns: 40, output: 5 },
+      watchdogMs: 1000,
+    });
+    expect(run.stopped).toContain('output');
+  });
+});
+
+describe('runWithFallback: 候補が空', () => {
+  it('1 回だけ走らせる（親と同じ設定）', async () => {
+    let calls = 0;
+    const run = await runWithFallback([], async () => {
+      calls += 1;
+      return combinedRun('');
+    });
+    expect(calls).toBe(1);
+    expect(run.ended).toBe(false);
+  });
+});

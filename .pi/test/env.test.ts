@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gitEnv } from '../extensions/consult/run/run.ts';
+import { tmpDir } from './tmp.ts';
 
 // `.pi/test/setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
 
@@ -17,5 +18,11 @@ describe('テストの環境', () => {
     const cleaned = gitEnv({ GIT_DIR: '/x', GIT_INDEX_FILE: '/y', PATH: '/bin' });
     expect(Object.keys(cleaned).filter((key) => key.startsWith('GIT_'))).toEqual([]);
     expect(Object.entries(cleaned)).toContainEqual(['PATH', '/bin']);
+  });
+});
+
+describe('tmpDir', () => {
+  it('リポジトリの外に作る（テストが作業ツリーを汚さない）', () => {
+    expect(tmpDir().startsWith(process.cwd())).toBe(false);
   });
 });

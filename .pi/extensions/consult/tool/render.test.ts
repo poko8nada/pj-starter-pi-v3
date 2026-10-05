@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { reportBlock, result, usageLine, type ChildReport } from './render.ts';
+import { describe, expect, it, vi } from 'vitest';
+import { refLabel, reportBlock, result, usageLine, type ChildReport } from './render.ts';
 
 // 親に届く形（本文と塊）を試す。子を走らせないので、イベントと結果を自分で作る。
 
@@ -73,5 +73,22 @@ describe('reportBlock', () => {
     const block = reportBlock({ ...base, files: ['a.ts'] });
     expect(block).not.toContain('+++');
     expect(block).not.toContain('@@');
+  });
+});
+
+describe('usageLine: cost', () => {
+  it('cost があれば末尾に $ で出す', () => {
+    const event =
+      '{"type":"message_end","message":{"role":"assistant","model":"x/y","usage":{"input":10,"output":20,"turns":3,"cost":{"total":0.001}}}}';
+    expect(usageLine([JSON.parse(event)])).toContain('$0.0010');
+  });
+});
+
+describe('refLabel', () => {
+  it('type と、0埋めした日時と番号を返す', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 2, 3, 4, 5));
+    expect(refLabel('review', 3)).toBe('review-20260102-030405-3');
+    vi.useRealTimers();
   });
 });

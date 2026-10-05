@@ -1,4 +1,7 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { tmpDir } from '../../test/tmp.ts';
 import { changedSince, fingerprint, parseStatus } from './targets.ts';
 
 // porcelain の解析と差分だけを試す。git の起動は実際のリポジトリが要るので扱わない。
@@ -56,5 +59,19 @@ describe('changedSince', () => {
 describe('fingerprint', () => {
   it('存在しないパスは入らない', () => {
     expect(fingerprint(['/no-such-file-quality-gate']).size).toBe(0);
+  });
+});
+
+describe('fingerprint: 肯定側', () => {
+  it('存在するファイルは mtime:ctime:size の指紋を持つ', () => {
+    const file = join(tmpDir(), 'a.txt');
+    writeFileSync(file, 'x');
+    const prints = fingerprint([file]);
+    expect(prints.has(file)).toBe(true);
+    expect(prints.get(file)).toMatch(/^\d+:\d+:\d+$/);
+  });
+
+  it('存在しないファイルは入れない', () => {
+    expect(fingerprint([join(tmpDir(), 'nope')]).size).toBe(0);
   });
 });

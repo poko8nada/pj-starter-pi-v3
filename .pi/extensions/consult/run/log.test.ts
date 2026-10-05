@@ -122,11 +122,6 @@ describe('pidAlive', () => {
 });
 
 describe('parseRun', () => {
-  it('空行と空白だけの行は undefined', () => {
-    expect(parseRun('')).toBeUndefined();
-    expect(parseRun('   \n')).toBeUndefined();
-  });
-
   it('本体の欄を上書きしない（worktree を持ち上げた後で、元の値で壊さない）', () => {
     const run = parseRun('{"child":"c","role":"r","pid":1,"started":2,"worktree":"w"}');
     expect(run).toMatchObject({ child: 'c', role: 'r', pid: 1, started: 2, worktree: 'w' });

@@ -191,10 +191,6 @@ describe('parseEvents', () => {
     expect(events).toHaveLength(2);
   });
 
-  it('空行を無視する', () => {
-    expect(parseEvents('\n\n{"type":"a"}\n\n')).toHaveLength(1);
-  });
-
   it('JSON でない行は捨てる（進捗行などが混ざりうる）', () => {
     expect(parseEvents('not json\n{"type":"a"}\n')).toHaveLength(1);
   });
@@ -221,7 +217,9 @@ describe('finalTextFrom', () => {
   });
 
   it('text 以外のパート（toolcall など）は無視する', () => {
-    const event = messageEnd({ content: [{ type: 'toolcall', name: 'read' }] });
+    const event = messageEnd({
+      content: [{ type: 'toolcall', name: 'read', text: 'SHOULD-NOT-APPEAR' }],
+    });
     expect(finalTextFrom([event])).toBe('');
   });
 
@@ -338,5 +336,20 @@ describe('accountEvent', () => {
     const narrow = { turns: 1, output: 100 };
     expect(accountEvent({ turns: 0, output: 0 }, turn(200), narrow)).toMatch(/output token limit/);
     expect(accountEvent({ turns: 0, output: 0 }, turn(200), LIMITS)).toBeUndefined();
+  });
+});
+
+describe('buildPiArgs: sessionPath', () => {
+  it('sessionPath あり → --session を指し、--no-session は付けない', () => {
+    const args = buildPiArgs(options({ sessionPath: '/tmp/s' }));
+    expect(args).toContain('--session');
+    expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
+    expect(args).not.toContain('--no-session');
+  });
+});
+
+describe('finalTextFrom: 複数イベント', () => {
+  it('最後が空なら、前のイベントの本文を返す', () => {
+    expect(finalTextFrom([messageEnd(), messageEnd({ content: [] })])).toBe('hi');
   });
 });

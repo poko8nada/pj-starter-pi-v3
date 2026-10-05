@@ -164,6 +164,10 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('bash', { command: 'cat .e${X}nv' }, dir).block).toBe(true);
   });
 
+  it('bash + backtick の展開を拒む（解決できない展開は通さない）', () => {
+    expect(judgeToolCall('bash', { command: 'cat `echo .env`' }, dir).block).toBe(true);
+  });
+
   it('bash + cat $(echo .env) を拒む（解決できない展開は通さない）', () => {
     expect(judgeToolCall('bash', { command: 'cat $(echo .env)' }, dir).block).toBe(true);
   });
@@ -302,5 +306,12 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, broken).block).toBe(true);
     expect(judgeToolCall('bash', { command: 'git status' }, dir, broken).block).toBe(true);
     expect(judgeToolCall('read', { path: 'src/a.ts' }, dir, broken)).toEqual({});
+  });
+});
+
+describe('judgeToolCall: OPEN（許可の設定が無い）', () => {
+  it('書く道具も bash も通す（fail-closed は壊れた設定の時だけ）', () => {
+    expect(judgeToolCall('edit', { path: 'x.txt' }, dir)).toEqual({});
+    expect(judgeToolCall('bash', { command: 'echo hi' }, dir)).toEqual({});
   });
 });

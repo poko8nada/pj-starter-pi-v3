@@ -40,7 +40,7 @@ The texts handed to children are in `references/tasks.md`.
 - when the slices are done: a `review` child, in the worktree (the parent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
 - it writes `## Review`, `### Round 1`, under the three viewpoints
 - the fixing child is a `code` child, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
-- rounds after the first continue the reviewer's own conversation and look at the `fixed` lines only; three rounds at most
+- Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. Two rounds: a Round 1 that finds nothing ends the review, and a Round 2 that still finds the same thing goes to the owner
 
 ### 5. The acceptance
 

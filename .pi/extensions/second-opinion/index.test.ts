@@ -5,6 +5,7 @@ import { tmpDir } from '../../test/tmp.ts';
 import { DEFAULT_QUESTION } from './answer.ts';
 import { type RunResult } from './run/run.ts';
 import { ownerMessage, recordMessage, type AgentMessage, type Held } from './conversation.ts';
+import { loadTypes, resolveType } from './policy/types.ts';
 import { bodyOf, collectMessage, parseCommandArgs, runOpinion, toRequest } from './index.ts';
 
 // 子を走らせない分だけを試す（文字列の組み立て）。子の起動は Slice 4 の統合で扱う。
@@ -235,5 +236,21 @@ describe('runOpinion: 子への env', () => {
       JSON.stringify({ paths: [], bash: [] }),
     );
     expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('8');
+  });
+});
+
+describe('runOpinion: 子へのモデル', () => {
+  it('役割の1番目のモデルを --model に渡す', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const argsFile = join(bin, 'args.txt');
+    placeWrapper(bin, argsFile, join(bin, 'stdin.txt'));
+    await runOpinion({ cwd: dir, env: fakeEnv(bin, 'Consistent: yes') }, heldOf('hi'), {});
+    const args = readFileSync(argsFile, 'utf8').split('\n');
+    const role = resolveType(
+      loadTypes(join(process.cwd(), '.pi/extensions/second-opinion')),
+      'opinion',
+    );
+    expect(args[args.indexOf('--model') + 1]).toBe(role.models[0]);
   });
 });

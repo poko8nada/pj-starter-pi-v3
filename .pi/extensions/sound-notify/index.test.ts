@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import extensionDefault, {
   handleSessionCompact,
   handleToolExecutionEnd,
+  isCommitResult,
   parseConfig,
   registerSoundHandlers,
   setPlayer,
@@ -200,5 +201,93 @@ describe('sound-notify.entry', () => {
     expect(handler).toBeDefined();
     await handler?.({}, ctx);
     expect(played).toEqual(['Glass']);
+  });
+});
+
+describe('sound-notify.dispatch: 通知の肯定側', () => {
+  it('done は cmux に通知する', async () => {
+    const restore = setPlayer(async () => undefined);
+    const cmux: string[][] = [];
+    const handlers = new Map<string, (...args: unknown[]) => unknown>();
+    const recordingPi: EntryPiPort = {
+      on: (...args: unknown[]) => {
+        const [event, handler] = args;
+        if (typeof event === 'string' && isHandler(handler)) {
+          handlers.set(event, handler);
+        }
+        return () => undefined;
+      },
+      exec: async (command: string, args: string[]) => {
+        cmux.push([command, ...args]);
+      },
+    };
+    registerSoundHandlers(recordingPi, defaultConfig);
+    await handlers.get('agent_settled')?.({}, ctx);
+    expect(cmux.some((call) => call[0] === 'cmux')).toBe(true);
+    expect(cmux.some((call) => call.includes('--title'))).toBe(true);
+    restore();
+  });
+
+  it('permission の合図と普通の質問で、通知の文面が違う', async () => {
+    const restore = setPlayer(async () => undefined);
+    const bodies: string[] = [];
+    const handlers = new Map<string, (...args: unknown[]) => unknown>();
+    const recordingPi: EntryPiPort = {
+      on: (...args: unknown[]) => {
+        const [event, handler] = args;
+        if (typeof event === 'string' && isHandler(handler)) {
+          handlers.set(event, handler);
+        }
+        return () => undefined;
+      },
+      exec: async (_command: string, args: string[]) => {
+        const body = args[args.indexOf('--body') + 1];
+        if (body !== undefined) bodies.push(body);
+      },
+    };
+    registerSoundHandlers(recordingPi, defaultConfig);
+    await handlers.get('ui_prompt_start')?.({ title: 'Permission Required' }, ctx);
+    await handlers.get('ui_prompt_start')?.({ title: 'Which one?' }, ctx);
+    expect(bodies.length).toBe(2);
+    expect(bodies[0]).not.toBe(bodies[1]);
+    restore();
+  });
+});
+
+describe('parseConfig: boolean', () => {
+  it('enabled: false を読む（既定に落とさない）', () => {
+    expect(parseConfig({ enabled: false }).enabled).toBe(false);
+    expect(parseConfig({ enabled: true }).enabled).toBe(true);
+  });
+
+  it('enabled が真偽値でなければ既定に落とす', () => {
+    expect(parseConfig({ enabled: 'yes' }).enabled).toBe(defaultConfig.enabled);
+  });
+
+  it('notifications: false を読む', () => {
+    expect(parseConfig({ notifications: false }).notifications).toBe(false);
+  });
+});
+
+describe('isCommitResult: result の読み方', () => {
+  it('文字列の result も見る', () => {
+    expect(isCommitResult('[main abc1234] x')).toBe(true);
+  });
+
+  it('content の text パートも見る', () => {
+    expect(isCommitResult({ content: [{ type: 'text', text: '[main abc1234] x' }] })).toBe(true);
+  });
+
+  it('7桁未満の hex は commit と見なさない', () => {
+    expect(isCommitResult('[main abc123] x')).toBe(false);
+  });
+
+  it('record でなければ false（落ちない）', () => {
+    expect(isCommitResult(undefined)).toBe(false);
+    expect(isCommitResult({})).toBe(false);
+  });
+
+  it('text 以外のパートは無視する', () => {
+    expect(isCommitResult({ content: [{ type: 'image' }] })).toBe(false);
   });
 });

@@ -184,3 +184,30 @@ describe('resolveType', () => {
     expect(resolveType(types, 'code').name).toBe('code');
   });
 });
+
+describe('parseTypes: 正常値の素通し', () => {
+  it('正の limits はそのまま通る', () => {
+    const type = parseTypes(config(aType({ limits: { turns: 7, output: 1234 } }))).at(0);
+    expect(type?.limits).toEqual({ turns: 7, output: 1234 });
+  });
+
+  it('isolated: true はそのまま通る', () => {
+    expect(parseTypes(config(aType({ isolated: true }))).at(0)?.isolated).toBe(true);
+  });
+});
+
+describe('parseTypes: 空の role', () => {
+  it('role が空文字なら拒む', () => {
+    expect(() => parseTypes(config(aType({ role: '' })))).toThrow();
+  });
+});
+
+describe('parseTypes: limits のキー欠け', () => {
+  it('output が無ければ拒む', () => {
+    expect(() => parseTypes(config(aType({ limits: { turns: 20 } })))).toThrow();
+  });
+
+  it('turns が無ければ拒む', () => {
+    expect(() => parseTypes(config(aType({ limits: { output: 20000 } })))).toThrow();
+  });
+});

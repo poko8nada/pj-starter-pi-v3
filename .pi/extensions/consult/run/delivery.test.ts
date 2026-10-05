@@ -94,3 +94,14 @@ describe('createDelivery', () => {
     expect(delivery.attached()).toBe(false);
   });
 });
+
+describe('createDelivery: root の遅延', () => {
+  it('必要になるまで root を引かない（起動しただけで置き場を作らない）', () => {
+    let calls = 0;
+    createDelivery(() => {
+      calls += 1;
+      return tmpDir();
+    });
+    expect(calls).toBe(0);
+  });
+});

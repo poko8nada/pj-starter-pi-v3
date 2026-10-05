@@ -47,3 +47,11 @@ describe('opinionTask', () => {
     expect(opinionTask(windowOf('  \n '), 'check this')).toBe('check this');
   });
 });
+
+describe('opinionTask: 窓の前置き', () => {
+  it('窓があるときは、会話であることと上が古いことを添える', () => {
+    const task = opinionTask(windowOf('owner: hi'), undefined);
+    expect(task).toContain('以下は直近の会話である');
+    expect(task).toContain('上が古い');
+  });
+});

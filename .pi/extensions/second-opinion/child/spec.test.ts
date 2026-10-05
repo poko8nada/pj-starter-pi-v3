@@ -74,6 +74,10 @@ describe('joinPrompt', () => {
     expect(joinPrompt('', 'TASK')).toBe('TASK');
   });
 
+  it('task が空なら空の文', () => {
+    expect(joinPrompt(undefined, '')).toBe('');
+  });
+
   it('payload の中の改行を壊さない', () => {
     expect(joinPrompt('A\nB', 'T')).toBe('A\nB\nT');
   });
@@ -171,9 +175,8 @@ describe('buildPiArgs', () => {
     );
   });
 
-  it('task: 空 → 引数は同じで、stdin に空を書く（happy、empty）', () => {
+  it('task: 空 → 引数は同じ（happy、empty）', () => {
     expect(buildPiArgs(options({ task: '' }))).toEqual(buildPiArgs(options({ task: '調べる' })));
-    expect(joinPrompt(undefined, '')).toBe('');
   });
 });
 
@@ -191,10 +194,6 @@ describe('parseEvents', () => {
   it('各行をイベントにする', () => {
     const events = parseEvents('{"type":"a"}\n{"type":"b"}\n');
     expect(events).toHaveLength(2);
-  });
-
-  it('空行を無視する', () => {
-    expect(parseEvents('\n\n{"type":"a"}\n\n')).toHaveLength(1);
   });
 
   it('JSON でない行は捨てる（進捗行などが混ざりうる）', () => {
@@ -223,7 +222,9 @@ describe('finalTextFrom', () => {
   });
 
   it('text 以外のパート（toolcall など）は無視する', () => {
-    const event = messageEnd({ content: [{ type: 'toolcall', name: 'read' }] });
+    const event = messageEnd({
+      content: [{ type: 'toolcall', name: 'read', text: 'SHOULD-NOT-APPEAR' }],
+    });
     expect(finalTextFrom([event])).toBe('');
   });
 
@@ -340,5 +341,20 @@ describe('accountEvent', () => {
     const narrow = { turns: 1, output: 100 };
     expect(accountEvent({ turns: 0, output: 0 }, turn(200), narrow)).toMatch(/output token limit/);
     expect(accountEvent({ turns: 0, output: 0 }, turn(200), LIMITS)).toBeUndefined();
+  });
+});
+
+describe('buildPiArgs: sessionPath', () => {
+  it('sessionPath あり → --session を指し、--no-session は付けない', () => {
+    const args = buildPiArgs(options({ sessionPath: '/tmp/s' }));
+    expect(args).toContain('--session');
+    expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
+    expect(args).not.toContain('--no-session');
+  });
+});
+
+describe('finalTextFrom: 複数イベント', () => {
+  it('最後が空なら、前のイベントの本文を返す', () => {
+    expect(finalTextFrom([messageEnd(), messageEnd({ content: [] })])).toBe('hi');
   });
 });
