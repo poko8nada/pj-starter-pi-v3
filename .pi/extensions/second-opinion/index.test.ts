@@ -2,11 +2,27 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../test/tmp.ts';
-import { DEFAULT_QUESTION } from './answer.ts';
+import { DEFAULT_QUESTION } from './tool/answer.ts';
 import { type RunResult } from './run/run.ts';
-import { ownerMessage, recordMessage, type AgentMessage, type Held } from './conversation.ts';
+import {
+  ownerMessage,
+  recordMessage,
+  seedHeld,
+  type AgentMessage,
+  type Held,
+} from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
-import { bodyOf, collectMessage, parseCommandArgs, runOpinion, toRequest } from './index.ts';
+import { readRuns } from './run/log.ts';
+import { opinionRoot } from './run/root.ts';
+import extensionDefault, {
+  bodyOf,
+  collectMessage,
+  formatBody,
+  parseCommandArgs,
+  runOpinion,
+  toRequest,
+  TOOL_NAME,
+} from './index.ts';
 
 // 子を走らせない分だけを試す（文字列の組み立て）。子の起動は Slice 4 の統合で扱う。
 
@@ -54,12 +70,14 @@ describe('parseCommandArgs', () => {
 
 /** owner の発言だけの会話 */
 function heldOf(...texts: string[]): Held {
+  const messages = texts.map((text, index): AgentMessage => ({
+    role: 'user',
+    content: text,
+    timestamp: index,
+  }));
   return {
-    messages: texts.map((text, index): AgentMessage => ({
-      role: 'user',
-      content: text,
-      timestamp: index,
-    })),
+    messages,
+    seen: new Set(messages.map((message) => `${message.role}:${String(message.timestamp)}`)),
   };
 }
 
@@ -70,7 +88,26 @@ function fakeEnv(bin: string, text: string): NodeJS.ProcessEnv {
     PATH: `${bin}:${process.env.PATH ?? ''}`,
     FAKE_PI_MODE: 'exit',
     FAKE_PI_TEXT: text,
+    CONSULT_ROOT: tmpDir(),
   };
+}
+
+/** 打ち切り子を置く。`agent_end` を出さず `message_end` を21件出し、turn limit で止まる */
+function placeCutoffWrapper(bin: string, stdinFile: string): void {
+  const line =
+    '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"cut-body"}],"usage":{"output":1}}}';
+  const script = [
+    '#!/bin/sh',
+    `tee "${stdinFile}" > /dev/null`,
+    'i=0',
+    'while [ "$i" -lt 21 ]; do',
+    `  printf '%s\\n' '${line}'`,
+    '  i=$((i + 1))',
+    'done',
+    'exit 0',
+  ].join('\n');
+  writeFileSync(join(bin, 'pi'), `${script}\n`);
+  chmodSync(join(bin, 'pi'), 0o755);
 }
 
 /** 引数と stdin を記録して偽の pi に渡す wrapper の `pi` を置く */
@@ -130,7 +167,7 @@ describe('runOpinion: 偽の pi で子を走らせる', () => {
     placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
     const body = await runOpinion(
       { cwd: dir, env: fakeEnv(bin, 'Consistent: yes') },
-      { messages: [] },
+      { messages: [], seen: new Set() },
       {},
     );
     expect(body).toBe('Consistent: yes');
@@ -141,20 +178,24 @@ describe('runOpinion: 偽の pi で子を走らせる', () => {
     const dir = tmpDir();
     const emptyBin = tmpDir();
     await expect(
-      runOpinion({ cwd: dir, env: { ...process.env, PATH: emptyBin } }, heldOf('hi'), {}),
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: tmpDir() } },
+        heldOf('hi'),
+        {},
+      ),
     ).rejects.toThrow(/did not finish/);
   });
 });
 
 describe('collectMessage', () => {
   it('user は input で貯めるので貯めない', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     collectMessage(held, { role: 'user', content: 'hi', timestamp: 1 });
     expect(held.messages).toHaveLength(0);
   });
 
   it('agent 側は貯める', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     const message: AgentMessage = {
       role: 'assistant',
       content: [{ type: 'text', text: 'done' }],
@@ -177,7 +218,7 @@ describe('collectMessage', () => {
   });
 
   it('input は時刻つきで貯まる', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     recordMessage(held, ownerMessage('do this', 7));
     expect(held.messages).toEqual([{ role: 'user', content: 'do this', timestamp: 7 }]);
   });
@@ -188,19 +229,112 @@ function ended(extra: Partial<RunResult> = {}): RunResult {
   return { stdout: '', stderr: '', code: 0, aborted: false, ended: false, ...extra };
 }
 
+/** 本文つきの子の stdout を組む */
+function stdoutOf(text: string): string {
+  return `{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"${text}"}],"usage":{"output":1}}}\n`;
+}
+
 describe('bodyOf', () => {
   it('終わり切らなければ投げる', () => {
     expect(() => bodyOf(ended({ code: 1, stderr: 'boom' }))).toThrow(/did not finish.*boom/);
   });
 
   it('生成 0 のまま done の空本文はそのまま返す', () => {
-    expect(bodyOf(ended({ ended: true }))).toBe('');
+    expect(bodyOf(ended({ ended: true }))).toEqual({ text: '' });
   });
 
   it('本文があればそのまま返す', () => {
     const stdout =
       '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"hi"}],"usage":{"output":1}}}\n';
-    expect(bodyOf(ended({ stdout, ended: true }))).toBe('hi');
+    expect(bodyOf(ended({ stdout, ended: true }))).toEqual({ text: 'hi' });
+  });
+});
+
+describe('bodyOf: 打ち切られても最後の本文', () => {
+  it('ended で本文あり → cut なし', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), ended: true }))).toEqual({ text: 'hi' });
+  });
+
+  it('stopped で本文あり → cut に理由が入る', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }))).toEqual({
+      text: 'hi',
+      cut: 'turn limit reached (20)',
+    });
+  });
+
+  it('aborted で本文あり → cut は親が止めた旨', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), aborted: true }))).toEqual({
+      text: 'hi',
+      cut: 'stopped by the parent',
+    });
+  });
+
+  it('code 1 で本文あり → cut は stderr の1行目', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), code: 1, stderr: 'boom' }))).toEqual({
+      text: 'hi',
+      cut: 'boom',
+    });
+  });
+
+  it('本文が空で ended → 空のまま返す', () => {
+    expect(bodyOf(ended({ ended: true }))).toEqual({ text: '' });
+  });
+
+  it('本文が空で stopped → 投げる', () => {
+    expect(() => bodyOf(ended({ stopped: 'turn limit reached (20)' }))).toThrow(
+      /did not finish.*turn limit reached \(20\)/,
+    );
+  });
+
+  it('本文が空で aborted → 投げる', () => {
+    expect(() => bodyOf(ended({ aborted: true }))).toThrow(/did not finish.*stopped by the parent/);
+  });
+
+  it('本文が空で code 1 → 投げる', () => {
+    expect(() => bodyOf(ended({ code: 1, stderr: 'boom' }))).toThrow(/did not finish.*boom/);
+  });
+});
+
+describe('formatBody: 打ち切りの注', () => {
+  it('cut が無ければそのまま', () => {
+    expect(formatBody({ text: 'hi' })).toBe('hi');
+  });
+
+  it('cut があれば本文の後ろに注を添える', () => {
+    const body = bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }));
+    expect(formatBody(body).endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
+  });
+});
+
+describe('runOpinion: 打ち切りの注', () => {
+  it('exit の子 → 注なしで本文だけ返す', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'cut-free') }, heldOf('hi'), {});
+    expect(body).toBe('cut-free');
+    expect(body).not.toContain('打ち切られました');
+  });
+
+  it('cut 付きの子 → 返る本文が注で終わる', async () => {
+    const body = bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }));
+    expect(formatBody(body).endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
+  });
+
+  it('打ち切りの子を走らせる → 注付きで本文が返る (spawn 経路)', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeCutoffWrapper(bin, join(bin, 'stdin.txt'));
+    const body = await runOpinion(
+      {
+        cwd: dir,
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, CONSULT_ROOT: tmpDir() },
+      },
+      heldOf('hi'),
+      {},
+    );
+    expect(body).toContain('cut-body');
+    expect(body.endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
   });
 });
 
@@ -235,7 +369,7 @@ describe('runOpinion: 子への env', () => {
     expect(readFileSync(`${argsFile}.policy`, 'utf8')).toBe(
       JSON.stringify({ paths: [], bash: [] }),
     );
-    expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('8');
+    expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('20');
   });
 });
 
@@ -252,5 +386,520 @@ describe('runOpinion: 子へのモデル', () => {
       'opinion',
     );
     expect(args[args.indexOf('--model') + 1]).toBe(role.models[0]);
+  });
+});
+
+describe('registration: 道具とコマンドの名前', () => {
+  it('TOOL_NAME は second_opinion', () => {
+    expect(TOOL_NAME).toBe('second_opinion');
+  });
+
+  it('registerTool と registerCommand に second_opinion を渡す', () => {
+    let toolName: string | undefined;
+    let commandName: string | undefined;
+    const pi = {
+      registerTool: (tool: { name: string }) => {
+        toolName = tool.name;
+      },
+      registerCommand: (name: string) => {
+        commandName = name;
+      },
+      on: () => {},
+      sendMessage: () => {},
+    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の登録だけを試すための、意図的な狭い形
+    extensionDefault(pi as never);
+    expect(toolName).toBe('second_opinion');
+    expect(commandName).toBe('second_opinion');
+  });
+
+  it('コマンドの description が second_opinion を指す', () => {
+    let commandDescription = '';
+    const pi = {
+      registerTool: () => {},
+      registerCommand: (_name: string, command: { description: string }) => {
+        commandDescription = command.description;
+      },
+      on: () => {},
+      sendMessage: () => {},
+    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の登録だけを試すための、意図的な狭い形
+    extensionDefault(pi as never);
+    expect(commandDescription).toContain('second_opinion');
+  });
+});
+
+describe('context: reload をまたいでも会話を材料にする', () => {
+  it('偽 pi の context を起こす → その会話で子の窓が埋まる', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'Consistent: yes';
+      process.env.CONSULT_ROOT = tmpDir();
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の context だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      const onContext = handlers.get('context');
+      expect(onContext).toBeDefined();
+      onContext?.({ messages: [ownerMessage('reload-kept', 5)] });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(readFileSync(stdinFile, 'utf8')).toContain('reload-kept');
+      expect(result.content[0]?.text).toBe('Consistent: yes');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('runOpinion: 進行の通知', () => {
+  it('子が起動できない → 例外を投げ、その前onProgressがちょうど1度呼ばれる', async () => {
+    const dir = tmpDir();
+    const emptyBin = tmpDir();
+    const seen: string[] = [];
+    await expect(
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: tmpDir() } },
+        heldOf('hi'),
+        {},
+        (text) => {
+          seen.push(text);
+        },
+      ),
+    ).rejects.toThrow();
+    expect(seen).toHaveLength(1);
+  });
+
+  it('子の本文が届いたら、その本文がonProgressに来る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const seen: string[] = [];
+    const body = await runOpinion(
+      { cwd: dir, env: fakeEnv(bin, 'progress-body-here') },
+      heldOf('hi'),
+      {},
+      (text) => {
+        seen.push(text);
+      },
+    );
+    expect(body).toBe('progress-body-here');
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+    expect(seen.join('\n')).toContain('progress-body-here');
+  });
+
+  it('onProgressを渡さない → 何も起きず今までどおり本文が返る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'quiet-body') }, heldOf('hi'), {});
+    expect(body).toBe('quiet-body');
+  });
+
+  it('executeのonUpdateを包んで渡す → 更新が届き本文が返る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'update-body';
+      process.env.CONSULT_ROOT = tmpDir();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (update: { content: { type: string; text: string }[] }) => void,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: () => {},
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の更新だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const updates: string[] = [];
+      const result = await execute(
+        'id',
+        {},
+        undefined,
+        (update) => {
+          const first = update.content[0];
+          if (first !== undefined) {
+            updates.push(first.text);
+          }
+        },
+        { cwd: dir },
+      );
+      expect(result.content[0]?.text).toBe('update-body');
+      expect(updates.length).toBeGreaterThanOrEqual(1);
+      expect(updates.join('\n')).toContain('update-body');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('統合: 実用で1回使える', () => {
+  it('reloadの後に呼んでも会話が材料になり、本文が返り、記録に開始と終了が残る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const logRoot = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'integration-body';
+      process.env.CONSULT_ROOT = logRoot;
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の統合だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('context')?.({ messages: [ownerMessage('reload-integration', 9)] });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(result.content[0]?.text).toBe('integration-body');
+      expect(readFileSync(stdinFile, 'utf8')).toContain('reload-integration');
+      const runs = readRuns(opinionRoot(dir, { CONSULT_ROOT: logRoot }));
+      expect(runs).toHaveLength(2);
+      expect(runs[0]).toMatchObject({ child: 'second-opinion-1', role: 'opinion' });
+      expect(runs[0]?.ended).toBeUndefined();
+      expect(runs[1]).toMatchObject({
+        child: 'second-opinion-1',
+        role: 'opinion',
+        state: 'done',
+      });
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+
+  it('子が起動できない → 例外を投げ、記録に終了の1行が error として残る', async () => {
+    const dir = tmpDir();
+    const emptyBin = tmpDir();
+    const logRoot = tmpDir();
+    await expect(
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: logRoot } },
+        heldOf('hi'),
+        {},
+      ),
+    ).rejects.toThrow();
+    const runs = readRuns(opinionRoot(dir, { CONSULT_ROOT: logRoot }));
+    expect(runs.length).toBeGreaterThanOrEqual(1);
+    expect(runs.every((record) => record.state === 'error')).toBe(true);
+  });
+});
+
+describe('input: owner の入力が窓に入る', () => {
+  it('偽 pi の input を起こす → その発言で子の窓が埋まる', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'input-body';
+      process.env.CONSULT_ROOT = tmpDir();
+      const handlers = new Map<string, (event: { text: string }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { text: string }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の input だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('input')?.({ text: 'owner-said-this' });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(result.content[0]?.text).toBe('input-body');
+      expect(readFileSync(stdinFile, 'utf8')).toContain('owner-said-this');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('command: /second_opinion の handler', () => {
+  it('handler を呼ぶ → 子を走らせ会話へ出す', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'command-body';
+      process.env.CONSULT_ROOT = tmpDir();
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type Handler = (args: string, ctx: { cwd: string }) => Promise<void>;
+      let handler: Handler | undefined;
+      const sent: { customType: string; content: string; display: boolean }[] = [];
+      const pi = {
+        registerTool: () => {},
+        registerCommand: (_name: string, command: { handler: Handler }) => {
+          handler = command.handler;
+        },
+        on: (event: string, next: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, next);
+        },
+        sendMessage: (message: { customType: string; content: string; display: boolean }) => {
+          sent.push(message);
+        },
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi のコマンドだけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('context')?.({ messages: [ownerMessage('command-topic', 3)] });
+      if (handler === undefined) {
+        throw new Error('handler was not registered');
+      }
+      await handler('', { cwd: dir });
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).toMatchObject({
+        customType: 'second-opinion-answer',
+        content: 'command-body',
+        display: true,
+      });
+      expect(readFileSync(stdinFile, 'utf8')).toContain('command-topic');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+});
+
+describe('runOpinion: 自分の道具は窓に入れない', () => {
+  it('TOOL_NAME の呼び出しと結果 → 窓から除く', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const toolCall: AgentMessage = {
+      role: 'assistant',
+      content: [{ type: 'toolCall', id: '9', name: TOOL_NAME, arguments: { focus: 'check' } }],
+      api: 'test',
+      provider: 'test',
+      model: 'test',
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+      stopReason: 'stop',
+      timestamp: 2,
+    };
+    const toolResult: AgentMessage = {
+      role: 'toolResult',
+      toolCallId: '9',
+      toolName: TOOL_NAME,
+      content: [{ type: 'text', text: 'leaked-verdict' }],
+      isError: false,
+      timestamp: 3,
+    };
+    const held: Held = { messages: [], seen: new Set() };
+    seedHeld(
+      [ownerMessage('real-topic', 1), toolCall, toolResult, ownerMessage('follow-up', 4)],
+      held,
+    );
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'filtered-body') }, held, {});
+    expect(body).toBe('filtered-body');
+    const stdin = readFileSync(stdinFile, 'utf8');
+    expect(stdin).toContain('real-topic');
+    expect(stdin).toContain('follow-up');
+    expect(stdin).not.toContain('leaked-verdict');
+    expect(stdin).not.toContain(`[tool: ${TOOL_NAME}]`);
   });
 });

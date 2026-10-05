@@ -1,9 +1,9 @@
 /**
- * second-opinion 拡張の入口。道具 `opinion` とコマンド `/opinion` の登録だけを行う。
+ * second-opinion 拡張の入口。道具 `second_opinion` とコマンド `/second_opinion` の登録だけを行う。
  *
- * 会話は `message_end`（agent 側）と `input`（owner の入力）で貯める。`message_end` の
- * user は `input` と重なるので貯めない。道具もコマンドも、その場で子を1体走らせ、
- * 子の本文をそのまま返す（道具）・会話へ出す（コマンド）。
+ * 会話は reload 時の `context` から写し、以後は `message_end`（agent 側）と `input`（owner の入力）で足す。
+ * `message_end` の user は `input` と重なるので貯めない。道具もコマンドも、その場で子を1体走らせ、
+ * 子の本文を返す（打ち切られれば注を添えて）・会話へ出す（コマンド）。
  */
 
 import { dirname } from 'node:path';
@@ -16,20 +16,23 @@ import type {
 } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { opinionTask } from './answer.ts';
+import { opinionTask } from './tool/answer.ts';
 import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './child/spec.ts';
 import {
   ownerMessage,
   recordMessage,
+  seedHeld,
   windowFrom,
   type AgentMessage,
   type Held,
-} from './conversation.ts';
+} from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
+import { appendRun } from './run/log.ts';
+import { opinionRoot } from './run/root.ts';
 import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } from './run/run.ts';
 
 /** 道具とコマンドの名前 */
-export const TOOL_NAME = 'opinion';
+export const TOOL_NAME = 'second_opinion';
 
 /** 窓の既定の件数 */
 export const DEFAULT_MESSAGES = 20;
@@ -105,18 +108,40 @@ function withModel(
   return { ...policy, models: [model] };
 }
 
+export interface Body {
+  readonly text: string;
+  /** 打ち切りの理由。done なら無い */
+  readonly cut?: string;
+}
+
 /**
- * 走り終えた子から本文を取る。終わり切らなければ投げる（黙って空を返さない）。
+ * 走り終えた子から本文を取る。本文があれば打ち切られていても返し、理由を `cut` に入れる。
+ * 本文が無ければ、終わり切らない限り投げる（黙って空を返さない）。
  *
  * 純粋な判定だけを抜き出した物で、子を実際に走らせずに「どう終わったか」を試せる。
  */
-export function bodyOf(run: RunResult): string {
-  if (stateOf(run) !== 'done') {
-    throw new Error(
-      `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
-    );
+export function bodyOf(run: RunResult): Body {
+  const text = finalTextFrom(parseEvents(run.stdout));
+  if (text === '') {
+    if (stateOf(run) !== 'done') {
+      throw new Error(
+        `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
+      );
+    }
+    return { text };
   }
-  return finalTextFrom(parseEvents(run.stdout));
+  if (stateOf(run) === 'done') {
+    return { text };
+  }
+  return { text, cut: reasonOf(run) ?? `exit ${run.code}` };
+}
+
+/** 本文に打ち切りの注を添える。`cut` が無ければそのまま */
+export function formatBody(body: Body): string {
+  if (body.cut === undefined) {
+    return body.text;
+  }
+  return `${body.text}\n\n(打ち切られました: ${body.cut})`;
 }
 
 /**
@@ -128,6 +153,7 @@ export async function runOpinion(
   port: PiPort,
   held: Held,
   request: OpinionRequest,
+  onProgress?: (text: string) => void,
 ): Promise<string> {
   const window = windowFrom(held.messages, request.messages ?? DEFAULT_MESSAGES, TOOL_NAME);
   const task = opinionTask(window, request.focus);
@@ -137,6 +163,11 @@ export async function runOpinion(
     CONSULT_POLICY: JSON.stringify({ paths: policy.paths, bash: policy.bash }),
     CONSULT_TURNS: String(policy.limits.turns),
   };
+  onProgress?.('second-opinion: starting the child');
+  const root = opinionRoot(port.cwd, port.env);
+  const child = 'second-opinion-1';
+  const started = Date.now();
+  let pid = 0;
   const run = await runWithFallback(policy.models, (model) =>
     runPi({
       piArgs: buildPiArgs({ type: 'opinion', task, policy: withModel(policy, model) }),
@@ -144,9 +175,26 @@ export async function runOpinion(
       cwd: port.cwd,
       env,
       limits: policy.limits,
+      onProgress: (chunk) => onProgress?.(chunk.text),
+      onStarted: (startedPid) => {
+        pid = startedPid;
+        appendRun(root, { child, role: 'opinion', pid: startedPid, started });
+      },
+      onDone: (done) => {
+        const reason = reasonOf(done);
+        appendRun(root, {
+          child,
+          role: 'opinion',
+          pid: done.pid ?? pid,
+          started,
+          ended: Date.now(),
+          state: stateOf(done),
+          ...(reason === undefined ? {} : { reason }),
+        });
+      },
     }),
   );
-  return bodyOf(run);
+  return formatBody(bodyOf(run));
 }
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
@@ -169,6 +217,16 @@ function portOf(ctx: Pick<ExtensionContext, 'cwd'>): PiPort {
   return { cwd: ctx.cwd, env: process.env };
 }
 
+/** `onUpdate` を進行の文に包む。無ければ何もしない */
+function progressOf(onUpdate: ExecuteArgs[3]): ((text: string) => void) | undefined {
+  if (onUpdate === undefined) {
+    return undefined;
+  }
+  return (text) => {
+    onUpdate({ content: [{ type: 'text', text }], details: {} });
+  };
+}
+
 /**
  * 会話に agent 側の1件を足す。owner の発言は `input` で貯めるので、ここでは貯めない。
  *
@@ -182,33 +240,38 @@ export function collectMessage(held: Held, message: AgentMessage): void {
 }
 
 export default function (pi: ExtensionAPI) {
-  const held: Held = { messages: [] };
+  const held: Held = { messages: [], seen: new Set() };
 
   pi.registerTool({
     name: TOOL_NAME,
     label: 'Second opinion',
     description:
-      'Judge the recent conversation with another model: consistency, holes and alternatives. Returns the child text as-is.',
+      'Judge the recent conversation with another model: consistency, holes and alternatives. Returns the child text, with a cut-off note appended when the child did not finish cleanly.',
     promptSnippet:
       'Judge the recent conversation (consistency, holes, alternatives) with another model',
     promptGuidelines: [
-      'Use opinion when the conversation itself needs another eye: a second model reads the recent messages and judges them.',
+      'Use second_opinion when the conversation itself needs another eye: a second model reads the recent messages and judges them.',
       'Pass focus to ask about one thing, messages to change how many recent messages are judged (default 20).',
     ],
     parameters: PARAMETERS,
     execute: (...args: ExecuteArgs) =>
-      runOpinion(portOf(args[4]), held, toRequest(args[1])).then((body) => result(body)),
+      runOpinion(portOf(args[4]), held, toRequest(args[1]), progressOf(args[3])).then((body) =>
+        result(body),
+      ),
   });
 
   pi.registerCommand(TOOL_NAME, {
     description:
-      'Judge the recent conversation with another model (usage: /opinion [messages] [question])',
+      'Judge the recent conversation with another model (usage: /second_opinion [messages] [question])',
     handler: async (args, ctx) => {
       const body = await runOpinion(portOf(ctx), held, parseCommandArgs(args));
       pi.sendMessage({ customType: 'second-opinion-answer', content: body, display: true });
     },
   });
 
+  pi.on('context', (event) => {
+    seedHeld(event.messages, held);
+  });
   pi.on('message_end', (event) => {
     collectMessage(held, event.message);
   });
