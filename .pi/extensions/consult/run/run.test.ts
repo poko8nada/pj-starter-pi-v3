@@ -3,10 +3,14 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
 import {
+  applyEvent,
   changedFiles,
   stateOf,
   reasonOf,
+  watchdogDue,
   type GitRun,
+  type RunResult,
+  type RunState,
   spawnOptions,
   gitEnv,
   installCommand,
@@ -15,7 +19,6 @@ import {
   readPayloads,
   runForInputs,
   runWithFallback,
-  type RunResult,
 } from './run.ts';
 import { finalTextFrom, parseEvents } from '../child/spec.ts';
 import { compose } from '../tool/render.ts';
@@ -71,6 +74,7 @@ describe('runWithFallback', () => {
     stderr: '',
     code: 0,
     aborted: false,
+    ended: false,
   };
   /** モデルが動かなかった子。assistant のイベントは在るが、生成は 0 */
   const silent: RunResult = {
@@ -78,8 +82,9 @@ describe('runWithFallback', () => {
     stderr: 'Warning: Model "x" not found for provider "commandcode". Using custom model id.\n',
     code: 0,
     aborted: false,
+    ended: false,
   };
-  const cancelled: RunResult = { stdout: '', stderr: '', code: 1, aborted: true };
+  const cancelled: RunResult = { stdout: '', stderr: '', code: 1, aborted: true, ended: false };
 
   it('1 番目が生成すれば 1 回で終わる', async () => {
     const tried: (string | undefined)[] = [];
@@ -160,6 +165,7 @@ describe('runForInputs', () => {
     stderr: '',
     code: 0,
     aborted: false,
+    ended: false,
   };
 
   it('入力 1 つ → 1 体、結果も 1 つ', async () => {
@@ -272,7 +278,7 @@ describe('runForInputs: 同期で投げるコールバック', () => {
 
 /** combineRuns に渡す 1 回分の結果 */
 function combinedRun(stdout: string, extra: Partial<RunResult> = {}): RunResult {
-  return { stdout, stderr: '', code: 0, aborted: false, ...extra };
+  return { stdout, stderr: '', code: 0, aborted: false, ended: false, ...extra };
 }
 
 describe('spawnOptions', () => {
@@ -341,6 +347,7 @@ describe('compose: 打ち切りの行', () => {
     code: 0,
     stopped: 'turn limit reached (2)',
     aborted: false,
+    ended: false,
   };
 
   it('回数と、続きを走らせたかを、打ち切りの行の隣に出す', () => {
@@ -354,5 +361,120 @@ describe('compose: 打ち切りの行', () => {
     const finished: RunResult = { ...stopped, stopped: undefined };
     const body = compose(parseEvents(finished.stdout), finished, { attempts: 1, continued: false });
     expect(body).not.toContain('consult runs:');
+  });
+});
+
+function makeWatchState(overrides: Partial<RunState> = {}): RunState {
+  return {
+    stdout: '',
+    stderr: '',
+    buffered: '',
+    aborted: false,
+    spent: { turns: 0, output: 0 },
+    limits: { turns: 40, output: 60000 },
+    lastOutputAt: 1000,
+    ...overrides,
+  };
+}
+
+describe('applyEvent', () => {
+  it('agent_end のイベント → endedAt が入る', () => {
+    const state = makeWatchState({ lastOutputAt: 1000 });
+    applyEvent(state, { type: 'agent_end' }, 2000);
+    expect(state.endedAt).toBe(2000);
+    expect(state.lastOutputAt).toBe(2000);
+  });
+
+  it('agent_end の後に出力 → lastOutputAt が進む（endedAt は最初のまま）', () => {
+    const state = makeWatchState({ lastOutputAt: 1000 });
+    applyEvent(state, { type: 'agent_end' }, 2000);
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      3000,
+    );
+    expect(state.endedAt).toBe(2000);
+    expect(state.lastOutputAt).toBe(3000);
+  });
+
+  it('agent_end が来ない → endedAt は空のまま', () => {
+    const state = makeWatchState({ lastOutputAt: 1000 });
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      2000,
+    );
+    expect(state.endedAt).toBeUndefined();
+    expect(state.lastOutputAt).toBe(2000);
+  });
+
+  it('壊れた行 → イベントとして扱わない', () => {
+    const state = makeWatchState({ lastOutputAt: 1000 });
+    applyEvent(state, 'not json', 2000);
+    expect(state.endedAt).toBeUndefined();
+    expect(state.lastOutputAt).toBe(1000);
+    expect(state.spent).toEqual({ turns: 0, output: 0 });
+    expect(state.stopped).toBeUndefined();
+  });
+
+  it('上限で止まった後のイベント → 数えない', () => {
+    const state = makeWatchState({
+      limits: { turns: 1, output: 60000 },
+      lastOutputAt: 1000,
+    });
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      2000,
+    );
+    expect(state.stopped).toBeUndefined();
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      3000,
+    );
+    expect(state.stopped).toBe('turn limit reached (1)');
+    const spent = { ...state.spent };
+    applyEvent(state, { type: 'agent_end' }, 4000);
+    expect(state.endedAt).toBeUndefined();
+    expect(state.lastOutputAt).toBe(3000);
+    expect(state.spent).toEqual(spent);
+  });
+});
+
+describe('watchdogDue', () => {
+  it('猶予ちょうど → true', () => {
+    expect(watchdogDue(1000, 1000, 1000 + 30000, 30000)).toBe(true);
+  });
+
+  it('猶予の前 → false', () => {
+    expect(watchdogDue(1000, 1000, 1000 + 29999, 30000)).toBe(false);
+  });
+
+  it('猶予を過ぎたら → true', () => {
+    expect(watchdogDue(1000, 1000, 1000 + 30001, 30000)).toBe(true);
+  });
+
+  it('agent_end が無ければ → false', () => {
+    expect(watchdogDue(undefined, 1000, 1000 + 60000, 30000)).toBe(false);
+  });
+
+  it('出力が進めば猶予が伸びる', () => {
+    expect(watchdogDue(1000, 2000, 2000 + 29999, 30000)).toBe(false);
+    expect(watchdogDue(1000, 2000, 2000 + 30000, 30000)).toBe(true);
+  });
+});
+
+describe('stateOf / reasonOf: ended', () => {
+  it('ended: true の run → done（理由は出さない）', () => {
+    const run = combinedRun('', { ended: true, code: 1 });
+    expect(stateOf(run)).toBe('done');
+    expect(reasonOf(run)).toBeUndefined();
+  });
+
+  it('aborted と ended が同時 → aborted を先に見る', () => {
+    const run = combinedRun('', { aborted: true, ended: true });
+    expect(stateOf(run)).toBe('aborted');
+    expect(reasonOf(run)).toBe('stopped by the parent');
   });
 });
