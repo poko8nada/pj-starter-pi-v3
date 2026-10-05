@@ -6,6 +6,8 @@ import { DEFAULT_QUESTION } from './tool/answer.ts';
 import { type RunResult } from './run/run.ts';
 import { ownerMessage, recordMessage, type AgentMessage, type Held } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
+import { readRuns } from './run/log.ts';
+import { opinionRoot } from './run/root.ts';
 import extensionDefault, {
   bodyOf,
   collectMessage,
@@ -577,5 +579,101 @@ describe('runOpinion: 進行の通知', () => {
         process.env.CONSULT_ROOT = savedRoot;
       }
     }
+  });
+});
+
+describe('統合: 実用で1回使える', () => {
+  it('reloadの後に呼んでも会話が材料になり、本文が返り、記録に開始と終了が残る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const logRoot = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'integration-body';
+      process.env.CONSULT_ROOT = logRoot;
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の統合だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      handlers.get('context')?.({ messages: [ownerMessage('reload-integration', 9)] });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(result.content[0]?.text).toBe('integration-body');
+      expect(readFileSync(stdinFile, 'utf8')).toContain('reload-integration');
+      const runs = readRuns(opinionRoot(dir, { CONSULT_ROOT: logRoot }));
+      expect(runs).toHaveLength(2);
+      expect(runs[0]).toMatchObject({ child: 'second-opinion-1', role: 'opinion' });
+      expect(runs[0]?.ended).toBeUndefined();
+      expect(runs[1]).toMatchObject({
+        child: 'second-opinion-1',
+        role: 'opinion',
+        state: 'done',
+      });
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
+    }
+  });
+
+  it('子が起動できない → 例外を投げ、記録に終了の1行が error として残る', async () => {
+    const dir = tmpDir();
+    const emptyBin = tmpDir();
+    const logRoot = tmpDir();
+    await expect(
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: logRoot } },
+        heldOf('hi'),
+        {},
+      ),
+    ).rejects.toThrow();
+    const runs = readRuns(opinionRoot(dir, { CONSULT_ROOT: logRoot }));
+    expect(runs.length).toBeGreaterThanOrEqual(1);
+    expect(runs.every((record) => record.state === 'error')).toBe(true);
   });
 });
