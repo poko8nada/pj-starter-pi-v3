@@ -106,18 +106,40 @@ function withModel(
   return { ...policy, models: [model] };
 }
 
+export interface Body {
+  readonly text: string;
+  /** 打ち切りの理由。done なら無い */
+  readonly cut?: string;
+}
+
 /**
- * 走り終えた子から本文を取る。終わり切らなければ投げる（黙って空を返さない）。
+ * 走り終えた子から本文を取る。本文があれば打ち切られていても返し、理由を `cut` に入れる。
+ * 本文が無ければ、終わり切らない限り投げる（黙って空を返さない）。
  *
  * 純粋な判定だけを抜き出した物で、子を実際に走らせずに「どう終わったか」を試せる。
  */
-export function bodyOf(run: RunResult): string {
-  if (stateOf(run) !== 'done') {
-    throw new Error(
-      `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
-    );
+export function bodyOf(run: RunResult): Body {
+  const text = finalTextFrom(parseEvents(run.stdout));
+  if (text === '') {
+    if (stateOf(run) !== 'done') {
+      throw new Error(
+        `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
+      );
+    }
+    return { text };
   }
-  return finalTextFrom(parseEvents(run.stdout));
+  if (stateOf(run) === 'done') {
+    return { text };
+  }
+  return { text, cut: reasonOf(run) ?? `exit ${run.code}` };
+}
+
+/** 本文に打ち切りの注を添える。`cut` が無ければそのまま */
+export function formatBody(body: Body): string {
+  if (body.cut === undefined) {
+    return body.text;
+  }
+  return `${body.text}\n\n(打ち切られました: ${body.cut})`;
 }
 
 /**
@@ -150,7 +172,7 @@ export async function runOpinion(
       onProgress: (chunk) => onProgress?.(chunk.text),
     }),
   );
-  return bodyOf(run);
+  return formatBody(bodyOf(run));
 }
 
 /** 道具の戻り値。details は必須なので、必ず埋める */

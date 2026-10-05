@@ -9,6 +9,7 @@ import { loadTypes, resolveType } from './policy/types.ts';
 import extensionDefault, {
   bodyOf,
   collectMessage,
+  formatBody,
   parseCommandArgs,
   runOpinion,
   toRequest,
@@ -197,19 +198,96 @@ function ended(extra: Partial<RunResult> = {}): RunResult {
   return { stdout: '', stderr: '', code: 0, aborted: false, ended: false, ...extra };
 }
 
+/** 本文つきの子の stdout を組む */
+function stdoutOf(text: string): string {
+  return `{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"${text}"}],"usage":{"output":1}}}\n`;
+}
+
 describe('bodyOf', () => {
   it('終わり切らなければ投げる', () => {
     expect(() => bodyOf(ended({ code: 1, stderr: 'boom' }))).toThrow(/did not finish.*boom/);
   });
 
   it('生成 0 のまま done の空本文はそのまま返す', () => {
-    expect(bodyOf(ended({ ended: true }))).toBe('');
+    expect(bodyOf(ended({ ended: true }))).toEqual({ text: '' });
   });
 
   it('本文があればそのまま返す', () => {
     const stdout =
       '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"hi"}],"usage":{"output":1}}}\n';
-    expect(bodyOf(ended({ stdout, ended: true }))).toBe('hi');
+    expect(bodyOf(ended({ stdout, ended: true }))).toEqual({ text: 'hi' });
+  });
+});
+
+describe('bodyOf: 打ち切られても最後の本文', () => {
+  it('ended で本文あり → cut なし', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), ended: true }))).toEqual({ text: 'hi' });
+  });
+
+  it('stopped で本文あり → cut に理由が入る', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }))).toEqual({
+      text: 'hi',
+      cut: 'turn limit reached (20)',
+    });
+  });
+
+  it('aborted で本文あり → cut は親が止めた旨', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), aborted: true }))).toEqual({
+      text: 'hi',
+      cut: 'stopped by the parent',
+    });
+  });
+
+  it('code 1 で本文あり → cut は stderr の1行目', () => {
+    expect(bodyOf(ended({ stdout: stdoutOf('hi'), code: 1, stderr: 'boom' }))).toEqual({
+      text: 'hi',
+      cut: 'boom',
+    });
+  });
+
+  it('本文が空で ended → 空のまま返す', () => {
+    expect(bodyOf(ended({ ended: true }))).toEqual({ text: '' });
+  });
+
+  it('本文が空で stopped → 投げる', () => {
+    expect(() => bodyOf(ended({ stopped: 'turn limit reached (20)' }))).toThrow(
+      /did not finish.*turn limit reached \(20\)/,
+    );
+  });
+
+  it('本文が空で aborted → 投げる', () => {
+    expect(() => bodyOf(ended({ aborted: true }))).toThrow(/did not finish.*stopped by the parent/);
+  });
+
+  it('本文が空で code 1 → 投げる', () => {
+    expect(() => bodyOf(ended({ code: 1, stderr: 'boom' }))).toThrow(/did not finish.*boom/);
+  });
+});
+
+describe('formatBody: 打ち切りの注', () => {
+  it('cut が無ければそのまま', () => {
+    expect(formatBody({ text: 'hi' })).toBe('hi');
+  });
+
+  it('cut があれば本文の後ろに注を添える', () => {
+    const body = bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }));
+    expect(formatBody(body).endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
+  });
+});
+
+describe('runOpinion: 打ち切りの注', () => {
+  it('exit の子 → 注なしで本文だけ返す', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'cut-free') }, heldOf('hi'), {});
+    expect(body).toBe('cut-free');
+    expect(body).not.toContain('打ち切られました');
+  });
+
+  it('cut 付きの子 → 返る本文が注で終わる', async () => {
+    const body = bodyOf(ended({ stdout: stdoutOf('hi'), stopped: 'turn limit reached (20)' }));
+    expect(formatBody(body).endsWith('(打ち切られました: turn limit reached (20))')).toBe(true);
   });
 });
 
