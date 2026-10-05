@@ -96,6 +96,7 @@ Section and field names are English; the content is Japanese.
 
 - `test` — a machine runs the tests: the file, the command, and the cases
   - a case is `<入力> → <結果>`, marked with the walk's line: `(happy)`, `(error)`, `(empty)`, `(boundary values)`
+  - what is given is a call, a value passed, or a situation the code meets. A line with nothing given is not a case: a value the plan or the ADR decided is not a case
   - the cases are written on top of that test file: read it first, and follow the way it already works (its fixtures, its doubles, the seam it uses)
   - the result is a value, an error type or a state
 - `api` — a request is sent to the interface, and the response is read
@@ -118,6 +119,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 - every branch of a union
 - every optional, present and absent
+- the states, and the legal and illegal transitions between them
 - empty and missing
 - the boundary values
 - invalid input
@@ -142,7 +144,7 @@ For every slice that moves an input or an output, walk the shape and write a cas
 ## Review
 
 - The reviewer writes here, and the fixing child answers here. One `### Round N` per round, three rounds at most.
-- A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over).
+- A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over — a behavior the checks do not exercise; a decided value is not a gap).
 - A finding is one bullet. What the fixing child did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.
 - Round 1 is a new conversation; the rounds after it continue the reviewer's own, and look at the `fixed` lines only.

@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
 import {
-  DEFAULT_WATCHDOG_MS,
   applyEvent,
   changedFiles,
   runPi,
@@ -708,10 +707,6 @@ describe('runPi: watchdog', () => {
       env: { ...bareEnv, FAKE_PI_MODE: 'bogus' },
     });
     expect(bogus.status).toBe(2);
-  });
-
-  it('既定の猶予は 30 秒', () => {
-    expect(DEFAULT_WATCHDOG_MS).toBe(30000);
   });
 
   it('watchdogMs 省略 → 既定のまま普通に終わる', async () => {

@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MESSAGE_LIMIT,
-  RESULT_LIMIT,
   ownerMessage,
   recordMessage,
   windowFrom,
@@ -147,11 +145,6 @@ describe('windowFrom: 道具', () => {
 });
 
 describe('windowFrom: 打切り', () => {
-  it('定数は発言 4000 字・結果 2000 字', () => {
-    expect(MESSAGE_LIMIT).toBe(4000);
-    expect(RESULT_LIMIT).toBe(2000);
-  });
-
   it('長い発言は切る', () => {
     const window = windowFrom([say(`x${'あ'.repeat(4000)}`)], 20, 'opinion');
     expect(window.text.startsWith('agent: x')).toBe(true);

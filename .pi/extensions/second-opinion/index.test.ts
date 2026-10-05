@@ -5,22 +5,13 @@ import { tmpDir } from '../../test/tmp.ts';
 import { DEFAULT_QUESTION } from './answer.ts';
 import { type RunResult } from './run/run.ts';
 import { ownerMessage, recordMessage, type AgentMessage, type Held } from './conversation.ts';
-import {
-  DEFAULT_MESSAGES,
-  TOOL_NAME,
-  bodyOf,
-  collectMessage,
-  parseCommandArgs,
-  runOpinion,
-  toRequest,
-} from './index.ts';
+import { bodyOf, collectMessage, parseCommandArgs, runOpinion, toRequest } from './index.ts';
 
 // 子を走らせない分だけを試す（文字列の組み立て）。子の起動は Slice 4 の統合で扱う。
 
 describe('toRequest', () => {
   it('既定の質問と件数 20（何も渡さない）', () => {
     expect(toRequest({})).toEqual({});
-    expect(DEFAULT_MESSAGES).toBe(20);
   });
 
   it('focus の上書き', () => {
@@ -33,10 +24,6 @@ describe('toRequest', () => {
 
   it('messages の上書き', () => {
     expect(toRequest({ messages: 5 })).toEqual({ messages: 5 });
-  });
-
-  it('道具の名前は opinion', () => {
-    expect(TOOL_NAME).toBe('opinion');
   });
 });
 
@@ -237,7 +224,7 @@ describe('不正な messages', () => {
   });
 });
 
-describe('runOpinion: 子への env とモデル', () => {
+describe('runOpinion: 子への env', () => {
   it('子に役割の許可と上限を渡す', async () => {
     const bin = tmpDir();
     const dir = tmpDir();
@@ -248,16 +235,5 @@ describe('runOpinion: 子への env とモデル', () => {
       JSON.stringify({ paths: [], bash: [] }),
     );
     expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('8');
-  });
-
-  it('子のモデルは役割の1番目で、1回で終わる', async () => {
-    const bin = tmpDir();
-    const dir = tmpDir();
-    const argsFile = join(bin, 'args.txt');
-    placeWrapper(bin, argsFile, join(bin, 'stdin.txt'));
-    await runOpinion({ cwd: dir, env: fakeEnv(bin, 'Consistent: yes') }, heldOf('hi'), {});
-    const args = readFileSync(argsFile, 'utf8').split('\n');
-    expect(args[args.indexOf('--model') + 1]).toBe('opencode-go/deepseek-v4.1-flash:high');
-    expect(readFileSync(`${argsFile}.calls`, 'utf8')).toBe('x');
   });
 });
