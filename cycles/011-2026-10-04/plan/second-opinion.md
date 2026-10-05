@@ -199,7 +199,19 @@
   - 15行以内（`answer.ts` の既定質問・`README.md`）の強制が無い。`runOpinion` は子の本文をそのまま返し（`index.test.ts:117-127` が素通しを保証）、Verify は文面に `15行` が入ることしか見ない
     left: 強制（切断・拒否）は plan I/O の「子の本文をそのまま返す」と矛盾するため入れない。15行は子への指示として残す
 
+### Round 2
+
+- Stale:
+  - なし（`fixed:` 7件を検証。`README.md:13` / `README.ja.md:13` は両方 `second-opinion` と `opinion` を含む。`policy/types.ts:6` は「次の opinion から効く」。`policy/types.ts:39` は遣い捨ての旨、`71,205` は `second-opinion types:` で、`types.ts` 内の `consult` は0件。`child/spec.ts:2` は `second-opinion が起動する子`、`22` は `(index.ts)` で `run/child.ts` の言及なし。`child/guard.ts:4,155` は両方 `second-opinion` で小文字 `consult` は0件。`child/budget.ts:4` は `index.ts`、`52` と `budget.test.ts:47` は `second-opinion-budget` で `run/child.ts` / `consult-budget` なし。`run/run.ts:168-169` は読みだけの旨に直っている）
+- Unlisted:
+  - なし（Round 1 がなしで、`fixed:` 対象外）
+- Gaps:
+  - なし（`fixed:` 5件を検証。蓄積は `index.ts:177-182` の `collectMessage` に user 除外があり `index.test.ts:161-196` が user 除外・agent 蓄積・input 時刻を試す。不正 `messages` は `index.ts:132` の `windowFrom` が `runPi` より先に投げ、`index.test.ts:219-238` が throw・素通し・`0 check`・`-3 x` を試す。空出力は `index.ts:113-120` の `bodyOf` が非 done を投げ、`index.test.ts:203-217` が throw・空素通し・本文ありを試す。env と乗換えは `index.ts:135-148` が `CONSULT_POLICY` / `CONSULT_TURNS` と `runWithFallback` を組み立て、`index.test.ts:240-263` が許可・上限8・1番目モデル・1回終了を試し、2番目以降は `run/run.test.ts:69-137` が持つ。描画は `conversation.ts:233` が窓全体走査で `148-217` が除外を持ち、`conversation.test.ts:135-146,191-210` が除外と残存を試す。`left:` 1件は対象外で据え置き）
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm run test:run .pi/extensions/second-opinion` → 8 files / 244 passed
+  - `pnpm run typecheck` → 緑
+  - `pnpm run test:run` → 28 files / 623 passed
+- Findings: なし
