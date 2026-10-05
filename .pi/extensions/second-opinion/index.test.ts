@@ -61,12 +61,14 @@ describe('parseCommandArgs', () => {
 
 /** owner の発言だけの会話 */
 function heldOf(...texts: string[]): Held {
+  const messages = texts.map((text, index): AgentMessage => ({
+    role: 'user',
+    content: text,
+    timestamp: index,
+  }));
   return {
-    messages: texts.map((text, index): AgentMessage => ({
-      role: 'user',
-      content: text,
-      timestamp: index,
-    })),
+    messages,
+    seen: new Set(messages.map((message) => `${message.role}:${String(message.timestamp)}`)),
   };
 }
 
@@ -137,7 +139,7 @@ describe('runOpinion: 偽の pi で子を走らせる', () => {
     placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
     const body = await runOpinion(
       { cwd: dir, env: fakeEnv(bin, 'Consistent: yes') },
-      { messages: [] },
+      { messages: [], seen: new Set() },
       {},
     );
     expect(body).toBe('Consistent: yes');
@@ -155,13 +157,13 @@ describe('runOpinion: 偽の pi で子を走らせる', () => {
 
 describe('collectMessage', () => {
   it('user は input で貯めるので貯めない', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     collectMessage(held, { role: 'user', content: 'hi', timestamp: 1 });
     expect(held.messages).toHaveLength(0);
   });
 
   it('agent 側は貯める', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     const message: AgentMessage = {
       role: 'assistant',
       content: [{ type: 'text', text: 'done' }],
@@ -184,7 +186,7 @@ describe('collectMessage', () => {
   });
 
   it('input は時刻つきで貯まる', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     recordMessage(held, ownerMessage('do this', 7));
     expect(held.messages).toEqual([{ role: 'user', content: 'do this', timestamp: 7 }]);
   });
@@ -299,5 +301,70 @@ describe('registration: 道具とコマンドの名前', () => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の登録だけを試すための、意図的な狭い形
     extensionDefault(pi as never);
     expect(commandDescription).toContain('second_opinion');
+  });
+});
+
+describe('context: reload をまたいでも会話を材料にする', () => {
+  it('偽 pi の context を起こす → その会話で子の窓が埋まる', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    const stdinFile = join(bin, 'stdin.txt');
+    placeWrapper(bin, join(bin, 'args.txt'), stdinFile);
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'Consistent: yes';
+      const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (() => void) | undefined,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: (event: string, handler: (event: { messages: AgentMessage[] }) => void) => {
+          handlers.set(event, handler);
+        },
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の context だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      const onContext = handlers.get('context');
+      expect(onContext).toBeDefined();
+      onContext?.({ messages: [ownerMessage('reload-kept', 5)] });
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const result = await execute('id', {}, undefined, undefined, { cwd: dir });
+      expect(readFileSync(stdinFile, 'utf8')).toContain('reload-kept');
+      expect(result.content[0]?.text).toBe('Consistent: yes');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+    }
   });
 });

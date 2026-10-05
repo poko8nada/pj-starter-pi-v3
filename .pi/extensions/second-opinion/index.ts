@@ -21,6 +21,7 @@ import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './
 import {
   ownerMessage,
   recordMessage,
+  seedHeld,
   windowFrom,
   type AgentMessage,
   type Held,
@@ -182,7 +183,7 @@ export function collectMessage(held: Held, message: AgentMessage): void {
 }
 
 export default function (pi: ExtensionAPI) {
-  const held: Held = { messages: [] };
+  const held: Held = { messages: [], seen: new Set() };
 
   pi.registerTool({
     name: TOOL_NAME,
@@ -209,6 +210,9 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  pi.on('context', (event) => {
+    seedHeld(event.messages, held);
+  });
   pi.on('message_end', (event) => {
     collectMessage(held, event.message);
   });

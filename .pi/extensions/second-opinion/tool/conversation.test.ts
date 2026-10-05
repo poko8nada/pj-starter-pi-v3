@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ownerMessage,
   recordMessage,
+  seedHeld,
   windowFrom,
   type AgentMessage,
   type Held,
@@ -67,7 +68,7 @@ function result(toolCallId: string, toolName: string, text: string): AgentMessag
 
 describe('recordMessage / ownerMessage', () => {
   it('足した順に貯まる', () => {
-    const held: Held = { messages: [] };
+    const held: Held = { messages: [], seen: new Set() };
     recordMessage(held, owner('first'));
     recordMessage(held, say('second'));
     expect(held.messages).toHaveLength(2);
@@ -206,5 +207,33 @@ describe('windowFrom: 不正な count', () => {
   it('NaN と非整数は投げる', () => {
     expect(() => windowFrom([ownerMessage('hi', 1)], Number.NaN, 'opinion')).toThrow();
     expect(() => windowFrom([ownerMessage('hi', 1)], 2.5, 'opinion')).toThrow();
+  });
+});
+
+describe('seedHeld: 既にある会話を写す', () => {
+  it('既にある会話を渡す → messages に入り、seen に role と timestamp の印が立つ', () => {
+    const held: Held = { messages: [], seen: new Set() };
+    const first = ownerMessage('first', 1);
+    const second = ownerMessage('second', 2);
+    seedHeld([first, second], held);
+    expect(held.messages).toEqual([first, second]);
+    expect(held.seen.has('user:1')).toBe(true);
+    expect(held.seen.has('user:2')).toBe(true);
+  });
+
+  it('同じ role と timestamp の message_end が seed の後に来る → messages は増えない', () => {
+    const held: Held = { messages: [], seen: new Set() };
+    const first = ownerMessage('first', 1);
+    seedHeld([first], held);
+    recordMessage(held, ownerMessage('first again', 1));
+    expect(held.messages).toHaveLength(1);
+    expect(held.messages[0]).toEqual(first);
+  });
+
+  it('空の会話を渡す → messages も seen も空のまま', () => {
+    const held: Held = { messages: [], seen: new Set() };
+    seedHeld([], held);
+    expect(held.messages).toHaveLength(0);
+    expect(held.seen.size).toBe(0);
   });
 });

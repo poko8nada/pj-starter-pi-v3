@@ -14,11 +14,30 @@ export type AgentMessage = MessageEndEvent['message'];
 /** 貯めた会話。`messages` の中身は `recordMessage` だけが足す */
 export interface Held {
   readonly messages: AgentMessage[];
+  /** 入れた発言の印。`role` と `timestamp` を繋げた物 */
+  readonly seen: Set<string>;
 }
 
-/** 会話に1件足す */
+/** 発言の印。`role` と `timestamp` を繋げる */
+function keyOf(message: AgentMessage): string {
+  return `${message.role}:${String(message.timestamp)}`;
+}
+
+/** 会話に1件足す。同じ印があれば足さない（二重に貯めない） */
 export function recordMessage(held: Held, message: AgentMessage): void {
+  const key = keyOf(message);
+  if (held.seen.has(key)) {
+    return;
+  }
+  held.seen.add(key);
   held.messages.push(message);
+}
+
+/** 既にある会話を写す。`seen` に印を立てるので、後から同じ発言が来ても二重にならない */
+export function seedHeld(messages: readonly AgentMessage[], held: Held): void {
+  for (const message of messages) {
+    recordMessage(held, message);
+  }
 }
 
 /** owner の入力を会話の1件にする。時刻は引数で受ける */
