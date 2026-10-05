@@ -57,7 +57,11 @@ When the decision needs hands, run a `trial` child in a worktree. It installs th
 
 Write `なし` when there is nothing to try.
 
-### 6. Decide
+### 6. Probe the holes
+
+Before Decide, run the proposal through `second_opinion` with the proposal in `focus`. Answer the holes it returns, and carry both into the `Highlight`.
+
+### 7. Decide
 
 The owner's answer is the decision, and nothing else records it. Write `5. Decision:` — `accepted` or `rejected` — and put the accepted result into the md it belongs to.
 

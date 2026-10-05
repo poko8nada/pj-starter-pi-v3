@@ -11,8 +11,8 @@
       "paths": [],
       "bash": [],
       "continueByDefault": false,
-      "limits": { "turns": 20, "output": 8000 },
-      "role": "会話の一貫性・穴・別案を判定して返す。直さない。根拠を示す"
+      "limits": { "turns": 10, "output": 4000 },
+      "role": "提案・意見の穴を指摘して返す。直さない。根拠を示す"
     }
   ]
 }

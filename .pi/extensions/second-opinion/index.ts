@@ -15,7 +15,13 @@ import type {
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { opinionTask } from './tool/answer.ts';
-import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './child/spec.ts';
+import {
+  buildPiArgs,
+  finalTextFrom,
+  parseEvents,
+  usageFrom,
+  type ConsultOptions,
+} from './child/spec.ts';
 import { messagesFrom, windowFrom, type AgentMessage } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
 import { appendRun } from './run/log.ts';
@@ -26,17 +32,17 @@ import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } fro
 export const TOOL_NAME = 'second_opinion';
 
 /** 窓の既定の件数 */
-export const DEFAULT_MESSAGES = 20;
+export const DEFAULT_MESSAGES = 8;
 
 /** 道具の引数（typebox） */
 export const PARAMETERS = Type.Object({
   focus: Type.Optional(
     Type.String({
-      description: 'What to ask about. Without it, consistency, holes and alternatives',
+      description: 'What to ask about. Without it, holes in the proposal',
     }),
   ),
   messages: Type.Optional(
-    Type.Number({ description: 'How many recent messages to judge (default 20)' }),
+    Type.Number({ description: 'How many recent messages to judge (default 8)' }),
   ),
 });
 
@@ -168,6 +174,7 @@ export async function runOpinion(port: PiPort, request: OpinionRequest): Promise
       },
       onDone: (done) => {
         const reason = reasonOf(done);
+        const usage = usageFrom(parseEvents(done.stdout));
         appendRun(root, {
           child,
           role: 'opinion',
@@ -176,6 +183,8 @@ export async function runOpinion(port: PiPort, request: OpinionRequest): Promise
           ended: Date.now(),
           state: stateOf(done),
           ...(reason === undefined ? {} : { reason }),
+          turns: usage.turns,
+          spend: `${usage.cost.toFixed(4)} usd`,
         });
       },
     }),
@@ -212,12 +221,11 @@ export default function (pi: ExtensionAPI) {
     name: TOOL_NAME,
     label: 'Second opinion',
     description:
-      'Judge the recent conversation with another model: consistency, holes and alternatives. Returns the child text, with a cut-off note appended when the child did not finish cleanly.',
-    promptSnippet:
-      'Judge the recent conversation (consistency, holes, alternatives) with another model',
+      'Point out holes in the recent proposal or opinion with another model. Returns the child text, with a cut-off note appended when the child did not finish cleanly.',
+    promptSnippet: 'Point out holes in the recent proposal or opinion with another model',
     promptGuidelines: [
-      'Use second_opinion when the conversation itself needs another eye: a second model reads the recent messages and judges them.',
-      'Pass focus to ask about one thing, messages to change how many recent messages are judged (default 20).',
+      'Use second_opinion when a proposal or opinion needs another eye: a second model reads the recent messages and points out holes.',
+      'Pass focus to ask about one thing, messages to change how many recent messages are judged (default 8).',
     ],
     parameters: PARAMETERS,
     execute: (...args: ExecuteArgs) =>

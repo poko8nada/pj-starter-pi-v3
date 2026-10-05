@@ -1,28 +1,28 @@
 # second-opinion
 
-Another eye on the current conversation. A second model reads the recent messages and judges consistency, holes and alternatives — synchronously, in the same turn.
+Another eye on the current proposal. A second model reads the recent messages and points out holes — synchronously, in the same turn.
 
 The child sees only the recent conversation (as text), never this project's files beyond reading them. It cannot write anything: it runs with read-only tools and no worktree.
 
 ## Tools
 
-| Tool             | What it does                                                                                                                           |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `second_opinion` | Judges the recent conversation with another model. Returns the child text (plus a cut-off note when the child did not finish cleanly). |
+| Tool             | What it does                                                                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `second_opinion` | Points out holes in the recent proposal or opinion with another model. Returns the child text (plus a cut-off note when the child did not finish cleanly). |
 
-| Parameter  | Required | Meaning                                                            |
-| ---------- | -------- | ------------------------------------------------------------------ |
-| `focus`    | no       | What to ask about. Without it, consistency, holes and alternatives |
-| `messages` | no       | How many recent messages to judge (default 20)                     |
+| Parameter  | Required | Meaning                                              |
+| ---------- | -------- | ---------------------------------------------------- |
+| `focus`    | no       | What to ask about. Without it, holes in the proposal |
+| `messages` | no       | How many recent messages to judge (default 8)        |
 
 ```
-second_opinion({ focus: "Is this plan consistent?" })
+second_opinion({ focus: "Where does this plan break?" })
 second_opinion({ messages: 5 })
 ```
 
 ## Commands
 
-`/second_opinion` is the same judgment for the owner. A leading number is the message count, the rest is the question. The answer arrives as a message in the conversation.
+`/second_opinion` is the same hole-probing for the owner. A leading number is the message count, the rest is the question. The answer arrives as a message in the conversation.
 
 ```
 /second_opinion
@@ -34,15 +34,9 @@ second_opinion({ messages: 5 })
 The child's text, unedited, in this shape:
 
 ```
-## Consistent
-...
 ## Holes
 ...
-## Alternative
-...
-## Cannot judge
-...
-## Read
+## Overlooked
 ...
 ```
 
@@ -52,7 +46,7 @@ When the child was cut off (turn limit, error, abort) after writing its answer, 
 
 ## Settings
 
-`types.json` sits next to this file and holds the single `opinion` role: another model's candidates, read-only tools (`read`, `ls`, `find`, `grep`, `web_search`, `fetch_content`), no isolation, and the spend limits (20 turns, 8000 output tokens). The window (default 20 messages, 4000 chars per message, 2000 per tool result) and the default question live in `tool/conversation.ts` and `tool/answer.ts`. The file is read on every call, so a change takes effect on the next opinion without reloading pi.
+`types.json` sits next to this file and holds the single `opinion` role: another model's candidates, read-only tools (`read`, `ls`, `find`, `grep`, `web_search`, `fetch_content`), no isolation, and the spend limits (10 turns, 4000 output tokens). The window (default 8 messages, 4000 chars per message, 2000 per tool result) and the default question live in `tool/conversation.ts` and `tool/answer.ts`. The file is read on every call, so a change takes effect on the next opinion without reloading pi.
 
 ## The code
 
