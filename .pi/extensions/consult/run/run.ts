@@ -81,6 +81,8 @@ export interface RunOptions {
   readonly limits: Limits;
   /** 子のプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
   readonly onStarted?: (pid: number) => void;
+  /** `agent_end` の後の猶予。静かなら子を止める（既定 30 秒） */
+  readonly watchdogMs?: number;
   /** 進行の通知。子の出力が届くたびに呼ぶ */
   readonly onProgress?: (chunk: {
     readonly stream: 'stdout' | 'stderr';
@@ -361,87 +363,163 @@ function consumeLine(
   killChild(child);
 }
 
+const DEFAULT_WATCHDOG_MS = 30000;
+
+/** 起動直後の状態。`lastOutputAt` は起動の時刻。 */
+function initialRunState(limits: Limits, startedAt: number): RunState {
+  return {
+    stdout: '',
+    stderr: '',
+    buffered: '',
+    aborted: false,
+    spent: { turns: 0, output: 0 },
+    limits,
+    lastOutputAt: startedAt,
+  };
+}
+
+/** 終了の塊。`ended` は `agent_end` を見たか。 */
+function runOutcome(state: RunState, ending: { code: number; pid?: number }): RunResult {
+  return {
+    stdout: state.stdout,
+    stderr: state.stderr,
+    code: ending.code,
+    stopped: state.stopped,
+    aborted: state.aborted,
+    ended: state.endedAt !== undefined,
+    ...(ending.pid === undefined ? {} : { pid: ending.pid }),
+  };
+}
+
+/** 走っている子と見張りの時計。`settled` が立ったら何もしない。 */
+interface LiveRun {
+  readonly state: RunState;
+  readonly child: ReturnType<typeof spawn>;
+  readonly quietMs: number;
+  readonly onProgress?: RunOptions['onProgress'];
+  settled: boolean;
+  watchdog?: NodeJS.Timeout;
+}
+
+/** 見張りの時計を止める。無ければ何もしない。 */
+function clearWatchdog(live: LiveRun): void {
+  if (live.watchdog === undefined) {
+    return;
+  }
+  clearTimeout(live.watchdog);
+  live.watchdog = undefined;
+}
+
+/** `agent_end` の後だけ時計を動かす。出力が来たら呼び直して戻す。 */
+function armWatchdog(live: LiveRun): void {
+  clearWatchdog(live);
+  if (live.state.endedAt === undefined) {
+    return;
+  }
+  if (live.settled) {
+    return;
+  }
+  live.watchdog = setTimeout(() => {
+    live.watchdog = undefined;
+    if (live.settled) {
+      return;
+    }
+    const now = Date.now();
+    if (!watchdogDue(live.state.endedAt, live.state.lastOutputAt, now, live.quietMs)) {
+      armWatchdog(live);
+      return;
+    }
+    killChild(live.child);
+  }, live.quietMs);
+}
+
+/** stdout の届きを足し、行を数え、時計を戻す。 */
+function consumeStdout(live: LiveRun, input: { text: string; now: number }): void {
+  live.state.stdout += input.text;
+  live.state.buffered += input.text;
+  live.state.lastOutputAt = input.now;
+  live.onProgress?.({ stream: 'stdout', text: input.text });
+  const lines = live.state.buffered.split('\n');
+  live.state.buffered = lines.pop() ?? '';
+  for (const line of lines) {
+    consumeLine(line, live.state, live.child, input.now);
+  }
+  armWatchdog(live);
+}
+
+/** stderr の届きを足す。見張りの時計は触らない。 */
+function appendStderr(live: LiveRun, text: string): void {
+  live.state.stderr += text;
+  live.onProgress?.({ stream: 'stderr', text });
+}
+
+/** 終了を 1 回だけ配る。2 回目は捨てる。 */
+function finishLive(
+  live: LiveRun,
+  input: {
+    code: number;
+    signal?: AbortSignal;
+    onAbort: () => void;
+    onDone?: RunOptions['onDone'];
+    settle: (result: RunResult) => void;
+  },
+): void {
+  if (live.settled) {
+    return;
+  }
+  live.settled = true;
+  clearWatchdog(live);
+  input.signal?.removeEventListener('abort', input.onAbort);
+  const outcome = runOutcome(live.state, { code: input.code, pid: live.child.pid });
+  input.onDone?.(outcome);
+  input.settle(outcome);
+}
+
 export function runPi(options: RunOptions): Promise<RunResult> {
   return new Promise((settle) => {
     const child = spawn('pi', [...options.piArgs], spawnOptions(options.cwd, options.env));
-    const startedAt = Date.now();
-    const state: RunState = {
-      stdout: '',
-      stderr: '',
-      buffered: '',
-      aborted: false,
-      spent: { turns: 0, output: 0 },
-      limits: options.limits,
-      lastOutputAt: startedAt,
+    const live: LiveRun = {
+      state: initialRunState(options.limits, Date.now()),
+      child,
+      quietMs: options.watchdogMs ?? DEFAULT_WATCHDOG_MS,
+      ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+      settled: false,
     };
-    let settled = false;
-
-    // 起きたことを先に伝える。走っている子の記録を、終わりを待たずに書けるように
+    const onAbort = () => {
+      live.state.aborted = true;
+      killChild(child);
+    };
+    const finish = (code: number) => {
+      finishLive(live, {
+        code,
+        signal: options.signal,
+        onAbort,
+        onDone: options.onDone,
+        settle,
+      });
+    };
     if (child.pid !== undefined) {
       options.onStarted?.(child.pid);
     }
-
-    const onAbort = () => {
-      state.aborted = true;
-      killChild(child);
-    };
-
-    const finish = (code: number) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      options.signal?.removeEventListener('abort', onAbort);
-      const outcome: RunResult = {
-        stdout: state.stdout,
-        stderr: state.stderr,
-        code,
-        stopped: state.stopped,
-        aborted: state.aborted,
-        ended: state.endedAt !== undefined,
-        ...(child.pid === undefined ? {} : { pid: child.pid }),
-      };
-      // 待たずに結果を受け取りたい呼び出し側の口。promise の解決より先に呼ぶ。
-      options.onDone?.(outcome);
-      settle(outcome);
-    };
-
-    // 中断が既に来ていれば即座に止める。来たら子を殺す。
     if (options.signal?.aborted === true) {
-      // 既に中断されている（再走のときなど）。spawn 済みの子をここで殺す
-      state.aborted = true;
+      live.state.aborted = true;
       killChild(child);
     } else {
       options.signal?.addEventListener('abort', onAbort, { once: true });
     }
-
     child.stdout.on('data', (chunk: Buffer) => {
-      const now = Date.now();
-      const text = chunk.toString();
-      state.stdout += text;
-      state.buffered += text;
-      state.lastOutputAt = now;
-      options.onProgress?.({ stream: 'stdout', text });
-      const lines = state.buffered.split('\n');
-      state.buffered = lines.pop() ?? '';
-      for (const line of lines) {
-        consumeLine(line, state, child, now);
-      }
+      consumeStdout(live, { text: chunk.toString(), now: Date.now() });
     });
     child.stderr.on('data', (chunk: Buffer) => {
-      const text = chunk.toString();
-      state.stderr += text;
-      options.onProgress?.({ stream: 'stderr', text });
+      appendStderr(live, chunk.toString());
     });
     child.on('error', (error: Error) => {
-      state.stderr += error.message;
+      live.state.stderr += error.message;
       finish(1);
     });
     child.on('close', (code: number | null) => {
       finish(code ?? 0);
     });
-
-    // 指示は stdin から渡す。argv に載せると、先頭が `-` や `@` の文書がオプションやファイル引数として読まれる。
     child.stdin.end(options.stdin);
   });
 }

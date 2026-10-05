@@ -5,6 +5,7 @@ import { tmpDir } from '../../../test/tmp.ts';
 import {
   applyEvent,
   changedFiles,
+  runPi,
   stateOf,
   reasonOf,
   watchdogDue,
@@ -23,7 +24,7 @@ import {
 import { finalTextFrom, parseEvents } from '../child/spec.ts';
 import { compose } from '../tool/render.ts';
 
-// 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
+// 子の起動は `.pi/test/pi` の偽で扱う。worktree は実際のリポジトリが要るので扱わない。
 // ファイルを書くテストは `.pi/test/tmp.ts` の helper に置き場を寄せる。
 
 /** git を差し替えて、コミットと ref 作りの判断だけを試す */
@@ -476,5 +477,96 @@ describe('stateOf / reasonOf: ended', () => {
     const run = combinedRun('', { aborted: true, ended: true });
     expect(stateOf(run)).toBe('aborted');
     expect(reasonOf(run)).toBe('stopped by the parent');
+  });
+});
+
+function fakeEnv(mode: string): NodeJS.ProcessEnv {
+  const fakeDir = join(process.cwd(), '.pi/test');
+  return {
+    ...process.env,
+    PATH: `${fakeDir}:${process.env.PATH ?? ''}`,
+    FAKE_PI_MODE: mode,
+  };
+}
+
+describe('runPi: watchdog', () => {
+  it('agent_end の後に眠る子 → 猶予の後に殺され、ended:true で done、最後の本文が取れる', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('sleep'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('done');
+    expect(finalTextFrom(parseEvents(run.stdout))).toBe('fake report');
+  });
+
+  it('普通に終わる子 → 殺さず done', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('exit'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('done');
+    expect(finalTextFrom(parseEvents(run.stdout))).toBe('fake report');
+  });
+
+  it('agent_end の後にもう1つイベント → 猶予の内にタイマーが戻り、本文を配達して done', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('extra'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('done');
+    expect(run.stdout).toContain('extra');
+  });
+
+  it('猶予の前に親が cancel → aborted', async () => {
+    const dir = tmpDir();
+    const controller = new AbortController();
+    const promise = runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      signal: controller.signal,
+      env: fakeEnv('sleep'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    setTimeout(() => {
+      controller.abort();
+    }, 20);
+    const run = await promise;
+    expect(run.aborted).toBe(true);
+    expect(stateOf(run)).toBe('aborted');
+  });
+
+  it('pi の無い PATH → 起動できず error', async () => {
+    const dir = tmpDir();
+    const emptyBin = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: { ...process.env, PATH: emptyBin },
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(stateOf(run)).toBe('error');
+    expect(run.ended).toBe(false);
   });
 });
