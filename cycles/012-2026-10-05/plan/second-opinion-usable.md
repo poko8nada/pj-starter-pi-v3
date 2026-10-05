@@ -350,4 +350,8 @@
 ## Acceptance
 
 - Ran:
+  - `pnpm run test:run`（worktree、31 files / 728 tests、すべて green）
+  - `pnpm run typecheck` / `pnpm run lint` / `pnpm run format:check`（すべて green）
+  - 変異試験3件。`seen` の重複除去を外す → `tool/conversation.test.ts` が1件赤。`formatBody` の打ち切り注を外す → `index.test.ts` が3件赤。起動前の `onProgress` を外す → `index.test.ts` が1件赤。いずれも復元して 728 件 green に戻した
 - Findings:
+  - なし
