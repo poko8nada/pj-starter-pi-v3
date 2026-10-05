@@ -1,0 +1,15 @@
+{
+  "types": [
+    {
+      "name": "opinion",
+      "models": ["opencode-go/deepseek-v4.1-flash:high"],
+      "tools": ["read", "ls", "find", "grep", "web_search", "fetch_content"],
+      "isolated": false,
+      "paths": [],
+      "bash": [],
+      "continueByDefault": false,
+      "limits": { "turns": 8, "output": 8000 },
+      "role": "会話の一貫性・穴・別案を判定して返す。直さない。根拠を示す"
+    }
+  ]
+}
