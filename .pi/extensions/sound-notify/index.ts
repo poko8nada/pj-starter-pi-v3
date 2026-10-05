@@ -7,11 +7,11 @@ import type {
   ToolExecutionEndEvent,
 } from '@earendil-works/pi-coding-agent';
 
-/** 通知の種類。種類ごとに音を出し分ける（commit を除いて文言も） */
-type NotifyKind = 'permission' | 'question' | 'done' | 'commit';
+/** 通知の種類。種類ごとに音を出し分ける（commit・compact を除いて文言も） */
+type NotifyKind = 'permission' | 'question' | 'done' | 'commit' | 'compact';
 
-/** cmux へ文言を送る種類。commit は音だけにする */
-type NotificationKind = Exclude<NotifyKind, 'commit'>;
+/** cmux へ文言を送る種類。commit と compact は音だけにする */
+type NotificationKind = Exclude<NotifyKind, 'commit' | 'compact'>;
 
 interface SoundNotifyConfig {
   enabled: boolean;
@@ -31,7 +31,7 @@ export type CtxPort = Pick<ExtensionContext, 'hasUI'>;
 
 const DEFAULT_CONFIG: SoundNotifyConfig = {
   enabled: true,
-  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop' },
+  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop', compact: 'Glass' },
   notifications: true,
 };
 
@@ -78,6 +78,7 @@ export function parseConfig(parsed: unknown): SoundNotifyConfig {
       question: readString(sounds.question, DEFAULT_CONFIG.sounds.question),
       done: readString(sounds.done, DEFAULT_CONFIG.sounds.done),
       commit: readString(sounds.commit, DEFAULT_CONFIG.sounds.commit),
+      compact: readString(sounds.compact, DEFAULT_CONFIG.sounds.compact),
     },
   };
 }
@@ -142,8 +143,8 @@ function dispatch(pi: PiPort, ctx: CtxPort, kind: NotifyKind, config: SoundNotif
   }
 
   const tasks: Promise<void>[] = [player(pi, config.sounds[kind])];
-  // commit は音だけ。cmux 通知は入力待ち・ターン完了の合図に限る。
-  if (config.notifications && kind !== 'commit') {
+  // commit と compact は音だけ。cmux 通知は入力待ち・ターン完了の合図に限る。
+  if (config.notifications && kind !== 'commit' && kind !== 'compact') {
     tasks.push(sendNotification(pi, kind));
   }
 
@@ -184,9 +185,19 @@ export function handleToolExecutionEnd(
   }
 }
 
-export default function (pi: ExtensionAPI) {
-  const config = loadConfig();
+/** 圧縮が終わったときだけ compact の音を鳴らす */
+export function handleSessionCompact(pi: PiPort, ctx: CtxPort, config: SoundNotifyConfig): void {
+  dispatch(pi, ctx, 'compact', config);
+}
 
+/** 拡張の入口が pi に求める口だけ。テストは on を記録する偽物を渡す */
+export type EntryPiPort = {
+  on: ExtensionAPI['on'];
+  exec: PiPort['exec'];
+};
+
+/** 拡張の入口の配線。既定の export は設定を読んでここに渡す。テストは設定を直接渡す */
+export function registerSoundHandlers(pi: EntryPiPort, config: SoundNotifyConfig): void {
   // 入力待ち: エージェントが止まってユーザーの答えを待っている（緊急度が高い）
   pi.on('ui_prompt_start', async (event, ctx) => {
     dispatch(pi, ctx, classify(event.title), config);
@@ -201,4 +212,13 @@ export default function (pi: ExtensionAPI) {
   pi.on('tool_execution_end', async (event, ctx) => {
     handleToolExecutionEnd(pi, ctx, event, config);
   });
+
+  // 圧縮完了: 圧縮が終わったときに 1 音（失敗は鳴らさない）
+  pi.on('session_compact', async (_event, ctx) => {
+    handleSessionCompact(pi, ctx, config);
+  });
+}
+
+export default function (pi: EntryPiPort) {
+  registerSoundHandlers(pi, loadConfig());
 }
