@@ -62,6 +62,14 @@ describe('childEnv', () => {
     expect(env.CONSULT_TURNS).toBe('20');
     expect(env.CONSULT_POLICY).toBe('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}');
   });
+
+  it('上限 40 → CONSULT_TURNS は 40（値の振りを見る）', () => {
+    const env = childEnv({
+      ...policy(false),
+      limits: { turns: 40, output: 8000 },
+    });
+    expect(env.CONSULT_TURNS).toBe('40');
+  });
 });
 
 describe('sessionFile', () => {

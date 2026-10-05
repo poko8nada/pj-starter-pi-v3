@@ -85,31 +85,49 @@
 ### Slice 1: 促しの番号を上限の2つ前にし、いつ出すかを試せる形にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: f9e2757
 
 ### Slice 2: 促しが子に届く配線を固定する
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 88927ff
 
 ### Slice 3: 統合: 上限が読まれてから促しが出るまで
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: b29af3d
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし（consult 内に 39/`turns - 1` の残りは無い。`child/budget.ts:4-8,14` と `child/budget.test.ts:20-25` は 38/`turns - 2` に更新済み。`README.md:143`「last turn の前に促す」・`child/spec.ts:20-22`「上限の手前」は 2 つ手前でも真で偽にならない。`second-opinion/child/budget.ts:19` の `turns - 1` は別拡張の写しで `design.md:5` が対象外と明記。`adr.md:69,130`・`009/plan.md:61` の `turns - 1` は当時の観測・履歴で仕様ではない）
 - Unlisted:
+  - なし（`8703e56..HEAD` は `child/budget.ts`・`child/budget.test.ts`・`child/spec.test.ts`・`run/child.test.ts`・`run/run.test.ts` の 5 件で Files の 5 項目と一致）
 - Gaps:
+  - `default export` の env 読み→登録の配線を検査が歩かない。変更点 `child/budget.ts:81-83`（`turnsFrom(process.env.CONSULT_TURNS)` を `registerBudget` に渡す）に対し、テストは `child/budget.test.ts:3` の名前付き import のみで default を呼ばず、env からの 1 本も `turnsFrom('40')` の直値代用（`child/budget.test.ts:96-99` の `fireWith(turns, ...)`）。`CONSULT_TURNS` 未設定・不正で default が登録しないこと、`'40'` で 38 に登録することの e2e が無い（値 40/38 自体は plan 決定のため問わない）
+    fixed: default export の env 配線を `fireDefaultWith` で試した（`'40'`→38 で促す、未設定・`''`・`'x'` は促さない）。偽 pi を unsafe 主張なしで渡せるよう default の引口を `BudgetPiPort` に狭めた
+  - 同一登録での `37 → 38` の順序を検査が歩かない。`registerBudget` は `result === undefined` のとき `sent` を立てない（`child/budget.ts:70-76`）が、Slice 1 Verify は `38,38` の 2 度押しのみ、Slice 3 の `37` は毎回新規 `pi` の `fireWith`（`child/budget.test.ts:8-17,104-106`）。同一 `pi` で `37` の後に `38` が促すこと（`37` が `sent` を消費しないこと）を主張する物が無い
+    fixed: 同一 pi で 37→38 の順序を試した（37 は `{}` で `sent` を消費せず、38 で促す）
 - Unproven:
+  - `child/budget.test.ts:79-92`「促しの番号で 1 度だけ促す」は `entries` を見ない。`first` の `continue` と `second` の `{}` だけなので、`nudge` が `{continue: true, entries: []}` を返しても緑のまま。促しの中身（`custom_message` 1 件）は `nudge` 単体と env chain が見るが、このテストの名指す「促す」は素抜け
+    fixed: `first` に `entries` 1 件（`custom_message`/`consult-budget`）の主張を足した
 
 ## Acceptance
 
 - Ran:
+  - `pnpm run test:run`（worktree、29 files / 678 tests、すべて green）
+  - `pnpm run typecheck` / `pnpm run lint` / `pnpm run format:check`（すべて green）
+  - 変異試験3件。`lastTurn` の `turns - 2` を `turns - 1` に → `budget.test.ts` が 6 件赤。`sent = true` を削除 → 一度だけ促すケースが赤。`--extension` の順序を入れ替え → `spec.test.ts` が 2 件赤。いずれも復元して 138 件 green に戻した
 - Findings:
+  - なし
