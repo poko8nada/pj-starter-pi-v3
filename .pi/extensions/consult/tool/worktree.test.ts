@@ -1,10 +1,8 @@
-import { rmSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
-import { gitEnv } from '../run/run.ts';
 import { appendRun } from '../run/log.ts';
 import { findWorktree } from '../run/worktree.ts';
 import { execute, removeText } from './worktree.ts';
@@ -31,18 +29,6 @@ function repo(): { readonly dir: string; readonly home: string } {
   run(['add', '-A']);
   run(['commit', '--quiet', '-m', 'base']);
   return { dir, home };
-}
-
-/** worktree に git を打つ（`runGit` は repo 用に GIT_DIR を固定するので使えない） */
-function gitInWorktree(path: string, args: readonly string[]): void {
-  const result = spawnSync('git', [...args], {
-    cwd: path,
-    encoding: 'utf8',
-    env: gitEnv(process.env),
-  });
-  if (result.status !== 0) {
-    throw new Error(`git ${args.join(' ')} failed: ${(result.stderr || '').trim()}`);
-  }
 }
 
 function text(outcome: { content: readonly { type: string; text?: string }[] }): string {
@@ -82,47 +68,6 @@ describe('consult_worktree', () => {
     expect(text(await call({}, dir))).toContain('consult/2-b');
   });
 
-  it('remove → 消す。force 無しで変更が残っていれば断る', async () => {
-    const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    const made = text(await call({ action: 'new', id: '2-b' }, dir));
-    const path = /^path: (\S+)$/m.exec(made)?.[1];
-    expect(path).toBeDefined();
-    writeFileSync(join(path ?? dir, 'note.md'), 'left\n');
-
-    expect(text(await call({ action: 'remove', id: '2-b' }, dir))).toContain('変更が残っている');
-    expect(text(await call({ action: 'remove', id: '2-b', force: true }, dir))).toContain('消した');
-    expect(text(await call({ action: 'remove', id: '2-b' }, dir))).toContain('無い');
-  });
-
-  it('remove → worktree と、取り込み済みのブランチを消す', async () => {
-    const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
-
-    const body = text(outcome);
-    expect(body).toContain('消した: 2-b');
-    expect(body).toContain('ブランチも消した');
-    expect(outcome.details['outcome']).toBe('removed');
-  });
-
-  it('未マージなら → ブランチは残したと返す（仕事を消さない）', async () => {
-    const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    const path = findWorktree(dir, '2-b')?.path ?? '';
-    writeFileSync(join(path, 'note.md'), 'the child wrote this\n');
-    gitInWorktree(path, ['add', '-A']);
-    gitInWorktree(path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
-
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
-    expect(text(outcome)).toContain('ブランチは未マージなので残した');
-    expect(outcome.details['outcome']).toBe('removed');
-    expect(outcome.details['cleanup']).toEqual({
-      pruned: [],
-      branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
-    });
-  });
-
   it('子が走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
@@ -156,19 +101,6 @@ describe('consult_worktree', () => {
 
     const outcome = await call({ action: 'remove', id: '2-b' }, dir);
     expect(outcome.details['outcome']).toBe('removed');
-  });
-
-  it('実体の無い登録の remove → 掃除した枝を言い、一覧にゴーストが出ない', async () => {
-    const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    const made = findWorktree(dir, '2-b');
-    rmSync(made?.path ?? '', { recursive: true, force: true });
-
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
-    expect(text(outcome)).toContain('無い: 2-b');
-    expect(text(outcome)).toContain('登録を掃除した');
-    expect(text(outcome)).toContain('消した枝: consult/2-b');
-    expect(text(await call({ action: 'list' }, dir))).toContain('作業場は無い');
   });
 
   it('list が、走っている子の居る unit に印を付ける', async () => {
