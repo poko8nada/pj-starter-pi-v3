@@ -7,12 +7,13 @@
 
 import type { ToolExecutionEndEvent } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
+import extensionDefault, {
   handleSessionCompact,
   handleToolExecutionEnd,
   parseConfig,
   setPlayer,
   type CtxPort,
+  type EntryPiPort,
   type PiPort,
 } from './index.ts';
 
@@ -135,5 +136,24 @@ describe('sound-notify.compact', () => {
   it('hasUI が false → 鳴らない', () => {
     handleSessionCompact(pi, { hasUI: false }, defaultConfig);
     expect(played).toEqual([]);
+  });
+});
+
+describe('sound-notify.entry', () => {
+  it('session_compact を登録し、session_compact_failed は登録しない', () => {
+    const registered: string[] = [];
+    const recordingPi: EntryPiPort = {
+      on: (...args: unknown[]) => {
+        const event = args[0];
+        if (typeof event === 'string') {
+          registered.push(event);
+        }
+        return () => undefined;
+      },
+      exec: async () => undefined,
+    };
+    extensionDefault(recordingPi);
+    expect(registered).toContain('session_compact');
+    expect(registered).not.toContain('session_compact_failed');
   });
 });

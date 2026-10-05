@@ -190,7 +190,13 @@ export function handleSessionCompact(pi: PiPort, ctx: CtxPort, config: SoundNoti
   dispatch(pi, ctx, 'compact', config);
 }
 
-export default function (pi: ExtensionAPI) {
+/** 拡張の入口が pi に求める口だけ。テストは on を記録する偽物を渡す */
+export type EntryPiPort = {
+  on: ExtensionAPI['on'];
+  exec: PiPort['exec'];
+};
+
+export default function (pi: EntryPiPort) {
   const config = loadConfig();
 
   // 入力待ち: エージェントが止まってユーザーの答えを待っている（緊急度が高い）
