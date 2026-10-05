@@ -129,6 +129,7 @@ export async function runOpinion(
   port: PiPort,
   held: Held,
   request: OpinionRequest,
+  onProgress?: (text: string) => void,
 ): Promise<string> {
   const window = windowFrom(held.messages, request.messages ?? DEFAULT_MESSAGES, TOOL_NAME);
   const task = opinionTask(window, request.focus);
@@ -138,6 +139,7 @@ export async function runOpinion(
     CONSULT_POLICY: JSON.stringify({ paths: policy.paths, bash: policy.bash }),
     CONSULT_TURNS: String(policy.limits.turns),
   };
+  onProgress?.('second-opinion: starting the child');
   const run = await runWithFallback(policy.models, (model) =>
     runPi({
       piArgs: buildPiArgs({ type: 'opinion', task, policy: withModel(policy, model) }),
@@ -145,6 +147,7 @@ export async function runOpinion(
       cwd: port.cwd,
       env,
       limits: policy.limits,
+      onProgress: (chunk) => onProgress?.(chunk.text),
     }),
   );
   return bodyOf(run);
@@ -168,6 +171,16 @@ type ExecuteArgs = [
 /** 使うのは cwd だけ。テストが本物の pi の文脈を組み立てずに済むよう、狭くしておく */
 function portOf(ctx: Pick<ExtensionContext, 'cwd'>): PiPort {
   return { cwd: ctx.cwd, env: process.env };
+}
+
+/** `onUpdate` を進行の文に包む。無ければ何もしない */
+function progressOf(onUpdate: ExecuteArgs[3]): ((text: string) => void) | undefined {
+  if (onUpdate === undefined) {
+    return undefined;
+  }
+  return (text) => {
+    onUpdate({ content: [{ type: 'text', text }], details: {} });
+  };
 }
 
 /**
@@ -198,7 +211,9 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: PARAMETERS,
     execute: (...args: ExecuteArgs) =>
-      runOpinion(portOf(args[4]), held, toRequest(args[1])).then((body) => result(body)),
+      runOpinion(portOf(args[4]), held, toRequest(args[1]), progressOf(args[3])).then((body) =>
+        result(body),
+      ),
   });
 
   pi.registerCommand(TOOL_NAME, {

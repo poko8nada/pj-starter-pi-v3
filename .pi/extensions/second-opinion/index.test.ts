@@ -368,3 +368,117 @@ describe('context: reload をまたいでも会話を材料にする', () => {
     }
   });
 });
+
+describe('runOpinion: 進行の通知', () => {
+  it('子が起動できない → 例外を投げ、その前onProgressがちょうど1度呼ばれる', async () => {
+    const dir = tmpDir();
+    const emptyBin = tmpDir();
+    const seen: string[] = [];
+    await expect(
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin } },
+        heldOf('hi'),
+        {},
+        (text) => {
+          seen.push(text);
+        },
+      ),
+    ).rejects.toThrow();
+    expect(seen).toHaveLength(1);
+  });
+
+  it('子の本文が届いたら、その本文がonProgressに来る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const seen: string[] = [];
+    const body = await runOpinion(
+      { cwd: dir, env: fakeEnv(bin, 'progress-body-here') },
+      heldOf('hi'),
+      {},
+      (text) => {
+        seen.push(text);
+      },
+    );
+    expect(body).toBe('progress-body-here');
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+    expect(seen.join('\n')).toContain('progress-body-here');
+  });
+
+  it('onProgressを渡さない → 何も起きず今までどおり本文が返る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const body = await runOpinion({ cwd: dir, env: fakeEnv(bin, 'quiet-body') }, heldOf('hi'), {});
+    expect(body).toBe('quiet-body');
+  });
+
+  it('executeのonUpdateを包んで渡す → 更新が届き本文が返る', async () => {
+    const bin = tmpDir();
+    const dir = tmpDir();
+    placeWrapper(bin, join(bin, 'args.txt'), join(bin, 'stdin.txt'));
+    const savedPath = process.env.PATH;
+    const savedMode = process.env.FAKE_PI_MODE;
+    const savedText = process.env.FAKE_PI_TEXT;
+    try {
+      process.env.PATH = `${bin}:${savedPath ?? ''}`;
+      process.env.FAKE_PI_MODE = 'exit';
+      process.env.FAKE_PI_TEXT = 'update-body';
+      type ExecuteFn = (
+        ...args: [
+          toolCallId: string,
+          params: Record<string, unknown>,
+          signal: AbortSignal | undefined,
+          onUpdate: (update: { content: { type: string; text: string }[] }) => void,
+          ctx: { cwd: string },
+        ]
+      ) => Promise<{ content: { type: string; text: string }[] }>;
+      let execute: ExecuteFn | undefined;
+      const pi = {
+        registerTool: (tool: { execute: ExecuteFn }) => {
+          execute = tool.execute;
+        },
+        registerCommand: () => {},
+        on: () => {},
+        sendMessage: () => {},
+      };
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 偽 pi の更新だけを試すための、意図的な狭い形
+      extensionDefault(pi as never);
+      if (execute === undefined) {
+        throw new Error('execute was not registered');
+      }
+      const updates: string[] = [];
+      const result = await execute(
+        'id',
+        {},
+        undefined,
+        (update) => {
+          const first = update.content[0];
+          if (first !== undefined) {
+            updates.push(first.text);
+          }
+        },
+        { cwd: dir },
+      );
+      expect(result.content[0]?.text).toBe('update-body');
+      expect(updates.length).toBeGreaterThanOrEqual(1);
+      expect(updates.join('\n')).toContain('update-body');
+    } finally {
+      if (savedPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = savedPath;
+      }
+      if (savedMode === undefined) {
+        delete process.env.FAKE_PI_MODE;
+      } else {
+        process.env.FAKE_PI_MODE = savedMode;
+      }
+      if (savedText === undefined) {
+        delete process.env.FAKE_PI_TEXT;
+      } else {
+        process.env.FAKE_PI_TEXT = savedText;
+      }
+    }
+  });
+});
