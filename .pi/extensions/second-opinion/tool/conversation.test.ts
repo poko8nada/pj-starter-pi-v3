@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ownerMessage,
-  recordMessage,
-  seedHeld,
-  windowFrom,
-  type AgentMessage,
-  type Held,
-} from './conversation.ts';
+import { messagesFrom, windowFrom, type AgentMessage } from './conversation.ts';
 
 // `AgentMessage` の literal を fixture にする。渡すのは本物の pi の文脈ではなく、ここで組んだ物だけ。
 
@@ -65,21 +58,6 @@ function result(toolCallId: string, toolName: string, text: string): AgentMessag
     timestamp: 1,
   };
 }
-
-describe('recordMessage / ownerMessage', () => {
-  it('足した順に貯まる', () => {
-    const held: Held = { messages: [], seen: new Set() };
-    recordMessage(held, owner('first'));
-    recordMessage(held, say('second'));
-    expect(held.messages).toHaveLength(2);
-  });
-
-  it('owner の入力は `owner:` の行になる', () => {
-    const window = windowFrom([ownerMessage('do this', 7)], 20, 'opinion');
-    expect(window.text).toBe('owner: do this');
-    expect(window.dropped).toBe(0);
-  });
-});
 
 describe('windowFrom: 直近 N 件', () => {
   it('直近 N 件だけを残し、落とした件数を返す', () => {
@@ -205,35 +183,28 @@ describe('windowFrom: 出さない物', () => {
 
 describe('windowFrom: 不正な count', () => {
   it('NaN と非整数は投げる', () => {
-    expect(() => windowFrom([ownerMessage('hi', 1)], Number.NaN, 'opinion')).toThrow();
-    expect(() => windowFrom([ownerMessage('hi', 1)], 2.5, 'opinion')).toThrow();
+    expect(() => windowFrom([owner('hi')], Number.NaN, 'opinion')).toThrow();
+    expect(() => windowFrom([owner('hi')], 2.5, 'opinion')).toThrow();
   });
 });
 
-describe('seedHeld: 既にある会話を写す', () => {
-  it('既にある会話を渡す → messages に入り、seen に role と timestamp の印が立つ', () => {
-    const held: Held = { messages: [], seen: new Set() };
-    const first = ownerMessage('first', 1);
-    const second = ownerMessage('second', 2);
-    seedHeld([first, second], held);
-    expect(held.messages).toEqual([first, second]);
-    expect(held.seen.has('user:1')).toBe(true);
-    expect(held.seen.has('user:2')).toBe(true);
+describe('messagesFrom: セッションの entry から会話を取り出す', () => {
+  it('type: "message" の entry だけを、順番どおりに取り出す', () => {
+    const entries = [
+      { type: 'model_change', model: 'x' },
+      { type: 'message', message: owner('hi') },
+      { type: 'compaction', summary: '...' },
+      { type: 'message', message: say('done') },
+    ];
+    expect(messagesFrom(entries)).toEqual([owner('hi'), say('done')]);
   });
 
-  it('同じ role と timestamp の message_end が seed の後に来る → messages は増えない', () => {
-    const held: Held = { messages: [], seen: new Set() };
-    const first = ownerMessage('first', 1);
-    seedHeld([first], held);
-    recordMessage(held, ownerMessage('first again', 1));
-    expect(held.messages).toHaveLength(1);
-    expect(held.messages[0]).toEqual(first);
+  it('message が無い entry と、形の違う entry は飛ばす', () => {
+    const entries = [{ type: 'message' }, { type: 'message', message: 'not an object' }, null, 7];
+    expect(messagesFrom(entries)).toEqual([]);
   });
 
-  it('空の会話を渡す → messages も seen も空のまま', () => {
-    const held: Held = { messages: [], seen: new Set() };
-    seedHeld([], held);
-    expect(held.messages).toHaveLength(0);
-    expect(held.seen.size).toBe(0);
+  it('entry が無ければ空', () => {
+    expect(messagesFrom([])).toEqual([]);
   });
 });

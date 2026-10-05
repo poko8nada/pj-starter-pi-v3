@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
  */
 
 /** 節や観点の見出し（穴ではない行） */
-const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps):\s*(.*)$/;
+const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 

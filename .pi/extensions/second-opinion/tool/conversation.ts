@@ -1,7 +1,7 @@
 /**
  * 会話の窓 — 直近の会話を、子に渡す文字列にする。
  *
- * 貯めるのは `index.ts` の仕事（`message_end` と `input` で足す）。ここは純粋な整形だけを持つ。
+ * 会話は pi のセッション（`ctx.sessionManager`）から取る。ここは純粋な整形だけを持つ。
  * 役割・本文・道具の引数と結果を1行ずつにし、直近 N 件だけを残す。長い発言は切る。
  * この拡張自身の道具（`ownToolName`）の呼び出しと結果は入れない（以前の判定が材料に混ざらない）。
  */
@@ -11,38 +11,30 @@ import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
 /** pi の会話に出る1件。`message_end` が運ぶ物と同じ */
 export type AgentMessage = MessageEndEvent['message'];
 
-/** 貯めた会話。`messages` の中身は `recordMessage` だけが足す */
-export interface Held {
-  readonly messages: AgentMessage[];
-  /** 入れた発言の印。`role` と `timestamp` を繋げた物 */
-  readonly seen: Set<string>;
+/** 会話の1件か。`role` を持つ物だけを会話として通す */
+function isMessage(value: unknown): value is AgentMessage {
+  const role = at(value, 'role');
+  return role === 'user' || role === 'assistant' || role === 'toolResult';
 }
 
-/** 発言の印。`role` と `timestamp` を繋げる */
-function keyOf(message: AgentMessage): string {
-  return `${message.role}:${String(message.timestamp)}`;
-}
-
-/** 会話に1件足す。同じ印があれば足さない（二重に貯めない） */
-export function recordMessage(held: Held, message: AgentMessage): void {
-  const key = keyOf(message);
-  if (held.seen.has(key)) {
-    return;
+/**
+ * pi のセッションの entry から、子に渡す会話の1件を取り出す。
+ *
+ * `ctx.sessionManager.buildContextEntries()` が返すのは entry の並びで、会話は `type: "message"` の
+ * 物だけ。他の entry（compaction、model の変更、custom など）は会話ではないので飛ばす。
+ */
+export function messagesFrom(entries: readonly unknown[]): AgentMessage[] {
+  const messages: AgentMessage[] = [];
+  for (const entry of entries) {
+    if (at(entry, 'type') !== 'message') {
+      continue;
+    }
+    const message = at(entry, 'message');
+    if (isMessage(message)) {
+      messages.push(message);
+    }
   }
-  held.seen.add(key);
-  held.messages.push(message);
-}
-
-/** 既にある会話を写す。`seen` に印を立てるので、後から同じ発言が来ても二重にならない */
-export function seedHeld(messages: readonly AgentMessage[], held: Held): void {
-  for (const message of messages) {
-    recordMessage(held, message);
-  }
-}
-
-/** owner の入力を会話の1件にする。時刻は引数で受ける */
-export function ownerMessage(text: string, now: number): AgentMessage {
-  return { role: 'user', content: text, timestamp: now };
+  return messages;
 }
 
 /** 子に渡す窓。`dropped` は落とした件数 */
