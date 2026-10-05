@@ -98,8 +98,16 @@ describe('buildPiArgs: child-guard', () => {
     expect(path.length).toBeGreaterThan('/child-guard.ts'.length);
   });
 
-  it('-e は guard と budget の 2 回（子にだけ読ませる）', () => {
-    expect(buildPiArgs(options()).filter((arg) => arg === '--extension')).toHaveLength(2);
+  it('-e は guard と budget の 2 回（順に guard・budget の絶対パス）', () => {
+    const args = buildPiArgs(options());
+    const indexes = args.flatMap((arg, i) => (arg === '--extension' ? [i] : []));
+    expect(indexes).toHaveLength(2);
+    const guardPath = args[(indexes[0] ?? 0) + 1] ?? '';
+    const budgetPath = args[(indexes[1] ?? 0) + 1] ?? '';
+    expect(guardPath.startsWith('/')).toBe(true);
+    expect(guardPath.endsWith('guard.ts')).toBe(true);
+    expect(budgetPath.startsWith('/')).toBe(true);
+    expect(budgetPath.endsWith('budget.ts')).toBe(true);
   });
 
   it('--tools が空配列でも -e の位置が崩れない', () => {
