@@ -37,9 +37,9 @@ Two rules hold the whole way through.
 ### 3. The integration test
 
 - the target is what the design's `Boundary.Plans` names: the handoff between plans. `なし` everywhere means no test, and `## Integration` is `なし`
-- look first: a test that already covers the handoff is updated (`updated`); with none, write one under `test/integration/` (`new`)
+- look first: a test that already covers the handoff is updated (`updated`); with none, write one where this project keeps its tests — beside the code it exercises (`new`)
 - the cases are the happy path and the most likely error path, and nothing more
-- it touches nothing real: it writes under a temporary directory, and its doubles live in `test/`
+- it touches nothing real: it writes under a temporary directory, and its doubles live in `.pi/test/`
 - run it on the base. A `fail` is a hole: it goes to step 5
 
 ### 4. Collect

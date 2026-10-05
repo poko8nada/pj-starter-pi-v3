@@ -1,7 +1,7 @@
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import {
   commandAllowed,
   isSecretPath,
@@ -16,7 +16,7 @@ import {
  * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
  * 存在しないパスでは判断の意味が変わる（それはそれで 1 つのケース）。
  *
- * 置き場は `test/tmp.ts` の helper。テストごとに作り直し、後始末は helper がする。
+ * 置き場は `.pi/test/tmp.ts` の helper。テストごとに作り直し、後始末は helper がする。
  */
 let dir = '';
 

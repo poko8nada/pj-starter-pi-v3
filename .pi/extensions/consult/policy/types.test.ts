@@ -2,12 +2,12 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { loadTypes, parseTypes, resolveType } from './types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-// 設定の読み込みは毎回ファイルを触る。置き場は `test/tmp.ts` の helper（後始末も helper がする）。
+// 設定の読み込みは毎回ファイルを触る。置き場は `.pi/test/tmp.ts` の helper（後始末も helper がする）。
 function writeConfig(text: string): string {
   const dir = tmpDir();
   writeFileSync(join(dir, 'types.json'), text);

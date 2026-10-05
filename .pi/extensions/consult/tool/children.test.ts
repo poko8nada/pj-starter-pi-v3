@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
 import { PARENT_UNIT, appendRun, logPath, type RunRecord } from '../run/log.ts';
 import { createWorktree, rootFor } from '../run/worktree.ts';

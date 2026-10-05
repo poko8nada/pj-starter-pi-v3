@@ -68,7 +68,7 @@ A `test` check is written on top of the test file it names: read that file first
 
 ### 8. The cycle's plans, together
 
-When every plan of the cycle is written, read them together: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
+When every plan of the cycle is written, read them together — the `I/O` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
 
 A pair found is a change to the cut, so it takes an `adr` entry (a plan added, an order the owner lives with, and the definition when the shared part moves what the product promises or stands on). The owner decides. Then write:
 
@@ -79,7 +79,7 @@ A pair found is a change to the cut, so it takes an `adr` entry (a plan added, a
 
 ### 9. The review of each plan
 
-A `review` child reads one plan's core — `I/O`, `Verify`, `Files` — and answers with its findings. The plan is fixed from them. One child per plan; the plans do not wait for each other.
+A `review` child reads one plan's core — `I/O`, `Verify`, `Files` — and answers with its findings. The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One child per plan; the plans do not wait for each other.
 
 ### 10. Show the owner
 

@@ -2,7 +2,7 @@ import { rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
 import { gitEnv } from '../run/run.ts';
 import { appendRun } from '../run/log.ts';

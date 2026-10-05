@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { collectCycle, collectPlan } from './collect.mjs';
 
 const plan = `# PLAN worktree-cleanup

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { gitEnv } from '../.pi/extensions/consult/run/run.ts';
+import { gitEnv } from '../extensions/consult/run/run.ts';
 
-// `vitest.setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
+// `.pi/test/setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
 
 describe('テストの環境', () => {
   it('フックの GIT_* を引き継がず、HOME が一時ディレクトリを指す', () => {

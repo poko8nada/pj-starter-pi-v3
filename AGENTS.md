@@ -21,6 +21,4 @@
 
 ### Tests
 
-- A test does not touch the real thing:
-  - A DB, an external API, this repo's tree, `HOME` or credentials, the shared store, a daemon.
-  - It writes under a temporary directory, and its doubles live in `test/`.
+- Tests do NOT touch the real thing: create mock such as a DB, an external API, repo's tree, or credentials, the shared store, a daemon.

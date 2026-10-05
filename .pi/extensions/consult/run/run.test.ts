@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import {
   changedFiles,
   stateOf,
@@ -21,7 +21,7 @@ import { finalTextFrom, parseEvents } from '../child/spec.ts';
 import { compose } from '../tool/render.ts';
 
 // 子の起動と worktree は実際の pi とリポジトリが要るので扱わない。入力の読み取りと、候補の選び方（子を起動しない部分）を試す。
-// ファイルを書くテストは `test/tmp.ts` の helper に置き場を寄せる。
+// ファイルを書くテストは `.pi/test/tmp.ts` の helper に置き場を寄せる。
 
 /** git を差し替えて、コミットと ref 作りの判断だけを試す */
 
