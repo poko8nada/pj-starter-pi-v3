@@ -27,6 +27,8 @@ import {
   type Held,
 } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
+import { appendRun } from './run/log.ts';
+import { opinionRoot } from './run/root.ts';
 import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } from './run/run.ts';
 
 /** 道具とコマンドの名前 */
@@ -162,6 +164,10 @@ export async function runOpinion(
     CONSULT_TURNS: String(policy.limits.turns),
   };
   onProgress?.('second-opinion: starting the child');
+  const root = opinionRoot(port.cwd, port.env);
+  const child = 'second-opinion-1';
+  const started = Date.now();
+  let pid = 0;
   const run = await runWithFallback(policy.models, (model) =>
     runPi({
       piArgs: buildPiArgs({ type: 'opinion', task, policy: withModel(policy, model) }),
@@ -170,6 +176,22 @@ export async function runOpinion(
       env,
       limits: policy.limits,
       onProgress: (chunk) => onProgress?.(chunk.text),
+      onStarted: (startedPid) => {
+        pid = startedPid;
+        appendRun(root, { child, role: 'opinion', pid: startedPid, started });
+      },
+      onDone: (done) => {
+        const reason = reasonOf(done);
+        appendRun(root, {
+          child,
+          role: 'opinion',
+          pid: done.pid ?? pid,
+          started,
+          ended: Date.now(),
+          state: stateOf(done),
+          ...(reason === undefined ? {} : { reason }),
+        });
+      },
     }),
   );
   return formatBody(bodyOf(run));

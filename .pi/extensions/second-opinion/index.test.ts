@@ -80,6 +80,7 @@ function fakeEnv(bin: string, text: string): NodeJS.ProcessEnv {
     PATH: `${bin}:${process.env.PATH ?? ''}`,
     FAKE_PI_MODE: 'exit',
     FAKE_PI_TEXT: text,
+    CONSULT_ROOT: tmpDir(),
   };
 }
 
@@ -151,7 +152,11 @@ describe('runOpinion: 偽の pi で子を走らせる', () => {
     const dir = tmpDir();
     const emptyBin = tmpDir();
     await expect(
-      runOpinion({ cwd: dir, env: { ...process.env, PATH: emptyBin } }, heldOf('hi'), {}),
+      runOpinion(
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: tmpDir() } },
+        heldOf('hi'),
+        {},
+      ),
     ).rejects.toThrow(/did not finish/);
   });
 });
@@ -391,10 +396,12 @@ describe('context: reload をまたいでも会話を材料にする', () => {
     const savedPath = process.env.PATH;
     const savedMode = process.env.FAKE_PI_MODE;
     const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
     try {
       process.env.PATH = `${bin}:${savedPath ?? ''}`;
       process.env.FAKE_PI_MODE = 'exit';
       process.env.FAKE_PI_TEXT = 'Consistent: yes';
+      process.env.CONSULT_ROOT = tmpDir();
       const handlers = new Map<string, (event: { messages: AgentMessage[] }) => void>();
       type ExecuteFn = (
         ...args: [
@@ -443,6 +450,11 @@ describe('context: reload をまたいでも会話を材料にする', () => {
       } else {
         process.env.FAKE_PI_TEXT = savedText;
       }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
+      }
     }
   });
 });
@@ -454,7 +466,7 @@ describe('runOpinion: 進行の通知', () => {
     const seen: string[] = [];
     await expect(
       runOpinion(
-        { cwd: dir, env: { ...process.env, PATH: emptyBin } },
+        { cwd: dir, env: { ...process.env, PATH: emptyBin, CONSULT_ROOT: tmpDir() } },
         heldOf('hi'),
         {},
         (text) => {
@@ -498,10 +510,12 @@ describe('runOpinion: 進行の通知', () => {
     const savedPath = process.env.PATH;
     const savedMode = process.env.FAKE_PI_MODE;
     const savedText = process.env.FAKE_PI_TEXT;
+    const savedRoot = process.env.CONSULT_ROOT;
     try {
       process.env.PATH = `${bin}:${savedPath ?? ''}`;
       process.env.FAKE_PI_MODE = 'exit';
       process.env.FAKE_PI_TEXT = 'update-body';
+      process.env.CONSULT_ROOT = tmpDir();
       type ExecuteFn = (
         ...args: [
           toolCallId: string,
@@ -556,6 +570,11 @@ describe('runOpinion: 進行の通知', () => {
         delete process.env.FAKE_PI_TEXT;
       } else {
         process.env.FAKE_PI_TEXT = savedText;
+      }
+      if (savedRoot === undefined) {
+        delete process.env.CONSULT_ROOT;
+      } else {
+        process.env.CONSULT_ROOT = savedRoot;
       }
     }
   });
