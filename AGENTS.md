@@ -22,3 +22,4 @@
 ### Tests
 
 - Tests do NOT touch the real thing: create mock such as a DB, an external API, repo's tree, or credentials, the shared store, a daemon.
+- With no faithful mock, stop at the adapter boundary; cover the wiring with `look` / `use`.

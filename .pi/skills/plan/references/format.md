@@ -130,6 +130,8 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 **A boundary with no answer is a hole in the plan.** When the shape cannot say what happens, the shape is not decided: stop, decide it — an `adr` entry when it meets the bar in the `adr` skill — and write the plan after.
 
+Write a case only for a line whose breakage the owner would notice. A line with no such breakage takes no case: write the reason it does not apply.
+
 ## Notes
 
 - `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.

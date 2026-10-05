@@ -22,7 +22,7 @@ Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md (## Files, ## Slices, ## Notes).
 Review the diff <base hash>..HEAD, by four viewpoints:
 - Stale: a document, a comment or a test this change makes stale
 - Unlisted: a change the plan's Files does not name
-- Gaps: a hole the slices passed over — a behavior the checks do not exercise. A value the plan or the ADR already decided is not a gap: the check does not restate it
+- Gaps: a hole the slices passed over — a behavior the checks do not exercise. A value the plan or the ADR already decided is not a gap: the check does not restate it. A behavior with no faithful double is not a gap when the plan covers it with a `look` / `use` check instead
 - Unproven: a test that would stay green if the behavior it names were removed
 Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from. Write なし for a viewpoint that found nothing.
 Do not change the code.
