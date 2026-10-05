@@ -126,4 +126,8 @@
 ## Acceptance
 
 - Ran:
+  - `pnpm run test:run`（worktree、29 files / 678 tests、すべて green）
+  - `pnpm run typecheck` / `pnpm run lint` / `pnpm run format:check`（すべて green）
+  - 変異試験3件。`lastTurn` の `turns - 2` を `turns - 1` に → `budget.test.ts` が 6 件赤。`sent = true` を削除 → 一度だけ促すケースが赤。`--extension` の順序を入れ替え → `spec.test.ts` が 2 件赤。いずれも復元して 138 件 green に戻した
 - Findings:
+  - なし
