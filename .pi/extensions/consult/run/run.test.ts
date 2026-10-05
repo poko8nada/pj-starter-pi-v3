@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -363,6 +364,13 @@ describe('compose: 打ち切りの行', () => {
     const body = compose(parseEvents(finished.stdout), finished, { attempts: 1, continued: false });
     expect(body).not.toContain('consult runs:');
   });
+
+  it('ended:true（報告済み）→ 早止まりの行は出さず本文を出す', () => {
+    const delivered: RunResult = { ...stopped, stopped: undefined, ended: true };
+    const body = compose(parseEvents(delivered.stdout), delivered);
+    expect(body).toContain('half');
+    expect(body).not.toContain('consult stopped early');
+  });
 });
 
 function makeWatchState(overrides: Partial<RunState> = {}): RunState {
@@ -412,6 +420,8 @@ describe('applyEvent', () => {
   it('壊れた行 → イベントとして扱わない', () => {
     const state = makeWatchState({ lastOutputAt: 1000 });
     applyEvent(state, 'not json', 2000);
+    applyEvent(state, null, 2000);
+    applyEvent(state, 42, 2000);
     expect(state.endedAt).toBeUndefined();
     expect(state.lastOutputAt).toBe(1000);
     expect(state.spent).toEqual({ turns: 0, output: 0 });
@@ -440,6 +450,28 @@ describe('applyEvent', () => {
     expect(state.endedAt).toBeUndefined();
     expect(state.lastOutputAt).toBe(3000);
     expect(state.spent).toEqual(spent);
+  });
+
+  it('agent_end の後の出力は上限に数えない', () => {
+    const state = makeWatchState({
+      limits: { turns: 1, output: 60000 },
+      lastOutputAt: 1000,
+    });
+    applyEvent(state, { type: 'agent_end' }, 2000);
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      3000,
+    );
+    applyEvent(
+      state,
+      { type: 'message_end', message: { role: 'assistant', usage: { output: 1 } } },
+      4000,
+    );
+    expect(state.endedAt).toBe(2000);
+    expect(state.stopped).toBeUndefined();
+    expect(state.lastOutputAt).toBe(4000);
+    expect(state.spent).toEqual({ turns: 0, output: 0 });
   });
 });
 
@@ -477,6 +509,12 @@ describe('stateOf / reasonOf: ended', () => {
     const run = combinedRun('', { aborted: true, ended: true });
     expect(stateOf(run)).toBe('aborted');
     expect(reasonOf(run)).toBe('stopped by the parent');
+  });
+
+  it('ended と stopped が同時 → ended が勝って done（理由なし）', () => {
+    const run = combinedRun('', { ended: true, stopped: 'turn limit reached (40)', code: 1 });
+    expect(stateOf(run)).toBe('done');
+    expect(reasonOf(run)).toBeUndefined();
   });
 });
 
@@ -568,5 +606,119 @@ describe('runPi: watchdog', () => {
     });
     expect(stateOf(run)).toBe('error');
     expect(run.ended).toBe(false);
+  });
+
+  it('出し続ける子 → 初回猶予を越えても殺されない', async () => {
+    const dir = tmpDir();
+    const controller = new AbortController();
+    let finished = false;
+    const promise = runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      signal: controller.signal,
+      env: fakeEnv('steady'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    }).then((run) => {
+      finished = true;
+      return run;
+    });
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 350);
+    });
+    expect(finished).toBe(false);
+    controller.abort();
+    const run = await promise;
+    expect(run.aborted).toBe(true);
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('aborted');
+  });
+
+  it('壊れた行を出し続ける子 → 静かにならず殺されない', async () => {
+    const dir = tmpDir();
+    const controller = new AbortController();
+    let finished = false;
+    const promise = runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      signal: controller.signal,
+      env: fakeEnv('broken'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    }).then((run) => {
+      finished = true;
+      return run;
+    });
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 250);
+    });
+    expect(finished).toBe(false);
+    controller.abort();
+    const run = await promise;
+    expect(run.stdout).toContain('not json');
+    expect(run.aborted).toBe(true);
+  });
+
+  it('agent_end 後の stderr → 猶予を延ばさず殺して done', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('stderr'),
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('done');
+    expect(finalTextFrom(parseEvents(run.stdout))).toBe('fake report');
+    expect(run.stderr).toContain('some warning noise');
+  });
+
+  it('FAKE_PI_TEXT → 最後の本文が差し替わる', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: { ...fakeEnv('exit'), FAKE_PI_TEXT: 'custom body' },
+      limits: { turns: 40, output: 60000 },
+      watchdogMs: 100,
+    });
+    expect(finalTextFrom(parseEvents(run.stdout))).toBe('custom body');
+  });
+
+  it('FAKE_PI_MODE 未設定・不正 → exit 2（未設定は何も出さない）', () => {
+    const fake = join(process.cwd(), '.pi/test/pi');
+    const bareEnv: NodeJS.ProcessEnv = { ...process.env };
+    delete bareEnv.FAKE_PI_MODE;
+    delete bareEnv.FAKE_PI_TEXT;
+    const unset = spawnSync(fake, [], { encoding: 'utf8', env: bareEnv });
+    expect(unset.status).toBe(2);
+    expect(unset.stdout).toBe('');
+    const bogus = spawnSync(fake, [], {
+      encoding: 'utf8',
+      env: { ...bareEnv, FAKE_PI_MODE: 'bogus' },
+    });
+    expect(bogus.status).toBe(2);
+  });
+
+  it('watchdogMs 省略 → 既定のまま普通に終わる', async () => {
+    const dir = tmpDir();
+    const run = await runPi({
+      piArgs: ['--mode', 'json'],
+      stdin: 'task',
+      cwd: dir,
+      env: fakeEnv('exit'),
+      limits: { turns: 40, output: 60000 },
+    });
+    expect(run.ended).toBe(true);
+    expect(stateOf(run)).toBe('done');
   });
 });

@@ -1,7 +1,7 @@
 #!/bin/sh
 # 偽の pi。テストだけが使う。`--mode json` のふりをして JSONL を出す。
 # stdin を読み切ってから `message_end`（assistant）と `agent_end` を出す。
-# FAKE_PI_MODE: exit（終わる）/ sleep（眠り続ける）/ extra（もう1つ出して眠る）。無ければ何も出さず exit 2。
+# FAKE_PI_MODE: exit（終わる）/ sleep（眠り続ける）/ extra（もう1つ出して眠る）/ steady（出し続ける）/ broken（壊れた行を出し続ける）/ stderr（stderr に出し続ける）。無ければ何も出さず exit 2。
 # FAKE_PI_TEXT: 本文の差し替え（既定 `fake report`）。
 
 if [ -z "$FAKE_PI_MODE" ]; then
@@ -28,6 +28,28 @@ case "$FAKE_PI_MODE" in
     sleep 0.05
     printf '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"extra"}],"usage":{"output":1}}}\n'
     exec sleep 10000
+    ;;
+  steady)
+    trap 'exit 0' TERM INT
+    while true; do
+      printf '{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"steady"}],"usage":{"output":1}}}\n'
+      sleep 0.05
+    done
+    ;;
+  broken)
+    trap 'exit 0' TERM INT
+    while true; do
+      printf 'not json at all\n'
+      printf '\n'
+      sleep 0.05
+    done
+    ;;
+  stderr)
+    trap 'exit 0' TERM INT
+    while true; do
+      printf 'some warning noise\n' >&2
+      sleep 0.05
+    done
     ;;
   *)
     exit 2

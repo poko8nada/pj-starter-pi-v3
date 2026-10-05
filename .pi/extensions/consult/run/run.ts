@@ -298,6 +298,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  *
  * 壊れた入力（record でない物）は無視する。上限で止まった後のイベントは数えない。
  * `agent_end`（`type === 'agent_end'`）を見たら `endedAt` を入れる。有効なイベントのたびに `lastOutputAt` を進める。
+ * 報告後の出力は時計だけ進め、上限には数えない（`ended` を `done` で閉じるため）。
  */
 export function applyEvent(state: RunState, event: unknown, now: number): void {
   if (state.stopped !== undefined) {
@@ -311,6 +312,9 @@ export function applyEvent(state: RunState, event: unknown, now: number): void {
     if (state.endedAt === undefined) {
       state.endedAt = now;
     }
+    return;
+  }
+  if (state.endedAt !== undefined) {
     return;
   }
   const reason = accountEvent(state.spent, event, state.limits);
