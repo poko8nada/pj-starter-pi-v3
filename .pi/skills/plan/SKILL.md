@@ -60,13 +60,30 @@ For each shape, walk its boundaries and write a case, or the reason it does not 
 
 Every slice carries one `Verify`: a type from the closed list, and its content — the file, the command and the cases for a `test`; the child and the document for a `read`. A check that is not runnable is a hole: fix it, or say why it does not apply.
 
+A `test` check is written on top of the test file it names: read that file first, and write the cases the way it already works — its fixtures, its doubles, the seam it uses.
+
 ### 7. Write the record
 
 `## Notes`, one `### Slice N` per slice, with the fields empty; a child fills its own slice's record as the work goes. `## Review` and `## Acceptance` are written by the reviewer and by the parent.
 
-### 8. Show the owner
+### 8. The cycle's plans, together
 
-One plan: the files, the slices, the shapes, the checks. They read it, and answer.
+When every plan of the cycle is written, read them together: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
+
+A pair found is a change to the cut, so it takes an `adr` entry (a plan added, an order the owner lives with, and the definition when the shared part moves what the product promises or stands on). The owner decides. Then write:
+
+- the design: `## Refactor` at the top, and the plans that use it name it in their `Boundary.Plans`
+- the plans that used to make it: their `Files` drop it, and the step that made it becomes a step that uses it
+- the refactor plan's own md: its `Files`, `Slices` and checks, with the entry's number in `ADR`
+- the definition, when the entry moved it
+
+### 9. The review of each plan
+
+A `review` child reads one plan's core — `I/O`, `Verify`, `Files` — and answers with its findings. The plan is fixed from them. One child per plan; the plans do not wait for each other.
+
+### 10. Show the owner
+
+Every plan of the cycle: the files, the slices, the shapes, the checks. They read them, and answer.
 
 ### A change after this
 

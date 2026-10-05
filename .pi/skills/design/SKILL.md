@@ -66,6 +66,8 @@ One list of plans, each with its scope and its boundary. They read the cut, and 
 
 A new `adr` entry records it. The design is edited to match, and git holds the diff.
 
+A plan found while the plans are written comes back here: the `adr` entry first (a plan added, an order the owner lives with), then the top of this file gains `## Refactor`.
+
 ## What is not here
 
 | what                                                                   | where           |
