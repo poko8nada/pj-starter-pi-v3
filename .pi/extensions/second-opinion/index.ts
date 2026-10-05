@@ -1,16 +1,14 @@
 /**
  * second-opinion 拡張の入口。道具 `second_opinion` とコマンド `/second_opinion` の登録だけを行う。
  *
- * 会話は reload 時の `context` から写し、以後は `message_end`（agent 側）と `input`（owner の入力）で足す。
- * `message_end` の user は `input` と重なるので貯めない。道具もコマンドも、その場で子を1体走らせ、
- * 子の本文を返す（打ち切られれば注を添えて）・会話へ出す（コマンド）。
+ * 会話は pi のセッション（`ctx.sessionManager.buildContextEntries()`）から取る。イベントで貯めない。
+ * 道具もコマンドも、その場で子を1体走らせ、子の本文を返す（打ち切られれば注を添えて）・会話へ出す（コマンド）。
  */
 
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
   AgentToolResult,
-  AgentToolUpdateCallback,
   ExtensionAPI,
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent';
@@ -18,14 +16,7 @@ import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { opinionTask } from './tool/answer.ts';
 import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './child/spec.ts';
-import {
-  ownerMessage,
-  recordMessage,
-  seedHeld,
-  windowFrom,
-  type AgentMessage,
-  type Held,
-} from './tool/conversation.ts';
+import { messagesFrom, windowFrom, type AgentMessage } from './tool/conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
 import { appendRun } from './run/log.ts';
 import { opinionRoot } from './run/root.ts';
@@ -61,6 +52,8 @@ export interface OpinionRequest {
 export interface PiPort {
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  /** 会話の材料。pi のセッションから取る（`ctx.sessionManager`） */
+  readonly messages: () => readonly AgentMessage[];
 }
 
 /** この拡張の置き場。`types.json` を読むのに使う */
@@ -149,13 +142,8 @@ export function formatBody(body: Body): string {
  *
  * `types.json` は呼び出しごとに読む。終わり方は `bodyOf` が見る。
  */
-export async function runOpinion(
-  port: PiPort,
-  held: Held,
-  request: OpinionRequest,
-  onProgress?: (text: string) => void,
-): Promise<string> {
-  const window = windowFrom(held.messages, request.messages ?? DEFAULT_MESSAGES, TOOL_NAME);
+export async function runOpinion(port: PiPort, request: OpinionRequest): Promise<string> {
+  const window = windowFrom(port.messages(), request.messages ?? DEFAULT_MESSAGES, TOOL_NAME);
   const task = opinionTask(window, request.focus);
   const policy = resolveType(loadTypes(extensionDir()), 'opinion');
   const env = {
@@ -163,7 +151,6 @@ export async function runOpinion(
     CONSULT_POLICY: JSON.stringify({ paths: policy.paths, bash: policy.bash }),
     CONSULT_TURNS: String(policy.limits.turns),
   };
-  onProgress?.('second-opinion: starting the child');
   const root = opinionRoot(port.cwd, port.env);
   const child = 'second-opinion-1';
   const started = Date.now();
@@ -175,7 +162,6 @@ export async function runOpinion(
       cwd: port.cwd,
       env,
       limits: policy.limits,
-      onProgress: (chunk) => onProgress?.(chunk.text),
       onStarted: (startedPid) => {
         pid = startedPid;
         appendRun(root, { child, role: 'opinion', pid: startedPid, started });
@@ -207,41 +193,21 @@ type ExecuteArgs = [
   toolCallId: string,
   params: Params,
   signal: AbortSignal | undefined,
-  onUpdate: AgentToolUpdateCallback<unknown> | undefined,
-  /** 使うのは cwd だけ。テストが本物の pi の文脈を組み立てずに済むよう、狭くしておく */
-  ctx: Pick<ExtensionContext, 'cwd'>,
+  onUpdate: unknown,
+  /** 使うのは cwd と sessionManager */
+  ctx: Pick<ExtensionContext, 'cwd' | 'sessionManager'>,
 ];
 
-/** 使うのは cwd だけ。テストが本物の pi の文脈を組み立てずに済むよう、狭くしておく */
-function portOf(ctx: Pick<ExtensionContext, 'cwd'>): PiPort {
-  return { cwd: ctx.cwd, env: process.env };
-}
-
-/** `onUpdate` を進行の文に包む。無ければ何もしない */
-function progressOf(onUpdate: ExecuteArgs[3]): ((text: string) => void) | undefined {
-  if (onUpdate === undefined) {
-    return undefined;
-  }
-  return (text) => {
-    onUpdate({ content: [{ type: 'text', text }], details: {} });
+/** 道具の ctx から、子を走らせるのに要る面を組む。会話は pi のセッションから取る */
+function portOf(ctx: Pick<ExtensionContext, 'cwd' | 'sessionManager'>): PiPort {
+  return {
+    cwd: ctx.cwd,
+    env: process.env,
+    messages: () => messagesFrom(ctx.sessionManager.buildContextEntries()),
   };
 }
 
-/**
- * 会話に agent 側の1件を足す。owner の発言は `input` で貯めるので、ここでは貯めない。
- *
- * 抜き出した物で、`message_end` の振る舞い（user 重複除外）を子を走らせずに試せる。
- */
-export function collectMessage(held: Held, message: AgentMessage): void {
-  if (message.role === 'user') {
-    return;
-  }
-  recordMessage(held, message);
-}
-
 export default function (pi: ExtensionAPI) {
-  const held: Held = { messages: [], seen: new Set() };
-
   pi.registerTool({
     name: TOOL_NAME,
     label: 'Second opinion',
@@ -255,27 +221,26 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: PARAMETERS,
     execute: (...args: ExecuteArgs) =>
-      runOpinion(portOf(args[4]), held, toRequest(args[1]), progressOf(args[3])).then((body) =>
-        result(body),
-      ),
+      runOpinion(portOf(args[4]), toRequest(args[1])).then((body) => result(body)),
   });
 
+  registerCommand(pi);
+}
+
+/** 人が使う口。`/second_opinion` を登録する */
+function registerCommand(pi: ExtensionAPI): void {
   pi.registerCommand(TOOL_NAME, {
     description:
       'Judge the recent conversation with another model (usage: /second_opinion [messages] [question])',
     handler: async (args, ctx) => {
-      const body = await runOpinion(portOf(ctx), held, parseCommandArgs(args));
-      pi.sendMessage({ customType: 'second-opinion-answer', content: body, display: true });
+      ctx.ui.setWorkingVisible(true);
+      ctx.ui.setWorkingMessage('second-opinion: consulting… (実行中の入力は終了後に処理されます)');
+      try {
+        const body = await runOpinion(portOf(ctx), parseCommandArgs(args));
+        pi.sendMessage({ customType: 'second-opinion-answer', content: body, display: true });
+      } finally {
+        ctx.ui.setWorkingMessage();
+      }
     },
-  });
-
-  pi.on('context', (event) => {
-    seedHeld(event.messages, held);
-  });
-  pi.on('message_end', (event) => {
-    collectMessage(held, event.message);
-  });
-  pi.on('input', (event) => {
-    recordMessage(held, ownerMessage(event.text, Date.now()));
   });
 }
