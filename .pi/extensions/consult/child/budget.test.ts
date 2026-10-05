@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { TurnEndEventResult } from '@earendil-works/pi-coding-agent';
-import { LAST_TURN_MESSAGE, lastTurn, nudge, registerBudget, turnsFrom } from './budget.ts';
+import budgetDefault, {
+  LAST_TURN_MESSAGE,
+  lastTurn,
+  nudge,
+  registerBudget,
+  turnsFrom,
+} from './budget.ts';
 
 // ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（consult の道具の検査が扱う）。
 
@@ -14,6 +20,35 @@ function fireWith(turns: number | undefined, turnIndex: number): TurnEndEventRes
   };
   registerBudget(pi, turns);
   return handler?.({ turnIndex });
+}
+
+/** default export 用: env を差し替えて登録し、指定の turnIndex を起こす */
+function fireDefaultWith(
+  envValue: string | undefined,
+  turnIndex: number,
+): TurnEndEventResult | undefined {
+  const saved = process.env.CONSULT_TURNS;
+  try {
+    if (envValue === undefined) {
+      delete process.env.CONSULT_TURNS;
+    } else {
+      process.env.CONSULT_TURNS = envValue;
+    }
+    let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
+    const pi = {
+      on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
+        handler = next;
+      },
+    };
+    budgetDefault(pi);
+    return handler?.({ turnIndex });
+  } finally {
+    if (saved === undefined) {
+      delete process.env.CONSULT_TURNS;
+    } else {
+      process.env.CONSULT_TURNS = saved;
+    }
+  }
 }
 
 describe('lastTurn', () => {
@@ -87,8 +122,43 @@ describe('registerBudget', () => {
     registerBudget(pi, 40);
     const first = handler?.({ turnIndex: 38 });
     expect(first && 'continue' in first ? first.continue : undefined).toBe(true);
+    expect(first && 'entries' in first ? first.entries : undefined).toHaveLength(1);
+    expect(first && 'entries' in first ? first.entries?.[0] : undefined).toMatchObject({
+      type: 'custom_message',
+      customType: 'consult-budget',
+      content: LAST_TURN_MESSAGE,
+      display: true,
+    });
     const second = handler?.({ turnIndex: 38 });
     expect(second).toEqual({});
+  });
+
+  it('37 の後に 38 が来ても促す（37 は sent を消費しない）', () => {
+    let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
+    const pi = {
+      on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
+        handler = next;
+      },
+    };
+    registerBudget(pi, 40);
+    expect(handler?.({ turnIndex: 37 })).toEqual({});
+    const result = handler?.({ turnIndex: 38 });
+    expect(result && 'continue' in result ? result.continue : undefined).toBe(true);
+    expect(result && 'entries' in result ? result.entries : undefined).toHaveLength(1);
+  });
+});
+
+describe('default export', () => {
+  it("'40' → 38 で促す（env から登録までの配線）", () => {
+    const result = fireDefaultWith('40', 38);
+    expect(result && 'continue' in result ? result.continue : undefined).toBe(true);
+    expect(result && 'entries' in result ? result.entries : undefined).toHaveLength(1);
+  });
+
+  it('未設定・不正 → 促しは出ない', () => {
+    expect(fireDefaultWith(undefined, 38)).toEqual({});
+    expect(fireDefaultWith('', 38)).toEqual({});
+    expect(fireDefaultWith('x', 38)).toEqual({});
   });
 });
 

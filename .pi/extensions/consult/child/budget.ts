@@ -9,7 +9,7 @@
  * ここが働かなくても、子は上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
  */
 
-import type { ExtensionAPI, TurnEndEventResult } from '@earendil-works/pi-coding-agent';
+import type { TurnEndEventResult } from '@earendil-works/pi-coding-agent';
 
 /** 促しを出す番号。上限の 2 つ手前。上限が読めない（2 未満・数でない）ときは何もしない */
 export function lastTurn(turns: number | undefined): number | undefined {
@@ -78,6 +78,6 @@ export function registerBudget(pi: BudgetPiPort, turns: number | undefined): voi
   });
 }
 
-export default function (pi: ExtensionAPI) {
+export default function (pi: BudgetPiPort) {
   registerBudget(pi, turnsFrom(process.env.CONSULT_TURNS));
 }
