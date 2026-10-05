@@ -56,22 +56,33 @@
 ### Slice 1: 圧縮の終わりを種類に足し、音を鳴らす
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: b48f76f
 
 ### Slice 2: 統合: 圧縮が終わった時に、差し替えた鳴らす所へ音が届く
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - 既定 export の引口を `EntryPiPort`（`on` + `exec`）に狭めた、偽の pi を unsafe な型主張なしで渡し lint を通すため
+- Commit: 9b61037
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/sound-notify/index.test.ts:2` の頭注「bash の git commit で鳴る音だけを」が stale ―― diff が `describe('sound-notify.compact')` と `describe('sound-notify.entry')` を足したため「だけ」が偽になった。頭注は `0d4af01..HEAD` で不変。
+    - fixed: 頭注を commit・compact の音と入口の配線を表す文に直し、`registerSoundHandlers` への設定直渡し（実 FS 非依存）も明記した
 - Unlisted:
+  - なし（`git diff --name-only 0d4af01..HEAD` は Files の3件 `index.ts` / `index.test.ts` / `README.md` のみ）
 - Gaps:
+  - `enabled: false` の compact → 鳴らない、が Verify に無い。`dispatch`（`index.ts:141`）は `!config.enabled || !ctx.hasUI` で止めるが、Slice 1 の Verify は `hasUI: false` のみで `enabled: false` のケースが無い（compact テストは全て `enabled: true` の `defaultConfig` 使用）。
+    - fixed: compact の describe に `enabled が false → 鳴らない` を足した（`{ ...defaultConfig, enabled: false }` で Glass なしを確認）
+  - 既定 export の `session_compact` ハンドラ本体が発音へ届くこと、が Verify に無い。Slice 2 の Verify は「closure は呼ばない」と明記し、テスト（`index.test.ts:143-158`）は登録名の `toContain('session_compact')` / `not.toContain('session_compact_failed')` のみ見て捕捉したコールバックを実行しないため、登録→`handleSessionCompact` の配線は未検証。
+    - fixed: 配線を `registerSoundHandlers(pi, config)` に切り出し（既定 export は `loadConfig()` を渡すだけ）、テストは設定を直接渡して捕捉した `session_compact` ハンドラを呼び Glass 1 回を確認。実 FS の `config.json` に依存させない
 
 ## Acceptance
 

@@ -196,9 +196,8 @@ export type EntryPiPort = {
   exec: PiPort['exec'];
 };
 
-export default function (pi: EntryPiPort) {
-  const config = loadConfig();
-
+/** 拡張の入口の配線。既定の export は設定を読んでここに渡す。テストは設定を直接渡す */
+export function registerSoundHandlers(pi: EntryPiPort, config: SoundNotifyConfig): void {
   // 入力待ち: エージェントが止まってユーザーの答えを待っている（緊急度が高い）
   pi.on('ui_prompt_start', async (event, ctx) => {
     dispatch(pi, ctx, classify(event.title), config);
@@ -218,4 +217,8 @@ export default function (pi: EntryPiPort) {
   pi.on('session_compact', async (_event, ctx) => {
     handleSessionCompact(pi, ctx, config);
   });
+}
+
+export default function (pi: EntryPiPort) {
+  registerSoundHandlers(pi, loadConfig());
 }
