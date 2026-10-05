@@ -121,16 +121,17 @@
 
 ## 02: consult
 
-### 02-1: consult.roles
+### 02-1: consult.run
 
 1. Agenda:
-   - Title: ロールごとのターン数と出力の上限
-   - Proposal: research 40 / 60000、review 40 / 60000、trial 60 / 120000、code 80 / 120000 を、owner の決定として記録する
+   - Title: 促しが効かず、上限で打ち切られる
+   - Proposal: 促しを上限の2つ前に出し、子が促しを無視しても、書かれた本文が失われない形にする
 2. Highlight:
-   - これらは ADR を通らずに `types.json` に入った値で、私が決めた。009 の definition が決めたのは「ロールごとの上限を決められる」という能力だけで、値そのものではない
-   - モデルの消費なので owner が払う物（`adr` スキルの一覧の「the owner pays — a running cost」）
-   - second-opinion の `turns: 8` は同じ種類の値で、小さすぎて owner が踏み、01-6 として立項した
+   - `child/budget.ts` は `turnIndex >= turns - 1` で促す。`turnIndex` は0始まりで終了したターンを指すので、40 なら**40ターン目の終わり**に出る。促しが使わせる1ターンは、上限を越えている
+   - `continue: true` の門が handler の `entries` を見ない（`_buildBoundaryContext([], "turn_end")`）ので、素の続行は棄却される
+   - 観測: 011 の consult の子は `turn limit reached (80)`、今回の research の子も `turn limit reached (40)` で終わった。促しは一度も効いていない
+   - second-opinion の 01-5 と同じ機構。`child/budget.ts` は consult と second-opinion に別々のコピーとして在る
 3. Research:
-   - なし
+   - mechanism: `turnIndex` は 0 始まり（`agent-session.js:111,711-730`）。門は `boundary.continue && !this._buildBoundaryContext([], "turn_end").canContinue`（同 `:360`）
 4. Trial: なし
 5. Decision: **accepted**
