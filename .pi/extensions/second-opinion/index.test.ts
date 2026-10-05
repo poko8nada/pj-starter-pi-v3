@@ -322,7 +322,7 @@ describe('runOpinion: 子への env', () => {
     expect(readFileSync(`${argsFile}.policy`, 'utf8')).toBe(
       JSON.stringify({ paths: [], bash: [] }),
     );
-    expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('8');
+    expect(readFileSync(`${argsFile}.turns`, 'utf8')).toBe('20');
   });
 });
 

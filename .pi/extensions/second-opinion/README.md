@@ -50,7 +50,7 @@ A missing section reads `なし`.
 
 ## Settings
 
-`types.json` sits next to this file and holds the single `opinion` role: another model's candidates, read-only tools (`read`, `ls`, `find`, `grep`, `web_search`, `fetch_content`), no isolation, and the spend limits (8 turns, 8000 output tokens). The window (default 20 messages, 4000 chars per message, 2000 per tool result) and the default question live in `tool/conversation.ts` and `tool/answer.ts`. The file is read on every call, so a change takes effect on the next opinion without reloading pi.
+`types.json` sits next to this file and holds the single `opinion` role: another model's candidates, read-only tools (`read`, `ls`, `find`, `grep`, `web_search`, `fetch_content`), no isolation, and the spend limits (20 turns, 8000 output tokens). The window (default 20 messages, 4000 chars per message, 2000 per tool result) and the default question live in `tool/conversation.ts` and `tool/answer.ts`. The file is read on every call, so a change takes effect on the next opinion without reloading pi.
 
 ## The code
 
