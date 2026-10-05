@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LAST_TURN_MESSAGE, lastTurn, nudge, turnsFrom } from './budget.ts';
 
-// ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（consult の道具の検査が扱う）。
+// ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（opinion の道具の検査が扱う）。
 
 describe('lastTurn', () => {
   it('上限 40 → 39 番（0 から数えるので次が 40 番目）', () => {
@@ -44,7 +44,7 @@ describe('nudge', () => {
     expect(result?.entries).toHaveLength(1);
     expect(result?.entries?.[0]).toMatchObject({
       type: 'custom_message',
-      customType: 'consult-budget',
+      customType: 'second-opinion-budget',
       content: LAST_TURN_MESSAGE,
       display: true,
     });

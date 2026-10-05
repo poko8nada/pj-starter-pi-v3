@@ -1,7 +1,7 @@
 /**
  * child-budget — 子が上限の手前に来たら、報告して終えるように促す拡張。
  *
- * 親は `CONSULT_TURNS` で上限を渡す（`run/child.ts` が env に足す）。`turnIndex` は 0 から数えるので、
+ * 親は `CONSULT_TURNS` で上限を渡す（`index.ts` が env に足す）。`turnIndex` は 0 から数えるので、
  * `上限 - 1` が最後の 1 つ手前になる。
  *
  * この版の pi（0.87.1 以降）は `turn_end` から値を返せる。そこを 1 度だけ使って、最後の 1 つ手前で
@@ -49,7 +49,7 @@ export function nudge(
     entries: [
       {
         type: 'custom_message',
-        customType: 'consult-budget',
+        customType: 'second-opinion-budget',
         content: LAST_TURN_MESSAGE,
         display: true,
       },

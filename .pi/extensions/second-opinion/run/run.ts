@@ -165,8 +165,8 @@ export interface PiSpawnOptions {
 /**
  * 子の起動オプション。
  *
- * `detached: true` が要る: pi のプロセスが落ちても子は走り続け、残った作業は worktree に残る（完了の
- * 知らせは届かないが、記録を読めば分かる）。
+ * `detached: true` が要る: pi のプロセスが落ちても子は走り続け、親に道連れにしない。
+ * 読みだけの子なので、残る作業場の心配は要らない。
  */
 export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOptions {
   return { cwd, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true };

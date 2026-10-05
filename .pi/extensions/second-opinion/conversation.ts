@@ -114,7 +114,7 @@ interface Scope {
   readonly ownIds: ReadonlySet<string>;
 }
 
-/** 自分の道具の呼び出し id を集める。描画とは別の純粋な1走査 */
+/** 自分の道具の呼び出し id を集める。描画とは別の純粋な1走査。窓に収まる分だけでなく全部を見る（窓外に落ちた呼び出しに対応する結果も除くため） */
 function collectOwnIds(messages: readonly AgentMessage[], ownToolName: string): Set<string> {
   const ids = new Set<string>();
   for (const message of messages) {
@@ -230,7 +230,7 @@ export function windowFrom(
     throw new Error(`second-opinion: count must be a positive integer (got ${String(count)})`);
   }
   const kept = messages.slice(-count);
-  const scope: Scope = { ownToolName, ownIds: collectOwnIds(kept, ownToolName) };
+  const scope: Scope = { ownToolName, ownIds: collectOwnIds(messages, ownToolName) };
   const lines: string[] = [];
   for (const message of kept) {
     lines.push(...renderMessage(message, scope));

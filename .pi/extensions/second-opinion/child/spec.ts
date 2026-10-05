@@ -1,5 +1,5 @@
 /**
- * consult が起動する子 pi の組み立てと、子が返す JSONL の解釈。
+ * second-opinion が起動する子 pi の組み立てと、子が返す JSONL の解釈。
  *
  * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、道具としての入口は index.ts が持つ。
  *
@@ -19,7 +19,7 @@ const CHILD_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 /**
  * 子に読ませる budget。上限の手前で子に報告を促す。
  *
- * 親が `CONSULT_TURNS` で上限を渡す（run/child.ts）。子だけがこれを読む。
+ * 親が `CONSULT_TURNS` で上限を渡す（index.ts）。子だけがこれを読む。
  */
 const CHILD_BUDGET = fileURLToPath(new URL('./budget.ts', import.meta.url));
 

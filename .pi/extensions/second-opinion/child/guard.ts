@@ -1,7 +1,7 @@
 /**
  * child-guard — 子にだけ読ませる guard。
  *
- * `consult` が子の起動引数に `-e <このファイル>` を入れる。子だけがこれを読む
+ * `second-opinion` が子の起動引数に `-e <このファイル>` を入れる。子だけがこれを読む
  * （pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない）。
  *
  * 親が渡した役割の許可（`CONSULT_POLICY`）を規則にする。書く道具は許可されたパスだけ、bash は許可された接頭辞だけ。読みは縛らない。
@@ -152,7 +152,7 @@ export type Limits =
   | { readonly state: 'broken' }
   | { readonly state: 'set'; readonly paths: readonly string[]; readonly bash: readonly string[] };
 
-/** 何も渡されていない（consult 以外から起動された） */
+/** 何も渡されていない（second-opinion 以外から起動された） */
 export const OPEN: Limits = { state: 'open' };
 
 /** 文字列の配列か。違えば undefined */

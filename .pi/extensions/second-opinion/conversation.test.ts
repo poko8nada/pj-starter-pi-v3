@@ -47,8 +47,11 @@ function say(text: string): AgentMessage {
   return agent([{ type: 'text', text }]);
 }
 
+/** 道具の引数の形 */
+type ToolArguments = Extract<AssistantContent[number], { type: 'toolCall' }>['arguments'];
+
 /** 道具の呼び出しだけの agent */
-function call(id: string, name: string, args: Record<string, string | string[]>): AgentMessage {
+function call(id: string, name: string, args: ToolArguments): AgentMessage {
   return agent([{ type: 'toolCall', id, name, arguments: args }]);
 }
 
@@ -128,6 +131,19 @@ describe('windowFrom: 道具', () => {
     const window = windowFrom(messages, 20, 'opinion');
     expect(window.text).toBe('');
   });
+
+  it('窓外に落ちた自分の道具の呼び出しに対応する結果も入れない', () => {
+    const messages = [call('9', 'opinion', { focus: 'check' }), result('9', 'other', 'leaked')];
+    const window = windowFrom(messages, 1, 'opinion');
+    expect(window.text).toBe('');
+    expect(window.dropped).toBe(1);
+  });
+
+  it('窓外に落ちた他の道具の呼び出しの結果は残す', () => {
+    const messages = [call('9', 'read', { path: 'a.md' }), result('9', 'read', 'the file')];
+    const window = windowFrom(messages, 1, 'opinion');
+    expect(window.text).toBe('agent: [tool: read] result: the file');
+  });
 });
 
 describe('windowFrom: 打切り', () => {
@@ -169,5 +185,27 @@ describe('windowFrom: 空と不正', () => {
   it('空の発言は行にならない', () => {
     const window = windowFrom([owner('   '), say('')], 20, 'opinion');
     expect(window.text).toBe('');
+  });
+});
+
+describe('windowFrom: 出さない物', () => {
+  it('system と custom は会話ではないので出さない', () => {
+    const system: AgentMessage = { role: 'system', content: 'you are pi', timestamp: 1 };
+    const custom =
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 型に無い役割の除外を試すための、意図的な不正形
+      { role: 'custom', content: 'nudge' } as unknown as AgentMessage;
+    const window = windowFrom([system, custom, owner('hi')], 20, 'opinion');
+    expect(window.text).toBe('owner: hi');
+  });
+
+  it('考える分（thinking）は出さない', () => {
+    const thinking = agent([{ type: 'thinking', thinking: 'hmm' }]);
+    const window = windowFrom([thinking, say('done')], 20, 'opinion');
+    expect(window.text).toBe('agent: done');
+  });
+
+  it('知らない引数は JSON のまま出す', () => {
+    const window = windowFrom([call('1', 'mystery', { zzz: 1 })], 20, 'opinion');
+    expect(window.text).toBe('agent: [tool: mystery] {"zzz":1}');
   });
 });

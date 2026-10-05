@@ -3,7 +3,7 @@
  *
  * type は子の走り方の一式（モデル候補・ツール・書き込みの可否・続きの既定・上限・役割）を持つ。呼び出し側が選べるのは type の名前だけ。上書きの口は作らない。
  *
- * 壊れた設定は setup の誤りなので投げる。子を走らせてから気づくのでは遅い。読み込みは呼び出しごと。設定を変えたら、次の consult から効く。
+ * 壊れた設定は setup の誤りなので投げる。子を走らせてから気づくのでは遅い。読み込みは呼び出しごと。設定を変えたら、次の opinion から効く。
  */
 
 import { readFileSync } from 'node:fs';
@@ -36,7 +36,7 @@ export interface TypePolicy {
    * 先頭が一致するかだけを見る（`git` は `git status` を通す）。シェルは解さない。
    */
   readonly bash: readonly string[];
-  /** `consult_run` の `continue` を省いたときの既定 */
+  /** 続きの既定。`opinion` は遣い捨て（`--no-session`）のため使わないが、形は写し元と同じに保つ */
   readonly continueByDefault: boolean;
   readonly limits: Limits;
   /** システムプロンプトへの追記。無ければ素の子 */
@@ -68,7 +68,7 @@ export const KNOWN_TOOLS: ReadonlySet<string> = new Set([
 ]);
 
 function fail(message: string): never {
-  throw new Error(`consult types: ${message}`);
+  throw new Error(`second-opinion types: ${message}`);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -202,7 +202,9 @@ export function loadTypes(dir: string): readonly TypePolicy[] {
       errorCode(error) === 'ENOENT'
         ? ' It is committed in this repository: restore it, or put your own models in it'
         : '';
-    throw new Error(`consult types: could not read ${file}.${hint} (${detail})`, { cause: error });
+    throw new Error(`second-opinion types: could not read ${file}.${hint} (${detail})`, {
+      cause: error,
+    });
   }
   return parseTypes(text);
 }

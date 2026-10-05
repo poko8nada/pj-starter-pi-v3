@@ -18,9 +18,15 @@ import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { opinionTask } from './answer.ts';
 import { buildPiArgs, finalTextFrom, parseEvents, type ConsultOptions } from './child/spec.ts';
-import { ownerMessage, recordMessage, windowFrom, type Held } from './conversation.ts';
+import {
+  ownerMessage,
+  recordMessage,
+  windowFrom,
+  type AgentMessage,
+  type Held,
+} from './conversation.ts';
 import { loadTypes, resolveType } from './policy/types.ts';
-import { gitEnv, reasonOf, runPi, runWithFallback, stateOf } from './run/run.ts';
+import { gitEnv, reasonOf, runPi, runWithFallback, stateOf, type RunResult } from './run/run.ts';
 
 /** 道具とコマンドの名前 */
 export const TOOL_NAME = 'opinion';
@@ -100,9 +106,23 @@ function withModel(
 }
 
 /**
+ * 走り終えた子から本文を取る。終わり切らなければ投げる（黙って空を返さない）。
+ *
+ * 純粋な判定だけを抜き出した物で、子を実際に走らせずに「どう終わったか」を試せる。
+ */
+export function bodyOf(run: RunResult): string {
+  if (stateOf(run) !== 'done') {
+    throw new Error(
+      `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
+    );
+  }
+  return finalTextFrom(parseEvents(run.stdout));
+}
+
+/**
  * 子を1体走らせ、その本文をそのまま返す。
  *
- * 子が終わり切らなければ投げる（黙って空を返さない）。`types.json` は呼び出しごとに読む。
+ * `types.json` は呼び出しごとに読む。終わり方は `bodyOf` が見る。
  */
 export async function runOpinion(
   port: PiPort,
@@ -126,12 +146,7 @@ export async function runOpinion(
       limits: policy.limits,
     }),
   );
-  if (stateOf(run) !== 'done') {
-    throw new Error(
-      `second-opinion: the child did not finish (${reasonOf(run) ?? `exit ${run.code}`})`,
-    );
-  }
-  return finalTextFrom(parseEvents(run.stdout));
+  return bodyOf(run);
 }
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
@@ -152,6 +167,18 @@ type ExecuteArgs = [
 /** 使うのは cwd だけ。テストが本物の pi の文脈を組み立てずに済むよう、狭くしておく */
 function portOf(ctx: Pick<ExtensionContext, 'cwd'>): PiPort {
   return { cwd: ctx.cwd, env: process.env };
+}
+
+/**
+ * 会話に agent 側の1件を足す。owner の発言は `input` で貯めるので、ここでは貯めない。
+ *
+ * 抜き出した物で、`message_end` の振る舞い（user 重複除外）を子を走らせずに試せる。
+ */
+export function collectMessage(held: Held, message: AgentMessage): void {
+  if (message.role === 'user') {
+    return;
+  }
+  recordMessage(held, message);
 }
 
 export default function (pi: ExtensionAPI) {
@@ -183,11 +210,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on('message_end', (event) => {
-    // owner の発言は `input` で貯める。両方貯めると2重になる。
-    if (event.message.role === 'user') {
-      return;
-    }
-    recordMessage(held, event.message);
+    collectMessage(held, event.message);
   });
   pi.on('input', (event) => {
     recordMessage(held, ownerMessage(event.text, Date.now()));
