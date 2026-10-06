@@ -7,7 +7,7 @@ description: Use when a plan is agreed and its work has to be carried out — af
 
 One plan is one worktree: a branch and a merge — or the base, when the design's `Where` says so. The work is done from the plan md, and the record goes back into it.
 
-**The judgment is the parent's, and the owner's.** A child runs its own slice's check and reports; the review and the acceptance are not its business. A point that needs a decision — a shape with no answer, a file outside the plan, a cost — belongs to the cycle's ADR (the `adr` skill).
+**The judgment is the parent's, and the owner's.** A child runs its own slice's check and reports; the review and the acceptance are not its business. A point that needs a decision — a shape with no answer, a file outside the plan, a cost — belongs to the cycle's ADR (the `adr` skill). The bar is in the `adr` skill; these are the shapes it takes here.
 
 ## The file
 
@@ -38,7 +38,7 @@ The texts handed to children are in `references/tasks.md`.
 ### 4. The review
 
 - when the slices are done: a `review` child, in the worktree (the parent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
-- it writes `## Review`, `### Round 1`, under the three viewpoints
+- it writes `## Review`, `### Round 1`, under the four viewpoints
 - the fixing child is a `code` child, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. Two rounds: a Round 1 that finds nothing ends the review, and a Round 2 that still finds the same thing goes to the owner
 
