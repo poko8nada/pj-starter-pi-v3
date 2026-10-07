@@ -9,7 +9,7 @@ One cycle has one design: `cycles/<NNN-YYYY-MM-DD>/design.md`. It cuts the cycle
 
 A plan is a worktree, a branch and a merge — the unit the work runs in. The plan md and the steps inside it are written from here, and the work is carried out there.
 
-**The discussion does not happen here.** A fork about the cut — a plan added or dropped, an order the owner has to live with, a boundary that costs — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
+**The discussion does not happen here.** A fork the cut cannot resolve — an accepted entry that cannot be cut as accepted — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
 
 ## The file
 
@@ -19,14 +19,9 @@ Read that file before writing. It holds the section per plan, the rules for the 
 
 ## What goes to adr
 
-- **the promise changes** — a plan is added or dropped in a way that changes what the cycle delivers
-- **the order** — a wait the owner lives with: a plan that several others wait for, or a chain that runs long
-- **a boundary that costs** — a new service, a licence, a running cost, a permission
-- **the owner's call** — how much runs at once, since each plan is an agent, a branch and a merge
+- **an accepted entry cannot be cut as accepted** — its premise fails, or two entries contradict. The entry is reopened, and the owner answers.
 
-The cut keeps its own business: which files a plan holds, the order inside a plan, the steps.
-
-The bar is in the `adr` skill; these are the shapes it takes here.
+The cut keeps its own business: the plans, their order, how many run at once, where each one runs, and the steps inside a plan.
 
 ## Procedure
 
@@ -66,7 +61,7 @@ One list of plans, each with its scope and its boundary. They read the cut, and 
 
 A new `adr` entry records it. The design is edited to match, and git holds the diff.
 
-A plan found while the plans are written comes back here: the `adr` entry first (a plan added, an order the owner lives with), then the top of this file gains `## Refactor`.
+A plan found while the plans are written comes back here: the top of this file gains `## Refactor`, and the plans that use it name it in their `Boundary.Plans`.
 
 ## What is not here
 
@@ -81,5 +76,4 @@ A plan found while the plans are written comes back here: the `adr` entry first 
 
 - Do not cut by unit: the cut follows the change and the merge, not the folder a thing lives in
 - Do not split for the sake of parallelism: two parts that read the same input stay in one worktree
-- Do not decide policy here: open an `adr` entry, and let the owner answer
 - Do not write the plan: this file says the cut, not the work
