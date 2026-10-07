@@ -19,6 +19,8 @@ Read that file before writing. It holds the sections, the marker rules, the `Who
 
 ## What goes to adr
 
+### In this cycle
+
 Every part of this file can raise a decision.
 
 - `What` — what the product does is redefined; it becomes another thing
@@ -26,35 +28,31 @@ Every part of this file can raise a decision.
 - `Users can do` — a unit is added or dropped; a unit's capability moves in a way that is expensive to undo; two units would share one name, or one unit would stand for two things
 - `Stack` — a runtime, a framework, a library or a deploy with real alternatives; a cost: a licence, a service, a running cost
 
-And outside the file: a `Decision: proposed` entry the last `close` left, waiting for the owner's call.
+### The last cycle's close
 
-The definition keeps its own business: the picture, the lines that did not move, and the markers.
+A point can also come from the last cycle.
+
+- A `proposed` line the last `close` left becomes an entry, and the owner decides it.
 
 ## Procedure
 
 ### 1. Confirm the trigger and read what is behind the cycle
 
-- the trigger is the owner's explicit declaration. Research and discussion are not the trigger
 - scaffold the draft with the script (`.pi/skills/definition/scripts/scaffold.mjs`; the previous definition without markers, the format for the first cycle), and set the `# Definition <NNN>` heading
 - the last definition, in full: the frame, the `Users can do` map, the Stack
-- this cycle's `adr.md`: the entries the last `close` left as `Decision: proposed`
 
-### 2. Collect the cycle's points
-
-The owner's request, and the `proposed` entries the last `close` left. A point is a change to a unit, to the frame, or to the Stack — or a question that has to be answered before any of those can be written.
-
-### 3. Decide the points that need a decision
+### 2. Decide the points that need a decision
 
 Each point in `## What goes to adr` above is one `adr` entry. Its `Decision` is where the agreement is recorded; nothing else records it.
 
-### 4. Write the definition
+### 3. Write the definition
 
 - carry every part that did not move, as it is
 - mark what moved: `**add**`, `**update**` or `**drop**`, on the line it belongs to. An unmarked line is a line that did not move
 - `Users can do` is the product's capability map, one line per unit, written from the `Who`'s side
 - the `Stack` names what the product stands on, by role, `Ground` first
 
-### 5. Show the owner
+### 4. Show the owner
 
 One file, one picture. They read the whole shape, and answer.
 

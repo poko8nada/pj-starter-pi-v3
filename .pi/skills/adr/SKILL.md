@@ -1,6 +1,6 @@
 ---
 name: adr
-description: Use when the work meets a choice that is expensive to undo, that changes what the product promises, or that costs the owner something. It writes the entry, researches it, and decides.
+description: Use when the definition, the design, the plan or the work meets its handoff condition. It writes the entry, researches it, and decides.
 ---
 
 # adr
@@ -9,7 +9,7 @@ One cycle has one ADR: `cycles/<NNN-YYYY-MM-DD>/adr.md`. It is where a decision 
 
 The other md are written from what is decided here. The definition says what the product is, the design says the cut, and the plan says the work; none of them argues. The argument lives in the ADR.
 
-**A point does not wait for a stage.** The ADR fires from wherever the work is — the definition, the design, the plan, the work, or the close.
+**A point comes from a handoff.** The ADR is entered from the definition, the design, the plan or the work, and never on its own.
 
 ## The file
 
@@ -17,24 +17,15 @@ The other md are written from what is decided here. The definition says what the
 
 Read that file before writing. It holds the tree, the parts, the research types, and the trial.
 
-## What needs an entry
-
-- **expensive to undo** — a data shape, a public name, a file or folder layout, a dependency, an interface with the outside
-- **the product's promise changes** — a line of the definition's `Users can do`; not the code inside
-- **the product's behavior changes** — what it can do, or what a person sees while it does it
-- **the owner pays** — a new dependency, a service, a licence, a running cost, a migration
-- **a reversal** — something already accepted, now to be changed
-- **the owner's call** — the product's direction (what to build, what to drop), a trade-off the owner lives with
-
-The stage keeps its own business: a name, a local order, where a file goes, the shape of a private function, a test case.
-
 ## Procedure
 
 ### 1. Take the point
 
+The point comes from a handoff. Before writing the entry, present what the definition changes in chat and discuss it.
+
 One entry, one point. Place it in the tree: the `##` is where the thing lives (`Product`, a unit, `Stack`), and the `###` is the name the definition gives it (`Who`, `.worktree`, `Product`).
 
-A new cycle's first points are the previous `close.md`'s `Triage` lines that go to `proposed`: read that file, and place each as an entry with `Decision: proposed`. Their origin is that close, and that close did no research for them.
+A point the previous `close` left as `proposed` is placed as an entry: that close did no research for it.
 
 ### 2. Write the Agenda
 
@@ -63,7 +54,7 @@ Before Decide, run the proposal through `second_opinion` with the proposal in `f
 
 ### 7. Decide
 
-The owner's answer is the decision, and nothing else records it. Write `5. Decision:` — `accepted` or `rejected` — and put the accepted result into the md it belongs to.
+The owner's answer is the decision, and nothing else records it. Write `5. Decision:` — `accepted` or `rejected` — and put the accepted result into the definition.
 
 ### A change after this
 
@@ -71,6 +62,4 @@ A new entry. The older one stays as it was written; the record adds up.
 
 ## How not to write this
 
-- Do not decide alone: the direction, a cost or a long-lived trade-off is the owner's call
-- Do not leave the decision empty: an entry raised in this cycle is decided in this cycle (`proposed` is what a `close` leaves for the next cycle)
 - Do not write the work here: the ADR argues, it does not do

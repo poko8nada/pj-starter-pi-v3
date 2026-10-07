@@ -10,11 +10,6 @@ Each plan carries its own acceptance, so the inside of a plan has an eye on it.
 What no plan looks at is the handoff between plans: the design's `Boundary.Plans`.
 This skill writes that test, triages what the plans left, and closes the cycle.
 
-Two rules hold the whole way through.
-
-- It does not change the product. A hole that breaks the criteria goes back as an `ex-` plan, and the cycle waits. The integration test is the one thing this close writes.
-- It does not invent criteria. The criteria are the definition's `Users can do`, the design, and the plans' acceptances. A criterion that is missing is a hole, not something to add here.
-
 ## The file
 
 `cycles/<NNN-YYYY-MM-DD>/close.md`, in the shape `references/format.md` gives.
@@ -77,8 +72,6 @@ Two rules hold the whole way through.
 
 ## How not to do this
 
-- Do not implement: a hole that breaks the criteria goes back as an `ex-` plan, and the cycle waits
-- Do not invent criteria: the definition, the design and the acceptances are the whole of it
-- Do not fix a hole silently, and do not write the fix into the definition, the design or a plan: they are the cycle's record
+- Do not fix a hole silently, and do not write the fix into the definition, the design or a plan
 - Do not re-run the whole suite: the merge gate already did, and the close is not a second acceptance
 - Do not copy by hand what the script collects: a line left out is a hole nobody finds again
