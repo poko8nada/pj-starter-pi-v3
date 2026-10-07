@@ -16,7 +16,7 @@ Section and field names are English; the content is Japanese.
 - ADR: <NN>-<m>, <NN>-<m>
 - Where: worktree | base（owner が見る）
 - Scope:
-  - <unit>.<feature>: <変える物>
+  - <定義の部分>: <変える物>
 - Boundary:
   - Plans: なし
   - External:
@@ -57,7 +57,7 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 ## Scope
 
-- One line per unit or feature the plan changes: `<unit>.<feature>: <変える物>`. The names are the definition's.
+- One line per part of the definition the plan changes: `<定義の部分>: <変える物>`. The names are the definition's — a unit and its feature (`consult.worktree`), a line of `Product`, or a role of the `Stack`. The part is the one the plan's `ADR` entries moved.
 
 ## Boundary
 
