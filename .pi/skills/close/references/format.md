@@ -14,17 +14,15 @@
 
 ## Collected
 
-### <plan id>
+### <plan id> (ADR <NN>-<m> / Scope <定義の部分>)
 
 1. <place> / <hole> / <handling>: <why>
 
 ## Triage
 
-owner 確認済み。
-
-- <N>: ex-plan <plan id>: <why>
-- <N>: proposed: <why>
-- <N>: dropped: <why>
+- <N>: ex-plan <plan id> (<定義の部分>): <why>
+- <N>: proposed (<定義の部分>): <why>
+- <N>: dropped (<定義の部分>): <why>
 ```
 
 ## Integration
@@ -38,6 +36,8 @@ owner 確認済み。
 ## Collected
 
 - The script's output, pasted as it is. The script is `.pi/skills/close/scripts/collect.mjs`.
+- The heading of a plan carries its link, read from the design's plan section: the `ADR` and the `Scope`. `未特定` when the script cannot read it — the plan is not in the design (an `ex-` plan, a refactor plan), or the section or the field is missing.
+- A `未特定` is filled before the `Triage`: read the design and the definition, and the owner confirms the part each leftover belongs to.
 - Do not shorten and do not rewrite: a line left out is a hole nobody finds again.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
@@ -46,9 +46,9 @@ owner 確認済み。
 ## Triage
 
 - `owner 確認済み。` first: the destinations are the owner's call, confirmed.
-- One line per leftover: its number, where it goes, and why.
+- One line per leftover: its number, where it goes, the part of the definition it belongs to, and why. The part is the `ADR` entry and the line of the definition the leftover lands on.
 - `ex-plan <plan id>` — it breaks the criteria. The plan is named `ex-<what it fixes>`, and it has no design.
-- `proposed` — it breaks nothing, but leaving it makes things worse. The next cycle's ADR reads it.
+- `proposed` — it breaks nothing, but leaving it makes things worse. The next cycle's definition carries it.
 - `dropped` — rare, and the fix weighs more.
 - `done` at the end of the line when the `ex-` plan has merged and closed it.
 - `なし` when there is none.

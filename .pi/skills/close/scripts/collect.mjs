@@ -5,12 +5,15 @@
  * 拾うのは、Notes の各スライスの Findings、Review の各ラウンドの指摘、Acceptance の Findings。
  * 1件は1行にし、`場所 / 穴 / 対応: 理由` の形にする。判断はしない。人が写し落とさないためだけの物。
  *
+ * plan ごとの見出しには、design.md の plan 節から読んだ `ADR` と `Scope` を添える。
+ * 読めない時は `未特定` と出す。close は `未特定` を探し、design と定義を見て埋める。
+ *
  * 並びは、設計の plan（ファイル名順）が先、`ex-` の plan（ファイル名順）が後。
  * だから `ex-` の plan を足しても、前の番号はずれない。
  *
  *   node collect.mjs <cycle-dir>
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -24,6 +27,13 @@ import { pathToFileURL } from 'node:url';
 const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
+/** design の plan 節。`## \`<plan id>\`` の形。backtick の無い `##`（`## Refactor` 等）は plan ではない */
+const PLAN_HEAD = /^## `(.+)`\s*$/;
+const ADR_FIELD = /^-\s*ADR:\s*(.*)$/;
+const SCOPE_FIELD = /^-\s*Scope:\s*(.*)$/;
+const SCOPE_ITEM = /^\s+-\s*([^:]+):/;
+/** 読めなかった所の印。close はこれを探して埋める */
+const UNKNOWN = '未特定';
 
 const isBullet = (line) => /^\s*- /.test(line);
 /** `なし` は穴ではない。後ろに注記（`なし — 理由`）が続いても穴ではない */
@@ -192,12 +202,85 @@ const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 /** 設計の plan が先、`ex-` の plan が後。 */
 const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 
+/**
+ * design.md から plan ごとの `ADR` と `Scope` を読む。
+ *
+ * plan 節は backtick 付きの `##` だけ。`## Refactor` などは plan ではない。
+ * 節や欄が読めない plan は `未特定` になる。
+ *
+ * @param {string} text
+ * @returns {Map<string, { adr: string, scope: string }>}
+ */
+export function designLinks(text) {
+  /** @type {Map<string, { adr: string, scope: string }>} */
+  const links = new Map();
+  /** @type {string | null} */
+  let id = null;
+  let adr = null;
+  /** @type {string[]} */
+  let scope = [];
+  let inScope = false;
+  const keep = () => {
+    if (!id) return;
+    links.set(id, { adr: adr ?? UNKNOWN, scope: scope.length ? scope.join(', ') : UNKNOWN });
+  };
+  for (const line of text.split('\n')) {
+    const head = line.match(PLAN_HEAD);
+    if (head) {
+      keep();
+      id = head[1].trim();
+      adr = null;
+      scope = [];
+      inScope = false;
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      keep();
+      id = null;
+      continue;
+    }
+    if (!id) continue;
+    if (inScope) {
+      const item = line.match(SCOPE_ITEM);
+      if (item) {
+        scope.push(item[1].trim());
+        continue;
+      }
+      inScope = false;
+    }
+    const adrLine = line.match(ADR_FIELD);
+    if (adrLine) {
+      adr = adrLine[1].trim() || UNKNOWN;
+      continue;
+    }
+    const scopeLine = line.match(SCOPE_FIELD);
+    if (scopeLine) {
+      if (scopeLine[1].trim()) scope.push(scopeLine[1].trim());
+      inScope = true;
+    }
+  }
+  keep();
+  return links;
+}
+
+/** plan ごとの見出しの後ろに付ける link。読めない所は `未特定`。
+ *
+ * @param {{ adr: string, scope: string } | undefined} link
+ * @returns {string}
+ */
+const linkText = (link) => `ADR ${link?.adr ?? UNKNOWN} / Scope ${link?.scope ?? UNKNOWN}`;
+
 /** `## Collected` の中身。残り物が無ければ `なし`。
  *
  * @param {string} planDir
+ * @param {string} designPath
  * @returns {string}
  */
-export function collectCycle(planDir) {
+export function collectCycle(planDir, designPath) {
+  const links =
+    designPath && existsSync(designPath)
+      ? designLinks(readFileSync(designPath, 'utf8'))
+      : new Map();
   const files = readdirSync(planDir)
     .filter((file) => file.endsWith('.md'))
     .toSorted((a, b) => planRank(a) - planRank(b) || a.localeCompare(b));
@@ -207,12 +290,13 @@ export function collectCycle(planDir) {
   for (const file of files) {
     const items = collectPlan(readFileSync(join(planDir, file), 'utf8'));
     if (!items.length) continue;
+    const id = file.replace(/\.md$/, '');
     const lines = items.map((item) => {
       const handling = item.handling ? ` / ${item.handling}` : '';
       const place = `${++n}. ${item.place} / ${item.finding}`;
       return place + handling;
     });
-    blocks.push(`### ${file.replace(/\.md$/, '')}\n\n${lines.join('\n')}`);
+    blocks.push(`### ${id} (${linkText(links.get(id))})\n\n${lines.join('\n')}`);
   }
   return blocks.length ? blocks.join('\n\n') : 'なし';
 }
@@ -224,5 +308,5 @@ if (isMain) {
     console.error('usage: collect.mjs <cycle-dir>');
     process.exit(1);
   }
-  console.log(collectCycle(join(dir, 'plan')));
+  console.log(collectCycle(join(dir, 'plan'), join(dir, 'design.md')));
 }

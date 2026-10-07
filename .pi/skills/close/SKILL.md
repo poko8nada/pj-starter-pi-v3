@@ -46,12 +46,13 @@ Two rules hold the whole way through.
 
 - `node .pi/skills/close/scripts/collect.mjs cycles/<NNN-YYYY-MM-DD>` prints the `## Collected` body. Paste it as it is
 - the script lists the leftovers of every plan md; it does not judge
+- a plan's heading carries its link (`ADR`, `Scope`). Fill each `未特定` by reading the design and the definition, and show the completed `## Collected` to the owner: the part each leftover belongs to is theirs to confirm, before the triage
 
 ### 5. Triage, with the owner
 
 - one destination per leftover, and the owner confirms. The shape is in `references/format.md`
   - `ex-plan`: it breaks the criteria. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged
-  - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle's ADR reads it
+  - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle's definition carries it
   - `dropped`: rare, and the fix weighs more
 - a leftover that needs facts nobody has gets a `research` child; the rest do not
 
