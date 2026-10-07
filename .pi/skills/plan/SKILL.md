@@ -7,7 +7,7 @@ description: Use when the design is agreed and one of its plans has to become wo
 
 One plan is one worktree: a branch and a merge. It is written from the cycle's design and ADR, and it is what the work is done from — a child reads the plan, and nothing else, to do the work.
 
-**The discussion does not happen here.** A fork the plan meets — a shape that has no answer, a file whose structure has to be fixed, a boundary that costs — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
+**The discussion does not happen here.** A fork the plan cannot resolve — an accepted entry that cannot be written as accepted — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
 
 ## The file
 
@@ -17,15 +17,9 @@ Read that file before writing. It holds the sections, the slice, the `I/O`, the 
 
 ## What goes to adr
 
-- **a shape with no answer** — the walk found a boundary the shape cannot state: a failure path with no state, an optional whose meaning is undecided. The shape is decided before the plan is written, and the entry records it when it meets the bar
-- **a reversal** — a shape, a boundary or a layout already accepted, now changed by this plan
-- **a file or folder layout** — a refactor this plan touches that moves, renames, or changes what stands where
-- **the owner pays** — a new dependency, a service, a permission the plan needs
-- **the owner's call** — a trade-off this plan would make the owner live with
+- **an accepted entry cannot be written as accepted** — the walk finds its premise fails, or two entries contradict. The entry is reopened, and the owner answers.
 
 The plan keeps its own business: the steps, the order inside the plan, the names, the test cases, and the record.
-
-The bar is in the `adr` skill; these are the shapes it takes here.
 
 ## Procedure
 
@@ -70,12 +64,11 @@ A `test` check is written on top of the test file it names: read that file first
 
 When every plan of the cycle is written, read them together — the `I/O` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
 
-A pair found is a change to the cut, so it takes an `adr` entry (a plan added, an order the owner lives with, and the definition when the shared part moves what the product promises or stands on). The owner decides. Then write:
+A pair found is a change to the cut. The owner decides. Then write:
 
 - the design: `## Refactor` at the top, and the plans that use it name it in their `Boundary.Plans`
 - the plans that used to make it: their `Files` drop it, and the step that made it becomes a step that uses it
-- the refactor plan's own md: its `Files`, `Slices` and checks, with the entry's number in `ADR`
-- the definition, when the entry moved it
+- the refactor plan's own md: its `Files`, `Slices` and checks
 
 ### 9. The review of each plan
 
@@ -87,7 +80,7 @@ Every plan of the cycle: the files, the slices, the shapes, the checks. They rea
 
 ### A change after this
 
-A new `adr` entry records it. The plan is edited to match, and git holds the diff.
+The plan is edited to match, and git holds the diff.
 
 ## What is not here
 

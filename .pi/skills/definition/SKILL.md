@@ -73,6 +73,5 @@ A new `adr` entry records it. The definition is edited to match, and git holds t
 
 ## How not to write this
 
-- Do not decide policy here: open an `adr` entry, and let the owner answer
 - Do not make a unit of internal work (aligning, refactoring, syncing): it is not something the `Who` can use, so it is not a unit
 - Do not write the work: this file is the product, not the cycle
