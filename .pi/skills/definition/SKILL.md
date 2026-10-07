@@ -28,7 +28,7 @@ Every part of this file can raise a decision.
 
 And outside the file: a `Decision: proposed` entry the last `close` left, waiting for the owner's call.
 
-The bar is in the `adr` skill; these are the shapes it takes here.
+The definition keeps its own business: the picture, the lines that did not move, and the markers.
 
 ## Procedure
 
