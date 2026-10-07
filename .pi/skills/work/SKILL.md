@@ -7,7 +7,9 @@ description: Use when a plan is agreed and its work has to be carried out — af
 
 One plan is one worktree: a branch and a merge — or the base, when the design's `Where` says so. The work is done from the plan md, and the record goes back into it.
 
-**The judgment is the parent's, and the owner's.** A child runs its own slice's check and reports; the review and the acceptance are not its business. A point that needs a decision — a shape with no answer, a file outside the plan, a cost — belongs to the cycle's ADR (the `adr` skill). The bar is in the `adr` skill; these are the shapes it takes here.
+**The judgment is the parent's, and the owner's.** A child runs its own slice's check and reports; the review and the acceptance are not its business. A premise the run disproves is triaged here with the owner first — within tolerance, or a change the work absorbs. When it cannot be absorbed, the cycle's ADR (the `adr` skill) decides: drop the plan, or take another approach.
+
+The work keeps its own business: the slices, the checks, the commits, the review, the acceptance, the merge, and the record.
 
 ## The file
 
@@ -19,7 +21,8 @@ The texts handed to children are in `references/tasks.md`.
 
 ### 1. Read the plan and its record
 
-- the plan md: `Where`, `Files`, `Slices` (the checks and the steps), `## Notes`
+- the plan md: `Files`, `Slices` (the checks and the steps), `## Notes`
+- the design's `Where`: worktree, or base
 - the state: `Commit` filled is done, `Stopped` is interrupted, neither is not started
 
 ### 2. Set the place
@@ -31,8 +34,10 @@ The texts handed to children are in `references/tasks.md`.
 
 - hand the plan md to one `code` child in the worktree: the slices in order, as far as it can. The task is in `references/tasks.md`
 - the child runs each slice's check, commits after it passes, and writes that slice's record
-- when it stops: read its report and the worktree's plan md. When it only ran out (the work is sound), continue it (`continue: true`) without calling the owner. When it is blocked, decide with the owner: continue it (the plan is not rewritten) or drop it (write `Stopped` and the reason in the parent's plan md, commit it in the base, remove the worktree, no merge)
-  - a plan that is itself wrong is revised through the ADR, with the owner; an agreed plan is never rewritten to keep going
+- when it stops, read its report and the worktree's plan md. Three answers:
+  - it only ran out (the work is sound): continue it (`continue: true`), without calling the owner
+  - a premise the run disproves is triaged here with the owner: within tolerance, or a change the work absorbs. The plan is not rewritten to keep going
+  - what the work cannot absorb goes to the ADR, which decides: drop the plan (write `Stopped` and the reason in the parent's plan md, commit it in the base, remove the worktree, no merge), or take another approach
 - a `base` plan: the parent does the slices. Show the owner after each one, and wait for their OK before committing
 
 ### 4. The review
@@ -52,13 +57,12 @@ The texts handed to children are in `references/tasks.md`.
 
 ### 6. The merge
 
-- in the parent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there (a plan that cannot merge is not done: see below)
+- in the parent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there
 - one constraint rules the order: a plan that waits for another (the head sentence's "what it waits for") has not merged yet. Nothing else fixes the order: a done plan merges when it is done
 - then run the whole typecheck and test on the base: the merge counts as done only when they are green
 - red means the combination is broken: undo the merge (`git reset --hard ORIG_HEAD`), keep the worktree, and fix it in the plan (its child continues); merge again when it is green
 - green means done: `consult_worktree remove <plan id>`
 - a `base` plan has nothing to merge
-- a plan that cannot merge is left where it is, and the owner decides: the plan is read again, and the tree is reset to where the work restarts
 
 ### 7. Report
 
