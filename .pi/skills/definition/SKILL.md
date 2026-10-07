@@ -1,6 +1,6 @@
 ---
 name: definition
-description: Use when a cycle starts, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<NNN>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
+description: Use when the owner declares a cycle start, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<NNN>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
 ---
 
 # definition
@@ -32,8 +32,10 @@ The bar is in the `adr` skill; these are the shapes it takes here.
 
 ## Procedure
 
-### 1. Read what is behind the cycle
+### 1. Confirm the trigger and read what is behind the cycle
 
+- the trigger is the owner's explicit declaration. Research and discussion are not the trigger
+- scaffold the draft with the script (`.pi/skills/definition/scripts/scaffold.mjs`; the previous definition without markers, the format for the first cycle), and set the `# Definition <NNN>` heading
 - the last definition, in full: the frame, the `Users can do` map, the Stack
 - this cycle's `adr.md`: the entries the last `close` left as `Decision: proposed`
 

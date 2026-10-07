@@ -37,16 +37,16 @@ Section and field names are English; the content is Japanese.
   - Package manager: <パッケージマネージャ>
   - Deploy: <出すのか、どこへいつ。出さないなら なし>
 - Checks:
-  - Typechecker: <物>
-  - Test runner: <物>
-  - Linter: <物>
-  - Formatter: <物>
-  - Git hooks: <物>
+  - Typechecker: <名称>
+  - Test runner: <名称>
+  - Linter: <名称>
+  - Formatter: <名称>
+  - Git hooks: <名称>
 - Agent:
-  - Host: <物>
-  - Schema: <物>
+  - Host: <名称>
+  - Schema: <名称>
 - Product:
-  - <役割>: <物>
+  - <役割>: <名称>
 ```
 
 A section with nothing in it is left out. A field that is not decided yet keeps its name and stays empty — the empty field is the thing still to decide.
