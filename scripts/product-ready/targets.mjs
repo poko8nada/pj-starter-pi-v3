@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 
 /** 消すテストの対象（root からの相対）。ディレクトリか、テストのファイルそのもの */
 export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts'];
@@ -7,6 +7,7 @@ export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts']
 // テストのファイルか（vitest の既定 include に合わせる）。
 // 既定は `**/*.{test,spec}.?(c|m)[jt]s?(x)`。ここがずれると（ゆるめる／狭める）、
 // 消し残しや食いすぎで「0本」が言えなくなるので、変えるときは両方を直す。
+// 名指しのファイルも同じ物差しで見る（テストでない名指しは拾わない）。
 /**
  * @param {string} name ファイル名
  * @returns {boolean} テストなら真
@@ -19,9 +20,10 @@ function isTestFile(name) {
  * 名指しの対象の中のテストを集める（純）。無い対象は飛ばす。
  *
  * @param {string} root リポジトリの根
+ * @param {readonly string[]} targets 集める対象（root からの相対）。既定は名指し
  * @returns {readonly string[]} 見つけたテストの絶対パス（昇順）
  */
-export function findTests(root) {
+export function findTests(root, targets = TEST_TARGETS) {
   if (!existsSync(root)) {
     throw new Error(`no such directory: ${root}`);
   }
@@ -39,7 +41,7 @@ export function findTests(root) {
       }
     }
   };
-  for (const target of TEST_TARGETS) {
+  for (const target of targets) {
     const full = join(root, target);
     if (!existsSync(full)) {
       continue;
@@ -52,7 +54,7 @@ export function findTests(root) {
     }
     if (isDir) {
       walk(full);
-    } else {
+    } else if (isTestFile(basename(full))) {
       found.push(full);
     }
   }
