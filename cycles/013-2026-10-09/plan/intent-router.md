@@ -632,51 +632,55 @@ type RegistryAnswer = RegistryResult['answers'][string];
 
 ### Slice 1: 設定と質問文を固定し、上書きの読み口をつくる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2e16bde
 
 ### Slice 2: owner の発言1つ分の状態と、jev に渡す state を組み立てる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5b37506
 
 ### Slice 3: 判定と差し込みを1行1件で記録し、古い物を落とす
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 21e3077
 
 ### Slice 4: classifier の候補を順に試し、有料に落ちたら知らせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5d51785
 
 ### Slice 5: `before_agent_start` で分け、質問なら「編集せず調べろ」を1回だけ差し込む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ddcb73e
 
 ### Slice 6: `turn_end` で「もう答えられるか」を判定し、1回だけ止めて答えさせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c5f275c
 
 ### Slice 7: `/intent` でセッション中だけ切り、README を置く
 
 - Findings:
-- Unplanned:
-- Commit:
+  - review の子の読み（README の3点照合）を子で実行できず、既定値・記載・形状を直接照合した
+    - `left: この worktree には子を走らせる口（consult_run 等）が無く、review ロールでの読みを実行できない`
+- Unplanned: なし
+- Commit: 5f5113d
 
 ### Slice 8: 統合: 配線が1本につながり、実セッションのログに残るまで
 
 - Findings:
-- Unplanned:
-- Commit:
+  - look 実行 (`pi -e .pi/extensions/intent-router/index.ts --no-session -p "cycles/013-2026-10-09/design.md は何を決めた?"`) の `logs/2026-10-09.jsonl`: (1) `hook: "route"` が1件あり `label: "question"` (`confidence: 1`) / (2) `hook: "judge"` の行は無し（短い応答で `minTurns: 2` に届かず判定が出なかった）/ (3) 差し込みは出ていない（`shadow: true` で `guide: "would"`）。合否にはしない
+    - `left: judge 行の有無は応答の往復数と閾値で揺れるため、ここでは確認だけした`
+- Unplanned: なし
+- Commit: d97063f
 
 ## Review
 
