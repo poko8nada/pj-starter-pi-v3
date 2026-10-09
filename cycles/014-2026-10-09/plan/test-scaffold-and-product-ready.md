@@ -216,8 +216,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 2: テストの足場を `test/` へ移し、`vitest` の参照先と14本の import を変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `test/env.test.ts:5` のコメントを `.pi/test/setup.ts` から `test/setup.ts` に直した、移した後の指し示しを保つため
+- Commit: b98c927
 
 ### Slice 3: スキルの `.pi/test/` を `test/` に直し、plan スキルの `read` に実行主体を書く
 
