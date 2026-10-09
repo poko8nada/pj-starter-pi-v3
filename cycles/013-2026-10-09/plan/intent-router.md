@@ -725,7 +725,27 @@ type RegistryAnswer = RegistryResult['answers'][string];
   - `settings.test.ts:118` は `JUDGE_QUESTION.criteria` の件数と閾値の位置のみで中身の `0:` / `1:` / `2:` を見ない。`questions.ts:51-55` を `['a', 'b', 'c']` に変えても緑のまま
     - `fixed: criteria の先頭の 0: / 1: / 2: を見る検査を足した`
 
+### Round 2
+
+- Stale:
+  - なし（README.md:13・README.ja.md:13 に intent-router を確認、## Files 30-33 に update 2件あり / extension README.md:30 が「register 時に1回だけ読み」に直り index.ts:96 の register 時1回の readSettings と一致）
+- Unlisted:
+  - なし
+- Gaps:
+  - なし（guide.enabled: false → route.ts:181-192 が guide none・text null で未返却を route.test:380-388 で確認 / stop.enabled: false → judge.ts:263-276 が stop none・text null で未返却を judge.test:372-380 で確認 / judge.enabled: false → judge.ts:380-382 が ask・ログ無しを judge.test:382-394 で確認 / decideRoute の score→skip・未知文字列→skip を route.ts:49-54 と route.test:215-227 で確認、handler の設定穴 skip は label 温存（route.ts:252）を route.test:352-361 で、未知文字列 skip は label null を route.test:363-378 で確認 / isSecretTarget の5種を state.ts:180-198 と state.test:113-128 で確認、秘密混じりの落下もあり / due の wait 無記録を judge.ts:323-325 に対し idle・助走・撃ち済み後の2回目・hold 直後の連続でログ件数確認 / 伝搬は route の has_images・truncated・display、judge の display・truncated を各 test で確認）
+- Unproven:
+  - なし（溢れは state.ts:117 の slice(1) が古い方捨てを state.test:88-89 で確認 / 重複は state.ts:110 の最新文上書きを state.test:94-101 で確認 / 停止文は judge.test:301-303 が literal 一致、stopMessage の {label} 置換は judge.test:289-291 と judge.ts:71-73 で別に確認 / 使い回しは index.test:225-239 が targets 分岐を見、judge.ts:327 の only を確認 / trim は command.ts:35 を command.test:116-125 で確認 / criteria 先頭の 0: / 1: / 2: は questions.ts:52-54 を settings.test:120-124 で確認）
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm run test:run`（worktree 全体）: 36ファイル / 604テスト、緑
+  - `pnpm run typecheck`: 緑
+  - `pnpm run lint`: 緑
+  - 壊しテスト3件（赤を確認して復元済み）:
+    - `hook/route.ts:57` の `>=` を `>` に → `hook/route.test.ts` が 1 件赤（閾値ちょうどの境界）
+    - `hook/judge.ts:327` の `only: run.candidate` を外す → `index.test.ts` と `hook/judge.test.ts` が 1 件赤（route が選んだ候補を使い回す契約）
+    - `hook/judge.ts:307` の `entries` を空に → `hook/judge.test.ts` が 3 件赤（止める差し込み）
+  - 統合スライス8の `look`: worktree で `pi -e .pi/extensions/intent-router/index.ts --no-session -p "…design.md と definition.md を読んで…"` を1回走らせ、`logs/2026-10-09.jsonl` を読んだ。route 2件（`label: question`, confidence 1, `decision: act`, shadow なので `guide: would`）と judge 2件（turn 1: score 1.04 / confidence 0.82 → `hold`、turn 2: score 1.18 / confidence 0.69 → `hold`、`stop: none`）。差し込みは無し（shadow の既定）。費用は $0、latency 454〜817ms。`text` の抜粋が 40 字で切れているのも仕様通り
+  - スライス7の `read`（子では走らせられなかった分を親が実行）: `review` の子が README の設定表と `defaultSettings()` を突き合わせ、30行すべて一致・欠けも余りも無しと報告。`/intent on|off` と `logs/` の記載もあり。形は `second-opinion/README.md` と同系（`Commands` / `Settings` / `The code` は対応、`Hooks` は `Tools` の位置、`Log` は独自、`What comes back` に対応物なし）
+- Findings: なし
