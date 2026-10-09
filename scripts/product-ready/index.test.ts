@@ -19,20 +19,26 @@ function makeTree(): {
   readonly root: string;
   readonly harness: string;
   readonly nested: string;
+  readonly tool: string;
+  readonly env: string;
   readonly kept: string;
   readonly cycleA: string;
 } {
   const root = tmpDir();
   const harness = join(root, '.pi', 'a.test.ts');
   const nested = join(root, '.pi', 'sub', 'b.test.ts');
+  const tool = join(root, 'scripts', 'product-ready', 'tool.test.ts');
+  const env = join(root, 'test', 'env.test.ts');
   const kept = join(root, 'test', 'keep.test.ts');
   const cycleA = join(root, 'cycles', '001-a');
   writeFile(harness);
   writeFile(nested);
+  writeFile(tool);
+  writeFile(env);
   writeFile(kept);
   writeFile(join(cycleA, 'note.txt'));
   writeFile(join(root, 'cycles', '002-b', 'note.txt'));
-  return { root, harness, nested, kept, cycleA };
+  return { root, harness, nested, tool, env, kept, cycleA };
 }
 
 function run(
@@ -49,24 +55,30 @@ describe('product-ready entries', () => {
     const result = run(INDEX, ['--root', tree.root]);
     expect(result.status).toBe(0);
     expect(result.output).toContain('a.test.ts');
+    expect(result.output).toContain('tool.test.ts');
+    expect(result.output).toContain('env.test.ts');
     expect(result.output).toContain('001-a');
     expect(existsSync(tree.harness)).toBe(true);
     expect(existsSync(tree.nested)).toBe(true);
+    expect(existsSync(tree.tool)).toBe(true);
+    expect(existsSync(tree.env)).toBe(true);
     expect(existsSync(tree.kept)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 
-  it('index の --run → ハーネスのテストと cycles が消え、test/ は残る', () => {
+  it('index の --run → 名指しのテストと cycles が消え、名指しの外は残る', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root, '--run']);
     expect(result.status).toBe(0);
     expect(existsSync(tree.harness)).toBe(false);
     expect(existsSync(tree.nested)).toBe(false);
+    expect(existsSync(tree.tool)).toBe(false);
+    expect(existsSync(tree.env)).toBe(false);
     expect(existsSync(tree.cycleA)).toBe(false);
     expect(existsSync(tree.kept)).toBe(true);
   });
 
-  it('prune-tests → 表示だけでは消えず、--run で .pi/ のテストだけが消える', () => {
+  it('prune-tests → 表示だけでは消えず、--run で名指しのテストが消える', () => {
     const tree = makeTree();
     const shown = run(PRUNE_TESTS, ['--root', tree.root]);
     expect(shown.status).toBe(0);
@@ -76,6 +88,8 @@ describe('product-ready entries', () => {
     expect(done.status).toBe(0);
     expect(existsSync(tree.harness)).toBe(false);
     expect(existsSync(tree.nested)).toBe(false);
+    expect(existsSync(tree.tool)).toBe(false);
+    expect(existsSync(tree.env)).toBe(false);
     expect(existsSync(tree.cycleA)).toBe(true);
     expect(existsSync(tree.kept)).toBe(true);
   });
@@ -125,6 +139,8 @@ describe('product-ready entries', () => {
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe('unknown argument: --bogus');
     expect(existsSync(tree.harness)).toBe(true);
+    expect(existsSync(tree.tool)).toBe(true);
+    expect(existsSync(tree.env)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 });

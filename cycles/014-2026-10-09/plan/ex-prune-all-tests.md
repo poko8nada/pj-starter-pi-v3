@@ -9,7 +9,7 @@ scripts/product-ready/
   index.test.ts                update
   cli.mjs                      （触らない）
   index.mjs                    （触らない）
-  prune-tests.mjs              （触らない）
+  prune-tests.mjs              update（コメントだけ）
   prune-cycles.mjs             （触らない）
 ```
 
@@ -20,7 +20,7 @@ README.md                      update
 README.ja.md                   update
 ```
 
-対象は「ディレクトリか、テストのファイル」。`test/` をディレクトリで名指ししない（プロダクトのテストの置き場だから）。`findCycles` は今のまま（`cycles/` のフォルダごと）。`index.mjs` / `prune-tests.mjs` / `prune-cycles.mjs` / `cli.mjs` は `findTests` の呼び方だけなので触らない。
+対象は「ディレクトリか、テストのファイル」。`test/` をディレクトリで名指ししない（プロダクトのテストの置き場だから）。`findCycles` は今のまま（`cycles/` のフォルダごと）。`index.mjs` / `prune-cycles.mjs` / `cli.mjs` は `findTests` の呼び方だけなので触らない（`prune-tests.mjs` はコメントだけ直す）。
 
 ## Slices
 
@@ -32,7 +32,8 @@ README.ja.md                   update
      export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts'];
 
      /** @returns {readonly string[]} 名指しの中のテスト（絶対パス、昇順）。無い対象は飛ばす */
-     export function findTests(root) {}
+     export function findTests(root, targets = TEST_TARGETS) {}
+     // 名指しのファイルも isTestFile で見てから取る（テストでない名指しは拾わない）
      ```
    - Verify:
      - test: `pnpm run test:run scripts/product-ready/targets.test.ts`
@@ -40,12 +41,15 @@ README.ja.md                   update
        - 同じ木に `test/keep.test.ts` と `src/keep.test.ts` を足す → 4本のまま（happy。名指しの外は食わない）
        - `node_modules/a.test.ts` と `.git/b.test.ts` を置く → 返らない（happy。名指しの外）
        - `test/env.test.ts` だけ無い木 → 残りを返す（empty。無い対象は飛ばす）
-       - `scripts/product-ready/z.spec.ts` を置く → 拾う（boundary values。vitest の既定 include）
+       - `scripts/product-ready/z.spec.ts` を置く → 拾う（boundary values。vitest の既定 include。base の木に置いて本数で見る）
+       - `.pi/node_modules/a.test.ts` を置く → 返らない（boundary values。名指しの中の入れ子でも skip が効く）
+       - `.pi/.git/a.test.ts` を置く → 返らない（boundary values。skip の `.git` 側）
+       - `findTests(root, ['test/setup.ts'])` → `[]`（invalid input。名指しでもテストでない物は拾わない）
        - 無い root → 投げる（error。黙って成功しない）
        - `removeTests` を2回呼ぶ → 2回目は `[]`（boundary values。2回目）
        - 権限: 当てはまらない（一時ディレクトリだけ）
    - Steps:
-     1. `scripts/product-ready/targets.mjs`: `TEST_TARGETS` と `findTests` を書く。対象ごとに `existsSync` し、ディレクトリなら今の walk、ファイルならそのまま取る。パターンは vitest の既定 include（`**/*.{test,spec}.?(c|m)[jt]s?(x)`）に合わせ、ずれると「0本」が言えないことをコメントに書く
+     1. `scripts/product-ready/targets.mjs`: `TEST_TARGETS` と `findTests(root, targets = TEST_TARGETS)` を書く。対象ごとに `existsSync` し、ディレクトリなら今の walk、ファイルは `isTestFile` で見てから取る。パターンは vitest の既定 include（`**/*.{test,spec}.?(c|m)[jt]s?(x)`）に合わせ、ずれると「0本」が言えないことをコメントに書く
      2. `scripts/product-ready/targets.test.ts`: 上のケースを書く。既存のケース（`.pi/` だけ、`test/` は対象外）を新しい対象に合わせて直す
 2. 0本でも緑にする
    - I/O: なし（設定と文書）
@@ -64,7 +68,7 @@ README.ja.md                   update
 4. 統合: 写しの上で0本になり、0本でも緑で、プロダクトのテストは食われない
    - I/O: なし
    - Verify:
-     - cli: worktree で4つ走らせ、出力を読む。(1) `node scripts/product-ready/index.mjs`（引数なし）— 名指しの3つと本数が出て、`git status --short` が前後で変わらない／(2) `tmpDir()` に写しを作り（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`）、そこに `test/keep.test.ts` を置いて `node scripts/product-ready/index.mjs --root <写し> --run` → 名指しのテストが0本になり、`test/keep.test.ts` は残る／(3) 写しで `node <worktree>/node_modules/vitest/vitest.mjs run --root <写し>` → 0本で exit 0（`No test files found`）／(4) 2回目の `--run` → 静かに終わる（冪等）
+     - cli: worktree で4つ走らせ、出力を読む。(1) `node scripts/product-ready/index.mjs`（引数なし）— 名指しの3つと本数が出て、`git status --short` が前後で変わらない／(2) `tmpDir()` に写しを作り（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`）、そこに `test/keep.test.ts` を置いて `node scripts/product-ready/index.mjs --root <写し> --run` → 名指しのテストが0本になり、`test/keep.test.ts` は残る／(3) 写しから `test/keep.test.ts` を外し、`node <worktree>/node_modules/vitest/vitest.mjs run --root <写し>` → 0本で exit 0（`No test files found`）。写しには `node_modules` の symlink を張る（`vitest/config` の解決のため）／(4) 2回目の `--run` → 静かに終わる（冪等）
      - test: `pnpm run test:run scripts/product-ready` — 既存21件と新しいケースが緑
    - Steps:
      1. 上の4つを走らせ、結果を記録する
@@ -73,38 +77,112 @@ README.ja.md                   update
 
 ### Slice 1: 対象を名指しに変え、名指しの外を食わないことをテストで固定する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1ad7fbe
 
 ### Slice 2: 0本でも緑にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d661925
 
 ### Slice 3: README 2枚の Getting started を新しい意図に直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 09b6d0d
 
 ### Slice 4: 統合: 写しの上で0本になり、0本でも緑で、プロダクトのテストは食われない
 
 - Findings:
+  - 計画の Verify (3) は `test/keep.test.ts` が写しに残ったままでは 0 本にならない（vitest が 1 本を見つける）。keep を除いた写しでは exit 0 で `No test files found`（`passWithNoTests` の効果）。写しでの vitest 実行には `node_modules` の symlink が要る（`vitest/config` の解決のため）
+    - `left: Verify (3) の文面は変えず、0 本確認は keep 除去後に行う手順として記録する（keep を消す側に倒すのは誤りのため。文面の直しは親・review に委ねる）`
+      - 親が `c264568` で Verify (3) を「写しから `test/keep.test.ts` を外し」に直した。この `left:` はそこで閉じた
+  - keep を置いたまま写しで vitest を走らせると 1 passed になり、プロダクトのテストが食われずに動くことを確認した
 - Unplanned:
-- Commit:
+  - `scripts/product-ready/index.test.ts` は Files で `update` だが、新しい名指しの下でも既存の検査（プロダクトのテストが残る）が緑のままなので触らなかった
+    - その後 Round 1 の `0b9b0c1` が `index.test.ts` を書き換えた（木に名指しの3つを置き、`test/env.test.ts` と道具自身のテストが消えることを検査）。この Unplanned はそこで解消した
+- Commit: 1227f57
 
 ## Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `Files: index.test.ts update` が偽（子は触らず、`Notes` の Unplanned が自認）
+  - `prune-tests.mjs:5` の「ハーネスのテストを消す入口」が `.pi/` だけに読める
+  - `index.test.ts:59` の「test/ は残る」と `:69` の「.pi/ のテストだけが消える」が偽（一般には `test/env.test.ts` が消える。`makeTree` がそれを置かないため緑だった）
+  - `Slice 4 Verify (3)` の文面（親が `c264568` で「写しから `test/keep.test.ts` を外し」に直した）
+- Unlisted: なし（子は `git diff` を child-guard で走らせられず、親 HEAD との目視比較だった。親が diff で確認した）
 - Gaps:
+  - 新しい削除範囲の統合カバーが無い（`index.test.ts` の木に `test/env.test.ts` と `scripts/product-ready/*.test.ts` が無い）
+  - `targets.mjs` の `node_modules` / `.git` の skip を効かせる入れ子のケースが無い
+  - 名指しのファイルが `isTestFile` を通らない（非テストを名指しすると消える）
 - Unproven:
+  - Slice 4 の Verify (1)(2)(4) と `test:run` の出力記録が無い（`## Acceptance` で記録する）
+  - `.spec.ts` のケースが本数を見ない（名指しの中での既定 include の証明になっていない）
+
+- fixed: `0b9b0c1` `index.test.ts` の木に名指しの3つを置き、`test/env.test.ts` と道具自身のテストが消え、名指しの外（`test/keep.test.ts`）が残ることを見た。偽の文面も直した
+- fixed: `9b98573` 名指しのファイルも `isTestFile` で見るようにし、`findTests(root, targets = TEST_TARGETS)` にした（テストできる形）
+- fixed: `874bd8a` 入れ子の skip・名指しの非テスト・`.spec.ts` の本数をテストに足した
+- fixed: `734bce0` `prune-tests.mjs` のコメントを「名指しのテスト（`targets.mjs` の `TEST_TARGETS`）を消す入口」に直した
+
+### Round 2
+
+- Stale:
+  - L23 の「`index.mjs` / `prune-tests.mjs` / `prune-cycles.mjs` / `cli.mjs` は…触らない」が偽（`prune-tests.mjs` はコメントだけ直した）
+  - Slice 1 の I/O `findTests(root)` が偽（最終形は `findTests(root, targets = TEST_TARGETS)`）
+  - Slice 1 Steps の「ファイルならそのまま取る」が偽（`isTestFile` で見てから取る）
+  - `Notes` Slice 4 の Unplanned「`index.test.ts` は触らなかった」が、Round 1 の `0b9b0c1` の後で偽になった
+- Unlisted: なし
+- Gaps:
+  - 入れ子の `.git` skip が未検査（`.pi/node_modules` だけ。root の `.git` は名指しの外なので skip 行を通らない）
+- Unproven:
+  - `## Acceptance` の Ran / Findings が空（ただし review が見た snapshot は `46a0e80` で、`806d702` で記入済み。指摘の時点で古い）
+
+- fixed: `83f1fb5` L23・I/O・Steps の文面を最終形に合わせ、`Notes` の Unplanned に解消の一行を足した
+- fixed: `b5664ad` 入れ子の `.git`（`.pi/.git/a.test.ts`）が返らないケースを足した
+- fixed: `## Acceptance` は `806d702` で記入済み（review が見た snapshot より後）
+
+### Round 3
+
+- Stale:
+  - Slice 1 の Verify が入れ子の `.git` のケースを載せていない（`b5664ad` で足した）
+  - Round 2 の `fixed: b5664ad` のパスが `.pi/sub/.git/c.test.ts`（実際は `.pi/.git/a.test.ts`）
+  - `Notes` Slice 4 の `left:`（Verify (3) の文面）が、親の `c264568` の後で古い
+  - `## Acceptance` の壊しテストの数字が `b5664ad` の前の物（A は5件ではなく6件、B は総数が 13）
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+
+- fixed: Slice 1 の Verify に `.pi/.git/a.test.ts` のケースを足し、Round 2 の `fixed:` のパスを直した
+- fixed: `Notes` Slice 4 の `left:` に、`c264568` で閉じたことを書き足した
+- fixed: `## Acceptance` の数字を取り直した（A: 6 failed | 7 passed (13) / B: 1 failed | 12 passed (13) / C: exit 1）
+
+### Round 4
+
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven:
+  - `findTests` / `findCycles` の「昇順」が Verify に出ない（`targets.mjs` の JSDoc と plan の I/O が言うが、テストは本数と `toContain` だけ）
+
+- fixed: `c0982de` 並び順のケースを2つ足した（作った順と昇順が違う木で、`toEqual([...found].toSorted())` と期待の配列を見る）
+- fixed: `## Acceptance` の数字を最終コードで取り直した（A: 6 failed | 9 passed (15) / B: 1 failed | 14 passed (15) / C: exit 1 / 対照: フラグありは exit 0）
 
 ## Acceptance
 
 - Ran:
+  - `pnpm run test:run`（worktree）: 30ファイル457テスト緑（Round 2 の `b5664ad` と Round 4 の `c0982de` の3件を含む）
+  - `pnpm typecheck` / `pnpm lint`: 緑
+  - 引数なしの `node scripts/product-ready/index.mjs`: `tests (30)` と `cycles (14)` を出し、前後で `git status --short` は不変（何も消さない）
+  - 写し（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`・`node_modules` の symlink）に `test/keep.test.ts` を置き、`--root <写し> --run`: 名指しのテストは0本、`test/env.test.ts` は消え、`test/keep.test.ts` は残る。2回目は `no tests to remove` / `no cycles to remove` で exit 0（冪等）
+  - 写しから `test/keep.test.ts` を外して `vitest run --root <写し>`: `No test files found, exiting with code 0`
+- 壊しテスト（3つとも赤）:
+  - `TEST_TARGETS` から `test/env.test.ts` を外す → `writeBase` を使う6件が赤（6 failed | 9 passed (15)）
+  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed | 14 passed (15)）
+  - `vitest.config.ts` の `passWithNoTests: true` を外す → 0本の写しが `No test files found, exiting with code 1`（対照: フラグありは exit 0）
 - Findings:
+  - plan の Verify (3) は「写しから `test/keep.test.ts` を外し」に親が直した（`c264568`）。`Notes` Slice 4 の `left:` はこの直しで閉じた
+  - 統合テスト（close 用の受け渡し）は close 側で書く。ここでは名指しの外の生存までを見た

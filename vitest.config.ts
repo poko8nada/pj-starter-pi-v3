@@ -7,5 +7,7 @@ export default defineConfig({
     // テストの足場（`test/setup.ts`）。理由はファイルを確認。
     setupFiles: ['./test/setup.ts'],
     reporters: verbose ? ['verbose'] : [['default', { summary: false }]],
+    // 開始時はテストが0本でも緑。product:ready が名指しを消すと0本になる。
+    passWithNoTests: true,
   },
 });

@@ -1,32 +1,63 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { basename, isAbsolute, join } from 'node:path';
+
+/** 消すテストの対象（root からの相対）。ディレクトリか、テストのファイルそのもの */
+export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts'];
+
+// テストのファイルか（vitest の既定 include に合わせる）。
+// 既定は `**/*.{test,spec}.?(c|m)[jt]s?(x)`。ここがずれると（ゆるめる／狭める）、
+// 消し残しや食いすぎで「0本」が言えなくなるので、変えるときは両方を直す。
+// 名指しのファイルも同じ物差しで見る（テストでない名指しは拾わない）。
+/**
+ * @param {string} name ファイル名
+ * @returns {boolean} テストなら真
+ */
+function isTestFile(name) {
+  return /\.(test|spec)\.(c|m)?[jt]sx?$/.test(name);
+}
 
 /**
- * `.pi/` の下の `*.test.ts` を集める（純）。
+ * 名指しの対象の中のテストを集める（純）。無い対象は飛ばす。
  *
  * @param {string} root リポジトリの根
+ * @param {readonly string[]} targets 集める対象（root からの相対）。既定は名指し
  * @returns {readonly string[]} 見つけたテストの絶対パス（昇順）
  */
-export function findTests(root) {
+export function findTests(root, targets = TEST_TARGETS) {
   if (!existsSync(root)) {
     throw new Error(`no such directory: ${root}`);
-  }
-  const piDir = join(root, '.pi');
-  if (!existsSync(piDir)) {
-    return [];
   }
   const found = [];
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === '.git') {
+          continue;
+        }
         walk(path);
-      } else if (entry.isFile() && entry.name.endsWith('.test.ts')) {
+      } else if (entry.isFile() && isTestFile(entry.name)) {
         found.push(path);
       }
     }
   };
-  walk(piDir);
+  for (const target of targets) {
+    const full = join(root, target);
+    if (!existsSync(full)) {
+      continue;
+    }
+    let isDir = false;
+    try {
+      isDir = statSync(full).isDirectory();
+    } catch (_unused) {
+      continue;
+    }
+    if (isDir) {
+      walk(full);
+    } else if (isTestFile(basename(full))) {
+      found.push(full);
+    }
+  }
   return found.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 

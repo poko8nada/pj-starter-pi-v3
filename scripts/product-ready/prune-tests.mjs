@@ -2,7 +2,7 @@ import { findTests, removeTests } from './targets.mjs';
 import { parseArgs, planLines } from './cli.mjs';
 
 /**
- * ハーネスのテストを消す入口。引数なしは表示だけ、`--run` で実行する。
+ * 名指しのテスト（targets.mjs の TEST_TARGETS）を消す入口。引数なしは表示だけ、`--run` で実行する。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
