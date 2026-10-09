@@ -10,7 +10,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
 - **The cycle mechanism** — six skills in `.pi/skills/` (`adr` / `definition` / `design` / `plan` / `work` / `close`)
-- **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), `second-opinion` (points out holes in the recent proposal with another model) (`.pi/extensions/`)
+- **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), `second-opinion` (points out holes in the recent proposal with another model), `intent-router` (routes the owner's message and stops over-investigation) (`.pi/extensions/`)
   - `consult_run` — runs one child `pi` with a role and a place, without showing it this conversation
   - `consult_children` — lists the children of this project and stops one; it reads a record, so the list survives a reload
   - `consult_worktree` — makes, lists, or removes a unit worktree; a worktree stays until it is removed, and `remove` takes its branch too when it is merged (an unmerged branch is kept)

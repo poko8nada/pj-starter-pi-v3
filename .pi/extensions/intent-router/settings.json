@@ -1,0 +1,14 @@
+{
+  "thresholds": {
+    "routeConfidence": 0.5,
+    "judgeConfidence": 0.5,
+    "judgeScore": 1.5
+  },
+  "classifier": {
+    "models": [
+      { "provider": "opencode", "model": "jev-1.13-free" },
+      { "provider": "openrouter", "model": "~typesafe/jev-latest" }
+    ],
+    "allowPaid": true
+  }
+}

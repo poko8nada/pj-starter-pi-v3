@@ -27,6 +27,11 @@
   logs/                      （実行時に作る。`logs/` は .gitignore にある）
 ```
 
+```text
+README.md                  update
+README.ja.md               update
+```
+
 置き場の決め：`Label / LABELS` は `questions.ts`（ラベルは route の criteria のキーそのもの）。`Usage / RunPort / FlagsPort / JsonObject`（= `Record<string, unknown>`）は `state.ts`（状態の持ち主）。`RouteDeps / JudgeDeps / CommandDeps` は使う側のファイル（`hook/route.ts` / `hook/judge.ts` / `command.ts`）。`Ask / Answer / AskOutcome / RegistryModel / RegistryAnswer` は `classifier.ts`。
 
 pi の classifier の型は `@earendil-works/pi-ai` から取らない（この repo の依存に無く、pnpm は持ち上げない）。SDK の口から引き出す。
@@ -632,62 +637,115 @@ type RegistryAnswer = RegistryResult['answers'][string];
 
 ### Slice 1: 設定と質問文を固定し、上書きの読み口をつくる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2e16bde
 
 ### Slice 2: owner の発言1つ分の状態と、jev に渡す state を組み立てる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5b37506
 
 ### Slice 3: 判定と差し込みを1行1件で記録し、古い物を落とす
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 21e3077
 
 ### Slice 4: classifier の候補を順に試し、有料に落ちたら知らせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5d51785
 
 ### Slice 5: `before_agent_start` で分け、質問なら「編集せず調べろ」を1回だけ差し込む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ddcb73e
 
 ### Slice 6: `turn_end` で「もう答えられるか」を判定し、1回だけ止めて答えさせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c5f275c
 
 ### Slice 7: `/intent` でセッション中だけ切り、README を置く
 
 - Findings:
-- Unplanned:
-- Commit:
+  - review の子の読み（README の3点照合）を子で実行できず、既定値・記載・形状を直接照合した
+    - `left: この worktree には子を走らせる口（consult_run 等）が無く、review ロールでの読みを実行できない`
+- Unplanned: なし
+- Commit: 5f5113d
 
 ### Slice 8: 統合: 配線が1本につながり、実セッションのログに残るまで
 
 - Findings:
-- Unplanned:
-- Commit:
+  - look 実行 (`pi -e .pi/extensions/intent-router/index.ts --no-session -p "cycles/013-2026-10-09/design.md は何を決めた?"`) の `logs/2026-10-09.jsonl`: (1) `hook: "route"` が1件あり `label: "question"` (`confidence: 1`) / (2) `hook: "judge"` の行は無し（短い応答で `minTurns: 2` に届かず判定が出なかった）/ (3) 差し込みは出ていない（`shadow: true` で `guide: "would"`）。合否にはしない
+    - `left: judge 行の有無は応答の往復数と閾値で揺れるため、ここでは確認だけした`
+- Unplanned: なし
+- Commit: d97063f
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `README.md:13` / `README.ja.md:13` の拡張一覧が `consult` / `quality-gate` / `sound-notify` / `second-opinion` のままで、この差分が足した `.pi/extensions/intent-router/` を含まない
+    - `fixed: 両 README の拡張一覧に intent-router を足し、この2ファイルを ## Files に update で追記した`
+  - `.pi/extensions/intent-router/README.md:30` の「The file is read on every prompt」が `index.ts:96` と矛盾する。設定は `register` 時に1回だけ `readSettings` し、handler は閉じ込めた `settings` を使う。プロンプト毎に読み直さない
+    - `fixed: README の文を「register 時に1回だけ読み、変えたら reload」に直した`
 - Unlisted:
+  - なし
 - Gaps:
+  - `guide.enabled: false`（`hook/route.ts:181`）/ `stop.enabled: false`（`hook/judge.ts:263`）の分岐を叩く検査が無い。Slices 5・6 の Verify は shadow のみで、無効化で `guide` / `stop` が `none` になる経路を見ない
+    - `fixed: route.test と judge.test に無効化の検査を足し、guide / stop が none・text null になることを見た`
+  - `judge.enabled: false`（`hook/judge.ts:380`）を叩く検査が無い。対照的に `route.enabled: false` は `hook/route.test.ts:249` で叩く
+    - `fixed: judge.test に judge.enabled: false の検査を足し、ask もログも増えないことを見た`
+  - `decideRoute` の score回答→skip（`hook/route.ts:49`）と未知ラベル文字列→skip（`hook/route.ts:52-54`）の単位検査が無く、handler の skip 経路（actOn / idleOn のどちらにも無い）のログ検査も無い
+    - `fixed: 単位検査2件と handler の skip ログ検査2件（設定の穴は label 付き・未知文字列は label null）を足した。設定の穴の skip が label null で数を数えられない穴も見つけ、既知ラベルを残す直しと一緒に検査した`
+  - `isSecretTarget` の `.env` 以外（`state.ts:187-196` の `~/.pi/`・`id_rsa` / `id_ed25519`・`.pem` / `.key`）を叩く検査が無い。`state.test.ts:101` は `.env` のみ
+    - `fixed: state.test に秘密の的5種と非秘密の検査を足し、秘密混じりの記録が落ちることも見た`
+  - `due` が wait の時に行を作らないことの検査が空道具以外に無い（`hook/judge.ts:323`）。`hook/judge.test.ts:305` は道具0件のみで、助走・間隔・連続・上限・撃ち済み・idle の wait でログ件数を見ない。2回目テスト（`judge.test.ts:291`）も `requests` のみでログ件数を見ない
+    - `fixed: idle・助走・撃ち済み後の2回目・hold 直後の連続でログ件数を見ない検査を足し、2回目テストにもログ1件の検査を足した`
+  - `has_images`（`hook/route.ts:278`）・`truncated`（`hook/route.ts:148` と judge の `state['truncated']`）・`display`（`hook/route.ts:219` と `hook/judge.ts:312`）の伝搬を見る検査が無い。route.test は `cwd_basename` のみ、judge.test は `customType` / `content` のみを見る
+    - `fixed: route.test に画像・truncated・display の検査を、judge.test に display と maxStateChars を絞った truncated の検査を足した`
 - Unproven:
+  - `state.test.ts:72` の溢れ検査は件数と `truncated` のみで、どれを捨てたかを見ない。`state.ts:117` の `slice(1)` を `slice(0, -1)`（新しい方を捨てる）に変えても緑のまま
+    - `fixed: 溢れ検査に古い方（f0.ts）が落ち・新しい方（overflow.ts）が残ることを足した`
+  - `state.test.ts:90` の重複検査は同じ `result: 'ok'` を2回入れて `attempts` のみ見る。`state.ts:110` の `result` 上書きを消しても緑のまま
+    - `fixed: 重複検査を first / second の別文にし、attempts と最新文の両方を見るようにした`
+  - `hook/judge.test.ts:287` は `entries.content` を `stopMessage(...)` の戻り値と比べる自己一致で、`settings.ts:251` の `stop.text` に `{label}` が無いため置換を消しても緑のまま。対照的に route.test は文面を一字一句の literal で比べる
+    - `fixed: entries.content を一字一句の literal と比べ、stopMessage には {label} の置換検査を別に足した`
+  - `index.test.ts:190` の配線検査は `findOfType` が常に同モデルを返す偽物のため、`hook/judge.ts:327` の `only: run.candidate` を消して選び直しても2行・`owner_prompt` 一致のまま緑
+    - `fixed: findOfType が別モデルを返す偽物にし、route と judge の classify 先が可用と使い回しで分かれることを見る検査を足した`
+  - `command.test.ts:87-114` は前後空白無しの `off` / `on` / `''` / `maybe` のみで、`command.ts:35` の `trim()` を消しても緑のまま
+    - `fixed: 前後空白つきの on / off の検査を足した`
+  - `settings.test.ts:118` は `JUDGE_QUESTION.criteria` の件数と閾値の位置のみで中身の `0:` / `1:` / `2:` を見ない。`questions.ts:51-55` を `['a', 'b', 'c']` に変えても緑のまま
+    - `fixed: criteria の先頭の 0: / 1: / 2: を見る検査を足した`
+
+### Round 2
+
+- Stale:
+  - なし（README.md:13・README.ja.md:13 に intent-router を確認、## Files 30-33 に update 2件あり / extension README.md:30 が「register 時に1回だけ読み」に直り index.ts:96 の register 時1回の readSettings と一致）
+- Unlisted:
+  - なし
+- Gaps:
+  - なし（guide.enabled: false → route.ts:181-192 が guide none・text null で未返却を route.test:380-388 で確認 / stop.enabled: false → judge.ts:263-276 が stop none・text null で未返却を judge.test:372-380 で確認 / judge.enabled: false → judge.ts:380-382 が ask・ログ無しを judge.test:382-394 で確認 / decideRoute の score→skip・未知文字列→skip を route.ts:49-54 と route.test:215-227 で確認、handler の設定穴 skip は label 温存（route.ts:252）を route.test:352-361 で、未知文字列 skip は label null を route.test:363-378 で確認 / isSecretTarget の5種を state.ts:180-198 と state.test:113-128 で確認、秘密混じりの落下もあり / due の wait 無記録を judge.ts:323-325 に対し idle・助走・撃ち済み後の2回目・hold 直後の連続でログ件数確認 / 伝搬は route の has_images・truncated・display、judge の display・truncated を各 test で確認）
+- Unproven:
+  - なし（溢れは state.ts:117 の slice(1) が古い方捨てを state.test:88-89 で確認 / 重複は state.ts:110 の最新文上書きを state.test:94-101 で確認 / 停止文は judge.test:301-303 が literal 一致、stopMessage の {label} 置換は judge.test:289-291 と judge.ts:71-73 で別に確認 / 使い回しは index.test:225-239 が targets 分岐を見、judge.ts:327 の only を確認 / trim は command.ts:35 を command.test:116-125 で確認 / criteria 先頭の 0: / 1: / 2: は questions.ts:52-54 を settings.test:120-124 で確認）
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm run test:run`（worktree 全体）: 36ファイル / 604テスト、緑
+  - `pnpm run typecheck`: 緑
+  - `pnpm run lint`: 緑
+  - 壊しテスト3件（赤を確認して復元済み）:
+    - `hook/route.ts:57` の `>=` を `>` に → `hook/route.test.ts` が 1 件赤（閾値ちょうどの境界）
+    - `hook/judge.ts:327` の `only: run.candidate` を外す → `index.test.ts` と `hook/judge.test.ts` が 1 件赤（route が選んだ候補を使い回す契約）
+    - `hook/judge.ts:307` の `entries` を空に → `hook/judge.test.ts` が 3 件赤（止める差し込み）
+  - 統合スライス8の `look`: worktree で `pi -e .pi/extensions/intent-router/index.ts --no-session -p "…design.md と definition.md を読んで…"` を1回走らせ、`logs/2026-10-09.jsonl` を読んだ。route 2件（`label: question`, confidence 1, `decision: act`, shadow なので `guide: would`）と judge 2件（turn 1: score 1.04 / confidence 0.82 → `hold`、turn 2: score 1.18 / confidence 0.69 → `hold`、`stop: none`）。差し込みは無し（shadow の既定）。費用は $0、latency 454〜817ms。`text` の抜粋が 40 字で切れているのも仕様通り
+  - スライス7の `read`（子では走らせられなかった分を親が実行）: `review` の子が README の設定表と `defaultSettings()` を突き合わせ、30行すべて一致・欠けも余りも無しと報告。`/intent on|off` と `logs/` の記載もあり。形は `second-opinion/README.md` と同系（`Commands` / `Settings` / `The code` は対応、`Hooks` は `Tools` の位置、`Log` は独自、`What comes back` に対応物なし）
+- Findings: なし
