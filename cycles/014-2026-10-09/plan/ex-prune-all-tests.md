@@ -9,7 +9,7 @@ scripts/product-ready/
   index.test.ts                update
   cli.mjs                      （触らない）
   index.mjs                    （触らない）
-  prune-tests.mjs              （触らない）
+  prune-tests.mjs              update（コメントだけ）
   prune-cycles.mjs             （触らない）
 ```
 
@@ -40,7 +40,9 @@ README.ja.md                   update
        - 同じ木に `test/keep.test.ts` と `src/keep.test.ts` を足す → 4本のまま（happy。名指しの外は食わない）
        - `node_modules/a.test.ts` と `.git/b.test.ts` を置く → 返らない（happy。名指しの外）
        - `test/env.test.ts` だけ無い木 → 残りを返す（empty。無い対象は飛ばす）
-       - `scripts/product-ready/z.spec.ts` を置く → 拾う（boundary values。vitest の既定 include）
+       - `scripts/product-ready/z.spec.ts` を置く → 拾う（boundary values。vitest の既定 include。base の木に置いて本数で見る）
+       - `.pi/node_modules/a.test.ts` を置く → 返らない（boundary values。名指しの中の入れ子でも skip が効く）
+       - `findTests(root, ['test/setup.ts'])` → `[]`（invalid input。名指しでもテストでない物は拾わない）
        - 無い root → 投げる（error。黙って成功しない）
        - `removeTests` を2回呼ぶ → 2回目は `[]`（boundary values。2回目）
        - 権限: 当てはまらない（一時ディレクトリだけ）
@@ -104,9 +106,23 @@ README.ja.md                   update
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `Files: index.test.ts update` が偽（子は触らず、`Notes` の Unplanned が自認）
+  - `prune-tests.mjs:5` の「ハーネスのテストを消す入口」が `.pi/` だけに読める
+  - `index.test.ts:59` の「test/ は残る」と `:69` の「.pi/ のテストだけが消える」が偽（一般には `test/env.test.ts` が消える。`makeTree` がそれを置かないため緑だった）
+  - `Slice 4 Verify (3)` の文面（親が `c264568` で「写しから `test/keep.test.ts` を外し」に直した）
+- Unlisted: なし（子は `git diff` を child-guard で走らせられず、親 HEAD との目視比較だった。親が diff で確認した）
 - Gaps:
+  - 新しい削除範囲の統合カバーが無い（`index.test.ts` の木に `test/env.test.ts` と `scripts/product-ready/*.test.ts` が無い）
+  - `targets.mjs` の `node_modules` / `.git` の skip を効かせる入れ子のケースが無い
+  - 名指しのファイルが `isTestFile` を通らない（非テストを名指しすると消える）
 - Unproven:
+  - Slice 4 の Verify (1)(2)(4) と `test:run` の出力記録が無い（`## Acceptance` で記録する）
+  - `.spec.ts` のケースが本数を見ない（名指しの中での既定 include の証明になっていない）
+
+- fixed: `0b9b0c1` `index.test.ts` の木に名指しの3つを置き、`test/env.test.ts` と道具自身のテストが消え、名指しの外（`test/keep.test.ts`）が残ることを見た。偽の文面も直した
+- fixed: `9b98573` 名指しのファイルも `isTestFile` で見るようにし、`findTests(root, targets = TEST_TARGETS)` にした（テストできる形）
+- fixed: `874bd8a` 入れ子の skip・名指しの非テスト・`.spec.ts` の本数をテストに足した
+- fixed: `734bce0` `prune-tests.mjs` のコメントを「名指しのテスト（`targets.mjs` の `TEST_TARGETS`）を消す入口」に直した
 
 ## Acceptance
 
