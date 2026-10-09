@@ -25,12 +25,17 @@ The texts handed to children are in `references/tasks.md`.
 - the design's `Where`: worktree, or base
 - the state: `Commit` filled is done, `Stopped` is interrupted, neither is not started
 
-### 2. Set the place
+### 2. Commit the documents
+
+- Commit the files associated with this cycle: `definition.md`, `adr.md`, `design.md`, and `plan/*.md`.
+- Use the commit message: `update: NNN's definition, ADR, design and plan`
+
+### 3. Set the place
 
 - a worktree plan: `consult_worktree new <plan id>`, and keep the base hash (`git rev-parse HEAD`) for the review
 - a `base` plan: nothing to make; the parent works in its own tree
 
-### 3. Run the slices
+### 4. Run the slices
 
 - hand the plan md to one `code` child in the worktree: the slices in order, as far as it can. The task is in `references/tasks.md`
 - the child runs each slice's check, commits after it passes, and writes that slice's record
@@ -40,14 +45,14 @@ The texts handed to children are in `references/tasks.md`.
   - what the work cannot absorb goes to the ADR, which decides: drop the plan (write `Stopped` and the reason in the parent's plan md, commit it in the base, remove the worktree, no merge), or take another approach
 - a `base` plan: the parent does the slices. Show the owner after each one, and wait for their OK before committing
 
-### 4. The review
+### 5. The review
 
 - when the slices are done: a `review` child, in the worktree (the parent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
 - it writes `## Review`, `### Round 1`, under the four viewpoints
 - the fixing child is a `code` child, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. Two rounds: a Round 1 that finds nothing ends the review, and a Round 2 that still finds the same thing goes to the owner
 
-### 5. The acceptance
+### 6. The acceptance
 
 - the parent runs the plan's checks (the integration slice included) and the whole typecheck and test, in the worktree (or the base)
 - and for two or three of the behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
@@ -55,7 +60,7 @@ The texts handed to children are in `references/tasks.md`.
 - a `Findings` line is a fix instruction for a `code` child; when it is fixed, the acceptance runs again and is written again
 - commit it in the worktree: `consult(<plan id>): acceptance`
 
-### 6. The merge
+### 7. The merge
 
 - in the parent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there
 - one constraint rules the order: a plan that waits for another (the head sentence's "what it waits for") has not merged yet. Nothing else fixes the order: a done plan merges when it is done
@@ -64,7 +69,7 @@ The texts handed to children are in `references/tasks.md`.
 - green means done: `consult_worktree remove <plan id>`
 - a `base` plan has nothing to merge
 
-### 7. Report
+### 8. Report
 
 - once, to the owner: what the plan delivered, the holes the record holds, and what the next plan waits on
 - when every plan of the cycle is done: the cycle goes to `close`
