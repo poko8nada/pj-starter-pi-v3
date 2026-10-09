@@ -73,26 +73,30 @@ README.ja.md                   update
 
 ### Slice 1: 対象を名指しに変え、名指しの外を食わないことをテストで固定する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1ad7fbe
 
 ### Slice 2: 0本でも緑にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d661925
 
 ### Slice 3: README 2枚の Getting started を新しい意図に直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 09b6d0d
 
 ### Slice 4: 統合: 写しの上で0本になり、0本でも緑で、プロダクトのテストは食われない
 
 - Findings:
+  - 計画の Verify (3) は `test/keep.test.ts` が写しに残ったままでは 0 本にならない（vitest が 1 本を見つける）。keep を除いた写しでは exit 0 で `No test files found`（`passWithNoTests` の効果）。写しでの vitest 実行には `node_modules` の symlink が要る（`vitest/config` の解決のため）
+    - `left: Verify (3) の文面は変えず、0 本確認は keep 除去後に行う手順として記録する（keep を消す側に倒すのは誤りのため。文面の直しは親・review に委ねる）`
+  - keep を置いたまま写しで vitest を走らせると 1 passed になり、プロダクトのテストが食われずに動くことを確認した
 - Unplanned:
+  - `scripts/product-ready/index.test.ts` は Files で `update` だが、新しい名指しの下でも既存の検査（プロダクトのテストが残る）が緑のままなので触らなかった
 - Commit:
 
 ## Review
