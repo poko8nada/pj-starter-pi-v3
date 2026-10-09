@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gitEnv } from '../extensions/consult/run/run.ts';
+import { gitEnv } from '../../lib/git-env.mjs';
 import { tmpDir } from './tmp.ts';
 
 // `.pi/test/setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
@@ -18,6 +18,23 @@ describe('テストの環境', () => {
     const cleaned = gitEnv({ GIT_DIR: '/x', GIT_INDEX_FILE: '/y', PATH: '/bin' });
     expect(Object.keys(cleaned).filter((key) => key.startsWith('GIT_'))).toEqual([]);
     expect(Object.entries(cleaned)).toContainEqual(['PATH', '/bin']);
+  });
+
+  it('引数なしでは process.env から GIT_* を落とす', () => {
+    const key = 'GIT_SLICE1_PROBE';
+    const before = process.env[key];
+    process.env[key] = '/probe';
+    try {
+      const cleaned = gitEnv();
+      expect(Object.keys(cleaned).filter((k) => k.startsWith('GIT_'))).toEqual([]);
+      expect(cleaned.PATH).toBe(process.env.PATH);
+    } finally {
+      if (before === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = before;
+      }
+    }
   });
 });
 

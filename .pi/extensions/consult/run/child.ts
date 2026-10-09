@@ -8,13 +8,13 @@
 
 import { join } from 'node:path';
 import {
-  gitEnv,
   installDependencies,
   runPi,
   runWithFallback,
   type InstallOutcome,
   type RunResult,
 } from './run.ts';
+import { gitEnv } from '../../../../lib/git-env.mjs';
 import { buildPiArgs, joinPrompt, needsIsolation } from '../child/spec.ts';
 import type { ConsultOptions } from '../child/spec.ts';
 import type { TypePolicy } from '../policy/types.ts';

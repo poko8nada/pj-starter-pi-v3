@@ -13,7 +13,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { gitEnv } from './run.ts';
+import { gitEnv } from '../../../../lib/git-env.mjs';
 
 /** consult の作業場をまとめる場所 */
 export const CONSULT_ROOT = '/tmp/pi-consult';

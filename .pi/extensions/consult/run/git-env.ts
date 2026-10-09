@@ -1,7 +1,7 @@
 /** 検査が git に使わせる置き場（repo / config / HOME）を自分で決める。環境は継承しない */
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import { join } from 'node:path';
-import { gitEnv } from './run.ts';
+import { gitEnv } from '../../../../lib/git-env.mjs';
 
 /** `repo` と `home` を置き場として決めた環境を返す。`home` は config と `HOME` の置き場 */
 export function gitEnvFor(repo: string, home: string): NodeJS.ProcessEnv {
