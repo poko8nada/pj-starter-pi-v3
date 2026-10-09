@@ -25,7 +25,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 pnpm install
 ```
 
-1. Run `pnpm product:ready` to make the clone yours — it lists what would go (the starter's own `cycles/` and the harness tests under `.pi/`). Nothing is deleted until you add `--run`
+1. Run `pnpm product:ready` once to make the clone yours — it lists what would go (the tests in the named places and the starter's own `cycles/`). Nothing is deleted until you add `--run`. Run it before writing your own tests; afterwards you start from zero tests
 2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
