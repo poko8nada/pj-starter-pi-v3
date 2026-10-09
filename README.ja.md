@@ -25,7 +25,7 @@ English: [README.md](README.md)
 pnpm install
 ```
 
-1. `cycles/` を消す — このスターター自身のサイクル。clone 先には持ち込まない
+1. `pnpm product:ready` で clone を自分の物にする — 消える物（このスターター自身の `cycles/` と `.pi/` の下のハーネスのテスト）を先に並べる。消すのは `--run` を足したときだけ
 2. `.pi/extensions/consult/types.json` がリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 

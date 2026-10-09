@@ -240,8 +240,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 5: 3つの入口を書き、package に `product:ready` を登録する
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 429fad7
 
 ### Slice 6: README 2枚の「Getting started」を、手で消す手順から `pnpm product:ready` に変える
 
