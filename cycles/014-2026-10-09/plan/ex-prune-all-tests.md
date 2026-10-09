@@ -64,7 +64,7 @@ README.ja.md                   update
 4. 統合: 写しの上で0本になり、0本でも緑で、プロダクトのテストは食われない
    - I/O: なし
    - Verify:
-     - cli: worktree で4つ走らせ、出力を読む。(1) `node scripts/product-ready/index.mjs`（引数なし）— 名指しの3つと本数が出て、`git status --short` が前後で変わらない／(2) `tmpDir()` に写しを作り（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`）、そこに `test/keep.test.ts` を置いて `node scripts/product-ready/index.mjs --root <写し> --run` → 名指しのテストが0本になり、`test/keep.test.ts` は残る／(3) 写しで `node <worktree>/node_modules/vitest/vitest.mjs run --root <写し>` → 0本で exit 0（`No test files found`）／(4) 2回目の `--run` → 静かに終わる（冪等）
+     - cli: worktree で4つ走らせ、出力を読む。(1) `node scripts/product-ready/index.mjs`（引数なし）— 名指しの3つと本数が出て、`git status --short` が前後で変わらない／(2) `tmpDir()` に写しを作り（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`）、そこに `test/keep.test.ts` を置いて `node scripts/product-ready/index.mjs --root <写し> --run` → 名指しのテストが0本になり、`test/keep.test.ts` は残る／(3) 写しから `test/keep.test.ts` を外し、`node <worktree>/node_modules/vitest/vitest.mjs run --root <写し>` → 0本で exit 0（`No test files found`）。写しには `node_modules` の symlink を張る（`vitest/config` の解決のため）／(4) 2回目の `--run` → 静かに終わる（冪等）
      - test: `pnpm run test:run scripts/product-ready` — 既存21件と新しいケースが緑
    - Steps:
      1. 上の4つを走らせ、結果を記録する
@@ -97,7 +97,7 @@ README.ja.md                   update
   - keep を置いたまま写しで vitest を走らせると 1 passed になり、プロダクトのテストが食われずに動くことを確認した
 - Unplanned:
   - `scripts/product-ready/index.test.ts` は Files で `update` だが、新しい名指しの下でも既存の検査（プロダクトのテストが残る）が緑のままなので触らなかった
-- Commit:
+- Commit: 1227f57
 
 ## Review
 
