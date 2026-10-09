@@ -61,6 +61,15 @@ describe('findTests', () => {
     expect(found).not.toContain(join(root, '.git', 'b.test.ts'));
   });
 
+  it('名指しの内側の node_modules/ は返らない', () => {
+    const root = tmpDir();
+    writeBase(root);
+    writeFile(join(root, '.pi', 'node_modules', 'a.test.ts'));
+    const found = findTests(root);
+    expect(found).toHaveLength(4);
+    expect(found).not.toContain(join(root, '.pi', 'node_modules', 'a.test.ts'));
+  });
+
   it('無い対象は飛ばす（test/env.test.ts だけ無い木 → 残りを返す）', () => {
     const root = tmpDir();
     const piX = join(root, '.pi', 'x.test.ts');
@@ -78,10 +87,21 @@ describe('findTests', () => {
 
   it('vitest の既定 include（.spec.ts）も拾う', () => {
     const root = tmpDir();
+    const base = writeBase(root);
     const spec = join(root, 'scripts', 'product-ready', 'z.spec.ts');
     writeFile(spec);
     const found = findTests(root);
+    expect(found).toHaveLength(5);
+    expect(found).toContain(base.piX);
+    expect(found).toContain(base.readyZ);
+    expect(found).toContain(base.env);
     expect(found).toContain(spec);
+  });
+
+  it('テストでない名指し（test/setup.ts）は拾わない', () => {
+    const root = tmpDir();
+    writeFile(join(root, 'test', 'setup.ts'));
+    expect(findTests(root, ['test/setup.ts'])).toEqual([]);
   });
 
   it('対象が何も無い root → []（投げない）', () => {
