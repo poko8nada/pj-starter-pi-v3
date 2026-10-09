@@ -27,7 +27,7 @@ export interface ClassifierChoiceQuestion {
 export interface ClassifierScoreQuestion {
   readonly type: 'score';
   readonly instructions: string;
-  readonly criteria: readonly string[];
+  readonly criteria: string[];
 }
 
 export const ROUTE_QUESTION: ClassifierChoiceQuestion = {
