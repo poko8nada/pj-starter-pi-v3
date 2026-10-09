@@ -101,20 +101,31 @@ README 2枚は plan 2 も触る（29行目）。plan 1 はその前に走る。
 
 ### Slice 4: 統合: second-opinion の痕跡が消え、残るテストが緑のまま
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 91a91db
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし（`.pi/` に `second_opinion` / `second-opinion` の残りなし、`README.md` / `README.ja.md` の一覧から除去済み、`consult/index.ts:76` の "a second opinion" は plan が触らないと明記した物）
 - Unlisted:
+  - なし（`149b0c3..HEAD` の `D` 22件は Files の22件と一致、`M` 3件は `SKILL.md` + `README` 2枚の `update` と一致、残る `M` は plan 自身の Notes）
 - Gaps:
+  - なし（削除は `test !-e` + `grep`、手順6の5点は direct read、README 4名残りは `grep`、残テスト緑 + 陽性対照は slice 4 が持ち、`review` 子の成立は ADR 01-1 Trial が既決で check は restate しない）
 - Unproven:
+  - なし（残るテストの追加・変更なし、消えた9本は削除対象自身で残存テストに `second_opinion` を名指す物なし）
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` — 27ファイル / 426テストが緑（統合スライス）
+  - `pnpm typecheck` / `pnpm lint` — 緑
+  - `test ! -e .pi/extensions/second-opinion` — 真。`grep -rn "second_opinion\|second-opinion" .pi/` と `README.md` / `README.ja.md` — 0件。リポジトリ全体（`cycles/` を除く）でも0件。陽性対照 `grep -n "a second opinion" .pi/extensions/consult/index.ts` — 1件
+  - `adr` スキルの手順6を親が読んだ（ADR 03-1 の受け）：`review` の子に1回、`cycles/<NNN>/adr.md` を渡し、考慮もれ・調査もれ・実験もれの3観点、穴と自分の答えを owner に見せてから `Highlight` に載せる、到着は後続メッセージでよい、の5点を確認
+  - 壊しテスト3つ（A: `.pi/extensions/second-opinion/` を作り直す → `test ! -e` が赤／B: `adr/SKILL.md` に `second_opinion` を書き戻す → `.pi/` の grep が赤／C: `README.md` に `second-opinion` の行を足す → README の grep が赤）。3つとも赤を確認して戻した
 - Findings:
+  - slice 2 の `read` は子に走らせる口（`consult_run`）が無く `left:` になった（`## Notes` の slice 2）
+    - fixed: 親が acceptance で `.pi/skills/adr/SKILL.md` の手順6を読み、5点を確認した（ADR 03-1 の「親は acceptance で念のため読む」どおり）
