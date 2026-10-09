@@ -48,7 +48,7 @@
 - agent-rules: エージェントが、毎セッション同じ規則を読む
 - readme: owner が、このスターターの使い方を読める **update** (ADR 01-1, 02-1)
 - product-ready: owner が、ハーネス自身の物（テストとサイクル記録）を外して、プロダクト開発を始められる **add** (ADR 02-1)
-  - .tests: ハーネスのテスト（`.pi/` の下）を外せる。テストとスクリプトの足場（`test/`、`lib/git-env.mjs`）は残る **add** (ADR 02-1)
+  - .tests: 名指しした場所（`.pi/`、`scripts/product-ready/`、`test/env.test.ts`）のテストを外せる。開始時にテストがゼロになる。テストとスクリプトの足場（`test/`、`lib/git-env.mjs`）は残る **add** (ADR 02-1, 02-2)
   - .cycles: サイクルのフォルダを消せる **add** (ADR 02-1)
   - .report: 消える物を先に見られる（引数なしは表示だけ、`--run` で実行） **add** (ADR 02-1)
 - adr-skill: エージェントが、決めるべきことを調べ、決めて記録できる **update** (ADR 01-1)

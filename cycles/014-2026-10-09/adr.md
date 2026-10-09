@@ -54,6 +54,29 @@
    - `lib/git-env.mjs` へ移せば、番人の `gitEnv` の1件はそのまま生き、分ける必要は無い（移す先が prune の後も残る場所になるため）
 5. Decision: **accepted**
 
+### 02-2: product-ready
+
+1. Agenda:
+   - Title: `product-ready` は、どのテストまで外すのか
+   - Proposal: 対象を root の walk と除外ではなく、**名指しの一覧**に変える（`TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts']`。ディレクトリかテストのファイル）。パターンは vitest の既定 include に合わせる。`vitest.config.ts` に `passWithNoTests: true` を足す。`test/README.md` の番人の行、`index.test.ts` と `targets.test.ts` の古い意図、README 2枚の Getting started を直す
+2. Highlight:
+   - owner の判断: 正しい意図は「**プロダクトとしてスタートした時点でテストがゼロ**」。道具自身のテスト（`scripts/product-ready/*.test.ts`）も番人（`test/env.test.ts`）もハーネスの物なので、一緒に外す
+   - owner の判断の理由（02-1 の親の推しを覆した所）: 番人は「足場（`setup.ts` / `tmp.ts`）が今のままであること」を前提にする。プロダクトが足場を作り変えるのは正当な選択で、その時に番人が赤くなる。ハーネスの形を押し付けるテストはプロダクトの物ではない
+   - 代償: テストが0本だと `vitest run` は exit 1（014 のトライアルで実測）。`passWithNoTests: true`（vitest 4 の設定、`test` の root オプション）を入れないと、プロダクト開始直後の `pnpm test:run` と pre-push（typecheck + test）が赤くなる。**02-1 の「`passWithNoTests` は入れない」を、このエントリが上書きする**
+   - 残る物: 足場（`test/setup.ts` / `test/tmp.ts` / `test/README.md`）と `lib/git-env.mjs`。`test/README.md` は番人の行を落とし、テストはプロダクトがゼロから書くことを書く
+   - 実数: いまの `*.test.ts` は30本（`.pi/` 26・`scripts/product-ready/` 3・`test/` 1）。`product-ready --run` の後は0本
+   - 触らない物: `lefthook.yaml`（pre-commit の `test:related` は0本でも exit 0、pre-push は `passWithNoTests` で緑）と `package.json` の test 系
+   - 落とした案: 番人だけ残す（02-1 の判断。上の理由で覆した）／`passWithNoTests` を入れずに赤を受け入れる（プロダクトの最初の push が通らない）
+   - 指摘への答え（ADR レビュー19件。ほぼ全部採る）:
+     - owner の判断（形）: 対象は root を歩いて除外するのではなく、**名指し**する。`test/` はディレクトリではなく `test/env.test.ts` という**ファイル**で名指しする（`test/` はプロダクトのテストの置き場だから）。これで除外が消え、名指しの外のテストは構造的に消えない
+     - ex-plan が運ぶ物: `TEST_TARGETS` と walk（ディレクトリは歩き、ファイルはそのまま取る。無い対象は飛ばす）／パターンは vitest の既定 include と同じ形（`.test.ts` / `.spec.ts` / `.test.tsx` など。ずれると「0本」が言えない）／`index.test.ts` の古い意図（プロダクトのテストが残る）／README 2枚の Getting started（いまは「`.pi/` の下のハーネスのテスト」）と「一度きり、プロダクトのテストを書く前に走らせる」／close.md の Integration の2ケース
+     - 文面で受ける物: 足場はテストなしで残る（プロダクトが最初のテストを書いた時に初めて動く）／`passWithNoTests` でも「No test files found」は表示に残る（黙らない）／道具（5つの `.mjs`）は残す（一度きりの道具で、消すのはテストだけ）／空になったディレクトリは残る（git は追わない）／表示に「どの対象を歩いたか」を出す
+     - Trial で確かめる物（ex-plan の Verify）: 名指しの3つを集める／`test/keep.test.ts` のような名指しの外は消えない（プロダクトのテストを食わない）／`node_modules` や `.git` のテストは歩かない／`.spec.ts` も拾う／無い対象は飛ばす／0本の写しで `test:run` が exit 0（`passWithNoTests`）／自己削除の後に0本・typecheck・lint・2回目の冪等／プロダクトが `test/tmp.ts` で最初のテストを書けること／実 repo の写しで30→0
+     - `setupFiles` は0本の時には走らない（足場の副作用はプロダクトの最初のテストで初めて出る）。権限エラーなどで歩けないディレクトリは投げる（自分の repo なので場所が見えた方が良い）
+3. Research: なし（`passWithNoTests` は vitest 4 の設定にあり、`test` の root オプション）
+4. Trial: なし（014 のトライアルが、テスト0本で `vitest run` が exit 1・`vitest related` が exit 0 を実測している）
+5. Decision: **accepted**
+
 ## 03: plan-skill
 
 ### 03-1: plan-skill
