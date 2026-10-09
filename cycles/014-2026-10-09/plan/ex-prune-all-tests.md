@@ -20,7 +20,7 @@ README.md                      update
 README.ja.md                   update
 ```
 
-対象は「ディレクトリか、テストのファイル」。`test/` をディレクトリで名指ししない（プロダクトのテストの置き場だから）。`findCycles` は今のまま（`cycles/` のフォルダごと）。`index.mjs` / `prune-tests.mjs` / `prune-cycles.mjs` / `cli.mjs` は `findTests` の呼び方だけなので触らない。
+対象は「ディレクトリか、テストのファイル」。`test/` をディレクトリで名指ししない（プロダクトのテストの置き場だから）。`findCycles` は今のまま（`cycles/` のフォルダごと）。`index.mjs` / `prune-cycles.mjs` / `cli.mjs` は `findTests` の呼び方だけなので触らない（`prune-tests.mjs` はコメントだけ直す）。
 
 ## Slices
 
@@ -32,7 +32,8 @@ README.ja.md                   update
      export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts'];
 
      /** @returns {readonly string[]} 名指しの中のテスト（絶対パス、昇順）。無い対象は飛ばす */
-     export function findTests(root) {}
+     export function findTests(root, targets = TEST_TARGETS) {}
+     // 名指しのファイルも isTestFile で見てから取る（テストでない名指しは拾わない）
      ```
    - Verify:
      - test: `pnpm run test:run scripts/product-ready/targets.test.ts`
@@ -47,7 +48,7 @@ README.ja.md                   update
        - `removeTests` を2回呼ぶ → 2回目は `[]`（boundary values。2回目）
        - 権限: 当てはまらない（一時ディレクトリだけ）
    - Steps:
-     1. `scripts/product-ready/targets.mjs`: `TEST_TARGETS` と `findTests` を書く。対象ごとに `existsSync` し、ディレクトリなら今の walk、ファイルならそのまま取る。パターンは vitest の既定 include（`**/*.{test,spec}.?(c|m)[jt]s?(x)`）に合わせ、ずれると「0本」が言えないことをコメントに書く
+     1. `scripts/product-ready/targets.mjs`: `TEST_TARGETS` と `findTests(root, targets = TEST_TARGETS)` を書く。対象ごとに `existsSync` し、ディレクトリなら今の walk、ファイルは `isTestFile` で見てから取る。パターンは vitest の既定 include（`**/*.{test,spec}.?(c|m)[jt]s?(x)`）に合わせ、ずれると「0本」が言えないことをコメントに書く
      2. `scripts/product-ready/targets.test.ts`: 上のケースを書く。既存のケース（`.pi/` だけ、`test/` は対象外）を新しい対象に合わせて直す
 2. 0本でも緑にする
    - I/O: なし（設定と文書）
@@ -99,6 +100,7 @@ README.ja.md                   update
   - keep を置いたまま写しで vitest を走らせると 1 passed になり、プロダクトのテストが食われずに動くことを確認した
 - Unplanned:
   - `scripts/product-ready/index.test.ts` は Files で `update` だが、新しい名指しの下でも既存の検査（プロダクトのテストが残る）が緑のままなので触らなかった
+    - その後 Round 1 の `0b9b0c1` が `index.test.ts` を書き換えた（木に名指しの3つを置き、`test/env.test.ts` と道具自身のテストが消えることを検査）。この Unplanned はそこで解消した
 - Commit: 1227f57
 
 ## Review
