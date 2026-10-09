@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { gitEnv } from '../../lib/git-env.mjs';
+import { gitEnv } from '../lib/git-env.mjs';
 import { tmpDir } from './tmp.ts';
 
-// `.pi/test/setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
+// `test/setup.ts` が効いているかを、テストの側から見る。ここが赤くなると、フックの中でテストが本体を汚せる状態に戻っている。
 
 describe('テストの環境', () => {
   it('フックの GIT_* を引き継がず、HOME が一時ディレクトリを指す', () => {

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tmpDir } from '../../../../test/tmp.ts';
 import type { Answer, Ask, AskOutcome, AskRequest } from '../classifier.ts';
 import { append, type LogRecord } from '../log.ts';
 import { defaultSettings, type Settings } from '../settings.ts';

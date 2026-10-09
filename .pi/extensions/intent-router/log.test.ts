@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { append, logPath, prune, type LogRecord } from './log.ts';
 import { defaultSettings } from './settings.ts';
 

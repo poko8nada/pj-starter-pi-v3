@@ -208,8 +208,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 1: `gitEnv` を `lib/git-env.mjs` へ出し、consult をその import に変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 1dcdc60
 
 ### Slice 2: テストの足場を `test/` へ移し、`vitest` の参照先と14本の import を変える
 

@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { changedSince, fingerprint, parseStatus } from './targets.ts';
 
 // porcelain の解析と差分だけを試す。git の起動は実際のリポジトリが要るので扱わない。
