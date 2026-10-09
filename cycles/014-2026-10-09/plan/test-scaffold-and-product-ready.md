@@ -224,8 +224,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 3: スキルの `.pi/test/` を `test/` に直し、plan スキルの `read` に実行主体を書く
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 21e41a2
 
 ### Slice 4: `prune` の芯を書き、消える物の数え方と消し方をテストで固定する
 
