@@ -248,8 +248,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 6: README 2枚の「Getting started」を、手で消す手順から `pnpm product:ready` に変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bdb5b56
 
 ### Slice 7: 統合: 足場が `test/` にあり、`product:ready` が表示だけをして、スイートが緑
 
