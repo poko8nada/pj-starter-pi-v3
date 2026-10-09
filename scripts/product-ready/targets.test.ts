@@ -70,6 +70,15 @@ describe('findTests', () => {
     expect(found).not.toContain(join(root, '.pi', 'node_modules', 'a.test.ts'));
   });
 
+  it('名指しの内側の .git/ は返らない', () => {
+    const root = tmpDir();
+    writeBase(root);
+    writeFile(join(root, '.pi', '.git', 'a.test.ts'));
+    const found = findTests(root);
+    expect(found).toHaveLength(4);
+    expect(found).not.toContain(join(root, '.pi', '.git', 'a.test.ts'));
+  });
+
   it('無い対象は飛ばす（test/env.test.ts だけ無い木 → 残りを返す）', () => {
     const root = tmpDir();
     const piX = join(root, '.pi', 'x.test.ts');
