@@ -43,6 +43,7 @@ README.ja.md                   update
        - `test/env.test.ts` だけ無い木 → 残りを返す（empty。無い対象は飛ばす）
        - `scripts/product-ready/z.spec.ts` を置く → 拾う（boundary values。vitest の既定 include。base の木に置いて本数で見る）
        - `.pi/node_modules/a.test.ts` を置く → 返らない（boundary values。名指しの中の入れ子でも skip が効く）
+       - `.pi/.git/a.test.ts` を置く → 返らない（boundary values。skip の `.git` 側）
        - `findTests(root, ['test/setup.ts'])` → `[]`（invalid input。名指しでもテストでない物は拾わない）
        - 無い root → 投げる（error。黙って成功しない）
        - `removeTests` を2回呼ぶ → 2回目は `[]`（boundary values。2回目）
@@ -97,6 +98,7 @@ README.ja.md                   update
 - Findings:
   - 計画の Verify (3) は `test/keep.test.ts` が写しに残ったままでは 0 本にならない（vitest が 1 本を見つける）。keep を除いた写しでは exit 0 で `No test files found`（`passWithNoTests` の効果）。写しでの vitest 実行には `node_modules` の symlink が要る（`vitest/config` の解決のため）
     - `left: Verify (3) の文面は変えず、0 本確認は keep 除去後に行う手順として記録する（keep を消す側に倒すのは誤りのため。文面の直しは親・review に委ねる）`
+      - 親が `c264568` で Verify (3) を「写しから `test/keep.test.ts` を外し」に直した。この `left:` はそこで閉じた
   - keep を置いたまま写しで vitest を走らせると 1 passed になり、プロダクトのテストが食われずに動くことを確認した
 - Unplanned:
   - `scripts/product-ready/index.test.ts` は Files で `update` だが、新しい名指しの下でも既存の検査（プロダクトのテストが残る）が緑のままなので触らなかった
@@ -140,8 +142,23 @@ README.ja.md                   update
   - `## Acceptance` の Ran / Findings が空（ただし review が見た snapshot は `46a0e80` で、`806d702` で記入済み。指摘の時点で古い）
 
 - fixed: `83f1fb5` L23・I/O・Steps の文面を最終形に合わせ、`Notes` の Unplanned に解消の一行を足した
-- fixed: `b5664ad` 入れ子の `.git`（`.pi/sub/.git/c.test.ts`）が返らないケースを足した
+- fixed: `b5664ad` 入れ子の `.git`（`.pi/.git/a.test.ts`）が返らないケースを足した
 - fixed: `## Acceptance` は `806d702` で記入済み（review が見た snapshot より後）
+
+### Round 3
+
+- Stale:
+  - Slice 1 の Verify が入れ子の `.git` のケースを載せていない（`b5664ad` で足した）
+  - Round 2 の `fixed: b5664ad` のパスが `.pi/sub/.git/c.test.ts`（実際は `.pi/.git/a.test.ts`）
+  - `Notes` Slice 4 の `left:`（Verify (3) の文面）が、親の `c264568` の後で古い
+  - `## Acceptance` の壊しテストの数字が `b5664ad` の前の物（A は5件ではなく6件、B は総数が 13）
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+
+- fixed: Slice 1 の Verify に `.pi/.git/a.test.ts` のケースを足し、Round 2 の `fixed:` のパスを直した
+- fixed: `Notes` Slice 4 の `left:` に、`c264568` で閉じたことを書き足した
+- fixed: `## Acceptance` の数字を取り直した（A: 6 failed | 7 passed (13) / B: 1 failed | 12 passed (13) / C: exit 1）
 
 ## Acceptance
 
@@ -152,8 +169,8 @@ README.ja.md                   update
   - 写し（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`・`node_modules` の symlink）に `test/keep.test.ts` を置き、`--root <写し> --run`: 名指しのテストは0本、`test/env.test.ts` は消え、`test/keep.test.ts` は残る。2回目は `no tests to remove` / `no cycles to remove` で exit 0（冪等）
   - 写しから `test/keep.test.ts` を外して `vitest run --root <写し>`: `No test files found, exiting with code 0`
 - 壊しテスト（3つとも赤）:
-  - `TEST_TARGETS` から `test/env.test.ts` を外す → `targets.test.ts` の5件が赤（名指しの3つ・食わない・入れ子の skip・.spec）
-  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed / 11 passed）
+  - `TEST_TARGETS` から `test/env.test.ts` を外す → `writeBase` を使う6件が赤（6 failed | 7 passed (13)）
+  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed | 12 passed (13)）
   - `vitest.config.ts` の `passWithNoTests: true` を外す → 0本の写しが `No test files found, exiting with code 1`（対照: フラグありは exit 0）
 - Findings:
   - plan の Verify (3) は「写しから `test/keep.test.ts` を外し」に親が直した（`c264568`）。`Notes` Slice 4 の `left:` はこの直しで閉じた
