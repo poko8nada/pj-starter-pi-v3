@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tmpDir } from '../../../../test/tmp.ts';
 import type { ConsultMessage, ConsultSendOptions, PiFace } from '../tool/consult.ts';
 import { createDelivery } from './delivery.ts';
 import { readRuns, type RunRecord } from './log.ts';

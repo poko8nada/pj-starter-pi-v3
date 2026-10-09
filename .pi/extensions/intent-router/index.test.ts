@@ -2,7 +2,7 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { tmpDir } from '../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import type { RegistryModel } from './classifier.ts';
 import { register } from './index.ts';
 import type { LogRecord } from './log.ts';

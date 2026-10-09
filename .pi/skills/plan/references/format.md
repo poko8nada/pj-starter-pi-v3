@@ -66,7 +66,7 @@ Section and field names are English; the content is Japanese.
 - The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
 - Walk the relations before writing it: what imports the thing that changes, calls it, renders it, migrates with it, seeds with it, documents it, checks it. A follower that is not written is a follower that gets missed.
 - A file whose structure does not follow the project's rules, and that this plan touches anyway, is fixed in the same plan. The step carries the reason: what the build makes worse.
-- A new double or fixture is a file: it goes in the tree, and `.pi/test/` is where the doubles live. Say how it behaves when it is run outside its test: refuse, do not hang.
+- A new double or fixture is a file: it goes in the tree, and `test/` is where the doubles live. Say how it behaves when it is run outside its test: refuse, do not hang.
 
 ## Slices
 
@@ -109,7 +109,7 @@ Section and field names are English; the content is Japanese.
 - `data` — rows are written into the store and read back, and a migration runs forward and back
 - `security` — a request that should be refused is sent, and the refusal is read
 - `form` — a machine checks a length, a count, or compares two files
-- `read` — a child reads a document and reports: which child, which document, and what it reports
+- `read` — a child reads a document and reports: which child, which document, and what it reports. The child reads it itself; a check that needs a consult child is run by the parent, and the parent reads it again at the acceptance as a precaution
 - `use` — a child uses the document, and reports what it does with it
 - `look` — a person reads a value: a screen, a log, a DB, a file
 

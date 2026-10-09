@@ -54,7 +54,7 @@ For each shape, walk its boundaries and write a case, or the reason it does not 
 
 Every slice carries one `Verify`: a type from the closed list, and its content — the file, the command and the cases for a `test`; the child and the document for a `read`. A check that is not runnable is a hole: fix it, or say why it does not apply.
 
-A `test` check is written on top of the test file it names: read that file first, and write the cases the way it already works — its fixtures, its doubles, the seam it uses.
+A `test` check is written on top of the test file it names: read that file first, and write the cases the way it already works — its fixtures, its doubles, the seam it uses. A `read` check is read by the child itself; a check that needs a consult child is run by the parent, and the parent reads it again at the acceptance as a precaution.
 
 ### 7. Write the record
 

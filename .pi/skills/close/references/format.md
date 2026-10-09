@@ -31,7 +31,7 @@
 - `なし` when the design names none.
 - `Test` — the file, and `new` or `updated`. The close looks for a test that already covers the handoff before writing one.
 - `Cases` — the happy path and the most likely error path. A `fail` is a hole: it goes to the `Triage`.
-- The test touches nothing real: it writes under a temporary directory, and its doubles live in `.pi/test/`.
+- The test touches nothing real: it writes under a temporary directory, and its doubles live in `test/`.
 
 ## Collected
 

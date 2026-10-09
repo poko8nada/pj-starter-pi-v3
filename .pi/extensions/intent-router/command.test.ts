@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { intentMessage, registerCommand, type CommandCtx, type CommandPiPort } from './command.ts';
 import { append, type LogRecord } from './log.ts';
 import { defaultSettings, readSettings } from './settings.ts';

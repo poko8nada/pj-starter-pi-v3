@@ -34,7 +34,7 @@ This skill writes that test, triages what the plans left, and closes the cycle.
 - the target is what the design's `Boundary.Plans` names: the handoff between plans. `なし` everywhere means no test, and `## Integration` is `なし`
 - look first: a test that already covers the handoff is updated (`updated`); with none, write one where this project keeps its tests — beside the code it exercises (`new`)
 - the cases are the happy path and the most likely error path, and nothing more
-- it touches nothing real: it writes under a temporary directory, and its doubles live in `.pi/test/`
+- it touches nothing real: it writes under a temporary directory, and its doubles live in `test/`
 - run it on the base. A `fail` is a hole: it goes to step 5
 
 ### 4. Collect

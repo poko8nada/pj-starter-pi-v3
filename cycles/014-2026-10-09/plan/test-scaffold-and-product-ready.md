@@ -208,55 +208,86 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 1: `gitEnv` を `lib/git-env.mjs` へ出し、consult をその import に変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 1dcdc60
 
 ### Slice 2: テストの足場を `test/` へ移し、`vitest` の参照先と14本の import を変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `test/env.test.ts:5` のコメントを `.pi/test/setup.ts` から `test/setup.ts` に直した、移した後の指し示しを保つため
+- Commit: b98c927
 
 ### Slice 3: スキルの `.pi/test/` を `test/` に直し、plan スキルの `read` に実行主体を書く
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 21e41a2
 
 ### Slice 4: `prune` の芯を書き、消える物の数え方と消し方をテストで固定する
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 3222c6c
 
 ### Slice 5: 3つの入口を書き、package に `product:ready` を登録する
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 429fad7
 
 ### Slice 6: README 2枚の「Getting started」を、手で消す手順から `pnpm product:ready` に変える
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bdb5b56
 
 ### Slice 7: 統合: 足場が `test/` にあり、`product:ready` が表示だけをして、スイートが緑
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 2d28010
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし
+- Unlisted: なし
 - Gaps:
+  - `parseArgs` の `--root=<value>` 形と未知引数の投げは実装にあるがチェックが無い。`scripts/product-ready/cli.mjs:25-33` が `--root=` と `unknown argument` を扱うのに、`scripts/product-ready/cli.test.ts:18-29` は `[]`／`--run --root /x`／`--root` 欠けの3件だけで、slice 4 Verifyもその3件だけを挙げる。純関数で faithful double があるのに exercised されていない
+    - fixed: `cli.test.ts` に `--root=/x` の読みと未知引数の投げの2件を足した
+  - `findCycles` の無い root での投げは未検証。`scripts/product-ready/targets.mjs:39-42` は `findTests` と同じく投げるのに、`scripts/product-ready/targets.test.ts:30-32` は `findTests` のみを投げさせ、`findCycles` の error path を叩かない。slice 4 Verifyも `findTests` のみを名指しする
+    - fixed: `targets.test.ts` の無い root の1件で `findCycles` の投げも確かめた
+  - `index` と `prune-cycles` の無い root・引数誤りでの exit 1 は未検証。`scripts/product-ready/index.mjs:11-30` と `prune-cycles.mjs` は parse／find／remove の失敗で 1 を返すのに、`scripts/product-ready/index.test.ts:97-100` は `prune-tests` の無い root の1件だけで、slice 5 Verifyもその1件だけを挙げる。`index --root <無いパス> --run` と未知引数の exit 1 が exercised されていない
+    - fixed: `index.test.ts` に `index` と `prune-cycles` の無い root の exit 1 と未知引数の exit 1（木は変わらない）の3件を足した
 - Unproven:
+  - `planLines('tests', [])` の1件は中身を見ない。`scripts/product-ready/cli.test.ts:5-7` は `toHaveLength(1)` だけで、表示文字列（`no tests to remove`）を別な1行に変えても緑のまま。名指す「消える物が無い旨」を証明しない
+    - fixed: `cli.test.ts` の空の1件を `toEqual(['no tests to remove'])` に変えた
+  - `prune-tests --root <無いパス> --run → exit 1` の1件は `main` の `return 1` を証明しない。`scripts/product-ready/index.test.ts:97-100` は子プロセスの exit code だけを見て、`scripts/product-ready/prune-tests.mjs` の catch→`return 1`→`process.exitCode` を外して投げっぱなしにしても node の異常終了で exit 1 になり緑のまま。slice 5 Verifyの「`main` が 1 を返し、`process.exitCode` に渡る」を区別しない
+    - fixed: `index.test.ts` の `run()` が stderr も返すようにし、無い root・未知引数の各件で stdout が空かつ stderr が1行の置き場エラーに等しいことを確かめた（投げっぱなしは stack で複数行になるので赤くなる）
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` — 30ファイル / 448テストが緑（統合スライス）
+  - `pnpm run test:run scripts/product-ready` — 21件緑
+  - `pnpm typecheck` / `pnpm lint` — 緑
+  - 統合の `cli`: worktree で `node scripts/product-ready/index.mjs`（引数なし）— 42行（テスト26本＋`cycles/` 001〜014）を出し、`git status --short` は前後で変わらない（何も消えない）
+  - `grep -rn "\.pi/test" .pi/ test/ vitest.config.ts README.md README.ja.md` — 0件
+  - 壊しテスト3つ（A: `index.mjs` の「引数なしなら return 0」を消す → 「表示だけ → 木は変わらない」が赤／B: `targets.mjs` の `walk(piDir)` を `walk(root)` に → 「`.pi/` の下だけを返す」が赤／C: `prune-tests.mjs` の底の1行を消す → 「`--run` で消える」と「無い root で exit 1」の2件が赤）。3つとも赤を確認して戻した（`git status` は空、448テスト緑）
 - Findings:
+  - なし

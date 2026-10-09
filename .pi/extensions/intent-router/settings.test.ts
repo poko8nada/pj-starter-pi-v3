@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tmpDir } from '../../../test/tmp.ts';
 import { JUDGE_QUESTION, LABELS, ROUTE_QUESTION } from './questions.ts';
 import { defaultSettings, parseSettings, readSettings } from './settings.ts';
 
