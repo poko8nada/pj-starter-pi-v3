@@ -171,6 +171,10 @@ README.ja.md                   update
 - fixed: `c0982de` 並び順のケースを2つ足した（作った順と昇順が違う木で、`toEqual([...found].toSorted())` と期待の配列を見る）
 - fixed: `## Acceptance` の数字を最終コードで取り直した（A: 6 failed | 9 passed (15) / B: 1 failed | 14 passed (15) / C: exit 1 / 対照: フラグありは exit 0）
 
+### Round 5
+
+- 本文は親に届かず（ログでは done、8ターン）。owner の判断でここで review を終えた。Stale / Unlisted / Gaps の3観点は Round 4 で `なし`、Round 4 の Unproven 1件は `c0982de` で閉じている
+
 ## Acceptance
 
 - Ran:
