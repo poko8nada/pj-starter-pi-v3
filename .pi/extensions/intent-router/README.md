@@ -27,7 +27,7 @@ Prompts starting with `/` are never classified. When the ask fails, the hooks st
 
 ## Settings
 
-`settings.json` sits next to this file and holds a partial override: only the written fields apply, the rest stay at their defaults. Unknown keys, out-of-range numbers, and wrong types throw instead of being silently ignored. The file is read on every prompt, so a change takes effect on the next prompt without reloading pi.
+`settings.json` sits next to this file and holds a partial override: only the written fields apply, the rest stay at their defaults. Unknown keys, out-of-range numbers, and wrong types throw instead of being silently ignored. The file is read once when the extension registers, so reload pi to pick up a change.
 
 | Setting                         | Default                                                                                                                                                                      |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

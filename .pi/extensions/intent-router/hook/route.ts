@@ -249,9 +249,10 @@ function settleRoute(
   const probabilities = answer.type === 'choice' ? answer.probabilities : {};
   if (decision.kind !== 'act') {
     deps.run.set(idleRun());
+    const skipLabel = answer.type === 'choice' ? (toLabel(answer.choice) ?? null) : null;
     logRoute(deps, {
       prompt,
-      label: decision.kind === 'skip' ? null : decision.label,
+      label: decision.kind === 'skip' ? skipLabel : decision.label,
       confidence: decision.kind === 'skip' ? null : decision.confidence,
       probabilities,
       decision: decision.kind === 'skip' ? 'skip' : 'idle',

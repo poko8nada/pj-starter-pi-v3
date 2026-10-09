@@ -63,14 +63,16 @@ function usage() {
   };
 }
 
-function answeringRegistry(model: RegistryModel) {
+function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets?: string[]) {
+  const only = reused ?? model;
   return {
     getAvailableOfType: (): Promise<RegistryModel[]> => Promise.resolve([model]),
-    findOfType: (): RegistryModel | undefined => model,
+    findOfType: (): RegistryModel | undefined => only,
     classify: (
-      _target: RegistryModel,
+      target: RegistryModel,
       context: { readonly questions: Readonly<Record<string, unknown>> },
     ) => {
+      targets?.push(target.id);
       if ('route' in context.questions) {
         return Promise.resolve({
           stopReason: 'stop',
@@ -218,6 +220,22 @@ describe('register', () => {
     const fake = fakePi();
     const wiring = register(fake.api, { cwd: tmpDir() });
     expect(wiring.settings).toEqual(defaultSettings());
+  });
+
+  it('judge は route が選んだ候補を使い回す（only）', async () => {
+    const cwd = tmpDir();
+    const logs = join(cwd, 'logs');
+    writeSettings(cwd, JSON.stringify({ judge: { minTurns: 1 }, log: { dir: logs } }));
+    const reused = { ...classifierModel(0), id: 'jev-1.13-reused' };
+    const targets: string[] = [];
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0), reused, targets), notifies);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('turn_end')?.(readTurn(), ctx);
+    expect(targets).toEqual(['jev-1.13-free', 'jev-1.13-reused']);
+    expect(readRecords(logs)).toHaveLength(2);
   });
 
   it('有料の候補で答えた時、ui.notify が1回呼ばれる', async () => {

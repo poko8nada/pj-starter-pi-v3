@@ -130,6 +130,14 @@ function withJudge(settings: Settings, patch: Partial<Settings['judge']>): Setti
   return { ...settings, judge: { ...settings.judge, ...patch } };
 }
 
+function withStop(settings: Settings, patch: Partial<Settings['stop']>): Settings {
+  return { ...settings, stop: { ...settings.stop, ...patch } };
+}
+
+function withMaxStateChars(settings: Settings, maxStateChars: number): Settings {
+  return { ...settings, budget: { ...settings.budget, maxStateChars } };
+}
+
 function readContent(event: JudgeTurnEvent): object[] {
   const content = event.message.content;
   if (!Array.isArray(content)) {
@@ -277,6 +285,12 @@ describe('due', () => {
   });
 });
 
+describe('stopMessage', () => {
+  it('{label} を埋める', () => {
+    expect(stopMessage('stop ({label})', 'question')).toBe('stop (question)');
+  });
+});
+
 describe('registerJudge', () => {
   it('道具1件の turn_end と score 1.8 / 0.8 → entries が1件で continue の欄が無い', async () => {
     const settings = withJudge(defaultSettings(), { shadow: false });
@@ -284,13 +298,15 @@ describe('registerJudge', () => {
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result?.entries).toHaveLength(1);
     expect(result?.entries[0]).toMatchObject({ type: 'custom_message', customType: 'intent-stop' });
-    expect(result?.entries[0]?.content).toBe(stopMessage(settings.stop.text, 'question'));
+    expect(result?.entries[0]?.content).toBe(
+      'Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.',
+    );
     expect(result).not.toHaveProperty('continue');
   });
 
   it('同じ handler を 2 回目に起こすと ask が呼ばれず undefined', async () => {
     const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests } = wired(
+    const { handler, requests, dir } = wired(
       settings,
       answeredOutcome(1.8, 0.8),
       true,
@@ -300,6 +316,7 @@ describe('registerJudge', () => {
     const second = await handler(readTurn(), { cwd: '/repo' });
     expect(second).toBeUndefined();
     expect(requests).toHaveLength(1);
+    expect(readRecords(dir)).toHaveLength(1);
   });
 
   it('道具0件の turn_end → ask が呼ばれず undefined、ログに judge の行が増えない', async () => {
@@ -350,6 +367,87 @@ describe('registerJudge', () => {
     if (records[0]?.hook === 'judge') {
       expect(records[0].text).toContain('Stop investigating');
     }
+  });
+
+  it('stop.enabled が false → undefined でログは fire・stop none・text null', async () => {
+    const settings = withStop(withJudge(defaultSettings(), { shadow: false }), { enabled: false });
+    const { handler, dir } = wired(settings, answeredOutcome(1.8, 0.8), true, armedWithTurns(2));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'judge', decision: 'fire', stop: 'none', text: null });
+  });
+
+  it('judge.enabled が false → ask が呼ばれずログも増えない', async () => {
+    const settings = withJudge(defaultSettings(), { enabled: false });
+    const { handler, requests, dir } = wired(
+      settings,
+      answeredOutcome(1.8, 0.8),
+      true,
+      armedWithTurns(2),
+    );
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(dir)).toHaveLength(0);
+  });
+
+  it('idle のまま → ask が呼ばれずログも増えない', async () => {
+    const { handler, requests, dir } = wired(
+      withJudge(defaultSettings(), { shadow: false }),
+      answeredOutcome(1.8, 0.8),
+      true,
+    );
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(dir)).toHaveLength(0);
+  });
+
+  it('助走中 → ask が呼ばれずログも増えない', async () => {
+    const { handler, requests, dir } = wired(
+      withJudge(defaultSettings(), { shadow: false }),
+      answeredOutcome(1.8, 0.8),
+      true,
+      armedWithTurns(0),
+    );
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(dir)).toHaveLength(0);
+  });
+
+  it('直後にまた来ても間隔で待つ → ask もログも増えない', async () => {
+    const settings = withJudge(defaultSettings(), { shadow: false });
+    const { handler, requests, dir } = wired(
+      settings,
+      answeredOutcome(1.0, 0.9),
+      true,
+      armedWithTurns(2),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    const second = await handler(readTurn(), { cwd: '/repo' });
+    expect(second).toBeUndefined();
+    expect(requests).toHaveLength(1);
+    expect(readRecords(dir)).toHaveLength(1);
+  });
+
+  it('stop.display が false → entries の display が false', async () => {
+    const settings = withStop(withJudge(defaultSettings(), { shadow: false }), { display: false });
+    const { handler } = wired(settings, answeredOutcome(1.8, 0.8), true, armedWithTurns(2));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries[0]?.display).toBe(false);
+  });
+
+  it('state が maxStateChars に収まらない → ログの truncated が true', async () => {
+    const settings = withMaxStateChars(withJudge(defaultSettings(), { shadow: false }), 50);
+    const { handler, dir } = wired(settings, answeredOutcome(1.8, 0.8), true, armedWithTurns(2));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'judge', truncated: true });
   });
 
   it('flags が off → undefined', async () => {

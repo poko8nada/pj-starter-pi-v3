@@ -85,17 +85,20 @@ describe('addAction', () => {
     }
     expect(run.actions).toHaveLength(12);
     expect(run.truncated).toBe(true);
+    expect(run.actions.map((item) => item.target)).not.toContain('f0.ts');
+    expect(run.actions.map((item) => item.target)).toContain('overflow.ts');
   });
 
   it('同じ read と同じ path を 2 回 → 1 件のままで attempts が 2', () => {
     let run = armed();
-    run = addAction(run, action({ tool: 'read', target: 'x.ts' }), limits());
-    run = addAction(run, action({ tool: 'read', target: 'x.ts' }), limits());
+    run = addAction(run, action({ tool: 'read', target: 'x.ts', result: 'first' }), limits());
+    run = addAction(run, action({ tool: 'read', target: 'x.ts', result: 'second' }), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
     expect(run.actions).toHaveLength(1);
     expect(run.actions[0]?.attempts).toBe(2);
+    expect(run.actions[0]?.result).toBe('second');
   });
 
   it('.env を読んだ action が落ちる', () => {
@@ -105,6 +108,23 @@ describe('addAction', () => {
       throw new Error('must be armed');
     }
     expect(run.actions).toHaveLength(0);
+  });
+
+  it('秘密の的（~/.pi の下・鍵の名前・鍵の拡張子）を弾き、ふつうの的は通す', () => {
+    expect(isSecretTarget('~/.pi/config.json')).toBe(true);
+    expect(isSecretTarget('/home/owner/.ssh/id_rsa')).toBe(true);
+    expect(isSecretTarget('id_ed25519')).toBe(true);
+    expect(isSecretTarget('certs/server.pem')).toBe(true);
+    expect(isSecretTarget('certs/server.key')).toBe(true);
+    expect(isSecretTarget('x.ts')).toBe(false);
+    expect(isSecretTarget('')).toBe(false);
+    let run = armed();
+    run = addAction(run, action({ tool: 'read', target: '~/.pi/config.json' }), limits());
+    run = addAction(run, action({ tool: 'read', target: 'x.ts' }), limits());
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.actions.map((item) => item.target)).toEqual(['x.ts']);
   });
 
   it('includeTools に無い道具は入らない', () => {

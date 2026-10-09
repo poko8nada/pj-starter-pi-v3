@@ -117,6 +117,11 @@ describe('questions', () => {
 
   it('JUDGE_QUESTION.criteria が3本で、1.5 が真ん中と上の間に入る', () => {
     expect(JUDGE_QUESTION.criteria).toHaveLength(3);
+    expect(JUDGE_QUESTION.criteria.map((criterion) => criterion.slice(0, 2))).toEqual([
+      '0:',
+      '1:',
+      '2:',
+    ]);
     expect(defaultSettings().thresholds.judgeScore).toBeGreaterThan(1);
     expect(defaultSettings().thresholds.judgeScore).toBeLessThan(2);
   });

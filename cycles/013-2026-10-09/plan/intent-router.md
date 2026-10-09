@@ -27,6 +27,11 @@
   logs/                      （実行時に作る。`logs/` は .gitignore にある）
 ```
 
+```text
+README.md                  update
+README.ja.md               update
+```
+
 置き場の決め：`Label / LABELS` は `questions.ts`（ラベルは route の criteria のキーそのもの）。`Usage / RunPort / FlagsPort / JsonObject`（= `Record<string, unknown>`）は `state.ts`（状態の持ち主）。`RouteDeps / JudgeDeps / CommandDeps` は使う側のファイル（`hook/route.ts` / `hook/judge.ts` / `command.ts`）。`Ask / Answer / AskOutcome / RegistryModel / RegistryAnswer` は `classifier.ts`。
 
 pi の classifier の型は `@earendil-works/pi-ai` から取らない（この repo の依存に無く、pnpm は持ち上げない）。SDK の口から引き出す。
@@ -687,9 +692,38 @@ type RegistryAnswer = RegistryResult['answers'][string];
 ### Round 1
 
 - Stale:
+  - `README.md:13` / `README.ja.md:13` の拡張一覧が `consult` / `quality-gate` / `sound-notify` / `second-opinion` のままで、この差分が足した `.pi/extensions/intent-router/` を含まない
+    - `fixed: 両 README の拡張一覧に intent-router を足し、この2ファイルを ## Files に update で追記した`
+  - `.pi/extensions/intent-router/README.md:30` の「The file is read on every prompt」が `index.ts:96` と矛盾する。設定は `register` 時に1回だけ `readSettings` し、handler は閉じ込めた `settings` を使う。プロンプト毎に読み直さない
+    - `fixed: README の文を「register 時に1回だけ読み、変えたら reload」に直した`
 - Unlisted:
+  - なし
 - Gaps:
+  - `guide.enabled: false`（`hook/route.ts:181`）/ `stop.enabled: false`（`hook/judge.ts:263`）の分岐を叩く検査が無い。Slices 5・6 の Verify は shadow のみで、無効化で `guide` / `stop` が `none` になる経路を見ない
+    - `fixed: route.test と judge.test に無効化の検査を足し、guide / stop が none・text null になることを見た`
+  - `judge.enabled: false`（`hook/judge.ts:380`）を叩く検査が無い。対照的に `route.enabled: false` は `hook/route.test.ts:249` で叩く
+    - `fixed: judge.test に judge.enabled: false の検査を足し、ask もログも増えないことを見た`
+  - `decideRoute` の score回答→skip（`hook/route.ts:49`）と未知ラベル文字列→skip（`hook/route.ts:52-54`）の単位検査が無く、handler の skip 経路（actOn / idleOn のどちらにも無い）のログ検査も無い
+    - `fixed: 単位検査2件と handler の skip ログ検査2件（設定の穴は label 付き・未知文字列は label null）を足した。設定の穴の skip が label null で数を数えられない穴も見つけ、既知ラベルを残す直しと一緒に検査した`
+  - `isSecretTarget` の `.env` 以外（`state.ts:187-196` の `~/.pi/`・`id_rsa` / `id_ed25519`・`.pem` / `.key`）を叩く検査が無い。`state.test.ts:101` は `.env` のみ
+    - `fixed: state.test に秘密の的5種と非秘密の検査を足し、秘密混じりの記録が落ちることも見た`
+  - `due` が wait の時に行を作らないことの検査が空道具以外に無い（`hook/judge.ts:323`）。`hook/judge.test.ts:305` は道具0件のみで、助走・間隔・連続・上限・撃ち済み・idle の wait でログ件数を見ない。2回目テスト（`judge.test.ts:291`）も `requests` のみでログ件数を見ない
+    - `fixed: idle・助走・撃ち済み後の2回目・hold 直後の連続でログ件数を見ない検査を足し、2回目テストにもログ1件の検査を足した`
+  - `has_images`（`hook/route.ts:278`）・`truncated`（`hook/route.ts:148` と judge の `state['truncated']`）・`display`（`hook/route.ts:219` と `hook/judge.ts:312`）の伝搬を見る検査が無い。route.test は `cwd_basename` のみ、judge.test は `customType` / `content` のみを見る
+    - `fixed: route.test に画像・truncated・display の検査を、judge.test に display と maxStateChars を絞った truncated の検査を足した`
 - Unproven:
+  - `state.test.ts:72` の溢れ検査は件数と `truncated` のみで、どれを捨てたかを見ない。`state.ts:117` の `slice(1)` を `slice(0, -1)`（新しい方を捨てる）に変えても緑のまま
+    - `fixed: 溢れ検査に古い方（f0.ts）が落ち・新しい方（overflow.ts）が残ることを足した`
+  - `state.test.ts:90` の重複検査は同じ `result: 'ok'` を2回入れて `attempts` のみ見る。`state.ts:110` の `result` 上書きを消しても緑のまま
+    - `fixed: 重複検査を first / second の別文にし、attempts と最新文の両方を見るようにした`
+  - `hook/judge.test.ts:287` は `entries.content` を `stopMessage(...)` の戻り値と比べる自己一致で、`settings.ts:251` の `stop.text` に `{label}` が無いため置換を消しても緑のまま。対照的に route.test は文面を一字一句の literal で比べる
+    - `fixed: entries.content を一字一句の literal と比べ、stopMessage には {label} の置換検査を別に足した`
+  - `index.test.ts:190` の配線検査は `findOfType` が常に同モデルを返す偽物のため、`hook/judge.ts:327` の `only: run.candidate` を消して選び直しても2行・`owner_prompt` 一致のまま緑
+    - `fixed: findOfType が別モデルを返す偽物にし、route と judge の classify 先が可用と使い回しで分かれることを見る検査を足した`
+  - `command.test.ts:87-114` は前後空白無しの `off` / `on` / `''` / `maybe` のみで、`command.ts:35` の `trim()` を消しても緑のまま
+    - `fixed: 前後空白つきの on / off の検査を足した`
+  - `settings.test.ts:118` は `JUDGE_QUESTION.criteria` の件数と閾値の位置のみで中身の `0:` / `1:` / `2:` を見ない。`questions.ts:51-55` を `['a', 'b', 'c']` に変えても緑のまま
+    - `fixed: criteria の先頭の 0: / 1: / 2: を見る検査を足した`
 
 ## Acceptance
 

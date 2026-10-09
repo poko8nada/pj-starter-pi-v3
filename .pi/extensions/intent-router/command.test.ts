@@ -112,6 +112,17 @@ describe('intentMessage', () => {
       message: 'intent-router: on|off',
     });
   });
+
+  it('前後の空白は無視する', () => {
+    expect(intentMessage('  off  ', true)).toEqual({
+      next: { enabled: false },
+      message: 'intent-router: off',
+    });
+    expect(intentMessage(' on ', false)).toEqual({
+      next: { enabled: true },
+      message: 'intent-router: on',
+    });
+  });
 });
 
 describe('registerCommand', () => {

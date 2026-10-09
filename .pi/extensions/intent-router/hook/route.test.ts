@@ -102,6 +102,22 @@ function withRouteEnabled(settings: Settings, enabled: boolean): Settings {
   return { ...settings, route: { ...settings.route, enabled } };
 }
 
+function withGuideEnabled(settings: Settings, enabled: boolean): Settings {
+  return { ...settings, guide: { ...settings.guide, enabled } };
+}
+
+function withGuideDisplay(settings: Settings, display: boolean): Settings {
+  return { ...settings, guide: { ...settings.guide, display } };
+}
+
+function withRouteLabels(
+  settings: Settings,
+  actOn: Settings['route']['actOn'],
+  idleOn: Settings['route']['idleOn'],
+): Settings {
+  return { ...settings, route: { ...settings.route, actOn, idleOn } };
+}
+
 function wired(
   settings: Settings,
   outcome: AskOutcome,
@@ -194,6 +210,20 @@ describe('decideRoute', () => {
     ).toMatchObject({
       kind: 'skip',
     });
+  });
+
+  it('score の答え → skip', () => {
+    const thresholds = defaultSettings().thresholds;
+    expect(
+      decideRoute({ type: 'score', score: 1.8, confidence: 0.9 }, thresholds, ['design'], ['chat']),
+    ).toMatchObject({ kind: 'skip' });
+  });
+
+  it('知らないラベル文字列 → skip', () => {
+    const thresholds = defaultSettings().thresholds;
+    expect(decideRoute(choiceAnswer('weird', 0.9), thresholds, ['design'], ['chat'])).toMatchObject(
+      { kind: 'skip' },
+    );
   });
 });
 
@@ -317,5 +347,75 @@ describe('registerRoute', () => {
     );
     await handler({ prompt: 'hello' }, { cwd: '/work/repo' });
     expect(requests[0]?.state['cwd_basename']).toBe('repo');
+  });
+
+  it('どちらの一覧にも無いラベル → undefined でログは skip', async () => {
+    const settings = withRouteLabels(withShadow(defaultSettings(), false), ['question'], ['chat']);
+    const { handler, run, dir } = wired(settings, answeredOutcome('design', 0.9), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(run.get().kind).toBe('idle');
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', decision: 'skip', label: 'design' });
+  });
+
+  it('知らないラベル文字列の答え → undefined でログは skip・label null', async () => {
+    const outcome: AskOutcome = {
+      kind: 'answered',
+      provider: 'opencode',
+      model: 'jev-1.13-free',
+      answer: { type: 'choice', choice: 'weird', probabilities: { weird: 0.9 }, confidence: 0.9 },
+      usage: { input: 1, output: 0, cost: 0 },
+      latencyMs: 5,
+    };
+    const { handler, dir } = wired(withShadow(defaultSettings(), false), outcome, true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', decision: 'skip', label: null });
+  });
+
+  it('guide.enabled が false → act でも文を返さずログの guide が none', async () => {
+    const settings = withGuideEnabled(withShadow(defaultSettings(), false), false);
+    const { handler, dir } = wired(settings, answeredOutcome('design', 0.9), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', decision: 'act', guide: 'none', text: null });
+  });
+
+  it('画像つきの発言 → state の has_images が true', async () => {
+    const { handler, requests } = wired(
+      withShadow(defaultSettings(), false),
+      answeredOutcome('question', 0.9),
+      true,
+    );
+    await handler({ prompt: 'hello', images: [{ type: 'image' }] }, { cwd: '/repo' });
+    expect(requests[0]?.state['has_images']).toBe(true);
+  });
+
+  it('2000 字超の発言 → ログの truncated が true', async () => {
+    const { handler, dir } = wired(
+      withShadow(defaultSettings(), false),
+      answeredOutcome('question', 0.9),
+      true,
+    );
+    await handler({ prompt: 'あ'.repeat(2500) }, { cwd: '/repo' });
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', truncated: true });
+  });
+
+  it('guide.display が false → 返す文の display が false', async () => {
+    const { handler } = wired(
+      withGuideDisplay(withShadow(defaultSettings(), false), false),
+      answeredOutcome('design', 0.9),
+      true,
+    );
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result?.message.display).toBe(false);
   });
 });
