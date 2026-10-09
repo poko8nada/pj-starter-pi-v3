@@ -88,8 +88,10 @@ README 2枚は plan 2 も触る（29行目）。plan 1 はその前に走る。
 ### Slice 2: `adr` スキルの手順6を、consult の `review` の子に差し替える
 
 - Findings:
-- Unplanned:
-- Commit:
+  - child read of step 6 not run; checked the 5 points by direct read instead (review role, `cycles/<NNN>/adr.md` proposal, 3 views once, holes plus own answers to owner before `Highlight`, later arrival)
+    - `left: this worktree has no child runner (consult_run), so a review-role read could not be executed here`
+- Unplanned: なし
+- Commit: a296f55
 
 ### Slice 3: README 2枚から second-opinion を外す
 
