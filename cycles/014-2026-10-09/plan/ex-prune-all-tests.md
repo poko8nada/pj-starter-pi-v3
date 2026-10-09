@@ -126,10 +126,27 @@ README.ja.md                   update
 - fixed: `874bd8a` 入れ子の skip・名指しの非テスト・`.spec.ts` の本数をテストに足した
 - fixed: `734bce0` `prune-tests.mjs` のコメントを「名指しのテスト（`targets.mjs` の `TEST_TARGETS`）を消す入口」に直した
 
+### Round 2
+
+- Stale:
+  - L23 の「`index.mjs` / `prune-tests.mjs` / `prune-cycles.mjs` / `cli.mjs` は…触らない」が偽（`prune-tests.mjs` はコメントだけ直した）
+  - Slice 1 の I/O `findTests(root)` が偽（最終形は `findTests(root, targets = TEST_TARGETS)`）
+  - Slice 1 Steps の「ファイルならそのまま取る」が偽（`isTestFile` で見てから取る）
+  - `Notes` Slice 4 の Unplanned「`index.test.ts` は触らなかった」が、Round 1 の `0b9b0c1` の後で偽になった
+- Unlisted: なし
+- Gaps:
+  - 入れ子の `.git` skip が未検査（`.pi/node_modules` だけ。root の `.git` は名指しの外なので skip 行を通らない）
+- Unproven:
+  - `## Acceptance` の Ran / Findings が空（ただし review が見た snapshot は `46a0e80` で、`806d702` で記入済み。指摘の時点で古い）
+
+- fixed: `83f1fb5` L23・I/O・Steps の文面を最終形に合わせ、`Notes` の Unplanned に解消の一行を足した
+- fixed: `b5664ad` 入れ子の `.git`（`.pi/sub/.git/c.test.ts`）が返らないケースを足した
+- fixed: `## Acceptance` は `806d702` で記入済み（review が見た snapshot より後）
+
 ## Acceptance
 
 - Ran:
-  - `pnpm run test:run`（worktree）: 30ファイル454テスト緑
+  - `pnpm run test:run`（worktree）: 30ファイル455テスト緑（Round 2 の `b5664ad` の1件を含む）
   - `pnpm typecheck` / `pnpm lint`: 緑
   - 引数なしの `node scripts/product-ready/index.mjs`: `tests (30)` と `cycles (14)` を出し、前後で `git status --short` は不変（何も消さない）
   - 写し（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`・`node_modules` の symlink）に `test/keep.test.ts` を置き、`--root <写し> --run`: 名指しのテストは0本、`test/env.test.ts` は消え、`test/keep.test.ts` は残る。2回目は `no tests to remove` / `no cycles to remove` で exit 0（冪等）
