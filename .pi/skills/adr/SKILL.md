@@ -50,7 +50,7 @@ Write `なし` when there is nothing to try.
 
 ### 6. Probe the holes
 
-Before Decide, run the proposal through `second_opinion` with the proposal in `focus`. Answer the holes it returns, and carry both into the `Highlight`.
+Before Decide, pass this ADR (the proposal in `cycles/<NNN>/adr.md`) to a `review` child once, asking for holes in three views: missed considerations, missed research, missed trials. Answer the holes it returns, show both the holes and your answers to the owner, and carry them into the `Highlight` after the owner's opinion. The arrival may come in a later message.
 
 ### 7. Decide
 

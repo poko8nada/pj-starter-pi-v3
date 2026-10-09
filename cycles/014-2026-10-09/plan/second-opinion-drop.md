@@ -81,9 +81,9 @@ README 2枚は plan 2 も触る（29行目）。plan 1 はその前に走る。
 
 ### Slice 1: second-opinion の拡張を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: fe35f98
 
 ### Slice 2: `adr` スキルの手順6を、consult の `review` の子に差し替える
 
