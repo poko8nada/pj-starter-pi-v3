@@ -127,4 +127,15 @@ README.ja.md                   update
 ## Acceptance
 
 - Ran:
+  - `pnpm run test:run`（worktree）: 30ファイル454テスト緑
+  - `pnpm typecheck` / `pnpm lint`: 緑
+  - 引数なしの `node scripts/product-ready/index.mjs`: `tests (30)` と `cycles (14)` を出し、前後で `git status --short` は不変（何も消さない）
+  - 写し（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`・`node_modules` の symlink）に `test/keep.test.ts` を置き、`--root <写し> --run`: 名指しのテストは0本、`test/env.test.ts` は消え、`test/keep.test.ts` は残る。2回目は `no tests to remove` / `no cycles to remove` で exit 0（冪等）
+  - 写しから `test/keep.test.ts` を外して `vitest run --root <写し>`: `No test files found, exiting with code 0`
+- 壊しテスト（3つとも赤）:
+  - `TEST_TARGETS` から `test/env.test.ts` を外す → `targets.test.ts` の5件が赤（名指しの3つ・食わない・入れ子の skip・.spec）
+  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed / 11 passed）
+  - `vitest.config.ts` の `passWithNoTests: true` を外す → 0本の写しが `No test files found, exiting with code 1`（対照: フラグありは exit 0）
 - Findings:
+  - plan の Verify (3) は「写しから `test/keep.test.ts` を外し」に親が直した（`c264568`）。`Notes` Slice 4 の `left:` はこの直しで閉じた
+  - 統合テスト（close 用の受け渡し）は close 側で書く。ここでは名指しの外の生存までを見た
