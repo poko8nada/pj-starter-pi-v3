@@ -38,9 +38,9 @@ function makeTree(): {
 function run(
   script: string,
   args: readonly string[],
-): { readonly status: number; readonly output: string } {
+): { readonly status: number; readonly output: string; readonly errors: string } {
   const result = spawnSync('node', [script, ...args], { encoding: 'utf8' });
-  return { status: result.status ?? 1, output: result.stdout ?? '' };
+  return { status: result.status ?? 1, output: result.stdout ?? '', errors: result.stderr ?? '' };
 }
 
 describe('product-ready entries', () => {
@@ -94,8 +94,37 @@ describe('product-ready entries', () => {
     expect(second.output).toContain('no cycles');
   });
 
-  it('prune-tests の --run で無い root → exit 1', () => {
-    const root = tmpDir();
-    expect(run(PRUNE_TESTS, ['--root', join(root, 'no-such'), '--run']).status).toBe(1);
+  it('prune-tests の --run で無い root → 1行の置き場エラーで exit 1', () => {
+    const missing = join(tmpDir(), 'no-such');
+    const result = run(PRUNE_TESTS, ['--root', missing, '--run']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim()).toBe(`no such directory: ${missing}`);
+  });
+
+  it('index の --run で無い root → exit 1', () => {
+    const missing = join(tmpDir(), 'no-such');
+    const result = run(INDEX, ['--root', missing, '--run']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim()).toBe(`no such directory: ${missing}`);
+  });
+
+  it('prune-cycles の --run で無い root → exit 1', () => {
+    const missing = join(tmpDir(), 'no-such');
+    const result = run(PRUNE_CYCLES, ['--root', missing, '--run']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim()).toBe(`no such directory: ${missing}`);
+  });
+
+  it('未知の引数 → exit 1', () => {
+    const tree = makeTree();
+    const result = run(INDEX, ['--root', tree.root, '--bogus']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim()).toBe('unknown argument: --bogus');
+    expect(existsSync(tree.harness)).toBe(true);
+    expect(existsSync(tree.cycleA)).toBe(true);
   });
 });

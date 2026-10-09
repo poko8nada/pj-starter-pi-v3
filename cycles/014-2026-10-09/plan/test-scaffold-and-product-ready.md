@@ -256,17 +256,29 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 7: 統合: 足場が `test/` にあり、`product:ready` が表示だけをして、スイートが緑
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 2d28010
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし
+- Unlisted: なし
 - Gaps:
+  - `parseArgs` の `--root=<value>` 形と未知引数の投げは実装にあるがチェックが無い。`scripts/product-ready/cli.mjs:25-33` が `--root=` と `unknown argument` を扱うのに、`scripts/product-ready/cli.test.ts:18-29` は `[]`／`--run --root /x`／`--root` 欠けの3件だけで、slice 4 Verifyもその3件だけを挙げる。純関数で faithful double があるのに exercised されていない
+    - fixed: `cli.test.ts` に `--root=/x` の読みと未知引数の投げの2件を足した
+  - `findCycles` の無い root での投げは未検証。`scripts/product-ready/targets.mjs:39-42` は `findTests` と同じく投げるのに、`scripts/product-ready/targets.test.ts:30-32` は `findTests` のみを投げさせ、`findCycles` の error path を叩かない。slice 4 Verifyも `findTests` のみを名指しする
+    - fixed: `targets.test.ts` の無い root の1件で `findCycles` の投げも確かめた
+  - `index` と `prune-cycles` の無い root・引数誤りでの exit 1 は未検証。`scripts/product-ready/index.mjs:11-30` と `prune-cycles.mjs` は parse／find／remove の失敗で 1 を返すのに、`scripts/product-ready/index.test.ts:97-100` は `prune-tests` の無い root の1件だけで、slice 5 Verifyもその1件だけを挙げる。`index --root <無いパス> --run` と未知引数の exit 1 が exercised されていない
+    - fixed: `index.test.ts` に `index` と `prune-cycles` の無い root の exit 1 と未知引数の exit 1（木は変わらない）の3件を足した
 - Unproven:
+  - `planLines('tests', [])` の1件は中身を見ない。`scripts/product-ready/cli.test.ts:5-7` は `toHaveLength(1)` だけで、表示文字列（`no tests to remove`）を別な1行に変えても緑のまま。名指す「消える物が無い旨」を証明しない
+    - fixed: `cli.test.ts` の空の1件を `toEqual(['no tests to remove'])` に変えた
+  - `prune-tests --root <無いパス> --run → exit 1` の1件は `main` の `return 1` を証明しない。`scripts/product-ready/index.test.ts:97-100` は子プロセスの exit code だけを見て、`scripts/product-ready/prune-tests.mjs` の catch→`return 1`→`process.exitCode` を外して投げっぱなしにしても node の異常終了で exit 1 になり緑のまま。slice 5 Verifyの「`main` が 1 を返し、`process.exitCode` に渡る」を区別しない
+    - fixed: `index.test.ts` の `run()` が stderr も返すようにし、無い root・未知引数の各件で stdout が空かつ stderr が1行の置き場エラーに等しいことを確かめた（投げっぱなしは stack で複数行になるので赤くなる）
 
 ## Acceptance
 

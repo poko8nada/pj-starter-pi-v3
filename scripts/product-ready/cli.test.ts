@@ -3,7 +3,7 @@ import { parseArgs, planLines } from './cli.mjs';
 
 describe('planLines', () => {
   it('空 → 消える物が無い旨の1行', () => {
-    expect(planLines('tests', [])).toHaveLength(1);
+    expect(planLines('tests', [])).toEqual(['no tests to remove']);
   });
 
   it('2件 → 見出しと2件の3行', () => {
@@ -26,5 +26,13 @@ describe('parseArgs', () => {
 
   it('--root の値が無い → 投げる', () => {
     expect(() => parseArgs(['--root'])).toThrow();
+  });
+
+  it('--root=/x の形も読む', () => {
+    expect(parseArgs(['--root=/x'])).toEqual({ root: '/x', run: false });
+  });
+
+  it('未知の引数 → 投げる', () => {
+    expect(() => parseArgs(['--bogus'])).toThrow();
   });
 });

@@ -29,6 +29,7 @@ describe('findTests', () => {
 
   it('無い root → 投げる', () => {
     expect(() => findTests(join(tmpDir(), 'no-such-root'))).toThrow();
+    expect(() => findCycles(join(tmpDir(), 'no-such-root'))).toThrow();
   });
 });
 
