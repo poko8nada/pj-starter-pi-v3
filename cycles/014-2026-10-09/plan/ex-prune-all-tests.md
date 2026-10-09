@@ -160,17 +160,28 @@ README.ja.md                   update
 - fixed: `Notes` Slice 4 の `left:` に、`c264568` で閉じたことを書き足した
 - fixed: `## Acceptance` の数字を取り直した（A: 6 failed | 7 passed (13) / B: 1 failed | 12 passed (13) / C: exit 1）
 
+### Round 4
+
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven:
+  - `findTests` / `findCycles` の「昇順」が Verify に出ない（`targets.mjs` の JSDoc と plan の I/O が言うが、テストは本数と `toContain` だけ）
+
+- fixed: `c0982de` 並び順のケースを2つ足した（作った順と昇順が違う木で、`toEqual([...found].toSorted())` と期待の配列を見る）
+- fixed: `## Acceptance` の数字を最終コードで取り直した（A: 6 failed | 9 passed (15) / B: 1 failed | 14 passed (15) / C: exit 1 / 対照: フラグありは exit 0）
+
 ## Acceptance
 
 - Ran:
-  - `pnpm run test:run`（worktree）: 30ファイル455テスト緑（Round 2 の `b5664ad` の1件を含む）
+  - `pnpm run test:run`（worktree）: 30ファイル457テスト緑（Round 2 の `b5664ad` と Round 4 の `c0982de` の3件を含む）
   - `pnpm typecheck` / `pnpm lint`: 緑
   - 引数なしの `node scripts/product-ready/index.mjs`: `tests (30)` と `cycles (14)` を出し、前後で `git status --short` は不変（何も消さない）
   - 写し（`.pi/`・`test/`・`scripts/`・`cycles/`・`vitest.config.ts`・`package.json`・`node_modules` の symlink）に `test/keep.test.ts` を置き、`--root <写し> --run`: 名指しのテストは0本、`test/env.test.ts` は消え、`test/keep.test.ts` は残る。2回目は `no tests to remove` / `no cycles to remove` で exit 0（冪等）
   - 写しから `test/keep.test.ts` を外して `vitest run --root <写し>`: `No test files found, exiting with code 0`
 - 壊しテスト（3つとも赤）:
-  - `TEST_TARGETS` から `test/env.test.ts` を外す → `writeBase` を使う6件が赤（6 failed | 7 passed (13)）
-  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed | 12 passed (13)）
+  - `TEST_TARGETS` から `test/env.test.ts` を外す → `writeBase` を使う6件が赤（6 failed | 9 passed (15)）
+  - `TEST_TARGETS` に `test` を足す → 「名指しの外は食わない」が赤（1 failed | 14 passed (15)）
   - `vitest.config.ts` の `passWithNoTests: true` を外す → 0本の写しが `No test files found, exiting with code 1`（対照: フラグありは exit 0）
 - Findings:
   - plan の Verify (3) は「写しから `test/keep.test.ts` を外し」に親が直した（`c264568`）。`Notes` Slice 4 の `left:` はこの直しで閉じた
