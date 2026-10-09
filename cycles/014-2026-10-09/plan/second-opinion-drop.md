@@ -95,9 +95,9 @@ README 2枚は plan 2 も触る（29行目）。plan 1 はその前に走る。
 
 ### Slice 3: README 2枚から second-opinion を外す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7ffe4db
 
 ### Slice 4: 統合: second-opinion の痕跡が消え、残るテストが緑のまま
 
