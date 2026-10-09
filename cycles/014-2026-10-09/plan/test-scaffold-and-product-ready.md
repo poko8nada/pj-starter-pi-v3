@@ -283,4 +283,11 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` — 30ファイル / 448テストが緑（統合スライス）
+  - `pnpm run test:run scripts/product-ready` — 21件緑
+  - `pnpm typecheck` / `pnpm lint` — 緑
+  - 統合の `cli`: worktree で `node scripts/product-ready/index.mjs`（引数なし）— 42行（テスト26本＋`cycles/` 001〜014）を出し、`git status --short` は前後で変わらない（何も消えない）
+  - `grep -rn "\.pi/test" .pi/ test/ vitest.config.ts README.md README.ja.md` — 0件
+  - 壊しテスト3つ（A: `index.mjs` の「引数なしなら return 0」を消す → 「表示だけ → 木は変わらない」が赤／B: `targets.mjs` の `walk(piDir)` を `walk(root)` に → 「`.pi/` の下だけを返す」が赤／C: `prune-tests.mjs` の底の1行を消す → 「`--run` で消える」と「無い root で exit 1」の2件が赤）。3つとも赤を確認して戻した（`git status` は空、448テスト緑）
 - Findings:
+  - なし
