@@ -232,8 +232,10 @@ README 2枚は plan 1 も触る（13行目と18行目）。plan 1 の merge 後�
 ### Slice 4: `prune` の芯を書き、消える物の数え方と消し方をテストで固定する
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 3222c6c
 
 ### Slice 5: 3つの入口を書き、package に `product:ready` を登録する
 

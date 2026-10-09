@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist",
+    "product:ready": "node scripts/product-ready/index.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "test:related": "vitest related --run",
