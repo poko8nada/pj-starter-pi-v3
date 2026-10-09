@@ -123,6 +123,15 @@ describe('findTests', () => {
     expect(() => findTests(join(tmpDir(), 'no-such-root'))).toThrow();
     expect(() => findCycles(join(tmpDir(), 'no-such-root'))).toThrow();
   });
+
+  it('絶対パスを昇順で返す（作った順が逆でも）', () => {
+    const root = tmpDir();
+    writeFile(join(root, '.pi', 'b.test.ts'));
+    writeFile(join(root, '.pi', 'a.test.ts'));
+    const found = findTests(root);
+    expect(found).toEqual([join(root, '.pi', 'a.test.ts'), join(root, '.pi', 'b.test.ts')]);
+    expect(found).toEqual([...found].toSorted());
+  });
 });
 
 describe('findCycles', () => {
@@ -135,6 +144,15 @@ describe('findCycles', () => {
     expect(found).toHaveLength(2);
     expect(found).toContain(join(root, 'cycles', '001-a'));
     expect(found).toContain(join(root, 'cycles', '002-b'));
+  });
+
+  it('絶対パスを昇順で返す（作った順が逆でも）', () => {
+    const root = tmpDir();
+    mkdirSync(join(root, 'cycles', '002-b'), { recursive: true });
+    mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
+    const found = findCycles(root);
+    expect(found).toEqual([join(root, 'cycles', '001-a'), join(root, 'cycles', '002-b')]);
+    expect(found).toEqual([...found].toSorted());
   });
 });
 
