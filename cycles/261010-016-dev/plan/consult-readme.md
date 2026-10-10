@@ -24,7 +24,7 @@
      ```
    - Verify:
      - cli: `grep -n` で行を出して 1 行ずつ読む
-       - (empty) `grep -c "unit-id/log.jsonl" .pi/extensions/consult/README.md` → `0`
+       - (empty) `grep -c "log.jsonl" .pi/extensions/consult/README.md` → `0`（古い置き場の名残が無いこと。新しい置き場が書いてあるかは隣の `records/` で見る）
        - (happy) `grep -n "records/" .pi/extensions/consult/README.md` → `consult_children` の節と `consult_worktree` の `record` の行の 2 か所が `records/<project>/<YYYY-MM-DD>.jsonl` の形
        - (happy) `grep -n "today and yesterday" .pi/extensions/consult/README.md` → 1 件以上（読む幅）
        - (happy) `grep -n "30 days" .pi/extensions/consult/README.md` → 1 件以上（起動のたびの掃除）
@@ -106,7 +106,7 @@
        - (happy) `for f in run/place.test.ts run/log.test.ts run/worktree.test.ts run/delivery.test.ts tool/consult.test.ts tool/children.test.ts tool/worktree.test.ts tool/sound.test.ts; do grep -q "$f" .pi/extensions/consult/README.md || echo "ない: $f"; done` の出力が空（行数では見ない。節は長い散文 1 行なので、数の比較は当たらない）
      - cli: 壊し
        - (error) 記録の場所を 1 か所だけ古い形に戻す → slice 1 の `grep` が赤に戻る（確かめたら戻す）
-       - (error) `lost` の説明を消す → slice 2 の `grep` が赤に戻る（確かめたら戻す）
+       - (error) README から `lost` の記述を全部消す → slice 2 の `grep -c "lost"` が `0` になり赤に戻る（確かめたら戻す）
        - (error) `Sound` の節を「最後の子で止まる」に戻す → slice 3 の `grep` が赤に戻る（確かめたら戻す）
        - (error) reload の段落を「一覧に出る」に戻す → slice 3 の `grep` が赤に戻る（確かめたら戻す）
    - Steps:
@@ -120,7 +120,7 @@
 - Findings: なし
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 1 record place)
-- Verify (cli, done here): `unit-id/log.jsonl`→0; `records/`→lines 68, 87 in `records/<project>/<YYYY-MM-DD>.jsonl` form; `today and yesterday`→line 68; `30 days`→line 99. No read/look in this slice.
+- Verify (cli, done here): `log.jsonl`→0; `records/`→lines 68, 87 in `records/<project>/<YYYY-MM-DD>.jsonl` form; `today and yesterday`→line 68; `30 days`→line 99. No read/look in this slice.
 
 ### Slice 2: 一覧の範囲と、行の見え方
 
@@ -171,5 +171,9 @@
 
 ## Acceptance
 
-- Ran:
+- Ran: （親が実施。壊しで plan の check 自体の壊れ 2 件が発覚）
 - Findings:
+  - slice 1 の cli `grep -c "unit-id/log.jsonl"` は直す前から 0 件の空振り（旧文は `<root>/<unit-id>/log.jsonl` で間に `>` が挟まる）
+    - `fixed: パターンを `log.jsonl`に直し、隣の`records/` ケースとの意図の違いを 1 行添えた`
+  - slice 4 の壊し 2「`lost` の説明を消す」は赤にならない（README に `lost` が他に 3 か所ある）
+    - `fixed: 「README から `lost`の記述を全部消す →`grep -c "lost"` が 0 で赤」に直した`
