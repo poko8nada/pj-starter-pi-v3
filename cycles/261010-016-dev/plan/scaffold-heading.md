@@ -168,14 +168,12 @@ lib/
 ## Acceptance
 
 - Ran:
-  - `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts` → 31 passed
-  - `pnpm lint` → 緑
-  - `pnpm typecheck` → 緑
-  - `pnpm test:run` → 31 files / 488 tests passed
-  - plan の cli の 8 ケース: 1〜6 と 8 は緑。**7（`--root` 省略）は期待の書き方が macOS で当たらず赤**（Findings 1）
+  - 1 回目（Findings の修正の前）: `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts` → 31 passed、`pnpm lint` 緑、`pnpm typecheck` 緑、`pnpm test:run` → 31 files / 488 tests passed。plan の cli の 8 ケースは 1〜6 と 8 が緑、**7（`--root` 省略）だけ赤**（Findings 1）
   - 壊し 1: `writeFileSync` に `withHeading` を通さない → 見出しが `# Definition 015` のまま（赤）→ 復旧
   - 壊し 2: `parseArgs` の数値の検査を外す → vitest が 1 件赤 → 復旧
   - 壊し 3: `argNNN ??` を外す（引数の番号を無視）→ 明示 `001` が `016` のフォルダになる（赤）→ 復旧
+  - **2 回目（Findings の修正の後、親が再実行）**: plan の cli 8 ケースが全部緑（7 は `R=$(cd "$T" && pwd -P)` との比較）、`pnpm vitest run …/scaffold.test.ts` 31 passed。`abc`・`0`・`1.5` の stderr が `Error: not a cycle number: <arg>` であることを手で確認（node が `Error: ` を前置し stack を出すので、`^...$` の当て方はしない）
+  - 修正後に子が回した物（その報告より）: `pnpm lint` 緑、`pnpm typecheck` 緑、`pnpm test:run` → 488 passed
 - Findings:
   - plan の cli のケース 7（`--root` 省略）が `$T` の絶対パスを期待している。macOS では `process.cwd()` が `/private/var/...` を返すので当たらない（**挙動は正しい**。フォルダも見出しも作られた）。期待を `created: .*cycles/<D>-016-feat-x` にするか、`$(cd "$T" && pwd -P)` と比べる
     fixed: slice 2 の cli と slice 3 の `--root` 省略の期待を `created: .*cycles/$D-016-feat-x` と `R=$(cd "$T" && pwd -P)` との比較に直した。実装は変えていない（挙動は正しいため）
