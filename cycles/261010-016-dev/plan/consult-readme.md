@@ -121,7 +121,7 @@ README.ja.md                  update
 
 - Findings: なし
 - Unplanned: なし
-- Commit: (see git log consult(consult-readme): slice 1 record place)
+- Commit: `fc20776` `consult(consult-readme): slice 1 record place`
 - fixed: check を `30 days` → `deletes record files older than 30 days` に変えた（`Tests` 節に当たらない綴り）
 - Verify (cli, done here): `log.jsonl`→0; `records/`→lines 68, 87 in `records/<project>/<YYYY-MM-DD>.jsonl` form; `today and yesterday`→line 68; `30 days`→line 99. No read/look in this slice.
 
@@ -129,7 +129,7 @@ README.ja.md                  update
 
 - Findings: なし
 - Unplanned: なし
-- Commit: (see git log consult(consult-readme): slice 2 list scope)
+- Commit: `aafac6b` `consult(consult-readme): slice 2 list scope`
 - fixed: check を `lost` → `not passed off as` に変えた（一覧の行の説明にしか無い語）
 - Verify (cli, done here): `a previous session`→0; `shows children a previous session started`→0; `lost`→1 (line 66); `What comes back` state stays 4 without `lost` (line 140); slice 1 greps still green.
 - Verify (look/read, 親がやる): look 4 件（いまのセッションの子だけ／`lost` の意味／`state` は 4 つのまま／`remove` はセッションを問わず断る）と read 1 件（review の子に README＋tool/children.ts＋tool/worktree.ts＋run/log.ts＋run/place.ts を突き合わせ）は親がやる。
@@ -138,7 +138,7 @@ README.ja.md                  update
 
 - Findings: なし
 - Unplanned: なし
-- Commit: (see git log consult(consult-readme): slice 3 stop sound report)
+- Commit: `6346f50` `consult(consult-readme): slice 3 stop sound report`
 - Verify (cli, done here): `stops when the last child`→0; `shows it in`→0; `killed through its`→0; `SIGTERM`→lines 68, 189; `re-reads the record`→line 195; Tests 8 本すべて有り; `30 seconds of quiet` と `lasts for this session only` は残した; slice 1–2 の grep も緑のまま.
 - Verify (look/read, 親がやる): look 3 件（SIGTERM の 2 経路／Sound の 5 秒読み直しと自停／reload 報告の記録残しと 1 つずつ配達）と read 1 件（review の子に README＋tool/consult.ts＋tool/sound.ts＋run/delivery.ts＋run/log.ts＋index.ts を突き合わせ）は親がやる。
 
@@ -154,7 +154,7 @@ README.ja.md                  update
     - `fixed: 壊し 2 を新 check に合わせて書き直した（赤になることを実証・復元済み）`
     - `fixed: 残りの read 3 件を直した（record 行の作業場・会話の場所を path 行の書き方に揃えて正確化／Tests 節の model attempt order を削除（参照するテスト無しを grep 確認）／tool/consult.test.ts の説明から ref を外し子の本文と [consult] 行のみに）`
 - Unplanned: なし
-- Commit: (see git log consult(consult-readme): slice 4 integrate)
+- Commit: `1f79e43` `consult(consult-readme): slice 4 integrate`。Round 1 の修正は `311827f`・`24ba392`・`ecab7dc`・`98f60ba`・`d3da289`・`01587d7`
 - Verify (cli, done here): 前提 `git log --oneline -20` に `record-and-delivery` の merge 有り・`run/place.ts` 有り。壊し 4 件すべて赤→緑を確認（記録の場所→slice 1 赤／`lost` 消し→slice 2 赤／Sound 戻し→slice 3 赤／reload 段落戻し→slice 3 赤、すべて復元済み・作業ツリー clean）。
 - Verify (form, done here): 8 本 (`run/place` `run/log` `run/worktree` `run/delivery` `tool/consult` `tool/children` `tool/worktree` `tool/sound` の各 `.test.ts`) すべて有り・出力空。
 - Verify (read, 親がやる): review の子に README 全体と `run/`・`tool/` の全部を突き合わせ（食い違い 0 件を期待）は親がやる。
@@ -177,15 +177,33 @@ README.ja.md                  update
 ### Round 2
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
+
+（子（`consult-40`）の報告から親が記録した。この子は plan md に書かなかった。4 件とも現物で直っていると確認された — ルート `README.md:15` は `lists the children of this session` と `still shows this session's children across a reload`、`README.ja.md:15` は「このセッションの子を一覧し」「このセッションの子は出る」になり、旧い綴りは grep で 0 件。plan の Files にルートの 2 本が足されていることも確認。slice 1 の check `deletes record files older than 30 days` は `README.md:99` の掃除の文 1 件にだけ当たり、`:227` の `the files older than 30 days` には当たらない。slice 2 の check `not passed off as` は `:66` の 1 件にだけ当たり、`:195` の `stays lost` や `:227` の `lost` には当たらない）
 
 ## Acceptance
 
-- Ran: （親が実施。壊しで plan の check 自体の壊れ 2 件が発覚）
+- Ran:
+  - plan の `cli` のケース（親が再実行）:
+    - slice 1 = `log.jsonl` 0 / `records/` 2 / `today and yesterday` 1 / `deletes record files older than 30 days` 1
+    - slice 2 = `a previous session` 0 / `shows children a previous session started` 0 / `not passed off as` 1 / `state` は 4 つのまま（146 行）
+    - slice 3 = `stops when the last child` 0 / `shows it in` 0 / `killed through its` 0 / `SIGTERM` 2 / `re-reads the record` 1
+  - `form`: 8 本の名が全部あり（出力空）。名指しと実在の一致（16＝16）は `consult-32` が両方向で確認
+  - ルート `README.md` / `README.ja.md`: 旧い `children of this project` と「このプロジェクトの子」は 0 件
+  - 壊し 1: 古い置き場の文（`<root>/<unit-id>/log.jsonl`）を戻す → `log.jsonl` が 1 件（0 期待）→ 赤 → 復旧
+  - 壊し 2: 一覧の行の `lost` の説明を消す → `not passed off as` が 0 件（1 期待）→ 赤 → 復旧
+  - 壊し 3・4（子が実施）: `Sound` の節を「最後の子で止まる」に戻す → slice 3 の `grep` が赤 / reload の段落を「一覧に出る」に戻す → slice 3 の `grep` が赤（どちらも復元済み）
+  - plan の `look`（親が読んだ）: slice 2 の 4 項目（いまのセッションの子だけ＝68 行・`lost` の意味＝66 行・`state` は 4 つのまま＝146 行・`remove` はセッションを問わず断る＝95 行）と slice 3 の 3 項目（止め方の 2 つの道＝195 行・音の 5 秒読み直しと自停＝201 行・reload 後の報告＝184 行）とも期待どおり
+  - plan の `read`（親が実行、3 回）: 1 回目 = 5 件 → 全部修正 / 2 回目 = 2 件 → 全部修正 / 3 回目 = 3 件 → 全部修正（打ち切り宣言どおり、その 3 件の修正は `read` を再実行していない）
+  - レビュー（work スキルの手順 5）: Round 1 = 4 件（Stale 2・Unproven 2）→ 全部修正、Round 2 = 4 件とも現物で直っていると確認され、4 観点 なし
 - Findings:
-  - slice 1 の cli `grep -c "unit-id/log.jsonl"` は直す前から 0 件の空振り（旧文は `<root>/<unit-id>/log.jsonl` で間に `>` が挟まる）
-    - `fixed: パターンを `log.jsonl`に直し、隣の`records/` ケースとの意図の違いを 1 行添えた`
-  - slice 4 の壊し 2「`lost` の説明を消す」は赤にならない（README に `lost` が他に 3 か所ある）
-    - `fixed: 「README から `lost`の記述を全部消す →`grep -c "lost"` が 0 で赤」に直した`
+  - plan の check の空振り 2 件（親の壊しで発覚）: slice 1 の `grep -c "unit-id/log.jsonl"` は直す前から 0 件（旧い文は `<root>/<unit-id>/log.jsonl` で間に `>` が挟まる）、slice 4 の壊し 2 は `lost` が他に 3 か所あるため赤にならない
+    - `fixed: `log.jsonl`と`deletes record files older than 30 days`に締め直し、壊し 2 を「一覧の行の`lost` の説明そのものを消す」に直した（`01587d7`）`
+  - 3 回目の `read` の 3 件の修正は、`read` を再実行して確かめていない（打ち切り宣言のため）。現物の読み合わせだけで確かめた
+    - `left: その 3 件は `## Notes`の Slice 4 の`fixed:` に記録した。食い違いが残っていないかは close の残り物で裁く`
