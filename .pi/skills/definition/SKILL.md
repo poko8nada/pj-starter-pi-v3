@@ -1,6 +1,6 @@
 ---
 name: definition
-description: Use when the owner declares a cycle start, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<NNN>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
+description: Use when the owner declares a cycle start, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<YYMMDD-NNN-<branch>>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
 ---
 
 # definition
@@ -13,7 +13,7 @@ The definition is the anchor of the cycle. The design, the plan and the close re
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/definition.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/definition.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the sections, the marker rules, the `Who` list, and the `Stack`'s roles.
 
@@ -38,7 +38,7 @@ A point can also come from the last cycle.
 
 ### 1. Confirm the trigger and read what is behind the cycle
 
-- scaffold the draft with the script (`.pi/skills/definition/scripts/scaffold.mjs`; the previous definition without markers, the format for the first cycle), and set the `# Definition <NNN>` heading
+- run `node .pi/skills/definition/scripts/scaffold.mjs` with no arguments to create the cycle folder and the draft definition (the previous definition without markers, or the format for the first cycle), and use the printed path, then set the `# Definition <NNN>` heading
 - the last definition, in full: the frame, the `Users can do` map, the Stack
 
 ### 2. Decide the points that need a decision

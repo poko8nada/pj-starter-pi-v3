@@ -23,8 +23,9 @@ lib/
      toYYMMDD(date: Date): string  // ローカル日付の YYMMDD
      nextNNN(names: readonly string[]): number  // 両根を合流させた名前の並びから次番号。新形・旧形を数値で拾い、合わない物は飛ばす。空 → 1
      cycleDirName(nnn: number, yymmdd: string, slug: string): string  // 0 埋めはここがやる
-     findPrevDefinition(cyclesDir: string, archiveDir: string): string | null  // NNN 降順に definition.md を探す。無ければ null
-     parseArgs(argv: readonly string[]): { root: string, src: string | null }  // root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない（CLI が読む）
+     findPrevDefinition(cyclesDir: string, archiveDir: string): string | null  // NNN 降順に definition.md を探す。同 NNN は live 優先、同根・同 NNN は名前順。無ければ null
+     parseArgs(argv: readonly string[]): { root: string, src: string | null }  // root 既定は cwd。`--root` 値欠落・未知引数・位置引数 2 個以上は投げる。src の存在確認はしない（CLI が読む）
+     createLeafDir(parentDir: string, name: string): string  // 非 recursive で葉だけ作り、path を返す。存在すれば EEXIST で投げる
      ```
    - Verify:
      - test: `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts`
@@ -35,13 +36,15 @@ lib/
        - (happy) `cycleDirName(16, "261010", "main")` → `"261010-016-main"`、`cycleDirName(5, "261010", "main")` → `"261010-005-main"`
        - (happy) `parseArgs(["--root", "/tmp/x"])` → `{root: "/tmp/x", src: null}`、src 付きは src が入る
        - (happy) `stripMarkers("a **add** (ADR 01-1)")` → `"a"`。marker 無し → そのまま
-       - (happy) tmp の両根に definition がある木 → NNN が最大の `definition.md` を返す。max-NNN の dir に無い時は番号を下がって探す
+       - (happy) tmp の両根に definition がある木 → NNN が最大の `definition.md` を返す。max-NNN の dir に無い時は番号を下がって探す。同 NNN 並立では live が勝つ。同根・同 NNN では名前順に先の `definition.md` を返す
        - (boundary) `slugBranch("")` → `"no-branch"`、`slugBranch("日本語/x")` → `"x"`、`slugBranch("///")` → `"no-branch"`、`"x".repeat(80)` → 80 個の `x`
        - (boundary) `parseArgs([])` → src は `null`（root は cwd なので値は見ない）
        - (empty) `nextNNN([])` → `1`。definition が無い木 → `findPrevDefinition` は `null`
-       - (error) `parseArgs(["--bogus"])` → 投げる。`parseArgs(["--root"])` → 投げる
+       - (error) `parseArgs(["--bogus"])` → 投げる。`parseArgs(["--root"])` → 投げる。`parseArgs(["a", "b"])` → 投げる
+       - (happy) 空 tmp に `createLeafDir` で作る → path が返り dir ができる
+       - (error) 既存 dir に `createLeafDir` → EEXIST で投げる（code が EEXIST であること）
    - Steps:
-     1. `scaffold.mjs`: 純関数6つを足す。既存の export（`stripMarkers`、`TEMPLATE_001`）は保つ。slug は完全一致・先頭セグメント・sanitize の順で決め、結合してから `-` の連続と端を除去し、空なら `no-branch`（`""` の判定はここだけ。CLI は空文字をそのまま渡す）。`toYYMMDD` はローカル getter で組み立てる。NNN 抽出は新形 `^\d{6}-(\d{3})-` を先に、旧形 `^(\d{3})-` を後に、それ以外は飛ばす。`findPrevDefinition` は両根の dir を NNN 降順に `definition.md` を探し、無ければ `null`
+     1. `scaffold.mjs`: 純関数7つを足す。既存の export（`stripMarkers`、`TEMPLATE_001`）は保つ。slug は完全一致・先頭セグメント・sanitize の順で決め、結合してから `-` の連続と端を除去し、空なら `no-branch`（`""` の判定はここだけ。CLI は空文字をそのまま渡す）。`toYYMMDD` はローカル getter で組み立てる。NNN 抽出は新形 `^\d{6}-(\d{3})-` を先に、旧形 `^(\d{3})-` を後に、それ以外は飛ばす。`findPrevDefinition` は両根の dir を NNN 降順に `definition.md` を探し、無ければ `null`。`createLeafDir` は非 recursive で葉だけ作り path を返す（存在すれば EEXIST で投げる）
      2. `scaffold.test.ts`: 上のケースを書く。`findPrevDefinition` の木は `test/tmp.ts` の `tmpDir` で作る（`targets.test.ts` の流儀）
 2. CLI と手順
    - I/O:
@@ -64,10 +67,11 @@ lib/
        - (error) `toYYMMDD(当日) + "-016-feat-x"` の期待 dir 名を事前に mkdir した木 → exit 1、`exists:` の行が出る（当日実行が前提。日跨ぎしたら求め直す）
        - `grep -c "scaffold.mjs <dest>" .pi/skills/definition/SKILL.md` → 0。`grep -n "node .pi/skills/definition/scripts/scaffold.mjs" .pi/skills/definition/SKILL.md` → 引数なしの呼び出しがある
        - `grep -n "cycles/" .pi/skills/definition/references/format.md` → path 行が `cycles/<YYMMDD-NNN-<branch>>/definition.md`
+       - `grep -n "cycles/" .pi/skills/definition/SKILL.md` → :3 と :16 が新形 `cycles/<YYMMDD-NNN-<branch>>/definition.md` で、旧 3 形が 0 件
        - `grep -rn "scaffold.mjs <dest>" .pi/ scripts/ lib/ test/` → 0 件
    - Steps:
-     1. `scaffold.mjs`: CLI を wire する。`parseArgs`（slice 1）で引数を読む。`--root` から両根を作り、存在しない根は空として扱う。親を作ってから葉を非 recursive で作り、EEXIST は `exists:` + exit 1。branch・日付・探索・草案・印字は I/O の通り。src 相対は root 基準。旧 `<dest> [<src>]` 形の呼び出しが他に無いことを grep で確かめる
-     2. `SKILL.md`: 手順1を新しい呼び出しに書き換える（引数なしでフォルダまで作り、印字された path を使う）
+     1. `scaffold.mjs`: CLI を wire する。`parseArgs`（slice 1）で引数を読む。`--root` から両根を作り、存在しない根は空として扱う。親を作ってから葉は `createLeafDir` で作り、catch EEXIST → `exists:` + exit 1（I/O の通り、変えない）。branch・日付・探索・草案・印字は I/O の通り。src 相対は root 基準。旧 `<dest> [<src>]` 形の呼び出しが他に無いことを grep で確かめる
+     2. `SKILL.md`: 手順1を新しい呼び出しに書き換える（引数なしでフォルダまで作り、印字された path を使う）。ついでに :3（description）と :16（path 行）も新形に直す
      3. `format.md`: path 行を新形 `cycles/<YYMMDD-NNN-<branch>>` に直す
 3. 統合: 素起こしが一つの呼び出しになる
    - Verify:
@@ -82,21 +86,29 @@ lib/
 
 ### Slice 1: rule とテスト
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b066190
+- 追加対応: `createLeafDir` を純関数に切り出し、CLI の葉作成に使用。単体テスト happy（path 返却＋dir 作成）と error（EEXIST の code 確認）を追加。17 tests 緑
+- Commit（追加）: 1593ca7
+- Round 4 対応: I/O に多引数 throw と tie-break（live 優先・同根名前順）を明記、Verify に 3 件を明記。3rd キーを名前昇順に修正し同根名前順テストを追加。22 tests 緑
+- Commit（Round 4）: 7362d4b
 
 ### Slice 2: CLI と手順
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `exists:` の事前 mkdir 再現が衝突に落ちない: 期待 dir `016` を事前に作ると max が `016` になり次は `017` を作るため、葉の EEXIST に当たらない。並行 2 実行も直列化され `016`/`017` ができ `exists:` は出ない
+    left: max+1 の算出では事前作成が次番号を押し上げるため、単純な事前 mkdir では再現できない。同時通過の競合を決定的に起こす手順が無い
+- Unplanned: なし
+- Commit: 8845b93
+- 追加対応: `SKILL.md` :3（description）と :16（path 行）を新形に修正。`grep -n "cycles/"` で :3・:16 が新形、旧 3 形 0 件を確認
+- Commit（追加）: 1593ca7
 
 ### Slice 3: 統合: 素起こしが一つの呼び出しになる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: fb79fd1
 
 ## Review
 
@@ -156,7 +168,32 @@ lib/
   - 80 文字境界の入力が未固定
     - fixed: `"x".repeat(80)` → 80 個の `x` にした
 
+### Round 3 (diff `f0fb6fd..HEAD`: `b066190`, `8845b93`, `fb79fd1`, `1593ca7` を review)
+
+- Stale: なし（旧 `<dest>` 形の残存なし。slice 2 の repo-wide grep が 0 を要求し、現状の `scaffold.mjs` 言及は `SKILL.md:41`（新形）・`scaffold.mjs:8`（新形）のみ。他スキルの `cycles/<NNN-YYYY-MM-DD>` 残存は本 change 前からあり Design `path-and-archive` の守備範囲なので本 change が stale にしたものではない。ADR Highlight の「フォルダは作らない」は決定前の現状記録で凍結対象）
+- Unlisted: なし（`git diff --name-status f0fb6fd..HEAD` の変更は `SKILL.md`・`format.md`・`scaffold.mjs`・`scaffold.test.ts`・plan md の 5 件のみ。前 4 件は ## Files の 4 行に載り、plan md は計画自体。`lib/git-env.mjs` と `test/tmp.ts` は import されるだけで無変更）
+- Gaps:
+  - CLI の EEXIST → `exists:` + exit 1 写像を起こす check が無い。`scaffold.mjs:250-258`（親 recursive＋葉 `createLeafDir`、catch EEXIST で `exists:`）に対し、slice 2 Verify の事前 mkdir 手順は Notes Slice 2 Findings の `left:` 通り max+1 が `016` → `017` に逃げて葉に当たらない。単体 `createLeafDir` EEXIST（`scaffold.test.ts:104-114`）は葉の throw だけを見て CLI の catch 写像を見ない
+    - left: CLI 通しの再現は不可。葉の EEXIST は単体テスト済みで catch は読みで正しい
+  - `parseArgs` の 2 つ目位置引数 `too many arguments`（`scaffold.mjs:213`）に check が無い。slice 1 Verify は `--bogus` と `--root` 値欠落だけ（plan:43）で二重 src の error ケースが無い。I/O（plan:27）は単一 src を仮定するだけで多引数の扱いを決めていない
+    - fixed: 余分な位置引数は未知引数と同様に投げることにし、`parseArgs(["a", "b"])` が投げるケースを足した（実装は既存の `too many arguments` のまま）
+  - 同一 NNN での live/archive 優先と同根同 NNN の name 順（`scaffold.mjs:153-155,172-175` の priority＋name 降順）に check が無い。slice 1 の `findPrevDefinition` 3 件も slice 3 も NNN が異なる木（`015` vs `014`）だけで同 NNN 並立の木が無い。I/O（plan:26）は NNN 降順のみで tie-break を決めていない
+    - fixed: 同 NNN では live が archive に勝つケース（両根に `015` を置き内容で判定）を足した（実装の priority 順のまま）
+- Unproven:
+  - `toYYMMDD` の月日 `padStart(2, '0')`（`scaffold.mjs:101-103`）。test（`scaffold.test.ts:44-48`）は `new Date(2026, 9, 10)` → `"261010"` のみで月日とも 2 桁のため、pad を外しても緑のまま。一桁月日（例 `260105`）のケースが無い
+    - fixed: `new Date(2026, 0, 5)` → `"260105"` のケースを足した
+  - `nextNNN` の旧形分岐（`extractNNN` の `^(\d{3})-`、`scaffold.mjs:115-116`）。test（`scaffold.test.ts:51-52`）は旧形 `001-...` を含むが max は新形 `015` のため旧形分岐を外しても `16` のまま緑。他の check（slice 2 の live `015`、slice 3 の live `015`）も新形が max で、旧形が max を決める木が無い
+    - fixed: 旧形だけのケース（`["001-2026-09-20", "014-2026-10-09"]` → `15`）を足した
+
+### Round 4
+
+- Gaps:
+  - `parseArgs` 多引数: I/O の parseArgs 行が単一 src 仮定で位置引数 2 個以上の扱いが未規定、Verify に `parseArgs(["a", "b"])` のケースが無い（テストは Round 3 で追加済み）
+    - fixed: I/O の parseArgs 行に「位置引数 2 個以上は投げる」を足し、Verify に `parseArgs(["a", "b"])` → 投げるを足した（実装・テストは既存のまま）
+  - tie-break 未規定・未検証: I/O の findPrevDefinition 行が NNN 降順のみで同 NNN の扱いが未規定。Verify の同 NNN ケースは両根 live 勝ちのみで同根の名前順が無い。コードの 3rd キーが名前降順で名前順と逆だった
+    - fixed: I/O に「同 NNN は live 優先、同根・同 NNN は名前順」を足し、Verify に同 NNN 両根・同根名前順の2件を明記した。コードの 3rd キーを名前昇順に直し、同根・同 NNN で名前順に先の定義を返すテストを足した
+
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: 対象テスト 22 件緑。統合 CLI 再実行（live 持ち越しと archive 持ち越しの両方）。壊し 2 本（写像外し・葉 recursive 化）→ 赤 → 復旧 → 緑。全体 `pnpm typecheck` 緑・`pnpm test:run` 479 件緑
+- Findings: なし
