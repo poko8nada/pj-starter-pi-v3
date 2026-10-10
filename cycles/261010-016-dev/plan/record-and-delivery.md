@@ -305,8 +305,11 @@ test/
 ### Slice 5: 統合: reload をまたいでも報告が届き、テストが本物に書かない
 
 - Findings:
+  - 本物の TUI で子を走らせながらの `/reload` 目視（報告が届く・一覧と cancel・音が止まる）はここではやっていない
+    - `left: 子を起こして reload を打つ実演環境が無いため。配達の結線（session_start で未読を渡し、渡し終えてから目録を 1 回進める）は捨てテストで確かめた（1 回だけ渡り、2 回目は渡らない）が、そのテストは commit していない`
 - Unplanned:
-- Commit:
+  - なし
+- Commit: `consult(record-and-delivery): integrate records and delivery`
 
 ## Review
 
