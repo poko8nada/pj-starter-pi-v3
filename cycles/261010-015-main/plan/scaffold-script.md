@@ -91,6 +91,8 @@ lib/
 - Commit: b066190
 - 追加対応: `createLeafDir` を純関数に切り出し、CLI の葉作成に使用。単体テスト happy（path 返却＋dir 作成）と error（EEXIST の code 確認）を追加。17 tests 緑
 - Commit（追加）: 1593ca7
+- Round 4 対応: I/O に多引数 throw と tie-break（live 優先・同根名前順）を明記、Verify に 3 件を明記。3rd キーを名前昇順に修正し同根名前順テストを追加。22 tests 緑
+- Commit（Round 4）: 7362d4b
 
 ### Slice 2: CLI と手順
 
@@ -193,5 +195,5 @@ lib/
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: 対象テスト 22 件緑。統合 CLI 再実行（live 持ち越しと archive 持ち越しの両方）。壊し 2 本（写像外し・葉 recursive 化）→ 赤 → 復旧 → 緑。全体 `pnpm typecheck` 緑・`pnpm test:run` 479 件緑
+- Findings: なし
