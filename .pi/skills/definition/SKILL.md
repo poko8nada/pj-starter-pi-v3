@@ -1,6 +1,6 @@
 ---
 name: definition
-description: Use when the owner declares a cycle start, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<NNN>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
+description: Use when the owner declares a cycle start, or when a recorded part of the definition is about to change — the frame, a unit in `Users can do`, or the Stack. It writes `cycles/<YYMMDD-NNN-<branch>>/definition.md`, and leaves the discussion behind every decision in the cycle's ADR.
 ---
 
 # definition
@@ -13,7 +13,7 @@ The definition is the anchor of the cycle. The design, the plan and the close re
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/definition.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/definition.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the sections, the marker rules, the `Who` list, and the `Stack`'s roles.
 

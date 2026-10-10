@@ -25,6 +25,7 @@ lib/
      cycleDirName(nnn: number, yymmdd: string, slug: string): string  // 0 埋めはここがやる
      findPrevDefinition(cyclesDir: string, archiveDir: string): string | null  // NNN 降順に definition.md を探す。無ければ null
      parseArgs(argv: readonly string[]): { root: string, src: string | null }  // root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない（CLI が読む）
+     createLeafDir(parentDir: string, name: string): string  // 非 recursive で葉だけ作り、path を返す。存在すれば EEXIST で投げる
      ```
    - Verify:
      - test: `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts`
@@ -40,8 +41,10 @@ lib/
        - (boundary) `parseArgs([])` → src は `null`（root は cwd なので値は見ない）
        - (empty) `nextNNN([])` → `1`。definition が無い木 → `findPrevDefinition` は `null`
        - (error) `parseArgs(["--bogus"])` → 投げる。`parseArgs(["--root"])` → 投げる
+       - (happy) 空 tmp に `createLeafDir` で作る → path が返り dir ができる
+       - (error) 既存 dir に `createLeafDir` → EEXIST で投げる（code が EEXIST であること）
    - Steps:
-     1. `scaffold.mjs`: 純関数6つを足す。既存の export（`stripMarkers`、`TEMPLATE_001`）は保つ。slug は完全一致・先頭セグメント・sanitize の順で決め、結合してから `-` の連続と端を除去し、空なら `no-branch`（`""` の判定はここだけ。CLI は空文字をそのまま渡す）。`toYYMMDD` はローカル getter で組み立てる。NNN 抽出は新形 `^\d{6}-(\d{3})-` を先に、旧形 `^(\d{3})-` を後に、それ以外は飛ばす。`findPrevDefinition` は両根の dir を NNN 降順に `definition.md` を探し、無ければ `null`
+     1. `scaffold.mjs`: 純関数7つを足す。既存の export（`stripMarkers`、`TEMPLATE_001`）は保つ。slug は完全一致・先頭セグメント・sanitize の順で決め、結合してから `-` の連続と端を除去し、空なら `no-branch`（`""` の判定はここだけ。CLI は空文字をそのまま渡す）。`toYYMMDD` はローカル getter で組み立てる。NNN 抽出は新形 `^\d{6}-(\d{3})-` を先に、旧形 `^(\d{3})-` を後に、それ以外は飛ばす。`findPrevDefinition` は両根の dir を NNN 降順に `definition.md` を探し、無ければ `null`。`createLeafDir` は非 recursive で葉だけ作り path を返す（存在すれば EEXIST で投げる）
      2. `scaffold.test.ts`: 上のケースを書く。`findPrevDefinition` の木は `test/tmp.ts` の `tmpDir` で作る（`targets.test.ts` の流儀）
 2. CLI と手順
    - I/O:
@@ -64,10 +67,11 @@ lib/
        - (error) `toYYMMDD(当日) + "-016-feat-x"` の期待 dir 名を事前に mkdir した木 → exit 1、`exists:` の行が出る（当日実行が前提。日跨ぎしたら求め直す）
        - `grep -c "scaffold.mjs <dest>" .pi/skills/definition/SKILL.md` → 0。`grep -n "node .pi/skills/definition/scripts/scaffold.mjs" .pi/skills/definition/SKILL.md` → 引数なしの呼び出しがある
        - `grep -n "cycles/" .pi/skills/definition/references/format.md` → path 行が `cycles/<YYMMDD-NNN-<branch>>/definition.md`
+       - `grep -n "cycles/" .pi/skills/definition/SKILL.md` → :3 と :16 が新形 `cycles/<YYMMDD-NNN-<branch>>/definition.md` で、旧 3 形が 0 件
        - `grep -rn "scaffold.mjs <dest>" .pi/ scripts/ lib/ test/` → 0 件
    - Steps:
-     1. `scaffold.mjs`: CLI を wire する。`parseArgs`（slice 1）で引数を読む。`--root` から両根を作り、存在しない根は空として扱う。親を作ってから葉を非 recursive で作り、EEXIST は `exists:` + exit 1。branch・日付・探索・草案・印字は I/O の通り。src 相対は root 基準。旧 `<dest> [<src>]` 形の呼び出しが他に無いことを grep で確かめる
-     2. `SKILL.md`: 手順1を新しい呼び出しに書き換える（引数なしでフォルダまで作り、印字された path を使う）
+     1. `scaffold.mjs`: CLI を wire する。`parseArgs`（slice 1）で引数を読む。`--root` から両根を作り、存在しない根は空として扱う。親を作ってから葉は `createLeafDir` で作り、catch EEXIST → `exists:` + exit 1（I/O の通り、変えない）。branch・日付・探索・草案・印字は I/O の通り。src 相対は root 基準。旧 `<dest> [<src>]` 形の呼び出しが他に無いことを grep で確かめる
+     2. `SKILL.md`: 手順1を新しい呼び出しに書き換える（引数なしでフォルダまで作り、印字された path を使う）。ついでに :3（description）と :16（path 行）も新形に直す
      3. `format.md`: path 行を新形 `cycles/<YYMMDD-NNN-<branch>>` に直す
 3. 統合: 素起こしが一つの呼び出しになる
    - Verify:
@@ -82,21 +86,23 @@ lib/
 
 ### Slice 1: rule とテスト
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b066190
 
 ### Slice 2: CLI と手順
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `exists:` の事前 mkdir 再現が衝突に落ちない: 期待 dir `016` を事前に作ると max が `016` になり次は `017` を作るため、葉の EEXIST に当たらない。並行 2 実行も直列化され `016`/`017` ができ `exists:` は出ない
+    left: max+1 の算出では事前作成が次番号を押し上げるため、単純な事前 mkdir では再現できない。同時通過の競合を決定的に起こす手順が無い
+- Unplanned: なし
+- Commit: 8845b93
 
 ### Slice 3: 統合: 素起こしが一つの呼び出しになる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: fb79fd1
 
 ## Review
 

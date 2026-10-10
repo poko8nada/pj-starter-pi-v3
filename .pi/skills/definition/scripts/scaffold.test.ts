@@ -1,8 +1,9 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import {
+  createLeafDir,
   cycleDirName,
   findPrevDefinition,
   nextNNN,
@@ -86,6 +87,30 @@ describe('stripMarkers', () => {
 
   it('marker 無しはそのまま', () => {
     expect(stripMarkers('a')).toBe('a');
+  });
+});
+
+describe('createLeafDir', () => {
+  it('空 tmp に作る → path が返り dir ができる', () => {
+    const root = tmpDir();
+    const parent = join(root, 'cycles');
+    mkdirSync(parent, { recursive: true });
+    const leaf = createLeafDir(parent, '261010-016-main');
+    expect(leaf).toBe(join(parent, '261010-016-main'));
+    expect(existsSync(leaf)).toBe(true);
+    expect(statSync(leaf).isDirectory()).toBe(true);
+  });
+
+  it('既存 dir → EEXIST で投げる', () => {
+    const root = tmpDir();
+    const parent = join(root, 'cycles');
+    mkdirSync(join(parent, '261010-016-main'), { recursive: true });
+    try {
+      createLeafDir(parent, '261010-016-main');
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toMatchObject({ code: 'EEXIST' });
+    }
   });
 });
 

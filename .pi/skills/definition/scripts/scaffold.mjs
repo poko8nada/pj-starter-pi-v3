@@ -181,6 +181,18 @@ export function findPrevDefinition(cyclesDir, archiveDir) {
 }
 
 /**
+ * 親の下に葉だけを非 recursive で作り、path を返す。存在すれば EEXIST で投げる。
+ * @param {string} parentDir
+ * @param {string} name
+ * @returns {string}
+ */
+export function createLeafDir(parentDir, name) {
+  const leaf = join(parentDir, name);
+  mkdirSync(leaf);
+  return leaf;
+}
+
+/**
  * CLI 引数を読む。root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない。
  * @param {readonly string[]} argv
  * @returns {{ root: string, src: string | null }}
@@ -235,13 +247,13 @@ if (isMain) {
   const nnn = nextNNN(names);
   const slug = slugBranch(branch);
   const dirName = cycleDirName(nnn, yymmdd, slug);
-  const leaf = join(cyclesDir, dirName);
   mkdirSync(cyclesDir, { recursive: true });
+  let leaf;
   try {
-    mkdirSync(leaf);
+    leaf = createLeafDir(cyclesDir, dirName);
   } catch (err) {
     if (err && err.code === 'EEXIST') {
-      console.error(`exists: ${leaf}`);
+      console.error(`exists: ${join(cyclesDir, dirName)}`);
       process.exit(1);
     }
     throw err;
