@@ -72,6 +72,21 @@ export function stripMarkers(text) {
 }
 
 /**
+ * 先頭に `# Definition <nnn>` を置く。`^# Definition \S+\r?$` に合う最初の 1 行だけ落とす。改行は正規化しない。
+ * @param {string} body
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function withHeading(body, nnn) {
+  const heading = `# Definition ${String(nnn).padStart(3, '0')}`;
+  const lines = body.split('\n');
+  const idx = lines.findIndex((line) => /^# Definition \S+\r?$/.test(line));
+  if (idx !== -1) lines.splice(idx, 1);
+  lines.unshift(heading);
+  return lines.join('\n');
+}
+
+/**
  * ブランチ名から cycle フォルダ用の slug を作る。空だけはここが落とす。
  * 完全一致（main→main、develop→dev）、先頭セグメント（feature→feat）の順で写像し、
  * 結合してから sanitize（小文字化、英数以外を `-`、連続と端の除去）する。

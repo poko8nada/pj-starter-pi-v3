@@ -11,6 +11,7 @@ import {
   slugBranch,
   stripMarkers,
   toYYMMDD,
+  withHeading,
 } from './scaffold.mjs';
 
 function writeDefinition(dir: string, body = 'x\n'): string {
@@ -99,6 +100,41 @@ describe('stripMarkers', () => {
 
   it('marker 無しはそのまま', () => {
     expect(stripMarkers('a')).toBe('a');
+  });
+});
+
+describe('withHeading', () => {
+  it('見出しを番号で置き換える', () => {
+    expect(withHeading('# Definition 015\n\n本文\n', 16)).toBe('# Definition 016\n\n本文\n');
+  });
+
+  it('`<NNN>` を 001 にする', () => {
+    expect(withHeading('# Definition <NNN>\n\n本文\n', 1)).toBe('# Definition 001\n\n本文\n');
+  });
+
+  it('見出しが無ければ置くだけ', () => {
+    expect(withHeading('## Product\n', 16)).toBe('# Definition 016\n## Product\n');
+  });
+
+  it('先頭行でなくても落とす', () => {
+    expect(withHeading('前置き\n# Definition 015\n', 16)).toBe('# Definition 016\n前置き\n');
+  });
+
+  it('落とすのは最初の 1 行だけ', () => {
+    expect(withHeading('# Definition 015\n# Definition 014\n', 16)).toBe(
+      '# Definition 016\n# Definition 014\n',
+    );
+  });
+
+  it('改行は正規化しない', () => {
+    expect(withHeading('# Definition 015\r\n\r\n本文\r\n', 16)).toBe(
+      '# Definition 016\n\r\n本文\r\n',
+    );
+  });
+
+  it('同じ番号で 2 回呼ぶと変わらない', () => {
+    const once = withHeading('# Definition 015\n\n本文\n', 16);
+    expect(withHeading(once, 16)).toBe(once);
   });
 });
 
