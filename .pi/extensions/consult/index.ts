@@ -172,11 +172,11 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_children',
     label: 'Consult children',
     description:
-      'Show the children of this project, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children a previous session started (after a reload). cancel only stops a child this session started; one from an earlier session is named in the reply and left alone.',
+      'Show the children of this session, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children this session started (even ones from before a reload). cancel stops a running child of this session, including one a previous instance started (by process id); a child from another session is named in the reply and left alone.',
     promptSnippet: 'List the consult children (and stop one) — works across reloads',
     promptGuidelines: [
-      'Use consult_children to see what is still running before you wait or act: one call lists every child of this project, including ones from before a reload.',
-      'Use action: cancel with the id to stop one; a child started by a previous session cannot be stopped, and says so.',
+      'Use consult_children to see what is still running before you wait or act: one call lists this session’s children, including ones from before a reload.',
+      'Use action: cancel with the id to stop one; a child started by another session cannot be stopped, and says so.',
     ],
     parameters: CHILDREN_PARAMETERS,
     execute: createChildrenTool({

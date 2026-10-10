@@ -316,9 +316,26 @@ test/
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/tool/worktree.ts:91-96` の旧コメント（`log.jsonl`・この unit のもの）が新コメントと重複して残っている
+    - `fixed: 旧い方のコメントブロックを消し、新しい方（置き場の日ごとのファイル・session で絞らない）だけを残した`
+  - `.pi/extensions/consult/tool/children.ts:4-5` の「前のセッションが走らせた子まで出る」が 01-4 の session 絞り（7-8）と矛盾している
+    - `fixed: 4-5 行目を「子は親のプロセスに従属しないので、reload で親が差し替わっても、同じ session の子は出る」に直した`
+  - `.pi/extensions/consult/index.ts:175,179` の consult_children 説明（previous session を表示・停止不可）が session 絞りと kill による停止（`controlChild`）と矛盾している
+    - `fixed: description を this session の表示＋前インスタンスの子も pid で止める旨に、guidelines を this session の一覧＋別 session は止めない旨に直した`
+  - `.pi/extensions/consult/README.md:68,87,178,189` が旧置き場（`<root>/<unit>/log.jsonl`）と旧振る舞い（他 session 表示・Abort のみ）のままである（plan は consult-readme が書くとしている）
+    - `left: README は consult-readme の plan が書く。この plan の Files は「README.md は変更しない」と明記している`
 - Unlisted:
+  - なし
 - Gaps:
+  - `session_start` の配達結線（未読を 1 つずつ送り終えてから目録を 1 回進め、2 回目は送らない）に commit された check が無い（捨てテスト未 commit・slice5 look 未実施で、tmp place＋fake pi の二重が作れるため look の代替にならない）
+    - `left: plan の slice 5 が look（owner が子を走らせて /reload）でこの振る舞いを覆っている。index.ts は import すると拡張を登録してしまうので、配線を単体で読む二重物が作れない（plan の slice 3 は cli の grep で順序を見る）`
+  - `index.ts` の `placeOf` の落とし（`topLevel` が投げたら cwd に落とす）に check が無い（非 repo の tmpDir で二重が作れる）
+    - `left: これも index.ts の読み込み時の分岐で、テストから届かない。落ちれば起動そのものが失敗して見える（plan の slice 1 は「読み込みで投げない」と書いているだけ）`
 - Unproven:
+  - `run/delivery.test.ts` の壊れ目録テストの `unreadNotices` 断言が空の置き場の 0 件を見ているため、壊れ→全部返すが無くても緑のままになる
+    - `fixed: 通知行を 1 本書いた置き場で目録を壊し、unreadNotices がその 1 本を返す形に直した`
+  - `run/delivery.test.ts` の遅延置き場テストが `CURSOR_FILE` の不在だけを見て dir の有無を見ないため、`mkdir` が足されても緑のままになる
+    - `fixed: existsSync(found.dir) が false である断言を足した`
 
 ### Round 2
 

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
@@ -133,6 +133,7 @@ describe('createDelivery: 置き場の遅延', () => {
   it('作っただけでは置き場を作らない（届け先が無くなって初めて書く）', () => {
     const found = place();
     createDelivery(found);
+    expect(existsSync(found.dir)).toBe(false);
     expect(() => readFileSync(join(found.dir, CURSOR_FILE), 'utf8')).toThrow();
   });
 });
@@ -150,10 +151,14 @@ describe('writeCursor / readCursor', () => {
 
   it('壊れている（JSON でない）→ undefined（全部返す側に倒れる）', () => {
     const found = place();
-    writeCursor(found, 'session-a', { ended: 1234 });
+    const at = new Date(2026, 9, 10, 12, 0);
+    notice(found, at, { ended: 2000, child: 'consult-1' });
+    writeCursor(found, 'session-a', { ended: 9999 });
     writeFileSync(join(found.dir, CURSOR_FILE), 'これは JSON ではない');
     expect(readCursor(found, 'session-a')).toBeUndefined();
-    expect(unreadNotices(found, { session: 'session-a' })).toHaveLength(0);
+    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.child)).toEqual([
+      'consult-1',
+    ]);
   });
 });
 
