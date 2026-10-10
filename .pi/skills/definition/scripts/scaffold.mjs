@@ -225,9 +225,9 @@ export function parseArgs(argv) {
       throw new Error(`unknown argument: ${arg}`);
     } else {
       if (nnn !== null) throw new Error(`too many arguments: ${arg}`);
-      if (!/^\d+$/.test(arg)) throw new Error(`invalid nnn: ${arg}`);
+      if (!/^\d+$/.test(arg)) throw new Error(`not a cycle number: ${arg}`);
       const n = Number(arg);
-      if (n < 1) throw new Error(`invalid nnn: ${arg}`);
+      if (n < 1) throw new Error(`not a cycle number: ${arg}`);
       nnn = n;
     }
   }

@@ -75,7 +75,7 @@ lib/
        git -C "$T" checkout --quiet -b feature/x
        node "$S" --root "$T" 016
        ```
-       - (happy) 出力の 1 行目が `created: $T/cycles/$D-016-feat-x`、2 行目が `src: $T/cycles/261010-015-main/definition.md`（`src:` は草案の出どころ。日付は今日なので `$D` で組む）
+       - (happy) 出力の 1 行目が `created: .*cycles/$D-016-feat-x`（`--root` に渡した `$T` 字面を含む）、2 行目が `src: $T/cycles/261010-015-main/definition.md`（`src:` は草案の出どころ。日付は今日なので `$D` で組む）
        - (happy) `head -1 "$T/cycles/$D-016-feat-x/definition.md"` が `# Definition 016`（明示した番号がフォルダ名と見出しの両方に入る）
        - (error) 同じ木で同じ番号をもう一度走らせると、`exists: ` を出して終了コード 1
    - Steps:
@@ -118,7 +118,7 @@ lib/
        - (error) `T=$(mktemp -d); mk "$T" "$BODY"; before=$(ls -1 "$T/cycles" | wc -l); node "$S" --root "$T" abc; echo $?` → 終了コードが 0 でなく、`ls -1 "$T/cycles" | wc -l` が `$before` と同じ（フォルダが増えない）
        - (boundary) 空の木: `T=$(mktemp -d); git -C "$T" init --quiet; git -C "$T" config user.email a@b; git -C "$T" config user.name a; git -C "$T" checkout --quiet -b feature/x; node "$S" --root "$T"` → `$D-001-feat-x` があり、見出しが `# Definition 001`、`src:` が `template`（前の definition が無いので Template になる。番号は `nextNNN` の 1）
        - (boundary) 見出しが無い definition: `T=$(mktemp -d); mk "$T" '## Product\n\nx\n'` の木で `node "$S" --root "$T"` → 終了コード 0、見出しが `# Definition 016`
-       - (boundary) `--root` を省く: `T=$(mktemp -d); mk "$T" "$BODY"; (cd "$T" && node "$S")` → `$T/cycles/$D-016-feat-x` ができる
+       - (boundary) `--root` を省く: `T=$(mktemp -d); mk "$T" "$BODY"; (cd "$T" && node "$S")` → `created:` が `.*cycles/$D-016-feat-x` に合い、`R=$(cd "$T" && pwd -P)` なら `$R/cycles/$D-016-feat-x`（macOS では `process.cwd()` が解決済みを返すため `$T` 字面では比べない）
        - (happy) `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts` が緑、`pnpm lint` が緑
        - (error) 壊し: `writeFileSync` に渡す `draft` から `withHeading` を外す → 明示 001 と自動採番の見出しのケースが赤に戻る（確かめたら戻す）
    - Steps:
@@ -178,4 +178,6 @@ lib/
   - 壊し 3: `argNNN ??` を外す（引数の番号を無視）→ 明示 `001` が `016` のフォルダになる（赤）→ 復旧
 - Findings:
   - plan の cli のケース 7（`--root` 省略）が `$T` の絶対パスを期待している。macOS では `process.cwd()` が `/private/var/...` を返すので当たらない（**挙動は正しい**。フォルダも見出しも作られた）。期待を `created: .*cycles/<D>-016-feat-x` にするか、`$(cd "$T" && pwd -P)` と比べる
+    fixed: slice 2 の cli と slice 3 の `--root` 省略の期待を `created: .*cycles/$D-016-feat-x` と `R=$(cd "$T" && pwd -P)` との比較に直した。実装は変えていない（挙動は正しいため）
   - `parseArgs` のエラー文面が plan の I/O と違う（実装は `invalid nnn: <arg>`、plan は `not a cycle number: <arg>`）。plan の I/O を正とするならコードを合わせる
+    fixed: `scaffold.mjs` の 2 箇所（非数字・0 以下）を `not a cycle number: <arg>` に合わせた。テストは文面を見ていないため変更なし
