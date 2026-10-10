@@ -7,7 +7,8 @@
  *
  *   node scaffold.mjs <dest-definition.md> [<src-definition.md>]
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /** 行末の marker。` **add** (ADR 01-1)` の形 */
@@ -66,6 +67,140 @@ export function stripMarkers(text) {
     .split('\n')
     .map((line) => line.replace(MARKER, ''))
     .join('\n');
+}
+
+/**
+ * ブランチ名から cycle フォルダ用の slug を作る。空だけはここが落とす。
+ * 完全一致（main→main、develop→dev）、先頭セグメント（feature→feat）の順で写像し、
+ * 結合してから sanitize（小文字化、英数以外を `-`、連続と端の除去）する。
+ * @param {string} branch
+ * @returns {string}
+ */
+export function slugBranch(branch) {
+  if (branch === 'main') return 'main';
+  if (branch === 'develop') return 'dev';
+  const parts = branch.split('/');
+  if (parts.length > 0 && parts[0].toLowerCase() === 'feature') {
+    parts[0] = 'feat';
+  }
+  const joined = parts.join('-');
+  const sanitized = joined.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const collapsed = sanitized.replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (collapsed === '') return 'no-branch';
+  return collapsed;
+}
+
+/**
+ * ローカル日付から YYMMDD を作る。
+ * @param {Date} date
+ * @returns {string}
+ */
+export function toYYMMDD(date) {
+  const yy = String(date.getFullYear() % 100).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
+}
+
+/**
+ * 名前から NNN を抜く。新形 `YYMMDD-NNN-slug` を先に、旧形 `NNN-YYYY-MM-DD` を後に見る。
+ * @param {string} name
+ * @returns {number | null}
+ */
+function extractNNN(name) {
+  const next = /^\d{6}-(\d{3})-/.exec(name);
+  if (next) return Number(next[1]);
+  const prev = /^(\d{3})-/.exec(name);
+  if (prev) return Number(prev[1]);
+  return null;
+}
+
+/**
+ * 両根を合流させた名前の並びから次番号を決める。合わない物は飛ばす。空 → 1。
+ * @param {readonly string[]} names
+ * @returns {number}
+ */
+export function nextNNN(names) {
+  let max = 0;
+  for (const name of names) {
+    const n = extractNNN(name);
+    if (n !== null && n > max) max = n;
+  }
+  return max + 1;
+}
+
+/**
+ * cycle のフォルダ名を組み立てる。0 埋めはここがやる。
+ * @param {number} nnn
+ * @param {string} yymmdd
+ * @param {string} slug
+ * @returns {string}
+ */
+export function cycleDirName(nnn, yymmdd, slug) {
+  return `${yymmdd}-${String(nnn).padStart(3, '0')}-${slug}`;
+}
+
+/**
+ * 両根の dir を NNN 降順に `definition.md` を探す。無ければ null。存在しない根は空として扱う。
+ * @param {string} cyclesDir
+ * @param {string} archiveDir
+ * @returns {string | null}
+ */
+export function findPrevDefinition(cyclesDir, archiveDir) {
+  const candidates = [];
+  const roots = [
+    { dir: cyclesDir, priority: 0 },
+    { dir: archiveDir, priority: 1 },
+  ];
+  for (const { dir, priority } of roots) {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+      if (err && err.code === 'ENOENT') continue;
+      throw err;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const n = extractNNN(entry.name);
+      if (n === null) continue;
+      candidates.push({ nnn: n, dir, name: entry.name, priority });
+    }
+  }
+  candidates.sort(
+    (a, b) =>
+      b.nnn - a.nnn || a.priority - b.priority || (a.name < b.name ? 1 : a.name > b.name ? -1 : 0),
+  );
+  for (const { dir, name } of candidates) {
+    const file = join(dir, name, 'definition.md');
+    if (existsSync(file)) return file;
+  }
+  return null;
+}
+
+/**
+ * CLI 引数を読む。root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない。
+ * @param {readonly string[]} argv
+ * @returns {{ root: string, src: string | null }}
+ */
+export function parseArgs(argv) {
+  let root = process.cwd();
+  let src = null;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--root') {
+      const value = argv[i + 1];
+      if (value === undefined) throw new Error('missing value for --root');
+      root = value;
+      i++;
+    } else if (arg.startsWith('-')) {
+      throw new Error(`unknown argument: ${arg}`);
+    } else {
+      if (src !== null) throw new Error(`too many arguments: ${arg}`);
+      src = arg;
+    }
+  }
+  return { root, src };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
