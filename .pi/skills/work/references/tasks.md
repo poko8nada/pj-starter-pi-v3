@@ -5,7 +5,7 @@ A child does not read this skill. What it knows is the task and the plan md, so 
 ## The slices (a `code` child)
 
 ```
-Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md.
+Read cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md.
 Work its slices in order, as far as you can.
 For each slice: its Steps, then its Verify, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes.
 A finding is a hole you could not close: one bullet for the hole, and `left: <why>` under it. What you did, and why, goes in the commit message. `Unplanned` is only for a hole you found and fixed here. Write なし when there is none.
@@ -18,7 +18,7 @@ If you cannot finish, write where you stopped (Stopped) and stop.
 ## The review (a `review` child)
 
 ```
-Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md (## Files, ## Slices, ## Notes).
+Read cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md (## Files, ## Slices, ## Notes).
 Review the diff <base hash>..HEAD, by four viewpoints:
 - Stale: a document, a comment or a test this change makes stale
 - Unlisted: a change the plan's Files does not name
@@ -47,7 +47,7 @@ Run the plan's checks after fixing. Then commit: consult(<plan id>): round <N> f
 ## The acceptance's findings (a `code` child)
 
 ```
-The acceptance found this, in cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md (## Acceptance, Findings):
+The acceptance found this, in cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md (## Acceptance, Findings):
 <the lines>
 Fix them, run the plan's checks, and commit: consult(<plan id>): acceptance fixes
 If one cannot be fixed here, write why under it instead, and leave it for the close.

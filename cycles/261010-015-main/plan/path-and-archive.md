@@ -87,21 +87,21 @@ cycles/
 
 ### Slice 1: 表記の sweep
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: cb2088851b7f8828838daca0ff8b50410079c7b2
 
 ### Slice 2: archive 移動
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7b90523ed185361dcf549fef39bb02456889a6f6
 
 ### Slice 3: 統合: 記録と表記が新 rule に揃う
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（slice 1–2 に残りなしのため）
 
 ## Review
 
@@ -141,7 +141,16 @@ cycles/
   - archive の突き合わせが Steps の間接参照のまま（Steps に名前が無い）
     - fixed: Steps と Verify の両方を `## Files` の 14 件に向けて直した
 
+### Round 3
+
+- Stale:
+  - `.pi/skills/definition/SKILL.md:3` の `cycles/<NNN>/definition.md` と `:16` の `cycles/<NNN-YYYY-MM-DD>/definition.md` が旧形のまま新 rule と矛盾する（grep で確認）。この plan の `## Files` は definition を含まず、scaffold-script plan の Steps/Verify が名指すのは手順1の呼び出しと `format.md` の path 行だけなので、この2行はどちらの plan も名指さない
+    - left: `scaffold-script` plan が吸収する（同じ SKILL.md を既に触っているため。`consult-10` が作業中）。この plan の guard（definition untouched）は保つ
+- Unlisted: なし（`f0fb6fd..HEAD` の `.pi`/README 変更14件が `## Files` の14件と一致し、あとは `cycles/`→`cycles/archive/` の14件移動だけ。余分な変更なし）
+- Gaps: なし（旧3形0件・新 literal 13件+実例1件・`test -f`・`git status -- .pi/skills/definition/`・`ls` 2件+rename・`product-ready` が各行為を直接見る。archive 内の旧表記と `adr.md` の旧記録は ADR が温存を決めており対象外が正しい）
+- Unproven: なし（各 check は行為を戻せば赤になる。1件戻せば旧0件/新13件がずれ、例を戻せば実例 grep が外れ、移動を戻せば `ls` と `cycles (2):` がずれる）
+
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: slice 1–3 の確認を再実行（旧 3 形 0 件・新 literal 13 件 + 実例 1 件・`test -f`・definition untouched・`ls`・`cycles (2):`）。壊し 2 本（置換 1 件戻し・archive 1 件戻し）→ 赤 → 復旧 → 緑。全体 `pnpm typecheck` 緑・`pnpm test:run` 457 件緑
+- Findings: なし

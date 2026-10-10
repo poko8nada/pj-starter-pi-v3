@@ -13,7 +13,7 @@ The work keeps its own business: the slices, the checks, the commits, the review
 
 ## The file
 
-The work writes no file of its own. It reads `cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md` and writes into it: the slices' records under `## Notes`, `## Review`, `## Acceptance`.
+The work writes no file of its own. It reads `cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md` and writes into it: the slices' records under `## Notes`, `## Review`, `## Acceptance`.
 
 The texts handed to children are in `references/tasks.md`.
 

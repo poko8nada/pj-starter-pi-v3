@@ -12,7 +12,7 @@ This skill writes that test, triages what the plans left, and closes the cycle.
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/close.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/close.md`, in the shape `references/format.md` gives.
 
 ## Procedure
 
@@ -39,7 +39,7 @@ This skill writes that test, triages what the plans left, and closes the cycle.
 
 ### 4. Collect
 
-- `node .pi/skills/close/scripts/collect.mjs cycles/<NNN-YYYY-MM-DD>` prints the `## Collected` body. Paste it as it is
+- `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD-NNN-<branch>>` prints the `## Collected` body. Paste it as it is
 - the script lists the leftovers of every plan md; it does not judge
 - a plan's heading carries its link (`ADR`, `Scope`). Fill each `未特定` by reading the design and the definition, and show the completed `## Collected` to the owner: the part each leftover belongs to is theirs to confirm, before the triage
 

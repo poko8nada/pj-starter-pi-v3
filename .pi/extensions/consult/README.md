@@ -46,7 +46,7 @@ The limits are enforced while the child runs, and neither the caller nor the chi
 | `continue` | no                   | Reopen the same conversation in that worktree. Defaults to the role's `continueByDefault`                   |
 
 ```
-consult_run({ role: "review", task: "What is missing in cycles/002-2026-09-22/definition.md?" })
+consult_run({ role: "review", task: "What is missing in cycles/261010-015-main/definition.md?" })
 consult_run({ role: "code", task: "Fix the failing check in run/log.ts", worktree: "8-consult.docs" })
 ```
 

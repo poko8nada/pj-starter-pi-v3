@@ -1,6 +1,6 @@
 # The ADR's format
 
-`cycles/<NNN-YYYY-MM-DD>/adr.md`.
+`cycles/<YYMMDD-NNN-<branch>>/adr.md`.
 
 Section and field names are English; the content is Japanese.
 

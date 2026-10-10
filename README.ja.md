@@ -55,6 +55,6 @@ work         1 プランを片付ける（スライス / レビュー / 受け�
 close        サイクルを裁く（統合テスト / 残り物の行き先）
 ```
 
-記録は `cycles/<NNN-DATE>/` に残る: `adr.md` / `definition.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つので、チェックマークも状態欄も無い。
+記録は `cycles/<YYMMDD-NNN-<branch>>/` に残る: `adr.md` / `definition.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つので、チェックマークも状態欄も無い。
 
 製品を持つのは定義。その裏の議論を持つのは ADR で、ADR はどの段からでも書ける。定義に合意した後の変更は新しい ADR の entry にし、定義をそれに合わせて直す。

@@ -1,6 +1,6 @@
 # The plan's format
 
-`cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md`.
+`cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`.
 
 Section and field names are English; the content is Japanese.
 
