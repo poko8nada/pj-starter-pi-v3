@@ -132,9 +132,11 @@
 
 ### Slice 3: 止め方と、音と、報告
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: (see git log consult(consult-readme): slice 3 stop sound report)
+- Verify (cli, done here): `stops when the last child`→0; `shows it in`→0; `killed through its`→0; `SIGTERM`→lines 68, 189; `re-reads the record`→line 195; Tests 8 本すべて有り; `30 seconds of quiet` と `lasts for this session only` は残した; slice 1–2 の grep も緑のまま.
+- Verify (look/read, 親がやる): look 3 件（SIGTERM の 2 経路／Sound の 5 秒読み直しと自停／reload 報告の記録残しと 1 つずつ配達）と read 1 件（review の子に README＋tool/consult.ts＋tool/sound.ts＋run/delivery.ts＋run/log.ts＋index.ts を突き合わせ）は親がやる。
 
 ### Slice 4: 統合: README が実装と一致する
 
