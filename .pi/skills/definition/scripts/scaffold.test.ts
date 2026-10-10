@@ -74,22 +74,32 @@ describe('cycleDirName', () => {
 });
 
 describe('parseArgs', () => {
-  it('--root と src を読む', () => {
-    expect(parseArgs(['--root', '/tmp/x'])).toEqual({ root: '/tmp/x', src: null });
-    expect(parseArgs(['--root', '/tmp/x', 'foo.md'])).toEqual({ root: '/tmp/x', src: 'foo.md' });
+  it('位置引数は番号になる', () => {
+    expect(parseArgs(['016'])).toEqual({ root: process.cwd(), nnn: 16 });
   });
 
-  it('空 → src は null', () => {
-    expect(parseArgs([]).src).toBe(null);
+  it('空 → root は cwd、nnn は null', () => {
+    expect(parseArgs([])).toEqual({ root: process.cwd(), nnn: null });
   });
 
-  it('未知引数・--root 値欠落は投げる', () => {
+  it('--root を読む', () => {
+    expect(parseArgs(['--root', '/tmp/x'])).toEqual({ root: '/tmp/x', nnn: null });
+  });
+
+  it('数でない・小数・0 は投げる', () => {
+    expect(() => parseArgs(['abc'])).toThrow();
+    expect(() => parseArgs(['1.5'])).toThrow();
+    expect(() => parseArgs(['0'])).toThrow();
+  });
+
+  it('未知引数・`=` 形・--root 値欠落は投げる', () => {
     expect(() => parseArgs(['--bogus'])).toThrow();
+    expect(() => parseArgs(['--root=/tmp/x'])).toThrow();
     expect(() => parseArgs(['--root'])).toThrow();
   });
 
   it('2 つ目位置引数は投げる', () => {
-    expect(() => parseArgs(['a', 'b'])).toThrow();
+    expect(() => parseArgs(['016', '017'])).toThrow();
   });
 });
 
