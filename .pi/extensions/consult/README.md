@@ -63,9 +63,9 @@ The task reaches the child on stdin, not as an argument, so a task that begins w
 | `action`  | no           | `list` (the default), or `cancel`               |
 | `id`      | for `cancel` | The child to stop, as returned by `consult_run` |
 
-A row carries the id, the role, the place (a worktree id, or `parent`), how long it has been going, its turns, and its spend. A child that is still running shows `running (pid <n>)`; a finished one shows how it ended (`done`, `turn-limit`, `error`, `aborted`) and, when it did not end well, the reason.
+A row carries the id, the role, the place (a worktree id, or `parent`), how long it has been going, its turns, and its spend. A child that is still running shows `running (pid <n>)`; a finished one shows how it ended (`done`, `turn-limit`, `error`, `aborted`) and, when it did not end well, the reason. A child with no end row whose pid is also dead shows `lost` (it is not passed off as `done`).
 
-The list is read from a record on disk (`<root>/records/<project>/<YYYY-MM-DD>.jsonl` — today and yesterday, 2 files), so **it still shows this session's children across a reload** — a child is not tied to the pi process that started it. `cancel` can only stop a child **this** session started: a child from an earlier session is named in the reply and left alone.
+The list is read from a record on disk (`<root>/records/<project>/<YYYY-MM-DD>.jsonl` — today and yesterday, 2 files), filtered to this session: **only children this session started appear, even across a reload** — a child is not tied to the pi process that started it, but a child from another session is not shown. `cancel` can only stop a child **this** session started: a child from an earlier session is named in the reply and left alone.
 
 ## `consult_worktree`
 
@@ -92,7 +92,7 @@ The list is read from a record on disk (`<root>/records/<project>/<YYYY-MM-DD>.j
 
 - the branch is deleted **when it is already merged** into the current `HEAD` (or has an upstream that has it) — that is what `git branch -d` refuses otherwise
 - an **unmerged** branch is kept, and the reply says so: take it in (`git merge --no-ff consult/<unit-id>`), or discard it with `force`
-- a worktree a child is running in is refused, and so is one with changes left, unless `force`
+- a worktree a child is running in is refused regardless of session (a worktree where another session's child is running is not deleted either), and so is one with changes left, unless `force`
 
 `remove` first prunes registrations whose path is gone: a pruned registration reads as missing, and the reply names the pruned paths. It then sweeps the other `consult/*` branches that are checked out nowhere — a merged one is deleted, an unmerged one is kept — and the reply names what was deleted and what was kept. A call refused for a running child is the one exception: it touches nothing. The reply carries the cleanup report: the pruned paths, and for each orphan branch whether it was removed or kept (`unmerged`).
 

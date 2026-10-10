@@ -124,9 +124,11 @@
 
 ### Slice 2: 一覧の範囲と、行の見え方
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: (see git log consult(consult-readme): slice 2 list scope)
+- Verify (cli, done here): `a previous session`→0; `shows children a previous session started`→0; `lost`→1 (line 66); `What comes back` state stays 4 without `lost` (line 140); slice 1 greps still green.
+- Verify (look/read, 親がやる): look 4 件（いまのセッションの子だけ／`lost` の意味／`state` は 4 つのまま／`remove` はセッションを問わず断る）と read 1 件（review の子に README＋tool/children.ts＋tool/worktree.ts＋run/log.ts＋run/place.ts を突き合わせ）は親がやる。
 
 ### Slice 3: 止め方と、音と、報告
 
