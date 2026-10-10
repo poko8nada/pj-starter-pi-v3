@@ -8,11 +8,11 @@
 import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
-import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool, latest } from './tool/children.ts';
+import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
-import { runningChildren, startSound, stopSound } from './tool/sound.ts';
+import { startSound, stopSound } from './tool/sound.ts';
 import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
-import { KEEP_DAYS, pidAlive, readRuns, type RunRecord } from './run/log.ts';
+import { KEEP_DAYS, runningRuns, type RunRecord } from './run/log.ts';
 import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
@@ -83,18 +83,19 @@ function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
 /**
  * 前のセッション（reload の前）の子がまだ走っていれば、そのことを知らせて音を戻す。
  *
- * 判定は記録（置き場の日ごとのファイル）と pid で行う。
+ * いまの session の走っている子だけを見る（別の session の子の報告はここには来ないので、
+ * 待たせない）。音も同じ述語で鳴らし、居なくなれば自分で止まる。
  */
-function announceRunningChildren(place: Place, ctx: ExtensionContext): void {
-  const running = runningChildren(latest(readRuns(place)), pidAlive);
-  if (running.length === 0) {
+function announceRunningChildren(place: Place, announced: string, ctx: ExtensionContext): void {
+  if (runningRuns(place, { session: announced }).length === 0) {
     return;
   }
+  const count = runningRuns(place, { session: announced }).length;
   ctx.ui.notify(
-    `consult: ${running.length} child(ren) are still running from an earlier session (see consult_children)`,
+    `consult: ${count} child(ren) are still running from an earlier session (see consult_children)`,
     'info',
   );
-  startSound();
+  startSound(() => runningRuns(place, { session: announced }).length > 0);
 }
 
 /** 人が使う口。子の一覧と停止、音の切り替え */
@@ -143,7 +144,7 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
-    announceRunningChildren(place, ctx);
+    announceRunningChildren(place, session, ctx);
     sweep(place, ctx.cwd);
     // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める
     deliverUnread(place, session, pi);
@@ -181,8 +182,7 @@ export default function (pi: ExtensionAPI) {
     execute: createChildrenTool({
       place,
       sessionNow: () => session,
-      // session は Slice 4 で control に渡す（今は control が session を受け取らない）
-      control: (action) => consult.control(action),
+      control: (action, childSession) => consult.control(action, childSession),
     }),
   });
 

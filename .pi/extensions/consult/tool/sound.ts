@@ -2,14 +2,14 @@
  * consult の音。子が走っている間だけ、5 秒ごとに 1 音鳴らす。
  *
  * 合図は人に向けた物で、エージェントの関心ではない。鳴らなくても走行は止めない。
- * タイマーは 1 本だけ持ち、子が 0 体になったら止める（子の増減は `consult.ts` が知らせる）。
- * `enabled` は既定 on で、`/consult-sound on|off` が `setSoundEnabled` を呼ぶ。セッションの間だけ効く。
+ * タイマーは 1 本だけ持つ。tick ごとに述語を読み直し、走っている子が居なければ自分を止める
+ * （記録を読む述語なので、reload をまたいでも止まる）。`enabled` は既定 on で、
+ * `/consult-sound on|off` が `setSoundEnabled` を呼ぶ。セッションの間だけ効く。
  *
  * 鳴らす所（`player`）は差し替えられる。テストは afplay を起動しない物を渡す。
  */
 
 import { spawn } from 'node:child_process';
-import type { RunRecord } from '../run/log.ts';
 
 /** 子が 1 体以上走っている間の、1 音の間隔 */
 export const SOUND_INTERVAL_MS = 5000;
@@ -47,7 +47,7 @@ export function isSoundEnabled(): boolean {
   return enabled;
 }
 
-/** 音の on / off。既定 on。off の間もタイマーは子の数に従い、on に戻せばまた鳴る */
+/** 音の on / off。既定 on。off の間もタイマーは述語に従い、on に戻せばまた鳴る */
 export function setSoundEnabled(on: boolean): void {
   enabled = on;
 }
@@ -60,15 +60,25 @@ export function playSound(): void {
   player();
 }
 
-/** 子が走っている間のタイマーを 1 本だけ始める。すでにあれば何もしない */
-export function startSound(): void {
+/**
+ * 走っている間のタイマーを 1 本だけ始める。すでにあれば何もしない。
+ *
+ * tick ごとに述語を読み直し、居なければ止めて戻る（鳴らさない）。
+ */
+export function startSound(runningNow: () => boolean): void {
   if (timer !== undefined) {
     return;
   }
-  timer = setInterval(playSound, SOUND_INTERVAL_MS);
+  timer = setInterval(() => {
+    if (!runningNow()) {
+      stopSound();
+      return;
+    }
+    playSound();
+  }, SOUND_INTERVAL_MS);
 }
 
-/** 子が 0 体になったら止める。無ければ何もしない */
+/** タイマーを止める。無ければ何もしない */
 export function stopSound(): void {
   if (timer === undefined) {
     return;
@@ -80,17 +90,4 @@ export function stopSound(): void {
 /** タイマーが動いているか。テストが読む */
 export function isSoundRunning(): boolean {
   return timer !== undefined;
-}
-
-/**
- * 走っている子の記録だけを返す。
- *
- * 記録から数えるのは、reload をまたいだ子も見えるようにするため。`ended` が無く、pid が生きている物
- * が走っている（親が死んでも子は detach されて残るので、親の記憶では判定できない）。
- */
-export function runningChildren(
-  records: readonly RunRecord[],
-  alive: (pid: number) => boolean,
-): RunRecord[] {
-  return records.filter((record) => record.ended === undefined && alive(record.pid));
 }

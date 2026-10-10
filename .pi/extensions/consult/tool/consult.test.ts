@@ -2,12 +2,15 @@
  * consult 道具のバックグラウンドの面を、偽の API で確かめる。
  *
  * 子は起こさない。`createRuntime` に差し替えた `run` を渡し、完了のタイミングと届くメッセージを自分で決める。pi の `sendMessage` と slash command の `ctx.ui.notify` も記録する。
+ * 記録の置き場は `placeFor(tmpDir(), tmpDir())` で作り、session は `'test-session'` を渡す
+ * （`parseRun` が空の session を弾くため、既定の `''` は使わない）。
  */
 
+import { spawn } from 'node:child_process';
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  control,
+  controlChild,
   createRuntime,
   type CommandContext,
   type ConsultContext,
@@ -27,7 +30,11 @@ import {
   stopSound,
 } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { placeFor } from '../run/place.ts';
+import { appendRun } from '../run/log.ts';
+import { placeFor, type Place } from '../run/place.ts';
+
+/** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
+const SESSION = 'test-session';
 
 // 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
 // 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
@@ -48,6 +55,15 @@ afterEach(() => {
   stopSound();
   setSoundEnabled(true);
 });
+
+/** runtime と置き場を組む。session は `SESSION` */
+function setup(
+  pi: PiFace,
+  run: ConsultRunner,
+): { readonly runtime: ConsultRuntime; readonly place: Place } {
+  const place = placeFor(tmpDir(), tmpDir());
+  return { runtime: createRuntime(pi, place, run, undefined, () => SESSION), place };
+}
 
 /** 背景の then / catch / finally を、偽のタイマーの下でも流す */
 async function settle(): Promise<void> {
@@ -124,11 +140,22 @@ function flush(): Promise<void> {
   });
 }
 
+/** 走っている行を 1 本書く。pid が生きている間だけ述語は true */
+function seedRunning(place: Place, extra: { session?: string; child?: string; pid?: number } = {}) {
+  appendRun(place, {
+    session: extra.session ?? SESSION,
+    child: extra.child ?? 'consult-9',
+    role: 'review',
+    pid: extra.pid ?? process.pid,
+    started: Date.now(),
+  });
+}
+
 describe('run', () => {
   it('review を 1 体起こす → id が返り、その時点で子は終わっていない', async () => {
     const { pi, calls } = fakePi();
     const { run: runner, signals, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
+    const { runtime } = setup(pi, runner);
 
     const result = await startChild(runtime, { role: 'review', task: '判定する' });
 
@@ -142,7 +169,7 @@ describe('run', () => {
   it('書き込むロール（code）で worktree を省くと、子を起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
+    const { runtime } = setup(pi, runner);
 
     await expect(startChild(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
       /needs a worktree/,
@@ -154,7 +181,7 @@ describe('run', () => {
   it('知らない worktree の id → 子を起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
+    const { runtime } = setup(pi, runner);
 
     await expect(
       startChild(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
@@ -168,7 +195,7 @@ describe('完了の通知', () => {
   it('子の完了 → 子のテキスト・ref:・[consult] 行がメッセージに入る', async () => {
     const { pi, calls } = fakePi();
     const { run, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     await startChild(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
@@ -193,7 +220,7 @@ describe('cancel', () => {
   it('/consult-cancel <id> → その id が止まる', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -206,7 +233,7 @@ describe('cancel', () => {
   it('/consult-cancel に知らない id → 理由を出して止めない', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -218,13 +245,137 @@ describe('cancel', () => {
   });
 });
 
+describe('controlChild: cancel', () => {
+  it('掴んでいる子 → abort で止まり、cancelled: true（kill は呼ばない）', () => {
+    const kills: number[] = [];
+    const controller = new AbortController();
+    const children = new Map([
+      ['consult-1', { id: 'consult-1', type: 'review', task: 'a', startedAt: 1, controller }],
+    ]);
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-1' },
+      children,
+      placeFor(tmpDir(), tmpDir()),
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(controller.signal.aborted).toBe(true);
+    expect(outcome.details).toMatchObject({ cancelled: true, id: 'consult-1' });
+    expect(kills).toEqual([]);
+  });
+
+  it('掴んでいない子（記録だけ、pid 生存）→ kill がその pid で 1 回呼ばれ、cancelled: true', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    seedRunning(found, { pid: process.pid });
+    const kills: number[] = [];
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(kills).toEqual([process.pid]);
+    expect(outcome.details).toMatchObject({ cancelled: true, id: 'consult-9' });
+    expect(outcome.text).toContain('cancelled consult-9');
+  });
+
+  it('pid が死んでいる子 → kill を呼ばず、止められない理由を返す', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    seedRunning(found, { pid: 999_999 });
+    const kills: number[] = [];
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+    expect(outcome.text).toContain('lost');
+  });
+
+  it('終わった子 → kill を呼ばず、理由を返す', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      child: 'consult-9',
+      role: 'review',
+      pid: process.pid,
+      started: 1,
+      ended: 2,
+      state: 'done',
+    });
+    const kills: number[] = [];
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+  });
+
+  it('記録に無い id → kill を呼ばず、理由を返す', () => {
+    const kills: number[] = [];
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-999' },
+      new Map(),
+      placeFor(tmpDir(), tmpDir()),
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+    expect(outcome.text).toContain('no such child: consult-999');
+  });
+
+  it('別の session の子 → 止めず、理由を返す', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    seedRunning(found, { session: 'other-session', pid: process.pid });
+    const kills: number[] = [];
+    const outcome = controlChild(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+    );
+
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+    expect(outcome.text).toContain('another session');
+  });
+});
+
 describe('音', () => {
   it('子を 2 体走らせてもタイマーは 1 本 → 5 秒ごとに 1 音', async () => {
     vi.useFakeTimers();
     try {
       const { pi } = fakePi();
       const { run } = deferredRunner();
-      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+      const { runtime, place } = setup(pi, run);
+      seedRunning(place);
       await startChild(runtime, { role: 'research', task: 'a' });
       await startChild(runtime, { role: 'review', task: 'b' });
 
@@ -238,24 +389,60 @@ describe('音', () => {
     }
   });
 
-  it('子が 0 体になる → タイマーが止まる', async () => {
+  it('走っている子が居なくなると、次の tick で止まる（述語で止まる）', async () => {
+    const proc = spawn(process.execPath, ['--eval', 'setInterval(() => {}, 1000)'], {
+      stdio: 'ignore',
+    });
+    proc.unref();
+    const pid = proc.pid ?? 0;
+    expect(pid).toBeGreaterThan(0);
     vi.useFakeTimers();
     try {
       const { pi } = fakePi();
       const { run, resolvers } = deferredRunner();
-      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+      const { runtime, place } = setup(pi, run);
+      seedRunning(place, { pid });
       await startChild(runtime, { role: 'review', task: 'a' });
       expect(isSoundRunning()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
+      expect(beeps).toHaveLength(1);
 
       for (const resolve of resolvers) {
         resolve({ text: 'done', details: {} });
       }
       await settle();
-
       expect(runtime.children.size).toBe(0);
+
+      // 終わりの行が無く pid も死ぬ → 述語は false。次の tick で鳴らず、タイマーが消える
+      proc.kill();
+      await new Promise<void>((resolve) => {
+        proc.on('exit', () => {
+          resolve();
+        });
+      });
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
+      expect(beeps).toHaveLength(1);
       expect(isSoundRunning()).toBe(false);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 2);
+    } finally {
+      vi.useRealTimers();
+      proc.kill();
+    }
+  });
+
+  it('別の session の子だけが走っている → 鳴らず、タイマーが消える', async () => {
+    vi.useFakeTimers();
+    try {
+      const { pi } = fakePi();
+      const { run } = deferredRunner();
+      const { runtime, place } = setup(pi, run);
+      seedRunning(place, { session: 'other-session' });
+      await startChild(runtime, { role: 'review', task: 'a' });
+
+      expect(isSoundRunning()).toBe(true);
+      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
       expect(beeps).toHaveLength(0);
+      expect(isSoundRunning()).toBe(false);
     } finally {
       vi.useRealTimers();
     }
@@ -267,7 +454,8 @@ describe('音', () => {
       setSoundEnabled(false);
       const { pi } = fakePi();
       const { run } = deferredRunner();
-      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+      const { runtime, place } = setup(pi, run);
+      seedRunning(place);
       await startChild(runtime, { role: 'review', task: 'a' });
 
       expect(isSoundRunning()).toBe(true);
@@ -292,7 +480,7 @@ describe('音', () => {
   it('/consult-sound → 状態を出し、on / off を切り替える', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.sound('', ctx);
@@ -310,9 +498,14 @@ describe('音', () => {
   });
 });
 
-describe('control: list', () => {
+describe('controlChild: list', () => {
   it('子が 0 体なら、そう言う（空文字を返さない）', () => {
-    const outcome = control({ action: 'list' }, new Map());
+    const outcome = controlChild(
+      { action: 'list' },
+      new Map(),
+      placeFor(tmpDir(), tmpDir()),
+      SESSION,
+    );
     expect(outcome.text).toContain('no child is running');
   });
 });
@@ -321,7 +514,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-cancel に id が無ければ、使い方を出して止めない', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('', ctx);
     expect(notices[0]?.message).toContain('needs an id');
@@ -331,7 +524,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-sound に不正な引数 → 使い方を出す', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.sound('nope', ctx);
     expect(notices[0]?.message).toContain('usage');
@@ -341,7 +534,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-status は子が 0 体なら、そう言う', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
+    const { runtime } = setup(pi, run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
     expect(notices[0]?.message).toContain('no child is running');

@@ -13,8 +13,9 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import type { Static } from 'typebox';
 import { runOneChild, type ChildJob } from '../run/child.ts';
 import { findWorktree } from '../run/worktree.ts';
-import { appendRun, type RunRecord } from '../run/log.ts';
+import { appendRun, isRunning, readRuns, runningRuns, type RunRecord } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
+import { latest } from './children.ts';
 import type { Delivery } from '../run/delivery.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
@@ -26,7 +27,7 @@ import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
 import { parseEvents, usageFrom, type ConsultOptions } from '../child/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, reportBlock, result, usageLine, type ChildReport } from './render.ts';
-import { isSoundEnabled, setSoundEnabled, startSound, stopSound } from './sound.ts';
+import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -117,11 +118,21 @@ function describeChild(child: RunningChild): string {
 
 /**
  * 走っている子の一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
- * 知らない id は理由を返し、止めない。
+ *
+ * 掴んでいる子（このインスタンスが起こした物）は `abort()` で止める。掴んでいない子は記録から
+ * 引いて、生きている pid に `kill`（既定は SIGTERM）を送る。記録は書かない（終わりの行は、
+ * その子を持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
+ * 知らない id・終わった子・死んだ pid・別の session の子は、理由を返して止めない。
  */
-export function control(
+// eslint-disable-next-line max-params -- plan の I/O（action, children, place, session, kill の 5 つ）
+export function controlChild(
   action: ControlAction,
   children: ReadonlyMap<string, RunningChild>,
+  place: Place,
+  session: string,
+  kill: (pid: number) => void = (pid) => {
+    process.kill(pid, 'SIGTERM');
+  },
 ): ControlOutcome {
   if (action.action === 'list') {
     const running = [...children.values()];
@@ -136,17 +147,45 @@ export function control(
       },
     };
   }
-  const child = children.get(action.id);
-  if (child === undefined) {
+  const held = children.get(action.id);
+  if (held !== undefined) {
+    // 掴んでいる子は abort だけ（kill は送らない）
+    held.controller.abort();
+    return {
+      text: `consult_new: cancelled ${held.id} (${held.type})`,
+      details: { action: 'cancel', id: held.id, cancelled: true },
+    };
+  }
+  const own = latest(readRuns(place, { session })).find((run) => run.child === action.id);
+  if (own === undefined) {
+    const elsewhere = latest(readRuns(place)).find((run) => run.child === action.id);
+    if (elsewhere !== undefined) {
+      return {
+        text: `consult_new: ${action.id} belongs to another session (it cannot be stopped here)`,
+        details: { action: 'cancel', id: action.id, cancelled: false },
+      };
+    }
     return {
       text: `consult_new: no such child: ${action.id}`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
-  child.controller.abort();
+  if (own.ended !== undefined) {
+    return {
+      text: `consult_new: ${action.id} already finished (${own.state ?? 'done'})`,
+      details: { action: 'cancel', id: action.id, cancelled: false },
+    };
+  }
+  if (!isRunning(own)) {
+    return {
+      text: `consult_new: ${action.id} is not running (lost)`,
+      details: { action: 'cancel', id: action.id, cancelled: false },
+    };
+  }
+  kill(own.pid);
   return {
-    text: `consult_new: cancelled ${child.id} (${child.type})`,
-    details: { action: 'cancel', id: child.id, cancelled: true },
+    text: `consult_new: cancelled ${own.child} (${own.role})`,
+    details: { action: 'cancel', id: own.child, cancelled: true },
   };
 }
 
@@ -293,9 +332,7 @@ function runInBackground(state: RuntimeState, job: BackgroundJob): void {
     })
     .finally(() => {
       state.children.delete(job.child.id);
-      if (state.children.size === 0) {
-        stopSound();
-      }
+      // 音は述語（記録の読み直し）が止める。ここでは止めない
     });
 }
 
@@ -346,7 +383,8 @@ function beginRun(
   };
   state.children.set(child.id, child);
   if (state.children.size === 1) {
-    startSound();
+    // 記録を読み直す述語で鳴らす。reload をまたいでも、走っている子が居なくなれば止まる
+    startSound(() => runningRuns(state.place, { session: state.sessionNow() }).length > 0);
   }
   runInBackground(state, { ctx, options, job, child, session });
   const running = [...state.children.values()].map(describeChild).join('\n');
@@ -361,7 +399,7 @@ function beginRun(
 export interface ConsultRuntime {
   readonly children: ReadonlyMap<string, RunningChild>;
   run(...args: RunExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
-  control(action: ControlAction): ControlOutcome;
+  control(action: ControlAction, session: string): ControlOutcome;
   commands: {
     status(args: string, ctx: CommandContext): Promise<void>;
     cancel(args: string, ctx: CommandContext): Promise<void>;
@@ -401,10 +439,15 @@ export function createRuntime(
       const [, params, , , ctx] = args;
       return beginRun(state, ctx, parseRunRequest(params));
     },
-    control: (action) => control(action, state.children),
+    control: (action, session) => controlChild(action, state.children, state.place, session),
     commands: {
       status: async (_args, ctx) => {
-        const outcome = control({ action: 'list' }, state.children);
+        const outcome = controlChild(
+          { action: 'list' },
+          state.children,
+          state.place,
+          state.sessionNow(),
+        );
         ctx.ui.notify(outcome.text, 'info');
       },
       cancel: async (args, ctx) => {
@@ -416,7 +459,12 @@ export function createRuntime(
           );
           return;
         }
-        const outcome = control({ action: 'cancel', id }, state.children);
+        const outcome = controlChild(
+          { action: 'cancel', id },
+          state.children,
+          state.place,
+          state.sessionNow(),
+        );
         ctx.ui.notify(outcome.text, outcome.details.cancelled === true ? 'info' : 'error');
       },
       sound: async (args, ctx) => {

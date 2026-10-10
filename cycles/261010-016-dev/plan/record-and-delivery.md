@@ -297,8 +297,10 @@ test/
 ### Slice 4: 音と、前のセッションの子を止める
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `controlChild` が plan の I/O どおり 5 引数なので、`createRuntime` と同じ `// eslint-disable-next-line max-params -- <理由>` を付けた。
+- Commit: `consult(record-and-delivery): predicate sound and kill by pid`
 
 ### Slice 5: 統合: reload をまたいでも報告が届き、テストが本物に書かない
 
