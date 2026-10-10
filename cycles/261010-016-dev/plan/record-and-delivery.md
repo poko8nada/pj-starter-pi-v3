@@ -330,4 +330,15 @@ test/
 ## Acceptance
 
 - Ran:
+  - plan の cli の grep: `rootFor(` の残りは `run/worktree.ts` の `ensureRoot` の中とテストの言及だけ。`runningChildren` は 0 件。`logPath`・`unitOf`・`PARENT_UNIT` は 0 件
+  - `pnpm vitest run .pi/extensions/consult` → 16 files / 306 tests passed
+  - `pnpm test:run`（全体）→ 32 files / 518 tests passed
+  - `pnpm lint`・`pnpm typecheck` → 緑
+  - 本物の置き場 `/tmp/pi-consult/records`: 全体スイートの前後とも `*.jsonl` が 0 件（**テストが本物に書かない**）
+  - 旧い置き場の走行中子: `ps -p <pid>` との突き合わせで 0 件（slice 5 の前提）
+  - 壊し 1: `rowOf` の `lost` を `record.state ?? 'done'` に戻す → children の「終わりの行が無く pid も死んでいる → lost（done と偽らない）」が赤 → 復旧
+  - 壊し 2: `createChildrenTool` の session の絞りを外す → children の「2 つの session の子が居る → いまの session の子だけが出る」が赤 → 復旧
+  - 壊し 3: `startSound` の tick から述語を外す（鳴り続ける）→ sound の「述語が false になった次の tick」が赤 → 復旧
 - Findings:
+  - plan の slice 5 の look（親が子を 1 体走らせ、その間に owner が `/reload` を打つ）は**未実施**。この look は新しいコードが読み込まれた pi でしか成立せず、それは merge の後になるため
+    left: merge の後に owner の `/reload` で見る（報告が届く・一覧に出て止められる・音が止まるの 3 つ）
