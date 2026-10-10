@@ -11,8 +11,8 @@ import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
 import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool, latest } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { runningChildren, startSound, stopSound } from './tool/sound.ts';
-import { createDelivery } from './run/delivery.ts';
-import { KEEP_DAYS, pidAlive, readRuns } from './run/log.ts';
+import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
+import { KEEP_DAYS, pidAlive, readRuns, type RunRecord } from './run/log.ts';
 import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
@@ -36,6 +36,48 @@ function placeOf(cwd: string): Place {
 function readSession(ctx: ExtensionContext): string {
   const id = ctx.sessionManager.getSessionId();
   return id === '' ? session : id;
+}
+
+/** 渡す通知の details。記録の欄から組み直す（完了のメッセージと同じ形） */
+function noticeDetails(record: RunRecord): Record<string, unknown> {
+  return {
+    id: record.child,
+    type: record.role,
+    ...(record.worktree === undefined ? {} : { worktree: record.worktree }),
+    ...(record.state === undefined ? {} : { state: record.state }),
+    ...(record.files === undefined ? {} : { files: [...record.files] }),
+    ...(record.turns === undefined ? {} : { turns: record.turns }),
+    ...(record.spend === undefined ? {} : { spend: record.spend }),
+    ...(record.reason === undefined ? {} : { reason: record.reason }),
+  };
+}
+
+/**
+ * まだ渡していない完了の報告を、owner へ 1 つずつ渡す。
+ *
+ * 起動のたびに記録を読み直すので、reload の前の子の報告もここで届く。全部渡し終えてから目録を
+ * 1 回だけ進める（途中で落ちても、同じ物をもう一度渡すだけになる）。
+ */
+function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
+  if (current === '') {
+    return;
+  }
+  let last: number | undefined;
+  for (const record of unreadNotices(place, { session: current, days: KEEP_DAYS })) {
+    pi.sendMessage(
+      {
+        customType: 'consult',
+        content: record.notice ?? '',
+        display: true,
+        details: noticeDetails(record),
+      },
+      { triggerTurn: true, deliverAs: 'followUp' },
+    );
+    last = record.ended;
+  }
+  if (last !== undefined) {
+    writeCursor(place, current, { ended: last });
+  }
 }
 
 /**
@@ -103,6 +145,9 @@ export default function (pi: ExtensionAPI) {
     session = readSession(ctx);
     announceRunningChildren(place, ctx);
     sweep(place, ctx.cwd);
+    // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める
+    deliverUnread(place, session, pi);
+    pruneCursors(place, new Date(), KEEP_DAYS);
   });
 
   pi.registerTool({

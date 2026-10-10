@@ -289,8 +289,10 @@ test/
 ### Slice 3: 完了の配達
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: `consult(record-and-delivery): deliver unread notices`
 
 ### Slice 4: 音と、前のセッションの子を止める
 
