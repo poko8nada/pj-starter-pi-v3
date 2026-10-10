@@ -146,6 +146,7 @@
     - `fixed: README の run/run.test.ts を run/child.test.ts に直した`
     - `fixed: Tests 節を実態に合わせた（run/child と tool/children の説明を現物通りに書き直し、child/guard・tool/render・tool/run の 1 文を追加）。名指し 16 本と実在 16 本が一致することを両方向で確認`
     - `fixed: 完了メッセージの順序（1 行目 consult <id> (<type>) finished→塊→--- と子の本文→[consult] 行）と tool/consult.test.ts の説明（塊でなく子のテキスト・ref・[consult] 行を断言）を現物に合わせた`
+    - `fixed: 残りの read 3 件を直した（record 行の作業場・会話の場所を path 行の書き方に揃えて正確化／Tests 節の model attempt order を削除（参照するテスト無しを grep 確認）／tool/consult.test.ts の説明から ref を外し子の本文と [consult] 行のみに）`
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 4 integrate)
 - Verify (cli, done here): 前提 `git log --oneline -20` に `record-and-delivery` の merge 有り・`run/place.ts` 有り。壊し 4 件すべて赤→緑を確認（記録の場所→slice 1 赤／`lost` 消し→slice 2 赤／Sound 戻し→slice 3 赤／reload 段落戻し→slice 3 赤、すべて復元済み・作業ツリー clean）。
