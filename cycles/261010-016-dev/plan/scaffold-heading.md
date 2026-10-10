@@ -129,30 +129,34 @@ lib/
 
 ### Slice 1: 見出しを書く純関数
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0574de5
 
 ### Slice 2: CLI が番号を 1 回だけ決める
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 50371de
 
 ### Slice 3: 統合: 素起こしが番号まで書く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 26ff694
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし（scaffold.mjs の冒頭注記と parseArgs 注釈と SKILL.md 手順1と scaffold.test.ts の旧 src ケースは差分で置き換え済みで、旧い src や「書き手が直す」への言及は歴史の cycle 記録以外に残っていないため）。
 - Unlisted:
+  - なし（git diff --name-only は scaffold.mjs と scaffold.test.ts と SKILL.md の3件だけで、いずれも ## Files が名指しし、lib/git-env.mjs は宣言どおり無変更のため）。
 - Gaps:
+  - なし（ADR 02-1 の最初1行落としと先頭付与と3桁0埋めと改行不変と冪等と走査決定と数字上書きと非数字投げと見出し無し付与と src 引数撤去は、slice1 の7件と slice2 の parseArgs と CLI と slice3 の自動・明示001・abc 無増加・空木 template・見出し無し・--root 省略と break で exercised され、-1 除外と文面不問は plan が決めた値のため）。
 - Unproven:
+  - なし（withHeading の全件一致と parseArgs の投げ分けと2つ目投げと SKILL の3 grep と exists と break は該当振る舞いを外すと赤になる関係にあり、--bogus 等の文面差は plan が文面はケースにしないと決めているため対象外としたため）。
 
 ### Round 2
 
@@ -164,4 +168,14 @@ lib/
 ## Acceptance
 
 - Ran:
+  - `pnpm vitest run .pi/skills/definition/scripts/scaffold.test.ts` → 31 passed
+  - `pnpm lint` → 緑
+  - `pnpm typecheck` → 緑
+  - `pnpm test:run` → 31 files / 488 tests passed
+  - plan の cli の 8 ケース: 1〜6 と 8 は緑。**7（`--root` 省略）は期待の書き方が macOS で当たらず赤**（Findings 1）
+  - 壊し 1: `writeFileSync` に `withHeading` を通さない → 見出しが `# Definition 015` のまま（赤）→ 復旧
+  - 壊し 2: `parseArgs` の数値の検査を外す → vitest が 1 件赤 → 復旧
+  - 壊し 3: `argNNN ??` を外す（引数の番号を無視）→ 明示 `001` が `016` のフォルダになる（赤）→ 復旧
 - Findings:
+  - plan の cli のケース 7（`--root` 省略）が `$T` の絶対パスを期待している。macOS では `process.cwd()` が `/private/var/...` を返すので当たらない（**挙動は正しい**。フォルダも見出しも作られた）。期待を `created: .*cycles/<D>-016-feat-x` にするか、`$(cd "$T" && pwd -P)` と比べる
+  - `parseArgs` のエラー文面が plan の I/O と違う（実装は `invalid nnn: <arg>`、plan は `not a cycle number: <arg>`）。plan の I/O を正とするならコードを合わせる
