@@ -171,7 +171,7 @@ export function findPrevDefinition(cyclesDir, archiveDir) {
   }
   candidates.sort(
     (a, b) =>
-      b.nnn - a.nnn || a.priority - b.priority || (a.name < b.name ? 1 : a.name > b.name ? -1 : 0),
+      b.nnn - a.nnn || a.priority - b.priority || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
   );
   for (const { dir, name } of candidates) {
     const file = join(dir, name, 'definition.md');

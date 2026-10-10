@@ -154,6 +154,15 @@ describe('findPrevDefinition', () => {
     expect(findPrevDefinition(cyclesDir, archiveDir)).toBe(live);
   });
 
+  it('同根・同 NNN では名前順に先の definition.md を返す', () => {
+    const root = tmpDir();
+    const cyclesDir = join(root, 'cycles');
+    const archiveDir = join(cyclesDir, 'archive');
+    writeDefinition(join(cyclesDir, '261010-015-b'), 'b\n');
+    const first = writeDefinition(join(cyclesDir, '261010-015-a'), 'a\n');
+    expect(findPrevDefinition(cyclesDir, archiveDir)).toBe(first);
+  });
+
   it('definition が無い木 → null', () => {
     const root = tmpDir();
     const cyclesDir = join(root, 'cycles');

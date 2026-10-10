@@ -23,8 +23,8 @@ lib/
      toYYMMDD(date: Date): string  // ローカル日付の YYMMDD
      nextNNN(names: readonly string[]): number  // 両根を合流させた名前の並びから次番号。新形・旧形を数値で拾い、合わない物は飛ばす。空 → 1
      cycleDirName(nnn: number, yymmdd: string, slug: string): string  // 0 埋めはここがやる
-     findPrevDefinition(cyclesDir: string, archiveDir: string): string | null  // NNN 降順に definition.md を探す。無ければ null
-     parseArgs(argv: readonly string[]): { root: string, src: string | null }  // root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない（CLI が読む）
+     findPrevDefinition(cyclesDir: string, archiveDir: string): string | null  // NNN 降順に definition.md を探す。同 NNN は live 優先、同根・同 NNN は名前順。無ければ null
+     parseArgs(argv: readonly string[]): { root: string, src: string | null }  // root 既定は cwd。`--root` 値欠落・未知引数・位置引数 2 個以上は投げる。src の存在確認はしない（CLI が読む）
      createLeafDir(parentDir: string, name: string): string  // 非 recursive で葉だけ作り、path を返す。存在すれば EEXIST で投げる
      ```
    - Verify:
@@ -36,11 +36,11 @@ lib/
        - (happy) `cycleDirName(16, "261010", "main")` → `"261010-016-main"`、`cycleDirName(5, "261010", "main")` → `"261010-005-main"`
        - (happy) `parseArgs(["--root", "/tmp/x"])` → `{root: "/tmp/x", src: null}`、src 付きは src が入る
        - (happy) `stripMarkers("a **add** (ADR 01-1)")` → `"a"`。marker 無し → そのまま
-       - (happy) tmp の両根に definition がある木 → NNN が最大の `definition.md` を返す。max-NNN の dir に無い時は番号を下がって探す
+       - (happy) tmp の両根に definition がある木 → NNN が最大の `definition.md` を返す。max-NNN の dir に無い時は番号を下がって探す。同 NNN 並立では live が勝つ。同根・同 NNN では名前順に先の `definition.md` を返す
        - (boundary) `slugBranch("")` → `"no-branch"`、`slugBranch("日本語/x")` → `"x"`、`slugBranch("///")` → `"no-branch"`、`"x".repeat(80)` → 80 個の `x`
        - (boundary) `parseArgs([])` → src は `null`（root は cwd なので値は見ない）
        - (empty) `nextNNN([])` → `1`。definition が無い木 → `findPrevDefinition` は `null`
-       - (error) `parseArgs(["--bogus"])` → 投げる。`parseArgs(["--root"])` → 投げる
+       - (error) `parseArgs(["--bogus"])` → 投げる。`parseArgs(["--root"])` → 投げる。`parseArgs(["a", "b"])` → 投げる
        - (happy) 空 tmp に `createLeafDir` で作る → path が返り dir ができる
        - (error) 既存 dir に `createLeafDir` → EEXIST で投げる（code が EEXIST であること）
    - Steps:
@@ -182,6 +182,14 @@ lib/
     - fixed: `new Date(2026, 0, 5)` → `"260105"` のケースを足した
   - `nextNNN` の旧形分岐（`extractNNN` の `^(\d{3})-`、`scaffold.mjs:115-116`）。test（`scaffold.test.ts:51-52`）は旧形 `001-...` を含むが max は新形 `015` のため旧形分岐を外しても `16` のまま緑。他の check（slice 2 の live `015`、slice 3 の live `015`）も新形が max で、旧形が max を決める木が無い
     - fixed: 旧形だけのケース（`["001-2026-09-20", "014-2026-10-09"]` → `15`）を足した
+
+### Round 4
+
+- Gaps:
+  - `parseArgs` 多引数: I/O の parseArgs 行が単一 src 仮定で位置引数 2 個以上の扱いが未規定、Verify に `parseArgs(["a", "b"])` のケースが無い（テストは Round 3 で追加済み）
+    - fixed: I/O の parseArgs 行に「位置引数 2 個以上は投げる」を足し、Verify に `parseArgs(["a", "b"])` → 投げるを足した（実装・テストは既存のまま）
+  - tie-break 未規定・未検証: I/O の findPrevDefinition 行が NNN 降順のみで同 NNN の扱いが未規定。Verify の同 NNN ケースは両根 live 勝ちのみで同根の名前順が無い。コードの 3rd キーが名前降順で名前順と逆だった
+    - fixed: I/O に「同 NNN は live 優先、同根・同 NNN は名前順」を足し、Verify に同 NNN 両根・同根名前順の2件を明記した。コードの 3rd キーを名前昇順に直し、同根・同 NNN で名前順に先の定義を返すテストを足した
 
 ## Acceptance
 
