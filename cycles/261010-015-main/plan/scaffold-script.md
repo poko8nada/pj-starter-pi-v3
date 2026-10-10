@@ -89,6 +89,8 @@ lib/
 - Findings: なし
 - Unplanned: なし
 - Commit: b066190
+- 追加対応: `createLeafDir` を純関数に切り出し、CLI の葉作成に使用。単体テスト happy（path 返却＋dir 作成）と error（EEXIST の code 確認）を追加。17 tests 緑
+- Commit（追加）: 1593ca7
 
 ### Slice 2: CLI と手順
 
@@ -97,6 +99,8 @@ lib/
     left: max+1 の算出では事前作成が次番号を押し上げるため、単純な事前 mkdir では再現できない。同時通過の競合を決定的に起こす手順が無い
 - Unplanned: なし
 - Commit: 8845b93
+- 追加対応: `SKILL.md` :3（description）と :16（path 行）を新形に修正。`grep -n "cycles/"` で :3・:16 が新形、旧 3 形 0 件を確認
+- Commit（追加）: 1593ca7
 
 ### Slice 3: 統合: 素起こしが一つの呼び出しになる
 
@@ -161,6 +165,23 @@ lib/
     - fixed: `grep -c` → 0 と期待行の `grep -n` にし、repo-wide の旧形 grep を足した
   - 80 文字境界の入力が未固定
     - fixed: `"x".repeat(80)` → 80 個の `x` にした
+
+### Round 3 (diff `f0fb6fd..HEAD`: `b066190`, `8845b93`, `fb79fd1`, `1593ca7` を review)
+
+- Stale: なし（旧 `<dest>` 形の残存なし。slice 2 の repo-wide grep が 0 を要求し、現状の `scaffold.mjs` 言及は `SKILL.md:41`（新形）・`scaffold.mjs:8`（新形）のみ。他スキルの `cycles/<NNN-YYYY-MM-DD>` 残存は本 change 前からあり Design `path-and-archive` の守備範囲なので本 change が stale にしたものではない。ADR Highlight の「フォルダは作らない」は決定前の現状記録で凍結対象）
+- Unlisted: なし（`git diff --name-status f0fb6fd..HEAD` の変更は `SKILL.md`・`format.md`・`scaffold.mjs`・`scaffold.test.ts`・plan md の 5 件のみ。前 4 件は ## Files の 4 行に載り、plan md は計画自体。`lib/git-env.mjs` と `test/tmp.ts` は import されるだけで無変更）
+- Gaps:
+  - CLI の EEXIST → `exists:` + exit 1 写像を起こす check が無い。`scaffold.mjs:250-258`（親 recursive＋葉 `createLeafDir`、catch EEXIST で `exists:`）に対し、slice 2 Verify の事前 mkdir 手順は Notes Slice 2 Findings の `left:` 通り max+1 が `016` → `017` に逃げて葉に当たらない。単体 `createLeafDir` EEXIST（`scaffold.test.ts:104-114`）は葉の throw だけを見て CLI の catch 写像を見ない
+    - left: CLI 通しの再現は不可。葉の EEXIST は単体テスト済みで catch は読みで正しい
+  - `parseArgs` の 2 つ目位置引数 `too many arguments`（`scaffold.mjs:213`）に check が無い。slice 1 Verify は `--bogus` と `--root` 値欠落だけ（plan:43）で二重 src の error ケースが無い。I/O（plan:27）は単一 src を仮定するだけで多引数の扱いを決めていない
+    - fixed: 余分な位置引数は未知引数と同様に投げることにし、`parseArgs(["a", "b"])` が投げるケースを足した（実装は既存の `too many arguments` のまま）
+  - 同一 NNN での live/archive 優先と同根同 NNN の name 順（`scaffold.mjs:153-155,172-175` の priority＋name 降順）に check が無い。slice 1 の `findPrevDefinition` 3 件も slice 3 も NNN が異なる木（`015` vs `014`）だけで同 NNN 並立の木が無い。I/O（plan:26）は NNN 降順のみで tie-break を決めていない
+    - fixed: 同 NNN では live が archive に勝つケース（両根に `015` を置き内容で判定）を足した（実装の priority 順のまま）
+- Unproven:
+  - `toYYMMDD` の月日 `padStart(2, '0')`（`scaffold.mjs:101-103`）。test（`scaffold.test.ts:44-48`）は `new Date(2026, 9, 10)` → `"261010"` のみで月日とも 2 桁のため、pad を外しても緑のまま。一桁月日（例 `260105`）のケースが無い
+    - fixed: `new Date(2026, 0, 5)` → `"260105"` のケースを足した
+  - `nextNNN` の旧形分岐（`extractNNN` の `^(\d{3})-`、`scaffold.mjs:115-116`）。test（`scaffold.test.ts:51-52`）は旧形 `001-...` を含むが max は新形 `015` のため旧形分岐を外しても `16` のまま緑。他の check（slice 2 の live `015`、slice 3 の live `015`）も新形が max で、旧形が max を決める木が無い
+    - fixed: 旧形だけのケース（`["001-2026-09-20", "014-2026-10-09"]` → `15`）を足した
 
 ## Acceptance
 

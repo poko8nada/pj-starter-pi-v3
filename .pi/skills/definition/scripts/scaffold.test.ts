@@ -45,6 +45,10 @@ describe('toYYMMDD', () => {
   it('ローカル日付を YYMMDD にする', () => {
     expect(toYYMMDD(new Date(2026, 9, 10))).toBe('261010');
   });
+
+  it('一桁月日は 0 埋めする', () => {
+    expect(toYYMMDD(new Date(2026, 0, 5))).toBe('260105');
+  });
 });
 
 describe('nextNNN', () => {
@@ -54,6 +58,10 @@ describe('nextNNN', () => {
 
   it('空 → 1', () => {
     expect(nextNNN([])).toBe(1);
+  });
+
+  it('旧形だけでも max+1 を返す', () => {
+    expect(nextNNN(['001-2026-09-20', '014-2026-10-09'])).toBe(15);
   });
 });
 
@@ -77,6 +85,10 @@ describe('parseArgs', () => {
   it('未知引数・--root 値欠落は投げる', () => {
     expect(() => parseArgs(['--bogus'])).toThrow();
     expect(() => parseArgs(['--root'])).toThrow();
+  });
+
+  it('2 つ目位置引数は投げる', () => {
+    expect(() => parseArgs(['a', 'b'])).toThrow();
   });
 });
 
@@ -131,6 +143,15 @@ describe('findPrevDefinition', () => {
     mkdirSync(join(cyclesDir, '261010-015-main'), { recursive: true });
     const prev = writeDefinition(join(archiveDir, '014-2026-10-09'), 'archive\n');
     expect(findPrevDefinition(cyclesDir, archiveDir)).toBe(prev);
+  });
+
+  it('同 NNN 並立では live が勝つ', () => {
+    const root = tmpDir();
+    const cyclesDir = join(root, 'cycles');
+    const archiveDir = join(cyclesDir, 'archive');
+    const live = writeDefinition(join(cyclesDir, '261010-015-main'), 'live\n');
+    writeDefinition(join(archiveDir, '015-2026-10-09'), 'archive\n');
+    expect(findPrevDefinition(cyclesDir, archiveDir)).toBe(live);
   });
 
   it('definition が無い木 → null', () => {
