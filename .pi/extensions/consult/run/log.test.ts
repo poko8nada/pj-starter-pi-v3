@@ -3,7 +3,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { dayFile, placeFor, type Place } from './place.ts';
-import { appendRun, parseRun, pidAlive, readRuns, type RunRecord } from './log.ts';
+import {
+  appendRun,
+  isRunning,
+  parseRun,
+  pidAlive,
+  readRuns,
+  runningRuns,
+  type RunRecord,
+} from './log.ts';
 
 // 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
 // 実物の /tmp/pi-consult を触らない。
@@ -156,6 +164,38 @@ describe('pidAlive', () => {
     expect(pidAlive(999999)).toBe(false);
     expect(pidAlive(0)).toBe(false);
     expect(pidAlive(-1)).toBe(false);
+  });
+});
+
+describe('isRunning', () => {
+  it('終わりの行が無く pid が生きている → true', () => {
+    expect(isRunning(record({ pid: 42 }), () => true)).toBe(true);
+  });
+
+  it('終わりの行があれば、pid が生きていても false', () => {
+    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => true)).toBe(false);
+  });
+
+  it('pid が死んでいれば、終わりの行が無くても false（親ごと落ちた子）', () => {
+    expect(isRunning(record({ pid: 42 }), () => false)).toBe(false);
+  });
+});
+
+describe('runningRuns', () => {
+  it('session で絞り、走っている行だけ返す', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', child: 'consult-live', pid: process.pid }), at);
+    appendRun(
+      found,
+      record({ session: 'A', child: 'consult-done', pid: process.pid, ended: 2000, state: 'done' }),
+      at,
+    );
+    appendRun(found, record({ session: 'B', child: 'consult-other', pid: process.pid }), at);
+
+    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual([
+      'consult-live',
+    ]);
   });
 });
 

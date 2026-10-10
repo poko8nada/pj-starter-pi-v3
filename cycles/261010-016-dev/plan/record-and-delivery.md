@@ -281,8 +281,10 @@ test/
 ### Slice 2: 一覧が記録から真実を読む
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `index.ts` の `default` 関数が `max-lines-per-function`（上限 80）を超えたので、起動の掃除（`oldFiles` + `rmSync`、`cleanWorktrees`）を `sweep(place, cwd)` に切り出した（plan の形は変えていない）。
+- Commit: `consult(record-and-delivery): list read from records`
 
 ### Slice 3: 完了の配達
 

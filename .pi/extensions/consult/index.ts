@@ -5,16 +5,17 @@
  * 置き場（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは置き場を一時ディレクトリに逃がせる。
  */
 
+import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
 import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool, latest } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { runningChildren, startSound, stopSound } from './tool/sound.ts';
 import { createDelivery } from './run/delivery.ts';
-import { pidAlive, readRuns } from './run/log.ts';
-import { placeFor, type Place } from './run/place.ts';
+import { KEEP_DAYS, pidAlive, readRuns } from './run/log.ts';
+import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
-import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
+import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
 /** いまの pi のセッション id。`session_start` で読み直す（照合に使うだけ） */
@@ -70,6 +71,26 @@ function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
   });
 }
 
+/**
+ * 起動の掃除。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児枝を静かに 1 回片付ける。
+ *
+ * 失敗は握って続ける（開始を止めない）。
+ */
+function sweep(place: Place, cwd: string): void {
+  try {
+    for (const file of oldFiles(place, new Date(), KEEP_DAYS)) {
+      rmSync(file, { force: true });
+    }
+  } catch (error) {
+    void error;
+  }
+  try {
+    cleanWorktrees(cwd);
+  } catch (error) {
+    void error;
+  }
+}
+
 export default function (pi: ExtensionAPI) {
   const place = placeOf(process.cwd());
   // 完了の届け先は 1 本。reload で捨てられても、古い delivery は記録へ回すだけ（新しいセッションが読む）
@@ -80,13 +101,8 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
-    announceRunningChildren(placeOf(ctx.cwd), ctx);
-    // ゴーストの登録と取り込み済みの孤児枝を静かに 1 回掃除する。失敗は握って続ける（開始を止めない）
-    try {
-      cleanWorktrees(ctx.cwd);
-    } catch (error) {
-      void error;
-    }
+    announceRunningChildren(place, ctx);
+    sweep(place, ctx.cwd);
   });
 
   pi.registerTool({
@@ -117,7 +133,12 @@ export default function (pi: ExtensionAPI) {
       'Use action: cancel with the id to stop one; a child started by a previous session cannot be stopped, and says so.',
     ],
     parameters: CHILDREN_PARAMETERS,
-    execute: createChildrenTool(consult),
+    execute: createChildrenTool({
+      place,
+      sessionNow: () => session,
+      // session は Slice 4 で control に渡す（今は control が session を受け取らない）
+      control: (action) => consult.control(action),
+    }),
   });
 
   pi.registerTool({
@@ -131,7 +152,7 @@ export default function (pi: ExtensionAPI) {
       'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the child did.',
     ],
     parameters: WORKTREE_PARAMETERS,
-    execute: worktreeExecute,
+    execute: createWorktreeTool(place),
   });
 
   registerCommands(pi, consult);

@@ -75,6 +75,15 @@ export function pidAlive(pid: number): boolean {
 }
 
 /**
+ * 走っている子の行か。終わりの行が無く、pid が生きている。
+ *
+ * 親の記憶ではなく記録で見るので、reload をまたいだ子にも効く。`alive` はテストが差し替える口。
+ */
+export function isRunning(record: RunRecord, alive: (pid: number) => boolean = pidAlive): boolean {
+  return record.ended === undefined && alive(record.pid);
+}
+
+/**
  * 1 行を記録にする。壊れた行（JSON でない・形が違う・session が無い）は undefined。
  *
  * 型を書いた枠に 1 回だけ入れてから見る（`any` を各所に持ち回らない）。
@@ -156,4 +165,17 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
     }
   }
   return records.toSorted((left, right) => left.started - right.started);
+}
+
+/**
+ * その session の、走っている子の行だけを返す。
+ *
+ * `readRuns` の窓を `scope` で切り、`isRunning`（既定 `pidAlive`）で生きている物だけにする。
+ * 音の述語と、前のセッションの子の告知が読む。
+ */
+export function runningRuns(
+  place: Place,
+  scope: ReadScope & { readonly session: string },
+): RunRecord[] {
+  return readRuns(place, scope).filter((record) => isRunning(record));
 }

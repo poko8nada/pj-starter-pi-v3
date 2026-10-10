@@ -1,11 +1,7 @@
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { runGit } from '../run/git-env.ts';
 import { appendRun, type RunRecord } from '../run/log.ts';
-import { placeFor } from '../run/place.ts';
-import { consultRoot, createWorktree, topLevel } from '../run/worktree.ts';
+import { placeFor, type Place } from '../run/place.ts';
 import {
   USAGE,
   createChildrenTool,
@@ -17,30 +13,11 @@ import {
   type ChildrenArgs,
 } from './children.ts';
 
-// 置き場は `CONSULT_ROOT` で一時ディレクトリに逃がす。子は起こさない（記録と、runtime の偽物だけで試す）。
-// 一覧は `rootFor(cwd)` の root を読むので、テストは本物のリポジトリと worktree を 1 つ作る。
+// 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
+// 子は起こさない（記録と、runtime の偽物だけで試す）。
 
-const ROOT_KEY = 'CONSULT_ROOT';
-beforeEach(() => {
-  vi.stubEnv(ROOT_KEY, tmpDir());
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-/** base のコミットを 1 つ持つリポジトリ */
-function repo(): string {
-  const dir = tmpDir();
-  const home = tmpDir();
-  const run = (args: readonly string[]) => runGit(dir, home, args);
-  run(['init', '--quiet']);
-  run(['config', 'user.email', 'consult@example.com']);
-  run(['config', 'user.name', 'consult']);
-  writeFileSync(join(dir, 'README.md'), 'base\n');
-  run(['add', '-A']);
-  run(['commit', '--quiet', '-m', 'base']);
-  return dir;
+function place(): Place {
+  return placeFor(tmpDir(), tmpDir());
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
@@ -54,26 +31,22 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
   };
 }
 
-/** worktree を 1 つ作り、その置き場に記録を書く。返るのは（リポジトリ, 置き場, 書いた記録） */
-function withLog(extra: Partial<RunRecord> = {}): {
-  readonly dir: string;
-  readonly root: string;
-  readonly run: RunRecord;
-} {
-  const dir = repo();
-  createWorktree(dir, '2-a');
-  const root = placeFor(consultRoot(), topLevel(dir)).dir;
-  const run = record({ worktree: '2-a', ...extra });
-  appendRun(placeFor(consultRoot(), topLevel(dir)), run);
-  return { dir, root, run };
+/** 記録を置き場に書き、その置き場を返す。`at` を渡せばその日の file に入る */
+function withLog(records: readonly RunRecord[] = [record()], at?: Date): Place {
+  const found = place();
+  for (const run of records) {
+    appendRun(found, run, at);
+  }
+  return found;
 }
 
-/** 一覧に出す口。`children` と `control` だけを持つ偽の runtime */
-function fakeHost(live: string[] = []) {
+/** 一覧に出す口。置き場と、いまの session と、止める手を持つ偽の runtime */
+function fakeHost(found: Place, session = 'session-a') {
   const cancelled: string[] = [];
   return {
     host: {
-      children: new Map(live.map((id) => [id, {}])),
+      place: found,
+      sessionNow: () => session,
       control: (
         action: { readonly action: 'list' } | { readonly action: 'cancel'; readonly id: string },
       ) => {
@@ -135,22 +108,28 @@ describe('rowOf / rowsOf', () => {
   });
 
   it('走っている子（pid が生きていて終了行が無い）は running になる', () => {
-    expect(rowsOf([record()], new Set(), alive, 0)[0]).toContain('running');
-    expect(rowsOf([record()], new Set(), dead, 0)[0]).not.toContain('running');
+    expect(rowsOf([record()], alive, 0)[0]).toContain('running');
   });
 
-  it('いまのセッションが持っている子は、pid を見なくても running とする', () => {
-    expect(rowsOf([record()], new Set(['consult-1']), dead, 0)[0]).toContain('running');
+  it('終わりの行が無く pid も死んでいる → lost（done と偽らない）', () => {
+    const row = rowsOf([record()], dead, 0)[0] ?? '';
+    expect(row).toContain('lost');
+    expect(row).not.toContain('done');
   });
 
-  it('終了の行がある子は、いまのセッションに居ても running にしない', () => {
+  it('終了の行がある子は running にしない（state を出す）', () => {
     const ended = record({ ended: 5, state: 'done' });
-    expect(rowsOf([ended], new Set(['consult-1']), alive, 0)[0]).not.toContain('running');
+    expect(rowsOf([ended], alive, 0)[0]).not.toContain('running');
+    expect(rowsOf([ended], dead, 0)[0]).toContain('done');
+  });
+
+  it('記録が空 → []', () => {
+    expect(rowsOf([], alive, 0)).toEqual([]);
   });
 });
 
 describe('latest', () => {
-  it('子ごとに最後の行を取る（走っている行 → 終わった行）', () => {
+  it('子ごとに最後の行を取る（走っている行 → 終わった行で 1 本に畳む）', () => {
     const running = record({ child: 'consult-1', pid: 5 });
     const done = record({ child: 'consult-1', pid: 5, ended: 2000, state: 'done' });
     const other = record({ child: 'consult-2', started: 3000 });
@@ -167,39 +146,104 @@ describe('latest', () => {
 
 describe('listText', () => {
   it('記録が無ければそう言う（空行を返さない）', () => {
-    expect(listText([], new Set(), 0)).toBe('no children in this project yet');
+    expect(listText([], 0)).toBe('no children in this project yet');
   });
 });
 
 describe('createChildrenTool', () => {
   it('{action: list} → 記録の行が出る', async () => {
-    const { dir, run } = withLog({ ended: 2000, state: 'done', turns: 3, spend: '0.002 usd' });
-    const { host } = fakeHost();
-    const args: ChildrenArgs = ['call', { action: 'list' }, undefined, undefined, { cwd: dir }];
+    const found = withLog([
+      record({ worktree: '2-a', ended: 2000, state: 'done', turns: 3, spend: '0.002 usd' }),
+    ]);
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
     const out = await createChildrenTool(host)(...args);
     const text = textOf(out);
-    expect(text).toContain(run.child);
+    expect(text).toContain('consult-1');
     expect(text).toContain('worktree 2-a');
     expect(text).toContain('done');
   });
 
   it('action を省くと list（既定）', async () => {
-    const { dir, run } = withLog({ ended: 2000, state: 'done' });
-    const { host } = fakeHost();
-    const args: ChildrenArgs = ['call', {}, undefined, undefined, { cwd: dir }];
+    const found = withLog([record({ ended: 2000, state: 'done' })]);
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = ['call', {}, undefined, undefined, { cwd: tmpDir() }];
     const out = await createChildrenTool(host)(...args);
-    expect(textOf(out)).toContain(run.child);
+    expect(textOf(out)).toContain('consult-1');
+  });
+
+  it('2 つの session の子が居る → いまの session の子だけが出る', async () => {
+    const found = withLog([
+      record({ session: 'session-a', child: 'consult-1', ended: 2000, state: 'done' }),
+      record({ session: 'session-b', child: 'consult-2', ended: 2000, state: 'done' }),
+    ]);
+    const { host } = fakeHost(found, 'session-a');
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
+    const text = textOf(await createChildrenTool(host)(...args));
+    expect(text).toContain('consult-1');
+    expect(text).not.toContain('consult-2');
+  });
+
+  it('3 日前に始まっていまも走っている子（終わりの行が無い）→ 一覧に出ない', async () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    // 2 日より長く走る子は窓の外に出る（受け入れる限界）
+    const found = withLog([record({ child: 'consult-old', pid: process.pid })], threeDaysAgo);
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
+    const text = textOf(await createChildrenTool(host)(...args));
+    expect(text).not.toContain('consult-old');
+  });
+
+  it('3 日前に始まって今日終わった子 → state 付きで出る（終わりの行は今日の file）', async () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const found = place();
+    appendRun(found, record({ child: 'consult-long', pid: process.pid }), threeDaysAgo);
+    appendRun(
+      found,
+      record({ child: 'consult-long', pid: process.pid, ended: 2000, state: 'done' }),
+    );
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
+    const text = textOf(await createChildrenTool(host)(...args));
+    expect(text).toContain('consult-long');
+    expect(text).toContain('done');
   });
 
   it('{action: cancel, id} → 止めた結果が返る', async () => {
-    const { dir } = withLog();
-    const { host, cancelled } = fakeHost(['consult-1']);
+    const found = withLog();
+    const { host, cancelled } = fakeHost(found);
     const args: ChildrenArgs = [
       'call',
       { action: 'cancel', id: 'consult-1' },
       undefined,
       undefined,
-      { cwd: dir },
+      { cwd: tmpDir() },
     ];
     const out = await createChildrenTool(host)(...args);
     expect(textOf(out)).toContain('stopped: consult-1');
@@ -207,17 +251,29 @@ describe('createChildrenTool', () => {
   });
 
   it('{action: cancel}（id 無し）→ 使い方つきで投げる', async () => {
-    const { dir } = withLog();
-    const { host } = fakeHost();
-    const args: ChildrenArgs = ['call', { action: 'cancel' }, undefined, undefined, { cwd: dir }];
+    const found = withLog();
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'cancel' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
     await expect(createChildrenTool(host)(...args)).rejects.toThrow(/cancel needs id/);
     expect(USAGE).toContain('cancel needs id');
   });
 
   it('知らない action → 投げる', async () => {
-    const { dir } = withLog();
-    const { host } = fakeHost();
-    const args: ChildrenArgs = ['call', { action: 'stop' }, undefined, undefined, { cwd: dir }];
+    const found = withLog();
+    const { host } = fakeHost(found);
+    const args: ChildrenArgs = [
+      'call',
+      { action: 'stop' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
     await expect(createChildrenTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
   });
 });
