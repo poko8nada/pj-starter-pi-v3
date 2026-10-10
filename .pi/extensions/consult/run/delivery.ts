@@ -11,6 +11,7 @@
 
 import type { ConsultMessage, ConsultSendOptions, PiFace } from '../tool/consult.ts';
 import { appendRun, type RunRecord } from './log.ts';
+import type { Place } from './place.ts';
 
 /** 完了の知らせ 1 つ。pi に渡す形と、記録に回すときの元 */
 export interface Delivery {
@@ -27,10 +28,10 @@ export interface Delivery {
 /**
  * delivery を作る。
  *
- * root は**必要になったとき**に引く（`rootFor` は置き場を作るので、起動しただけで作らない）。
+ * 置き場は runtime の入力として渡す（起動しただけで作らない。`placeFor` は決めるだけ）。
  * 記録へ回すのは、届け先が消えたとき（reload のあと）だけ。
  */
-export function createDelivery(resolveRoot: () => string): Delivery {
+export function createDelivery(place: Place): Delivery {
   let pi: PiFace | undefined;
 
   return {
@@ -46,7 +47,7 @@ export function createDelivery(resolveRoot: () => string): Delivery {
     send(message, options, record) {
       if (pi === undefined) {
         // 届け先が無い。落とさず、記録に回す（新しいセッションが読む）
-        appendRun(resolveRoot(), { ...record, notice: message.content });
+        appendRun(place, { ...record, notice: message.content });
         return;
       }
       pi.sendMessage(message, options);

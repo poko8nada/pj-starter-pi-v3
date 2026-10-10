@@ -26,6 +26,8 @@ import {
   setSoundEnabled,
   stopSound,
 } from './sound.ts';
+import { tmpDir } from '../../../../test/tmp.ts';
+import { placeFor } from '../run/place.ts';
 
 // 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
 // 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
@@ -126,7 +128,7 @@ describe('run', () => {
   it('review を 1 体起こす → id が返り、その時点で子は終わっていない', async () => {
     const { pi, calls } = fakePi();
     const { run: runner, signals, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, runner);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
 
     const result = await startChild(runtime, { role: 'review', task: '判定する' });
 
@@ -140,7 +142,7 @@ describe('run', () => {
   it('書き込むロール（code）で worktree を省くと、子を起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const runtime = createRuntime(pi, runner);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
 
     await expect(startChild(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
       /needs a worktree/,
@@ -152,7 +154,7 @@ describe('run', () => {
   it('知らない worktree の id → 子を起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const runtime = createRuntime(pi, runner);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), runner);
 
     await expect(
       startChild(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
@@ -166,7 +168,7 @@ describe('完了の通知', () => {
   it('子の完了 → 子のテキスト・ref:・[consult] 行がメッセージに入る', async () => {
     const { pi, calls } = fakePi();
     const { run, resolvers } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     await startChild(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
@@ -191,7 +193,7 @@ describe('cancel', () => {
   it('/consult-cancel <id> → その id が止まる', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -204,7 +206,7 @@ describe('cancel', () => {
   it('/consult-cancel に知らない id → 理由を出して止めない', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     await startChild(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -222,7 +224,7 @@ describe('音', () => {
     try {
       const { pi } = fakePi();
       const { run } = deferredRunner();
-      const runtime = createRuntime(pi, run);
+      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
       await startChild(runtime, { role: 'research', task: 'a' });
       await startChild(runtime, { role: 'review', task: 'b' });
 
@@ -241,7 +243,7 @@ describe('音', () => {
     try {
       const { pi } = fakePi();
       const { run, resolvers } = deferredRunner();
-      const runtime = createRuntime(pi, run);
+      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
       await startChild(runtime, { role: 'review', task: 'a' });
       expect(isSoundRunning()).toBe(true);
 
@@ -265,7 +267,7 @@ describe('音', () => {
       setSoundEnabled(false);
       const { pi } = fakePi();
       const { run } = deferredRunner();
-      const runtime = createRuntime(pi, run);
+      const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
       await startChild(runtime, { role: 'review', task: 'a' });
 
       expect(isSoundRunning()).toBe(true);
@@ -290,7 +292,7 @@ describe('音', () => {
   it('/consult-sound → 状態を出し、on / off を切り替える', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.sound('', ctx);
@@ -319,7 +321,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-cancel に id が無ければ、使い方を出して止めない', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('', ctx);
     expect(notices[0]?.message).toContain('needs an id');
@@ -329,7 +331,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-sound に不正な引数 → 使い方を出す', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.sound('nope', ctx);
     expect(notices[0]?.message).toContain('usage');
@@ -339,7 +341,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-status は子が 0 体なら、そう言う', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const runtime = createRuntime(pi, run);
+    const runtime = createRuntime(pi, placeFor(tmpDir(), tmpDir()), run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
     expect(notices[0]?.message).toContain('no child is running');

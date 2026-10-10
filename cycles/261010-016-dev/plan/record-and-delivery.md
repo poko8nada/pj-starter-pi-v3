@@ -272,8 +272,11 @@ test/
 ### Slice 1: 置き場を値にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `createRuntime` を plan の I/O どおり 5 引数にすると `oxlint` の `max-params`（上限 4）で commit が止まった。`.pi/extensions/intent-router/state.ts:200` の先例と同じ `// eslint-disable-next-line max-params -- <理由>` で黙らせた（結果: `pnpm lint` 緑）。
+  - `lint --deny-warnings` が `place.ts` の `sort`/`reverse`（配列を破壊する）と `index.ts` の unsafe assertion を指摘したので、`toSorted`/`toReversed` と `ctx.sessionManager.getSessionId()` の直呼びに直した（plan の形は変えていない）。
+- Commit: `consult(record-and-delivery): place-valued records with session`
 
 ### Slice 2: 一覧が記録から真実を読む
 

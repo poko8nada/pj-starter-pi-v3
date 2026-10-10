@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
 import { appendRun, type RunRecord } from '../run/log.ts';
-import { createWorktree, rootFor } from '../run/worktree.ts';
+import { placeFor } from '../run/place.ts';
+import { consultRoot, createWorktree, topLevel } from '../run/worktree.ts';
 import {
   USAGE,
   createChildrenTool,
@@ -43,10 +44,17 @@ function repo(): string {
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return { child: 'consult-1', role: 'review', pid: 999_999, started: 1000, ...extra };
+  return {
+    session: 'session-a',
+    child: 'consult-1',
+    role: 'review',
+    pid: 999_999,
+    started: 1000,
+    ...extra,
+  };
 }
 
-/** worktree を 1 つ作り、その root に記録を書く。返るのは（リポジトリ, root, 書いた記録） */
+/** worktree を 1 つ作り、その置き場に記録を書く。返るのは（リポジトリ, 置き場, 書いた記録） */
 function withLog(extra: Partial<RunRecord> = {}): {
   readonly dir: string;
   readonly root: string;
@@ -54,9 +62,9 @@ function withLog(extra: Partial<RunRecord> = {}): {
 } {
   const dir = repo();
   createWorktree(dir, '2-a');
-  const root = rootFor(dir);
+  const root = placeFor(consultRoot(), topLevel(dir)).dir;
   const run = record({ worktree: '2-a', ...extra });
-  appendRun(root, run);
+  appendRun(placeFor(consultRoot(), topLevel(dir)), run);
   return { dir, root, run };
 }
 

@@ -12,7 +12,8 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { pidAlive, readRuns, type RunRecord } from '../run/log.ts';
-import { rootFor } from '../run/worktree.ts';
+import { placeFor } from '../run/place.ts';
+import { consultRoot, topLevel } from '../run/worktree.ts';
 import type { ControlAction, ControlOutcome } from './consult.ts';
 
 /**
@@ -129,13 +130,24 @@ export function listText(
   return rowsOf(records, live, pidAlive, now).join('\n');
 }
 
+/** cwd から置き場を決める。頂点が引けなければ cwd 自身に落とす（読む経路で投げない） */
+function placeOf(cwd: string) {
+  let toplevel: string;
+  try {
+    toplevel = topLevel(cwd);
+  } catch {
+    toplevel = cwd;
+  }
+  return placeFor(consultRoot(), toplevel);
+}
+
 export function createChildrenTool(consult: ChildrenHost) {
   return async function execute(...args: ExecuteArgs) {
     const [, params, , , ctx] = args;
     const action = params.action ?? 'list';
 
     if (action === 'list') {
-      const records = latest(readRuns(rootFor(ctx.cwd)));
+      const records = latest(readRuns(placeOf(ctx.cwd)));
       const live = new Set(consult.children.keys());
       return result(listText(records, live, Date.now()), { action, count: records.length });
     }

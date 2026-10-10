@@ -9,6 +9,7 @@ import {
   branchFor,
   cleanWorktrees,
   createWorktree,
+  ensureRoot,
   findWorktree,
   listWorktrees,
   removeWorktree,
@@ -78,10 +79,42 @@ describe('rootFor', () => {
     }
   });
 
+  it('worktree が無ければ undefined → 作らない（呼ぶ前後で直下の並びが同じ）', () => {
+    const { dir } = repo();
+    const root = process.env[ROOT_KEY] ?? '';
+    const before = readdirSync(root);
+    expect(rootFor(dir)).toBeUndefined();
+    expect(readdirSync(root)).toEqual(before);
+  });
+
+  it('worktree があればそれを使う', () => {
+    const { dir } = repo();
+    const made = createWorktree(dir, '1-a');
+    expect(rootFor(dir)).toBe(dirname(made.unitDir));
+  });
+});
+
+describe('ensureRoot', () => {
+  it('2 回呼ぶと、同じ根を返し、作るのは 1 回だけ', () => {
+    const { dir } = repo();
+    const root = process.env[ROOT_KEY] ?? '';
+    createWorktree(dir, '1-a');
+    const first = ensureRoot(dir);
+    const before = readdirSync(root).length;
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
+      expect(ensureRoot(dir)).toBe(first);
+      expect(readdirSync(root)).toHaveLength(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('worktree が無ければ新しく 1 つ作る', () => {
     const { dir } = repo();
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(0);
-    expect(rootFor(dir).endsWith('/')).toBe(false);
+    expect(ensureRoot(dir).endsWith('/')).toBe(false);
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(1);
   });
 });
@@ -93,7 +126,7 @@ describe('createWorktree', () => {
 
     expect(made.id).toBe('1-a');
     expect(made.branch).toBe('consult/1-a');
-    expect(made.path.startsWith(rootFor(dir))).toBe(true);
+    expect(made.path.startsWith(ensureRoot(dir))).toBe(true);
     expect(basename(made.path)).toBe('wt');
     expect(made.path.endsWith(join('1-a', 'wt'))).toBe(true);
     expect(listWorktrees(dir).map((row) => row.id)).toEqual(['1-a']);
@@ -168,7 +201,7 @@ describe('listWorktrees / findWorktree', () => {
   it('台帳ファイルを持たない → 一覧は git から作る', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
-    const root = rootFor(dir);
+    const root = ensureRoot(dir);
     // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その親
     expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
@@ -476,6 +509,6 @@ describe('unitRoot', () => {
     expect(made.path.startsWith(made.unitDir)).toBe(true);
     // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の親
     expect(made.path).toBe(join(made.unitDir, 'wt'));
-    expect(dirname(made.unitDir)).toBe(rootFor(dir));
+    expect(dirname(made.unitDir)).toBe(ensureRoot(dir));
   });
 });

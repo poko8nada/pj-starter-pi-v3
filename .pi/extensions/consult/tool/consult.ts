@@ -12,8 +12,9 @@ import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
 import { runOneChild, type ChildJob } from '../run/child.ts';
-import { findWorktree, rootFor } from '../run/worktree.ts';
+import { findWorktree } from '../run/worktree.ts';
 import { appendRun, type RunRecord } from '../run/log.ts';
+import type { Place } from '../run/place.ts';
 import type { Delivery } from '../run/delivery.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
@@ -213,10 +214,12 @@ async function consult(
 /** 走らせている consult の一式。道具とスラッシュコマンドが同じ children を見る */
 interface RuntimeState {
   readonly pi: PiFace;
+  readonly place: Place;
   readonly run: ConsultRunner;
   readonly children: Map<string, RunningChild>;
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
+  readonly sessionNow: () => string;
   counter: number;
 }
 
@@ -226,6 +229,7 @@ interface BackgroundJob {
   readonly options: ConsultOptions;
   readonly job: ChildJob;
   readonly child: RunningChild;
+  readonly session: string;
 }
 
 /** 失敗も本文にする。投げずにメッセージへ回す */
@@ -256,8 +260,9 @@ function deliver(
  * 落ちた子も閉じる（開いたままにすると、いつまでも「走っている」と見える）。届け先が無かったときの
  * 控え（`notice`）にもこの記録を使う。
  */
-function closeRecord(job: BackgroundJob, root: string, report: ChildReport | undefined): RunRecord {
+function closeRecord(job: BackgroundJob, place: Place, report: ChildReport | undefined): RunRecord {
   const record: RunRecord = {
+    session: job.session,
     child: job.child.id,
     role: job.options.type,
     pid: job.child.pid ?? 0,
@@ -270,21 +275,20 @@ function closeRecord(job: BackgroundJob, root: string, report: ChildReport | und
     ...(report?.reason === undefined ? {} : { reason: report.reason }),
     ...(job.job.worktree === undefined ? {} : { worktree: job.job.worktree.id }),
   };
-  appendRun(root, record);
+  appendRun(place, record);
   return record;
 }
 
 /** 子を起こし、完了でメッセージを送る。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
-  const root = rootFor(job.ctx.cwd);
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
-      const record = closeRecord(job, root, outcome.report);
+      const record = closeRecord(job, state.place, outcome.report);
       deliver(state, job.child, outcome, record);
     })
     .catch((error: unknown) => {
-      const record = closeRecord(job, root, undefined);
+      const record = closeRecord(job, state.place, undefined);
       deliver(state, job.child, failureOutcome(error), record);
     })
     .finally(() => {
@@ -320,7 +324,7 @@ function beginRun(
     startedAt: Date.now(),
     controller: new AbortController(),
   };
-  const root = rootFor(ctx.cwd);
+  const session = state.sessionNow();
   const job: ChildJob = {
     task: request.task,
     id: child.id,
@@ -330,7 +334,8 @@ function beginRun(
     // 起きたら、まず「走っている」1 行を記録に足す。reload をまたいでも一覧に出るように
     onStarted: (pid) => {
       child.pid = pid;
-      appendRun(root, {
+      appendRun(state.place, {
+        session,
         child: child.id,
         role: policy.name,
         pid,
@@ -343,7 +348,7 @@ function beginRun(
   if (state.children.size === 1) {
     startSound();
   }
-  runInBackground(state, { ctx, options, job, child });
+  runInBackground(state, { ctx, options, job, child, session });
   const running = [...state.children.values()].map(describeChild).join('\n');
   return result(`started: ${child.id}\n\nrunning now:\n${running}`, {
     action: 'run',
@@ -373,16 +378,21 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ children を共有する。
  * テストは `pi` と `run` を差し替えて、子を起こさずに確かめられる。
  */
+// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow の 5 つ）
 export function createRuntime(
   pi: PiFace,
+  place: Place,
   run: ConsultRunner = consult,
   delivery?: Delivery,
+  sessionNow: () => string = () => '',
 ): ConsultRuntime {
   const state: RuntimeState = {
     pi,
+    place,
     run,
     children: new Map(),
     counter: 0,
+    sessionNow,
     ...(delivery === undefined ? {} : { delivery }),
   };
   return {

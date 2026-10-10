@@ -76,9 +76,9 @@ export function branchFor(id: string): ConsultBranch {
   return `consult/${id}`;
 }
 
-/** unit の入れ物。worktree の外なので、記録を置いてもリポジトリを汚さない */
+/** unit の入れ物。worktree の外なので、リポジトリを汚さない（記録はここには無い） */
 export function unitRoot(cwd: string, id: string): string {
-  return join(rootFor(cwd), id);
+  return join(ensureRoot(cwd), id);
 }
 
 /** `YYYYMMDD-HHMM`。作業場の root に 1 回だけ付く */
@@ -108,7 +108,7 @@ export function topLevel(cwd: string): string {
 }
 
 /** 実体のパスに揃える。無い場合はそのまま返す（比較の文字列を作るだけなので、投げない） */
-function resolveReal(path: string): string {
+export function resolveReal(path: string): string {
   try {
     return realpathSync(path);
   } catch {
@@ -117,19 +117,29 @@ function resolveReal(path: string): string {
 }
 
 /**
- * 実行の根（runRoot）。
+ * 実行の根（runRoot）を読み取るだけ。作らない。
  *
- * 既に consult の worktree があれば、その実行の根を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。
+ * 既に consult の worktree があれば、その実行の根を返す。無ければ `undefined`
+ *（読む経路が置き場を作ると、呼ぶたびに場所が変わり、記録を読む側が迷子になる）。
  */
-
-export function rootFor(cwd: string): string {
+export function rootFor(cwd: string): string | undefined {
   const base = resolveReal(consultRoot());
   // git は /private/tmp のように実体のパスを返す（macOS の /tmp は symlink）。文字列で比べると、
-  // 同じ置き場を別物と見て、呼ぶたびに新しい root を作ってしまう（記録を読む側が迷子になる）。
-  const existing = parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`));
+  // 同じ置き場を別物と見てしまう（記録を読む側が迷子になる）。
+  return parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`))?.runRoot;
+}
+
+/**
+ * 実行の根（runRoot）を決める。1 回だけ作る。
+ *
+ * 既に consult の worktree があれば、その実行の根を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここには無い。
+ */
+export function ensureRoot(cwd: string): string {
+  const existing = rootFor(cwd);
   if (existing !== undefined) {
-    return existing.runRoot;
+    return existing;
   }
+  const base = resolveReal(consultRoot());
   const dir = join(base, `${basename(topLevel(cwd))}-${stamp()}`);
   mkdirSync(dir, { recursive: true });
   // 実体のパスで持つ（git が返すパスと、そのまま比べられるように）
@@ -137,7 +147,7 @@ export function rootFor(cwd: string): string {
 }
 
 /** 置き場の大元。テストは `CONSULT_ROOT` で自分の一時ディレクトリに逃がす */
-function consultRoot(): string {
+export function consultRoot(): string {
   return process.env.CONSULT_ROOT ?? CONSULT_ROOT;
 }
 
@@ -197,7 +207,7 @@ export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree
   if (existing !== undefined) {
     return existing;
   }
-  const runRoot = rootFor(cwd);
+  const runRoot = ensureRoot(cwd);
   const path = join(runRoot, id, 'wt');
   const branch = branchFor(id);
   const result = git(cwd, ['worktree', 'add', '-b', branch, path, base]);

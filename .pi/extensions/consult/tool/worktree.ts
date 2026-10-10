@@ -9,11 +9,13 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { pidAlive, readRuns } from '../run/log.ts';
+import { placeFor, type Place } from '../run/place.ts';
 import {
+  consultRoot,
   createWorktree,
   listWorktrees,
   removeWorktree,
-  rootFor,
+  topLevel,
   type RemoveResult,
   type WorktreeRow,
 } from '../run/worktree.ts';
@@ -94,12 +96,23 @@ function parseAction(
  * 記録（`log.jsonl`）で見る: 終わりの行が無く、pid が生きている行があれば走っている。親の記憶ではなく
  * 記録を見るので、reload をまたいだ子にも効く（その記録はこの unit のもの）。
  */
+/** cwd から置き場を決める。頂点が引けなければ cwd 自身に落とす（読む経路で投げない） */
+function placeOf(cwd: string): Place {
+  let toplevel: string;
+  try {
+    toplevel = topLevel(cwd);
+  } catch {
+    toplevel = cwd;
+  }
+  return placeFor(consultRoot(), toplevel);
+}
+
 export function runningIn(
-  runRoot: string,
+  place: Place,
   id: string,
   alive: (pid: number) => boolean = pidAlive,
 ): boolean {
-  return readRuns(runRoot).some(
+  return readRuns(place).some(
     (run) => run.worktree === id && run.ended === undefined && alive(run.pid),
   );
 }
@@ -165,7 +178,7 @@ export async function execute(...args: ExecuteArgs) {
   if (action.action === 'remove') {
     const removed = removeWorktree(cwd, action.id, {
       force: action.force,
-      busy: runningIn(rootFor(cwd), action.id),
+      busy: runningIn(placeOf(cwd), action.id),
     });
     return result(removeText(action.id, removed), {
       action: 'remove',
@@ -177,8 +190,8 @@ export async function execute(...args: ExecuteArgs) {
   if (rows.length === 0) {
     return result('作業場は無い。', { action: 'list', rows });
   }
-  const runRoot = rootFor(cwd);
-  return result(rows.map((row) => rowLine(row, runningIn(runRoot, row.id))).join('\n'), {
+  const place = placeOf(cwd);
+  return result(rows.map((row) => rowLine(row, runningIn(place, row.id))).join('\n'), {
     action: 'list',
     rows,
   });

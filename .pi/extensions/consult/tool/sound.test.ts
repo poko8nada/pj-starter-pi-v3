@@ -20,7 +20,13 @@ import {
 } from './sound.ts';
 
 describe('runningChildren', () => {
-  const base: RunRecord = { child: 'consult-1', role: 'review', pid: 42, started: 1000 };
+  const base: RunRecord = {
+    session: 'session-a',
+    child: 'consult-1',
+    role: 'review',
+    pid: 42,
+    started: 1000,
+  };
 
   it('終わっていない子（pid が生きている）→ 走っている', () => {
     expect(runningChildren([base], () => true)).toHaveLength(1);
