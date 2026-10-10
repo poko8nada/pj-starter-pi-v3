@@ -58,7 +58,7 @@ parent tree。worktree を作らない（owner の指示）。
   - 1 と 3 はテストを足した
   - 2 はコードも直した。記録に書かれるのは子が起きた時なので、同じ runtime で続けて起こすと 2 体目が 1 体目の行を見ない。決めた番号を「床」として覚え、session が変われば記録から取り直す
 - Unplanned: なし（2 のコード修正はレビューの指摘から出た物で、plan の Slice の外ではない）
-- Commit: **未 commit**（owner の許可待ち）
+- Commit: `b36a842` `consult(ex-child-identity): number children from the record`
 - 逸脱: plan の Steps 5「ADR に 01-5 を足す」は **owner の指示で取り下げた**（ADR には書いていない）。決定はこの plan md に残す
 - Verify (done here):
   - cli: `grep -c "counter" .pi/extensions/consult/tool/consult.ts` → 0
@@ -107,4 +107,4 @@ parent tree。worktree を作らない（owner の指示）。
 - Findings:
   - レビューの Gaps 3 件は全部直した（`fixed:` を `## Review` に書いた）
   - `test/` は触っていない。worktree は作っていない（owner の指示）
-  - commit は owner の許可待ち
+  - commit: `b36a842`（`consult(ex-child-identity): number children from the record`）
