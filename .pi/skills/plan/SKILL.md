@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when the design is agreed and one of its plans has to become work — after the cut is settled and a plan is ready to be handed to a child. It writes `cycles/<NNN>/plan/<plan id>.md`, holding the files, the slices, the shapes and the checks.
+description: Use when the design is agreed and one of its plans has to become work — after the cut is settled and a plan is ready to be handed to a child. It writes `cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`, holding the files, the slices, the shapes and the checks.
 ---
 
 # plan
@@ -11,7 +11,7 @@ One plan is one worktree: a branch and a merge. It is written from the cycle's d
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the sections, the slice, the `I/O`, the type rules, the checks and the record.
 

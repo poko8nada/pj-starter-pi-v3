@@ -5,7 +5,7 @@ description: Use when the definition, the design, the plan or the work meets its
 
 # adr
 
-One cycle has one ADR: `cycles/<NNN-YYYY-MM-DD>/adr.md`. It is where a decision is made and left.
+One cycle has one ADR: `cycles/<YYMMDD-NNN-<branch>>/adr.md`. It is where a decision is made and left.
 
 The other md are written from what is decided here. The definition says what the product is, the design says the cut, and the plan says the work; none of them argues. The argument lives in the ADR.
 
@@ -13,7 +13,7 @@ The other md are written from what is decided here. The definition says what the
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/adr.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/adr.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the tree, the parts, the research types, and the trial.
 
@@ -50,7 +50,7 @@ Write `なし` when there is nothing to try.
 
 ### 6. Probe the holes
 
-Before Decide, pass this ADR (the proposal in `cycles/<NNN>/adr.md`) to a `review` child once, asking for holes in three views: missed considerations, missed research, missed trials. Answer the holes it returns, show both the holes and your answers to the owner, and carry them into the `Highlight` after the owner's opinion. The arrival may come in a later message.
+Before Decide, pass this ADR (the proposal in `cycles/<YYMMDD-NNN-<branch>>/adr.md`) to a `review` child once, asking for holes in three views: missed considerations, missed research, missed trials. Answer the holes it returns, show both the holes and your answers to the owner, and carry them into the `Highlight` after the owner's opinion. The arrival may come in a later message.
 
 ### 7. Decide
 

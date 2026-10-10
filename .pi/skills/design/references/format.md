@@ -1,6 +1,6 @@
 # The design's format
 
-`cycles/<NNN-YYYY-MM-DD>/design.md`.
+`cycles/<YYMMDD-NNN-<branch>>/design.md`.
 
 Section and field names are English; the content is Japanese.
 

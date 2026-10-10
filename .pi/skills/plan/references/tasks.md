@@ -3,7 +3,7 @@
 ## The review of a plan (a `review` child)
 
 ```
-Read cycles/<NNN-YYYY-MM-DD>/plan/<plan id>.md (## Files, ## Slices, ## Verify).
+Read cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md (## Files, ## Slices, ## Verify).
 Review its core, by three viewpoints:
 - Shapes: does the I/O cover the change — every shape, signature and state the plan moves
 - Checks: is every Verify runnable, do its cases cover the walk, do they follow the test file they name, and does each case's input tell the behavior from its absence

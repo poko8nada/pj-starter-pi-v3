@@ -26,7 +26,7 @@ export interface TypePolicy {
   /**
    * 書ける所。空は全部。読みは縛らない。
    *
-   * エントリは、ファイル、ディレクトリ、または glob（`cycles/<NNN>/plan/<plan id>.md`）。
+   * エントリは、ファイル、ディレクトリ、または glob（`cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`）。
    * 子の cwd（worktree）からの相対で当てる。
    */
   readonly paths: readonly string[];

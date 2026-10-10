@@ -1,11 +1,11 @@
 ---
 name: design
-description: Use when the definition and the cycle's ADR are settled and the work has to be cut — after the units that move are written and their entries are decided. It decides how many worktrees the cycle runs, in what order, and where each plan stops, and writes `cycles/<NNN>/design.md`.
+description: Use when the definition and the cycle's ADR are settled and the work has to be cut — after the units that move are written and their entries are decided. It decides how many worktrees the cycle runs, in what order, and where each plan stops, and writes `cycles/<YYMMDD-NNN-<branch>>/design.md`.
 ---
 
 # design
 
-One cycle has one design: `cycles/<NNN-YYYY-MM-DD>/design.md`. It cuts the cycle's decided changes into plans, and says where each plan stops.
+One cycle has one design: `cycles/<YYMMDD-NNN-<branch>>/design.md`. It cuts the cycle's decided changes into plans, and says where each plan stops.
 
 A plan is a worktree, a branch and a merge — the unit the work runs in. The plan md and the steps inside it are written from here, and the work is carried out there.
 
@@ -13,7 +13,7 @@ A plan is a worktree, a branch and a merge — the unit the work runs in. The pl
 
 ## The file
 
-`cycles/<NNN-YYYY-MM-DD>/design.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD-NNN-<branch>>/design.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the section per plan, the rules for the cut, and the `Boundary`'s two groups.
 

@@ -55,6 +55,6 @@ work         carry a plan to done (the slices, the review, the acceptance, the m
 close        judge the cycle (the integration test, where each leftover goes)
 ```
 
-The records stay in `cycles/<NNN-DATE>/`: `adr.md`, `definition.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
+The records stay in `cycles/<YYMMDD-NNN-<branch>>/`: `adr.md`, `definition.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
 
 The definition holds the product. The ADR holds the argument behind it, and it fires from any stage. A change after the definition is agreed is a new ADR entry, and the definition is edited to match.
