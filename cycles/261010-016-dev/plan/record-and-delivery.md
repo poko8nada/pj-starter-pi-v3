@@ -340,9 +340,15 @@ test/
 ### Round 2
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
+
+（子（`consult-28`）の報告から親が記録した。この子は plan md に書かなかった。`fixed:` の 5 件は、現物と `git diff a6029d2..HEAD` の読み合わせで直っていると確認された — `tool/worktree.ts:91-96` の旧コメントは古いブロックだけが消えている、`tool/children.ts:4-5` は session の絞りと矛盾しなくなっている、`index.ts:175,179` は this session と pid 停止に合っている、`delivery.test.ts` の壊れ目録は通知 1 本を書いた置き場で見ている、遅延置き場は `existsSync(dir)` の不在まで見ている）
 
 ## Acceptance
 
@@ -356,6 +362,7 @@ test/
   - 壊し 1: `rowOf` の `lost` を `record.state ?? 'done'` に戻す → children の「終わりの行が無く pid も死んでいる → lost（done と偽らない）」が赤 → 復旧
   - 壊し 2: `createChildrenTool` の session の絞りを外す → children の「2 つの session の子が居る → いまの session の子だけが出る」が赤 → 復旧
   - 壊し 3: `startSound` の tick から述語を外す（鳴り続ける）→ sound の「述語が false になった次の tick」が赤 → 復旧
+  - **2 回目（Round 1 の `fixed:` の修正の後）**: 上の grep・306 tests・518 tests・`lint`・`tsc`・本物の置き場 0 件を再確認（すべて同じ結果）。壊し 3 本は修正の前に入れた物で、`cc4883c` はコメント・文言・テストしか変えていないのでそのまま有効
 - Findings:
   - plan の slice 5 の look（親が子を 1 体走らせ、その間に owner が `/reload` を打つ）は**未実施**。この look は新しいコードが読み込まれた pi でしか成立せず、それは merge の後になるため
     left: merge の後に owner の `/reload` で見る（報告が届く・一覧に出て止められる・音が止まるの 3 つ）
