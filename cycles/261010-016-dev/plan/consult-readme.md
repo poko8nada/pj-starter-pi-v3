@@ -117,9 +117,10 @@
 
 ### Slice 1: 記録の場所と形
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: (see git log consult(consult-readme): slice 1 record place)
+- Verify (cli, done here): `unit-id/log.jsonl`→0; `records/`→lines 68, 87 in `records/<project>/<YYYY-MM-DD>.jsonl` form; `today and yesterday`→line 68; `30 days`→line 99. No read/look in this slice.
 
 ### Slice 2: 一覧の範囲と、行の見え方
 
