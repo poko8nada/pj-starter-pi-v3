@@ -13,7 +13,14 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import type { Static } from 'typebox';
 import { runOneChild, type ChildJob } from '../run/child.ts';
 import { findWorktree } from '../run/worktree.ts';
-import { appendRun, isRunning, readRuns, runningRuns, type RunRecord } from '../run/log.ts';
+import {
+  appendRun,
+  isRunning,
+  KEEP_DAYS,
+  readRuns,
+  runningRuns,
+  type RunRecord,
+} from '../run/log.ts';
 import type { Place } from '../run/place.ts';
 import { latest } from './children.ts';
 import type { Delivery } from '../run/delivery.ts';
@@ -259,7 +266,8 @@ interface RuntimeState {
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
   readonly sessionNow: () => string;
-  counter: number;
+  /** 番号の床。記録の最大で種を取り、同じ runtime で続けて起こす時も重ねない */
+  number: { session: string; next: number };
 }
 
 /** バックグラウンドの子 1 体分の起動材料 */
@@ -336,6 +344,38 @@ function runInBackground(state: RuntimeState, job: BackgroundJob): void {
     });
 }
 
+/** `consult-12` から 12 を取り出す。`consult-` の形でなければ undefined */
+function numberOf(child: string): number | undefined {
+  const found = /^consult-(\d+)$/.exec(child);
+  return found === null ? undefined : Number(found[1]);
+}
+
+/** その session の記録にある最大の番号。`consult-` の形でない行は数えない */
+function highestInRecord(place: Place, session: string): number {
+  const used = readRuns(place, { session, days: KEEP_DAYS })
+    .map((record) => numberOf(record.child))
+    .filter((value): value is number => value !== undefined);
+  return Math.max(0, ...used);
+}
+
+/**
+ * 次に使う子の番号。その session の記録の最大 + 1。
+ *
+ * 番号を拡張のメモリーだけで数えると reload のたびに 1 に戻り、名前で 1 行に畳む一覧
+ *（`children.ts` の `latest`）が、走っている前の子を新しい子で上書きして見えなくする。
+ * だから記録から数える。掃除と同じ幅で読み、長く走る session でも戻らないようにする。
+ *
+ * 記録に書かれるのは子が起きた時なので、同じ runtime で続けて起こすと、2 体目が
+ * 1 体目の行を見ない。だから決めた番号を覚えておき、次はその続きから振る。
+ */
+function nextChildId(state: RuntimeState, session: string): string {
+  const floor =
+    state.number.session === session ? state.number.next : highestInRecord(state.place, session);
+  const next = floor + 1;
+  state.number = { session, next };
+  return `consult-${next}`;
+}
+
 /** 子を起こして、すぐ `started: <id>` を返す。完了はメッセージで届く */
 function beginRun(
   state: RuntimeState,
@@ -353,15 +393,15 @@ function beginRun(
     throw new Error(`consult_run: ${policy.name} writes, so it needs a worktree. ${RUN_USAGE}`);
   }
   const options: ConsultOptions = { type: policy.name, task: request.task, policy };
-  state.counter += 1;
+  // 番号は記録から決める。reload でメモリーが消えても、戻らないように。
+  const session = state.sessionNow();
   const child: RunningChild = {
-    id: `consult-${state.counter}`,
+    id: nextChildId(state, session),
     type: policy.name,
     task: request.task,
     startedAt: Date.now(),
     controller: new AbortController(),
   };
-  const session = state.sessionNow();
   const job: ChildJob = {
     task: request.task,
     id: child.id,
@@ -429,7 +469,7 @@ export function createRuntime(
     place,
     run,
     children: new Map(),
-    counter: 0,
+    number: { session: '', next: 0 },
     sessionNow,
     ...(delivery === undefined ? {} : { delivery }),
   };

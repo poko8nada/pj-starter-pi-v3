@@ -166,6 +166,74 @@ describe('run', () => {
     expect(calls).toHaveLength(0);
   });
 
+  it('記録に consult-3 がある → 次の子は consult-4（reload で番号が戻らない）', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const { runtime, place } = setup(pi, runner);
+    seedRunning(place, { child: 'consult-3' });
+
+    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+
+    expect(textOf(result)).toContain('started: consult-4');
+  });
+
+  it('記録に consult-7 と consult-2 が混ざっている → 次は consult-8', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const { runtime, place } = setup(pi, runner);
+    seedRunning(place, { child: 'consult-7' });
+    seedRunning(place, { child: 'consult-2' });
+
+    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+
+    expect(textOf(result)).toContain('started: consult-8');
+  });
+
+  it('別の session の consult-9 は数えない → この session の次は consult-1', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const { runtime, place } = setup(pi, runner);
+    seedRunning(place, { child: 'consult-9', session: 'other-session' });
+
+    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+
+    expect(textOf(result)).toContain('started: consult-1');
+  });
+
+  it('同じ runtime で続けて 2 体 → consult-1、consult-2（記録に書かれる前に次を決める）', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const { runtime } = setup(pi, runner);
+
+    const first = await startChild(runtime, { role: 'review', task: '1 体目' });
+    const second = await startChild(runtime, { role: 'review', task: '2 体目' });
+
+    expect(textOf(first)).toContain('started: consult-1');
+    expect(textOf(second)).toContain('started: consult-2');
+  });
+
+  it('終わった子の番号も数える → 次は consult-6', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const { runtime, place } = setup(pi, runner);
+    appendRun(place, {
+      session: SESSION,
+      child: 'consult-5',
+      role: 'review',
+      pid: process.pid,
+      started: Date.now() - 1000,
+      ended: Date.now(),
+      state: 'done',
+      files: [],
+      turns: 1,
+      spend: '0.0001 usd',
+    });
+
+    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+
+    expect(textOf(result)).toContain('started: consult-6');
+  });
+
   it('書き込むロール（code）で worktree を省くと、子を起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
