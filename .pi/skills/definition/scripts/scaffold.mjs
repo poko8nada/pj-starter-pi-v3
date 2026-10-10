@@ -1,15 +1,17 @@
 /**
- * scaffold — 新 cycle の definition 草案を素起こしする。1 script 2役。
+ * scaffold — 新 cycle のフォルダと definition 草案を素起こしする。
  *
  * - 前 cycle がある時: 前回 definition の marker を外して複写する
  * - 初回 cycle の時: `references/format.md` の形の template 文字列を出す
  * `# Definition <NNN>` の見出し番号は書き手が直す。
  *
- *   node scaffold.mjs <dest-definition.md> [<src-definition.md>]
+ *   node scaffold.mjs [--root <dir>] [<src-definition.md>]
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { gitEnv } from '../../../../lib/git-env.mjs';
 
 /** 行末の marker。` **add** (ADR 01-1)` の形 */
 const MARKER = /\s+\*\*(add|update|drop)\*\*(\s*\(.*\))?\s*$/;
@@ -205,10 +207,62 @@ export function parseArgs(argv) {
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const [dest, src] = process.argv.slice(2);
-  if (!dest) {
-    console.error('usage: scaffold.mjs <dest-definition.md> [<src-definition.md>]');
-    process.exit(1);
+  const { root, src } = parseArgs(process.argv.slice(2));
+  const cyclesDir = join(root, 'cycles');
+  const archiveDir = join(cyclesDir, 'archive');
+  let branch = '';
+  try {
+    const spawned = spawnSync('git', ['branch', '--show-current'], {
+      cwd: root,
+      encoding: 'utf8',
+      env: gitEnv(),
+    });
+    if (spawned.status === 0) branch = (spawned.stdout ?? '').trim();
+  } catch {
+    branch = '';
   }
-  writeFileSync(dest, src ? stripMarkers(readFileSync(src, 'utf8')) : TEMPLATE_001);
+  const yymmdd = toYYMMDD(new Date());
+  const names = [];
+  for (const dir of [cyclesDir, archiveDir]) {
+    try {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) names.push(entry.name);
+      }
+    } catch (err) {
+      if (!err || err.code !== 'ENOENT') throw err;
+    }
+  }
+  const nnn = nextNNN(names);
+  const slug = slugBranch(branch);
+  const dirName = cycleDirName(nnn, yymmdd, slug);
+  const leaf = join(cyclesDir, dirName);
+  mkdirSync(cyclesDir, { recursive: true });
+  try {
+    mkdirSync(leaf);
+  } catch (err) {
+    if (err && err.code === 'EEXIST') {
+      console.error(`exists: ${leaf}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+  let draft;
+  let used;
+  if (src !== null) {
+    const resolved = isAbsolute(src) ? src : join(root, src);
+    draft = stripMarkers(readFileSync(resolved, 'utf8'));
+    used = resolved;
+  } else {
+    const prev = findPrevDefinition(cyclesDir, archiveDir);
+    if (prev !== null) {
+      draft = stripMarkers(readFileSync(prev, 'utf8'));
+      used = prev;
+    } else {
+      draft = TEMPLATE_001;
+      used = 'template';
+    }
+  }
+  writeFileSync(join(leaf, 'definition.md'), draft);
+  console.log(`created: ${leaf}`);
+  console.log(`src: ${used}`);
 }

@@ -1,6 +1,6 @@
 # The definition's format
 
-`cycles/<NNN-YYYY-MM-DD>/definition.md`.
+`cycles/<YYMMDD-NNN-<branch>>/definition.md`.
 
 Section and field names are English; the content is Japanese.
 
