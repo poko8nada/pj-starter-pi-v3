@@ -3,6 +3,8 @@
 ## Files
 
 ```text
+README.md                     update
+README.ja.md                  update
 .pi/extensions/consult/
   README.md                   update
 ```
@@ -27,7 +29,7 @@
        - (empty) `grep -c "log.jsonl" .pi/extensions/consult/README.md` → `0`（古い置き場の名残が無いこと。新しい置き場が書いてあるかは隣の `records/` で見る）
        - (happy) `grep -n "records/" .pi/extensions/consult/README.md` → `consult_children` の節と `consult_worktree` の `record` の行の 2 か所が `records/<project>/<YYYY-MM-DD>.jsonl` の形
        - (happy) `grep -n "today and yesterday" .pi/extensions/consult/README.md` → 1 件以上（読む幅）
-       - (happy) `grep -n "30 days" .pi/extensions/consult/README.md` → 1 件以上（起動のたびの掃除）
+       - (happy) `grep -n "deletes record files older than 30 days" .pi/extensions/consult/README.md` → 1 件（起動のたびの掃除。`Tests` 節の「the files older than 30 days」には当たらない綴り）
    - Steps:
      1. `README.md`: 表の `consult_children` の行と、一覧の節の記録の場所・読む幅を直す
      2. `README.md`: `consult_worktree` の表の `record` の行を直す
@@ -49,7 +51,7 @@
      - cli: `grep -n` で行を出して 1 行ずつ読む
        - (empty) `grep -c "a previous session" .pi/extensions/consult/README.md` → `0`（古い「前のセッションの子も出る」が消えている）
        - (empty) `grep -c "shows children a previous session started" .pi/extensions/consult/README.md` → `0`
-       - (happy) `grep -c "lost" .pi/extensions/consult/README.md` → 1 以上（この plan を入れる前は 0 だった。消すと 0 に戻るので、slice 4 の壊しが見分けられる）
+       - (happy) `grep -c "not passed off as" .pi/extensions/consult/README.md` → 1 以上（一覧の行の説明にしか無い語。この plan を入れる前は 0 だった。消すと 0 に戻るので、slice 4 の壊しが見分けられる）
      - look: 直した節を人が読んで答える（grep で語を見分けられない物）
        - (happy) 一覧の節に、出るのは いまのセッションの子だけだと書いてある（`grep "this session"` は `cancel` の文にも当たるので、grep では見分けない）
        - (happy) 行の説明に `lost` があり、終わりの行が無く pid も死んでいる子のことだと読める
@@ -106,7 +108,7 @@
        - (happy) `for f in run/place.test.ts run/log.test.ts run/worktree.test.ts run/delivery.test.ts tool/consult.test.ts tool/children.test.ts tool/worktree.test.ts tool/sound.test.ts; do grep -q "$f" .pi/extensions/consult/README.md || echo "ない: $f"; done` の出力が空（行数では見ない。節は長い散文 1 行なので、数の比較は当たらない）
      - cli: 壊し
        - (error) 記録の場所を 1 か所だけ古い形に戻す → slice 1 の `grep` が赤に戻る（確かめたら戻す）
-       - (error) README から `lost` の記述を全部消す → slice 2 の `grep -c "lost"` が `0` になり赤に戻る（確かめたら戻す）
+       - (error) README から一覧の行の `lost` の説明そのものを消す → slice 2 の `grep -c "not passed off as"` が `0` になり赤に戻る（確かめたら戻す）
        - (error) `Sound` の節を「最後の子で止まる」に戻す → slice 3 の `grep` が赤に戻る（確かめたら戻す）
        - (error) reload の段落を「一覧に出る」に戻す → slice 3 の `grep` が赤に戻る（確かめたら戻す）
    - Steps:
@@ -120,6 +122,7 @@
 - Findings: なし
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 1 record place)
+- fixed: check を `30 days` → `deletes record files older than 30 days` に変えた（`Tests` 節に当たらない綴り）
 - Verify (cli, done here): `log.jsonl`→0; `records/`→lines 68, 87 in `records/<project>/<YYYY-MM-DD>.jsonl` form; `today and yesterday`→line 68; `30 days`→line 99. No read/look in this slice.
 
 ### Slice 2: 一覧の範囲と、行の見え方
@@ -127,6 +130,7 @@
 - Findings: なし
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 2 list scope)
+- fixed: check を `lost` → `not passed off as` に変えた（一覧の行の説明にしか無い語）
 - Verify (cli, done here): `a previous session`→0; `shows children a previous session started`→0; `lost`→1 (line 66); `What comes back` state stays 4 without `lost` (line 140); slice 1 greps still green.
 - Verify (look/read, 親がやる): look 4 件（いまのセッションの子だけ／`lost` の意味／`state` は 4 つのまま／`remove` はセッションを問わず断る）と read 1 件（review の子に README＋tool/children.ts＋tool/worktree.ts＋run/log.ts＋run/place.ts を突き合わせ）は親がやる。
 
@@ -146,6 +150,8 @@
     - `fixed: README の run/run.test.ts を run/child.test.ts に直した`
     - `fixed: Tests 節を実態に合わせた（run/child と tool/children の説明を現物通りに書き直し、child/guard・tool/render・tool/run の 1 文を追加）。名指し 16 本と実在 16 本が一致することを両方向で確認`
     - `fixed: 完了メッセージの順序（1 行目 consult <id> (<type>) finished→塊→--- と子の本文→[consult] 行）と tool/consult.test.ts の説明（塊でなく子のテキスト・ref・[consult] 行を断言）を現物に合わせた`
+    - `fixed: ルート README.md:15 と README.ja.md:15 を this session 絞りに合わせ、## Files に 2 つを足した`
+    - `fixed: 壊し 2 を新 check に合わせて書き直した（赤になることを実証・復元済み）`
     - `fixed: 残りの read 3 件を直した（record 行の作業場・会話の場所を path 行の書き方に揃えて正確化／Tests 節の model attempt order を削除（参照するテスト無しを grep 確認）／tool/consult.test.ts の説明から ref を外し子の本文と [consult] 行のみに）`
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 4 integrate)
@@ -158,9 +164,15 @@
 ### Round 1
 
 - Stale:
+  - ルートの `README.md:15` は `consult_children` を「このプロジェクトの子の一覧」と書いたままなので、新しい「このセッションの子だけ」と食い違っている。
+  - ルートの `README.ja.md:15` は「このプロジェクトの子を一覧し」と書いたままなので、新しい「このセッションの子だけ」と食い違っている。
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - slice 1 の `grep -n "30 days"` は `session_start` の掃除の文のほか Tests 節の `run/place.test.ts` の説明にも当たるため、掃除の文を消しても緑のままになる。
+  - slice 2 の `grep -c "lost"` は一覧の行のほか配達の none is lost・止め方の stays lost・Tests 節にも当たるため、行の `lost` の文を消しても緑のままになる。
 
 ### Round 2
 
