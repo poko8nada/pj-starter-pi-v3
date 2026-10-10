@@ -1,110 +1,156 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
+import { dayFile, placeFor, type Place } from './place.ts';
 import {
-  PARENT_UNIT,
   appendRun,
-  logPath,
+  isRunning,
   parseRun,
   pidAlive,
   readRuns,
-  unitOf,
+  runningRuns,
   type RunRecord,
 } from './log.ts';
 
-// root は毎回 tmpDir に逃がす（実物の /tmp/pi-consult を触らない）。
+// 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
+// 実物の /tmp/pi-consult を触らない。
 
-const roots: string[] = [];
-
-function makeRoot(): string {
-  const root = tmpDir();
-  roots.push(root);
-  return root;
+function place(): Place {
+  return placeFor(tmpDir(), tmpDir());
 }
-
-afterEach(() => {
-  roots.length = 0;
-});
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return { child: 'consult-1', role: 'review', pid: process.pid, started: 1000, ...extra };
+  return {
+    session: 'session-a',
+    child: 'consult-1',
+    role: 'review',
+    pid: process.pid,
+    started: 1000,
+    ...extra,
+  };
 }
-
-describe('unitOf / logPath', () => {
-  it('worktree があればその id、無ければ _parent', () => {
-    expect(unitOf('2-a')).toBe('2-a');
-    expect(unitOf(undefined)).toBe(PARENT_UNIT);
-  });
-
-  it('置き場は <root>/<unit>/log.jsonl', () => {
-    expect(logPath('/tmp/x', '2-a')).toBe('/tmp/x/2-a/log.jsonl');
-  });
-});
 
 describe('appendRun / readRuns', () => {
   it('1 行足して読む → その 1 行がそのまま返る', () => {
-    const root = makeRoot();
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
     const run = record({ worktree: '2-a', turns: 12, spend: '0.01 usd' });
-    appendRun(root, run);
-    expect(readRuns(root)).toEqual([run]);
-    expect(
-      readFileSync(join(root, '2-a', 'log.jsonl'), 'utf8')
-        .trim()
-        .split('\n'),
-    ).toHaveLength(1);
+    appendRun(found, run, at);
+    expect(readRuns(found, { at })).toEqual([run]);
+    expect(readFileSync(dayFile(found, at), 'utf8').trim().split('\n')).toHaveLength(1);
   });
 
   it('同じ run を 2 回足す → 2 行になる（追記で、上書きしない）', () => {
-    const root = makeRoot();
-    appendRun(root, record({ started: 1 }));
-    appendRun(root, record({ started: 1 }));
-    expect(readRuns(root)).toHaveLength(2);
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ started: 1 }), at);
+    appendRun(found, record({ started: 1 }), at);
+    expect(readRuns(found, { at })).toHaveLength(2);
   });
 
-  it('記録が無い unit（root が無い）→ 空の配列', () => {
-    expect(readRuns(join(makeRoot(), 'no-such-root'))).toEqual([]);
+  it('置き場が無い → 空の配列', () => {
+    expect(readRuns(place())).toEqual([]);
   });
 
   it('壊れた行（JSON でない）→ その行だけ飛ばし、他は読める', () => {
-    const root = makeRoot();
-    appendRun(root, record({ started: 1 }));
-    const file = logPath(root, PARENT_UNIT);
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ started: 1 }), at);
+    const file = dayFile(found, at);
     writeFileSync(file, `${readFileSync(file, 'utf8')}これは JSON ではない\n`);
-    appendRun(root, record({ started: 2 }));
-    expect(readRuns(root).map((run) => run.started)).toEqual([1, 2]);
+    appendRun(found, record({ started: 2 }), at);
+    expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1, 2]);
   });
 
   it('形が違う行（child が無い）も飛ばす', () => {
-    const root = makeRoot();
-    mkdirSync(join(root, PARENT_UNIT), { recursive: true });
-    writeFileSync(logPath(root, PARENT_UNIT), '{"role":"review","pid":1,"started":1}\n');
-    expect(readRuns(root)).toEqual([]);
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ started: 1 }), at);
+    const file = dayFile(found, at);
+    writeFileSync(
+      file,
+      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n`,
+    );
+    expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1]);
   });
 
-  it('unit をまたいで、始まった順に返す', () => {
-    const root = makeRoot();
-    appendRun(root, record({ worktree: '2-b', started: 2000, child: 'consult-2' }));
-    appendRun(root, record({ started: 1000, child: 'consult-1' }));
-    expect(readRuns(root).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
+  it('session の無い行を書いた file を読んでも、その行は返らない', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ started: 1 }), at);
+    const file = dayFile(found, at);
+    writeFileSync(
+      file,
+      `${readFileSync(file, 'utf8')}{"child":"consult-9","role":"review","pid":1,"started":2}\n`,
+    );
+    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1']);
+  });
+
+  it('始まった順に返す', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ started: 2000, child: 'consult-2' }), at);
+    appendRun(found, record({ started: 1000, child: 'consult-1' }), at);
+    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
   });
 
   it('終わりの欄を持つ行はそのまま返る（state と reason）', () => {
-    const root = makeRoot();
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
     appendRun(
-      root,
+      found,
       record({
         ended: 2000,
         state: 'turn-limit',
         reason: 'turn limit reached (40)',
         files: ['a.ts'],
       }),
+      at,
     );
-    expect(readRuns(root)[0]).toMatchObject({
+    expect(readRuns(found, { at })[0]).toMatchObject({
       state: 'turn-limit',
       reason: 'turn limit reached (40)',
       files: ['a.ts'],
     });
+  });
+
+  it('日をまたぐ子の開始と終わりは別の file に 1 行ずつ', () => {
+    const found = place();
+    const start = record({ child: 'consult-1', started: 1 });
+    const end = { ...start, ended: 2, state: 'done' as const };
+    appendRun(found, start, new Date(2026, 9, 9, 23, 59));
+    appendRun(found, end, new Date(2026, 9, 10, 0, 1));
+    expect(
+      readFileSync(join(found.dir, '2026-10-09.jsonl'), 'utf8').trim().split('\n'),
+    ).toHaveLength(1);
+    expect(
+      readFileSync(join(found.dir, '2026-10-10.jsonl'), 'utf8').trim().split('\n'),
+    ).toHaveLength(1);
+  });
+
+  it('at を渡さない appendRun は今日の file に書く', () => {
+    const found = place();
+    appendRun(found, record());
+    expect(readRuns(found).map((run) => run.child)).toEqual(['consult-1']);
+  });
+
+  it('session で絞る → その session だけ。省けば両方', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', child: 'consult-1' }), at);
+    appendRun(found, record({ session: 'B', child: 'consult-2' }), at);
+    expect(readRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual(['consult-1']);
+    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
+  });
+
+  it('days: 2 は 3 日前に書いた行を返さない', () => {
+    const found = place();
+    appendRun(found, record({ child: 'consult-old' }), new Date(2026, 9, 7, 12, 0));
+    appendRun(found, record({ child: 'consult-new' }), new Date(2026, 9, 10, 12, 0));
+    expect(
+      readRuns(found, { at: new Date(2026, 9, 10, 12, 0), days: 2 }).map((run) => run.child),
+    ).toEqual(['consult-new']);
   });
 });
 
@@ -121,17 +167,54 @@ describe('pidAlive', () => {
   });
 });
 
-describe('parseRun', () => {
-  it('本体の欄を上書きしない（worktree を持ち上げた後で、元の値で壊さない）', () => {
-    const run = parseRun('{"child":"c","role":"r","pid":1,"started":2,"worktree":"w"}');
-    expect(run).toMatchObject({ child: 'c', role: 'r', pid: 1, started: 2, worktree: 'w' });
+describe('isRunning', () => {
+  it('終わりの行が無く pid が生きている → true', () => {
+    expect(isRunning(record({ pid: 42 }), () => true)).toBe(true);
+  });
+
+  it('終わりの行があれば、pid が生きていても false', () => {
+    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => true)).toBe(false);
+  });
+
+  it('pid が死んでいれば、終わりの行が無くても false（親ごと落ちた子）', () => {
+    expect(isRunning(record({ pid: 42 }), () => false)).toBe(false);
   });
 });
 
-describe('ファイルの置き場', () => {
-  it('追記すると unit のディレクトリが作られる', () => {
-    const root = makeRoot();
-    appendRun(root, record({ worktree: '3-c' }));
-    expect(existsSync(join(root, '3-c'))).toBe(true);
+describe('runningRuns', () => {
+  it('session で絞り、走っている行だけ返す', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', child: 'consult-live', pid: process.pid }), at);
+    appendRun(
+      found,
+      record({ session: 'A', child: 'consult-done', pid: process.pid, ended: 2000, state: 'done' }),
+      at,
+    );
+    appendRun(found, record({ session: 'B', child: 'consult-other', pid: process.pid }), at);
+
+    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual([
+      'consult-live',
+    ]);
+  });
+});
+
+describe('parseRun', () => {
+  it('本体の欄を上書きしない（worktree を持ち上げた後で、元の値で壊さない）', () => {
+    const run = parseRun(
+      '{"session":"s","child":"c","role":"r","pid":1,"started":2,"worktree":"w"}',
+    );
+    expect(run).toMatchObject({
+      session: 's',
+      child: 'c',
+      role: 'r',
+      pid: 1,
+      started: 2,
+      worktree: 'w',
+    });
+  });
+
+  it('session が無い行は飛ばす', () => {
+    expect(parseRun('{"child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
   });
 });

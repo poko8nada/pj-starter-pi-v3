@@ -4,17 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
 import { appendRun } from '../run/log.ts';
-import { findWorktree } from '../run/worktree.ts';
-import { execute, removeText } from './worktree.ts';
+import { placeFor } from '../run/place.ts';
+import { consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
+import { createWorktreeTool, removeText } from './worktree.ts';
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす。
 const ROOT_KEY = 'CONSULT_ROOT';
 
-type Outcome = Awaited<ReturnType<typeof execute>>;
+type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
-/** 道具は位置で 5 つ受け取る。ここで組み立てる（ctx が使うのは cwd だけ） */
+/** 道具は位置で 5 つ受け取る。置き場は cwd から決め、ここで組み立てる */
 function call(params: Record<string, unknown>, cwd: string): Promise<Outcome> {
-  return execute('call-1', params, undefined, undefined, { cwd });
+  const place = placeFor(consultRoot(), topLevel(cwd));
+  return createWorktreeTool(place)('call-1', params, undefined, undefined, { cwd });
 }
 
 /** base のコミットを 1 つ持つリポジトリ */
@@ -71,9 +73,10 @@ describe('consult_worktree', () => {
   it('子が走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
-    const made = findWorktree(dir, '2-b');
+    findWorktree(dir, '2-b');
     // 走っている記録を書く（終わりの行が無く、pid は自分 = 生きている）
-    appendRun(made?.runRoot ?? '', {
+    appendRun(placeFor(consultRoot(), topLevel(dir)), {
+      session: 'session-a',
       child: 'consult-9',
       role: 'code',
       pid: process.pid,
@@ -90,8 +93,9 @@ describe('consult_worktree', () => {
   it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
-    const made = findWorktree(dir, '2-b');
-    appendRun(made?.runRoot ?? '', {
+    findWorktree(dir, '2-b');
+    appendRun(placeFor(consultRoot(), topLevel(dir)), {
+      session: 'session-a',
       child: 'consult-9',
       role: 'code',
       pid: 999_999,
@@ -103,11 +107,46 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
+  it('終わった子の記録だけなら、走っていない（消える）', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    appendRun(placeFor(consultRoot(), topLevel(dir)), {
+      session: 'session-a',
+      child: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      ended: 2,
+      state: 'done',
+      worktree: '2-b',
+    });
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('別の session の走っている子でも busy（作業場を守る側なので session で絞らない）', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    appendRun(placeFor(consultRoot(), topLevel(dir)), {
+      session: 'session-elsewhere',
+      child: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      worktree: '2-b',
+    });
+
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(outcome.details['outcome']).toBe('busy');
+  });
+
   it('list が、走っている子の居る unit に印を付ける', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
-    const made = findWorktree(dir, '2-b');
-    appendRun(made?.runRoot ?? '', {
+    findWorktree(dir, '2-b');
+    appendRun(placeFor(consultRoot(), topLevel(dir)), {
+      session: 'session-a',
       child: 'consult-9',
       role: 'code',
       pid: process.pid,

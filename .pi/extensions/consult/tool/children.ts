@@ -1,8 +1,11 @@
 /**
  * consult_children — 子の一覧と、止める手。
  *
- * 一覧は記録（`run/log.ts` の `log.jsonl`）から作る。親のセッションが reload で差し替わっても、
- * 前のセッションが走らせた子まで出る（子は親のプロセスに従属しないため）。
+ * 一覧は記録（`run/log.ts` の日ごとのファイル）から作る。子は親のプロセスに従属しないので、
+ * reload で親が差し替わっても、同じ session の子は出る。
+ *
+ * 出るのは**いまのセッションの子**だけ（session で絞る）。別のセッションの子の報告はこのセッションには
+ * 来ないので、待たせない。行方不明（終わりの行が無く pid も死んでいる子）は `lost` と出す。
  *
  * 止められるのは**いまのセッションが走らせている子**だけ。記録には pid があるが、止めるのに要る
  * `AbortController` はこのプロセスの物しか無い。前のセッションの子は、理由を返して止めない。
@@ -11,19 +14,20 @@
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { pidAlive, readRuns, type RunRecord } from '../run/log.ts';
-import { rootFor } from '../run/worktree.ts';
+import { isRunning, pidAlive, readRuns, type RunRecord } from '../run/log.ts';
+import type { Place } from '../run/place.ts';
 import type { ControlAction, ControlOutcome } from './consult.ts';
 
 /**
  * この道具が runtime に求める面。
  *
- * 走らせている子（`children`）と、止める手（`control`）だけ。狭くしておくと、テストが本物の
+ * 置き場と、いまのセッション id と、止める手（`control`）だけ。狭くしておくと、テストが本物の
  * runtime を組み立てずに偽物を渡せる。
  */
 export interface ChildrenHost {
-  readonly children: ReadonlyMap<string, unknown>;
-  control(action: ControlAction): ControlOutcome;
+  readonly place: Place;
+  readonly sessionNow: () => string;
+  control(action: ControlAction, session: string): ControlOutcome;
 }
 
 export const PARAMETERS = Type.Object({
@@ -83,13 +87,19 @@ export function latest(records: readonly RunRecord[]): RunRecord[] {
   return [...byChild.values()];
 }
 
-/** 1 体を 1 行にする。走っているかどうかも、ここで 1 回だけ決める */
+/**
+ * 1 体を 1 行にする。走っているかどうかは、ここで 1 回だけ決める。
+ *
+ * 走っておらず終わりの行も無い子は `lost`（親ごと落ちた、または記録を書く側が消えた子）。
+ * `done` と偽らない。
+ */
 export function rowOf(record: RunRecord, running: boolean, now: number): string {
+  const state = running ? `running (pid ${record.pid})` : stateOf(record);
   const parts = [
     record.child,
     record.role,
     record.worktree === undefined ? 'parent' : `worktree ${record.worktree}`,
-    running ? `running (pid ${record.pid})` : (record.state ?? 'done'),
+    state,
     elapsed(record, now),
     record.turns === undefined ? '(turns unknown)' : `${record.turns} turns`,
     record.spend ?? '(spend unknown)',
@@ -100,44 +110,41 @@ export function rowOf(record: RunRecord, running: boolean, now: number): string 
   return parts.join('  ');
 }
 
+/** 走っていない子の状態。終わりの行が無ければ行方不明 */
+function stateOf(record: RunRecord): string {
+  return record.ended === undefined ? 'lost' : (record.state ?? 'done');
+}
+
 /**
- * 記録に、いまのセッションが持っている子の id を突き合わせて行にする。
+ * 記録をそのまま行にする。
  *
- * 記録の pid が死んでいて終了の行が無い場合は「落ちた」と見る（`ended` が無いのに生きていない）。
+ * 走っているかは `alive`（既定 `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
-  live: ReadonlySet<string>,
   alive: (pid: number) => boolean,
   now: number,
 ): string[] {
-  return records.map((record) => {
-    const running = record.ended === undefined && (live.has(record.child) || alive(record.pid));
-    return rowOf(record, running, now);
-  });
+  return records.map((record) => rowOf(record, isRunning(record, alive), now));
 }
 
 /** 一覧の本文。記録が無ければそう言う */
-export function listText(
-  records: readonly RunRecord[],
-  live: ReadonlySet<string>,
-  now: number,
-): string {
+export function listText(records: readonly RunRecord[], now: number): string {
   if (records.length === 0) {
     return 'no children in this project yet';
   }
-  return rowsOf(records, live, pidAlive, now).join('\n');
+  return rowsOf(records, pidAlive, now).join('\n');
 }
 
-export function createChildrenTool(consult: ChildrenHost) {
+export function createChildrenTool(host: ChildrenHost) {
   return async function execute(...args: ExecuteArgs) {
-    const [, params, , , ctx] = args;
+    const [, params, , , _ctx] = args;
     const action = params.action ?? 'list';
+    const session = host.sessionNow();
 
     if (action === 'list') {
-      const records = latest(readRuns(rootFor(ctx.cwd)));
-      const live = new Set(consult.children.keys());
-      return result(listText(records, live, Date.now()), { action, count: records.length });
+      const records = latest(readRuns(host.place, { session }));
+      return result(listText(records, Date.now()), { action, count: records.length });
     }
 
     if (action === 'cancel') {
@@ -145,7 +152,7 @@ export function createChildrenTool(consult: ChildrenHost) {
       if (typeof id !== 'string' || id.trim() === '') {
         throw new Error(`consult_children: cancel needs id. ${USAGE}`);
       }
-      const outcome = consult.control({ action: 'cancel', id });
+      const outcome = host.control({ action: 'cancel', id }, session);
       return result(outcome.text, { action, id, outcome: outcome.details });
     }
 

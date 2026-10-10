@@ -272,50 +272,97 @@ test/
 ### Slice 1: 置き場を値にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `createRuntime` を plan の I/O どおり 5 引数にすると `oxlint` の `max-params`（上限 4）で commit が止まった。`.pi/extensions/intent-router/state.ts:200` の先例と同じ `// eslint-disable-next-line max-params -- <理由>` で黙らせた（結果: `pnpm lint` 緑）。
+  - `lint --deny-warnings` が `place.ts` の `sort`/`reverse`（配列を破壊する）と `index.ts` の unsafe assertion を指摘したので、`toSorted`/`toReversed` と `ctx.sessionManager.getSessionId()` の直呼びに直した（plan の形は変えていない）。
+- Commit: `consult(record-and-delivery): place-valued records with session`
 
 ### Slice 2: 一覧が記録から真実を読む
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `index.ts` の `default` 関数が `max-lines-per-function`（上限 80）を超えたので、起動の掃除（`oldFiles` + `rmSync`、`cleanWorktrees`）を `sweep(place, cwd)` に切り出した（plan の形は変えていない）。
+- Commit: `consult(record-and-delivery): list read from records`
 
 ### Slice 3: 完了の配達
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: `consult(record-and-delivery): deliver unread notices`
 
 ### Slice 4: 音と、前のセッションの子を止める
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `controlChild` が plan の I/O どおり 5 引数なので、`createRuntime` と同じ `// eslint-disable-next-line max-params -- <理由>` を付けた。
+- Commit: `consult(record-and-delivery): predicate sound and kill by pid`
 
 ### Slice 5: 統合: reload をまたいでも報告が届き、テストが本物に書かない
 
 - Findings:
+  - 本物の TUI で子を走らせながらの `/reload` 目視（報告が届く・一覧と cancel・音が止まる）はここではやっていない
+    - `left: 子を起こして reload を打つ実演環境が無いため。配達の結線（session_start で未読を渡し、渡し終えてから目録を 1 回進める）は捨てテストで確かめた（1 回だけ渡り、2 回目は渡らない）が、そのテストは commit していない`
 - Unplanned:
-- Commit:
+  - なし
+- Commit: `consult(record-and-delivery): integrate records and delivery`
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/tool/worktree.ts:91-96` の旧コメント（`log.jsonl`・この unit のもの）が新コメントと重複して残っている
+    - `fixed: 旧い方のコメントブロックを消し、新しい方（置き場の日ごとのファイル・session で絞らない）だけを残した`
+  - `.pi/extensions/consult/tool/children.ts:4-5` の「前のセッションが走らせた子まで出る」が 01-4 の session 絞り（7-8）と矛盾している
+    - `fixed: 4-5 行目を「子は親のプロセスに従属しないので、reload で親が差し替わっても、同じ session の子は出る」に直した`
+  - `.pi/extensions/consult/index.ts:175,179` の consult_children 説明（previous session を表示・停止不可）が session 絞りと kill による停止（`controlChild`）と矛盾している
+    - `fixed: description を this session の表示＋前インスタンスの子も pid で止める旨に、guidelines を this session の一覧＋別 session は止めない旨に直した`
+  - `.pi/extensions/consult/README.md:68,87,178,189` が旧置き場（`<root>/<unit>/log.jsonl`）と旧振る舞い（他 session 表示・Abort のみ）のままである（plan は consult-readme が書くとしている）
+    - `left: README は consult-readme の plan が書く。この plan の Files は「README.md は変更しない」と明記している`
 - Unlisted:
+  - なし
 - Gaps:
+  - `session_start` の配達結線（未読を 1 つずつ送り終えてから目録を 1 回進め、2 回目は送らない）に commit された check が無い（捨てテスト未 commit・slice5 look 未実施で、tmp place＋fake pi の二重が作れるため look の代替にならない）
+    - `left: plan の slice 5 が look（owner が子を走らせて /reload）でこの振る舞いを覆っている。index.ts は import すると拡張を登録してしまうので、配線を単体で読む二重物が作れない（plan の slice 3 は cli の grep で順序を見る）`
+  - `index.ts` の `placeOf` の落とし（`topLevel` が投げたら cwd に落とす）に check が無い（非 repo の tmpDir で二重が作れる）
+    - `left: これも index.ts の読み込み時の分岐で、テストから届かない。落ちれば起動そのものが失敗して見える（plan の slice 1 は「読み込みで投げない」と書いているだけ）`
 - Unproven:
+  - `run/delivery.test.ts` の壊れ目録テストの `unreadNotices` 断言が空の置き場の 0 件を見ているため、壊れ→全部返すが無くても緑のままになる
+    - `fixed: 通知行を 1 本書いた置き場で目録を壊し、unreadNotices がその 1 本を返す形に直した`
+  - `run/delivery.test.ts` の遅延置き場テストが `CURSOR_FILE` の不在だけを見て dir の有無を見ないため、`mkdir` が足されても緑のままになる
+    - `fixed: existsSync(found.dir) が false である断言を足した`
 
 ### Round 2
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
+
+（子（`consult-28`）の報告から親が記録した。この子は plan md に書かなかった。`fixed:` の 5 件は、現物と `git diff a6029d2..HEAD` の読み合わせで直っていると確認された — `tool/worktree.ts:91-96` の旧コメントは古いブロックだけが消えている、`tool/children.ts:4-5` は session の絞りと矛盾しなくなっている、`index.ts:175,179` は this session と pid 停止に合っている、`delivery.test.ts` の壊れ目録は通知 1 本を書いた置き場で見ている、遅延置き場は `existsSync(dir)` の不在まで見ている）
 
 ## Acceptance
 
 - Ran:
+  - plan の cli の grep: `rootFor(` の残りは `run/worktree.ts` の `ensureRoot` の中とテストの言及だけ。`runningChildren` は 0 件。`logPath`・`unitOf`・`PARENT_UNIT` は 0 件
+  - `pnpm vitest run .pi/extensions/consult` → 16 files / 306 tests passed
+  - `pnpm test:run`（全体）→ 32 files / 518 tests passed
+  - `pnpm lint`・`pnpm typecheck` → 緑
+  - 本物の置き場 `/tmp/pi-consult/records`: 全体スイートの前後とも `*.jsonl` が 0 件（**テストが本物に書かない**）
+  - 旧い置き場の走行中子: `ps -p <pid>` との突き合わせで 0 件（slice 5 の前提）
+  - 壊し 1: `rowOf` の `lost` を `record.state ?? 'done'` に戻す → children の「終わりの行が無く pid も死んでいる → lost（done と偽らない）」が赤 → 復旧
+  - 壊し 2: `createChildrenTool` の session の絞りを外す → children の「2 つの session の子が居る → いまの session の子だけが出る」が赤 → 復旧
+  - 壊し 3: `startSound` の tick から述語を外す（鳴り続ける）→ sound の「述語が false になった次の tick」が赤 → 復旧
+  - **2 回目（Round 1 の `fixed:` の修正の後）**: 上の grep・306 tests・518 tests・`lint`・`tsc`・本物の置き場 0 件を再確認（すべて同じ結果）。壊し 3 本は修正の前に入れた物で、`cc4883c` はコメント・文言・テストしか変えていないのでそのまま有効
 - Findings:
+  - plan の slice 5 の look（親が子を 1 体走らせ、その間に owner が `/reload` を打つ）は**未実施**。この look は新しいコードが読み込まれた pi でしか成立せず、それは merge の後になるため
+    left: merge の後に owner の `/reload` で見る（報告が届く・一覧に出て止められる・音が止まるの 3 つ）

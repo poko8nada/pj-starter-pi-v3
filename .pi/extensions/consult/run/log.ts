@@ -1,24 +1,28 @@
 /**
  * consult の実行記録。
  *
- * 1 回の子の起動を 1 行の JSON として `<root>/<unit-id>/log.jsonl` に足す。親のセッションが reload で
- * 差し替わっても、新しいインスタンスはこれを読めば前の子を思い出せる（子は親のプロセスに従属しない）。
- *
- * unit を持たない子（読むだけのロールで worktree を省いた物）は `_parent` に置く。unit が無い子にも
- * 記録の置き場が要るため。
+ * 1 回の子の起動を 1 行の JSON として置き場（`Place`）の日ごとのファイルに足す。
+ * 親のセッションが reload で差し替わっても、新しいインスタンスはこれを読めば
+ * 前の子を思い出せる。置き場はリポジトリから決まる固定の場所なので、記憶を持たない。
  *
  * 追記は 1 行単位。途中で落ちても、その前の行は残る。読む側は壊れた行を飛ばす。
+ * 読む幅は今日と昨日の 2 ファイル（`RECORD_DAYS`）。掃除は 30 日より古い物を消す。
  */
 
-import { appendFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import type { ChildState } from './run.ts';
+import { dayFile, windowFiles, type Place } from './place.ts';
 
-/** unit を持たない子の置き場の名前 */
-export const PARENT_UNIT = '_parent';
+/** 読む窓の日数（今日と昨日） */
+export const RECORD_DAYS = 2;
+
+/** 残す日数。起動の掃除がこれより古いファイルを消す */
+export const KEEP_DAYS = 30;
 
 /** 子 1 体の 1 回の記録。終わりの欄は、走っている間は無い */
 export interface RunRecord {
+  /** pi のセッション id。照合に使うだけ（人が読む物ではない） */
+  readonly session: string;
   /** 親が振った id（`consult-1` など） */
   readonly child: string;
   readonly role: string;
@@ -38,20 +42,17 @@ export interface RunRecord {
   readonly notice?: string;
 }
 
-/** 記録を置く unit の名前。worktree が無ければ親の木を指す固定の名前 */
-export function unitOf(worktree: string | undefined): string {
-  return worktree ?? PARENT_UNIT;
+/** 読む幅。`days` を省けば `RECORD_DAYS`、`at` を省けば今日 */
+export interface ReadScope {
+  readonly session?: string;
+  readonly days?: number;
+  readonly at?: Date;
 }
 
-/** 記録のファイル。unit のディレクトリごとに 1 つ */
-export function logPath(root: string, unit: string): string {
-  return join(root, unit, 'log.jsonl');
-}
-
-/** 1 行足す。unit のディレクトリが無ければ作る */
-export function appendRun(root: string, record: RunRecord): void {
-  const file = logPath(root, unitOf(record.worktree));
-  mkdirSync(join(root, unitOf(record.worktree)), { recursive: true });
+/** 1 行足す。その日のファイルに書く。置き場のディレクトリが無ければ作る */
+export function appendRun(place: Place, record: RunRecord, at?: Date): void {
+  const file = dayFile(place, at ?? new Date());
+  mkdirSync(place.dir, { recursive: true });
   appendFileSync(file, `${JSON.stringify(record)}\n`);
 }
 
@@ -74,7 +75,16 @@ export function pidAlive(pid: number): boolean {
 }
 
 /**
- * 1 行を記録にする。壊れた行（JSON でない・形が違う）は undefined。
+ * 走っている子の行か。終わりの行が無く、pid が生きている。
+ *
+ * 親の記憶ではなく記録で見るので、reload をまたいだ子にも効く。`alive` はテストが差し替える口。
+ */
+export function isRunning(record: RunRecord, alive: (pid: number) => boolean = pidAlive): boolean {
+  return record.ended === undefined && alive(record.pid);
+}
+
+/**
+ * 1 行を記録にする。壊れた行（JSON でない・形が違う・session が無い）は undefined。
  *
  * 型を書いた枠に 1 回だけ入れてから見る（`any` を各所に持ち回らない）。
  */
@@ -90,7 +100,10 @@ export function parseRun(line: string): RunRecord | undefined {
     return undefined;
   }
   const fields = asFields(parsed);
-  const { child, role, pid, started } = fields;
+  const { child, role, pid, started, session } = fields;
+  if (typeof session !== 'string' || session === '') {
+    return undefined;
+  }
   if (typeof child !== 'string' || typeof role !== 'string' || typeof pid !== 'number') {
     return undefined;
   }
@@ -98,6 +111,7 @@ export function parseRun(line: string): RunRecord | undefined {
     return undefined;
   }
   return {
+    session,
     child,
     role,
     pid,
@@ -128,28 +142,40 @@ function isPaths(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((path) => typeof path === 'string');
 }
 
-/** root にある全部の unit の記録を、始まった順に返す */
-export function readRuns(root: string): RunRecord[] {
-  let units: string[];
-  try {
-    units = readdirSync(root);
-  } catch {
-    return [];
-  }
+/** 置き場の窓の中の記録を、始まった順に返す */
+export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
+  const files = windowFiles(place, scope.at ?? new Date(), scope.days ?? RECORD_DAYS);
   const records: RunRecord[] = [];
-  for (const unit of units) {
+  for (const file of files) {
     let text: string;
     try {
-      text = readFileSync(logPath(root, unit), 'utf8');
+      text = readFileSync(file, 'utf8');
     } catch {
       continue;
     }
     for (const line of text.split('\n')) {
       const record = parseRun(line);
-      if (record !== undefined) {
-        records.push(record);
+      if (record === undefined) {
+        continue;
       }
+      if (scope.session !== undefined && record.session !== scope.session) {
+        continue;
+      }
+      records.push(record);
     }
   }
   return records.toSorted((left, right) => left.started - right.started);
+}
+
+/**
+ * その session の、走っている子の行だけを返す。
+ *
+ * `readRuns` の窓を `scope` で切り、`isRunning`（既定 `pidAlive`）で生きている物だけにする。
+ * 音の述語と、前のセッションの子の告知が読む。
+ */
+export function runningRuns(
+  place: Place,
+  scope: ReadScope & { readonly session: string },
+): RunRecord[] {
+  return readRuns(place, scope).filter((record) => isRunning(record));
 }

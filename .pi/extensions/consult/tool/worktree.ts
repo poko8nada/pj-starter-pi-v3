@@ -9,11 +9,11 @@ import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/p
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { pidAlive, readRuns } from '../run/log.ts';
+import type { Place } from '../run/place.ts';
 import {
   createWorktree,
   listWorktrees,
   removeWorktree,
-  rootFor,
   type RemoveResult,
   type WorktreeRow,
 } from '../run/worktree.ts';
@@ -91,15 +91,17 @@ function parseAction(
 /**
  * その unit で子が走っているか。
  *
- * 記録（`log.jsonl`）で見る: 終わりの行が無く、pid が生きている行があれば走っている。親の記憶ではなく
- * 記録を見るので、reload をまたいだ子にも効く（その記録はこの unit のもの）。
+ * 記録（置き場の日ごとのファイル）で見る: 終わりの行が無く、pid が生きている行があれば走っている。
+ * 親の記憶ではなく記録を見るので、reload をまたいだ子にも効く。
+ *
+ * session では絞らない。作業場を守る側なので、他のセッションの子が走っている作業場も消してはいけない。
  */
 export function runningIn(
-  runRoot: string,
+  place: Place,
   id: string,
   alive: (pid: number) => boolean = pidAlive,
 ): boolean {
-  return readRuns(runRoot).some(
+  return readRuns(place).some(
     (run) => run.worktree === id && run.ended === undefined && alive(run.pid),
   );
 }
@@ -146,40 +148,44 @@ export function removeText(id: string, removed: RemoveResult): string {
   return `消した: ${id}（ブランチも消した）${tail}`;
 }
 
-export async function execute(...args: ExecuteArgs) {
-  const [, params, , , ctx] = args;
-  const action = parseAction(params);
-  const cwd = ctx.cwd;
-  if (action.action === 'new') {
-    const made = createWorktree(cwd, action.id, action.base);
-    return result(
-      [
-        `id: ${made.id}`,
-        `branch: ${made.branch}`,
-        `path: ${made.path}`,
-        `base: ${action.base ?? 'HEAD'}`,
-      ].join('\n'),
-      { action: 'new', worktree: made },
-    );
-  }
-  if (action.action === 'remove') {
-    const removed = removeWorktree(cwd, action.id, {
-      force: action.force,
-      busy: runningIn(rootFor(cwd), action.id),
+/**
+ * 道具を作る。置き場は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
+ */
+export function createWorktreeTool(place: Place) {
+  return async function execute(...args: ExecuteArgs) {
+    const [, params, , , ctx] = args;
+    const action = parseAction(params);
+    const cwd = ctx.cwd;
+    if (action.action === 'new') {
+      const made = createWorktree(cwd, action.id, action.base);
+      return result(
+        [
+          `id: ${made.id}`,
+          `branch: ${made.branch}`,
+          `path: ${made.path}`,
+          `base: ${action.base ?? 'HEAD'}`,
+        ].join('\n'),
+        { action: 'new', worktree: made },
+      );
+    }
+    if (action.action === 'remove') {
+      const removed = removeWorktree(cwd, action.id, {
+        force: action.force,
+        busy: runningIn(place, action.id),
+      });
+      return result(removeText(action.id, removed), {
+        action: 'remove',
+        outcome: removed.outcome,
+        cleanup: removed.cleanup,
+      });
+    }
+    const rows = listWorktrees(cwd);
+    if (rows.length === 0) {
+      return result('作業場は無い。', { action: 'list', rows });
+    }
+    return result(rows.map((row) => rowLine(row, runningIn(place, row.id))).join('\n'), {
+      action: 'list',
+      rows,
     });
-    return result(removeText(action.id, removed), {
-      action: 'remove',
-      outcome: removed.outcome,
-      cleanup: removed.cleanup,
-    });
-  }
-  const rows = listWorktrees(cwd);
-  if (rows.length === 0) {
-    return result('作業場は無い。', { action: 'list', rows });
-  }
-  const runRoot = rootFor(cwd);
-  return result(rows.map((row) => rowLine(row, runningIn(runRoot, row.id))).join('\n'), {
-    action: 'list',
-    rows,
-  });
+  };
 }

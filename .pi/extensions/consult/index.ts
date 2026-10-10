@@ -2,34 +2,100 @@
  * consult 拡張の入口。道具とスラッシュコマンドの登録だけを行う。
  *
  * 走っている子の管理は `tool/consult.ts` の `createRuntime` が 1 か所で持ち、道具の `action` とコマンドの両方が同じ `control` を呼ぶ。
+ * 置き場（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは置き場を一時ディレクトリに逃がせる。
  */
 
+import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
-import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool, latest } from './tool/children.ts';
+import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
-import { runningChildren, startSound, stopSound } from './tool/sound.ts';
-import { createDelivery } from './run/delivery.ts';
-import { pidAlive, readRuns } from './run/log.ts';
-import { cleanWorktrees, rootFor } from './run/worktree.ts';
-import { PARAMETERS as WORKTREE_PARAMETERS, execute as worktreeExecute } from './tool/worktree.ts';
+import { startSound, stopSound } from './tool/sound.ts';
+import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
+import { KEEP_DAYS, runningRuns, type RunRecord } from './run/log.ts';
+import { oldFiles, placeFor, type Place } from './run/place.ts';
+import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
+import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
+
+/** いまの pi のセッション id。`session_start` で読み直す（照合に使うだけ） */
+let session = '';
+
+/** cwd から置き場を決める。頂点が引けなければ cwd 自身に落とす（読み込みで投げない） */
+function placeOf(cwd: string): Place {
+  let toplevel: string;
+  try {
+    toplevel = topLevel(cwd);
+  } catch {
+    toplevel = cwd;
+  }
+  return placeFor(consultRoot(), toplevel);
+}
+
+/** session_start の文脈からセッション id を読む。取れなければ今のまま */
+function readSession(ctx: ExtensionContext): string {
+  const id = ctx.sessionManager.getSessionId();
+  return id === '' ? session : id;
+}
+
+/** 渡す通知の details。記録の欄から組み直す（完了のメッセージと同じ形） */
+function noticeDetails(record: RunRecord): Record<string, unknown> {
+  return {
+    id: record.child,
+    type: record.role,
+    ...(record.worktree === undefined ? {} : { worktree: record.worktree }),
+    ...(record.state === undefined ? {} : { state: record.state }),
+    ...(record.files === undefined ? {} : { files: [...record.files] }),
+    ...(record.turns === undefined ? {} : { turns: record.turns }),
+    ...(record.spend === undefined ? {} : { spend: record.spend }),
+    ...(record.reason === undefined ? {} : { reason: record.reason }),
+  };
+}
+
+/**
+ * まだ渡していない完了の報告を、owner へ 1 つずつ渡す。
+ *
+ * 起動のたびに記録を読み直すので、reload の前の子の報告もここで届く。全部渡し終えてから目録を
+ * 1 回だけ進める（途中で落ちても、同じ物をもう一度渡すだけになる）。
+ */
+function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
+  if (current === '') {
+    return;
+  }
+  let last: number | undefined;
+  for (const record of unreadNotices(place, { session: current, days: KEEP_DAYS })) {
+    pi.sendMessage(
+      {
+        customType: 'consult',
+        content: record.notice ?? '',
+        display: true,
+        details: noticeDetails(record),
+      },
+      { triggerTurn: true, deliverAs: 'followUp' },
+    );
+    last = record.ended;
+  }
+  if (last !== undefined) {
+    writeCursor(place, current, { ended: last });
+  }
+}
 
 /**
  * 前のセッション（reload の前）の子がまだ走っていれば、そのことを知らせて音を戻す。
  *
- * 子は detach されて親の記憶の外でも生きているので、判定は記録（log.jsonl）と pid で行う。
+ * いまの session の走っている子だけを見る（別の session の子の報告はここには来ないので、
+ * 待たせない）。音も同じ述語で鳴らし、居なくなれば自分で止まる。
  */
-function announceRunningChildren(ctx: ExtensionContext): void {
-  const running = runningChildren(latest(readRuns(rootFor(ctx.cwd))), pidAlive);
-  if (running.length === 0) {
+function announceRunningChildren(place: Place, announced: string, ctx: ExtensionContext): void {
+  if (runningRuns(place, { session: announced }).length === 0) {
     return;
   }
+  const count = runningRuns(place, { session: announced }).length;
   ctx.ui.notify(
-    `consult: ${running.length} child(ren) are still running from an earlier session (see consult_children)`,
+    `consult: ${count} child(ren) are still running from an earlier session (see consult_children)`,
     'info',
   );
-  startSound();
+  startSound(() => runningRuns(place, { session: announced }).length > 0);
 }
 
 /** 人が使う口。子の一覧と停止、音の切り替え */
@@ -48,21 +114,41 @@ function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
   });
 }
 
+/**
+ * 起動の掃除。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児枝を静かに 1 回片付ける。
+ *
+ * 失敗は握って続ける（開始を止めない）。
+ */
+function sweep(place: Place, cwd: string): void {
+  try {
+    for (const file of oldFiles(place, new Date(), KEEP_DAYS)) {
+      rmSync(file, { force: true });
+    }
+  } catch (error) {
+    void error;
+  }
+  try {
+    cleanWorktrees(cwd);
+  } catch (error) {
+    void error;
+  }
+}
+
 export default function (pi: ExtensionAPI) {
+  const place = placeOf(process.cwd());
   // 完了の届け先は 1 本。reload で捨てられても、古い delivery は記録へ回すだけ（新しいセッションが読む）
-  const delivery = createDelivery(() => rootFor(process.cwd()));
+  const delivery = createDelivery(place);
   delivery.attach(pi);
-  const consult = createRuntime(pi, undefined, delivery);
+  const consult = createRuntime(pi, place, undefined, delivery, () => session);
 
   // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
-    announceRunningChildren(ctx);
-    // ゴーストの登録と取り込み済みの孤児枝を静かに 1 回掃除する。失敗は握って続ける（開始を止めない）
-    try {
-      cleanWorktrees(ctx.cwd);
-    } catch (error) {
-      void error;
-    }
+    session = readSession(ctx);
+    announceRunningChildren(place, session, ctx);
+    sweep(place, ctx.cwd);
+    // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める
+    deliverUnread(place, session, pi);
+    pruneCursors(place, new Date(), KEEP_DAYS);
   });
 
   pi.registerTool({
@@ -86,14 +172,18 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_children',
     label: 'Consult children',
     description:
-      'Show the children of this project, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children a previous session started (after a reload). cancel only stops a child this session started; one from an earlier session is named in the reply and left alone.',
+      'Show the children of this session, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children this session started (even ones from before a reload). cancel stops a running child of this session, including one a previous instance started (by process id); a child from another session is named in the reply and left alone.',
     promptSnippet: 'List the consult children (and stop one) — works across reloads',
     promptGuidelines: [
-      'Use consult_children to see what is still running before you wait or act: one call lists every child of this project, including ones from before a reload.',
-      'Use action: cancel with the id to stop one; a child started by a previous session cannot be stopped, and says so.',
+      'Use consult_children to see what is still running before you wait or act: one call lists this session’s children, including ones from before a reload.',
+      'Use action: cancel with the id to stop one; a child started by another session cannot be stopped, and says so.',
     ],
     parameters: CHILDREN_PARAMETERS,
-    execute: createChildrenTool(consult),
+    execute: createChildrenTool({
+      place,
+      sessionNow: () => session,
+      control: (action, childSession) => consult.control(action, childSession),
+    }),
   });
 
   pi.registerTool({
@@ -107,7 +197,7 @@ export default function (pi: ExtensionAPI) {
       'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the child did.',
     ],
     parameters: WORKTREE_PARAMETERS,
-    execute: worktreeExecute,
+    execute: createWorktreeTool(place),
   });
 
   registerCommands(pi, consult);
