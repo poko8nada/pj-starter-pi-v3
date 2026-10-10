@@ -143,6 +143,7 @@
 - Findings:
   - Tests 節が `run/run.test.ts` に言及しているが、そのファイルは実装に無い（`run/` には `child.test.ts` がいる）。
     - `left: この plan の I/O（slice 1–3 の 8 本）の範囲外で、正しい置き換え（記述の振り分け直し）の判断が付かないため直さない。親の read の判断に任せる`
+    - `fixed: README の run/run.test.ts を run/child.test.ts に直した`
 - Unplanned: なし
 - Commit: (see git log consult(consult-readme): slice 4 integrate)
 - Verify (cli, done here): 前提 `git log --oneline -20` に `record-and-delivery` の merge 有り・`run/place.ts` 有り。壊し 4 件すべて赤→緑を確認（記録の場所→slice 1 赤／`lost` 消し→slice 2 赤／Sound 戻し→slice 3 赤／reload 段落戻し→slice 3 赤、すべて復元済み・作業ツリー clean）。
