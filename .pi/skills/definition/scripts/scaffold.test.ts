@@ -11,6 +11,7 @@ import {
   slugBranch,
   stripMarkers,
   toYYMMDD,
+  withHeading,
 } from './scaffold.mjs';
 
 function writeDefinition(dir: string, body = 'x\n'): string {
@@ -73,22 +74,32 @@ describe('cycleDirName', () => {
 });
 
 describe('parseArgs', () => {
-  it('--root と src を読む', () => {
-    expect(parseArgs(['--root', '/tmp/x'])).toEqual({ root: '/tmp/x', src: null });
-    expect(parseArgs(['--root', '/tmp/x', 'foo.md'])).toEqual({ root: '/tmp/x', src: 'foo.md' });
+  it('位置引数は番号になる', () => {
+    expect(parseArgs(['016'])).toEqual({ root: process.cwd(), nnn: 16 });
   });
 
-  it('空 → src は null', () => {
-    expect(parseArgs([]).src).toBe(null);
+  it('空 → root は cwd、nnn は null', () => {
+    expect(parseArgs([])).toEqual({ root: process.cwd(), nnn: null });
   });
 
-  it('未知引数・--root 値欠落は投げる', () => {
+  it('--root を読む', () => {
+    expect(parseArgs(['--root', '/tmp/x'])).toEqual({ root: '/tmp/x', nnn: null });
+  });
+
+  it('数でない・小数・0 は投げる', () => {
+    expect(() => parseArgs(['abc'])).toThrow();
+    expect(() => parseArgs(['1.5'])).toThrow();
+    expect(() => parseArgs(['0'])).toThrow();
+  });
+
+  it('未知引数・`=` 形・--root 値欠落は投げる', () => {
     expect(() => parseArgs(['--bogus'])).toThrow();
+    expect(() => parseArgs(['--root=/tmp/x'])).toThrow();
     expect(() => parseArgs(['--root'])).toThrow();
   });
 
   it('2 つ目位置引数は投げる', () => {
-    expect(() => parseArgs(['a', 'b'])).toThrow();
+    expect(() => parseArgs(['016', '017'])).toThrow();
   });
 });
 
@@ -99,6 +110,41 @@ describe('stripMarkers', () => {
 
   it('marker 無しはそのまま', () => {
     expect(stripMarkers('a')).toBe('a');
+  });
+});
+
+describe('withHeading', () => {
+  it('見出しを番号で置き換える', () => {
+    expect(withHeading('# Definition 015\n\n本文\n', 16)).toBe('# Definition 016\n\n本文\n');
+  });
+
+  it('`<NNN>` を 001 にする', () => {
+    expect(withHeading('# Definition <NNN>\n\n本文\n', 1)).toBe('# Definition 001\n\n本文\n');
+  });
+
+  it('見出しが無ければ置くだけ', () => {
+    expect(withHeading('## Product\n', 16)).toBe('# Definition 016\n## Product\n');
+  });
+
+  it('先頭行でなくても落とす', () => {
+    expect(withHeading('前置き\n# Definition 015\n', 16)).toBe('# Definition 016\n前置き\n');
+  });
+
+  it('落とすのは最初の 1 行だけ', () => {
+    expect(withHeading('# Definition 015\n# Definition 014\n', 16)).toBe(
+      '# Definition 016\n# Definition 014\n',
+    );
+  });
+
+  it('改行は正規化しない', () => {
+    expect(withHeading('# Definition 015\r\n\r\n本文\r\n', 16)).toBe(
+      '# Definition 016\n\r\n本文\r\n',
+    );
+  });
+
+  it('同じ番号で 2 回呼ぶと変わらない', () => {
+    const once = withHeading('# Definition 015\n\n本文\n', 16);
+    expect(withHeading(once, 16)).toBe(once);
   });
 });
 

@@ -3,13 +3,12 @@
  *
  * - 前 cycle がある時: 前回 definition の marker を外して複写する
  * - 初回 cycle の時: `references/format.md` の形の template 文字列を出す
- * `# Definition <NNN>` の見出し番号は書き手が直す。
  *
- *   node scaffold.mjs [--root <dir>] [<src-definition.md>]
+ *   node scaffold.mjs [--root <dir>] [<nnn>]
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gitEnv } from '../../../../lib/git-env.mjs';
 
@@ -69,6 +68,21 @@ export function stripMarkers(text) {
     .split('\n')
     .map((line) => line.replace(MARKER, ''))
     .join('\n');
+}
+
+/**
+ * 先頭に `# Definition <nnn>` を置く。`^# Definition \S+\r?$` に合う最初の 1 行だけ落とす。改行は正規化しない。
+ * @param {string} body
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function withHeading(body, nnn) {
+  const heading = `# Definition ${String(nnn).padStart(3, '0')}`;
+  const lines = body.split('\n');
+  const idx = lines.findIndex((line) => /^# Definition \S+\r?$/.test(line));
+  if (idx !== -1) lines.splice(idx, 1);
+  lines.unshift(heading);
+  return lines.join('\n');
 }
 
 /**
@@ -193,13 +207,13 @@ export function createLeafDir(parentDir, name) {
 }
 
 /**
- * CLI 引数を読む。root 既定は cwd。`--root` 値欠落・未知引数は投げる。src の存在確認はしない。
+ * CLI 引数を読む。root 既定は cwd。位置引数は番号 (`/^\d+$/`、1 以上)。`--root` 値欠落・未知引数・番号外・2 つ目は投げる。
  * @param {readonly string[]} argv
- * @returns {{ root: string, src: string | null }}
+ * @returns {{ root: string, nnn: number | null }}
  */
 export function parseArgs(argv) {
   let root = process.cwd();
-  let src = null;
+  let nnn = null;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--root') {
@@ -210,16 +224,19 @@ export function parseArgs(argv) {
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown argument: ${arg}`);
     } else {
-      if (src !== null) throw new Error(`too many arguments: ${arg}`);
-      src = arg;
+      if (nnn !== null) throw new Error(`too many arguments: ${arg}`);
+      if (!/^\d+$/.test(arg)) throw new Error(`not a cycle number: ${arg}`);
+      const n = Number(arg);
+      if (n < 1) throw new Error(`not a cycle number: ${arg}`);
+      nnn = n;
     }
   }
-  return { root, src };
+  return { root, nnn };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const { root, src } = parseArgs(process.argv.slice(2));
+  const { root, nnn: argNNN } = parseArgs(process.argv.slice(2));
   const cyclesDir = join(root, 'cycles');
   const archiveDir = join(cyclesDir, 'archive');
   let branch = '';
@@ -244,7 +261,7 @@ if (isMain) {
       if (!err || err.code !== 'ENOENT') throw err;
     }
   }
-  const nnn = nextNNN(names);
+  const nnn = argNNN ?? nextNNN(names);
   const slug = slugBranch(branch);
   const dirName = cycleDirName(nnn, yymmdd, slug);
   mkdirSync(cyclesDir, { recursive: true });
@@ -258,22 +275,17 @@ if (isMain) {
     }
     throw err;
   }
-  let draft;
+  let raw;
   let used;
-  if (src !== null) {
-    const resolved = isAbsolute(src) ? src : join(root, src);
-    draft = stripMarkers(readFileSync(resolved, 'utf8'));
-    used = resolved;
+  const prev = findPrevDefinition(cyclesDir, archiveDir);
+  if (prev !== null) {
+    raw = stripMarkers(readFileSync(prev, 'utf8'));
+    used = prev;
   } else {
-    const prev = findPrevDefinition(cyclesDir, archiveDir);
-    if (prev !== null) {
-      draft = stripMarkers(readFileSync(prev, 'utf8'));
-      used = prev;
-    } else {
-      draft = TEMPLATE_001;
-      used = 'template';
-    }
+    raw = TEMPLATE_001;
+    used = 'template';
   }
+  const draft = withHeading(raw, nnn);
   writeFileSync(join(leaf, 'definition.md'), draft);
   console.log(`created: ${leaf}`);
   console.log(`src: ${used}`);

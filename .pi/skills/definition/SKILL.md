@@ -38,7 +38,7 @@ A point can also come from the last cycle.
 
 ### 1. Confirm the trigger and read what is behind the cycle
 
-- run `node .pi/skills/definition/scripts/scaffold.mjs` with no arguments to create the cycle folder and the draft definition (the previous definition without markers, or the format for the first cycle), and use the printed path, then set the `# Definition <NNN>` heading
+- run `node .pi/skills/definition/scripts/scaffold.mjs` with no arguments to create the cycle folder and the draft definition (the previous definition without markers, or the format for the first cycle, with the heading already numbered), and use the printed path; pass `[<nnn>]` to use an explicit number
 - the last definition, in full: the frame, the `Users can do` map, the Stack
 
 ### 2. Decide the points that need a decision
