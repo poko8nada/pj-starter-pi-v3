@@ -121,7 +121,7 @@ function armedWithTurns(turns: number): Run {
     now: 1,
   });
   for (let index = 0; index < turns; index += 1) {
-    run = noteTurn(run, `text${index}`, defaultSettings().state, index + 2);
+    run = noteTurn(run, `text${index}`, defaultSettings().state);
   }
   return run;
 }

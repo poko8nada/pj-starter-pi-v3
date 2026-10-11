@@ -242,7 +242,7 @@ function recordTurn(deps: JudgeDeps, event: JudgeTurnEvent): Armed | undefined {
       deps.settings.state,
     );
   }
-  run = noteTurn(run, textOf(event.message.content), deps.settings.state, Date.now());
+  run = noteTurn(run, textOf(event.message.content), deps.settings.state);
   deps.run.set(run);
   return run.kind === 'armed' ? run : undefined;
 }

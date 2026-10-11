@@ -119,8 +119,7 @@ export function addAction(run: Run, action: Action, limits: Settings['state']): 
   return { ...run, actions: [...run.actions, action] };
 }
 
-export function noteTurn(run: Run, text: string, limits: Settings['state'], now: number): Run {
-  void now;
+export function noteTurn(run: Run, text: string, limits: Settings['state']): Run {
   if (run.kind !== 'armed') {
     return run;
   }

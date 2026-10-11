@@ -47,22 +47,12 @@ export interface ConsultOptions {
 }
 
 /**
- * 中身が無い入力か。0 バイトか空白だけなら空とみなす。
- * 「無言で、文脈なしの子を走らせない」ための判定（001 の規則）。
+ * 子のプロンプトを組む。今は常に task をそのまま返す。
+ *
+ * 過去のサイクル（007）で「空の指示は `joinPrompt(undefined, '')` で確かめた」と決め、文脈（payload）は渡さない方針にした。products コードは `run/child.ts` だけ。
  */
-export function isBlank(text: string): boolean {
-  return text.trim() === '';
-}
-
-/**
- * 子のプロンプトを組む。`input` は文書ではなく、プロンプトの先頭に連結されるテキスト。
- * 空（`undefined` / 空文字）なら足さない。
- */
-export function joinPrompt(payload: string | undefined, task: string): string {
-  if (payload === undefined || payload === '') {
-    return task;
-  }
-  return `${payload}\n${task}`;
+export function joinPrompt(task: string): string {
+  return task;
 }
 
 /**

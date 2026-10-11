@@ -5,38 +5,13 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { accountEvent, parseEvents, ranFrom, type Spent } from '../child/spec.ts';
 import type { Limits } from '../policy/types.ts';
 import { gitEnv } from '../../../../lib/git-env.mjs';
 
 const KILL_GRACE_MS = 5000;
-
-/** git リポジトリの中で実行しているか。worktree を作れるかの判定 */
-export function isGitRepo(cwd: string): boolean {
-  const result = spawnSync('git', ['rev-parse', '--git-dir'], {
-    cwd,
-    encoding: 'utf8',
-    env: gitEnv(),
-  });
-  return result.status === 0;
-}
-
-/**
- * payload を読む。読めない入力は例外にする（道具の失敗として呼び出し側が伝える）。
- *
- * existsSync で先に確かめると「無いときだけ undefined」になり、文脈を渡したつもりで空の子が走る。ディレクトリも通ってしまう。
- */
-export function readPayload(input: string, cwd: string): string {
-  const file = isAbsolute(input) ? input : join(cwd, input);
-  try {
-    return readFileSync(file, 'utf8');
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`could not read the input file: ${file} (${detail})`, { cause: error });
-  }
-}
 
 export interface RunResult {
   readonly stdout: string;
@@ -110,44 +85,6 @@ export async function runWithFallback(
   }
 
   return tryAt(0);
-}
-
-/**
- * 複数の payload を先に全部読む。
- *
- * 1 つでも読めなければ投げる。子を起動してから「2 つ目が読めない」と分かっても、1 体目はもう走っている。setup の誤りは、走らせる前に落とす。
- */
-export function readPayloads(inputs: readonly string[], cwd: string): string[] {
-  return inputs.map((input) => readPayload(input, cwd));
-}
-
-/** 入力ごとの結果。失敗も状態として持つ（投げない） */
-export type InputOutcome<R> =
-  | { readonly ok: true; readonly value: R }
-  | { readonly ok: false; readonly error: string };
-
-/**
- * 入力ごとに 1 体走らせる。
- *
- * 子は互いに独立なので並列に走らせる。結果は入力の順で返すので、待ち時間だけが縮む。1 体の失敗はその 1 体の状態にする（「実行中の失敗は投げない」の実装）。
- */
-export async function runForInputs<T, R>(
-  inputs: readonly T[],
-  runOne: (input: T, index: number) => Promise<R>,
-): Promise<InputOutcome<R>[]> {
-  // コールバックを async で包む。包まないと、コールバックが**同期で**投げたときに入力の map がそこで止まり、
-  // この関数ごと棄却される（1 つの入力の失敗が他を巻き込む。2026-09-24 の実演で踏んだ）。
-  const settled = await Promise.allSettled(
-    inputs.map(async (input, index) => runOne(input, index)),
-  );
-  return settled.map((entry) =>
-    entry.status === 'fulfilled'
-      ? { ok: true, value: entry.value }
-      : {
-          ok: false,
-          error: entry.reason instanceof Error ? entry.reason.message : String(entry.reason),
-        },
-  );
 }
 
 /** worktree に初手で走らせるコマンド。lockfile で決める */

@@ -4,8 +4,6 @@ import {
   buildPiArgs,
   errorFrom,
   finalTextFrom,
-  isBlank,
-  joinPrompt,
   modelFrom,
   needsIsolation,
   parseEvents,
@@ -38,26 +36,6 @@ function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
 function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
-
-describe('isBlank', () => {
-  it('空文字は空', () => {
-    expect(isBlank('')).toBe(true);
-  });
-
-  it('文字が 1 つでもあれば空ではない', () => {
-    expect(isBlank('a')).toBe(false);
-  });
-});
-
-describe('joinPrompt', () => {
-  it('payload を先頭に連結する（間に改行）', () => {
-    expect(joinPrompt('PAYLOAD', 'TASK')).toBe('PAYLOAD\nTASK');
-  });
-
-  it('payload が無ければ task だけ', () => {
-    expect(joinPrompt(undefined, 'TASK')).toBe('TASK');
-  });
-});
 
 describe('buildPiArgs: child-guard', () => {
   it('-e で child-guard を子に渡し、--tools の後ろに置く', () => {
@@ -139,11 +117,6 @@ describe('buildPiArgs', () => {
     const args = buildPiArgs(options({ task: '調べる' }));
     expect(args).not.toContain('調べる');
     expect(args).not.toContain('--');
-  });
-
-  it('task: 空 → 引数は同じで、stdin に空を書く（happy、empty）', () => {
-    expect(buildPiArgs(options({ task: '' }))).toEqual(buildPiArgs(options({ task: '調べる' })));
-    expect(joinPrompt(undefined, '')).toBe('');
   });
 });
 

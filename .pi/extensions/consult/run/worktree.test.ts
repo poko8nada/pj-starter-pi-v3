@@ -14,7 +14,6 @@ import {
   listWorktrees,
   removeWorktree,
   rootFor,
-  unitRoot,
 } from './worktree.ts';
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす（後始末も helper がする）。
@@ -499,12 +498,11 @@ describe('cleanWorktrees', () => {
   });
 });
 
-describe('unitRoot', () => {
+describe('unit の置き場', () => {
   it('worktree の外を指す → 記録を置いてもリポジトリは汚れない', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
 
-    expect(unitRoot(dir, '1-a')).toBe(made.unitDir);
     expect(made.unitDir).not.toBe(made.path);
     expect(made.path.startsWith(made.unitDir)).toBe(true);
     // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の親

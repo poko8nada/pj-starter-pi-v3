@@ -106,13 +106,7 @@ export function prune(dir: string, keepDays: number, at: Date): number {
     const year = Number(match[1]);
     const month = Number(match[2]);
     const day = Number(match[3]);
-    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
-      continue;
-    }
     const fileDay = new Date(year, month - 1, day).getTime();
-    if (Number.isNaN(fileDay)) {
-      continue;
-    }
     const diffDays = Math.round((atDay - fileDay) / 86400000);
     if (diffDays > keepDays) {
       rmSync(join(dir, name));

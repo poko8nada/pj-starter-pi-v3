@@ -104,17 +104,3 @@ export function compose(events: unknown[], run: RunResult, retry?: RetrySummary)
   }
   return lines.join('\n');
 }
-
-export function pad2(value: number): string {
-  return String(value).padStart(2, '0');
-}
-
-/**
- * ブランチ名の後半。同じ秒に複数の子が終わっても衝突しないように、番号を付ける。親はこの名前で取り込むかどうかを決める。
- */
-export function refLabel(type: string, index: number): string {
-  const now = new Date();
-  const date = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
-  const time = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
-  return `${type}-${date}-${time}-${index}`;
-}

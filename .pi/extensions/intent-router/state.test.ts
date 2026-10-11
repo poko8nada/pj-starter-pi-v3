@@ -64,7 +64,7 @@ describe('arm', () => {
 describe('idle', () => {
   it('idle に addAction / noteTurn しても idle のまま', () => {
     expect(addAction(idleRun(), action(), limits()).kind).toBe('idle');
-    expect(noteTurn(idleRun(), 'hi', limits(), 2).kind).toBe('idle');
+    expect(noteTurn(idleRun(), 'hi', limits()).kind).toBe('idle');
   });
 });
 
@@ -169,7 +169,7 @@ describe('targetOf', () => {
 
 describe('noteTurn / countJudgement / fire', () => {
   it('noteTurn で assistantLast が 500 字に切れる', () => {
-    const run = noteTurn(armed(), 'あ'.repeat(501), limits(), 2);
+    const run = noteTurn(armed(), 'あ'.repeat(501), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }

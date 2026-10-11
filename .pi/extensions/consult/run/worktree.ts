@@ -76,11 +76,6 @@ export function branchFor(id: string): ConsultBranch {
   return `consult/${id}`;
 }
 
-/** unit の入れ物。worktree の外なので、リポジトリを汚さない（記録はここには無い） */
-export function unitRoot(cwd: string, id: string): string {
-  return join(ensureRoot(cwd), id);
-}
-
 /** `YYYYMMDD-HHMM`。作業場の root に 1 回だけ付く */
 function pad(value: number): string {
   return String(value).padStart(2, '0');
