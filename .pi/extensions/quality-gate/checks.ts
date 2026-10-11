@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { relative } from 'node:path';
-import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
+import type { ExecResult } from '@earendil-works/pi-coding-agent';
 import type { CheckOutcome, CheckRun } from './report.ts';
 import { filterByExtensions } from './targets.ts';
 
@@ -60,13 +60,23 @@ export function toRelative(cwd: string, path: string): string {
   return rel === '' ? path : rel;
 }
 
+/** コマンドを打つ口。`ExtensionAPI` の `exec` だけで足りるので、据えた形で受ける */
+export interface ExecPort {
+  exec(command: string, args: string[], options?: { cwd?: string }): Promise<ExecResult>;
+}
+
+/** 作業の場所。`ExtensionContext` の `cwd` だけで足りる */
+export interface Workdir {
+  readonly cwd: string;
+}
+
 /**
  * チェック対象を確定する。
  * - 削除済みファイルは除外する（存在しないパスを渡すとツールが異常終了する）
  * - git 管理外（.gitignore 対象）も除外する（dist/ などで「対象なし」の誤検知になる）
  */
 async function prepareTargets(
-  pi: ExtensionAPI,
+  pi: ExecPort,
   cwd: string,
   paths: readonly string[],
 ): Promise<{ checked: string[]; skipped: string[] }> {
@@ -91,7 +101,7 @@ async function prepareTargets(
 
 /** 1 つのチェックを実行する。対象が無い場合は undefined を返す */
 async function runCheck(
-  pi: ExtensionAPI,
+  pi: ExecPort,
   cwd: string,
   spec: CheckSpec,
   checked: readonly string[],
@@ -118,8 +128,8 @@ async function runCheck(
  * ツール自体の異常（設定破損など）も検証フェーズで検出される。
  */
 export async function runChecks(
-  pi: ExtensionAPI,
-  ctx: ExtensionContext,
+  pi: ExecPort,
+  ctx: Workdir,
   targets: readonly string[],
 ): Promise<CheckRun> {
   const { checked, skipped } = await prepareTargets(pi, ctx.cwd, targets);
