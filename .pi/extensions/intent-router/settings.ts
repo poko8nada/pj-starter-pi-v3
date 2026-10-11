@@ -3,25 +3,136 @@
  *
  * 書いていない欄は既定のまま（欠けは誤りではない）。書いてある欄が知らないキー・
  * 範囲外・別の型なら投げる（打ち間違いを黙って無視しない）。
+ *
+ * 形は typebox のスキーマが 1 つの言い方。スキーマと型（`Static`）が同じ所から出るので、
+ * 検証と型が食い違わない。未知のキーはスキーマ（`Type.Object` は追加の欄を許さない）が弾く。
  */
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Check, Errors } from 'typebox/value';
+import { Type, type Static } from 'typebox';
 import type { Label } from './questions.ts';
 import { LABELS } from './questions.ts';
 
-export interface ClassifierCandidate {
-  readonly provider: string;
-  readonly model: string;
-}
+/** ラベル。`questions.ts` の一覧と同じ所から出る（増やしたらここも増える） */
+const LabelSchema = Type.Union(LABELS.map((label) => Type.Literal(label)));
 
-export interface Thresholds {
-  readonly routeConfidence: number;
-  readonly judgeConfidence: number;
-  readonly judgeScore: number;
-}
+const CandidateSchema = Type.Object(
+  {
+    provider: Type.String({ minLength: 1 }),
+    model: Type.String({ minLength: 1 }),
+  },
+  { additionalProperties: false },
+);
 
-export interface Settings {
+const ClassifierSchema = Type.Object(
+  {
+    models: Type.Optional(Type.Array(CandidateSchema, { minItems: 1 })),
+    allowPaid: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
+
+const BudgetSchema = Type.Object(
+  {
+    maxJudgementsPerPrompt: Type.Optional(Type.Integer({ minimum: 1 })),
+    maxStateChars: Type.Optional(Type.Integer({ minimum: 1 })),
+    minIntervalMs: Type.Optional(Type.Integer({ minimum: 0 })),
+    timeoutMs: Type.Optional(Type.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+const ThresholdsSchema = Type.Object(
+  {
+    routeConfidence: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
+    judgeConfidence: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
+    judgeScore: Type.Optional(Type.Number({ minimum: 0, maximum: 2 })),
+  },
+  { additionalProperties: false },
+);
+
+const RouteSchema = Type.Object(
+  {
+    enabled: Type.Optional(Type.Boolean()),
+    shadow: Type.Optional(Type.Boolean()),
+    actOn: Type.Optional(Type.Array(LabelSchema)),
+    idleOn: Type.Optional(Type.Array(LabelSchema)),
+  },
+  { additionalProperties: false },
+);
+
+const JudgeSchema = Type.Object(
+  {
+    enabled: Type.Optional(Type.Boolean()),
+    shadow: Type.Optional(Type.Boolean()),
+    minTurns: Type.Optional(Type.Integer({ minimum: 1 })),
+    everyNTurns: Type.Optional(Type.Integer({ minimum: 1 })),
+    maxFires: Type.Optional(Type.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+const GuideSchema = Type.Object(
+  {
+    enabled: Type.Optional(Type.Boolean()),
+    display: Type.Optional(Type.Boolean()),
+    text: Type.Optional(Type.String({ minLength: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+const StopSchema = Type.Object(
+  {
+    enabled: Type.Optional(Type.Boolean()),
+    display: Type.Optional(Type.Boolean()),
+    text: Type.Optional(Type.String({ minLength: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+const StateSchema = Type.Object(
+  {
+    maxActions: Type.Optional(Type.Integer({ minimum: 1 })),
+    actionChars: Type.Optional(Type.Integer({ minimum: 1 })),
+    assistantChars: Type.Optional(Type.Integer({ minimum: 1 })),
+    includeTools: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
+  },
+  { additionalProperties: false },
+);
+
+const LogSchema = Type.Object(
+  {
+    dir: Type.Optional(Type.String({ minLength: 1 })),
+    keepDays: Type.Optional(Type.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * 設定ファイルの形。欄は全部 Optional（書かれていない欄は既定のまま）。
+ *
+ * `additionalProperties: false` は打ち間替えのキーを弾く（書いていない欄は既定のままで、知らないキーは誤り）。
+ */
+const SettingsSchema = Type.Object(
+  {
+    classifier: Type.Optional(ClassifierSchema),
+    budget: Type.Optional(BudgetSchema),
+    thresholds: Type.Optional(ThresholdsSchema),
+    route: Type.Optional(RouteSchema),
+    judge: Type.Optional(JudgeSchema),
+    guide: Type.Optional(GuideSchema),
+    stop: Type.Optional(StopSchema),
+    state: Type.Optional(StateSchema),
+    log: Type.Optional(LogSchema),
+  },
+  { additionalProperties: false },
+);
+
+export type ClassifierCandidate = Static<typeof CandidateSchema>;
+export type Thresholds = Static<typeof ThresholdsSchema>;
+export type Settings = {
   readonly classifier: {
     readonly models: readonly ClassifierCandidate[];
     readonly allowPaid: boolean;
@@ -46,16 +157,8 @@ export interface Settings {
     readonly everyNTurns: number;
     readonly maxFires: number;
   };
-  readonly guide: {
-    readonly enabled: boolean;
-    readonly display: boolean;
-    readonly text: string;
-  };
-  readonly stop: {
-    readonly enabled: boolean;
-    readonly display: boolean;
-    readonly text: string;
-  };
+  readonly guide: { readonly enabled: boolean; readonly display: boolean; readonly text: string };
+  readonly stop: { readonly enabled: boolean; readonly display: boolean; readonly text: string };
   readonly state: {
     readonly maxActions: number;
     readonly actionChars: number;
@@ -63,149 +166,13 @@ export interface Settings {
     readonly includeTools: readonly string[];
   };
   readonly log: { readonly dir: string; readonly keepDays: number };
-}
+};
 
 export const SETTINGS_FILE = 'settings.json';
 
 function fail(message: string): never {
   throw new Error(`intent-router settings: ${message}`);
 }
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function asRecord(value: unknown, where: string): Record<string, unknown> {
-  if (!isRecord(value)) {
-    fail(`${where} must be an object`);
-  }
-  return value;
-}
-
-function asBoolean(value: unknown, where: string): boolean {
-  if (typeof value !== 'boolean') {
-    fail(`${where} must be true or false`);
-  }
-  return value;
-}
-
-function asNonEmptyString(value: unknown, where: string): string {
-  if (typeof value !== 'string' || value.trim() === '') {
-    fail(`${where} must be a non-empty string`);
-  }
-  return value;
-}
-
-function asString(value: unknown, where: string): string {
-  if (typeof value !== 'string') {
-    fail(`${where} must be a string`);
-  }
-  return value;
-}
-
-function asNumber(value: unknown, where: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    fail(`${where} must be a number`);
-  }
-  return value;
-}
-
-function asUnitInterval(value: unknown, where: string): number {
-  const n = asNumber(value, where);
-  if (n < 0 || n > 1) {
-    fail(`${where} must be between 0 and 1`);
-  }
-  return n;
-}
-
-function asScoreRange(value: unknown, where: string): number {
-  const n = asNumber(value, where);
-  if (n < 0 || n > 2) {
-    fail(`${where} must be between 0 and 2`);
-  }
-  return n;
-}
-
-function asPositiveInteger(value: unknown, where: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
-    fail(`${where} must be an integer`);
-  }
-  if (value <= 0) {
-    fail(`${where} must be a positive number`);
-  }
-  return value;
-}
-
-function asNonNegativeInteger(value: unknown, where: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
-    fail(`${where} must be an integer`);
-  }
-  if (value < 0) {
-    fail(`${where} must be a non-negative integer`);
-  }
-  return value;
-}
-
-function asStringArray(value: unknown, where: string): string[] {
-  if (!Array.isArray(value)) {
-    fail(`${where} must be an array`);
-  }
-  return value.map((item, index) => asString(item, `${where}[${index}]`));
-}
-
-function asLabel(value: unknown, where: string): Label {
-  if (value === 'question') {
-    return 'question';
-  }
-  if (value === 'design') {
-    return 'design';
-  }
-  if (value === 'verify') {
-    return 'verify';
-  }
-  if (value === 'permission') {
-    return 'permission';
-  }
-  if (value === 'chat') {
-    return 'chat';
-  }
-  if (value === 'unknown') {
-    return 'unknown';
-  }
-  fail(`${where} must be one of ${LABELS.join(', ')}`);
-  return 'unknown';
-}
-
-function asLabelArray(value: unknown, where: string): Label[] {
-  if (!Array.isArray(value)) {
-    fail(`${where} must be an array`);
-  }
-  return value.map((item, index) => asLabel(item, `${where}[${index}]`));
-}
-
-function checkNoUnknownKeys(
-  raw: Record<string, unknown>,
-  known: readonly string[],
-  where: string,
-): void {
-  for (const key of Object.keys(raw)) {
-    if (!known.includes(key)) {
-      fail(`${where} has an unknown key: ${key}`);
-    }
-  }
-}
-
-const TOP_KEYS = [
-  'classifier',
-  'budget',
-  'thresholds',
-  'route',
-  'judge',
-  'guide',
-  'stop',
-  'state',
-  'log',
-] as const;
 
 export function defaultSettings(): Settings {
   return {
@@ -273,165 +240,12 @@ export function defaultSettings(): Settings {
   };
 }
 
-function parseCandidate(value: unknown, where: string): ClassifierCandidate {
-  const raw = asRecord(value, where);
-  checkNoUnknownKeys(raw, ['provider', 'model'], where);
-  return {
-    provider: asNonEmptyString(raw.provider, `${where}.provider`),
-    model: asNonEmptyString(raw.model, `${where}.model`),
-  };
-}
-
-function parseClassifier(value: unknown, base: Settings['classifier']): Settings['classifier'] {
-  const raw = asRecord(value, 'classifier');
-  checkNoUnknownKeys(raw, ['models', 'allowPaid'], 'classifier');
-  let models = base.models;
-  if (raw.models !== undefined) {
-    if (!Array.isArray(raw.models)) {
-      fail('classifier.models must be an array');
-    }
-    const parsed = raw.models.map((item, index) =>
-      parseCandidate(item, `classifier.models[${index}]`),
-    );
-    if (parsed.length === 0) {
-      fail('classifier.models must not be empty');
-    }
-    models = parsed;
+/** 書かれた欄だけ既定に重ねる。JSON に `undefined` は無いので、書かれていない欄は base のまま */
+function overlaid<T>(base: T, written: Partial<T> | undefined): T {
+  if (written === undefined) {
+    return base;
   }
-  const allowPaid =
-    raw.allowPaid === undefined ? base.allowPaid : asBoolean(raw.allowPaid, 'classifier.allowPaid');
-  return { models, allowPaid };
-}
-
-function parseBudget(value: unknown, base: Settings['budget']): Settings['budget'] {
-  const raw = asRecord(value, 'budget');
-  checkNoUnknownKeys(
-    raw,
-    ['maxJudgementsPerPrompt', 'maxStateChars', 'minIntervalMs', 'timeoutMs'],
-    'budget',
-  );
-  return {
-    maxJudgementsPerPrompt:
-      raw.maxJudgementsPerPrompt === undefined
-        ? base.maxJudgementsPerPrompt
-        : asPositiveInteger(raw.maxJudgementsPerPrompt, 'budget.maxJudgementsPerPrompt'),
-    maxStateChars:
-      raw.maxStateChars === undefined
-        ? base.maxStateChars
-        : asPositiveInteger(raw.maxStateChars, 'budget.maxStateChars'),
-    minIntervalMs:
-      raw.minIntervalMs === undefined
-        ? base.minIntervalMs
-        : asNonNegativeInteger(raw.minIntervalMs, 'budget.minIntervalMs'),
-    timeoutMs:
-      raw.timeoutMs === undefined
-        ? base.timeoutMs
-        : asPositiveInteger(raw.timeoutMs, 'budget.timeoutMs'),
-  };
-}
-
-function parseThresholds(value: unknown, base: Settings['thresholds']): Settings['thresholds'] {
-  const raw = asRecord(value, 'thresholds');
-  checkNoUnknownKeys(raw, ['routeConfidence', 'judgeConfidence', 'judgeScore'], 'thresholds');
-  return {
-    routeConfidence:
-      raw.routeConfidence === undefined
-        ? base.routeConfidence
-        : asUnitInterval(raw.routeConfidence, 'thresholds.routeConfidence'),
-    judgeConfidence:
-      raw.judgeConfidence === undefined
-        ? base.judgeConfidence
-        : asUnitInterval(raw.judgeConfidence, 'thresholds.judgeConfidence'),
-    judgeScore:
-      raw.judgeScore === undefined
-        ? base.judgeScore
-        : asScoreRange(raw.judgeScore, 'thresholds.judgeScore'),
-  };
-}
-
-function parseRoute(value: unknown, base: Settings['route']): Settings['route'] {
-  const raw = asRecord(value, 'route');
-  checkNoUnknownKeys(raw, ['enabled', 'shadow', 'actOn', 'idleOn'], 'route');
-  return {
-    enabled: raw.enabled === undefined ? base.enabled : asBoolean(raw.enabled, 'route.enabled'),
-    shadow: raw.shadow === undefined ? base.shadow : asBoolean(raw.shadow, 'route.shadow'),
-    actOn: raw.actOn === undefined ? base.actOn : asLabelArray(raw.actOn, 'route.actOn'),
-    idleOn: raw.idleOn === undefined ? base.idleOn : asLabelArray(raw.idleOn, 'route.idleOn'),
-  };
-}
-
-function parseJudge(value: unknown, base: Settings['judge']): Settings['judge'] {
-  const raw = asRecord(value, 'judge');
-  checkNoUnknownKeys(raw, ['enabled', 'shadow', 'minTurns', 'everyNTurns', 'maxFires'], 'judge');
-  return {
-    enabled: raw.enabled === undefined ? base.enabled : asBoolean(raw.enabled, 'judge.enabled'),
-    shadow: raw.shadow === undefined ? base.shadow : asBoolean(raw.shadow, 'judge.shadow'),
-    minTurns:
-      raw.minTurns === undefined
-        ? base.minTurns
-        : asPositiveInteger(raw.minTurns, 'judge.minTurns'),
-    everyNTurns:
-      raw.everyNTurns === undefined
-        ? base.everyNTurns
-        : asPositiveInteger(raw.everyNTurns, 'judge.everyNTurns'),
-    maxFires:
-      raw.maxFires === undefined
-        ? base.maxFires
-        : asPositiveInteger(raw.maxFires, 'judge.maxFires'),
-  };
-}
-
-function parseGuide(value: unknown, base: Settings['guide']): Settings['guide'] {
-  const raw = asRecord(value, 'guide');
-  checkNoUnknownKeys(raw, ['enabled', 'display', 'text'], 'guide');
-  return {
-    enabled: raw.enabled === undefined ? base.enabled : asBoolean(raw.enabled, 'guide.enabled'),
-    display: raw.display === undefined ? base.display : asBoolean(raw.display, 'guide.display'),
-    text: raw.text === undefined ? base.text : asNonEmptyString(raw.text, 'guide.text'),
-  };
-}
-
-function parseStop(value: unknown, base: Settings['stop']): Settings['stop'] {
-  const raw = asRecord(value, 'stop');
-  checkNoUnknownKeys(raw, ['enabled', 'display', 'text'], 'stop');
-  return {
-    enabled: raw.enabled === undefined ? base.enabled : asBoolean(raw.enabled, 'stop.enabled'),
-    display: raw.display === undefined ? base.display : asBoolean(raw.display, 'stop.display'),
-    text: raw.text === undefined ? base.text : asNonEmptyString(raw.text, 'stop.text'),
-  };
-}
-
-function parseState(value: unknown, base: Settings['state']): Settings['state'] {
-  const raw = asRecord(value, 'state');
-  checkNoUnknownKeys(raw, ['maxActions', 'actionChars', 'assistantChars', 'includeTools'], 'state');
-  return {
-    maxActions:
-      raw.maxActions === undefined
-        ? base.maxActions
-        : asPositiveInteger(raw.maxActions, 'state.maxActions'),
-    actionChars:
-      raw.actionChars === undefined
-        ? base.actionChars
-        : asPositiveInteger(raw.actionChars, 'state.actionChars'),
-    assistantChars:
-      raw.assistantChars === undefined
-        ? base.assistantChars
-        : asPositiveInteger(raw.assistantChars, 'state.assistantChars'),
-    includeTools:
-      raw.includeTools === undefined
-        ? base.includeTools
-        : asStringArray(raw.includeTools, 'state.includeTools'),
-  };
-}
-
-function parseLog(value: unknown, base: Settings['log']): Settings['log'] {
-  const raw = asRecord(value, 'log');
-  checkNoUnknownKeys(raw, ['dir', 'keepDays'], 'log');
-  return {
-    dir: raw.dir === undefined ? base.dir : asNonEmptyString(raw.dir, 'log.dir'),
-    keepDays:
-      raw.keepDays === undefined ? base.keepDays : asPositiveInteger(raw.keepDays, 'log.keepDays'),
-  };
+  return { ...base, ...written };
 }
 
 /** 設定の本文に書かれている欄だけを既定に重ねる。知らないキー・範囲外・別の型は投げる */
@@ -443,24 +257,27 @@ export function parseSettings(text: string, defaults: Settings): Settings {
     const detail = error instanceof Error ? error.message : String(error);
     fail(`the config is not valid JSON (${detail})`);
   }
-  const raw = asRecord(document, 'the config');
-  checkNoUnknownKeys(raw, TOP_KEYS, 'the config');
+  if (!Check(SettingsSchema, document)) {
+    const first = Errors(SettingsSchema, document)[0];
+    const at =
+      first === undefined
+        ? 'the config'
+        : `the config.${first.instancePath.replaceAll('/', '.').replace(/^\./, '')}`;
+    fail(
+      `${at} ${first?.message ?? 'does not match the schema'} (got ${JSON.stringify(document)})`,
+    );
+  }
+  const written = document;
   return {
-    classifier:
-      raw.classifier === undefined
-        ? defaults.classifier
-        : parseClassifier(raw.classifier, defaults.classifier),
-    budget: raw.budget === undefined ? defaults.budget : parseBudget(raw.budget, defaults.budget),
-    thresholds:
-      raw.thresholds === undefined
-        ? defaults.thresholds
-        : parseThresholds(raw.thresholds, defaults.thresholds),
-    route: raw.route === undefined ? defaults.route : parseRoute(raw.route, defaults.route),
-    judge: raw.judge === undefined ? defaults.judge : parseJudge(raw.judge, defaults.judge),
-    guide: raw.guide === undefined ? defaults.guide : parseGuide(raw.guide, defaults.guide),
-    stop: raw.stop === undefined ? defaults.stop : parseStop(raw.stop, defaults.stop),
-    state: raw.state === undefined ? defaults.state : parseState(raw.state, defaults.state),
-    log: raw.log === undefined ? defaults.log : parseLog(raw.log, defaults.log),
+    classifier: overlaid(defaults.classifier, written.classifier),
+    budget: overlaid(defaults.budget, written.budget),
+    thresholds: overlaid(defaults.thresholds, written.thresholds),
+    route: overlaid(defaults.route, written.route),
+    judge: overlaid(defaults.judge, written.judge),
+    guide: overlaid(defaults.guide, written.guide),
+    stop: overlaid(defaults.stop, written.stop),
+    state: overlaid(defaults.state, written.state),
+    log: overlaid(defaults.log, written.log),
   };
 }
 

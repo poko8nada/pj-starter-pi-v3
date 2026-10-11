@@ -37,13 +37,13 @@ describe('parseSettings', () => {
 
   it('打ち間違いのキー → 投げる', () => {
     const defaults = defaultSettings();
-    expect(() => parseSettings('{"route":{"enabledd":false}}', defaults)).toThrow(/unknown key/);
+    expect(() => parseSettings('{"route":{"enabledd":false}}', defaults)).toThrow(/route.enabledd/);
   });
 
   it('routeConfidence が 0〜1 の外 → 投げる', () => {
     const defaults = defaultSettings();
     expect(() => parseSettings('{"thresholds":{"routeConfidence":1.5}}', defaults)).toThrow(
-      /between 0 and 1/,
+      /thresholds.routeConfidence.*must be <= 1/,
     );
   });
 
@@ -52,13 +52,15 @@ describe('parseSettings', () => {
     expect(
       parseSettings('{"thresholds":{"routeConfidence":1}}', defaults).thresholds.routeConfidence,
     ).toBe(1);
-    expect(() => parseSettings('{"budget":{"maxStateChars":0}}', defaults)).toThrow(/positive/);
+    expect(() => parseSettings('{"budget":{"maxStateChars":0}}', defaults)).toThrow(
+      /budget.maxStateChars.*must be >= 1/,
+    );
   });
 
   it('judgeScore は 0〜2（2.5 は投げ、0 は通る）', () => {
     const defaults = defaultSettings();
     expect(() => parseSettings('{"thresholds":{"judgeScore":2.5}}', defaults)).toThrow(
-      /between 0 and 2/,
+      /thresholds.judgeScore.*must be <= 2/,
     );
     expect(parseSettings('{"thresholds":{"judgeScore":0}}', defaults).thresholds.judgeScore).toBe(
       0,
@@ -68,7 +70,7 @@ describe('parseSettings', () => {
   it('judgeConfidence が 0〜1 の外 → 投げる', () => {
     const defaults = defaultSettings();
     expect(() => parseSettings('{"thresholds":{"judgeConfidence":1.2}}', defaults)).toThrow(
-      /between 0 and 1/,
+      /thresholds.judgeConfidence.*must be <= 1/,
     );
   });
 
