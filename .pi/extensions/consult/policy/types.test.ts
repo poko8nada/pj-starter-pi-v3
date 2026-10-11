@@ -59,7 +59,9 @@ describe('parseTypes', () => {
 
   it('`tools` が空 → 投げる', () => {
     // 空だと「指定なし」として親のツールが通ってしまう。
-    expect(() => parseTypes(config(aType({ tools: [] })))).toThrow(/must not be empty/);
+    expect(() => parseTypes(config(aType({ tools: [] })))).toThrow(
+      /fewer than 1 items|must not be empty/,
+    );
   });
 
   it('ホストの編集道具（quick_edit / target_edit）も名前として通る', () => {
@@ -84,8 +86,12 @@ describe('parseTypes', () => {
   });
 
   it('`turns` / `output` が 0 以下 → 投げる', () => {
-    expect(() => parseTypes(config(aType({ limits: { turns: 0, output: 100 } })))).toThrow(/turns/);
-    expect(() => parseTypes(config(aType({ limits: { turns: 1, output: -1 } })))).toThrow(/output/);
+    expect(() => parseTypes(config(aType({ limits: { turns: 0, output: 100 } })))).toThrow(
+      /limits.turns.*greater than 0|turns/,
+    );
+    expect(() => parseTypes(config(aType({ limits: { turns: 1, output: -1 } })))).toThrow(
+      /limits.output.*greater than 0|output/,
+    );
   });
 });
 
