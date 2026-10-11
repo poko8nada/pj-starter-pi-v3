@@ -6,7 +6,6 @@
  * （`parseRun` が空の session を弾くため、既定の `''` は使わない）。
  */
 
-import { spawn } from 'node:child_process';
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -63,15 +62,6 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = placeFor(tmpDir(), tmpDir());
   return { runtime: createRuntime(pi, place, run, undefined, () => SESSION), place };
-}
-
-/** 背景の then / catch / finally を、偽のタイマーの下でも流す */
-async function settle(): Promise<void> {
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
 }
 
 type RunParams = Parameters<ConsultRuntime['run']>[1];
@@ -437,7 +427,10 @@ describe('controlChild: cancel', () => {
 });
 
 describe('音', () => {
-  it('子を 2 体走らせてもタイマーは 1 本 → 5 秒ごとに 1 音', async () => {
+  // 音そのもの（タイマー 1 本・述語で止まる・enabled）は `sound.test.ts` が見る。
+  // ここでは runtime 側の組み立てだけを見る: 子が走り出したら音が始まる、と、述語がこの session の子だけを見ること。
+
+  it('子を 1 体起こす → 音が始まる（述語はこの session の走行中だけを真にする）', async () => {
     vi.useFakeTimers();
     try {
       const { pi } = fakePi();
@@ -445,56 +438,12 @@ describe('音', () => {
       const { runtime, place } = setup(pi, run);
       seedRunning(place);
       await startChild(runtime, { role: 'research', task: 'a' });
-      await startChild(runtime, { role: 'review', task: 'b' });
 
       expect(isSoundRunning()).toBe(true);
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
       expect(beeps).toHaveLength(1);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(2);
     } finally {
       vi.useRealTimers();
-    }
-  });
-
-  it('走っている子が居なくなると、次の tick で止まる（述語で止まる）', async () => {
-    const proc = spawn(process.execPath, ['--eval', 'setInterval(() => {}, 1000)'], {
-      stdio: 'ignore',
-    });
-    proc.unref();
-    const pid = proc.pid ?? 0;
-    expect(pid).toBeGreaterThan(0);
-    vi.useFakeTimers();
-    try {
-      const { pi } = fakePi();
-      const { run, resolvers } = deferredRunner();
-      const { runtime, place } = setup(pi, run);
-      seedRunning(place, { pid });
-      await startChild(runtime, { role: 'review', task: 'a' });
-      expect(isSoundRunning()).toBe(true);
-
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(1);
-
-      for (const resolve of resolvers) {
-        resolve({ text: 'done', details: {} });
-      }
-      await settle();
-      expect(runtime.children.size).toBe(0);
-
-      // 終わりの行が無く pid も死ぬ → 述語は false。次の tick で鳴らず、タイマーが消える
-      proc.kill();
-      await new Promise<void>((resolve) => {
-        proc.on('exit', () => {
-          resolve();
-        });
-      });
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(1);
-      expect(isSoundRunning()).toBe(false);
-    } finally {
-      vi.useRealTimers();
-      proc.kill();
     }
   });
 
@@ -511,35 +460,6 @@ describe('音', () => {
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
       expect(beeps).toHaveLength(0);
       expect(isSoundRunning()).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('setSoundEnabled(false) → 子が走っていても鳴らない', async () => {
-    vi.useFakeTimers();
-    try {
-      setSoundEnabled(false);
-      const { pi } = fakePi();
-      const { run } = deferredRunner();
-      const { runtime, place } = setup(pi, run);
-      seedRunning(place);
-      await startChild(runtime, { role: 'review', task: 'a' });
-
-      expect(isSoundRunning()).toBe(true);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 3);
-      expect(beeps).toHaveLength(0);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('子が 0 体のまま 5 秒経つ → 鳴らない', async () => {
-    vi.useFakeTimers();
-    try {
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS * 3);
-      expect(isSoundRunning()).toBe(false);
-      expect(beeps).toHaveLength(0);
     } finally {
       vi.useRealTimers();
     }

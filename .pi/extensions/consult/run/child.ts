@@ -118,7 +118,7 @@ export async function runOneChild(
         policy: { ...options.policy, models: model === undefined ? [] : [model] },
         ...(sessionPath === undefined ? {} : { sessionPath }),
       }),
-      stdin: joinPrompt(undefined, task),
+      stdin: joinPrompt(task),
       cwd: prepared.cwd,
       signal,
       env: { ...gitEnv(), ...childEnv(options.policy) },

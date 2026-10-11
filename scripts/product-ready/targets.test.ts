@@ -49,34 +49,20 @@ describe('findTests', () => {
     expect(found).not.toContain(join(root, 'src', 'keep.test.ts'));
   });
 
-  it('名指しの外（node_modules/・.git/）は返らない', () => {
+  it('node_modules と .git は、名指しの外でも内側でも返らない', () => {
     const root = tmpDir();
     const base = writeBase(root);
     writeFile(join(root, 'node_modules', 'a.test.ts'));
     writeFile(join(root, '.git', 'b.test.ts'));
+    writeFile(join(root, '.pi', 'node_modules', 'c.test.ts'));
+    writeFile(join(root, '.pi', '.git', 'd.test.ts'));
     const found = findTests(root);
+    // walk は内外を区別しないので、4 つの trap すべてが同じ skip にかかる
     expect(found).toHaveLength(4);
     expect(found).toContain(base.piX);
-    expect(found).not.toContain(join(root, 'node_modules', 'a.test.ts'));
-    expect(found).not.toContain(join(root, '.git', 'b.test.ts'));
-  });
-
-  it('名指しの内側の node_modules/ は返らない', () => {
-    const root = tmpDir();
-    writeBase(root);
-    writeFile(join(root, '.pi', 'node_modules', 'a.test.ts'));
-    const found = findTests(root);
-    expect(found).toHaveLength(4);
-    expect(found).not.toContain(join(root, '.pi', 'node_modules', 'a.test.ts'));
-  });
-
-  it('名指しの内側の .git/ は返らない', () => {
-    const root = tmpDir();
-    writeBase(root);
-    writeFile(join(root, '.pi', '.git', 'a.test.ts'));
-    const found = findTests(root);
-    expect(found).toHaveLength(4);
-    expect(found).not.toContain(join(root, '.pi', '.git', 'a.test.ts'));
+    expect(found.map((path) => path.replace(`${root}/`, ''))).not.toContainEqual(
+      expect.stringMatching(/node_modules|\.git/),
+    );
   });
 
   it('無い対象は飛ばす（test/env.test.ts だけ無い木 → 残りを返す）', () => {

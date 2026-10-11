@@ -14,13 +14,12 @@ describe('テストの環境', () => {
     expect(process.env.HOME ?? '').toContain('pi-test-home-');
   });
 
-  it('git を打つ道具は、渡された GIT_* を落とす', () => {
-    const cleaned = gitEnv({ GIT_DIR: '/x', GIT_INDEX_FILE: '/y', PATH: '/bin' });
-    expect(Object.keys(cleaned).filter((key) => key.startsWith('GIT_'))).toEqual([]);
-    expect(Object.entries(cleaned)).toContainEqual(['PATH', '/bin']);
-  });
+  it('git を打つ道具は、渡された GIT_* も process.env の GIT_* も落とす', () => {
+    const passed = gitEnv({ GIT_DIR: '/x', GIT_INDEX_FILE: '/y', PATH: '/bin' });
+    expect(Object.keys(passed).filter((key) => key.startsWith('GIT_'))).toEqual([]);
+    expect(Object.entries(passed)).toContainEqual(['PATH', '/bin']);
 
-  it('引数なしでは process.env から GIT_* を落とす', () => {
+    // 引数なしなら process.env から落とす（同じ for を通る）
     const key = 'GIT_SLICE1_PROBE';
     const before = process.env[key];
     process.env[key] = '/probe';

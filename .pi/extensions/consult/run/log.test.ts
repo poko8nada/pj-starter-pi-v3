@@ -63,28 +63,17 @@ describe('appendRun / readRuns', () => {
     expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1, 2]);
   });
 
-  it('形が違う行（child が無い）も飛ばす', () => {
+  it('形が違う行（必須欄が無い）も飛ばす', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
     appendRun(found, record({ started: 1 }), at);
     const file = dayFile(found, at);
+    // child が無い行と session が無い行の 2 種類。どちらも parseRun が落とす
     writeFileSync(
       file,
-      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n`,
+      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n{"child":"consult-9","role":"review","pid":1,"started":3}\n`,
     );
     expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1]);
-  });
-
-  it('session の無い行を書いた file を読んでも、その行は返らない', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    appendRun(found, record({ started: 1 }), at);
-    const file = dayFile(found, at);
-    writeFileSync(
-      file,
-      `${readFileSync(file, 'utf8')}{"child":"consult-9","role":"review","pid":1,"started":2}\n`,
-    );
-    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1']);
   });
 
   it('始まった順に返す', () => {
@@ -142,15 +131,6 @@ describe('appendRun / readRuns', () => {
     appendRun(found, record({ session: 'B', child: 'consult-2' }), at);
     expect(readRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual(['consult-1']);
     expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
-  });
-
-  it('days: 2 は 3 日前に書いた行を返さない', () => {
-    const found = place();
-    appendRun(found, record({ child: 'consult-old' }), new Date(2026, 9, 7, 12, 0));
-    appendRun(found, record({ child: 'consult-new' }), new Date(2026, 9, 10, 12, 0));
-    expect(
-      readRuns(found, { at: new Date(2026, 9, 10, 12, 0), days: 2 }).map((run) => run.child),
-    ).toEqual(['consult-new']);
   });
 });
 

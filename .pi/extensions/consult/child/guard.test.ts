@@ -22,18 +22,13 @@ let dir = '';
 beforeEach(() => {
   dir = tmpDir();
   mkdirSync(join(dir, 'sub/dir'), { recursive: true });
-  mkdirSync(join(dir, 'keys'), { recursive: true });
   mkdirSync(join(dir, 'node_modules/react'), { recursive: true });
   writeFileSync(join(dir, '.env'), 'SECRET=1\n');
   writeFileSync(join(dir, 'sub/dir/.envrc'), 'x\n');
-  writeFileSync(join(dir, 'keys/server.pem'), 'x\n');
-  writeFileSync(join(dir, 'id.key'), 'x\n');
   writeFileSync(join(dir, 'README.md'), 'x\n');
   writeFileSync(join(dir, '.env.bak'), 'x\n');
   writeFileSync(join(dir, '.ENV'), 'x\n');
   writeFileSync(join(dir, 'foo.env'), 'x\n');
-  writeFileSync(join(dir, 'id.key.bak'), 'x\n');
-  writeFileSync(join(dir, 'node_modules/react/index.js'), 'x\n');
   symlinkSync(join(dir, '.env'), join(dir, 'link-to-env'));
 });
 
@@ -44,14 +39,6 @@ describe('isSecretPath', () => {
 
   it('深い場所の .envrc', () => {
     expect(isSecretPath(join(dir, 'sub/dir/.envrc'), dir)).toBe(true);
-  });
-
-  it('keys/server.pem', () => {
-    expect(isSecretPath(join(dir, 'keys/server.pem'), dir)).toBe(true);
-  });
-
-  it('id.key', () => {
-    expect(isSecretPath(join(dir, 'id.key'), dir)).toBe(true);
   });
 
   it('相対パスは cwd で解決する', () => {

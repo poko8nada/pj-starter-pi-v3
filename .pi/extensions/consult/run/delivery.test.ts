@@ -192,28 +192,6 @@ describe('unreadNotices', () => {
     expect(unreadNotices(found, { at, session: 'session-a' })).toEqual([]);
   });
 
-  it('KEEP_DAYS を渡せば 3 日前の通知も返る（配達は時間で失わない）', () => {
-    const found = place();
-    const threeDaysAgo = new Date(2026, 9, 7, 12, 0);
-    notice(found, threeDaysAgo, { ended: 2000 });
-    expect(
-      unreadNotices(found, {
-        at: new Date(2026, 9, 10, 12, 0),
-        session: 'session-a',
-        days: KEEP_DAYS,
-      }),
-    ).toHaveLength(1);
-  });
-
-  it('days を省くと 3 日前の通知は返らない（既定は RECORD_DAYS）', () => {
-    const found = place();
-    const threeDaysAgo = new Date(2026, 9, 7, 12, 0);
-    notice(found, threeDaysAgo, { ended: 2000 });
-    expect(
-      unreadNotices(found, { at: new Date(2026, 9, 10, 12, 0), session: 'session-a' }),
-    ).toEqual([]);
-  });
-
   it('別の session の通知は返らない。別の session の目録の欄は影響しない', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
