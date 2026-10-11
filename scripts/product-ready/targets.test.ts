@@ -14,28 +14,32 @@ function writeBase(root: string): {
   readonly piY: string;
   readonly readyZ: string;
   readonly env: string;
+  readonly stagedCheck: string;
 } {
   const piX = join(root, '.pi', 'x.test.ts');
   const piY = join(root, '.pi', 'dir', 'y.test.ts');
   const readyZ = join(root, 'scripts', 'product-ready', 'z.test.ts');
   const env = join(root, 'test', 'env.test.ts');
+  const stagedCheck = join(root, 'scripts', 'typecheck-staged.test.ts');
   writeFile(piX);
   writeFile(piY);
   writeFile(readyZ);
   writeFile(env);
-  return { piX, piY, readyZ, env };
+  writeFile(stagedCheck);
+  return { piX, piY, readyZ, env, stagedCheck };
 }
 
 describe('findTests', () => {
-  it('名指しの3つ（.pi/・scripts/product-ready/・test/env.test.ts）を返す', () => {
+  it('名指しの4つ（.pi/・scripts/product-ready/・test/env.test.ts・scripts/typecheck-staged.test.ts）を返す', () => {
     const root = tmpDir();
     const base = writeBase(root);
     const found = findTests(root);
-    expect(found).toHaveLength(4);
+    expect(found).toHaveLength(5);
     expect(found).toContain(base.piX);
     expect(found).toContain(base.piY);
     expect(found).toContain(base.readyZ);
     expect(found).toContain(base.env);
+    expect(found).toContain(base.stagedCheck);
   });
 
   it('名指しの外（test/keep.test.ts・src/keep.test.ts）は食わない', () => {
@@ -44,7 +48,7 @@ describe('findTests', () => {
     writeFile(join(root, 'test', 'keep.test.ts'));
     writeFile(join(root, 'src', 'keep.test.ts'));
     const found = findTests(root);
-    expect(found).toHaveLength(4);
+    expect(found).toHaveLength(5);
     expect(found).not.toContain(join(root, 'test', 'keep.test.ts'));
     expect(found).not.toContain(join(root, 'src', 'keep.test.ts'));
   });
@@ -58,7 +62,7 @@ describe('findTests', () => {
     writeFile(join(root, '.pi', '.git', 'd.test.ts'));
     const found = findTests(root);
     // walk は内外を区別しないので、4 つの trap すべてが同じ skip にかかる
-    expect(found).toHaveLength(4);
+    expect(found).toHaveLength(5);
     expect(found).toContain(base.piX);
     expect(found.map((path) => path.replace(`${root}/`, ''))).not.toContainEqual(
       expect.stringMatching(/node_modules|\.git/),
@@ -74,19 +78,19 @@ describe('findTests', () => {
     writeFile(piY);
     writeFile(readyZ);
     const found = findTests(root);
+    // env と typecheck-staged.test.ts が無いので、作った 3 本だけ返す
     expect(found).toHaveLength(3);
     expect(found).toContain(piX);
     expect(found).toContain(piY);
     expect(found).toContain(readyZ);
   });
-
   it('vitest の既定 include（.spec.ts）も拾う', () => {
     const root = tmpDir();
     const base = writeBase(root);
     const spec = join(root, 'scripts', 'product-ready', 'z.spec.ts');
     writeFile(spec);
     const found = findTests(root);
-    expect(found).toHaveLength(5);
+    expect(found).toHaveLength(6);
     expect(found).toContain(base.piX);
     expect(found).toContain(base.readyZ);
     expect(found).toContain(base.env);

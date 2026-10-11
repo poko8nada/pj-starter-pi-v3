@@ -2,7 +2,12 @@ import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join } from 'node:path';
 
 /** 消すテストの対象（root からの相対）。ディレクトリか、テストのファイルそのもの */
-export const TEST_TARGETS = ['.pi', 'scripts/product-ready', 'test/env.test.ts'];
+export const TEST_TARGETS = [
+  '.pi',
+  'scripts/product-ready',
+  'test/env.test.ts',
+  'scripts/typecheck-staged.test.ts',
+];
 
 // テストのファイルか（vitest の既定 include に合わせる）。
 // 既定は `**/*.{test,spec}.?(c|m)[jt]s?(x)`。ここがずれると（ゆるめる／狭める）、
