@@ -1,88 +1,44 @@
 /**
- * scaffold — 新 cycle のフォルダと definition 草案を素起こしする。
- *
- * - 前 cycle がある時: 前回 definition の marker を外して複写する
- * - 初回 cycle の時: `references/format.md` の形の template 文字列を出す
+ * scaffold — 新 cycle のフォルダと `adr.md` の骨を出す。
  *
  *   node scaffold.mjs [--root <dir>] [<nnn>]
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gitEnv } from '../../../../lib/git-env.mjs';
 
-/** 行末の marker。` **add** (ADR 01-1)` の形 */
-const MARKER = /\s+\*\*(add|update|drop)\*\*(\s*\(.*\))?\s*$/;
-
 /**
- * 初回 cycle の template。`references/format.md` の形と合わせること。
- * @type {string}
- */
-export const TEMPLATE_001 = `# Definition <NNN>
-
-## Product
-
-<プロダクト名>
-
-### What
-
-<何であるか。何をするか>
-
-### Who
-
-- <id>: <誰か>
-  - Does: <その人が何をするか>
-  - Needs: <その人が何を必要としているか>
-
-### Users can do
-
-- <unit-id>: <Who が、xxx する>
-  - .<feature>: <説明>
-
-## Stack
-
-- Ground:
-  - Language: TypeScript
-  - Runtime: Node
-  - Package manager: pnpm
-  - Deploy:
-- Checks:
-  - Typechecker: tsc
-  - Test runner: vitest
-  - Linter: oxlint
-  - Formatter: oxfmt
-  - Git hooks: lefthook
-- Agent:
-  - Host: \`@earendil-works/pi-coding-agent\`
-  - Schema: typebox
-- Product:
-`;
-
-/**
- * @param {string} text
- * @returns {string}
- */
-export function stripMarkers(text) {
-  return text
-    .split('\n')
-    .map((line) => line.replace(MARKER, ''))
-    .join('\n');
-}
-
-/**
- * 先頭に `# Definition <nnn>` を置く。`^# Definition \S+\r?$` に合う最初の 1 行だけ落とす。改行は正規化しない。
- * @param {string} body
+ * `adr.md` の骨。`references/format.md` の形と合わせること。
  * @param {number} nnn
  * @returns {string}
  */
-export function withHeading(body, nnn) {
-  const heading = `# Definition ${String(nnn).padStart(3, '0')}`;
-  const lines = body.split('\n');
-  const idx = lines.findIndex((line) => /^# Definition \S+\r?$/.test(line));
-  if (idx !== -1) lines.splice(idx, 1);
-  lines.unshift(heading);
-  return lines.join('\n');
+export function adrSkeleton(nnn) {
+  return `# ADR ${String(nnn).padStart(3, '0')}
+
+## 01: <問い>
+
+### Context
+
+- <何が起きていて、何をしたいか>
+
+### Decision
+
+- Status: **accepted** | **rejected**（理由）
+- Adopted:
+- Options:
+  - <案>（採らなかった理由）
+
+### Research & Trial
+
+- <測った事実、試した事>
+
+### Definition Change
+
+- \`Unit.<name>\`(updated): <新しい行>
+- なし
+`;
 }
 
 /**
@@ -157,44 +113,6 @@ export function cycleDirName(nnn, yymmdd, slug) {
 }
 
 /**
- * 両根の dir を NNN 降順に `definition.md` を探す。無ければ null。存在しない根は空として扱う。
- * @param {string} cyclesDir
- * @param {string} archiveDir
- * @returns {string | null}
- */
-export function findPrevDefinition(cyclesDir, archiveDir) {
-  const candidates = [];
-  const roots = [
-    { dir: cyclesDir, priority: 0 },
-    { dir: archiveDir, priority: 1 },
-  ];
-  for (const { dir, priority } of roots) {
-    let entries;
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch (err) {
-      if (err && err.code === 'ENOENT') continue;
-      throw err;
-    }
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const n = extractNNN(entry.name);
-      if (n === null) continue;
-      candidates.push({ nnn: n, dir, name: entry.name, priority });
-    }
-  }
-  candidates.sort(
-    (a, b) =>
-      b.nnn - a.nnn || a.priority - b.priority || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
-  );
-  for (const { dir, name } of candidates) {
-    const file = join(dir, name, 'definition.md');
-    if (existsSync(file)) return file;
-  }
-  return null;
-}
-
-/**
  * 親の下に葉だけを非 recursive で作り、path を返す。存在すれば EEXIST で投げる。
  * @param {string} parentDir
  * @param {string} name
@@ -234,6 +152,29 @@ export function parseArgs(argv) {
   return { root, nnn };
 }
 
+/**
+ * `cycles/` と `cycles/archive/` の下の dir 名を集める。番号でない物（`archive`）も入る。無い根は空として扱う。
+ * @param {string} cyclesDir
+ * @param {string} archiveDir
+ * @returns {readonly string[]}
+ */
+export function dirNames(cyclesDir, archiveDir) {
+  const names = [];
+  for (const dir of [cyclesDir, archiveDir]) {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+      if (err && err.code === 'ENOENT') continue;
+      throw err;
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) names.push(entry.name);
+    }
+  }
+  return names;
+}
+
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const { root, nnn: argNNN } = parseArgs(process.argv.slice(2));
@@ -250,20 +191,8 @@ if (isMain) {
   } catch {
     branch = '';
   }
-  const yymmdd = toYYMMDD(new Date());
-  const names = [];
-  for (const dir of [cyclesDir, archiveDir]) {
-    try {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        if (entry.isDirectory()) names.push(entry.name);
-      }
-    } catch (err) {
-      if (!err || err.code !== 'ENOENT') throw err;
-    }
-  }
-  const nnn = argNNN ?? nextNNN(names);
-  const slug = slugBranch(branch);
-  const dirName = cycleDirName(nnn, yymmdd, slug);
+  const nnn = argNNN ?? nextNNN(dirNames(cyclesDir, archiveDir));
+  const dirName = cycleDirName(nnn, toYYMMDD(new Date()), slugBranch(branch));
   mkdirSync(cyclesDir, { recursive: true });
   let leaf;
   try {
@@ -275,18 +204,6 @@ if (isMain) {
     }
     throw err;
   }
-  let raw;
-  let used;
-  const prev = findPrevDefinition(cyclesDir, archiveDir);
-  if (prev !== null) {
-    raw = stripMarkers(readFileSync(prev, 'utf8'));
-    used = prev;
-  } else {
-    raw = TEMPLATE_001;
-    used = 'template';
-  }
-  const draft = withHeading(raw, nnn);
-  writeFileSync(join(leaf, 'definition.md'), draft);
+  writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn));
   console.log(`created: ${leaf}`);
-  console.log(`src: ${used}`);
 }
