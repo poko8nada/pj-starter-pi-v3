@@ -48,13 +48,13 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 ## Definition Change
 
 - A line is `<name>(<operation>): <the new line>`.
-- The name is how `DEFINITION.md` calls the part.
-  - `Unit.<name>` — a part under `Users can do`
+- The name is how `DEFINITION.md` calls it.
+  - `Unit.<name>` — a line under `Users can do`
   - `Who.<name>` — a role
   - `Stack.<group>` / `Stack.<group>.<role>`
   - `Product` / `What`
 - The operation is `(added)`, `(updated)` or `(dropped)`.
-- The value is the new line of `DEFINITION.md`. When the line does not change, the value is not written: the part moved, and the line stands.
+- The value is the new line of `DEFINITION.md`. When the line does not change, the value is not written: the name moved, and the line stands.
 - `なし` when no line moves.
 
 ## Writing

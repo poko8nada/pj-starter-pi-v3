@@ -1,27 +1,27 @@
 # The definition's rules
 
-What may be a part of `DEFINITION.md`, and how a part is named and written.
+What may be a Unit of `DEFINITION.md`, and how the Units, the `Who` and the `Stack` are named and written.
 
-This file is read when a part is added, moved or dropped: the ADR decides the change, and the definition is written from it. The shape of the file is in `definition/format.md`.
+This file is read when a line is added, moved or dropped: the ADR decides the change, and the definition is written from it. The shape of the file is in `definition/format.md`.
 
-## What may be a part
+## What may be a Unit
 
-A part is one thing of the product that the `Who` names and uses. The tests, in order:
+A Unit is one thing of the product that the `Who` names and uses. The tests, in order:
 
-1. **A name** — the `Who` calls the thing by one noun. A capability, a state or an internal mechanism has no noun of its own: it is not a part.
-2. **Reach** — the `Who` can reach it and do one thing with it. Another part's capability is not a precondition. Data or content is fine as a precondition.
-3. **Result** — using it changes something the `Who` can see, and the `Who` can stop there. If the work has to continue, the rest is inside the same part.
-4. **One loss** — taking it away removes exactly one thing the `Who` could do. Two losses: it is two parts. No loss: it is not a part.
-5. **The noun decides the split** — one noun is one part; a new noun is another part. More verbs on the same noun stay inside.
-6. **Not internal work** — aligning, refactoring, syncing are not parts. When they happen, the part they touch moves.
+1. **A name** — the `Who` calls the thing by one noun. A capability, a state or an internal mechanism has no noun of its own: it is not a Unit.
+2. **Reach** — the `Who` can reach it and do one thing with it. Another Unit's capability is not a precondition. Data or content is fine as a precondition.
+3. **Result** — using it changes something the `Who` can see, and the `Who` can stop there. If the work has to continue, the rest is inside the same Unit.
+4. **One loss** — taking it away removes exactly one thing the `Who` could do. Two losses: it is two Units. No loss: it is not a Unit.
+5. **The noun decides the split** — one noun is one Unit; a new noun is another Unit. More verbs on the same noun stay inside.
+6. **Not internal work** — aligning, refactoring, syncing are not Units. When they happen, the Unit they touch moves.
 
-A part may span many directories. A directory is not a part.
+A Unit may span many directories. A directory is not a Unit.
 
-The kinds below are how the parts of this product happen to appear. They are examples, not a rule: an extension, a skill, a gate, a document, a command.
+The kinds below are how the Units of this product happen to appear. They are examples, not a rule: an extension, a skill, a gate, a document, a command.
 
-## Each part
+## Each field
 
-- A part's line — written from the `Who`'s side: `<Who> が、xxx する`. The name is the thing's name; the description is not.
+- A Unit's line — written from the `Who`'s side: `<Who> が、xxx する`. The name is the thing's name; the description is not.
 - `Who` — a role that acts in the product.
 - `Stack` — what the product stands on, by group and role.
   - `Ground` is decided first, and it bounds the rest.
@@ -33,17 +33,17 @@ The kinds below are how the parts of this product happen to appear. They are exa
 - The argument, the options, the research, the trials, the dropped plans: the ADR's.
 - What is not decided yet. The definition holds what is decided.
 - The cycle's work: the plan and git hold it.
-- The definition itself. `DEFINITION.md` is the picture, not a part of it.
+- The definition itself. `DEFINITION.md` is the picture, not a Unit of it.
 
 ## Naming
 
 - The name is the `Who`'s word for the thing.
-- The name says what the part is. The feature layer is gone, so the name is the only place that says it.
+- The name says what the Unit is. The feature layer is gone, so the name is the only place that says it.
 - The name is two or more words joined with hyphens. Two shapes:
   - a thing and its kind: `lefthook-gate`, `adr-skill`, `agent-rules`
   - an object and its work: `sound-notify`, `intent-router`
 - A bare word is not written: `lint`, `test`, `consult`, `readme`.
-- The tool's name belongs to the `Stack`: `oxlint` is written there, and the part is named for what the `Who` uses.
+- The tool's name belongs to the `Stack`: `oxlint` is written there, and the Unit is named for what the `Who` uses.
 - The lists below are the spelling. They are not a gate: a name that is not in them is decided in the ADR entry, and written in `DEFINITION.md`. The list gains the name later, outside a cycle.
 - `Who`:
   - people: owner / administrator / operator / moderator / staff / member / user / customer / subscriber / guest / visitor / author / editor / reader / viewer / buyer / seller / player / student / teacher

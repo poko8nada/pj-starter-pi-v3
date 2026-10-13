@@ -1,34 +1,26 @@
 ---
 name: design
-description: Use when the definition and the cycle's ADR are settled and the work has to be cut — after the units that move are written and their entries are decided. It decides how many worktrees the cycle runs, in what order, and where each plan stops, and writes `cycles/<YYMMDD-NNN-<branch>>/design.md`.
+description: Use when the cycle's entries are decided and the work has to be cut. It decides how many worktrees the cycle runs, in what order, and where each plan stops, and writes `cycles/<YYMMDD>-<NNN>-<slug>/design.md`.
 ---
 
 # design
 
-One cycle has one design: `cycles/<YYMMDD-NNN-<branch>>/design.md`. It cuts the cycle's decided changes into plans, and says where each plan stops.
+One cycle has one design: `cycles/<YYMMDD>-<NNN>-<slug>/design.md`. It cuts the cycle's decided changes into plans, and says where each plan stops.
 
 A plan is a worktree, a branch and a merge — the unit the work runs in. The plan md and the steps inside it are written from here, and the work is carried out there.
 
-**The discussion does not happen here.** A fork the cut cannot resolve — an accepted entry that cannot be cut as accepted — belongs to the cycle's ADR (the `adr` skill). What is decided there comes back and is written here.
-
 ## The file
 
-`cycles/<YYMMDD-NNN-<branch>>/design.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD>-<NNN>-<slug>/design.md`, in the shape `references/format.md` gives.
 
 Read that file before writing. It holds the section per plan, the rules for the cut, and the `Boundary`'s two groups.
-
-## What goes to adr
-
-- **an accepted entry cannot be cut as accepted** — its premise fails, or two entries contradict. The entry is reopened, and the owner answers.
-
-The cut keeps its own business: the plans, their order, how many run at once, where each one runs, and the steps inside a plan.
 
 ## Procedure
 
 ### 1. Read what is behind the cycle
 
-- the definition's `Users can do`: the units and the features that moved
-- this cycle's `adr.md`: every `accepted` entry names what to change
+- `DEFINITION.md`: the product's picture
+- this cycle's `adr.md`: every `accepted` entry names, in its `Definition Change`, the lines it moves
 
 ### 2. Cut the cycle's changes into plans
 
@@ -36,12 +28,13 @@ The rules are in `references/format.md`. One plan is one worktree: the unit of a
 
 ### 3. Name each plan
 
-The plan id is the name of the change (`worktree-cleanup`), not the unit's id. A plan may span units.
+The plan id is the name of the change (`worktree-cleanup`), not the Unit's name. A plan may span Units.
 
 ### 4. Write each plan's section
 
-- the head sentence: why this plan — the input it shares, the condition that applies, and what it waits for
-- `ADR`, `Scope` (what it changes), `Boundary` (the interface with other plans, and the outside)
+- `ADR & Where` — `No` (the entries this plan cuts), `Why` (one sentence), `Where`
+- `Scope` — the names of the definition it changes
+- `Boundary` — the edge: `Plans` and `External`
 
 ### 5. Propose where each plan runs, and ask the owner
 
@@ -74,6 +67,6 @@ A plan found while the plans are written comes back here: the top of this file g
 
 ## How not to write this
 
-- Do not cut by unit: the cut follows the change and the merge, not the folder a thing lives in
-- Do not split for the sake of parallelism: two parts that read the same input stay in one worktree
+- Do not cut by Unit: the cut follows the change and the merge, not the folder a thing lives in
+- Do not split for the sake of parallelism: two halves that read the same input stay in one worktree
 - Do not write the plan: this file says the cut, not the work

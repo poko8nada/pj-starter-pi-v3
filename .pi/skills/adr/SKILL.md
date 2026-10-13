@@ -12,8 +12,8 @@ The ADR decides, and the picture is written from what it decided. The design, th
 ## The files
 
 - `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
-- `DEFINITION.md` — the product's picture. The entry names the parts of it that move, and the picture is written from them.
-- `definition/rules.md` — what may be a part, and how a part is named and written. Read it before deciding an entry's change.
+- `DEFINITION.md` — the product's picture. The entry names the lines of it that move, and the picture is written from them.
+- `definition/rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `definition/format.md` — the shape of the picture.
 
 ## The cycle
@@ -57,11 +57,11 @@ A `Stack` change is worth a trial.
 
 ### 4. The definition change
 
-For the option on the table, look at `DEFINITION.md` as a whole, and decide every line it would move: the part's name, the operation, and the new line.
+For the option on the table, look at `DEFINITION.md` as a whole, and decide every line it would move: the name, the operation, and the new line.
 
 - a line that changes carries its new content
-- a part that moves with its line standing carries the name and the operation, and no value
-- a part that `definition/rules.md` does not allow is not a part
+- a Unit that moves with its line standing carries the name and the operation, and no value
+- a Unit that `definition/rules.md` does not allow is not a Unit
 - this is what the owner weighs at the decision: the option, and what it does to the picture
 
 ### 5. The decision
@@ -75,9 +75,9 @@ Then write `DEFINITION.md` from the `Definition Change`. This is the only path t
 
 ## The entries, together
 
-When every entry is decided, read them together: the parts they name, and the lines they move.
+When every entry is decided, read them together: the names they write, and the lines they move.
 
-Two entries that touch the same part must not contradict, and a contradiction is settled here with the owner.
+Two entries that touch the same name must not contradict, and a contradiction is settled here with the owner.
 
 ## What comes after an entry
 

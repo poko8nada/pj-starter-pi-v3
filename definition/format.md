@@ -39,13 +39,13 @@ Section and field names are English; the content is Japanese.
 - `Product` — the product's name.
 - `What` — what the product is, in one sentence.
 - `Who` — the roles that act in the product. Each carries `Does` and `Needs`.
-- `Users can do` — one line per part: what the `Who` can do with it. The name is the thing's name.
+- `Users can do` — one line per Unit: what the `Who` can do with it. The name is the thing's name.
 - `Stack` — what the product stands on: a group, a role, and the thing that fills it.
 
-What may be a part, and how a part is named and written, is in `definition/rules.md`.
+What may be a Unit, and how a Unit is named and written, is in `definition/rules.md`.
 
 ## Writing
 
 - A section with nothing in it is left out.
-- One line is one part.
+- One line is one Unit.
 - Do not write what the reader can look up.
