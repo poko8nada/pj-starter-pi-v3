@@ -29,7 +29,7 @@ export function main(argv) {
     return 0;
   }
   try {
-    remove(args.root, entries);
+    remove(entries);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;

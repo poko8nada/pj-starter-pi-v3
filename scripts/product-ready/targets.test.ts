@@ -206,9 +206,9 @@ describe('remove', () => {
     writeFile(join(root, '.pi', 'a.test.ts'));
     const targets = plan(root);
     expect(targets).toHaveLength(1);
-    expect(remove(root, targets)).toHaveLength(1);
+    expect(remove(targets)).toHaveLength(1);
     expect(plan(root)).toEqual([]);
-    expect(remove(root, targets)).toEqual([]);
+    expect(remove(targets)).toEqual([]);
   });
 
   it('消した at を返し、cycles のフォルダも消す', () => {
@@ -216,7 +216,7 @@ describe('remove', () => {
     writeFile(join(root, '.pi', 'a.test.ts'));
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const targets = plan(root);
-    const removed = remove(root, targets);
+    const removed = remove(targets);
     expect(removed.toSorted()).toEqual(['.pi/a.test.ts', 'cycles/001-a']);
     expect(plan(root)).toEqual([]);
   });
