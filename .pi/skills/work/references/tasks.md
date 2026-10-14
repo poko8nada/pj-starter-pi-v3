@@ -26,13 +26,13 @@ Answer one question: can this diff close the plan? By four viewpoints:
 - Unproven: a test that stays green when the behavior it names is broken
 A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers with a `look` / `use` check.
 Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
-This is the only round of findings. A doubt or a note that is not a finding goes in the plan's ## Notes.
+This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`.
 Do not change the code.
 ```
 
 ```
 Fixes for Round 1 are in. Look only at the lines marked fixed:, and check each one is really fixed.
-This is the last look. Write your answer in ### Round 2, same viewpoints, and stop. A doubt that is not a finding goes in the plan's ## Notes.
+This is the last look. Write your answer in ### Round 2, same viewpoints, and stop. A doubt that is not a finding goes under `- Doubts:` in `### Round 2`.
 ```
 
 - Round 1 runs in a new conversation (`continue: false`); Round 2 continues the reviewer's own. A Round 1 that finds nothing ends the review.

@@ -1,77 +1,72 @@
 ---
 name: close
-description: Use when every plan of a cycle is done (merged in the base, or dropped by the owner). It writes the cycle's integration test, triages what the plans left, and closes the cycle.
+description: Use when every plan of a cycle is done (merged in the base, or dropped by the owner). It collects what the plans left, triages it with the owner, and closes the cycle.
 ---
 
 # close
 
-A cycle is one definition, and it is judged as one thing.
-Each plan carries its own acceptance, so the inside of a plan has an eye on it.
-What no plan looks at is the handoff between plans: the design's `Boundary.Plans`.
-This skill writes that test, triages what the plans left, and closes the cycle.
+Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at.
+What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
+This skill collects them, triages them with the owner, and closes the cycle.
 
-## The file
+## File
 
-`cycles/<YYMMDD-NNN-<branch>>/close.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD>-<NNN>-<slug>/close.md`, in the shape `references/format.md` gives.
 
 ## Procedure
 
 ### 1. Check the trigger
 
-- every plan is done: its `Commit:` is filled and its work is merged, or the owner dropped it (the record sits in the parent's plan md)
+- every plan is done: its `Commit:` is filled and its work is merged, or the owner dropped it (the record sits in the agent's plan md)
   - merged: every hash in the plan's `## Notes` `Commit:` is an ancestor of `HEAD` (`git merge-base --is-ancestor <commit> HEAD`); a `Commit:` of `なし` is skipped. The log holds the merge itself (`git log --merges --grep "consult/<plan id>"`)
 - a plan that is still open is the work skill's business, not this close's
 
 ### 2. Read the cycle
 
-- the definition: the `Users can do` lines the cycle promised
+- the ADR: the `accepted` entries, and what each `Definition Change` decides
 - the design: the cut, and the `Boundary.Plans`
-- each plan md: its `## Acceptance` (the checks that ran and what they found) and its `## Notes`
+- each plan md: its `## Acceptance` and its `## Notes`
 - do not read the criteria from memory: the files hold them
+- a change an entry decided that no plan's `Files` or `Scope` carries is a hole: it goes into `## Collected` by hand, in the same shape
 
-### 3. The integration test
+### 3. Collect
 
-- the target is what the design's `Boundary.Plans` names: the handoff between plans. `なし` everywhere means no test, and `## Integration` is `なし`
-- look first: a test that already covers the handoff is updated (`updated`); with none, write one where this project keeps its tests — beside the code it exercises (`new`)
-- the cases are the happy path and the most likely error path, and nothing more
-- it touches nothing real: it writes under a temporary directory, and its doubles live in `test/`
-- run it on the base. A `fail` is a hole: it goes to step 5
+- `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
+- the script lists the leftovers of every plan md with their plan and line; it does not judge
+- read the plan md and the diff for each line, and write its `Doing` / `Left` / `Cost`
+- fill every `未特定` from the design, and show the completed `## Collected` to the owner
 
-### 4. Collect
-
-- `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD-NNN-<branch>>` prints the `## Collected` body. Paste it as it is
-- the script lists the leftovers of every plan md; it does not judge
-- a plan's heading carries its link (`ADR`, `Scope`). Fill each `未特定` by reading the design and the definition, and show the completed `## Collected` to the owner: the part each leftover belongs to is theirs to confirm, before the triage
-
-### 5. Triage, with the owner
+### 4. Triage, with the owner
 
 - one destination per leftover, and the owner confirms. The shape is in `references/format.md`
-  - `ex-plan`: it breaks the criteria. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged
-  - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle's definition carries it
+  - `ex-plan`: it breaks the criteria, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged: its line carries `done <commit>`
+  - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes
   - `dropped`: rare, and the fix weighs more
-- a leftover that needs facts nobody has gets a `research` child; the rest do not
+- a leftover that moves a line of `DEFINITION.md` is not an `ex-` plan: it goes to `proposed`
+- a leftover that needs facts nobody has gets a `research` subagent; the rest do not
 
-### 6. Write close.md
+### 5. Write close.md
 
-- `## Integration`, `## Collected`, `## Triage`, in that order
-- after an `ex-` plan merged, run the script again, paste the new `## Collected`, and put `done` on the line it closed
+- `## Collected` and `## Triage`, in that order
+- after an `ex-` plan merged, run the script again: it keeps the lines that are there, and write `done <commit>` on the line it closed
 
-### 7. The owner
+### 6. Owner
 
 - they confirm the triage. A missing line comes back
-- a rejection sends you back to step 5
+- a rejection sends you back to step 4
 
-### 8. Commit
+### 7. Commit
 
-- the integration test and close.md, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
+- `close.md` and the `ex-` plans, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
 
-### 9. The leftovers
+### 8. Leftovers
 
 - after the commit: `consult_worktree list`, and remove what no plan and no line keeps
-- nothing is decided here: what this step finds that step 5 did not decide goes back to step 5, before the commit
+- nothing is decided here: what this step finds that step 4 did not decide goes back to step 4, before the commit
 
 ## How not to do this
 
-- Do not fix a hole silently, and do not write the fix into the definition, the design or a plan
-- Do not re-run the whole suite: the merge gate already did, and the close is not a second acceptance
+- Do not write a test: the plan's acceptance and the merge gate already ran. The close judges, it does not check again
+- Do not fix a hole silently, and do not write the fix into `DEFINITION.md`, the design or a plan
+- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination
 - Do not copy by hand what the script collects: a line left out is a hole nobody finds again

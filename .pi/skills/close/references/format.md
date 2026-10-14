@@ -1,22 +1,20 @@
-# The close.md format
+# Close format
 
-## The shape
+`cycles/<YYMMDD>-<NNN>-<slug>/close.md`, in the shape below. It is the cycle's last word.
+
+## Shape
 
 ```md
 # Close <NNN>
-
-## Integration
-
-- Test: <the file, from the project root> (new | updated)
-- Handoff: <the name the design's Boundary.Plans gives>
-- Cases:
-  - <case>: pass | fail
 
 ## Collected
 
 ### <plan id> (ADR <NN>-<m> / Scope <定義の部分>)
 
-1. <place> / <hole> / <handling>: <why>
+1. <plan id>:<line> / <place> / <穴>
+   - Doing: <その時 plan がしていた事>
+   - Left: <なぜ残したか>
+   - Cost: <放っておくと何が困るか>
 
 ## Triage
 
@@ -25,36 +23,33 @@
 - <N>: dropped (<定義の部分>): <why>
 ```
 
-## Integration
-
-- One block per handoff the design's `Boundary.Plans` names. Several handoffs: the block repeats.
-- `なし` when the design names none.
-- `Test` — the file, and `new` or `updated`. The close looks for a test that already covers the handoff before writing one.
-- `Cases` — the happy path and the most likely error path. A `fail` is a hole: it goes to the `Triage`.
-- The test touches nothing real: it writes under a temporary directory, and its doubles live in `test/`.
-
 ## Collected
 
-- The script's output, pasted as it is. The script is `.pi/skills/close/scripts/collect.mjs`.
-- The heading of a plan carries its link, read from the design's plan section: the `ADR` and the `Scope`. `未特定` when the script cannot read it — the plan is not in the design (an `ex-` plan, a refactor plan), or the section or the field is missing.
-- A `未特定` is filled before the `Triage`: read the design and the definition, and the owner confirms the part each leftover belongs to.
-- Do not shorten and do not rewrite: a line left out is a hole nobody finds again.
+- The script writes this section: `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>`. It writes `close.md` itself, and creates the file when it is not there.
+- One leftover is one numbered line and three bullets. The line is `<plan id>:<line> / <place> / <穴>`: the plan md, the line in it, and where the hole came from (`Slice 1 (名前)`, `Review Round 1`, `Acceptance`).
+- The agent writes the bullets, reading the plan md and the diff. `Doing` is what the plan was doing there, `Left` is why the hole was left, `Cost` is what it costs to leave it. They are what the owner judges with, so they name the line and the code, and do not restate the plan.
+- The script touches nothing that is indented deeper than a numbered line. The bullets stay when it runs again.
+- The heading of a plan carries its link, read from the design: the `ADR` and the `Scope`. `未特定` when the script cannot read it — the plan is not in the design (an `ex-` plan), or the field is missing. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
 - The order is the design's plans first (by file name), the `ex-` plans after (by file name), so adding an `ex-` plan does not move the numbers above it.
 
 ## Triage
 
-- `owner 確認済み。` first: the destinations are the owner's call, confirmed.
-- One line per leftover: its number, where it goes, the part of the definition it belongs to, and why. The part is the `ADR` entry and the line of the definition the leftover lands on.
-- `ex-plan <plan id>` — it breaks the criteria. The plan is named `ex-<what it fixes>`, and it has no design.
-- `proposed` — it breaks nothing, but leaving it makes things worse. The next cycle's definition carries it.
+- One line per leftover: its number, where it goes, the part of the definition it belongs to, and why. The part is the `ADR` entry and the line of `DEFINITION.md` the leftover lands on.
+- `ex-plan <plan id>` — it breaks the criteria. The plan is named `ex-<what it fixes>`, and it has no design. It fixes code only: a leftover that moves a line of `DEFINITION.md` goes to `proposed`.
+- `proposed` — it breaks nothing, but leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
 - `dropped` — rare, and the fix weighs more.
-- `done` at the end of the line when the `ex-` plan has merged and closed it.
+- `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
 - `なし` when there is none.
+
+## Closing
+
+- Every leftover has a line in the `Triage`: nothing is left without a destination.
+- Every `ex-` plan is merged, and its line carries `done <commit>`.
+- Then the cycle is closed: `close.md` and the `ex-` plans go in one commit, and nothing about the cycle is edited afterwards.
 
 ## Writing
 
 - A file name is written from the project root.
 - Do not write what the reader can look up: name the plan and the place.
-- Keep a table short: a wide one breaks with long text.

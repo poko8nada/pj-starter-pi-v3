@@ -1,39 +1,35 @@
-/**
- * collect — サイクルの残り物を、機械的に一覧にする。
- *
- * サイクルの plan md を読んで、close が仕分ける物を `## Collected` の中身として出す。
- * 拾うのは、Notes の各スライスの Findings、Review の各ラウンドの指摘、Acceptance の Findings。
- * 1件は1行にし、`場所 / 穴 / 対応: 理由` の形にする。判断はしない。人が写し落とさないためだけの物。
- *
- * plan ごとの見出しには、design.md の plan 節から読んだ `ADR` と `Scope` を添える。
- * 読めない時は `未特定` と出す。close は `未特定` を探し、design と定義を見て埋める。
- *
- * 並びは、設計の plan（ファイル名順）が先、`ex-` の plan（ファイル名順）が後。
- * だから `ex-` の plan を足しても、前の番号はずれない。
- *
- *   node collect.mjs <cycle-dir>
- */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+// close.md の `## Collected` を書く。
+// 使い方: node .pi/skills/close/scripts/collect.mjs <cycle-dir>
+// 仕組み: <cycle-dir>/plan/*.md の残り物を集め、design.md から ADR と Scope を読み、
+// close.md の `## Collected` を書き直す。番号行より深い行（エージェントの文脈）と `## Triage` は残す。
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /**
  * 残り物の1件。
  *
- * @typedef {{ place: string, finding: string, handling: string | null }} Leftover
+ * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
  */
 
 /** 節や観点の見出し（穴ではない行） */
-const LABELS = /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven):\s*(.*)$/;
+const LABELS =
+  /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Doubts):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 /** design の plan 節。`## \`<plan id>\`` の形。backtick の無い `##`（`## Refactor` 等）は plan ではない */
 const PLAN_HEAD = /^## `(.+)`\s*$/;
-const ADR_FIELD = /^-\s*ADR:\s*(.*)$/;
-const SCOPE_FIELD = /^-\s*Scope:\s*(.*)$/;
-const SCOPE_ITEM = /^\s+-\s*([^:]+):/;
+const ADR_FIELD = /^-\s*No:\s*(.*)$/;
+/** `### Scope` の節。ここから下のバレットが変える物 */
+const SCOPE_HEAD = /^###\s+Scope\s*$/;
+const SCOPE_ITEM = /^\s*-\s*([^:]+):/;
 /** 読めなかった所の印。close はこれを探して埋める */
 const UNKNOWN = '未特定';
+/** 番号行。`1. <plan id>:<line> / …` */
+const NUMBERED = /^\s*\d+\.\s+(.+?):(\d+)\s+\//;
+/** 穴を並べる所（`Slice 2 (…)` / `Round 1`）の見分け */
+const SLICE_PLACE = /^Slice\s+(\d+):\s*(.*)$/;
+const ROUND_PLACE = /^Round\s+(\d+)/;
 
 const isBullet = (line) => /^\s*- /.test(line);
 /** `なし` は穴ではない。後ろに注記（`なし — 理由`）が続いても穴ではない */
@@ -41,12 +37,20 @@ const isNone = (text) => text.startsWith('なし');
 const indentOf = (line) => line.length - line.trimStart().length;
 const bulletText = (line) => line.replace(/^\s*- /, '').trim();
 
+/**
+ * `## ` で節に切る。`at` は最初の中身の行の行番号（1 起点）。
+ *
+ * @param {string} text
+ * @returns {{ name: string, lines: string[], at: number }[]}
+ */
 function splitSections(text) {
   const sections = [];
   let current = null;
-  for (const line of text.split('\n')) {
+  const all = text.split('\n');
+  for (let i = 0; i < all.length; i += 1) {
+    const line = all[i];
     if (line.startsWith('## ')) {
-      current = { name: line.slice(3).trim(), lines: [] };
+      current = { name: line.slice(3).trim(), lines: [], at: i + 2 };
       sections.push(current);
       continue;
     }
@@ -55,12 +59,20 @@ function splitSections(text) {
   return sections;
 }
 
-function splitPlaces(lines) {
+/**
+ * `### ` で所に切る。`at` は最初の中身の行の行番号。
+ *
+ * @param {string[]} lines
+ * @param {number} at
+ * @returns {{ name: string, lines: string[], at: number }[]}
+ */
+function splitPlaces(lines, at) {
   const places = [];
   let current = null;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
     if (line.startsWith('### ')) {
-      current = { name: line.slice(4).trim(), lines: [] };
+      current = { name: line.slice(4).trim(), lines: [], at: at + i + 1 };
       places.push(current);
       continue;
     }
@@ -69,20 +81,22 @@ function splitPlaces(lines) {
   return places;
 }
 
-/** `- <field>:` の中身。穴は `対応: 理由` の行を伴う。
+/**
+ * 欄（`Findings:` など）の中身を読む。欄の下の、深いバレットも拾う。
  *
  * @param {string[]} lines
+ * @param {number} at
  * @param {string} field
- * @returns {Leftover[]}
+ * @returns {{ line: number, finding: string, handling: string | null }[]}
  */
-function readField(lines, field) {
-  /** @type {Leftover[]} */
+function readField(lines, at, field) {
   const items = [];
-  /** @type {Leftover | null} */
+  /** @type {{ line: number, finding: string, handling: string | null } | null} */
   let last = null;
   let inField = false;
   let fieldIndent = 0;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
     const bare = line.trim().replace(/^-\s*/, '');
     const bareHandling = bare.match(HANDLINGS);
     if (inField && bareHandling && last) {
@@ -98,7 +112,7 @@ function readField(lines, field) {
         last = null;
         const inline = label[2].trim();
         if (inField && inline && !isNone(inline)) {
-          last = { finding: inline, handling: null };
+          last = { line: at + i, finding: inline, handling: null };
           items.push(last);
         }
         continue;
@@ -110,7 +124,7 @@ function readField(lines, field) {
         last.handling = `${handling[1]}: ${handling[2].trim()}`;
         continue;
       }
-      last = { finding: text, handling: null };
+      last = { line: at + i, finding: text, handling: null };
       items.push(last);
       continue;
     }
@@ -119,17 +133,19 @@ function readField(lines, field) {
   return items;
 }
 
-/** 1つのラウンドの指摘。観点の見出しは穴ではない。
+/**
+ * 1つのラウンドの指摘。観点の見出しは穴ではない。
  *
  * @param {string[]} lines
- * @returns {Leftover[]}
+ * @param {number} at
+ * @returns {{ line: number, finding: string, handling: string | null }[]}
  */
-function readRound(lines) {
-  /** @type {Leftover[]} */
+function readRound(lines, at) {
   const items = [];
-  /** @type {Leftover | null} */
+  /** @type {{ line: number, finding: string, handling: string | null } | null} */
   let last = null;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
     const handling = line.trim().replace(/^-\s*/, '').match(HANDLINGS);
     if (handling) {
       if (last) last.handling = `${handling[1]}: ${handling[2].trim()}`;
@@ -143,12 +159,12 @@ function readRound(lines) {
       last = null;
       const inline = label[2].trim();
       if (inline && !isNone(inline)) {
-        last = { finding: inline, handling: null };
+        last = { line: at + i, finding: inline, handling: null };
         items.push(last);
       }
       continue;
     }
-    last = { finding: text, handling: null };
+    last = { line: at + i, finding: text, handling: null };
     items.push(last);
   }
   return items;
@@ -157,38 +173,40 @@ function readRound(lines) {
 /**
  * 1つの plan md の残り物。番号は付けない。
  *
- * 場所は `Slice 2 (remove が片付ける)` / `Review Round 1` / `Acceptance`。
+ * `## Notes` は `Slice N` の所の `Findings:`、`## Review` は `Round N` の所の指摘、
+ * `## Acceptance` は `Findings:` と `Doubts:`。
  * `fixed:` の付いた穴は閉じているので、残り物ではない。
  *
  * @param {string} text
- * @returns {Leftover[]}
+ * @returns {{ line: number, place: string, finding: string, handling: string | null }[]}
  */
 export function collectPlan(text) {
-  /** @type {Leftover[]} */
+  /** @type {{ line: number, place: string, finding: string, handling: string | null }[]} */
   const items = [];
   for (const section of splitSections(text)) {
-    if (section.name === 'Notes') {
-      for (const place of splitPlaces(section.lines)) {
-        const named = place.name.match(/^Slice\s+(\d+):\s*(.*)$/);
-        const at = named ? `Slice ${named[1]} (${named[2]})` : place.name;
-        for (const item of readField(place.lines, 'Findings')) {
-          items.push({ place: at, ...item });
-        }
-      }
-      continue;
-    }
-    if (section.name === 'Review') {
-      for (const place of splitPlaces(section.lines)) {
-        const named = place.name.match(/^Round\s+(\d+)/);
-        const at = named ? `Review Round ${named[1]}` : place.name;
-        for (const item of readRound(place.lines)) {
+    if (section.name === 'Notes' || section.name === 'Review') {
+      for (const place of splitPlaces(section.lines, section.at)) {
+        const named =
+          section.name === 'Notes' ? place.name.match(SLICE_PLACE) : place.name.match(ROUND_PLACE);
+        let at = place.name;
+        if (named && section.name === 'Notes') at = `Slice ${named[1]} (${named[2]})`;
+        else if (named) at = `Review Round ${named[1]}`;
+        const found =
+          section.name === 'Notes'
+            ? readField(place.lines, place.at, 'Findings')
+            : readRound(place.lines, place.at);
+        for (const item of found) {
           items.push({ place: at, ...item });
         }
       }
       continue;
     }
     if (section.name === 'Acceptance') {
-      for (const item of readField(section.lines, 'Findings')) {
+      const found = [
+        ...readField(section.lines, section.at, 'Findings'),
+        ...readField(section.lines, section.at, 'Doubts'),
+      ];
+      for (const item of found) {
         items.push({ place: 'Acceptance', ...item });
       }
     }
@@ -240,10 +258,19 @@ export function designLinks(text) {
       continue;
     }
     if (!id) continue;
+    if (line.startsWith('### ')) {
+      inScope = SCOPE_HEAD.test(line);
+      continue;
+    }
     if (inScope) {
+      if (line.trim() === '') {
+        continue;
+      }
       const item = line.match(SCOPE_ITEM);
       if (item) {
-        scope.push(item[1].trim());
+        if (!line.startsWith(' ')) {
+          scope.push(item[1].trim());
+        }
         continue;
       }
       inScope = false;
@@ -252,11 +279,6 @@ export function designLinks(text) {
     if (adrLine) {
       adr = adrLine[1].trim() || UNKNOWN;
       continue;
-    }
-    const scopeLine = line.match(SCOPE_FIELD);
-    if (scopeLine) {
-      if (scopeLine[1].trim()) scope.push(scopeLine[1].trim());
-      inScope = true;
     }
   }
   keep();
@@ -270,11 +292,89 @@ export function designLinks(text) {
  */
 const linkText = (link) => `ADR ${link?.adr ?? UNKNOWN} / Scope ${link?.scope ?? UNKNOWN}`;
 
-/** `## Collected` の中身。残り物が無ければ `なし`。
+/**
+ * 残り物を、plan ごとにまとめて 1 本のテキストにする。
+ *
+ * @param {Leftover[]} items
+ * @param {Map<string, string[]>} contexts 番号行の下の文脈（`<plan id>:<line>` で引く）
+ * @returns {string}
+ */
+function render(items, contexts) {
+  if (!items.length) return 'なし';
+  /** @type {string[]} */
+  const blocks = [];
+  /** @type {string[]} */
+  const lines = [];
+  let current = null;
+  let n = 0;
+  const flush = () => {
+    if (!current) return;
+    blocks.push(`### ${current.id} (${current.link})\n\n${lines.join('\n')}`);
+    lines.length = 0;
+  };
+  for (const item of items) {
+    if (!current || current.id !== item.plan) {
+      flush();
+      current = { id: item.plan, link: item.link };
+    }
+    n += 1;
+    const handling = item.handling ? ` / ${item.handling}` : '';
+    lines.push(`${n}. ${item.plan}:${item.line} / ${item.place} / ${item.finding}${handling}`);
+    for (const kept of contexts.get(`${item.plan}:${item.line}`) ?? []) {
+      lines.push(kept);
+    }
+  }
+  flush();
+  return blocks.join('\n\n');
+}
+
+/**
+ * close.md の番号行の下の文脈（深い行）を拾う。無ければ空。
+ *
+ * @param {string} text
+ * @returns {Map<string, string[]>}
+ */
+function readContexts(text) {
+  /** @type {Map<string, string[]>} */
+  const kept = new Map();
+  /** @type {string | null} */
+  let current = null;
+  for (const line of text.split('\n')) {
+    const numbered = line.match(NUMBERED);
+    if (numbered) {
+      current = `${numbered[1]}:${numbered[2]}`;
+      if (!kept.has(current)) kept.set(current, []);
+      continue;
+    }
+    if (!current) continue;
+    if (line.trim() === '' || !/^\s/.test(line)) {
+      current = null;
+      continue;
+    }
+    kept.get(current)?.push(line);
+  }
+  return kept;
+}
+
+/**
+ * close.md の `## Triage` の節を、あればそのまま返す。無ければ見出しだけ。
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function triagePart(text) {
+  const lines = text.split('\n');
+  const at = lines.findIndex((line) => line.startsWith('## Triage'));
+  if (at < 0) return '## Triage\n';
+  return lines.slice(at).join('\n');
+}
+
+/**
+ * cycle の plan md を読み、`ADR` と `Scope` を付けて残り物を返す。
  *
  * @param {string} planDir
  * @param {string} designPath
- * @returns {string}
+ * @returns {Leftover[]}
  */
 export function collectCycle(planDir, designPath) {
   const links =
@@ -284,21 +384,43 @@ export function collectCycle(planDir, designPath) {
   const files = readdirSync(planDir)
     .filter((file) => file.endsWith('.md'))
     .toSorted((a, b) => planRank(a) - planRank(b) || a.localeCompare(b));
-  /** @type {string[]} */
-  const blocks = [];
-  let n = 0;
+  /** @type {Leftover[]} */
+  const items = [];
   for (const file of files) {
-    const items = collectPlan(readFileSync(join(planDir, file), 'utf8'));
-    if (!items.length) continue;
     const id = file.replace(/\.md$/, '');
-    const lines = items.map((item) => {
-      const handling = item.handling ? ` / ${item.handling}` : '';
-      const place = `${++n}. ${item.place} / ${item.finding}`;
-      return place + handling;
-    });
-    blocks.push(`### ${id} (${linkText(links.get(id))})\n\n${lines.join('\n')}`);
+    const link = linkText(links.get(id));
+    for (const item of collectPlan(readFileSync(join(planDir, file), 'utf8'))) {
+      items.push({ plan: id, link, ...item });
+    }
   }
-  return blocks.length ? blocks.join('\n\n') : 'なし';
+  return items;
+}
+
+/**
+ * close.md を書き、そのパスを返す。無ければ作る。
+ *
+ * `## Collected` は毎回作り直すが、番号行の下の文脈と `## Triage` は残す。
+ *
+ * @param {string} cycleDir
+ * @returns {string}
+ */
+export function writeClose(cycleDir) {
+  if (!existsSync(cycleDir)) {
+    throw new Error(`no such directory: ${cycleDir}`);
+  }
+  const planDir = join(cycleDir, 'plan');
+  if (!existsSync(planDir)) {
+    throw new Error(`no such directory: ${planDir}`);
+  }
+  const closePath = join(cycleDir, 'close.md');
+  const old = existsSync(closePath) ? readFileSync(closePath, 'utf8') : '';
+  const items = collectCycle(planDir, join(cycleDir, 'design.md'));
+  const body = render(items, readContexts(old));
+  const triage = triagePart(old);
+  const nnn = (cycleDir.replace(/\/+$/, '').split('/').pop() ?? '').split('-')[1] ?? '';
+  const text = `# Close ${nnn}\n\n## Collected\n\n${body}\n\n${triage}`;
+  writeFileSync(closePath, text);
+  return closePath;
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -308,5 +430,10 @@ if (isMain) {
     console.error('usage: collect.mjs <cycle-dir>');
     process.exit(1);
   }
-  console.log(collectCycle(join(dir, 'plan'), join(dir, 'design.md')));
+  try {
+    console.log(`wrote ${writeClose(dir)}`);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
