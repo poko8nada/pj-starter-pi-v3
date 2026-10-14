@@ -1,10 +1,10 @@
-# The plan's format
+# Plan format
 
-`cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`.
+`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`.
 
 Section and field names are English; the content is Japanese.
 
-## The shape
+## Shape
 
 ````md
 # PLAN `<plan id>`
@@ -12,27 +12,36 @@ Section and field names are English; the content is Japanese.
 ## Files
 
 ```text
-<unit の根>/
+<dir>/
   <dir>/
     <file>                update
     <file>
-<unit の外のファイル>
+<file>
 ```
 
 ## Slices
 
-1. <スライス名>
-   - I/O:
-     ```ts
-     <型のコード、または関数の署名1行>
-     ```
-   - Verify:
-     - <型>: <コマンド / 相手 / 場所>
-       - <ケース、または何を見るか>
-   - Steps:
-     1. `<file>`: <何をどうするか>
-        - Outside: design の `<Boundary の項目>`。<そこでどうするか>
-2. <スライス名>
+## 1.<スライス名>
+
+### Types
+
+```ts
+<型・スキーマ・署名・状態の宣言。無ければ なし>
+```
+
+### Steps
+
+1. `<file>`:
+   - <何をどうするか。1 文>
+     - Outside: design の `<Boundary の項目>`。<そこでどうするか>
+
+### Verify:
+
+- <型>: <コマンド / 相手 / 場所>
+  - (<印>) <given> → <result>
+  - _no case_: <walk の行> — <理由>
+
+## 2.<スライス名>
 
 ## Notes
 
@@ -58,8 +67,8 @@ Section and field names are English; the content is Japanese.
 
 ## One plan is one worktree
 
-- The plan is one worktree, one branch and one merge — unless the design says `base`: then the parent does the work in its own tree, with no branch and no merge. The plan id is the name the design gave it.
-- A child reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
+- The plan is one worktree, one branch and one merge — unless the design says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the name the design gave it.
+- A subagent reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
 
 ## Files
 
@@ -70,19 +79,20 @@ Section and field names are English; the content is Japanese.
 
 ## Slices
 
-- One slice is one closing: work that ends when its check passes. A child may carry several in one run; the size is a hint, not a handoff.
-- The child commits only after the check passes: a filled `Commit` means that slice's check passed.
+- One slice is one closing: work that ends when its check passes. A subagent may carry several in one run; the size is a hint, not a handoff.
+- The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
 - A `base` plan is cut where the owner can look and decide: its check carries the look (`look`, `browser`, `use`), and their answer closes the slice.
 - One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the design's condition, named, and what to do there.
 - The last slice is the integration slice: its check covers what the plan delivers as a whole, not one file. Its name is `統合: <what the plan delivers>`.
 - The steps are numbered; the order is the order of the work.
 
-## I/O
+## Types
 
-- `I/O` sits in the slice that moves it. It holds the shapes, as code, and the signatures of functions whose inputs or outputs move, as one line.
-- Look at every input and output the slice touches. Write the ones that move; leave the ones that do not.
+- `Types` sits in the slice that moves it. It holds the declarations that move, as code: a type, a schema, a signature, a state.
+- It is the source of the slice's cases: what a declaration leaves open, `Verify` proves. `なし` when nothing moves.
+- The behaviour is written in the step that does it, not here.
 
-### The type rules
+### Type rules
 
 - A state is a discriminated union. Never a combination of optionals.
 - A `switch` over a union is exhaustive: the last branch assigns to `never`. No `default`.
@@ -92,13 +102,13 @@ Section and field names are English; the content is Japanese.
 
 ## Verify
 
-`Verify` names one type from this list, and its content. Pick the types that decide the work; do not invent a check.
+- `Verify` proves what `Types` and the `Steps` decide, and only what the types cannot: a value that arrives from outside, the side effects, the errors, the integration.
+- One `Verify` per slice. It names one type from the list below, and its content. Pick the type that decides the work; do not invent a check.
+
+### Kinds
 
 - `test` — a machine runs the tests: the file, the command, and the cases
-  - a case is `<入力> → <結果>`, marked with the walk's line: `(happy)`, `(error)`, `(empty)`, `(boundary values)`
-  - what is given is the input that tells the behavior from its absence. A line whose input would give the same result with the behavior removed is not a case: a value the plan or the ADR decided is not a case
   - the cases are written on top of that test file: read it first, and follow the way it already works (its fixtures, its doubles, the seam it uses)
-  - the result is a value, an error type or a state
 - `api` — a request is sent to the interface, and the response is read
 - `browser` — a person walks the screens, and reports what was seen
 - `visual` — a screenshot of the screens is compared against the agreed look
@@ -109,14 +119,25 @@ Section and field names are English; the content is Japanese.
 - `data` — rows are written into the store and read back, and a migration runs forward and back
 - `security` — a request that should be refused is sent, and the refusal is read
 - `form` — a machine checks a length, a count, or compares two files
-- `read` — a child reads a document and reports: which child, which document, and what it reports. The child reads it itself; a check that needs a consult child is run by the parent, and the parent reads it again at the acceptance as a precaution
-- `use` — a child uses the document, and reports what it does with it
+- `read` — a subagent reads a document and reports: which subagent, which document, and what it reports. The subagent reads it itself; a check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution
+- `use` — a subagent uses the document, and reports what it does with it
 - `look` — a person reads a value: a screen, a log, a DB, a file
 
-### The walk
+### Cases
 
-For every slice that moves an input or an output, walk the shape and write a case for each line, or the reason it does not apply:
+- Every `Verify` carries cases: the lines the walk below writes, and at least one `(happy)`.
+- A case is `<given> → <expected result>`, marked with the walk's line: `(happy)`, `(error)`, `(empty)`, `(boundary values)`. The result is a value, an error type or a state.
+- What is given is the input that tells the behavior from its absence. A case whose input would give the same result with the behavior removed is not a case: a value the plan or the ADR decided is not a case.
+- A line the compiler or the schema already settles takes no case: write the reason it does not apply. A line whose breakage nobody would notice takes no case either.
+- A line that takes no case stands in the same list, as `- _no case_: <the walk's line> — <why>`, so a reader can tell a decision from a hole.
+- A slice with `Types: なし` (a script, a document, a data file) takes its cases from its `Steps`: one case per rule the step writes, or the reason it does not apply.
+- A case reads by the kind: `cli` — the command and its premises → the lines and the exit code; `browser` / `visual` — the screen → what must be seen; `read` — the document → what the subagent reports; `look` — the value → the shape it must have; `form` — the input → the count, the length or the match.
 
+#### Walk
+
+Walk the slice's `Types` — or its `Steps`, when `Types` is `なし` — and write a case for each line, or a `_no case_` line with the reason:
+
+- the happy path — the nominal input, and the result the step promises
 - every branch of a union
 - every optional, present and absent
 - the states, and the legal and illegal transitions between them
@@ -130,34 +151,33 @@ For every slice that moves an input or an output, walk the shape and write a cas
 
 **A boundary with no answer is a hole in the plan.** When the shape cannot say what happens, the shape is not decided: stop, decide it, and write the plan after.
 
-Write a case only for a line whose breakage the owner would notice. A line with no such breakage takes no case: write the reason it does not apply.
-
 ## Notes
 
 - `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it. Under it, `left: <why>` says why it could not be closed here. `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
-- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the child's last text, how many times it ran, the time, and the id of the worktree it left.
-- **The child writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the child runs the check and sees it fail. The parent writes the plan md only at the acceptance, from the worktree.
+- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the subagent's last text, how many times it ran, the time, and the id of the worktree it left.
+- **The subagent writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the subagent runs the check and sees it fail. The agent writes the plan md only at the acceptance, from the worktree.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - `Commit` is the slice's own commit, and it is not rewritten.
 
 ## Review
 
-- The reviewer writes here, and the fixing child answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
+- The reviewer writes here, and the fixing subagent answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over — a behavior the checks do not exercise; a decided value is not a gap), `Unproven` (a test that would stay green if the behavior it names were removed).
-- A finding is one bullet. What the fixing child did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
+- A finding is one bullet. What the fixing subagent did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.
 - Round 1 is a new conversation; Round 2 continues the reviewer's own, and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review; a Round 2 that still finds the same thing goes to the owner.
 
 ## Acceptance
 
-- The parent writes it, after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
-- A `Findings` line without a `fixed:` is handed to a `code` child as the fix instruction; when it is fixed, the acceptance runs again and is written again.
+- The agent writes it, after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
+- A `Findings` line without a `fixed:` is handed to a `code` subagent as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
 
+- One bullet is one sentence.
 - A file name is written from the project root. The tree, the steps and the checks use the same name.
 - Do not write what the reader can look up.
 - Keep a table short: a wide one breaks with long text.

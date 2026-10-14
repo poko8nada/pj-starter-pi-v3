@@ -9,7 +9,7 @@ One cycle has one design: `cycles/<YYMMDD>-<NNN>-<slug>/design.md`. It cuts the 
 
 A plan is a worktree, a branch and a merge — the unit the work runs in. The plan md and the steps inside it are written from here, and the work is carried out there.
 
-## The file
+## File
 
 `cycles/<YYMMDD>-<NNN>-<slug>/design.md`, in the shape `references/format.md` gives.
 
@@ -38,7 +38,7 @@ The plan id is the name of the change (`worktree-cleanup`), not the Unit's name.
 
 ### 5. Propose where each plan runs, and ask the owner
 
-The default is a worktree: a branch, a child, a merge. A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base instead: the parent does it in its own tree, and the changes land as they are made.
+The default is a worktree: a branch, a subagent, a merge. A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base instead: the agent does it in its own tree, and the changes land as they are made.
 
 Propose one place per plan, with the reason. The owner answers, and the answer can be any of three:
 
@@ -50,7 +50,7 @@ Propose one place per plan, with the reason. The owner answers, and the answer c
 
 One list of plans, each with its scope and its boundary. They read the cut, and answer.
 
-### A change after this
+### Changes after this
 
 The design is edited to match, and git holds the diff.
 

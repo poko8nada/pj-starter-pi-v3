@@ -9,14 +9,14 @@ One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cy
 
 The ADR decides, and the picture is written from what it decided. The design, the plan and the work are written from `DEFINITION.md`, and none of them argues.
 
-## The files
+## Files
 
 - `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
 - `DEFINITION.md` — the product's picture. The entry names the lines of it that move, and the picture is written from them.
 - `definition/rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `definition/format.md` — the shape of the picture.
 
-## The cycle
+## Cycle
 
 - the owner declares the cycle, and says what it is for
 - the cycle's questions are the entries, and one entry is one question
@@ -39,17 +39,17 @@ The ADR decides, and the picture is written from what it decided. The design, th
 - write them in `Options`, each with the reason it stands or falls
 - the pick is not made here, and the owner makes it at the decision, with the `Status`
 
-When the facts are missing, run a `research` child with the type that fits. The type sets the questions:
+When the facts are missing, run a `research` subagent with the type that fits. The type sets the questions:
 
 - `triage` — a defect or a limitation: is it common, and is there a remedy in this setting
 - `compare` — a choice: what are the candidates, what does each buy and cost, and does it clash with the `Ground`
 - `mechanism` — a way of doing it: what does the tool offer, and what are its limits
 
-Keep the sources and the queries the child used, and carry them into `Research & Trial`.
+Keep the sources and the queries the subagent used, and carry them into `Research & Trial`.
 
 ### 3. The trial — when it needs hands
 
-A `trial` child runs in a worktree, because the `trial` role writes. The task carries the candidate and its setting, and the child installs it, sets it up, and reports the clashes, the versions and the smallest working shape. Ask the owner before it touches the shared store.
+A `trial` subagent runs in a worktree, because the `trial` role writes. The task carries the candidate and its setting, and the subagent installs it, sets it up, and reports the clashes, the versions and the smallest working shape. Ask the owner before it touches the shared store.
 
 A `Stack` change is worth a trial.
 
@@ -73,7 +73,7 @@ The owner's answer is the decision, and nothing else records it. Write the `Stat
 
 Then write `DEFINITION.md` from the `Definition Change`. This is the only path that moves the picture.
 
-## The entries, together
+## Entries, together
 
 When every entry is decided, read them together: the names they write, and the lines they move.
 

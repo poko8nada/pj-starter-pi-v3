@@ -1,10 +1,10 @@
-# The definition's format
+# Definition format
 
 `DEFINITION.md`, at the project root. One file, always current. It has no version: git holds the difference.
 
 Section and field names are English; the content is Japanese.
 
-## The shape
+## Shape
 
 ```md
 # DEFINITION
@@ -34,7 +34,7 @@ Section and field names are English; the content is Japanese.
 | <group> | <role> | <物>  |
 ```
 
-## The sections
+## Sections
 
 - `Product` — the product's name.
 - `What` — what the product is, in one sentence.

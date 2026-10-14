@@ -1,4 +1,4 @@
-# The definition's rules
+# Definition rules
 
 What may be a Unit of `DEFINITION.md`, and how the Units, the `Who` and the `Stack` are named and written.
 

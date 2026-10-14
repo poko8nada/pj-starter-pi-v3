@@ -1,10 +1,10 @@
-# The design's format
+# Design format
 
 `cycles/<YYMMDD>-<NNN>-<slug>/design.md`.
 
 Section and field names are English; the content is Japanese.
 
-## The shape
+## Shape
 
 ```md
 # DESIGN <NNN>
@@ -37,11 +37,11 @@ Section and field names are English; the content is Japanese.
 - A plan that depends on other plans waits for all of them.
 - A plan found while the plans are written (a shared piece two plans would make under two names) sits at the top of this file as `## Refactor`, and the plans that use it name it in their `Boundary.Plans`.
 
-## The cut
+## Cut
 
 The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by what the work reads, not by where it lives.
 
-- Work that reads the same input stays in one plan. The input is the subject: the entries it decides and the sources it changes — not every file it happens to read. One child continues the work, so nothing is read twice.
+- Work that reads the same input stays in one plan. The input is the subject: the entries it decides and the sources it changes — not every file it happens to read. One subagent continues the work, so nothing is read twice.
 - Split only when the inputs differ and the halves can run at once. Ask of a split:
   1. does a half leave the branch failing lint, typecheck or test? then keep it together
   2. is a half not usable on its own? then keep it together
@@ -60,10 +60,10 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 ## Where
 
-- The default is a worktree: a branch, a child, a merge.
-- A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base: the parent does it in its own tree, and the changes land as they are made. No branch and no merge.
+- The default is a worktree: a branch, a subagent, a merge.
+- A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base: the agent does it in its own tree, and the changes land as they are made. No branch and no merge.
 - Propose one place per plan with the reason, and record the owner's answer. `worktree`, or `base` with what the owner watches.
-- A base plan lands in the parent's tree as it goes, so a plan that follows it stands on its changes: keep the files apart, or order the two.
+- A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes: keep the files apart, or order the two.
 
 ## Scope
 

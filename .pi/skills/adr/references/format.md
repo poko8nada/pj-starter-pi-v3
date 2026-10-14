@@ -1,10 +1,10 @@
-# The ADR's format
+# ADR format
 
 `cycles/<YYMMDD-NNN-slug>/adr.md`. One cycle has one ADR.
 
 The procedure is in `SKILL.md`. Section and field names are English; the content is Japanese.
 
-## The shape
+## Shape
 
 ```md
 # ADR <NNN>
@@ -33,7 +33,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 - なし
 ```
 
-## The entries
+## Entries
 
 - `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
 - One bullet is one sentence.
