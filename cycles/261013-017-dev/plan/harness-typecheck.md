@@ -195,6 +195,7 @@ export type Thresholds = {
 - Stale:
 - Unlisted:
 - Gaps:
+- Unproven:
 
 ## Acceptance
 
