@@ -1,12 +1,14 @@
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { basename, isAbsolute, join } from 'node:path';
+import { basename, join, relative } from 'node:path';
 
-/** 消すテストの対象（root からの相対）。ディレクトリか、テストのファイルそのもの */
-export const TEST_TARGETS = [
-  '.pi',
-  'scripts/product-ready',
-  'test/env.test.ts',
-  'scripts/typecheck-staged.test.ts',
+/** 消す物の 1 行 */
+export const STARTER_ONLY = [
+  { label: 'harness', at: 'scripts/harness-scopes.json', pick: 'file' },
+  { label: 'tests', at: '.pi', pick: 'tests' },
+  { label: 'tests', at: 'scripts/product-ready', pick: 'tests' },
+  { label: 'tests', at: 'test/env.test.ts', pick: 'file' },
+  { label: 'tests', at: 'scripts/typecheck-staged.test.ts', pick: 'file' },
+  { label: 'cycles', at: 'cycles', pick: 'dirs' },
 ];
 
 // テストのファイルか（vitest の既定 include に合わせる）。
@@ -22,16 +24,17 @@ function isTestFile(name) {
 }
 
 /**
- * 名指しの対象の中のテストを集める（純）。無い対象は飛ばす。
+ * 消す物を集める（純）。
  *
  * @param {string} root リポジトリの根
- * @param {readonly string[]} targets 集める対象（root からの相対）。既定は名指し
- * @returns {readonly string[]} 見つけたテストの絶対パス（昇順）
+ * @param {string} [only] 絞る label（undefined なら全行）
+ * @returns {readonly { readonly label: string, readonly at: string, readonly path: string }[]} 見つけた物（`at` の昇順）
  */
-export function findTests(root, targets = TEST_TARGETS) {
+export function plan(root, only) {
   if (!existsSync(root)) {
     throw new Error(`no such directory: ${root}`);
   }
+  const rows = only === undefined ? STARTER_ONLY : STARTER_ONLY.filter((row) => row.label === only);
   const found = [];
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -42,93 +45,104 @@ export function findTests(root, targets = TEST_TARGETS) {
         }
         walk(path);
       } else if (entry.isFile() && isTestFile(entry.name)) {
-        found.push(path);
+        found.push({ label: '', at: '', path });
       }
     }
   };
-  for (const target of targets) {
-    const full = join(root, target);
-    if (!existsSync(full)) {
+  /** @type {{ readonly label: string, readonly at: string, readonly path: string }[]} */
+  const out = [];
+  for (const row of rows) {
+    if (row.pick === 'file') {
+      const full = join(root, row.at);
+      if (!existsSync(full)) {
+        continue;
+      }
+      out.push({ label: row.label, at: row.at, path: full });
+    } else if (row.pick === 'tests') {
+      const base = join(root, row.at);
+      if (!existsSync(base)) {
+        continue;
+      }
+      let isDir = false;
+      try {
+        isDir = statSync(base).isDirectory();
+      } catch (_unused) {
+        continue;
+      }
+      if (isDir) {
+        found.length = 0;
+        walk(base);
+        for (const hit of found) {
+          out.push({ label: row.label, at: relative(root, hit.path), path: hit.path });
+        }
+      } else if (isTestFile(basename(base))) {
+        out.push({ label: row.label, at: row.at, path: base });
+      }
+    } else if (row.pick === 'dirs') {
+      const base = join(root, row.at);
+      if (!existsSync(base)) {
+        continue;
+      }
+      for (const entry of readdirSync(base, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          out.push({
+            label: row.label,
+            at: join(row.at, entry.name),
+            path: join(base, entry.name),
+          });
+        }
+      }
+    }
+  }
+  return out.toSorted((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+}
+
+/**
+ * 消す物を消す（副作用）。無い物は飛ばす。
+ *
+ * @param {string} root リポジトリの根（相対パス用）
+ * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} entries 消す物
+ * @returns {readonly string[]} 消した物の `at`
+ */
+export function remove(root, entries) {
+  const removed = [];
+  for (const entry of entries) {
+    const path = entry.path;
+    if (!existsSync(path)) {
       continue;
     }
     let isDir = false;
     try {
-      isDir = statSync(full).isDirectory();
+      isDir = statSync(path).isDirectory();
     } catch (_unused) {
       continue;
     }
     if (isDir) {
-      walk(full);
-    } else if (isTestFile(basename(full))) {
-      found.push(full);
+      rmSync(path, { recursive: true, force: true });
+    } else {
+      rmSync(path, { force: true });
     }
-  }
-  return found.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-}
-
-/**
- * `cycles/` の下の全フォルダを集める（純）。今のサイクルも含む。
- *
- * @param {string} root リポジトリの根
- * @returns {readonly string[]} 見つけたフォルダの絶対パス（昇順）
- */
-export function findCycles(root) {
-  if (!existsSync(root)) {
-    throw new Error(`no such directory: ${root}`);
-  }
-  const cyclesDir = join(root, 'cycles');
-  if (!existsSync(cyclesDir)) {
-    return [];
-  }
-  const found = [];
-  for (const entry of readdirSync(cyclesDir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      found.push(join(cyclesDir, entry.name));
-    }
-  }
-  return found.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-}
-
-function resolveIn(root, file) {
-  return isAbsolute(file) ? file : join(root, file);
-}
-
-/**
- * テストを消す（副作用）。無い物は飛ばす。
- *
- * @param {string} root リポジトリの根（相対パス用）
- * @param {readonly string[]} files 消す物
- * @returns {readonly string[]} 消した物（渡された文字列のまま）
- */
-export function removeTests(root, files) {
-  const removed = [];
-  for (const file of files) {
-    const path = resolveIn(root, file);
-    if (!existsSync(path)) {
-      continue;
-    }
-    rmSync(path, { force: true });
-    removed.push(file);
+    void root;
+    removed.push(entry.at);
   }
   return removed;
 }
 
 /**
- * サイクルのフォルダを消す（副作用）。無い物は飛ばす。
+ * 表示する label（一覧の順、重複なし）。only があればその 1 つ。
  *
- * @param {string} root リポジトリの根（相対パス用）
- * @param {readonly string[]} dirs 消す物
- * @returns {readonly string[]} 消した物（渡された文字列のまま）
+ * @param {string} [only] 絞る label（undefined なら全 label）
+ * @returns {readonly string[]} label
  */
-export function removeCycles(root, dirs) {
-  const removed = [];
-  for (const dir of dirs) {
-    const path = resolveIn(root, dir);
-    if (!existsSync(path)) {
-      continue;
-    }
-    rmSync(path, { recursive: true, force: true });
-    removed.push(dir);
+export function labels(only) {
+  if (only !== undefined) {
+    return [only];
   }
-  return removed;
+  const out = [];
+  for (const row of STARTER_ONLY) {
+    if (!out.includes(row.label)) {
+      out.push(row.label);
+    }
+  }
+  return out;
 }
