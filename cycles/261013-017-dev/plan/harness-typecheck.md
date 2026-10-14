@@ -166,38 +166,38 @@ export type Thresholds = {
 
 ### Slice 1: タイプエラーを解消する（赤を消す）
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `WrittenThresholds` を `export` した（plan の Types は非 export）。非 export のままだと `oxlint --deny-warnings` が `no-unused-vars` で赤になり commit gate を通れないため。型の意味は変わらない。
+- Commit: d2dac29
 
 ### Slice 2: 一覧とランナー
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 一覧が JSON として読めるが配列でない時も `the list is not valid JSON` で exit 1 にした（plan は無効 JSON のみ指定。配列チェック無しだと `for..of` で落ちるため）。
+- Commit: d49544c
 
 ### Slice 3: staged も同じ一覧を読む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 一覧が配列でない時も `the list is not valid JSON` で exit 1、非文字列の要素は飛ばす（plan は無効 JSON のみ指定。`find`/`path.join` で落ちないため）。
+- Commit: 5a922ee
 
 ### Slice 4: 統合: 型チェックの意味が揃う
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `README.ja.md` の検査表の列幅を `oxfmt` で直した（`node scripts/typecheck.mjs` が旧列幅に収まらず `oxfmt --check` が赤になったため。表の意味は変わらない）。
+- Commit: 00c88ec
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: plan の検査 4 つ（slice 1: `tsc -p .pi/tsconfig.json --noEmit` exit 0 / slice 2: `vitest run scripts/typecheck.test.ts` 8 passed / slice 3: `vitest run scripts/typecheck-staged.test.ts` 10 passed / slice 4: `pnpm typecheck` が `root: ok` と `.pi: ok`、grep 5 つ）と、全体の `pnpm test:run`（550 passed）と `pnpm lint`（緑）。壊して赤を見た 3 つ: `typecheck.mjs` の一覧の loop を空にする → 3 failed、`typecheck-staged.mjs` の harness の割り当てを外す → 1 failed、`settings.ts` の `Thresholds` を optional に戻す → `judge.ts:38` ×2 と `route.ts:57` の 3 件（exit 2）。3 ファイルは `git checkout` で戻し、上の検査を再び緑で確認
+- Findings: なし

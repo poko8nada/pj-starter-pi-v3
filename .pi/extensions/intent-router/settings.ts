@@ -131,7 +131,14 @@ const SettingsSchema = Type.Object(
 );
 
 export type ClassifierCandidate = Static<typeof CandidateSchema>;
-export type Thresholds = Static<typeof ThresholdsSchema>;
+/** 設定ファイルに書かれた形（3 つとも Optional）。スキーマから出る */
+export type WrittenThresholds = Static<typeof ThresholdsSchema>;
+/** 既定に重ねた後の形（3 つとも埋まっている） */
+export type Thresholds = {
+  readonly routeConfidence: number;
+  readonly judgeConfidence: number;
+  readonly judgeScore: number;
+};
 export type Settings = {
   readonly classifier: {
     readonly models: readonly ClassifierCandidate[];

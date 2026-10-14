@@ -35,11 +35,11 @@ pnpm install
 | ----------------------------------- | ---------------------------- |
 | `pnpm test:run`                     | Run the tests once           |
 | `pnpm lint`                         | `oxlint`, warnings included  |
-| `pnpm typecheck`                    | `tsc --noEmit`               |
+| `pnpm typecheck`                    | `node scripts/typecheck.mjs` |
 | `pnpm format` / `pnpm format:check` | Format, or verify the format |
 
 - **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
-- **On push** — typecheck and test
+- **On push** — typecheck (the root and the harness) and test
 - **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
 
 ## Cycle

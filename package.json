@@ -12,7 +12,7 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/typecheck.mjs",
     "typecheck:staged": "node scripts/typecheck-staged.mjs",
     "prepare": "lefthook install"
   },
