@@ -50,22 +50,27 @@ export function plan(root, only) {} // `tests` の walk はパスだけを集め
 
 ### Slice 1: product-ready の形を直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: cc230f4
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
 - Doubts:
+  - `cycles/261013-017-dev/adr.md:49` の `remove(root, plan)` の書き方は残る。芯が `plan` と `remove` の2つである決定自体は保たれるし、前計画 `cycles/261013-017-dev/plan/product-ready-list.md:185` が archive・ADR の記録だけを Stale としないと決めたため、finding とはしない。
+  - `cycles/261013-017-dev/plan/product-ready-list.md:46,62,106` の `remove(root, plan)` と `:176` の `PruneArgs` 残存メモは現計画の Types/Steps に置き換えられた履歴で、live の `scripts/product-ready/cli.mjs:2`・`scripts/product-ready/targets.mjs:105` は更新済みのため、Stale とはしない。
+  - `scripts/product-ready/cli.mjs:2` を `PruneArgs` に全戻ししても `pnpm typecheck` は緑のままになるが、改名は振る舞いを変えない形の変更で plan が `_no case_` と決めた範囲のため、Unproven とはしない。
+  - `void root;` と第1引数を両方戻しても `pnpm lint` 単体は緑になるが、`scripts/product-ready/targets.test.ts:209,211,219` が赤になるため suite では覆う。単体チェックの弱さとみて finding とはしない。
+  - `scripts/product-ready/targets.mjs:38-51` の walk を旧形（placeholder 積み＋呼び側書き直し）に戻しても `plan` の出力は同じでテストは緑のままだが、振る舞い不変を plan が `_no case_` と決めた範囲のため、Unproven とはしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: plan の検査 3 つ（`vitest run scripts/product-ready/` 40 passed / `pnpm typecheck` が `root: ok` と `.pi: ok` / `pnpm lint` 緑）。壊して赤を見た 2 つ: `targets.mjs` の walk の `readdir` を空にする → 13 failed（`plan` の walk 系 9、`--run` 系 4）、`index.mjs` の `remove(entries)` を `remove([])` にする → 同じ 13 failed。2 ファイルは `git checkout` で戻し、40 passed に復帰
+- Findings: なし
+- Doubts: なし

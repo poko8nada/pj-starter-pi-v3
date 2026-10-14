@@ -35,19 +35,20 @@ export function plan(root, only) {
     throw new Error(`no such directory: ${root}`);
   }
   const rows = only === undefined ? STARTER_ONLY : STARTER_ONLY.filter((row) => row.label === only);
-  const found = [];
   const walk = (dir) => {
+    const paths = [];
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === 'node_modules' || entry.name === '.git') {
           continue;
         }
-        walk(path);
+        paths.push(...walk(path));
       } else if (entry.isFile() && isTestFile(entry.name)) {
-        found.push({ label: '', at: '', path });
+        paths.push(path);
       }
     }
+    return paths;
   };
   /** @type {{ readonly label: string, readonly at: string, readonly path: string }[]} */
   const out = [];
@@ -70,10 +71,8 @@ export function plan(root, only) {
         continue;
       }
       if (isDir) {
-        found.length = 0;
-        walk(base);
-        for (const hit of found) {
-          out.push({ label: row.label, at: relative(root, hit.path), path: hit.path });
+        for (const hit of walk(base)) {
+          out.push({ label: row.label, at: relative(root, hit), path: hit });
         }
       } else if (isTestFile(basename(base))) {
         out.push({ label: row.label, at: row.at, path: base });
@@ -100,11 +99,10 @@ export function plan(root, only) {
 /**
  * 消す物を消す（副作用）。無い物は飛ばす。
  *
- * @param {string} root リポジトリの根（相対パス用）
  * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} entries 消す物
  * @returns {readonly string[]} 消した物の `at`
  */
-export function remove(root, entries) {
+export function remove(entries) {
   const removed = [];
   for (const entry of entries) {
     const path = entry.path;
@@ -122,7 +120,6 @@ export function remove(root, entries) {
     } else {
       rmSync(path, { force: true });
     }
-    void root;
     removed.push(entry.at);
   }
   return removed;

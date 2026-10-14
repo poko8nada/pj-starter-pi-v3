@@ -1,12 +1,12 @@
 /**
- * @typedef {{ readonly root: string, readonly run: boolean, readonly only: string | undefined }} PruneArgs
+ * @typedef {{ readonly root: string, readonly run: boolean, readonly only: string | undefined }} Args
  */
 
 /**
  * 引数を解釈する（純）。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
- * @returns {PruneArgs}
+ * @returns {Args}
  */
 export function parseArgs(argv) {
   let root = process.cwd();
