@@ -20,6 +20,7 @@ Answer in this shape, one section per slice:
 - Noise: ...
 
 One finding is one bullet. Write なし for a name that found nothing.
+This is the only round: the findings come back once.
 Do not change the code or the plan.
 ```
 

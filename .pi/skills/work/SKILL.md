@@ -5,17 +5,17 @@ description: Use when a plan is agreed and its work has to be carried out — af
 
 # work
 
-One plan is one worktree: a branch and a merge — or the base, when the design's `Where` says so. The work is done from the plan md, and the record goes back into it.
+One plan is one worktree: a branch and a merge — or the base, when the design's `Where` says so. Work is done from the plan md, and the record goes back into it.
 
 **Judgment is the agent's, and the owner's.** A subagent runs its own slice's check and reports; the review and the acceptance are not its business. A premise the run disproves is triaged here with the owner first — within tolerance, or a change the work absorbs.
 
-The work keeps its own business: the slices, the checks, the commits, the review, the acceptance, the merge, and the record.
+Work keeps its own business: slices, checks, commits, review, acceptance, merge and record.
 
 ## File
 
-The work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and writes into it: the slices' records under `## Notes`, `## Review`, `## Acceptance`.
+Work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and writes into it: slices' records under `## Notes`, `## Review`, `## Acceptance`.
 
-The texts handed to subagents are in `references/tasks.md`.
+Texts handed to subagents are in `references/tasks.md`.
 
 ## Procedure
 
@@ -27,8 +27,8 @@ The texts handed to subagents are in `references/tasks.md`.
 
 ### 2. Commit the documents
 
-- Commit the files associated with this cycle: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `design.md` and `plan/*.md`.
-- Use the commit message: `update: NNN's ADR, design and plan`
+- Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `design.md` and `plan/*.md`.
+- Commit message: `update: NNN's ADR, design and plan`
 
 ### 3. Set the place
 
@@ -37,26 +37,28 @@ The texts handed to subagents are in `references/tasks.md`.
 
 ### 4. Run the slices
 
-- hand the plan md to one `code` subagent in the worktree: the slices in order, as far as it can. The task is in `references/tasks.md`
+- hand the plan md to one `code` subagent in the worktree: slices in order, as far as it can. Task: `references/tasks.md`
 - the subagent runs each slice's check, commits after it passes, and writes that slice's record
 - when it stops, read its report and the worktree's plan md. Three answers:
-  - it only ran out (the work is sound): continue it (`continue: true`), without calling the owner
-  - a premise the run disproves is triaged here with the owner: within tolerance, or a change the work absorbs. The plan is not rewritten to keep going
-  - what the work cannot absorb: the owner decides. Drop the plan (write `Stopped` and the reason in the agent's plan md, commit it in the base, remove the worktree, no merge), or carry it to the close
+  - it only ran out (work is sound): continue it (`continue: true`), without calling the owner
+  - a premise the run disproves is triaged here with the owner: within tolerance, or a change the work absorbs. Plan is not rewritten to keep going
+  - what work cannot absorb: the owner decides. Drop the plan (write `Stopped` and the reason in the agent's plan md, commit it in the base, remove the worktree, no merge), or carry it to the close
 - a `base` plan: the agent does the slices. Show the owner after each one, and wait for their OK before committing
 
 ### 5. Review
 
-- when the slices are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
+- when slices are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
 - it writes `## Review`, `### Round 1`, under the four viewpoints
-- the fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
-- Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. Two rounds: a Round 1 that finds nothing ends the review, and a Round 2 that still finds the same thing goes to the owner
+- fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
+- Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review
+- Round 2 is the last look: the review ends there, and what is still open is fixed once more. No third round
+- a doubt or a note that is not a finding goes in the plan's `## Notes`, and nowhere else
 
 ### 6. Acceptance
 
-- the agent runs the plan's checks (the integration slice included) and the whole typecheck and test, in the worktree (or the base)
-- and for two or three of the behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
-- write `## Acceptance`: `Ran` and `Findings` (`なし` when there is nothing). The merge's commit is not written there: the acceptance is committed before the merge
+- the agent runs the plan's checks (integration slice included) and the whole typecheck and test, in the worktree (or the base)
+- and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
+- write `## Acceptance`: `Ran` and `Findings` (`なし` when there is nothing). Merge's commit is not written there: the acceptance is committed before the merge
 - a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
 - commit it in the worktree: `consult(<plan id>): acceptance`
 

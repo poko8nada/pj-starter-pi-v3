@@ -12,29 +12,32 @@ A finding is a hole you could not close: one bullet for the hole, and `left: <wh
 If you cannot finish, write where you stopped (Stopped) and stop.
 ```
 
-- The agent passes `worktree` (for a worktree plan) and `continue: true` after the first run. The role's own permissions (`types.json`) are what the subagent works under.
+- Agent passes `worktree` (for a worktree plan) and `continue: true` after the first run. Role's own permissions (`types.json`) are what the subagent works under.
 - Check comes before the commit: a filled `Commit` means that slice's check passed.
 
 ## Review (a `review` subagent)
 
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md (## Files, the slices' `### Verify`, ## Notes).
-Review the diff <base hash>..HEAD, by four viewpoints:
+Answer one question: can this diff close the plan? By four viewpoints:
 - Stale: a document, a comment or a test this change makes stale
 - Unlisted: a change the plan's Files does not name
-- Gaps: a hole the slices passed over — a behavior the checks do not exercise. A value the plan or the ADR already decided is not a gap: the check does not restate it. A behavior with no faithful double is not a gap when the plan covers it with a `look` / `use` check instead
-- Unproven: a test that would stay green if the behavior it names were removed
-Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from. Write なし for a viewpoint that found nothing.
+- Gaps: a behavior the checks do not exercise
+- Unproven: a test that stays green when the behavior it names is broken
+A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers with a `look` / `use` check.
+Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
+This is the only round of findings. A doubt or a note that is not a finding goes in the plan's ## Notes.
 Do not change the code.
 ```
 
 ```
-The fixes for Round 1 are in. Look only at the lines marked fixed:, and check each one is really fixed.
-Write your answer in ### Round 2, same viewpoints. Write なし if nothing is left.
+Fixes for Round 1 are in. Look only at the lines marked fixed:, and check each one is really fixed.
+This is the last look. Write your answer in ### Round 2, same viewpoints, and stop. A doubt that is not a finding goes in the plan's ## Notes.
 ```
 
-- Round 1 runs in a new conversation (`continue: false`); Round 2 continues the reviewer's own. Two rounds: a Round 1 that finds nothing ends the review, and a Round 2 that still finds the same thing goes to the owner.
-- The reviewer's role allows it to write only `cycles/*/plan/*.md`: it writes the record, and nothing else.
+- Round 1 runs in a new conversation (`continue: false`); Round 2 continues the reviewer's own. A Round 1 that finds nothing ends the review.
+- After Round 2 the review ends. What is still open is fixed once more, and nothing looks at it again: the record and the report hold it.
+- Reviewer's role allows it to write only `cycles/*/plan/*.md`: it writes the record, and nothing else.
 
 ## Fixes (the `code` subagent, continued)
 
