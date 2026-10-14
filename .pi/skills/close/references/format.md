@@ -29,6 +29,7 @@
 - One leftover is one numbered line and three bullets. The line is `<plan id>:<line> / <place> / <穴>`: the plan md, the line in it, and where the hole came from (`Slice 1 (名前)`, `Review Round 1`, `Acceptance`).
 - The agent writes the bullets, reading the plan md and the diff. `Doing` is what the plan was doing there, `Left` is why the hole was left, `Cost` is what it costs to leave it. They are what the owner judges with, so they name the line and the code, and do not restate the plan.
 - The script touches nothing that is indented deeper than a numbered line. The bullets stay when it runs again.
+- A hole the script cannot see — a change an entry decided that no plan carries — is added by the agent as a numbered line, in the same shape, after every run of the script.
 - The heading of a plan carries its link, read from the design: the `ADR` and the `Scope`. `未特定` when the script cannot read it — the plan is not in the design (an `ex-` plan), or the field is missing. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.

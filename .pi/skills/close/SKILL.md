@@ -27,7 +27,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
 - the design: the cut, and the `Boundary.Plans`
 - each plan md: its `## Acceptance`, its `## Review` and its `## Notes`
 - do not read the criteria from memory: the files hold them
-- a change an entry decided that no plan's `Files` or `Scope` carries is a hole: it goes into `## Collected` by hand, in the same shape
+- a change an entry decided that no plan's `Files` or `Scope` carries is a hole: find it here, and add it in step 3
 
 ### 3. Collect
 
@@ -35,6 +35,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
 - read the plan md and the diff for each line, and write its `Doing` / `Left` / `Cost`
 - fill every `未特定` from the design, and show the completed `## Collected` to the owner
+- add the holes you found in step 2 as lines by hand, in the same shape: the script does not know them
 
 ### 4. Triage, with the owner
 
@@ -48,7 +49,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
 ### 5. Write close.md
 
 - `## Collected` and `## Triage`, in that order
-- after an `ex-` plan merged, run the script again: it keeps the lines that are there, and write `done <commit>` on the line it closed
+- after an `ex-` plan merged, run the script again: it keeps the lines that are there, and write `done <commit>` on the line it closed. The by-hand lines are added again after the run
 
 ### 6. Owner
 
