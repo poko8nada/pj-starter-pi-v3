@@ -22,7 +22,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 1. Read the plan and its record
 
 - Plan md: `Files`, each slice's `Types`, `Steps` and `Verify`, and `## Notes`
-- Design's `Where`: worktree, or base
+- Design's `Where`: worktree, or base. An `ex-` plan has no design: it takes the default (a worktree)
 - State: `Commit` filled is done, `Stopped` is interrupted, neither is not started
 
 ### 2. Commit the documents
