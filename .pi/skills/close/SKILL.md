@@ -25,7 +25,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
 
 - the ADR: the `accepted` entries, and what each `Definition Change` decides
 - the design: the cut, and the `Boundary.Plans`
-- each plan md: its `## Acceptance` and its `## Notes`
+- each plan md: its `## Acceptance`, its `## Review` and its `## Notes`
 - do not read the criteria from memory: the files hold them
 - a change an entry decided that no plan's `Files` or `Scope` carries is a hole: it goes into `## Collected` by hand, in the same shape
 

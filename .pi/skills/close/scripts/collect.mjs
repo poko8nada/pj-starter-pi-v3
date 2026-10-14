@@ -25,8 +25,8 @@ const SCOPE_HEAD = /^###\s+Scope\s*$/;
 const SCOPE_ITEM = /^\s*-\s*([^:]+):/;
 /** 読めなかった所の印。close はこれを探して埋める */
 const UNKNOWN = '未特定';
-/** 番号行。`1. <plan id>:<line> / …` */
-const NUMBERED = /^\s*\d+\.\s+(.+?):(\d+)\s+\//;
+/** 番号行。`1. <line> / …`。plan は上の `### ` の見出しから取る */
+const NUMBERED = /^\s*\d+\.\s+(\d+)\s+\//;
 /** 穴を並べる所（`Slice 2 (…)` / `Round 1`）の見分け */
 const SLICE_PLACE = /^Slice\s+(\d+):\s*(.*)$/;
 const ROUND_PLACE = /^Round\s+(\d+)/;
@@ -319,7 +319,7 @@ function render(items, contexts) {
     }
     n += 1;
     const handling = item.handling ? ` / ${item.handling}` : '';
-    lines.push(`${n}. ${item.plan}:${item.line} / ${item.place} / ${item.finding}${handling}`);
+    lines.push(`${n}. ${item.line} / ${item.place} / ${item.finding}${handling}`);
     for (const kept of contexts.get(`${item.plan}:${item.line}`) ?? []) {
       lines.push(kept);
     }
@@ -338,11 +338,19 @@ function readContexts(text) {
   /** @type {Map<string, string[]>} */
   const kept = new Map();
   /** @type {string | null} */
+  let plan = null;
+  /** @type {string | null} */
   let current = null;
   for (const line of text.split('\n')) {
+    const head = line.match(/^### (\S+)/);
+    if (head) {
+      plan = head[1];
+      current = null;
+      continue;
+    }
     const numbered = line.match(NUMBERED);
     if (numbered) {
-      current = `${numbered[1]}:${numbered[2]}`;
+      current = `${plan}:${numbered[1]}`;
       if (!kept.has(current)) kept.set(current, []);
       continue;
     }
