@@ -196,8 +196,10 @@ export type Thresholds = {
 - Unlisted: なし
 - Gaps: なし
 - Unproven: なし
+- Doubts: なし
 
 ## Acceptance
 
 - Ran: plan の検査 4 つ（slice 1: `tsc -p .pi/tsconfig.json --noEmit` exit 0 / slice 2: `vitest run scripts/typecheck.test.ts` 8 passed / slice 3: `vitest run scripts/typecheck-staged.test.ts` 10 passed / slice 4: `pnpm typecheck` が `root: ok` と `.pi: ok`、grep 5 つ）と、全体の `pnpm test:run`（550 passed）と `pnpm lint`（緑）。壊して赤を見た 3 つ: `typecheck.mjs` の一覧の loop を空にする → 3 failed、`typecheck-staged.mjs` の harness の割り当てを外す → 1 failed、`settings.ts` の `Thresholds` を optional に戻す → `judge.ts:38` ×2 と `route.ts:57` の 3 件（exit 2）。3 ファイルは `git checkout` で戻し、上の検査を再び緑で確認
 - Findings: なし
+- Doubts: なし
