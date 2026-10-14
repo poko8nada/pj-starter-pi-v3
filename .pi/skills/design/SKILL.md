@@ -13,7 +13,7 @@ A plan is a worktree, a branch and a merge — the unit the work runs in. The pl
 
 `cycles/<YYMMDD>-<NNN>-<slug>/design.md`, in the shape `references/format.md` gives.
 
-Read that file before writing. It holds the section per plan, the rules for the cut, and the `Boundary`'s two groups.
+Read that file before writing. It holds section per plan, rules for the cut, and `Boundary`'s two groups.
 
 ## Procedure
 
@@ -24,7 +24,7 @@ Read that file before writing. It holds the section per plan, the rules for the 
 
 ### 2. Cut the cycle's changes into plans
 
-The rules are in `references/format.md`. One plan is one worktree: the unit of a branch and a merge.
+Rules are in `references/format.md`. One plan is one worktree: the unit of a branch and a merge.
 
 ### 3. Name each plan
 
@@ -52,18 +52,18 @@ One list of plans, each with its scope and its boundary. They read the cut, and 
 
 ### Changes after this
 
-The design is edited to match, and git holds the diff.
+Design is edited to match, and git holds the diff.
 
 A plan found while the plans are written comes back here: the top of this file gains `## Refactor`, and the plans that use it name it in their `Boundary.Plans`.
 
 ## What is not here
 
-| what                                                                   | where           |
-| ---------------------------------------------------------------------- | --------------- |
-| the product's picture                                                  | the definition  |
-| the options, the research, the decision                                | the cycle's ADR |
-| the files, the internal dependencies, the types, the steps, the checks | the plan        |
-| whether the cycle delivered                                            | the close       |
+| what                                                               | where       |
+| ------------------------------------------------------------------ | ----------- |
+| product's picture                                                  | definition  |
+| options, the research, the decision                                | cycle's ADR |
+| files, the internal dependencies, the types, the steps, the checks | plan        |
+| whether the cycle delivered                                        | close       |
 
 ## How not to write this
 

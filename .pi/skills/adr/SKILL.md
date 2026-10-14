@@ -18,44 +18,44 @@ The ADR decides, and the picture is written from what it decided. The design, th
 
 ## Cycle
 
-- the owner declares the cycle, and says what it is for
-- the cycle's questions are the entries, and one entry is one question
+- owner declares the cycle, and says what it is for
+- cycle's questions are the entries, and one entry is one question
 - each entry runs the flow below, in order
-- when every entry is decided, the entries are read together, and the picture is written
+- when every entry is decided, entries are read together, and the picture is written
 
 ## One entry
 
-### 1. The context — the interview
+### 1. Context — the interview
 
 - ask the owner what is happening and what they want, and write the answers down as the entry's `Context`
 - organize them: what the question is, what is given, and what is not
-- the exchange itself is not recorded, and only the organized context stays
+- exchange itself is not recorded, and only organized context stays
 
-### 2. The options — the research
+### 2. Options — the research
 
-- put out the options that could answer the context
+- put out options that could answer the context
 - drop the ones that cannot work in this setting, and say why
 - weigh the rest: what each buys, and what each costs
 - write them in `Options`, each with the reason it stands or falls
-- the pick is not made here, and the owner makes it at the decision, with the `Status`
+- pick is not made here, and the owner makes it at the decision, with the `Status`
 
-When the facts are missing, run a `research` subagent with the type that fits. The type sets the questions:
+When facts are missing, run a `research` subagent with the type that fits. The type sets the questions:
 
 - `triage` — a defect or a limitation: is it common, and is there a remedy in this setting
 - `compare` — a choice: what are the candidates, what does each buy and cost, and does it clash with the `Ground`
 - `mechanism` — a way of doing it: what does the tool offer, and what are its limits
 
-Keep the sources and the queries the subagent used, and carry them into `Research & Trial`.
+Keep sources and queries the subagent used, and carry them into `Research & Trial`.
 
-### 3. The trial — when it needs hands
+### 3. Trial — when it needs hands
 
-A `trial` subagent runs in a worktree, because the `trial` role writes. The task carries the candidate and its setting, and the subagent installs it, sets it up, and reports the clashes, the versions and the smallest working shape. Ask the owner before it touches the shared store.
+A `trial` subagent runs in a worktree, because the `trial` role writes. The task carries the candidate and its setting, and the subagent installs it, sets it up, and reports clashes, versions and the smallest working shape. Ask the owner before it touches the shared store.
 
 A `Stack` change is worth a trial.
 
 **Nothing a trial writes enters the product.** The trial is a bench, and what it leaves is the fact. The product changes through the design, the plan and the work, and nowhere else.
 
-### 4. The definition change
+### 4. Definition change
 
 For the option on the table, look at `DEFINITION.md` as a whole, and decide every line it would move: the name, the operation, and the new line.
 
@@ -64,7 +64,7 @@ For the option on the table, look at `DEFINITION.md` as a whole, and decide ever
 - a Unit that `definition/rules.md` does not allow is not a Unit
 - this is what the owner weighs at the decision: the option, and what it does to the picture
 
-### 5. The decision
+### 5. Decision
 
 The owner's answer is the decision, and nothing else records it. Write the `Status` — `accepted` or `rejected` — and put a rejection's reason on the same line.
 
@@ -83,11 +83,11 @@ Two entries that touch the same name must not contradict, and a contradiction is
 
 An entry decided here is not work done: the design cuts it, the plan writes it, and the work carries it out.
 
-This skill keeps its own business — the entry, the research, the trial, the decision, and the picture — and does not do theirs.
+This skill keeps its own business — entry, research, trial, decision and picture — and does not do theirs.
 
 ## How not to write this
 
-- Do not write the work here: the files, the steps and the checks belong to the plan
+- Do not write the work here: files, steps and checks belong to the plan
 - Do not put two questions in one entry
 - Do not leave an entry undecided: a cycle decides every entry it raises
 - Do not write `DEFINITION.md` from anywhere but the entries

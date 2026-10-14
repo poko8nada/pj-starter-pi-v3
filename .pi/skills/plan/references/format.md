@@ -58,6 +58,7 @@ Section and field names are English; the content is Japanese.
 - Stale:
 - Unlisted:
 - Gaps:
+- Unproven:
 
 ## Acceptance
 

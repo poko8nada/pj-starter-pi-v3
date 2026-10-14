@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when the design is agreed and one of its plans has to become work — after the cut is settled and a plan is ready to be handed to a subagent. It writes `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding the files, the slices, the shapes and the checks.
+description: Use when design is agreed and one of its plans has to become work — after cut is settled and a plan is ready to be handed to a subagent. It writes `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types and checks.
 ---
 
 # plan
@@ -11,14 +11,14 @@ One plan is one worktree: a branch and a merge. It is written from the cycle's d
 
 `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, in the shape `references/format.md` gives.
 
-Read that file before writing. It holds the sections, the slice, the `Types`, the type rules, the checks and the record.
+Read that file before writing. It holds sections, slice, `Types`, type rules, checks and record.
 
 ## Procedure
 
 ### 1. Read what the plan carries
 
-- the design's section for this plan: `No`, `Why`, `Where`, `Scope`, `Boundary`
-- the entries the plan's `No` names, in full
+- design's section for this plan: `No`, `Why`, `Where`, `Scope`, `Boundary`
+- entries the plan's `No` names, in full
 
 ### 2. Walk the relations, and write `Files`
 
@@ -52,37 +52,37 @@ A `test` check is written on top of the test file it names: read that file first
 
 `## Notes`, one `### Slice N` per slice, with the fields empty; a subagent fills its own slice's record as the work goes. `## Review` and `## Acceptance` are written by the reviewer and by the agent.
 
-### 8. The cycle's plans, together
+### 8. Cycle's plans, together
 
 When every plan of the cycle is written, read them together — the `Types` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
 
-A pair found is a change to the cut. The owner decides. Then write:
+A pair found is a change to cut. The owner decides. Then write:
 
 - the design: `## Refactor` at the top, and the plans that use it name it in their `Boundary.Plans`
 - the plans that used to make it: their `Files` drop it, and the step that made it becomes a step that uses it
 - the refactor plan's own md: its `Files`, `Slices` and checks
 
-### 9. The review of each plan
+### 9. Review of each plan
 
 A `review` subagent reads one plan's `Verify` — each slice's check — and answers with its findings. The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
 
 ### 10. Show the owner
 
-Every plan of the cycle: the files, the slices, the shapes, the checks. They read them, and answer.
+Every plan of cycle: files, slices, types, checks. They read them, and answer.
 
 ### Changes after this
 
-The plan is edited to match, and git holds the diff.
+Plan is edited to match, and git holds the diff.
 
 ## What is not here
 
-| what                                            | where           |
-| ----------------------------------------------- | --------------- |
-| the product's picture                           | the definition  |
-| the options, the research, the decision         | the cycle's ADR |
-| the cut into plans, their order, their boundary | the design      |
-| the work, and what it leaves behind             | the work        |
-| whether the cycle delivered                     | the close       |
+| what                                        | where       |
+| ------------------------------------------- | ----------- |
+| product's picture                           | definition  |
+| options, the research, the decision         | cycle's ADR |
+| cut into plans, their order, their boundary | design      |
+| work, and what it leaves behind             | work        |
+| whether the cycle delivered                 | close       |
 
 ## How not to write this
 
