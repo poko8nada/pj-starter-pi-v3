@@ -31,15 +31,15 @@ pnpm install
 
 ## 検査
 
-| コマンド                            | 何をするか               |
-| ----------------------------------- | ------------------------ |
-| `pnpm test:run`                     | テストを 1 回走らせる    |
-| `pnpm lint`                         | `oxlint`（警告も落とす） |
-| `pnpm typecheck`                    | `tsc --noEmit`           |
-| `pnpm format` / `pnpm format:check` | 整形する / 確かめる      |
+| コマンド                            | 何をするか                   |
+| ----------------------------------- | ---------------------------- |
+| `pnpm test:run`                     | テストを 1 回走らせる        |
+| `pnpm lint`                         | `oxlint`（警告も落とす）     |
+| `pnpm typecheck`                    | `node scripts/typecheck.mjs` |
+| `pnpm format` / `pnpm format:check` | 整形する / 確かめる          |
 
 - **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related`
-- **push 時** — typecheck / test
+- **push 時** — typecheck（ルートとハーネス）/ test
 - **エージェントのターンごと** — そのターンで変えた物があるときだけ。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えた物に
 
 ## サイクル
