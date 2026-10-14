@@ -1,18 +1,18 @@
 ---
 name: adr
-description: Use when the owner declares a cycle start, or raises a point about the definition or the cycle. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, decides what the cycle does to `DEFINITION.md`, and writes the picture from it.
+description: Use when the owner declares a cycle start, or raises a point about the definition or the cycle. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` and decides what the cycle does to `DEFINITION.md`.
 ---
 
 # adr
 
 One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cycle's decisions about `DEFINITION.md` are made and left.
 
-The ADR decides, and the picture is written from what it decided. The design, the plan and the work are written from `DEFINITION.md`, and none of them argues.
+The ADR decides what the picture becomes, and a plan writes it. The design, the plan and the work are written from `DEFINITION.md`, and none of them argues.
 
 ## Files
 
 - `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
-- `DEFINITION.md` — the product's picture. The entry names the lines of it that move, and the picture is written from them.
+- `DEFINITION.md` — the product's picture. The entry names the lines of it that move; a plan writes them.
 - `definition/rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `definition/format.md` — the shape of the picture.
 
@@ -21,7 +21,7 @@ The ADR decides, and the picture is written from what it decided. The design, th
 - owner declares the cycle, and says what it is for
 - cycle's questions are the entries, and one entry is one question
 - each entry runs the flow below, in order
-- when every entry is decided, entries are read together, and the picture is written
+- when every entry is decided, entries are read together, and the change to the picture is settled
 
 ## One entry
 
@@ -71,8 +71,6 @@ The owner's answer is the decision, and nothing else records it. Write the `Stat
 - the option that is adopted moves from `Options` to `Adopted`
 - the rest keep the reason each was not taken, and a rejected entry adopts nothing, so `Adopted` stays empty
 
-Then write `DEFINITION.md` from the `Definition Change`. This is the only path that moves the picture.
-
 ## Entries, together
 
 When every entry is decided, read them together: the names they write, and the lines they move.
@@ -83,11 +81,11 @@ Two entries that touch the same name must not contradict, and a contradiction is
 
 An entry decided here is not work done: the design cuts it, the plan writes it, and the work carries it out.
 
-This skill keeps its own business — entry, research, trial, decision and picture — and does not do theirs.
+This skill keeps its own business — entry, research, trial and decision — and does not do theirs.
 
 ## How not to write this
 
 - Do not write the work here: files, steps and checks belong to the plan
 - Do not put two questions in one entry
 - Do not leave an entry undecided: a cycle decides every entry it raises
-- Do not write `DEFINITION.md` from anywhere but the entries
+- Do not write the picture here: the entries decide it, and a plan writes it

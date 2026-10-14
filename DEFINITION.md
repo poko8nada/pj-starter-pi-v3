@@ -19,6 +19,8 @@
 
 ### Users can do
 
+- definition-file: owner またはエージェントが、プロダクトの絵を 1 枚で読める
+- definition-rules: エージェントが、絵の書き方の規則を読める
 - subagent-consult: エージェントが、サブエージェントのコンサルを走らせ、その作業場と結果を扱える
 - quality-gate: エージェントが、そのターンでの変更分に対し、検査結果を受け取れる
 - sound-notify: owner が、pi からの通知、commit が通ったことに気づける

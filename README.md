@@ -9,7 +9,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
-- **The cycle mechanism** — six skills in `.pi/skills/` (`adr` / `definition` / `design` / `plan` / `work` / `close`)
+- **Cycle mechanism** — five skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close`)
 - **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), `intent-router` (routes the owner's message and stops over-investigation) (`.pi/extensions/`)
   - `consult_run` — runs one child `pi` with a role and a place, without showing it this conversation
   - `consult_children` — lists the children of this session and stops one; it reads a record, so the list still shows this session's children across a reload
@@ -17,7 +17,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
   - `consult_commit` — commits the work a child left in its worktree; you merge it yourself with `git merge --no-ff consult/<unit-id>`
   - the places: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, on the branch `consult/<unit-id>`, cut from the parent's `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
-- **The cycle records** — `cycles/`
+- **Cycle records** — `cycles/`
 
 ## Getting started
 
@@ -42,19 +42,18 @@ pnpm install
 - **On push** — typecheck and test
 - **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
 
-## The cycle
+## Cycle
 
-One cycle is an ADR, one definition, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
+One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
 
 ```
 adr          decide what needs deciding (the options, the research, the trial, the decision)
-definition   write the one definition (What / Who / Users can do / Stack)
 design       cut the cycle into plans, and say where each runs
-plan         write one plan per worktree (the files, the slices, the checks)
+plan         write one plan per worktree (the files, the types, the steps, the checks)
 work         carry a plan to done (the slices, the review, the acceptance, the merge)
 close        judge the cycle (the integration test, where each leftover goes)
 ```
 
-The records stay in `cycles/<YYMMDD-NNN-<branch>>/`: `adr.md`, `definition.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
+The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
 
-The definition holds the product. The ADR holds the argument behind it, and it fires from any stage. A change after the definition is agreed is a new ADR entry, and the definition is edited to match.
+`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it fires from any stage. A change after the definition is agreed is a new ADR entry, and a plan writes it.

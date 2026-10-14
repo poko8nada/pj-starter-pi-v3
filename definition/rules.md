@@ -2,7 +2,7 @@
 
 What may be a Unit of `DEFINITION.md`, and how the Units, the `Who` and the `Stack` are named and written.
 
-This file is read when a line is added, moved or dropped: the ADR decides the change, and the definition is written from it. The shape of the file is in `definition/format.md`.
+This file is read when a line is added, moved or dropped: the ADR decides the change, and a plan writes it. The shape of the file is in `definition/format.md`.
 
 ## What may be a Unit
 
@@ -33,7 +33,6 @@ The kinds below are how the Units of this product happen to appear. They are exa
 - The argument, the options, the research, the trials, the dropped plans: the ADR's.
 - What is not decided yet. The definition holds what is decided.
 - The cycle's work: the plan and git hold it.
-- The definition itself. `DEFINITION.md` is the picture, not a Unit of it.
 
 ## Naming
 
