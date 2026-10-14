@@ -1,8 +1,8 @@
-import { findCycles, findTests, removeCycles, removeTests } from './targets.mjs';
+import { labels, plan, remove } from './targets.mjs';
 import { parseArgs, planLines } from './cli.mjs';
 
 /**
- * 両方を順に回す入口。引数なしは表示だけ、`--run` で実行する。
+ * 3種を順に回す入口。引数なしは表示だけ、`--run` で実行する。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
@@ -15,34 +15,21 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  let tests;
-  let cycles;
+  let entries;
   try {
-    tests = findTests(args.root);
+    entries = plan(args.root, args.only);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  try {
-    cycles = findCycles(args.root);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    return 1;
-  }
-  for (const line of [...planLines('tests', tests), ...planLines('cycles', cycles)]) {
+  for (const line of planLines(labels(args.only), entries)) {
     console.log(line);
   }
   if (!args.run) {
     return 0;
   }
   try {
-    removeTests(args.root, tests);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    return 1;
-  }
-  try {
-    removeCycles(args.root, cycles);
+    remove(args.root, entries);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;

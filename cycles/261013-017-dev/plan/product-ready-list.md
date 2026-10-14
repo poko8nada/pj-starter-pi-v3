@@ -155,32 +155,44 @@ export function planLines(labels, plan) {}
 
 ### Slice 1: 一覧と芯
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `remove` の第2引数を `entries` にした（plan の `plan` は関数 `plan` を隠すため `oxlint --deny-warnings` の `no-shadow` で赤になる。意味は変わらない）。
+- Commit: fc158fc
 
 ### Slice 2: 入口と引数
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0268ca5
 
 ### Slice 3: 統合: 消える物の意味が 1 本になる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4331aec
+
+### Review Round 1: doubts（finding ではない）
+
+- `scripts/product-ready/cli.mjs:2` の `PruneArgs` という型名が残る。prune-* 削除後の入口は product-ready だが、prune＝消す物の意味は変わらず、plan の Steps も改名を求めないため Stale とはしない。
+- `scripts/product-ready/index.test.ts:54` の表示テストは `001-a` だけを見て `002-b` と `harness-scopes.json` の行を見ない。`targets.test.ts:69` が plan の両フォルダを持ち、`cli.test.ts:20` が `planLines` の exact を持つため、suite では覆う。単体代表とみて Gaps/Unproven とはしない。
+- `scripts/product-ready/index.test.ts:165` の2回目 `--run` は `no tests` / `no cycles` だけを見て `no harness` を見ない。`index.test.ts:129` の空 root が3行を持ち、`index.test.ts:97` が harness 削除を持つため、suite では覆う。単体不足とみて finding とはしない。
+- `scripts/product-ready/targets.test.ts:144` の昇順テストは FS の `readdir` 順に依存する。順序が既に昇順の FS では sort 撤去でも緑になる可能性があるが、plan の要求は昇順であること自体で、テストは昇順をexact と `toSorted` の両方で見る。FS 依存の弱さとみて finding とはしない。
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし（旧名の live 残りなし。`prune-tests.mjs` / `prune-cycles.mjs` は消え、live の `findTests` / `findCycles` / `TEST_TARGETS` 参照は archive と ADR の記録だけ。`README.md:28` / `README.ja.md:28` / `DEFINITION.md:40` / `vitest.config.ts:10` は新3種と矛盾しない）
+- Unlisted: なし（`1436572..HEAD` の10件は `## Files` の update/drop と一致。`harness-scopes.json` / `package.json` / `vitest.config.ts` / `test/tmp.ts` は bare のまま未変更で、余分な変更なし）
+- Gaps: なし（slice 1 の file/tests/dirs・昇順・`labels`、slice 2 の `--only` 両形・`planLines` 分岐・`--run` 3種・空/欠落/未知引数、slice 3 の3見出し・`--only cycles`・README grep はいずれも対応する test/cli が持つ。未知 label は slice 1 の `_no case_` で対象外）
+- Unproven: なし（各行為を戻せば対応する check が赤になる。`STARTER_ONLY` の1行欠落・`walk` の skip 撤去・`.spec` 狭め・`--only` 無視・見出し順崩しはいずれも `targets.test.ts` / `cli.test.ts` / `index.test.ts` の exact/length/contains のどれかが外れる）
+
+### Acceptance: doubts（finding ではない）
+
+- `scripts/product-ready/targets.mjs:125` の `void root;` — `remove` の第 1 引数 `root` は使われていない。plan の `Types` が `remove(root, plan)` と書くため残した物で、`plan` と対にする意図は読めるが、`void` で黙らせている形は残る。
+- `scripts/product-ready/targets.mjs:39-51,73-77` の `walk` は `{ label: '', at: '', path }` を積んで呼び側で書き直す。動くが、`walk` がパスだけを返す形の方が短い。
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: plan の検査 3 つ（slice 1: `vitest run scripts/product-ready/targets.test.ts` 17 passed / slice 2: `vitest run scripts/product-ready/` 40 passed / slice 3: `pnpm product:ready` が `harness (1)` / `tests (34)` / `cycles (4)` の 3 見出し、`--only cycles` が 1 見出し、`grep -n -e 'harness' -e 'tests' -e 'cycles' -e '\-\-only'` が README 2 つの `product:ready` の行に 4 語）と、全体の `pnpm test:run`（562 passed）と `pnpm lint`（緑）と `pnpm typecheck`（`root: ok` / `.pi: ok`）。壊して赤を見た 3 つ: `targets.mjs` の `only` の絞り込みを外す → 3 failed、`cli.mjs` の `--only` の 2 枝を外す → 2 failed、`index.mjs` の `remove` を空配列にする → 6 failed。3 ファイルは `git checkout` で戻し、上の検査を再び緑で確認
+- Findings: なし

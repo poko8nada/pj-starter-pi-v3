@@ -1,5 +1,5 @@
 /**
- * @typedef {{ readonly root: string, readonly run: boolean }} PruneArgs
+ * @typedef {{ readonly root: string, readonly run: boolean, readonly only: string | undefined }} PruneArgs
  */
 
 /**
@@ -11,6 +11,8 @@
 export function parseArgs(argv) {
   let root = process.cwd();
   let run = false;
+  /** @type {string | undefined} */
+  let only;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--run') {
@@ -28,23 +30,45 @@ export function parseArgs(argv) {
         throw new Error('missing a value for --root');
       }
       root = value;
+    } else if (arg === '--only') {
+      const value = argv[i + 1];
+      if (value === undefined) {
+        throw new Error('missing a value for --only');
+      }
+      only = value;
+      i += 1;
+    } else if (typeof arg === 'string' && arg.startsWith('--only=')) {
+      const value = arg.slice('--only='.length);
+      if (value === '') {
+        throw new Error('missing a value for --only');
+      }
+      only = value;
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  return { root, run };
+  return { root, run, only };
 }
 
 /**
  * 表示の行を作る（純）。
  *
- * @param {string} label 見出し（`tests` か `cycles`）
- * @param {readonly string[]} targets 消える物
+ * @param {readonly string[]} labels 出す label（一覧の順）
+ * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} plan 消える物
  * @returns {readonly string[]} 表示の行
  */
-export function planLines(label, targets) {
-  if (targets.length === 0) {
-    return [`no ${label} to remove`];
+export function planLines(labels, plan) {
+  const lines = [];
+  for (const label of labels) {
+    const targets = plan.filter((entry) => entry.label === label);
+    if (targets.length === 0) {
+      lines.push(`no ${label} to remove`);
+    } else {
+      lines.push(`${label} (${targets.length}):`);
+      for (const target of targets) {
+        lines.push(`  ${target.at}`);
+      }
+    }
   }
-  return [`${label} (${targets.length}):`, ...targets.map((target) => `  ${target}`)];
+  return lines;
 }
