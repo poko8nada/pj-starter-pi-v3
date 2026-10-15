@@ -47,7 +47,6 @@ These lines are the starter's: every definition has them, and a product keeps th
 | Ground | Language        | TypeScript                        |
 | Ground | Runtime         | Node                              |
 | Ground | Package manager | pnpm                              |
-| Ground | Deploy          | なし                              |
 | Checks | Typechecker     | tsc                               |
 | Checks | Test runner     | vitest                            |
 | Checks | Linter          | oxlint                            |
