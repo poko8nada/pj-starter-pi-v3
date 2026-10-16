@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TurnEndEventResult } from '@earendil-works/pi-coding-agent';
 import { LAST_TURN_MESSAGE, lastTurn, nudge, registerBudget, turnsFrom } from './budget.ts';
 
-// ここは「いつ促すか」だけを試す。子を実際に走らせるのは親の役目（consult の道具の検査が扱う）。
+// ここは「いつ促すか」だけを試す。サブエージェントを実際に走らせるのはメインエージェントの役目（consult の道具の検査が扱う）。
 
 /** 偽 pi に登録し、指定の turnIndex で turn_end を起こす */
 function fireWith(turns: number | undefined, turnIndex: number): TurnEndEventResult | undefined {

@@ -1,7 +1,7 @@
 /**
  * consult_worktree — unit ごとの作業場を作り、一覧し、消す道具。
  *
- * 作るのは明示的で、消すのも明示的。作った worktree は指定しない限り残る（子の仕事はそこに残る）。
+ * 作るのは明示的で、消すのも明示的。作った worktree は指定しない限り残る（サブエージェントの仕事はそこに残る）。
  * 判断と解釈は `../run/worktree.ts` が持ち、ここは道具の面だけ。
  */
 
@@ -32,7 +32,7 @@ export const PARAMETERS = Type.Object({
   ),
   base: Type.Optional(
     Type.String({
-      description: "What to branch from (for action=new). Defaults to the parent's HEAD",
+      description: 'What to branch from (for action=new). Defaults to the base HEAD',
     }),
   ),
   force: Type.Optional(
@@ -89,12 +89,12 @@ function parseAction(
 }
 
 /**
- * その unit で子が走っているか。
+ * その unit でサブエージェントが走っているか。
  *
  * 記録（置き場の日ごとのファイル）で見る: 終わりの行が無く、pid が生きている行があれば走っている。
- * 親の記憶ではなく記録を見るので、reload をまたいだ子にも効く。
+ * メインエージェントの記憶ではなく記録を見るので、reload をまたいだサブエージェントにも効く。
  *
- * session では絞らない。作業場を守る側なので、他のセッションの子が走っている作業場も消してはいけない。
+ * session では絞らない。作業場を守る側なので、他のセッションのサブエージェントが走っている作業場も消してはいけない。
  */
 export function runningIn(
   place: Place,
@@ -107,7 +107,7 @@ export function runningIn(
 }
 
 function rowLine(row: WorktreeRow, busy: boolean): string {
-  const state = [row.dirty ? 'changed' : 'clean', busy ? 'a child is running' : '']
+  const state = [row.dirty ? 'changed' : 'clean', busy ? 'a subagent is running' : '']
     .filter((part) => part !== '')
     .join(', ');
   return `${row.id}  ${row.branch}  ${row.path}  (${state})`;
@@ -115,7 +115,7 @@ function rowLine(row: WorktreeRow, busy: boolean): string {
 
 export function removeText(id: string, removed: RemoveResult): string {
   if (removed.outcome === 'busy') {
-    return `消さない: ${id} で子が走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
+    return `消さない: ${id} でサブエージェントが走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
   }
   const own = removed.cleanup.branches.find((entry) => entry.branch === `consult/${id}`);
   // `removed` のときは自分の枝の運命を前置きが言うので、掃除の内訳からは外す（二重に言わない）

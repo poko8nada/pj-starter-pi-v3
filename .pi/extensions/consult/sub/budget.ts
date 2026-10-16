@@ -1,12 +1,12 @@
 /**
- * child-budget — 子が上限の手前に来たら、報告して終えるように促す拡張。
+ * subagent-budget — サブエージェントが上限の手前に来たら、報告して終えるように促す拡張。
  *
- * 親は `CONSULT_TURNS` で上限を渡す（`run/child.ts` が env に足す）。`turnIndex` は 0 から数えるので、
+ * メインエージェントは `CONSULT_TURNS` で上限を渡す（`run/subagent.ts` が env に足す）。`turnIndex` は 0 から数えるので、
  * `上限 - 2` で促し、その後に 1 ターン残す。
  *
  * この版の pi（0.87.1 以降）は `turn_end` から値を返せる。そこを 1 度だけ使って、上限の 2 つ手前で
  * 「次が最後のターン」と伝え、その 1 ターンを報告に使わせる（`continue: true`）。
- * ここが働かなくても、子は上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
+ * ここが働かなくても、サブエージェントは上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
  */
 
 import type { TurnEndEventResult } from '@earendil-works/pi-coding-agent';
@@ -19,7 +19,7 @@ export function lastTurn(turns: number | undefined): number | undefined {
   return turns - 2;
 }
 
-/** 親が渡した上限（env の文字列）。正の整数でなければ undefined */
+/** メインエージェントが渡した上限（env の文字列）。正の整数でなければ undefined */
 export function turnsFrom(value: string | undefined): number | undefined {
   if (value === undefined || value.trim() === '') {
     return undefined;
@@ -28,14 +28,14 @@ export function turnsFrom(value: string | undefined): number | undefined {
   return Number.isInteger(turns) && turns > 0 ? turns : undefined;
 }
 
-/** 子に送る文。抽象を保つ（チケットやサイクルの言葉を入れない） */
+/** サブエージェントに送る文。抽象を保つ（チケットやサイクルの言葉を入れない） */
 export const LAST_TURN_MESSAGE =
   '次が最後のターンです。ここまでに分かったこと・やったことと、終わっていないことを報告して終えてください。';
 
 /**
  * 促しを出すときの 1 つ分。出す必要がなければ undefined。
  *
- * 純粋な形にしてあるのは、子を実際に走らせずに「いつ出すか」を試せるようにするため。
+ * 純粋な形にしてあるのは、サブエージェントを実際に走らせずに「いつ出すか」を試せるようにするため。
  */
 export function nudge(
   limit: number | undefined,

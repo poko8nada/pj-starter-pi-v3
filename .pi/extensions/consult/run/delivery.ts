@@ -1,7 +1,7 @@
 /**
- * consult の delivery — 子の完了を、いま生きているセッションへ届ける 1 本の通り道。
+ * consult の delivery — サブエージェントの完了を、いま生きているセッションへ届ける 1 本の通り道。
  *
- * pi のプロセスは reload で差し替わる（拡張のインスタンスも作り直される）。子は detach されて
+ * pi のプロセスは reload で差し替わる（拡張のインスタンスも作り直される）。サブエージェントは detach されて
  * 生き続けるので、完了の知らせを「もう居ない pi」へ渡すと落ちる。ここで 1 本にまとめ、古い配線は
  * no-op にして記録へ回す。新しいセッションはその記録（`notice` の欄）を起動の時に読む。
  *
@@ -25,7 +25,7 @@ export interface Delivery {
   attach(pi: PiFace): void;
   /** 手放す。以後の `send` は記録だけになる（セッションの終わりに呼ぶ） */
   detach(): void;
-  /** 子の完了を届ける。掴んでいる pi が無ければ、記録に 1 行足す */
+  /** サブエージェントの完了を届ける。掴んでいる pi が無ければ、記録に 1 行足す */
   send(message: ConsultMessage, options: ConsultSendOptions, record: RunRecord): void;
   /** いま届けられるか（テストと、状態を出す所のため） */
   attached(): boolean;

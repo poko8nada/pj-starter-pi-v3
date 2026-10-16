@@ -83,8 +83,8 @@ describe('sound', () => {
     expect(played).toHaveLength(2);
   });
 
-  it('子が 0 体のまま（startSound しない）→ 5 秒経っても鳴らない', () => {
-    // 走っている子がいなければ、timer は 1 本も無い。
+  it('サブエージェントが 0 体のまま（startSound しない）→ 5 秒経っても鳴らない', () => {
+    // 走っているサブエージェントがいなければ、timer は 1 本も無い。
     expect(isSoundRunning()).toBe(false);
 
     vi.advanceTimersByTime(SOUND_INTERVAL_MS * 3);

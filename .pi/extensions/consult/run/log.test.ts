@@ -23,7 +23,7 @@ function place(): Place {
 function record(extra: Partial<RunRecord> = {}): RunRecord {
   return {
     session: 'session-a',
-    child: 'consult-1',
+    subagent: 'consult-1',
     role: 'review',
     pid: process.pid,
     started: 1000,
@@ -68,10 +68,10 @@ describe('appendRun / readRuns', () => {
     const found = place();
     appendRun(found, record({ started: 1 }), at);
     const file = dayFile(found, at);
-    // child が無い行と session が無い行の 2 種類。どちらも parseRun が落とす
+    // subagent が無い行と session が無い行の 2 種類。どちらも parseRun が落とす
     writeFileSync(
       file,
-      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n{"child":"consult-9","role":"review","pid":1,"started":3}\n`,
+      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n{"subagent":"consult-9","role":"review","pid":1,"started":3}\n`,
     );
     expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1]);
   });
@@ -79,9 +79,9 @@ describe('appendRun / readRuns', () => {
   it('始まった順に返す', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ started: 2000, child: 'consult-2' }), at);
-    appendRun(found, record({ started: 1000, child: 'consult-1' }), at);
-    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
+    appendRun(found, record({ started: 2000, subagent: 'consult-2' }), at);
+    appendRun(found, record({ started: 1000, subagent: 'consult-1' }), at);
+    expect(readRuns(found, { at }).map((run) => run.subagent)).toEqual(['consult-1', 'consult-2']);
   });
 
   it('終わりの欄を持つ行はそのまま返る（state と reason）', () => {
@@ -104,9 +104,9 @@ describe('appendRun / readRuns', () => {
     });
   });
 
-  it('日をまたぐ子の開始と終わりは別の file に 1 行ずつ', () => {
+  it('日をまたぐサブエージェントの開始と終わりは別の file に 1 行ずつ', () => {
     const found = place();
-    const start = record({ child: 'consult-1', started: 1 });
+    const start = record({ subagent: 'consult-1', started: 1 });
     const end = { ...start, ended: 2, state: 'done' as const };
     appendRun(found, start, new Date(2026, 9, 9, 23, 59));
     appendRun(found, end, new Date(2026, 9, 10, 0, 1));
@@ -121,16 +121,16 @@ describe('appendRun / readRuns', () => {
   it('at を渡さない appendRun は今日の file に書く', () => {
     const found = place();
     appendRun(found, record());
-    expect(readRuns(found).map((run) => run.child)).toEqual(['consult-1']);
+    expect(readRuns(found).map((run) => run.subagent)).toEqual(['consult-1']);
   });
 
   it('session で絞る → その session だけ。省けば両方', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ session: 'A', child: 'consult-1' }), at);
-    appendRun(found, record({ session: 'B', child: 'consult-2' }), at);
-    expect(readRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual(['consult-1']);
-    expect(readRuns(found, { at }).map((run) => run.child)).toEqual(['consult-1', 'consult-2']);
+    appendRun(found, record({ session: 'A', subagent: 'consult-1' }), at);
+    appendRun(found, record({ session: 'B', subagent: 'consult-2' }), at);
+    expect(readRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual(['consult-1']);
+    expect(readRuns(found, { at }).map((run) => run.subagent)).toEqual(['consult-1', 'consult-2']);
   });
 });
 
@@ -156,7 +156,7 @@ describe('isRunning', () => {
     expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => true)).toBe(false);
   });
 
-  it('pid が死んでいれば、終わりの行が無くても false（親ごと落ちた子）', () => {
+  it('pid が死んでいれば、終わりの行が無くても false（メインエージェントごと落ちたサブエージェント）', () => {
     expect(isRunning(record({ pid: 42 }), () => false)).toBe(false);
   });
 });
@@ -165,15 +165,21 @@ describe('runningRuns', () => {
   it('session で絞り、走っている行だけ返す', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ session: 'A', child: 'consult-live', pid: process.pid }), at);
+    appendRun(found, record({ session: 'A', subagent: 'consult-live', pid: process.pid }), at);
     appendRun(
       found,
-      record({ session: 'A', child: 'consult-done', pid: process.pid, ended: 2000, state: 'done' }),
+      record({
+        session: 'A',
+        subagent: 'consult-done',
+        pid: process.pid,
+        ended: 2000,
+        state: 'done',
+      }),
       at,
     );
-    appendRun(found, record({ session: 'B', child: 'consult-other', pid: process.pid }), at);
+    appendRun(found, record({ session: 'B', subagent: 'consult-other', pid: process.pid }), at);
 
-    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.child)).toEqual([
+    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual([
       'consult-live',
     ]);
   });
@@ -182,11 +188,11 @@ describe('runningRuns', () => {
 describe('parseRun', () => {
   it('本体の欄を上書きしない（worktree を持ち上げた後で、元の値で壊さない）', () => {
     const run = parseRun(
-      '{"session":"s","child":"c","role":"r","pid":1,"started":2,"worktree":"w"}',
+      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"worktree":"w"}',
     );
     expect(run).toMatchObject({
       session: 's',
-      child: 'c',
+      subagent: 'c',
       role: 'r',
       pid: 1,
       started: 2,
@@ -195,6 +201,10 @@ describe('parseRun', () => {
   });
 
   it('session が無い行は飛ばす', () => {
-    expect(parseRun('{"child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
+    expect(parseRun('{"subagent":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
+  });
+
+  it('旧形の行（child 欄だけを持つ JSON）は捨てる', () => {
+    expect(parseRun('{"session":"s","child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
   });
 });

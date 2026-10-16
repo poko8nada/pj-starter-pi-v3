@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseRunRequest } from './run.ts';
 
-// 面（引数の検証）だけを試す。子の起動と worktree は consult.test.ts が runtime ごと見る。
+// 面（引数の検証）だけを試す。サブエージェントの起動と worktree は consult.test.ts が runtime ごと見る。
 
 describe('parseRunRequest', () => {
   it('role と task だけ → worktree も continue も無い依頼になる', () => {

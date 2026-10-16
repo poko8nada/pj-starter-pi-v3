@@ -14,7 +14,7 @@ import {
 } from './spec.ts';
 import type { TypePolicy } from '../policy/types.ts';
 
-// 純粋な部分だけを試す。子の起動と worktree は実際の pi とリポジトリが要るので扱わない。
+// 純粋な部分だけを試す。サブエージェントの起動と worktree は実際の pi とリポジトリが要るので扱わない。
 
 /** 上限は type が決める。ここでは「効くか」を見る（数字そのものは設定の話） */
 const LIMITS = { turns: 20, output: 20000 };
@@ -37,19 +37,19 @@ function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   return { type: 'review', task: '調べる', policy: policy(), ...overrides };
 }
 
-describe('buildPiArgs: child-guard', () => {
-  it('-e で child-guard を子に渡し、--tools の後ろに置く', () => {
+describe('buildPiArgs: subagent-guard', () => {
+  it('-e で subagent-guard をサブエージェントに渡し、--tools の後ろに置く', () => {
     const args = buildPiArgs(options());
     const index = args.indexOf('--extension');
     expect(index).toBeGreaterThan(args.indexOf('--tools'));
     expect(args[index + 1]?.endsWith('guard.ts')).toBe(true);
   });
 
-  it('child-guard のパスは空でない絶対パス', () => {
+  it('subagent-guard のパスは空でない絶対パス', () => {
     const args = buildPiArgs(options());
     const path = args[args.indexOf('--extension') + 1] ?? '';
     expect(path.startsWith('/')).toBe(true);
-    expect(path.length).toBeGreaterThan('/child-guard.ts'.length);
+    expect(path.length).toBeGreaterThan('/subagent-guard.ts'.length);
   });
 
   it('-e は guard と budget の 2 回（順に guard・budget の絶対パス）', () => {
@@ -90,7 +90,7 @@ describe('buildPiArgs', () => {
     expect(args[index + 1]).toBe('a/1:high');
   });
 
-  it('候補が空ならモデルを渡さない（親と同じ設定で走る）', () => {
+  it('候補が空ならモデルを渡さない（メインエージェントと同じ設定で走る）', () => {
     expect(buildPiArgs(options())).not.toContain('--model');
   });
 
@@ -188,7 +188,7 @@ describe('finalTextFrom', () => {
 });
 
 describe('modelFrom', () => {
-  it('子が報告した provider と model を組み立てる', () => {
+  it('サブエージェントが報告した provider と model を組み立てる', () => {
     expect(modelFrom([messageEnd()])).toBe('p/m');
   });
 });

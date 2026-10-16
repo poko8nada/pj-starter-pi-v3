@@ -11,11 +11,11 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Agent rules** — `AGENTS.md`, read in every session
 - **Cycle mechanism** — five skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close`)
 - **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), `intent-router` (routes the owner's message and stops over-investigation) (`.pi/extensions/`)
-  - `consult_run` — runs one child `pi` with a role and a place, without showing it this conversation
-  - `consult_children` — lists the children of this session and stops one; it reads a record, so the list still shows this session's children across a reload
+  - `consult_run` — runs one subagent `pi` with a role and a place, without showing it this conversation
+  - `consult_subagents` — lists the subagents of this session and stops one; it reads a record, so the list still shows this session's subagents across a reload
   - `consult_worktree` — makes, lists, or removes a unit worktree; a worktree stays until it is removed, and `remove` takes its branch too when it is merged (an unmerged branch is kept)
-  - `consult_commit` — commits the work a child left in its worktree; you merge it yourself with `git merge --no-ff consult/<unit-id>`
-  - the places: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, on the branch `consult/<unit-id>`, cut from the parent's `HEAD`
+  - `consult_commit` — commits the work a subagent left in its worktree; you merge it yourself with `git merge --no-ff consult/<unit-id>`
+  - the places: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, on the branch `consult/<unit-id>`, cut from the base `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
 - **Cycle records** — `cycles/`
 

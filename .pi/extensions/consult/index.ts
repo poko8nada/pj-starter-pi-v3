@@ -1,14 +1,14 @@
 /**
  * consult 拡張の入口。道具とスラッシュコマンドの登録だけを行う。
  *
- * 走っている子の管理は `tool/consult.ts` の `createRuntime` が 1 か所で持ち、道具の `action` とコマンドの両方が同じ `control` を呼ぶ。
+ * 走っているサブエージェントの管理は `tool/consult.ts` の `createRuntime` が 1 か所で持ち、道具の `action` とコマンドの両方が同じ `control` を呼ぶ。
  * 置き場（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは置き場を一時ディレクトリに逃がせる。
  */
 
 import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
-import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
+import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/subagents.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { startSound, stopSound } from './tool/sound.ts';
 import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
@@ -41,7 +41,7 @@ function readSession(ctx: ExtensionContext): string {
 /** 渡す通知の details。記録の欄から組み直す（完了のメッセージと同じ形） */
 function noticeDetails(record: RunRecord): Record<string, unknown> {
   return {
-    id: record.child,
+    id: record.subagent,
     type: record.role,
     ...(record.worktree === undefined ? {} : { worktree: record.worktree }),
     ...(record.state === undefined ? {} : { state: record.state }),
@@ -55,7 +55,7 @@ function noticeDetails(record: RunRecord): Record<string, unknown> {
 /**
  * まだ渡していない完了の報告を、owner へ 1 つずつ渡す。
  *
- * 起動のたびに記録を読み直すので、reload の前の子の報告もここで届く。全部渡し終えてから目録を
+ * 起動のたびに記録を読み直すので、reload の前のサブエージェントの報告もここで届く。全部渡し終えてから目録を
  * 1 回だけ進める（途中で落ちても、同じ物をもう一度渡すだけになる）。
  */
 function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
@@ -81,31 +81,31 @@ function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
 }
 
 /**
- * 前のセッション（reload の前）の子がまだ走っていれば、そのことを知らせて音を戻す。
+ * 前のセッション（reload の前）のサブエージェントがまだ走っていれば、そのことを知らせて音を戻す。
  *
- * いまの session の走っている子だけを見る（別の session の子の報告はここには来ないので、
+ * いまの session の走っているサブエージェントだけを見る（別の session のサブエージェントの報告はここには来ないので、
  * 待たせない）。音も同じ述語で鳴らし、居なくなれば自分で止まる。
  */
-function announceRunningChildren(place: Place, announced: string, ctx: ExtensionContext): void {
+function announceRunningSubagents(place: Place, announced: string, ctx: ExtensionContext): void {
   if (runningRuns(place, { session: announced }).length === 0) {
     return;
   }
   const count = runningRuns(place, { session: announced }).length;
   ctx.ui.notify(
-    `consult: ${count} child(ren) are still running from an earlier session (see consult_children)`,
+    `consult: ${count} subagent(s) are still running from an earlier session (see consult_subagents)`,
     'info',
   );
   startSound(() => runningRuns(place, { session: announced }).length > 0);
 }
 
-/** 人が使う口。子の一覧と停止、音の切り替え */
+/** 人が使う口。サブエージェントの一覧と停止、音の切り替え */
 function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
   pi.registerCommand('consult-status', {
-    description: 'List the consult children that are still running',
+    description: 'List the consult subagents that are still running',
     handler: (args, ctx) => consult.commands.status(args, ctx),
   });
   pi.registerCommand('consult-cancel', {
-    description: 'Stop a running consult child (usage: /consult-cancel <id>)',
+    description: 'Stop a running consult subagent (usage: /consult-cancel <id>)',
     handler: (args, ctx) => consult.commands.cancel(args, ctx),
   });
   pi.registerCommand('consult-sound', {
@@ -141,10 +141,10 @@ export default function (pi: ExtensionAPI) {
   delivery.attach(pi);
   const consult = createRuntime(pi, place, undefined, delivery, () => session);
 
-  // reload をまたいだ子がまだ走っていれば、知らせて音を戻す
+  // reload をまたいだサブエージェントがまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
-    announceRunningChildren(place, session, ctx);
+    announceRunningSubagents(place, session, ctx);
     sweep(place, ctx.cwd);
     // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める
     deliverUnread(place, session, pi);
@@ -155,12 +155,12 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_run',
     label: 'Consult run',
     description:
-      'Run one child pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one child; call it again for another. The child reads the files it needs itself, so name them in task. An isolated role needs a worktree (consult_worktree); one that is not runs in the parent tree when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
+      'Run one subagent pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one subagent; call it again for another. The subagent reads the files it needs itself, so name them in task. An isolated role needs a worktree (consult_worktree); one that is not runs in the base when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
     promptSnippet:
-      'Run one background child pi with a role (research / review / trial / code) and a place',
+      'Run one background subagent pi with a role (research / review / trial / code) and a place',
     promptGuidelines: [
       'Use consult_run when a question or a piece of work is better done without this conversation in view: a review, a second opinion, or a role you were not given.',
-      'One call is one child. For several, call it several times; it is background work, so do not wait.',
+      'One call is one subagent. For several, call it several times; it is background work, so do not wait.',
       'Pass the unit id in worktree for a role that writes; make the worktree first with consult_worktree.',
       'The policy (models, tools, isolated, paths, bash, continueByDefault, limits, role) lives in .pi/extensions/consult/types.json; the caller cannot override it.',
     ],
@@ -169,20 +169,20 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
-    name: 'consult_children',
-    label: 'Consult children',
+    name: 'consult_subagents',
+    label: 'Consult subagents',
     description:
-      'Show the children of this session, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows children this session started (even ones from before a reload). cancel stops a running child of this session, including one a previous instance started (by process id); a child from another session is named in the reply and left alone.',
-    promptSnippet: 'List the consult children (and stop one) — works across reloads',
+      'Show the subagents of this session, and stop one: consult_subagents{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows subagents this session started (even ones from before a reload). cancel stops a running subagent of this session, including one a previous instance started (by process id); a subagent from another session is named in the reply and left alone.',
+    promptSnippet: 'List the consult subagents (and stop one) — works across reloads',
     promptGuidelines: [
-      'Use consult_children to see what is still running before you wait or act: one call lists this session’s children, including ones from before a reload.',
-      'Use action: cancel with the id to stop one; a child started by another session cannot be stopped, and says so.',
+      'Use consult_subagents to see what is still running before you wait or act: one call lists this session’s subagents, including ones from before a reload.',
+      'Use action: cancel with the id to stop one; a subagent started by another session cannot be stopped, and says so.',
     ],
-    parameters: CHILDREN_PARAMETERS,
-    execute: createChildrenTool({
+    parameters: SUBAGENTS_PARAMETERS,
+    execute: createSubagentsTool({
       place,
       sessionNow: () => session,
-      control: (action, childSession) => consult.control(action, childSession),
+      control: (action, subagentSession) => consult.control(action, subagentSession),
     }),
   });
 
@@ -190,11 +190,11 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_worktree',
     label: 'Consult worktree',
     description:
-      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and takes its merged branch (an unmerged one is kept), refusing while a child runs in it. A worktree stays until it is removed.",
+      "Work with the unit worktrees: 'new' makes one (branch consult/<unit>, under /tmp/pi-consult), 'list' shows them with their state, 'remove' deletes one and takes its merged branch (an unmerged one is kept), refusing while a subagent runs in it. A worktree stays until it is removed.",
     promptSnippet: 'Make, list or remove a unit worktree (it stays until removed)',
     promptGuidelines: [
-      'Use consult_worktree with action: "new" and a unit id before starting a child that writes: the child runs in that worktree.',
-      'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the child did.',
+      'Use consult_worktree with action: "new" and a unit id before starting a subagent that writes: the subagent runs in that worktree.',
+      'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the subagent did.',
     ],
     parameters: WORKTREE_PARAMETERS,
     execute: createWorktreeTool(place),
@@ -204,7 +204,7 @@ export default function (pi: ExtensionAPI) {
 
   // reload / セッションの差し替えで古いインスタンスが残っても、始めたタイマーが鳴り続けないように閉じる
   pi.on('session_shutdown', () => {
-    // 子は detach されているので殺さない。届け先を手放すだけ（以後の完了は記録に回る）
+    // サブエージェントは detach されているので殺さない。届け先を手放すだけ（以後の完了は記録に回る）
     delivery.detach();
     stopSound();
   });
@@ -213,10 +213,10 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_commit',
     label: 'Consult commit',
     description:
-      "Commit the work a child left in its worktree, on that worktree's branch: consult_commit{worktree}. The message is made here (consult(<unit>): the child's work), so the log stays countable. Returns committed: <hash>, rejected: <hook output> (the work is left in place), or no change. Merging into your branch is a plain git command, run by you.",
-    promptSnippet: "Commit a child's work in its worktree (by unit id)",
+      "Commit the work a subagent left in its worktree, on that worktree's branch: consult_commit{worktree}. The message is made here (consult(<unit>): the subagent's work), so the log stays countable. Returns committed: <hash>, rejected: <hook output> (the work is left in place), or no change. Merging into your branch is a plain git command, run by you.",
+    promptSnippet: "Commit a subagent's work in its worktree (by unit id)",
     promptGuidelines: [
-      'Use consult_commit when a child that writes has finished and you have judged its work: one call commits the whole worktree.',
+      'Use consult_commit when a subagent that writes has finished and you have judged its work: one call commits the whole worktree.',
       'You never need the tmp path; the tool finds the worktree from the unit id.',
       'A rejected commit leaves the work in place; read the output, fix it, and call again, or discard the worktree with consult_worktree.',
       'Take the commit into your branch yourself with git merge --no-ff <branch>; consult does not merge.',

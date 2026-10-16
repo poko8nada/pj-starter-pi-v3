@@ -1,11 +1,11 @@
 /**
  * unit ごとの作業場（worktree）。
  *
- * 既定で残る。消すのは `removeWorktree` を明示的に呼んだときだけ。子が何をしたかは worktree に残るので、diff や ref で受け渡さない。
+ * 既定で残る。消すのは `removeWorktree` を明示的に呼んだときだけ。サブエージェントが何をしたかは worktree に残るので、diff や ref で受け渡さない。
  *
- * 置き場はリポジトリの外に固定する（macOS の `os.tmpdir()` は親の権限から見えない）:
+ * 置き場はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
  *   `/tmp/pi-consult/<project>-<YYYYMMDD-HHMM>/<unit>/wt`
- * ブランチは `consult/<unit>`。base は親の HEAD で、`main` を仮定しない。
+ * ブランチは `consult/<unit>`。base の既定は HEAD で、`main` を仮定しない。
  *
  * 台帳ファイルは持たない。一覧は `git worktree list` と `consult/*` ブランチから作る。
  */
@@ -195,7 +195,7 @@ export function findWorktree(cwd: string, id: string): WorktreeRow | undefined {
 /**
  * unit の作業場を作る。既にあれば同じ物を返す（2 回呼んでも増えない）。
  *
- * base は既定で親の HEAD。`main` を仮定しない。
+ * base の既定は HEAD。`main` を仮定しない。
  */
 export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree {
   const existing = findWorktree(cwd, id);
@@ -334,7 +334,7 @@ function emptyCleanup(): CleanupReport {
  * 掃除だけを単独で呼べる形（`removeWorktree` の中と同じ物を使う）。
  *
  * 実体の無い登録を `prune` で落とし、どの作業場にも checkout されていない `consult/*` のうち
- * 取り込み済みを消す。未マージは残して報告する。走っている子の作業場は checkout 中なので触らない
+ * 取り込み済みを消す。未マージは残して報告する。走っているサブエージェントの作業場は checkout 中なので触らない
  * （登録も枝も残る）。git が断ったら例外にする。
  */
 export function cleanWorktrees(cwd: string): CleanupReport {
@@ -344,7 +344,7 @@ export function cleanWorktrees(cwd: string): CleanupReport {
 }
 
 /**
- * 作業場を消す。子が動いているときは消さない（busy）。掃除もしない。
+ * 作業場を消す。サブエージェントが動いているときは消さない（busy）。掃除もしない。
  *
  * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。枝の掃除は
  * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児の枝は片付ける）。変更が

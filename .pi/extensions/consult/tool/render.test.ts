@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { reportBlock, usageLine, type ChildReport } from './render.ts';
+import { reportBlock, usageLine, type SubagentReport } from './render.ts';
 
-// 親に届く形（本文と塊）を試す。子を走らせないので、イベントと結果を自分で作る。
+// メインエージェントに届く形（本文と塊）を試す。サブエージェントを走らせないので、イベントと結果を自分で作る。
 describe('usageLine', () => {
   it('モデルが分からなければ unknown と出す（空にしない）', () => {
     expect(usageLine([])).toContain('(model unknown)');
@@ -17,7 +17,7 @@ describe('usageLine', () => {
 });
 
 describe('reportBlock', () => {
-  const base: ChildReport = {
+  const base: SubagentReport = {
     role: 'review',
     state: 'done',
     files: [],
@@ -36,13 +36,13 @@ describe('reportBlock', () => {
   it('素性・場所・回数・量・触った物を出す', () => {
     const block = reportBlock(base);
     expect(block).toContain('review / done');
-    expect(block).toContain('place: parent tree');
+    expect(block).toContain('place: base');
     expect(block).toContain('turns: 12 / 40');
     expect(block).toContain('spend: 0.0123 usd');
     expect(block).toContain('files: (none)');
   });
 
-  it('worktree の子はその id を場所に出す', () => {
+  it('worktree のサブエージェントはその id を場所に出す', () => {
     expect(reportBlock({ ...base, worktree: '2-a' })).toContain('place: worktree 2-a');
   });
 

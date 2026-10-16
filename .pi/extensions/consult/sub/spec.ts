@@ -1,5 +1,5 @@
 /**
- * consult が起動する子 pi の組み立てと、子が返す JSONL の解釈。
+ * consult が起動するサブエージェント pi の組み立てと、サブエージェントが返す JSONL の解釈。
  *
  * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、道具としての入口は index.ts が持つ。
  *
@@ -10,18 +10,18 @@ import { fileURLToPath } from 'node:url';
 import type { Limits, TypePolicy } from '../policy/types.ts';
 
 /**
- * 子に読ませる guard。`-e` で子の起動に渡す。
+ * サブエージェントに読ませる guard。`-e` でサブエージェントの起動に渡す。
  *
- * 子だけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`child-guard.ts` は自動では読まれない）。ホストの権限設定が無い環境でも、子が秘密のパスに触れないようにする。
+ * サブエージェントだけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`subagent-guard.ts` は自動では読まれない）。ホストの権限設定が無い環境でも、サブエージェントが秘密のパスに触れないようにする。
  */
-const CHILD_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
+const SUBAGENT_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 
 /**
- * 子に読ませる budget。上限の手前で子に報告を促す。
+ * サブエージェントに読ませる budget。上限の手前でサブエージェントに報告を促す。
  *
- * 親が `CONSULT_TURNS` で上限を渡す（run/child.ts）。子だけがこれを読む。
+ * メインエージェントが `CONSULT_TURNS` で上限を渡す（run/subagent.ts）。サブエージェントだけがこれを読む。
  */
-const CHILD_BUDGET = fileURLToPath(new URL('./budget.ts', import.meta.url));
+const SUBAGENT_BUDGET = fileURLToPath(new URL('./budget.ts', import.meta.url));
 
 /**
  * 隔離が要るか。type の `isolated` が決める（true は書き込むので、worktree で走らせる）
@@ -35,11 +35,11 @@ export function needsIsolation(policy: TypePolicy): boolean {
 export interface ConsultOptions {
   /** 選んだ type の名前。診断に使う */
   readonly type: string;
-  /** 子への指示。argv には載せず、標準入力へ流す（run.ts） */
+  /** サブエージェントへの指示。argv には載せず、標準入力へ流す（run.ts） */
   readonly task: string;
   readonly policy: TypePolicy;
   /**
-   * 子のセッションのファイル。worktree ごとに 1 つ。
+   * サブエージェントのセッションのファイル。worktree ごとに 1 つ。
    *
    * 同じパスを指し直すとその会話の続きから始まる。未指定なら `--no-session`（遣い捨て）。
    */
@@ -47,20 +47,20 @@ export interface ConsultOptions {
 }
 
 /**
- * 子のプロンプトを組む。今は常に task をそのまま返す。
+ * サブエージェントのプロンプトを組む。今は常に task をそのまま返す。
  *
- * 過去のサイクル（007）で「空の指示は `joinPrompt(undefined, '')` で確かめた」と決め、文脈（payload）は渡さない方針にした。products コードは `run/child.ts` だけ。
+ * 過去のサイクル（007）で「空の指示は `joinPrompt(undefined, '')` で確かめた」と決め、文脈（payload）は渡さない方針にした。products コードは `run/subagent.ts` だけ。
  */
 export function joinPrompt(task: string): string {
   return task;
 }
 
 /**
- * 子に渡す引数を組み立てる。
+ * サブエージェントに渡す引数を組み立てる。
  *
  * 指示（`task`）は載せない。argv に置くと、先頭が `-` や `@` の文書が pi のオプションやファイル引数として読まれる。run.ts が標準入力へ流す。
  *
- * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、ここは「1 回どう走らせるか」だけを決める。空なら渡さない（親と同じになる）。
+ * モデルは候補の 1 番目だけを渡す。候補を順に試すのは run.ts の仕事で、ここは「1 回どう走らせるか」だけを決める。空なら渡さない（メインエージェントと同じになる）。
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
   const { policy } = options;
@@ -80,9 +80,9 @@ export function buildPiArgs(options: ConsultOptions): string[] {
     args.push('--append-system-prompt', policy.role);
   }
   args.push('--tools', policy.tools.join(','));
-  // 子にだけ guard と budget を読ませる。親の設定には触らない（親はこの関数を通らない）。
-  args.push('--extension', CHILD_GUARD, '--extension', CHILD_BUDGET);
-  // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側が子の設定を変えられる。
+  // サブエージェントにだけ guard と budget を読ませる。メインエージェントの設定には触らない（メインエージェントはこの関数を通らない）。
+  args.push('--extension', SUBAGENT_GUARD, '--extension', SUBAGENT_BUDGET);
+  // プロジェクトの設定・拡張を読まない。読むと、リポジトリ側がサブエージェントの設定を変えられる。
   args.push('--no-approve');
   return args;
 }
@@ -140,7 +140,7 @@ export function finalTextFrom(events: unknown[]): string {
 }
 
 /**
- * 子がモデルから何かを生成したか。乗り換えの判定に使う。
+ * サブエージェントがモデルから何かを生成したか。乗り換えの判定に使う。
  *
  * assistant の `message_end` があっても、モデルが動いたとは限らない。存在しないモデル ID では pi が警告を出して API が失敗し、出力 0 のまま exit 0 で終わる。生成が 0 なら、そのモデルは動いていない。
  */
@@ -149,7 +149,7 @@ export function ranFrom(events: unknown[]): boolean {
 }
 
 /**
- * 子が実際に使ったモデル。子の報告が唯一の事実で、呼び出し元の環境に依存しない。診断に出すのは「何が動いたか」を知るためで、指定するためではない。
+ * サブエージェントが実際に使ったモデル。サブエージェントの報告が唯一の事実で、呼び出し元の環境に依存しない。診断に出すのは「何が動いたか」を知るためで、指定するためではない。
  */
 export function modelFrom(events: unknown[]): string | undefined {
   for (let i = events.length - 1; i >= 0; i -= 1) {
@@ -185,7 +185,7 @@ export function usageFrom(events: unknown[]): Usage {
   return total;
 }
 
-/** 子が異常終了した理由。エラーイベントが残っていれば拾う */
+/** サブエージェントが異常終了した理由。エラーイベントが残っていれば拾う */
 export function errorFrom(events: unknown[]): string {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const message = asEvent(events[i]).message;
