@@ -231,10 +231,24 @@ interface Entry {
 ### Round 1
 
 - Stale:
+  - `vitest.config.ts:21` の「product:ready が名指しを消すと0本になる」は旧機序のまま残る — 現行は `include` 否定で0にするため stale
+    - fixed: コメントを「product は include の否定で0本になる」に直した
+  - `scripts/product-ready/index.mjs:6` の「3種を順に回す」が残る — 現行 `STARTER_ONLY` は `cycles` の1行のみのため stale
+    - fixed: JSDoc を「cycles を消して状態を `product` にする入口」に直した
 - Unlisted:
+  - なし
 - Gaps:
+  - `scripts/product-ready/index.mjs:28` の状態ファイルが無い/壊れているときの `readMode` 失敗経路（exit 1）に Verify の bullet も `index.test.ts` の case も無い — 全 tree が mode を書くため未行使
+    - fixed: `index.test.ts` に無い場合と壊れている場合の 2 case を足した（exit 1・木は残る）
+  - `scripts/harness.mjs:441` の CLI 入口ガード変更後も `node scripts/harness.mjs pull/push` が口として動くことを確かめる Verify/test が無い
+    - left: `scripts/harness.test.ts` の 31 件が子プロセスで `node scripts/harness.mjs` を回しており、ガードの直接実行経路は既に押さえられているため足さない
 - Unproven:
+  - なし
 - Doubts:
+  - `test/README.md:7` の「ゼロから書く/開始時は0本」は run が0の意味では真にも読めるし、ファイルが残る現行とずれて読めもする。Files に無く確度が足りないので所見にしない
+  - `scripts/harness.mjs` は Files では bare だが diff が変えた。Files に名があり Notes Slice 2 Unplanned に記録があるため Unlisted にしない
+  - `scripts/harness-state.test.ts:93` の repo `harness.json` 検査は contains のみで `harness.mode.json` が `copy` に入っていないことまでは見ない。ただし Verify も contains で書くため所見にしない
+  - `scripts/product-ready/index.test.ts:73` の `--only cycles` 検査はその tree では全件==cycles のため filtering 故障でも緑だが、`--only harness` の検査が filtering を見るため所見にしない
 
 ## Acceptance
 

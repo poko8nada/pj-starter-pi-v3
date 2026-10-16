@@ -3,7 +3,7 @@ import { labels, plan, remove } from './targets.mjs';
 import { modeLine, parseArgs, planLines } from './cli.mjs';
 
 /**
- * 3種を順に回す入口。引数なしは表示だけ、`--run` で実行する。
+ * cycles を消して状態を `product` にする入口。引数なしは表示だけ、`--run` で実行する。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）

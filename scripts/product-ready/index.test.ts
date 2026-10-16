@@ -142,6 +142,28 @@ describe('product-ready index', () => {
     expect(existsSync(missing)).toBe(false);
   });
 
+  it('状態の道が無い → exit 1（道を指す1行を出す）', () => {
+    const root = tmpDir();
+    mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
+    const result = run(INDEX, ['--root', root]);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim()).toContain('scripts/harness.mode.json');
+    expect(existsSync(join(root, 'cycles', '001-a'))).toBe(true);
+  });
+
+  it('状態が壊れている → exit 1', () => {
+    const root = tmpDir();
+    mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
+    const modeFile = join(root, 'scripts', 'harness.mode.json');
+    mkdirSync(dirname(modeFile), { recursive: true });
+    writeFileSync(modeFile, '{"mode":"half"}\n');
+    const result = run(INDEX, ['--root', root, '--run']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(existsSync(join(root, 'cycles', '001-a'))).toBe(true);
+  });
+
   it('--only harness（知らない label）→ mode と no harness to remove の2行、exit 0', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root, '--only', 'harness']);
