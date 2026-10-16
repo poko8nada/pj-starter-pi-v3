@@ -8,7 +8,14 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../test/tmp.ts';
-import { MODE_AT, readList, readMode, writeMode } from './harness-state.mjs';
+import {
+  MODE_AT,
+  TEST_GLOB,
+  includeList,
+  readList,
+  readMode,
+  writeMode,
+} from './harness-state.mjs';
 
 function writeFile(abs: string, content: string): void {
   mkdirSync(dirname(abs), { recursive: true });
@@ -88,5 +95,43 @@ describe('readList', () => {
     expect(list.skip).toContain('harness.mode.json');
     expect(list.copy).toContain('scripts/harness-state.mjs');
     expect(list.copy).toContain('scripts/harness-state.test.ts');
+  });
+});
+
+describe('includeList', () => {
+  it('starter → [TEST_GLOB] だけ（skip は出ない）', () => {
+    expect(
+      includeList({ copy: ['.pi', 'scripts/harness.json'], skip: ['logs'] }, 'starter'),
+    ).toEqual([TEST_GLOB]);
+  });
+
+  it('product → [TEST_GLOB, 各道の否定2つずつ]（一覧の順のまま）', () => {
+    expect(includeList({ copy: ['.pi', 'scripts/harness.json'], skip: [] }, 'product')).toEqual([
+      TEST_GLOB,
+      '!.pi',
+      '!.pi/**',
+      '!scripts/harness.json',
+      '!scripts/harness.json/**',
+    ]);
+  });
+
+  it('product で copy: [] → [TEST_GLOB]', () => {
+    expect(includeList({ copy: [], skip: [] }, 'product')).toEqual([TEST_GLOB]);
+  });
+
+  it('".pi/" → "!.pi"（末の / は落とす）', () => {
+    expect(includeList({ copy: ['.pi/'], skip: [] }, 'product')).toEqual([
+      TEST_GLOB,
+      '!.pi',
+      '!.pi/**',
+    ]);
+  });
+
+  it('skip は includeList に出ない', () => {
+    expect(includeList({ copy: ['.pi'], skip: ['logs'] }, 'product')).toEqual([
+      TEST_GLOB,
+      '!.pi',
+      '!.pi/**',
+    ]);
   });
 });

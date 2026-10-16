@@ -16,6 +16,37 @@ export { readList } from './harness.mjs';
 export const MODE_AT = 'scripts/harness.mode.json';
 
 /**
+ * テストの既定の対象（vitest の既定と同じ字）
+ * @type {string}
+ */
+export const TEST_GLOB = '**/*.{test,spec}.?(c|m)[jt]s?(x)';
+
+/**
+ * テストの対象を組む（純）。product のときだけ、一覧の各道を否定で足す。
+ * @param {import('./harness.mjs').HarnessList} list 一覧
+ * @param {Mode} mode 状態
+ * @returns {readonly string[]} vitest の `include`
+ */
+export function includeList(list, mode) {
+  if (mode === 'starter') {
+    return [TEST_GLOB];
+  }
+  /** @type {string[]} */
+  const out = [TEST_GLOB];
+  for (const entry of list.copy) {
+    if (typeof entry !== 'string' || entry === '') {
+      continue;
+    }
+    const rel = entry.replace(/\/+$/, '');
+    if (rel === '' || rel === '.') {
+      continue;
+    }
+    out.push(`!${rel}`, `!${rel}/**`);
+  }
+  return out;
+}
+
+/**
  * 状態を読む。無い / JSON として読めない / starter でも product でもない → 道を入れた 1 つのエラーで投げる。
  * @param {string} root リポジトリの根
  * @returns {Mode} 状態

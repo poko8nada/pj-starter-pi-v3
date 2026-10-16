@@ -5,6 +5,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * どちらへ運ぶか
@@ -437,4 +438,8 @@ export function main(argv) {
   return 0;
 }
 
-process.exitCode = main(process.argv.slice(2));
+const invokedAsMain =
+  process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedAsMain) {
+  process.exitCode = main(process.argv.slice(2));
+}
