@@ -251,9 +251,9 @@ interface Applied {
 
 ### Slice 4: 統合: ハーネスを運べる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: eb2f391
 
 ## Review
 
