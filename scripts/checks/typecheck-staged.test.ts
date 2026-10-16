@@ -1,5 +1,5 @@
 /**
- * `scripts/typecheck-staged.mjs` の振る舞いを、子プロセスとして実行して試す。
+ * `scripts/checks/typecheck-staged.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
  * fake root の `node_modules/.bin/tsc` にスタブを置く（渡された `-p` を出す）。
  * これで、どの `tsconfig` が使われたかを見る。スタブに渡るのは一時 tsconfig
@@ -12,9 +12,9 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../test/tmp.ts';
+import { tmpDir } from '../../test/tmp.ts';
 
-const SCRIPT = join(process.cwd(), 'scripts', 'typecheck-staged.mjs');
+const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck-staged.mjs');
 
 interface RunOut {
   readonly status: number;
@@ -58,7 +58,7 @@ function writeFile(root: string, rel: string, content = 'x\n'): string {
 }
 
 function writeScopes(root: string, scopes: readonly string[]): void {
-  writeFile(root, join('scripts', 'harness-scopes.json'), JSON.stringify(scopes));
+  writeFile(root, join('scripts', 'checks', 'scopes.json'), JSON.stringify(scopes));
 }
 
 describe('typecheck-staged', () => {
@@ -158,7 +158,7 @@ describe('typecheck-staged', () => {
     stubTsc(root);
     writeFile(root, 'tsconfig.json', '{}');
     const ts = writeFile(root, 'a.ts');
-    writeFile(root, join('scripts', 'harness-scopes.json'), '{not json');
+    writeFile(root, join('scripts', 'checks', 'scopes.json'), '{not json');
     const out = run(root, [ts]);
     expect(out.status).toBe(1);
     expect(`${out.stdout}\n${out.stderr}`).toContain('the list is not valid JSON');

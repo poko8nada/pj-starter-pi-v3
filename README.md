@@ -31,12 +31,12 @@ pnpm install
 
 ## Checks
 
-| Command                             | What it does                 |
-| ----------------------------------- | ---------------------------- |
-| `pnpm test:run`                     | Run the tests once           |
-| `pnpm lint`                         | `oxlint`, warnings included  |
-| `pnpm typecheck`                    | `node scripts/typecheck.mjs` |
-| `pnpm format` / `pnpm format:check` | Format, or verify the format |
+| Command                             | What it does                        |
+| ----------------------------------- | ----------------------------------- |
+| `pnpm test:run`                     | Run the tests once                  |
+| `pnpm lint`                         | `oxlint`, warnings included         |
+| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
+| `pnpm format` / `pnpm format:check` | Format, or verify the format        |
 
 - **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
 - **On push** — typecheck (the root and the harness) and test

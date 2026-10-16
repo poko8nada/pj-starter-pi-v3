@@ -1,5 +1,5 @@
 // 触ったファイルのみを型チェックするスクリプト（tsc-files の pnpm 非互換を解消する代替）
-// 使い方: node scripts/typecheck-staged.mjs <file1> <file2> ...
+// 使い方: node scripts/checks/typecheck-staged.mjs <file1> <file2> ...
 // 仕組み: extends を使う一時 tsconfig を生成し、対象ファイルだけを tsc -p で検査する
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -8,11 +8,11 @@ import * as path from 'node:path';
 // ---- 設定 ----
 // 型チェックの対象拡張子（.js 系は allowJs で構文まで検査する）
 const CODE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
-// 専用 tsconfig を持つハーネスディレクトリ（root の scripts/harness-scopes.json を読む）
+// 専用 tsconfig を持つハーネスディレクトリ（root の scripts/checks/scopes.json を読む）
 let HARNESS_DIRS;
 try {
   HARNESS_DIRS = JSON.parse(
-    fs.readFileSync(path.join(process.cwd(), 'scripts', 'harness-scopes.json'), 'utf8'),
+    fs.readFileSync(path.join(process.cwd(), 'scripts', 'checks', 'scopes.json'), 'utf8'),
   );
 } catch (error) {
   if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {

@@ -24,7 +24,7 @@ function makeTree(): {
   readonly cycleA: string;
 } {
   const root = tmpDir();
-  const harnessJson = join(root, 'scripts', 'harness-scopes.json');
+  const harnessJson = join(root, 'scripts', 'checks', 'scopes.json');
   const harness = join(root, '.pi', 'a.test.ts');
   const nested = join(root, '.pi', 'sub', 'b.test.ts');
   const tool = join(root, 'scripts', 'product-ready', 'tool.test.ts');
