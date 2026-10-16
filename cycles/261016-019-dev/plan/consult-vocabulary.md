@@ -256,7 +256,7 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
   - 旧形破棄のテスト（`run/log.test.ts:207,208`）は旧欄名 `child` を字面に含むので `child` の grep に 2 行残る
     - left: 旧形を受けないことを示すには旧欄名を書くしかないため（書く側・読む側は `subagent` で揃っている）
 - Unplanned: なし
-- Commit:
+- Commit: ccff683
 
 ## Review
 
