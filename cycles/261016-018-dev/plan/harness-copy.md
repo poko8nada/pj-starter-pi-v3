@@ -233,9 +233,9 @@ interface Applied {
 
 ### Slice 1: 検査の一覧を `scripts/checks/` へ移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: README.md / README.ja.md の検査表の列幅を `oxfmt` で直した（新しい道が旧列幅に収まらず `pnpm format:check` が赤になったため。表の意味は変わらない）。
+- Commit: 665b288
 
 ### Slice 2: 一覧と差分を組む
 

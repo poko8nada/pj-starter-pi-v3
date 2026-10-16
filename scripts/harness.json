@@ -1,0 +1,23 @@
+{
+  "copy": [
+    ".pi",
+    "definition",
+    "lib",
+    ".github/workflows",
+    "test/setup.ts",
+    "test/tmp.ts",
+    "test/env.test.ts",
+    "AGENTS.md",
+    "lefthook.yaml",
+    "tsconfig.json",
+    "vitest.config.ts",
+    ".oxlintrc.json",
+    ".oxfmtrc.json",
+    "scripts/checks",
+    "scripts/product-ready",
+    "scripts/harness.mjs",
+    "scripts/harness.json",
+    "scripts/harness.test.ts"
+  ],
+  "skip": ["logs", "harness.local.json"]
+}
