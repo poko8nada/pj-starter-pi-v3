@@ -25,7 +25,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 pnpm install
 ```
 
-1. Run `pnpm product:ready` once to make the clone yours — it lists what would go (`harness` / `tests` / `cycles`). Nothing is deleted until you add `--run`. Add `--only <label>` to target one kind. Run it before writing your own tests; afterwards you start from zero tests
+1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/` and switches the state to `product`. Tests are not deleted: in `product` the harness tests do not run by default (the state lives in `scripts/harness.mode.json`). Nothing is deleted until you add `--run`. Add `--only <label>` to target one kind
 2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
@@ -41,6 +41,7 @@ pnpm install
 - **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
 - **On push** — typecheck (the root and the harness) and test
 - **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
+- **Harness tests** — in `product` they do not run by default. To run them, switch the state back to `starter` (`scripts/harness.mode.json`)
 
 ## Harness
 

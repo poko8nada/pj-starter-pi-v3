@@ -25,7 +25,7 @@ English: [README.md](README.md)
 pnpm install
 ```
 
-1. `pnpm product:ready` で clone を自分の物にする（一度きり） — 消える物（`harness` / `tests` / `cycles`）を先に並べる。消すのは `--run` を足したときだけ。1種だけなら `--only <label>` を足す。自分のテストを書く前に走らせると、開始時にテストがゼロになる
+1. `pnpm product:ready` で clone を自分の物にする（一度きり） — `cycles/` を消して状態を `product` にする。テストは消えない。`product` ではハーネスのテストが既定で回らない（状態は `scripts/harness.mode.json`）。消すのは `--run` を足したときだけ。1種だけなら `--only <label>` を足す
 2. `.pi/extensions/consult/types.json` がリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 
@@ -41,6 +41,7 @@ pnpm install
 - **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related`
 - **push 時** — typecheck（ルートとハーネス）/ test
 - **エージェントのターンごと** — そのターンで変えた物があるときだけ。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えた物に
+- **ハーネスのテスト** — `product` では既定で回らない。回したいときは状態を `starter` に戻す（`scripts/harness.mode.json`）
 
 ## ハーネス
 

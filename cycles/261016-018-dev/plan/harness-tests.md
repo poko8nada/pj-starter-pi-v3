@@ -197,26 +197,34 @@ interface Entry {
 ### Slice 1: 状態のファイルと読み書き
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 0ce5303 consult(harness-tests): add harness mode file and read/write
 
 ### Slice 2: テストの対象を組む
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - scripts/harness.mjs の CLI 入口を直接実行時のみにした。config とテストが readList を import すると main がホストの argv で走り、エラーを出して exit 1 になっていた（緑でも）。
+- Commit: c9c0f7d consult(harness-tests): build test include list from mode
 
 ### Slice 3: product:ready を切り替えにする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: e9991d3 consult(harness-tests): switch product-ready to mode flip
 
 ### Slice 4: 統合: ハーネスのテストが既定で回らない
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: consult(harness-tests): document the mode flip
 
 ## Review
 
