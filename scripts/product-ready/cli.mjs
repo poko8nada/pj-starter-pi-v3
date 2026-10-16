@@ -51,6 +51,17 @@ export function parseArgs(argv) {
 }
 
 /**
+ * 状態の切り替えの 1 行（純）。
+ *
+ * @param {string} from 今の状態
+ * @param {string} to 変える先の状態
+ * @returns {string} `mode: <from> → <to>` の 1 行
+ */
+export function modeLine(from, to) {
+  return `mode: ${from} → ${to}`;
+}
+
+/**
  * 表示の行を作る（純）。
  *
  * @param {readonly string[]} labels 出す label（一覧の順）

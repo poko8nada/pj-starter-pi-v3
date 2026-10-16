@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../test/tmp.ts';
@@ -13,36 +13,38 @@ function writeFile(path: string): void {
   writeFileSync(path, 'x\n');
 }
 
+function writeMode(root: string, mode: string): void {
+  const file = join(root, 'scripts', 'harness.mode.json');
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `{\n  "mode": "${mode}"\n}\n`);
+}
+
+function readMode(root: string): string {
+  return JSON.parse(readFileSync(join(root, 'scripts', 'harness.mode.json'), 'utf8')).mode;
+}
+
 function makeTree(): {
   readonly root: string;
-  readonly harnessJson: string;
-  readonly harness: string;
-  readonly nested: string;
-  readonly tool: string;
-  readonly env: string;
-  readonly stagedCheck: string;
-  readonly kept: string;
+  readonly keptTest: string;
+  readonly readyTest: string;
+  readonly envTest: string;
+  readonly scopes: string;
   readonly cycleA: string;
 } {
   const root = tmpDir();
-  const harnessJson = join(root, 'scripts', 'checks', 'scopes.json');
-  const harness = join(root, '.pi', 'a.test.ts');
-  const nested = join(root, '.pi', 'sub', 'b.test.ts');
-  const tool = join(root, 'scripts', 'product-ready', 'tool.test.ts');
-  const env = join(root, 'test', 'env.test.ts');
-  const stagedCheck = join(root, 'scripts', 'checks', 'typecheck-staged.test.ts');
-  const kept = join(root, 'test', 'keep.test.ts');
+  const keptTest = join(root, '.pi', 'a.test.ts');
+  const readyTest = join(root, 'scripts', 'product-ready', 'tool.test.ts');
+  const envTest = join(root, 'test', 'env.test.ts');
+  const scopes = join(root, 'scripts', 'checks', 'scopes.json');
   const cycleA = join(root, 'cycles', '001-a');
-  writeFile(harnessJson);
-  writeFile(harness);
-  writeFile(nested);
-  writeFile(tool);
-  writeFile(env);
-  writeFile(stagedCheck);
-  writeFile(kept);
+  writeMode(root, 'starter');
+  writeFile(keptTest);
+  writeFile(readyTest);
+  writeFile(envTest);
+  writeFile(scopes);
   writeFile(join(cycleA, 'note.txt'));
   writeFile(join(root, 'cycles', '002-b', 'note.txt'));
-  return { root, harnessJson, harness, nested, tool, env, stagedCheck, kept, cycleA };
+  return { root, keptTest, readyTest, envTest, scopes, cycleA };
 }
 
 function run(
@@ -54,98 +56,81 @@ function run(
 }
 
 describe('product-ready index', () => {
-  it('表示だけ → 3つの見出しが出て、木は変わらない', () => {
+  it('表示だけ → mode の1行と cycles の見出しが出て、木と状態は変わらない', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root]);
     expect(result.status).toBe(0);
-    expect(result.output).toContain('harness (');
-    expect(result.output).toContain('tests (');
+    const lines = result.output.split('\n');
+    expect(lines[0]).toBe('mode: starter → product');
     expect(result.output).toContain('cycles (');
-    expect(result.output.indexOf('harness (')).toBeLessThan(result.output.indexOf('tests ('));
-    expect(result.output.indexOf('tests (')).toBeLessThan(result.output.indexOf('cycles ('));
-    expect(result.output).toContain('a.test.ts');
-    expect(result.output).toContain('tool.test.ts');
-    expect(result.output).toContain('env.test.ts');
+    expect(result.output).not.toContain('harness (');
+    expect(result.output).not.toContain('tests (');
     expect(result.output).toContain('001-a');
-    expect(existsSync(tree.harnessJson)).toBe(true);
-    expect(existsSync(tree.harness)).toBe(true);
-    expect(existsSync(tree.nested)).toBe(true);
-    expect(existsSync(tree.tool)).toBe(true);
-    expect(existsSync(tree.env)).toBe(true);
-    expect(existsSync(tree.stagedCheck)).toBe(true);
-    expect(existsSync(tree.kept)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readMode(tree.root)).toBe('starter');
   });
 
-  it('--only tests → tests の見出しだけ', () => {
+  it('--only cycles → cycles の見出しだけ', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only', 'tests']);
+    const result = run(INDEX, ['--root', tree.root, '--only', 'cycles']);
     expect(result.status).toBe(0);
-    expect(result.output).toContain('tests (');
-    expect(result.output).not.toContain('harness (');
-    expect(result.output).not.toContain('cycles (');
-    expect(result.output).not.toContain('no harness to remove');
-    expect(existsSync(tree.harness)).toBe(true);
+    expect(result.output).toContain('cycles (');
     expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readMode(tree.root)).toBe('starter');
   });
 
-  it('--only=tests の形も同じ', () => {
-    const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only=tests']);
-    expect(result.status).toBe(0);
-    expect(result.output).toContain('tests (');
-    expect(result.output).not.toContain('harness (');
-    expect(result.output).not.toContain('cycles (');
-  });
-
-  it('--run → 3種とも消える', () => {
+  it('--run → cycles の下の dir が消え、状態が product になる', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root, '--run']);
     expect(result.status).toBe(0);
-    expect(existsSync(tree.harnessJson)).toBe(false);
-    expect(existsSync(tree.harness)).toBe(false);
-    expect(existsSync(tree.nested)).toBe(false);
-    expect(existsSync(tree.tool)).toBe(false);
-    expect(existsSync(tree.env)).toBe(false);
-    expect(existsSync(tree.stagedCheck)).toBe(false);
     expect(existsSync(tree.cycleA)).toBe(false);
-    expect(existsSync(tree.kept)).toBe(true);
+    expect(existsSync(join(tree.root, 'cycles', '002-b'))).toBe(false);
+    expect(readMode(tree.root)).toBe('product');
   });
 
-  it('--only harness --run → harness だけ消え、.pi のテストは残る', () => {
+  it('--run で旧 label の物は残る', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only', 'harness', '--run']);
+    const result = run(INDEX, ['--root', tree.root, '--run']);
     expect(result.status).toBe(0);
-    expect(existsSync(tree.harnessJson)).toBe(false);
-    expect(existsSync(tree.harness)).toBe(true);
-    expect(existsSync(tree.nested)).toBe(true);
-    expect(existsSync(tree.tool)).toBe(true);
-    expect(existsSync(tree.stagedCheck)).toBe(true);
-    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(existsSync(tree.keptTest)).toBe(true);
+    expect(existsSync(tree.readyTest)).toBe(true);
+    expect(existsSync(tree.envTest)).toBe(true);
+    expect(existsSync(tree.scopes)).toBe(true);
   });
 
-  it('--only harness で harness が無い → no harness to remove の1行、exit 0', () => {
+  it('cycles の無い木で --run → no cycles to remove と mode: starter → product、状態が product になる', () => {
     const root = tmpDir();
-    writeFile(join(root, '.pi', 'a.test.ts'));
-    const result = run(INDEX, ['--root', root, '--only', 'harness']);
-    expect(result.status).toBe(0);
-    expect(result.output.trim()).toBe('no harness to remove');
-  });
-
-  it('何も無い root で --run → 3つの no … to remove、exit 0', () => {
-    const root = tmpDir();
+    writeMode(root, 'starter');
     const result = run(INDEX, ['--root', root, '--run']);
     expect(result.status).toBe(0);
-    expect(result.output).toContain('no harness to remove');
-    expect(result.output).toContain('no tests to remove');
     expect(result.output).toContain('no cycles to remove');
+    expect(result.output).toContain('mode: starter → product');
+    expect(readMode(root)).toBe('product');
   });
 
-  it('--only に値が無い → exit 1', () => {
+  it('--run をもう一度 → mode: product → product、exit 0', () => {
+    const tree = makeTree();
+    expect(run(INDEX, ['--root', tree.root, '--run']).status).toBe(0);
+    const second = run(INDEX, ['--root', tree.root, '--run']);
+    expect(second.status).toBe(0);
+    expect(second.output).toContain('no cycles to remove');
+    expect(second.output).toContain('mode: product → product');
+  });
+
+  it('--only cycles --run → cycles だけ消え、状態は product になる', () => {
+    const tree = makeTree();
+    const result = run(INDEX, ['--root', tree.root, '--only', 'cycles', '--run']);
+    expect(result.status).toBe(0);
+    expect(existsSync(tree.cycleA)).toBe(false);
+    expect(readMode(tree.root)).toBe('product');
+  });
+
+  it('--only に値が無い → exit 1、状態は starter のまま', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root, '--only']);
     expect(result.status).toBe(1);
-    expect(existsSync(tree.harness)).toBe(true);
+    expect(readMode(tree.root)).toBe('starter');
+    expect(existsSync(tree.cycleA)).toBe(true);
   });
 
   it('無い root → 1行の置き場エラーで exit 1', () => {
@@ -154,6 +139,18 @@ describe('product-ready index', () => {
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe(`no such directory: ${missing}`);
+    expect(existsSync(missing)).toBe(false);
+  });
+
+  it('--only harness（知らない label）→ mode と no harness to remove の2行、exit 0', () => {
+    const tree = makeTree();
+    const result = run(INDEX, ['--root', tree.root, '--only', 'harness']);
+    expect(result.status).toBe(0);
+    expect(result.output.trim().split('\n')).toEqual([
+      'mode: starter → product',
+      'no harness to remove',
+    ]);
+    expect(existsSync(tree.cycleA)).toBe(true);
   });
 
   it('未知の引数 → exit 1', () => {
@@ -162,19 +159,6 @@ describe('product-ready index', () => {
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe('unknown argument: --bogus');
-    expect(existsSync(tree.harness)).toBe(true);
-    expect(existsSync(tree.tool)).toBe(true);
-    expect(existsSync(tree.env)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
-  });
-
-  it('2回目の --run → exit 0（消える物が無い）', () => {
-    const tree = makeTree();
-    expect(run(INDEX, ['--root', tree.root, '--run']).status).toBe(0);
-    expect(existsSync(tree.cycleA)).toBe(false);
-    const second = run(INDEX, ['--root', tree.root, '--run']);
-    expect(second.status).toBe(0);
-    expect(second.output).toContain('no tests to remove');
-    expect(second.output).toContain('no cycles to remove');
   });
 });
