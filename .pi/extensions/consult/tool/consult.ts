@@ -1,17 +1,17 @@
 /**
- * consult の runtime — 走っている子を 1 か所で持ち、完了を親に届ける。
+ * consult の runtime — 走っているサブエージェントを 1 か所で持ち、完了をメインエージェントに届ける。
  *
- * 子を起こすのは `consult_run`（`tool/run.ts` の面）から。1 呼び出し = 1 体で、行き先の worktree と、続きを使うかを親が指す。
+ * サブエージェントを起こすのは `consult_run`（`tool/run.ts` の面）から。1 呼び出し = 1 体で、行き先の worktree と、続きを使うかをメインエージェントが指す。
  * 設定（モデル・ツール・isolated・paths・bash・続きの既定・上限・役割）は types.json が持ち、上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
  *
- * 起こしたらすぐ `started: <id>` を返し、親は待たない。子ごとの完了で `pi.sendMessage` に本文を渡す。走っている子の一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
+ * 起こしたらすぐ `started: <id>` を返し、メインエージェントは待たない。サブエージェントごとの完了で `pi.sendMessage` に本文を渡す。走っているサブエージェントの一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
  */
 
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
-import { runOneChild, type ChildJob } from '../run/subagent.ts';
+import { runOneSubagent, type SubagentJob } from '../run/subagent.ts';
 import { findWorktree } from '../run/worktree.ts';
 import {
   appendRun,
@@ -33,7 +33,7 @@ import {
 import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
 import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
-import { compose, reportBlock, result, usageLine, type ChildReport } from './render.ts';
+import { compose, reportBlock, result, usageLine, type SubagentReport } from './render.ts';
 import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
@@ -60,7 +60,7 @@ type RunExecuteArgs = [
   ctx: ConsultContext,
 ];
 
-/** 走っている子を止める操作。道具の action とコマンドが同じ形を使う */
+/** 走っているサブエージェントを止める操作。道具の action とコマンドが同じ形を使う */
 export type ControlAction =
   | { readonly action: 'list' }
   | { readonly action: 'cancel'; readonly id: string };
@@ -79,7 +79,7 @@ export interface ConsultMessage {
   readonly details: Record<string, unknown>;
 }
 
-/** sendMessage の配送オプション。完了は次のターンで親に届ける */
+/** sendMessage の配送オプション。完了は次のターンでメインエージェントに届ける */
 export interface ConsultSendOptions {
   readonly triggerTurn?: boolean;
   readonly deliverAs?: 'steer' | 'followUp' | 'nextTurn';
@@ -90,51 +90,51 @@ export interface PiFace {
   sendMessage(message: ConsultMessage, options?: ConsultSendOptions): void;
 }
 
-/** バックグラウンドで走っている子 1 体 */
-export interface RunningChild {
+/** バックグラウンドで走っているサブエージェント 1 体 */
+export interface RunningSubagent {
   readonly id: string;
   readonly type: string;
   readonly task: string;
   readonly startedAt: number;
   readonly controller: AbortController;
-  /** 子のプロセス。走っている間だけ入る（実行の記録に書く） */
+  /** サブエージェントのプロセス。走っている間だけ入る（実行の記録に書く） */
   pid?: number;
 }
 
-/** 子の完了で親に届ける本文と診断 */
+/** サブエージェントの完了でメインエージェントに届ける本文と診断 */
 export interface ConsultOutcome {
   readonly text: string;
   readonly details: Record<string, unknown>;
-  /** 実行の記録に書く塊。走らせた子だけが持つ（失敗の結果などは持たない） */
-  readonly report?: ChildReport;
+  /** 実行の記録に書く塊。走らせたサブエージェントだけが持つ（失敗の結果などは持たない） */
+  readonly report?: SubagentReport;
 }
 
-/** 子 1 体を最後まで走らせる。テストでは子を起こさない差し替えを渡す */
+/** サブエージェント 1 体を最後まで走らせる。テストではサブエージェントを起こさない差し替えを渡す */
 export type ConsultRunner = (
   ctx: ConsultContext,
   options: ConsultOptions,
-  job: ChildJob,
+  job: SubagentJob,
 ) => Promise<ConsultOutcome>;
 
-/** 子 1 体を一覧に出す 1 行。task は最初の行だけ */
-function describeChild(child: RunningChild): string {
-  const line = child.task.split('\n', 1)[0] ?? '';
+/** サブエージェント 1 体を一覧に出す 1 行。task は最初の行だけ */
+function describeSubagent(subagent: RunningSubagent): string {
+  const line = subagent.task.split('\n', 1)[0] ?? '';
   const task = line.length > 80 ? `${line.slice(0, 77)}...` : line;
-  return `${child.id}  ${child.type}  ${task}`;
+  return `${subagent.id}  ${subagent.type}  ${task}`;
 }
 
 /**
- * 走っている子の一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
+ * 走っているサブエージェントの一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
  *
- * 掴んでいる子（このインスタンスが起こした物）は `abort()` で止める。掴んでいない子は記録から
+ * 掴んでいるサブエージェント（このインスタンスが起こした物）は `abort()` で止める。掴んでいないサブエージェントは記録から
  * 引いて、生きている pid に `kill`（既定は SIGTERM）を送る。記録は書かない（終わりの行は、
- * その子を持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
- * 知らない id・終わった子・死んだ pid・別の session の子は、理由を返して止めない。
+ * そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
+ * 知らない id・終わったサブエージェント・死んだ pid・別の session のサブエージェントは、理由を返して止めない。
  */
-// eslint-disable-next-line max-params -- plan の I/O（action, children, place, session, kill の 5 つ）
-export function controlChild(
+// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill の 5 つ）
+export function controlSubagent(
   action: ControlAction,
-  children: ReadonlyMap<string, RunningChild>,
+  subagents: ReadonlyMap<string, RunningSubagent>,
   place: Place,
   session: string,
   kill: (pid: number) => void = (pid) => {
@@ -142,30 +142,34 @@ export function controlChild(
   },
 ): ControlOutcome {
   if (action.action === 'list') {
-    const running = [...children.values()];
+    const running = [...subagents.values()];
     return {
       text:
         running.length === 0
-          ? 'consult_new: no child is running.'
-          : running.map(describeChild).join('\n'),
+          ? 'consult_new: no subagent is running.'
+          : running.map(describeSubagent).join('\n'),
       details: {
         action: 'list',
-        running: running.map((child) => ({ id: child.id, type: child.type, task: child.task })),
+        running: running.map((subagent) => ({
+          id: subagent.id,
+          type: subagent.type,
+          task: subagent.task,
+        })),
       },
     };
   }
-  const held = children.get(action.id);
+  const held = subagents.get(action.id);
   if (held !== undefined) {
-    // 掴んでいる子は abort だけ（kill は送らない）
+    // 掴んでいるサブエージェントは abort だけ（kill は送らない）
     held.controller.abort();
     return {
       text: `consult_new: cancelled ${held.id} (${held.type})`,
       details: { action: 'cancel', id: held.id, cancelled: true },
     };
   }
-  const own = latest(readRuns(place, { session })).find((run) => run.child === action.id);
+  const own = latest(readRuns(place, { session })).find((run) => run.subagent === action.id);
   if (own === undefined) {
-    const elsewhere = latest(readRuns(place)).find((run) => run.child === action.id);
+    const elsewhere = latest(readRuns(place)).find((run) => run.subagent === action.id);
     if (elsewhere !== undefined) {
       return {
         text: `consult_new: ${action.id} belongs to another session (it cannot be stopped here)`,
@@ -173,7 +177,7 @@ export function controlChild(
       };
     }
     return {
-      text: `consult_new: no such child: ${action.id}`,
+      text: `consult_new: no such subagent: ${action.id}`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
@@ -191,40 +195,40 @@ export function controlChild(
   }
   kill(own.pid);
   return {
-    text: `consult_new: cancelled ${own.child} (${own.role})`,
-    details: { action: 'cancel', id: own.child, cancelled: true },
+    text: `consult_new: cancelled ${own.subagent} (${own.role})`,
+    details: { action: 'cancel', id: own.subagent, cancelled: true },
   };
 }
 
-/** 子 1 体の完了を、親に届けるメッセージにする */
+/** サブエージェント 1 体の完了を、メインエージェントに届けるメッセージにする */
 export function completionMessage(
-  child: RunningChild,
+  subagent: RunningSubagent,
   outcome: ConsultOutcome,
 ): { message: ConsultMessage; options: ConsultSendOptions } {
   return {
     message: {
       customType: 'consult',
-      content: `consult ${child.id} (${child.type}) finished\n\n${outcome.text}`,
+      content: `consult ${subagent.id} (${subagent.type}) finished\n\n${outcome.text}`,
       display: true,
-      details: { id: child.id, type: child.type, ...outcome.details },
+      details: { id: subagent.id, type: subagent.type, ...outcome.details },
     },
     options: { triggerTurn: true, deliverAs: 'followUp' },
   };
 }
 
-/** 子 1 体を走らせて、親に届ける本文と診断にする */
+/** サブエージェント 1 体を走らせて、メインエージェントに届ける本文と診断にする */
 async function consult(
   ctx: ConsultContext,
   options: ConsultOptions,
-  job: ChildJob,
+  job: SubagentJob,
 ): Promise<ConsultOutcome> {
-  const { run, install } = await runOneChild(ctx, options, job);
+  const { run, install } = await runOneSubagent(ctx, options, job);
   const events = parseEvents(run.stdout);
   const usage = usageFrom(events);
   const state = stateOf(run);
   const reason = reasonOf(run);
   const files = job.worktree === undefined ? [] : changedFiles(worktreeGit(job.worktree.path));
-  const report: ChildReport = {
+  const report: SubagentReport = {
     role: options.type,
     state,
     files,
@@ -235,7 +239,7 @@ async function consult(
     ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
     ...(reason === undefined ? {} : { reason }),
   };
-  // 塊を先頭に置く。親は本文の前に、どう終わったか・どこを触ったかを見る。
+  // 塊を先頭に置く。メインエージェントは本文の前に、どう終わったか・どこを触ったかを見る。
   const lines = [
     reportBlock(report),
     '',
@@ -257,12 +261,12 @@ async function consult(
   };
 }
 
-/** 走らせている consult の一式。道具とスラッシュコマンドが同じ children を見る */
+/** 走らせている consult の一式。道具とスラッシュコマンドが同じ subagents を見る */
 interface RuntimeState {
   readonly pi: PiFace;
   readonly place: Place;
   readonly run: ConsultRunner;
-  readonly children: Map<string, RunningChild>;
+  readonly subagents: Map<string, RunningSubagent>;
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
   readonly sessionNow: () => string;
@@ -270,12 +274,12 @@ interface RuntimeState {
   number: { session: string; next: number };
 }
 
-/** バックグラウンドの子 1 体分の起動材料 */
+/** バックグラウンドのサブエージェント 1 体分の起動材料 */
 interface BackgroundJob {
   readonly ctx: ConsultContext;
   readonly options: ConsultOptions;
-  readonly job: ChildJob;
-  readonly child: RunningChild;
+  readonly job: SubagentJob;
+  readonly subagent: RunningSubagent;
   readonly session: string;
 }
 
@@ -285,14 +289,14 @@ function failureOutcome(error: unknown): ConsultOutcome {
   return { text: `(the consult could not run) ${detail}`, details: { error: detail } };
 }
 
-/** 完了を親のメッセージにする */
+/** 完了をメインエージェントのメッセージにする */
 function deliver(
   state: RuntimeState,
-  child: RunningChild,
+  subagent: RunningSubagent,
   outcome: ConsultOutcome,
   record: RunRecord,
 ): void {
-  const built = completionMessage(child, outcome);
+  const built = completionMessage(subagent, outcome);
   if (state.delivery === undefined) {
     // delivery を組んでいない（テストの runtime など）。今まで通り直接渡す
     state.pi.sendMessage(built.message, built.options);
@@ -302,18 +306,22 @@ function deliver(
 }
 
 /**
- * 走っている子の記録を閉じる 1 行。
+ * 走っているサブエージェントの記録を閉じる 1 行。
  *
- * 落ちた子も閉じる（開いたままにすると、いつまでも「走っている」と見える）。届け先が無かったときの
+ * 落ちたサブエージェントも閉じる（開いたままにすると、いつまでも「走っている」と見える）。届け先が無かったときの
  * 控え（`notice`）にもこの記録を使う。
  */
-function closeRecord(job: BackgroundJob, place: Place, report: ChildReport | undefined): RunRecord {
+function closeRecord(
+  job: BackgroundJob,
+  place: Place,
+  report: SubagentReport | undefined,
+): RunRecord {
   const record: RunRecord = {
     session: job.session,
-    child: job.child.id,
+    subagent: job.subagent.id,
     role: job.options.type,
-    pid: job.child.pid ?? 0,
-    started: job.child.startedAt,
+    pid: job.subagent.pid ?? 0,
+    started: job.subagent.startedAt,
     ended: Date.now(),
     state: report?.state ?? 'error',
     files: report === undefined ? [] : [...report.files],
@@ -326,49 +334,49 @@ function closeRecord(job: BackgroundJob, place: Place, report: ChildReport | und
   return record;
 }
 
-/** 子を起こし、完了でメッセージを送る。呼び出し側は待たない */
+/** サブエージェントを起こし、完了でメッセージを送る。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
       const record = closeRecord(job, state.place, outcome.report);
-      deliver(state, job.child, outcome, record);
+      deliver(state, job.subagent, outcome, record);
     })
     .catch((error: unknown) => {
       const record = closeRecord(job, state.place, undefined);
-      deliver(state, job.child, failureOutcome(error), record);
+      deliver(state, job.subagent, failureOutcome(error), record);
     })
     .finally(() => {
-      state.children.delete(job.child.id);
+      state.subagents.delete(job.subagent.id);
       // 音は述語（記録の読み直し）が止める。ここでは止めない
     });
 }
 
 /** `consult-12` から 12 を取り出す。`consult-` の形でなければ undefined */
-function numberOf(child: string): number | undefined {
-  const found = /^consult-(\d+)$/.exec(child);
+function numberOf(subagent: string): number | undefined {
+  const found = /^consult-(\d+)$/.exec(subagent);
   return found === null ? undefined : Number(found[1]);
 }
 
 /** その session の記録にある最大の番号。`consult-` の形でない行は数えない */
 function highestInRecord(place: Place, session: string): number {
   const used = readRuns(place, { session, days: KEEP_DAYS })
-    .map((record) => numberOf(record.child))
+    .map((record) => numberOf(record.subagent))
     .filter((value): value is number => value !== undefined);
   return Math.max(0, ...used);
 }
 
 /**
- * 次に使う子の番号。その session の記録の最大 + 1。
+ * 次に使うサブエージェントの番号。その session の記録の最大 + 1。
  *
  * 番号を拡張のメモリーだけで数えると reload のたびに 1 に戻り、名前で 1 行に畳む一覧
- *（`children.ts` の `latest`）が、走っている前の子を新しい子で上書きして見えなくする。
+ *（`subagents.ts` の `latest`）が、走っている前のサブエージェントを新しいサブエージェントで上書きして見えなくする。
  * だから記録から数える。掃除と同じ幅で読み、長く走る session でも戻らないようにする。
  *
- * 記録に書かれるのは子が起きた時なので、同じ runtime で続けて起こすと、2 体目が
+ * 記録に書かれるのはサブエージェントが起きた時なので、同じ runtime で続けて起こすと、2 体目が
  * 1 体目の行を見ない。だから決めた番号を覚えておき、次はその続きから振る。
  */
-function nextChildId(state: RuntimeState, session: string): string {
+function nextSubagentId(state: RuntimeState, session: string): string {
   const floor =
     state.number.session === session ? state.number.next : highestInRecord(state.place, session);
   const next = floor + 1;
@@ -376,7 +384,7 @@ function nextChildId(state: RuntimeState, session: string): string {
   return `consult-${next}`;
 }
 
-/** 子を起こして、すぐ `started: <id>` を返す。完了はメッセージで届く */
+/** サブエージェントを起こして、すぐ `started: <id>` を返す。完了はメッセージで届く */
 function beginRun(
   state: RuntimeState,
   ctx: ConsultContext,
@@ -395,49 +403,49 @@ function beginRun(
   const options: ConsultOptions = { type: policy.name, task: request.task, policy };
   // 番号は記録から決める。reload でメモリーが消えても、戻らないように。
   const session = state.sessionNow();
-  const child: RunningChild = {
-    id: nextChildId(state, session),
+  const subagent: RunningSubagent = {
+    id: nextSubagentId(state, session),
     type: policy.name,
     task: request.task,
     startedAt: Date.now(),
     controller: new AbortController(),
   };
-  const job: ChildJob = {
+  const job: SubagentJob = {
     task: request.task,
-    id: child.id,
-    signal: child.controller.signal,
+    id: subagent.id,
+    signal: subagent.controller.signal,
     ...(worktree === undefined ? {} : { worktree }),
     continueSession: request.continue ?? policy.continueByDefault,
     // 起きたら、まず「走っている」1 行を記録に足す。reload をまたいでも一覧に出るように
     onStarted: (pid) => {
-      child.pid = pid;
+      subagent.pid = pid;
       appendRun(state.place, {
         session,
-        child: child.id,
+        subagent: subagent.id,
         role: policy.name,
         pid,
-        started: child.startedAt,
+        started: subagent.startedAt,
         ...(worktree === undefined ? {} : { worktree: worktree.id }),
       });
     },
   };
-  state.children.set(child.id, child);
-  if (state.children.size === 1) {
-    // 記録を読み直す述語で鳴らす。reload をまたいでも、走っている子が居なくなれば止まる
+  state.subagents.set(subagent.id, subagent);
+  if (state.subagents.size === 1) {
+    // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
     startSound(() => runningRuns(state.place, { session: state.sessionNow() }).length > 0);
   }
-  runInBackground(state, { ctx, options, job, child, session });
-  const running = [...state.children.values()].map(describeChild).join('\n');
-  return result(`started: ${child.id}\n\nrunning now:\n${running}`, {
+  runInBackground(state, { ctx, options, job, subagent, session });
+  const running = [...state.subagents.values()].map(describeSubagent).join('\n');
+  return result(`started: ${subagent.id}\n\nrunning now:\n${running}`, {
     action: 'run',
-    id: child.id,
+    id: subagent.id,
     type: policy.name,
     ...(worktree === undefined ? {} : { worktree: worktree.id }),
   });
 }
 
 export interface ConsultRuntime {
-  readonly children: ReadonlyMap<string, RunningChild>;
+  readonly subagents: ReadonlyMap<string, RunningSubagent>;
   run(...args: RunExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
   control(action: ControlAction, session: string): ControlOutcome;
   commands: {
@@ -453,8 +461,8 @@ function soundStatus(): string {
 }
 
 /**
- * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ children を共有する。
- * テストは `pi` と `run` を差し替えて、子を起こさずに確かめられる。
+ * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
+ * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
 // eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow の 5 つ）
 export function createRuntime(
@@ -468,23 +476,23 @@ export function createRuntime(
     pi,
     place,
     run,
-    children: new Map(),
+    subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,
     ...(delivery === undefined ? {} : { delivery }),
   };
   return {
-    children: state.children,
+    subagents: state.subagents,
     run: async (...args: RunExecuteArgs) => {
       const [, params, , , ctx] = args;
       return beginRun(state, ctx, parseRunRequest(params));
     },
-    control: (action, session) => controlChild(action, state.children, state.place, session),
+    control: (action, session) => controlSubagent(action, state.subagents, state.place, session),
     commands: {
       status: async (_args, ctx) => {
-        const outcome = controlChild(
+        const outcome = controlSubagent(
           { action: 'list' },
-          state.children,
+          state.subagents,
           state.place,
           state.sessionNow(),
         );
@@ -499,9 +507,9 @@ export function createRuntime(
           );
           return;
         }
-        const outcome = controlChild(
+        const outcome = controlSubagent(
           { action: 'cancel', id },
-          state.children,
+          state.subagents,
           state.place,
           state.sessionNow(),
         );

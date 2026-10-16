@@ -1,7 +1,7 @@
 /**
- * 子 pi の起動と後片付け。
+ * サブエージェント pi の起動と後片付け。
  *
- * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせて子プロセスを殺す。CLI 版は SIGINT で finally が走らず worktree を残した。
+ * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI 版は SIGINT で finally が走らず worktree を残した。
  */
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -21,15 +21,15 @@ export interface RunResult {
   readonly stopped?: string;
   /** 中断されたか */
   readonly aborted: boolean;
-  /** `agent_end` を見たか（報告の後に終わらない子を止めた印） */
+  /** `agent_end` を見たか（報告の後に終わらないサブエージェントを止めた印） */
   readonly ended: boolean;
-  /** 子のプロセス。走っている子を外から見分けるための印 */
+  /** サブエージェントのプロセス。走っているサブエージェントを外から見分けるための印 */
   readonly pid?: number;
 }
 
 export interface RunOptions {
   readonly piArgs: readonly string[];
-  /** 子の標準入力に流す本文。指示を argv に載せないための口 */
+  /** サブエージェントの標準入力に流す本文。指示を argv に載せないための口 */
   readonly stdin: string;
   readonly cwd: string;
   readonly signal?: AbortSignal;
@@ -37,14 +37,14 @@ export interface RunOptions {
   /**
    * 上限。type が決める。
    *
-   * 子のプロセス 1 回ごとに数え直す。続けて走らせた分（拒否や打ち切りのあとの再走）は、合計でその回数だけ上限を使う。
+   * サブエージェントのプロセス 1 回ごとに数え直す。続けて走らせた分（拒否や打ち切りのあとの再走）は、合計でその回数だけ上限を使う。
    */
   readonly limits: Limits;
-  /** 子のプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
+  /** サブエージェントのプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
   readonly onStarted?: (pid: number) => void;
-  /** `agent_end` の後の猶予。静かなら子を止める（既定 30 秒） */
+  /** `agent_end` の後の猶予。静かならサブエージェントを止める（既定 30 秒） */
   readonly watchdogMs?: number;
-  /** 進行の通知。子の出力が届くたびに呼ぶ */
+  /** 進行の通知。サブエージェントの出力が届くたびに呼ぶ */
   readonly onProgress?: (chunk: {
     readonly stream: 'stdout' | 'stderr';
     readonly text: string;
@@ -54,7 +54,7 @@ export interface RunOptions {
 }
 
 /**
- * 試すモデルの並び。候補の後ろに「親と同じ」（`--model` を渡さない）を足す。候補が空でも 1 つは試す。
+ * 試すモデルの並び。候補の後ろに「メインエージェントと同じ」（`--model` を渡さない）を足す。候補が空でも 1 つは試す。
  */
 export function modelAttempts(models: readonly string[]): (string | undefined)[] {
   return [...models, undefined];
@@ -63,9 +63,9 @@ export function modelAttempts(models: readonly string[]): (string | undefined)[]
 /**
  * 候補を順に試す。
  *
- * 子が何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼ無い。
+ * サブエージェントが何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼ無い。
  *
- * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後に親と同じ設定で走る。
+ * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後にメインエージェントと同じ設定で走る。
  */
 export async function runWithFallback(
   models: readonly string[],
@@ -77,7 +77,7 @@ export async function runWithFallback(
   async function tryAt(index: number): Promise<RunResult> {
     const run = await runOnce(attempts[index]);
     const next = index + 1;
-    // 最後の試行（親と同じ）はどのみち返す。
+    // 最後の試行（メインエージェントと同じ）はどのみち返す。
     if (next >= attempts.length || run.aborted || ranFrom(parseEvents(run.stdout))) {
       return run;
     }
@@ -98,7 +98,7 @@ export function installCommand(dir: string): readonly string[] | undefined {
   return undefined;
 }
 
-/** 依存を入れた結果。失敗しても投げない（その子の状態として返す） */
+/** 依存を入れた結果。失敗しても投げない（そのサブエージェントの状態として返す） */
 export type InstallOutcome =
   | { readonly kind: 'none' }
   | { readonly kind: 'ok'; readonly command: string }
@@ -107,7 +107,7 @@ export type InstallOutcome =
 /**
  * worktree に依存を入れる。
  *
- * 入っていない worktree では、子もフックも何も確かめられない。worktree の用意の一部であって、子の仕事ではない。失敗は環境の失敗で、設定の誤りではない。
+ * 入っていない worktree では、サブエージェントもフックも何も確かめられない。worktree の用意の一部であって、サブエージェントの仕事ではない。失敗は環境の失敗で、設定の誤りではない。
  */
 export function installDependencies(cwd: string): InstallOutcome {
   const command = installCommand(cwd);
@@ -137,9 +137,9 @@ export interface GitOutput {
 export type GitRun = (args: readonly string[]) => GitOutput;
 
 /**
- * 子が触ったファイル。worktree の git が言う分だけ（読んだだけのファイルは入らない）。
+ * サブエージェントが触ったファイル。worktree の git が言う分だけ（読んだだけのファイルは入らない）。
  *
- * 親に渡す塊に入れるのはパスだけ。diff は運ばない。
+ * メインエージェントに渡す塊に入れるのはパスだけ。diff は運ばない。
  */
 export function changedFiles(git: GitRun): string[] {
   return git(['status', '--porcelain'])
@@ -164,7 +164,7 @@ export function worktreeGit(path: string): GitRun {
   };
 }
 
-/** 子の起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
+/** サブエージェントの起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
 export interface PiSpawnOptions {
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
@@ -173,9 +173,9 @@ export interface PiSpawnOptions {
 }
 
 /**
- * 子の起動オプション。
+ * サブエージェントの起動オプション。
  *
- * `detached: true` が要る: pi のプロセスが落ちても子は走り続け、残った作業は worktree に残る（完了の
+ * `detached: true` が要る: pi のプロセスが落ちてもサブエージェントは走り続け、残った作業は worktree に残る（完了の
  * 知らせは届かないが、記録を読めば分かる）。
  */
 export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOptions {
@@ -183,11 +183,11 @@ export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOption
 }
 
 /**
- * 子を 1 回起動する。
+ * サブエージェントを 1 回起動する。
  *
- * 中断（signal）で子を殺し、呼び出し側が後片付けできるように aborted を返す。上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
+ * 中断（signal）でサブエージェントを殺し、呼び出し側が後片付けできるように aborted を返す。上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
  */
-/** 子を殺す。SIGTERM を無視する子がいるので、猶予の後に強制終了する */
+/** サブエージェントを殺す。SIGTERM を無視するサブエージェントがいるので、猶予の後に強制終了する */
 function killChild(child: ReturnType<typeof spawn>): void {
   child.kill('SIGTERM');
   setTimeout(() => {
@@ -217,7 +217,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * 1 イベントを state に反映する純関数。子の停止はしない。
+ * 1 イベントを state に反映する純関数。サブエージェントの停止はしない。
  *
  * 壊れた入力（record でない物）は無視する。上限で止まった後のイベントは数えない。
  * `agent_end`（`type === 'agent_end'`）を見たら `endedAt` を入れる。有効なイベントのたびに `lastOutputAt` を進める。
@@ -248,7 +248,7 @@ export function applyEvent(state: RunState, event: unknown, now: number): void {
 }
 
 /**
- * 静かになった子を止めてよいか。`agent_end` があり、`lastOutputAt` から `quietMs` 静かなら true。
+ * 静かになったサブエージェントを止めてよいか。`agent_end` があり、`lastOutputAt` から `quietMs` 静かなら true。
  *
  * 猶予ちょうど（`now - lastOutputAt === quietMs`）は true。
  */
@@ -264,7 +264,7 @@ export function watchdogDue(
   return now - lastOutputAt >= quietMs;
 }
 
-/** 1 行を数える。上限を超えたら理由を記録し、子を殺す */
+/** 1 行を数える。上限を超えたら理由を記録し、サブエージェントを殺す */
 function consumeLine(
   line: string,
   state: RunState,
@@ -318,7 +318,7 @@ function runOutcome(state: RunState, ending: { code: number; pid?: number }): Ru
   };
 }
 
-/** 走っている子と見張りの時計。`settled` が立ったら何もしない。 */
+/** 走っているサブエージェントと見張りの時計。`settled` が立ったら何もしない。 */
 interface LiveRun {
   readonly state: RunState;
   readonly child: ReturnType<typeof spawn>;
@@ -453,16 +453,16 @@ export function runPi(options: RunOptions): Promise<RunResult> {
 
 /** 行単位の出力を、行の切れ目を保ったまま繋ぐ。詰めると最後の行が壊れる */
 
-/** 子の終わり方。理由は done のときだけ無い */
-export type ChildState = 'done' | 'turn-limit' | 'error' | 'aborted';
+/** サブエージェントの終わり方。理由は done のときだけ無い */
+export type SubagentState = 'done' | 'turn-limit' | 'error' | 'aborted';
 
 /**
- * 走り終えた子がどう終わったか。
+ * 走り終えたサブエージェントがどう終わったか。
  *
- * `aborted`（親が止めた）を先に見る。止めたときに上限の印も立っていることがあり、それは理由にならない。
- * `ended`（`agent_end` を見た）は `done` にする。報告の後に子が終わらなくても、本文は配達できる。
+ * `aborted`（メインエージェントが止めた）を先に見る。止めたときに上限の印も立っていることがあり、それは理由にならない。
+ * `ended`（`agent_end` を見た）は `done` にする。報告の後にサブエージェントが終わらなくても、本文は配達できる。
  */
-export function stateOf(run: RunResult): ChildState {
+export function stateOf(run: RunResult): SubagentState {
   if (run.aborted) {
     return 'aborted';
   }
@@ -478,7 +478,7 @@ export function stateOf(run: RunResult): ChildState {
 /** 終わり方に添える理由。done なら undefined（出す必要がない） */
 export function reasonOf(run: RunResult): string | undefined {
   if (run.aborted) {
-    return 'stopped by the parent';
+    return 'stopped by the agent';
   }
   if (run.ended) {
     return undefined;

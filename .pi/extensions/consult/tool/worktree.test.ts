@@ -70,14 +70,14 @@ describe('consult_worktree', () => {
     expect(text(await call({}, dir))).toContain('consult/2-b');
   });
 
-  it('子が走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
+  it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     findWorktree(dir, '2-b');
     // 走っている記録を書く（終わりの行が無く、pid は自分 = 生きている）
     appendRun(placeFor(consultRoot(), topLevel(dir)), {
       session: 'session-a',
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'code',
       pid: process.pid,
       started: 1,
@@ -85,7 +85,7 @@ describe('consult_worktree', () => {
     });
 
     const outcome = await call({ action: 'remove', id: '2-b' }, dir);
-    expect(text(outcome)).toContain('子が走っている');
+    expect(text(outcome)).toContain('サブエージェントが走っている');
     expect(outcome.details['outcome']).toBe('busy');
     expect(findWorktree(dir, '2-b')).toBeDefined();
   });
@@ -96,7 +96,7 @@ describe('consult_worktree', () => {
     findWorktree(dir, '2-b');
     appendRun(placeFor(consultRoot(), topLevel(dir)), {
       session: 'session-a',
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'code',
       pid: 999_999,
       started: 1,
@@ -107,12 +107,12 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('終わった子の記録だけなら、走っていない（消える）', async () => {
+  it('終わったサブエージェントの記録だけなら、走っていない（消える）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     appendRun(placeFor(consultRoot(), topLevel(dir)), {
       session: 'session-a',
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'code',
       pid: process.pid,
       started: 1,
@@ -125,12 +125,12 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('別の session の走っている子でも busy（作業場を守る側なので session で絞らない）', async () => {
+  it('別の session の走っているサブエージェントでも busy（作業場を守る側なので session で絞らない）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     appendRun(placeFor(consultRoot(), topLevel(dir)), {
       session: 'session-elsewhere',
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'code',
       pid: process.pid,
       started: 1,
@@ -141,20 +141,20 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('busy');
   });
 
-  it('list が、走っている子の居る unit に印を付ける', async () => {
+  it('list が、走っているサブエージェントの居る unit に印を付ける', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     findWorktree(dir, '2-b');
     appendRun(placeFor(consultRoot(), topLevel(dir)), {
       session: 'session-a',
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'code',
       pid: process.pid,
       started: 1,
       worktree: '2-b',
     });
 
-    expect(text(await call({ action: 'list' }, dir))).toContain('a child is running');
+    expect(text(await call({ action: 'list' }, dir))).toContain('a subagent is running');
   });
 
   it('知らない action → エラー', async () => {

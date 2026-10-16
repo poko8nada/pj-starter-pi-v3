@@ -45,7 +45,7 @@ describe('parseTypes', () => {
     ]);
   });
 
-  it('`models` が空 → 親のモデルで走る設定として通る', () => {
+  it('`models` が空 → メインエージェントのモデルで走る設定として通る', () => {
     expect(parseTypes(config(aType())).at(0)?.models).toEqual([]);
   });
 
@@ -58,7 +58,7 @@ describe('parseTypes', () => {
   });
 
   it('`tools` が空 → 投げる', () => {
-    // 空だと「指定なし」として親のツールが通ってしまう。
+    // 空だと「指定なし」としてメインエージェントのツールが通ってしまう。
     expect(() => parseTypes(config(aType({ tools: [] })))).toThrow(
       /fewer than 1 items|must not be empty/,
     );

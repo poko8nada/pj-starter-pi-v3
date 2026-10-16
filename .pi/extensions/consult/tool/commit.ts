@@ -1,11 +1,11 @@
 /**
- * consult_commit — worktree の子の仕事を、その worktree のブランチにコミットする道具。
+ * consult_commit — worktree のサブエージェントの仕事を、その worktree のブランチにコミットする道具。
  *
- * 親は id だけで呼べる（tmp のパスは道具が解決する）。メッセージはここで型を作る
- * （`consult(<unit>): the child's work`）。引数でメッセージを渡す道は作らない。型が崩れると、あとから
+ * メインエージェントは id だけで呼べる（tmp のパスは道具が解決する）。メッセージはここで型を作る
+ * （`consult(<unit>): the subagent's work`）。引数でメッセージを渡す道は作らない。型が崩れると、あとから
  * `git log` で unit を数えられなくなる。
  *
- * merge はここではしない。親のブランチへ取り込むのは CLI の仕事（境界: 親のディレクトリで完結する物は
+ * merge はここではしない。メインエージェントのブランチへ取り込むのは CLI の仕事（境界: メインエージェントのディレクトリで完結する物は
  * CLI、tmp のパスが要る物は道具）。
  *
  * フックが拒んだ場合は `rejected` とその出力を返し、**作業は worktree に残す**（消さない）。
@@ -58,7 +58,7 @@ export type CommitResult =
 
 /** メッセージの型。引数からは作らない */
 export function commitMessage(id: string): string {
-  return `consult(${id}): the child's work`;
+  return `consult(${id}): the subagent's work`;
 }
 
 /** 引数を検証する。知らない形は使い方つきで投げる */
@@ -77,7 +77,7 @@ export function parseCommitRequest(raw: unknown): string {
  * worktree でコミットする。
  *
  * 変更が無ければ `no-change`。フックが拒んだら `rejected` とその出力を返し、`add` した分も含めて作業は
- * そのまま残す（`git reset` で戻さない。親が中身を見て決められるように）。
+ * そのまま残す（`git reset` で戻さない。メインエージェントが中身を見て決められるように）。
  */
 export function commitInWorktree(git: GitRun, id: string): CommitResult {
   if (changedFiles(git).length === 0) {
@@ -91,7 +91,7 @@ export function commitInWorktree(git: GitRun, id: string): CommitResult {
   return { kind: 'committed', hash: git(['rev-parse', 'HEAD']).stdout.trim() };
 }
 
-/** 結果を本文にする。3 つの形がそのまま親の判断材料になる */
+/** 結果を本文にする。3 つの形がそのままメインエージェントの判断材料になる */
 export function compose(outcome: CommitResult): string {
   if (outcome.kind === 'no-change') {
     return 'no change';

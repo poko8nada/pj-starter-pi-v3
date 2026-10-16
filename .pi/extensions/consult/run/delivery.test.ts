@@ -14,7 +14,7 @@ import {
 import { appendRun, KEEP_DAYS, type RunRecord } from './log.ts';
 import { placeFor, type Place } from './place.ts';
 
-// 子は起こさない。pi の偽物と、使い捨ての置き場だけで試す。
+// サブエージェントは起こさない。pi の偽物と、使い捨ての置き場だけで試す。
 
 function place(): Place {
   return placeFor(tmpDir(), tmpDir());
@@ -23,7 +23,7 @@ function place(): Place {
 function record(extra: Partial<RunRecord> = {}): RunRecord {
   return {
     session: 'session-a',
-    child: 'consult-1',
+    subagent: 'consult-1',
     role: 'review',
     pid: 1,
     started: 1000,
@@ -152,11 +152,11 @@ describe('writeCursor / readCursor', () => {
   it('壊れている（JSON でない）→ undefined（全部返す側に倒れる）', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    notice(found, at, { ended: 2000, child: 'consult-1' });
+    notice(found, at, { ended: 2000, subagent: 'consult-1' });
     writeCursor(found, 'session-a', { ended: 9999 });
     writeFileSync(join(found.dir, CURSOR_FILE), 'これは JSON ではない');
     expect(readCursor(found, 'session-a')).toBeUndefined();
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.child)).toEqual([
+    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-1',
     ]);
   });
@@ -166,9 +166,9 @@ describe('unreadNotices', () => {
   it('目録が無い → 窓の中の通知を全部返す', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    notice(found, at, { ended: 2000, child: 'consult-1' });
-    notice(found, at, { ended: 3000, child: 'consult-2' });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.child)).toEqual([
+    notice(found, at, { ended: 2000, subagent: 'consult-1' });
+    notice(found, at, { ended: 3000, subagent: 'consult-2' });
+    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-1',
       'consult-2',
     ]);
@@ -177,10 +177,10 @@ describe('unreadNotices', () => {
   it('目録の ended と同じか古い通知は返らない', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    notice(found, at, { ended: 2000, child: 'consult-1' });
-    notice(found, at, { ended: 3000, child: 'consult-2' });
+    notice(found, at, { ended: 2000, subagent: 'consult-1' });
+    notice(found, at, { ended: 3000, subagent: 'consult-2' });
     writeCursor(found, 'session-a', { ended: 2000 });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.child)).toEqual([
+    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-2',
     ]);
   });
@@ -188,18 +188,18 @@ describe('unreadNotices', () => {
   it('通知を持たない行は返らない', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    appendRun(found, record({ child: 'consult-plain', ended: 1500 }), at);
+    appendRun(found, record({ subagent: 'consult-plain', ended: 1500 }), at);
     expect(unreadNotices(found, { at, session: 'session-a' })).toEqual([]);
   });
 
   it('別の session の通知は返らない。別の session の目録の欄は影響しない', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    notice(found, at, { session: 'session-b', ended: 2000, child: 'consult-b' });
-    notice(found, at, { session: 'session-a', ended: 3000, child: 'consult-a' });
+    notice(found, at, { session: 'session-b', ended: 2000, subagent: 'consult-b' });
+    notice(found, at, { session: 'session-a', ended: 3000, subagent: 'consult-a' });
     // session-b の目録を進めても、session-a の未読は消えない
     writeCursor(found, 'session-b', { ended: 9999 });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.child)).toEqual([
+    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-a',
     ]);
   });

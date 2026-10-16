@@ -1,12 +1,12 @@
 /**
  * consult の整形。
  *
- * 子が返したイベントと実行結果を、呼び出し側が読める 1 つのテキストにする。ref の名前もここで組む。
+ * サブエージェントが返したイベントと実行結果を、呼び出し側が読める 1 つのテキストにする。ref の名前もここで組む。
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../sub/spec.ts';
-import type { ChildState, RunResult } from '../run/run.ts';
+import type { SubagentState, RunResult } from '../run/run.ts';
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
 export function result(
@@ -17,29 +17,29 @@ export function result(
 }
 
 /**
- * 親に渡す塊。子 1 体分の素性・場所・終わり方・触った物・使った量。
+ * メインエージェントに渡す塊。サブエージェント 1 体分の素性・場所・終わり方・触った物・使った量。
  *
- * diff は入れない（親が見る物ではないし、行数だけでも意味がない）。重い物を運ばないのがこの塊の役目。
+ * diff は入れない（メインエージェントが見る物ではないし、行数だけでも意味がない）。重い物を運ばないのがこの塊の役目。
  */
-export interface ChildReport {
+export interface SubagentReport {
   readonly id?: string;
   readonly role: string;
-  /** worktree の id。親の木で走ったとき（読むだけ）は無い */
+  /** worktree の id。ベースで走ったとき（読むだけ）は無い */
   readonly worktree?: string;
-  readonly state: ChildState;
+  readonly state: SubagentState;
   /** 終わり方が done でないときの理由。本文から拾った 1 行 */
   readonly reason?: string;
-  /** 子が触ったファイル（git が言う分）。読んだだけのファイルは入らない */
+  /** サブエージェントが触ったファイル（git が言う分）。読んだだけのファイルは入らない */
   readonly files: readonly string[];
   readonly turns: number;
   readonly turnsLimit: number;
   readonly spend: string;
 }
 
-/** 塊を 1 つのテキストにする。先頭に置いて、子の本文が続く */
-export function reportBlock(report: ChildReport): string {
+/** 塊を 1 つのテキストにする。先頭に置いて、サブエージェントの本文が続く */
+export function reportBlock(report: SubagentReport): string {
   const where = report.worktree === undefined ? 'parent tree' : `worktree ${report.worktree}`;
-  // id は親が振る物で、無いこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
+  // id はメインエージェントが振る物で、無いこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
   const label = report.id ?? 'consult';
   const lines = [
     `## ${label} — ${report.role} / ${report.state}`,
@@ -68,7 +68,7 @@ export function usageLine(events: unknown[]): string {
 export interface RetrySummary {
   /** 走らせた回数（1 か 2） */
   readonly attempts: number;
-  /** 続きの子を走らせたか */
+  /** 続きのサブエージェントを走らせたか */
   readonly continued: boolean;
 }
 
@@ -98,9 +98,9 @@ export function compose(events: unknown[], run: RunResult, retry?: RetrySummary)
   if (text !== '') {
     lines.push(text);
   } else if (run.code !== 0) {
-    lines.push(errorFrom(events) || run.stderr.trim() || '(the child produced no text)');
+    lines.push(errorFrom(events) || run.stderr.trim() || '(the subagent produced no text)');
   } else {
-    lines.push('(the child produced no text)');
+    lines.push('(the subagent produced no text)');
   }
   return lines.join('\n');
 }

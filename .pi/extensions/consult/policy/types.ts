@@ -1,9 +1,9 @@
 /**
  * type の定義と設定の読み込み。
  *
- * type は子の走り方の一式（モデル候補・ツール・書き込みの可否・続きの既定・上限・役割）を持つ。呼び出し側が選べるのは type の名前だけ。上書きの口は作らない。
+ * type はサブエージェントの走り方の一式（モデル候補・ツール・書き込みの可否・続きの既定・上限・役割）を持つ。呼び出し側が選べるのは type の名前だけ。上書きの口は作らない。
  *
- * 壊れた設定は setup の誤りなので投げる。子を走らせてから気づくのでは遅い。読み込みは呼び出しごと。設定を変えたら、次の consult から効く。
+ * 壊れた設定は setup の誤りなので投げる。サブエージェントを走らせてから気づくのでは遅い。読み込みは呼び出しごと。設定を変えたら、次の consult から効く。
  *
  * 形は typebox のスキーマが 1 つの言い方。スキーマと型（`Static`）が同じ所から出るので、検証と型が食い違わない。
  */
@@ -16,9 +16,9 @@ import { Type, type Static } from 'typebox';
 export const CONFIG_FILE = 'types.json';
 
 /**
- * 子に渡してよいツール。
+ * サブエージェントに渡してよいツール。
  *
- * 打ち間違いを setup の時点で見つけるために列挙する。pi 側の一覧を引く口が無く、子を走らせてからでは「ツールが無い」と「ツールが失敗した」の区別が付かない。
+ * 打ち間違いを setup の時点で見つけるために列挙する。pi 側の一覧を引く口が無く、サブエージェントを走らせてからでは「ツールが無い」と「ツールが失敗した」の区別が付かない。
  */
 export const KNOWN_TOOLS: ReadonlySet<string> = new Set([
   'read',
@@ -50,22 +50,22 @@ const LimitsSchema = Type.Object({
 /**
  * ツールの一覧。空は許さない。
  *
- * 空の指定は「ツール無し」ではなく「指定なし」として親のツールが通ってしまう。列挙（`KNOWN_TOOLS`）は `parseTypes` の `checkTools` が見るので、ここでは型と空だけ。
+ * 空の指定は「ツール無し」ではなく「指定なし」としてメインエージェントのツールが通ってしまう。列挙（`KNOWN_TOOLS`）は `parseTypes` の `checkTools` が見るので、ここでは型と空だけ。
  */
 const ToolsSchema = Type.Array(Type.String(), { minItems: 1 });
 
 const TypePolicySchema = Type.Object({
   name: Type.String({ minLength: 1 }),
-  /** 試す順の pi のモデル。空なら親と同じ設定で走る */
+  /** 試す順の pi のモデル。空ならメインエージェントと同じ設定で走る */
   models: Type.Array(Type.String({ minLength: 1 })),
   tools: ToolsSchema,
-  /** 隔離するか。true のロールは worktree が要る（親のツリーを汚させない） */
+  /** 隔離するか。true のロールは worktree が要る（メインエージェントのツリーを汚させない） */
   isolated: Type.Boolean(),
   /**
    * 書ける所。空は全部。読みは縛らない。
    *
    * エントリは、ファイル、ディレクトリ、または glob（`cycles/<YYMMDD-NNN-<branch>>/plan/<plan id>.md`）。
-   * 子の cwd（worktree）からの相対で当てる。
+   * サブエージェントの cwd（worktree）からの相対で当てる。
    */
   paths: Type.Array(Type.String({ minLength: 1 })),
   /**
@@ -77,7 +77,7 @@ const TypePolicySchema = Type.Object({
   /** `consult_run` の `continue` を省いたときの既定 */
   continueByDefault: Type.Boolean(),
   limits: LimitsSchema,
-  /** システムプロンプトへの追記。無ければ素の子 */
+  /** システムプロンプトへの追記。無ければ素のサブエージェント */
   role: Type.Optional(Type.String({ minLength: 1 })),
 });
 

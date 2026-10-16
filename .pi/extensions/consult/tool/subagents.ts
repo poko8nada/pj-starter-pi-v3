@@ -1,14 +1,14 @@
 /**
- * consult_children — 子の一覧と、止める手。
+ * consult_children — サブエージェントの一覧と、止める手。
  *
- * 一覧は記録（`run/log.ts` の日ごとのファイル）から作る。子は親のプロセスに従属しないので、
- * reload で親が差し替わっても、同じ session の子は出る。
+ * 一覧は記録（`run/log.ts` の日ごとのファイル）から作る。サブエージェントはメインエージェントのプロセスに従属しないので、
+ * reload でメインエージェントが差し替わっても、同じ session のサブエージェントは出る。
  *
- * 出るのは**いまのセッションの子**だけ（session で絞る）。別のセッションの子の報告はこのセッションには
- * 来ないので、待たせない。行方不明（終わりの行が無く pid も死んでいる子）は `lost` と出す。
+ * 出るのは**いまのセッションのサブエージェント**だけ（session で絞る）。別のセッションのサブエージェントの報告はこのセッションには
+ * 来ないので、待たせない。行方不明（終わりの行が無く pid も死んでいるサブエージェント）は `lost` と出す。
  *
- * 止められるのは**いまのセッションが走らせている子**だけ。記録には pid があるが、止めるのに要る
- * `AbortController` はこのプロセスの物しか無い。前のセッションの子は、理由を返して止めない。
+ * 止められるのは**いまのセッションが走らせているサブエージェント**だけ。記録には pid があるが、止めるのに要る
+ * `AbortController` はこのプロセスの物しか無い。前のセッションのサブエージェントは、理由を返して止めない。
  */
 
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
@@ -24,7 +24,7 @@ import type { ControlAction, ControlOutcome } from './consult.ts';
  * 置き場と、いまのセッション id と、止める手（`control`）だけ。狭くしておくと、テストが本物の
  * runtime を組み立てずに偽物を渡せる。
  */
-export interface ChildrenHost {
+export interface SubagentsHost {
   readonly place: Place;
   readonly sessionNow: () => string;
   control(action: ControlAction, session: string): ControlOutcome;
@@ -32,9 +32,9 @@ export interface ChildrenHost {
 
 export const PARAMETERS = Type.Object({
   action: Type.Optional(
-    Type.String({ description: 'list (default) to show the children, cancel to stop one' }),
+    Type.String({ description: 'list (default) to show the subagents, cancel to stop one' }),
   ),
-  id: Type.Optional(Type.String({ description: 'The child to stop (only for action=cancel)' })),
+  id: Type.Optional(Type.String({ description: 'The subagent to stop (only for action=cancel)' })),
 });
 
 type Params = Static<typeof PARAMETERS>;
@@ -49,7 +49,7 @@ type ExecuteArgs = [
   ctx: { readonly cwd: string },
 ];
 
-export type ChildrenArgs = ExecuteArgs;
+export type SubagentsArgs = ExecuteArgs;
 
 /** 知らない action や引数不足のときに添える使い方 */
 export const USAGE = 'consult_children: action is list (default) or cancel. cancel needs id';
@@ -62,7 +62,7 @@ function result(
   return { content: [{ type: 'text', text }], details };
 }
 
-/** 経過を人が読める形にする。走っている子は今まで、終わった子は終わりまで */
+/** 経過を人が読める形にする。走っているサブエージェントは今まで、終わったサブエージェントは終わりまで */
 export function elapsed(record: RunRecord, now: number): string {
   const end = record.ended ?? now;
   const seconds = Math.max(0, Math.round((end - record.started) / 1000));
@@ -74,29 +74,29 @@ export function elapsed(record: RunRecord, now: number): string {
 }
 
 /**
- * 子ごとに最後の行を取る。
+ * サブエージェントごとに最後の行を取る。
  *
- * 記録は追記なので、1 体につき「走っている」行と「終わった」行が並ぶ。一覧は子ごとに 1 行なので、
+ * 記録は追記なので、1 体につき「走っている」行と「終わった」行が並ぶ。一覧はサブエージェントごとに 1 行なので、
  * 後ろの行（新しい方）が勝つ。並びは最初に現れた順（始まった順）のまま。
  */
 export function latest(records: readonly RunRecord[]): RunRecord[] {
-  const byChild = new Map<string, RunRecord>();
+  const bySubagent = new Map<string, RunRecord>();
   for (const record of records) {
-    byChild.set(record.child, record);
+    bySubagent.set(record.subagent, record);
   }
-  return [...byChild.values()];
+  return [...bySubagent.values()];
 }
 
 /**
  * 1 体を 1 行にする。走っているかどうかは、ここで 1 回だけ決める。
  *
- * 走っておらず終わりの行も無い子は `lost`（親ごと落ちた、または記録を書く側が消えた子）。
+ * 走っておらず終わりの行も無いサブエージェントは `lost`（メインエージェントごと落ちた、または記録を書く側が消えたサブエージェント）。
  * `done` と偽らない。
  */
 export function rowOf(record: RunRecord, running: boolean, now: number): string {
   const state = running ? `running (pid ${record.pid})` : stateOf(record);
   const parts = [
-    record.child,
+    record.subagent,
     record.role,
     record.worktree === undefined ? 'parent' : `worktree ${record.worktree}`,
     state,
@@ -110,7 +110,7 @@ export function rowOf(record: RunRecord, running: boolean, now: number): string 
   return parts.join('  ');
 }
 
-/** 走っていない子の状態。終わりの行が無ければ行方不明 */
+/** 走っていないサブエージェントの状態。終わりの行が無ければ行方不明 */
 function stateOf(record: RunRecord): string {
   return record.ended === undefined ? 'lost' : (record.state ?? 'done');
 }
@@ -131,12 +131,12 @@ export function rowsOf(
 /** 一覧の本文。記録が無ければそう言う */
 export function listText(records: readonly RunRecord[], now: number): string {
   if (records.length === 0) {
-    return 'no children in this project yet';
+    return 'no subagents in this project yet';
   }
   return rowsOf(records, pidAlive, now).join('\n');
 }
 
-export function createChildrenTool(host: ChildrenHost) {
+export function createSubagentsTool(host: SubagentsHost) {
   return async function execute(...args: ExecuteArgs) {
     const [, params, , , _ctx] = args;
     const action = params.action ?? 'list';

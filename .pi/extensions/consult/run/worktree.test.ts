@@ -193,7 +193,7 @@ describe('listWorktrees / findWorktree', () => {
     const made = createWorktree(dir, '1-a');
     expect(findWorktree(dir, '1-a')?.dirty).toBe(false);
 
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     expect(findWorktree(dir, '1-a')?.dirty).toBe(true);
   });
 
@@ -201,7 +201,7 @@ describe('listWorktrees / findWorktree', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const root = ensureRoot(dir);
-    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その親
+    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その上
     expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
 });
@@ -237,14 +237,14 @@ describe('removeWorktree', () => {
   it('options を渡さない → force と busy は既定（false）', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     // force の既定は false なので、変更が残っていれば dirty
     expect(removeWorktree(dir, '1-a').outcome).toBe('dirty');
     // busy の既定は false なので、force を付ければ消える（止められない）
     expect(removeWorktree(dir, '1-a', { force: true }).outcome).toBe('removed');
   });
 
-  it('子が動いている → busy で断り、掃除もしない', () => {
+  it('サブエージェントが動いている → busy で断り、掃除もしない', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const ghost = createWorktree(dir, '1-b');
@@ -263,7 +263,7 @@ describe('removeWorktree', () => {
   it('変更が残っている → force 無しでは断る', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
 
     expect(removeWorktree(dir, '1-a').outcome).toBe('dirty');
     expect(listWorktrees(dir)).toHaveLength(1);
@@ -272,7 +272,7 @@ describe('removeWorktree', () => {
   it('変更が残っていても、孤児の枝は掃除される（作業場は残す）', () => {
     const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     // 取り込み済みの孤児枝（実体を持たない枝）を 1 つ作る
     runGit(dir, home, ['branch', 'consult/9-merged', 'HEAD']);
 
@@ -287,17 +287,17 @@ describe('removeWorktree', () => {
   it('変更が残っていても force なら消える', () => {
     const { dir } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
 
     const result = removeWorktree(dir, '1-a', { force: true });
     expect(result.outcome).toBe('removed');
     expect(listWorktrees(dir)).toEqual([]);
   });
 
-  it('ブランチは、取り込み済みなら一緒に消える（親のツリーは汚れない）', () => {
+  it('ブランチは、取り込み済みなら一緒に消える（ベースは汚れない）', () => {
     const { dir, home } = repo();
     createWorktree(dir, '1-a');
-    // 子が何も書いていない（ブランチは base のまま = 親に取り込み済み）
+    // サブエージェントが何も書いていない（ブランチは base のまま = ベースに取り込み済み）
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('removed');
     expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
@@ -309,11 +309,11 @@ describe('removeWorktree', () => {
   it('未マージのブランチは残す（仕事を消さない）', () => {
     const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
-    // worktree で 1 つコミットする = 親に取り込まれていない仕事。
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
+    // worktree で 1 つコミットする = ベースに取り込まれていない仕事。
     // `runGit` は repo 用に GIT_DIR を固定するので、worktree は `-C` で指す
     gitInWorktree(made.path, ['add', '-A']);
-    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the subagent's work"]);
 
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('removed');
@@ -323,7 +323,7 @@ describe('removeWorktree', () => {
     expect(runGit(dir, home, ['branch', '--list', 'consult/*']).stdout).toContain(branchFor('1-a'));
     // 仕事はブランチに残っている
     expect(runGit(dir, home, ['log', '--oneline', branchFor('1-a')]).stdout).toContain(
-      "the child's work",
+      "the subagent's work",
     );
   });
 
@@ -344,9 +344,9 @@ describe('removeWorktree', () => {
   it('実体の無い登録でも、force なら未マージの枝を捨てる', () => {
     const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     gitInWorktree(made.path, ['add', '-A']);
-    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the subagent's work"]);
     rmSync(made.path, { recursive: true, force: true });
 
     const kept = removeWorktree(dir, '1-a');
@@ -384,9 +384,9 @@ describe('removeWorktree', () => {
   it('未マージでも force ならブランチも消える（捨てる）', () => {
     const { dir, home } = repo();
     const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     gitInWorktree(made.path, ['add', '-A']);
-    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    gitInWorktree(made.path, ['commit', '--no-verify', '--quiet', '-m', "the subagent's work"]);
 
     const result = removeWorktree(dir, '1-a', { force: true });
     expect(result.outcome).toBe('removed');
@@ -416,9 +416,9 @@ describe('removeWorktree の統合', () => {
     const target = createWorktree(dir, '1-t');
     runGit(dir, home, ['branch', 'consult/9-merged', 'HEAD']);
     const unmerged = createWorktree(dir, '1-u');
-    writeFileSync(join(unmerged.path, 'note.md'), 'the child wrote this\n');
+    writeFileSync(join(unmerged.path, 'note.md'), 'the subagent wrote this\n');
     gitInWorktree(unmerged.path, ['add', '-A']);
-    gitInWorktree(unmerged.path, ['commit', '--no-verify', '--quiet', '-m', "the child's work"]);
+    gitInWorktree(unmerged.path, ['commit', '--no-verify', '--quiet', '-m', "the subagent's work"]);
     rmSync(unmerged.path, { recursive: true, force: true });
     runGit(dir, home, ['worktree', 'prune']);
     const ghost = createWorktree(dir, '1-g');
@@ -480,7 +480,7 @@ describe('cleanWorktrees', () => {
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
   });
 
-  it('走っている子の作業場 → 消さず、その枝も消さない', () => {
+  it('走っているサブエージェントの作業場 → 消さず、その枝も消さない', () => {
     const { dir, home } = repo();
     // 取り込み済み（prune されれば枝も消える状態）だが、作業場があるので触らない
     const made = createWorktree(dir, '1-a');
@@ -505,7 +505,7 @@ describe('unit の置き場', () => {
 
     expect(made.unitDir).not.toBe(made.path);
     expect(made.path.startsWith(made.unitDir)).toBe(true);
-    // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の親
+    // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の上
     expect(made.path).toBe(join(made.unitDir, 'wt'));
     expect(dirname(made.unitDir)).toBe(ensureRoot(dir));
   });

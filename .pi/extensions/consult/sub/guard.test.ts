@@ -73,7 +73,7 @@ describe('isSecretPath', () => {
     expect(isSecretPath('', dir)).toBe(false);
   });
 
-  it('存在しないパスは、名前が秘密でなければ通す（cat のような語で子が凍らない）', () => {
+  it('存在しないパスは、名前が秘密でなければ通す（cat のような語でサブエージェントが凍らない）', () => {
     expect(isSecretPath(join(dir, 'does-not-exist'), dir)).toBe(false);
   });
 
@@ -195,7 +195,7 @@ describe('parseLimits', () => {
     expect(parseLimits('  ')).toEqual({ state: 'open' });
   });
 
-  it('親が渡した JSON → その値', () => {
+  it('メインエージェントが渡した JSON → その値', () => {
     expect(parseLimits('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}')).toEqual({
       state: 'set',
       paths: ['cycles/*/plan/*.md'],
@@ -273,7 +273,7 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(judgeToolCall('bash', { command: 'rm -rf src' }, dir, limits).block).toBe(true);
   });
 
-  it('親の許可が壊れている → 書く道具と bash を止める（読むのは通す）', () => {
+  it('メインエージェントの許可が壊れている → 書く道具と bash を止める（読むのは通す）', () => {
     const broken: Limits = { state: 'broken' };
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, broken).block).toBe(true);
     expect(judgeToolCall('bash', { command: 'git status' }, dir, broken).block).toBe(true);

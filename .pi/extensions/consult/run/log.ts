@@ -1,16 +1,16 @@
 /**
  * consult の実行記録。
  *
- * 1 回の子の起動を 1 行の JSON として置き場（`Place`）の日ごとのファイルに足す。
- * 親のセッションが reload で差し替わっても、新しいインスタンスはこれを読めば
- * 前の子を思い出せる。置き場はリポジトリから決まる固定の場所なので、記憶を持たない。
+ * 1 回のサブエージェントの起動を 1 行の JSON として置き場（`Place`）の日ごとのファイルに足す。
+ * メインエージェントのセッションが reload で差し替わっても、新しいインスタンスはこれを読めば
+ * 前のサブエージェントを思い出せる。置き場はリポジトリから決まる固定の場所なので、記憶を持たない。
  *
  * 追記は 1 行単位。途中で落ちても、その前の行は残る。読む側は壊れた行を飛ばす。
  * 読む幅は今日と昨日の 2 ファイル（`RECORD_DAYS`）。掃除は 30 日より古い物を消す。
  */
 
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
-import type { ChildState } from './run.ts';
+import type { SubagentState } from './run.ts';
 import { dayFile, windowFiles, type Place } from './place.ts';
 
 /** 読む窓の日数（今日と昨日） */
@@ -19,21 +19,21 @@ export const RECORD_DAYS = 2;
 /** 残す日数。起動の掃除がこれより古いファイルを消す */
 export const KEEP_DAYS = 30;
 
-/** 子 1 体の 1 回の記録。終わりの欄は、走っている間は無い */
+/** サブエージェント 1 体の 1 回の記録。終わりの欄は、走っている間は無い */
 export interface RunRecord {
   /** pi のセッション id。照合に使うだけ（人が読む物ではない） */
   readonly session: string;
-  /** 親が振った id（`consult-1` など） */
-  readonly child: string;
+  /** メインエージェントが振った id（`consult-1` など） */
+  readonly subagent: string;
   readonly role: string;
-  /** worktree の id。親の木で走った子（読むだけ）には無い */
+  /** worktree の id。ベースで走ったサブエージェント（読むだけ）には無い */
   readonly worktree?: string;
   readonly pid: number;
   /** 始まった時刻（ms） */
   readonly started: number;
   /** 終わった時刻（ms）。走っている間は無い */
   readonly ended?: number;
-  readonly state?: ChildState;
+  readonly state?: SubagentState;
   readonly reason?: string;
   readonly files?: readonly string[];
   readonly turns?: number;
@@ -60,7 +60,7 @@ export function appendRun(place: Place, record: RunRecord, at?: Date): void {
  * 生存確認。
  *
  * シグナル 0 は「送らずに送れるかだけ見る」。投げなければ生きている。権限が無い場合も投げるので、
- * 別のユーザーのプロセスは「死んでいる」と見える（自分の子しか見ないので、これで足りる）。
+ * 別のユーザーのプロセスは「死んでいる」と見える（自分のサブエージェントしか見ないので、これで足りる）。
  */
 export function pidAlive(pid: number): boolean {
   if (!Number.isInteger(pid) || pid <= 0) {
@@ -75,9 +75,9 @@ export function pidAlive(pid: number): boolean {
 }
 
 /**
- * 走っている子の行か。終わりの行が無く、pid が生きている。
+ * 走っているサブエージェントの行か。終わりの行が無く、pid が生きている。
  *
- * 親の記憶ではなく記録で見るので、reload をまたいだ子にも効く。`alive` はテストが差し替える口。
+ * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`alive` はテストが差し替える口。
  */
 export function isRunning(record: RunRecord, alive: (pid: number) => boolean = pidAlive): boolean {
   return record.ended === undefined && alive(record.pid);
@@ -100,11 +100,11 @@ export function parseRun(line: string): RunRecord | undefined {
     return undefined;
   }
   const fields = asFields(parsed);
-  const { child, role, pid, started, session } = fields;
+  const { subagent, role, pid, started, session } = fields;
   if (typeof session !== 'string' || session === '') {
     return undefined;
   }
-  if (typeof child !== 'string' || typeof role !== 'string' || typeof pid !== 'number') {
+  if (typeof subagent !== 'string' || typeof role !== 'string' || typeof pid !== 'number') {
     return undefined;
   }
   if (typeof started !== 'number') {
@@ -112,7 +112,7 @@ export function parseRun(line: string): RunRecord | undefined {
   }
   return {
     session,
-    child,
+    subagent,
     role,
     pid,
     started,
@@ -127,13 +127,13 @@ export function parseRun(line: string): RunRecord | undefined {
   };
 }
 
-/** 素の object を、欄だけを持つ枠として見る（`child/spec.ts` の `asEvent` と同じ形） */
+/** 素の object を、欄だけを持つ枠として見る（`sub/spec.ts` の `asEvent` と同じ形） */
 function asFields(raw: unknown): Record<string, unknown> {
   return typeof raw === 'object' && raw !== null ? { ...raw } : {};
 }
 
 /** 終わり方の 4 つのどれかか */
-function isState(value: unknown): value is ChildState {
+function isState(value: unknown): value is SubagentState {
   return value === 'done' || value === 'turn-limit' || value === 'error' || value === 'aborted';
 }
 
@@ -168,10 +168,10 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
 }
 
 /**
- * その session の、走っている子の行だけを返す。
+ * その session の、走っているサブエージェントの行だけを返す。
  *
  * `readRuns` の窓を `scope` で切り、`isRunning`（既定 `pidAlive`）で生きている物だけにする。
- * 音の述語と、前のセッションの子の告知が読む。
+ * 音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
   place: Place,

@@ -4,17 +4,17 @@ import { appendRun, type RunRecord } from '../run/log.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import {
   USAGE,
-  createChildrenTool,
+  createSubagentsTool,
   elapsed,
   latest,
   listText,
   rowOf,
   rowsOf,
-  type ChildrenArgs,
+  type SubagentsArgs,
 } from './subagents.ts';
 
 // 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
-// 子は起こさない（記録と、runtime の偽物だけで試す）。
+// サブエージェントは起こさない（記録と、runtime の偽物だけで試す）。
 
 function place(): Place {
   return placeFor(tmpDir(), tmpDir());
@@ -23,7 +23,7 @@ function place(): Place {
 function record(extra: Partial<RunRecord> = {}): RunRecord {
   return {
     session: 'session-a',
-    child: 'consult-1',
+    subagent: 'consult-1',
     role: 'review',
     pid: 999_999,
     started: 1000,
@@ -75,7 +75,7 @@ describe('elapsed', () => {
     expect(elapsed(record({ started: 0, ended: 125_000 }), 0)).toBe('2m05s');
   });
 
-  it('終わった子は終わりまでの時間（今ではない）', () => {
+  it('終わったサブエージェントは終わりまでの時間（今ではない）', () => {
     expect(elapsed(record({ started: 0, ended: 5000 }), 10 ** 9)).toBe('5s');
   });
 });
@@ -90,11 +90,11 @@ describe('rowOf / rowsOf', () => {
     expect(row).toContain('0.01 usd');
   });
 
-  it('worktree が無い子は親の木と出す', () => {
+  it('worktree が無いサブエージェントはベースと出す', () => {
     expect(rowOf(record(), false, 0)).toContain('parent');
   });
 
-  it('終わった子は state と reason を出す。走っている子は出さない', () => {
+  it('終わったサブエージェントは state と reason を出す。走っているサブエージェントは出さない', () => {
     const done = rowOf(
       record({ ended: 2, state: 'turn-limit', reason: 'turn limit reached (40)' }),
       false,
@@ -107,7 +107,7 @@ describe('rowOf / rowsOf', () => {
     expect(running).not.toContain('reason:');
   });
 
-  it('走っている子（pid が生きていて終了行が無い）は running になる', () => {
+  it('走っているサブエージェント（pid が生きていて終了行が無い）は running になる', () => {
     expect(rowsOf([record()], alive, 0)[0]).toContain('running');
   });
 
@@ -117,7 +117,7 @@ describe('rowOf / rowsOf', () => {
     expect(row).not.toContain('done');
   });
 
-  it('終了の行がある子は running にしない（state を出す）', () => {
+  it('終了の行があるサブエージェントは running にしない（state を出す）', () => {
     const ended = record({ ended: 5, state: 'done' });
     expect(rowsOf([ended], alive, 0)[0]).not.toContain('running');
     expect(rowsOf([ended], dead, 0)[0]).toContain('done');
@@ -129,11 +129,11 @@ describe('rowOf / rowsOf', () => {
 });
 
 describe('latest', () => {
-  it('子ごとに最後の行を取る（走っている行 → 終わった行で 1 本に畳む）', () => {
-    const running = record({ child: 'consult-1', pid: 5 });
-    const done = record({ child: 'consult-1', pid: 5, ended: 2000, state: 'done' });
-    const other = record({ child: 'consult-2', started: 3000 });
-    expect(latest([running, other, done]).map((row) => [row.child, row.state])).toEqual([
+  it('サブエージェントごとに最後の行を取る（走っている行 → 終わった行で 1 本に畳む）', () => {
+    const running = record({ subagent: 'consult-1', pid: 5 });
+    const done = record({ subagent: 'consult-1', pid: 5, ended: 2000, state: 'done' });
+    const other = record({ subagent: 'consult-2', started: 3000 });
+    expect(latest([running, other, done]).map((row) => [row.subagent, row.state])).toEqual([
       ['consult-1', 'done'],
       ['consult-2', undefined],
     ]);
@@ -146,24 +146,24 @@ describe('latest', () => {
 
 describe('listText', () => {
   it('記録が無ければそう言う（空行を返さない）', () => {
-    expect(listText([], 0)).toBe('no children in this project yet');
+    expect(listText([], 0)).toBe('no subagents in this project yet');
   });
 });
 
-describe('createChildrenTool', () => {
+describe('createSubagentsTool', () => {
   it('{action: list} → 記録の行が出る', async () => {
     const found = withLog([
       record({ worktree: '2-a', ended: 2000, state: 'done', turns: 3, spend: '0.002 usd' }),
     ]);
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'list' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    const out = await createChildrenTool(host)(...args);
+    const out = await createSubagentsTool(host)(...args);
     const text = textOf(out);
     expect(text).toContain('consult-1');
     expect(text).toContain('worktree 2-a');
@@ -173,64 +173,64 @@ describe('createChildrenTool', () => {
   it('action を省くと list（既定）', async () => {
     const found = withLog([record({ ended: 2000, state: 'done' })]);
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = ['call', {}, undefined, undefined, { cwd: tmpDir() }];
-    const out = await createChildrenTool(host)(...args);
+    const args: SubagentsArgs = ['call', {}, undefined, undefined, { cwd: tmpDir() }];
+    const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain('consult-1');
   });
 
-  it('2 つの session の子が居る → いまの session の子だけが出る', async () => {
+  it('2 つの session のサブエージェントが居る → いまの session のサブエージェントだけが出る', async () => {
     const found = withLog([
-      record({ session: 'session-a', child: 'consult-1', ended: 2000, state: 'done' }),
-      record({ session: 'session-b', child: 'consult-2', ended: 2000, state: 'done' }),
+      record({ session: 'session-a', subagent: 'consult-1', ended: 2000, state: 'done' }),
+      record({ session: 'session-b', subagent: 'consult-2', ended: 2000, state: 'done' }),
     ]);
     const { host } = fakeHost(found, 'session-a');
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'list' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    const text = textOf(await createChildrenTool(host)(...args));
+    const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain('consult-1');
     expect(text).not.toContain('consult-2');
   });
 
-  it('3 日前に始まっていまも走っている子（終わりの行が無い）→ 一覧に出ない', async () => {
+  it('3 日前に始まっていまも走っているサブエージェント（終わりの行が無い）→ 一覧に出ない', async () => {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    // 2 日より長く走る子は窓の外に出る（受け入れる限界）
-    const found = withLog([record({ child: 'consult-old', pid: process.pid })], threeDaysAgo);
+    // 2 日より長く走るサブエージェントは窓の外に出る（受け入れる限界）
+    const found = withLog([record({ subagent: 'consult-old', pid: process.pid })], threeDaysAgo);
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'list' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    const text = textOf(await createChildrenTool(host)(...args));
+    const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).not.toContain('consult-old');
   });
 
-  it('3 日前に始まって今日終わった子 → state 付きで出る（終わりの行は今日の file）', async () => {
+  it('3 日前に始まって今日終わったサブエージェント → state 付きで出る（終わりの行は今日の file）', async () => {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     const found = place();
-    appendRun(found, record({ child: 'consult-long', pid: process.pid }), threeDaysAgo);
+    appendRun(found, record({ subagent: 'consult-long', pid: process.pid }), threeDaysAgo);
     appendRun(
       found,
-      record({ child: 'consult-long', pid: process.pid, ended: 2000, state: 'done' }),
+      record({ subagent: 'consult-long', pid: process.pid, ended: 2000, state: 'done' }),
     );
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'list' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    const text = textOf(await createChildrenTool(host)(...args));
+    const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain('consult-long');
     expect(text).toContain('done');
   });
@@ -238,14 +238,14 @@ describe('createChildrenTool', () => {
   it('{action: cancel, id} → 止めた結果が返る', async () => {
     const found = withLog();
     const { host, cancelled } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'cancel', id: 'consult-1' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    const out = await createChildrenTool(host)(...args);
+    const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain('stopped: consult-1');
     expect(cancelled).toEqual(['consult-1']);
   });
@@ -253,27 +253,27 @@ describe('createChildrenTool', () => {
   it('{action: cancel}（id 無し）→ 使い方つきで投げる', async () => {
     const found = withLog();
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'cancel' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    await expect(createChildrenTool(host)(...args)).rejects.toThrow(/cancel needs id/);
+    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(/cancel needs id/);
     expect(USAGE).toContain('cancel needs id');
   });
 
   it('知らない action → 投げる', async () => {
     const found = withLog();
     const { host } = fakeHost(found);
-    const args: ChildrenArgs = [
+    const args: SubagentsArgs = [
       'call',
       { action: 'stop' },
       undefined,
       undefined,
       { cwd: tmpDir() },
     ];
-    await expect(createChildrenTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
+    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
   });
 });

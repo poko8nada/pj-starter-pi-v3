@@ -1,9 +1,9 @@
 /**
- * consult_run — 1 体の子を、ロールと行き先を指して走らせる道具の面。
+ * consult_run — 1 体のサブエージェントを、ロールと行き先を指して走らせる道具の面。
  *
- * **1 呼び出し = 必ず 1 体**。複数の子が欲しいときはこの道具を複数回呼ぶ（背景なので親は待たない）。
- * 読ませたいファイルはここには渡さない（`input` は持たない）。子は `read` を持っているので、`task` にパスを書いて自分で読ませる。
- * 走らせるのは `tool/consult.ts` の runtime（走っている子を 1 か所で持つ所）で、ここは引数の面だけ。
+ * **1 呼び出し = 必ず 1 体**。複数のサブエージェントが欲しいときはこの道具を複数回呼ぶ（背景なのでメインエージェントは待たない）。
+ * 読ませたいファイルはここには渡さない（`input` は持たない）。サブエージェントは `read` を持っているので、`task` にパスを書いて自分で読ませる。
+ * 走らせるのは `tool/consult.ts` の runtime（走っているサブエージェントを 1 か所で持つ所）で、ここは引数の面だけ。
  */
 
 import { Type } from 'typebox';
@@ -11,9 +11,9 @@ import { Type } from 'typebox';
 /** 道具のパラメータ */
 export const PARAMETERS = Type.Object({
   role: Type.String({
-    description: 'How the child runs: research / review / trial / code. Set in types.json',
+    description: 'How the subagent runs: research / review / trial / code. Set in types.json',
   }),
-  task: Type.String({ description: 'What the child should do. Name any file it must read' }),
+  task: Type.String({ description: 'What the subagent should do. Name any file it must read' }),
   worktree: Type.Optional(
     Type.String({
       description:

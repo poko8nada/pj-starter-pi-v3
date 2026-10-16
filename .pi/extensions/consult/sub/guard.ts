@@ -1,10 +1,10 @@
 /**
- * child-guard — 子にだけ読ませる guard。
+ * subagent-guard — サブエージェントにだけ読ませる guard。
  *
- * `consult` が子の起動引数に `-e <このファイル>` を入れる。子だけがこれを読む
+ * `consult` がサブエージェントの起動引数に `-e <このファイル>` を入れる。サブエージェントだけがこれを読む
  * （pi の拡張探索はディレクトリの `index.ts` なので、この名前のファイルは自動では読まれない）。
  *
- * 親が渡した役割の許可（`CONSULT_POLICY`）を規則にする。書く道具は許可されたパスだけ、bash は許可された接頭辞だけ。読みは縛らない。
+ * メインエージェントが渡した役割の許可（`CONSULT_POLICY`）を規則にする。書く道具は許可されたパスだけ、bash は許可された接頭辞だけ。読みは縛らない。
  *
  * 判定は**解決後の絶対パス**で行う。bash のトークンは先に変数展開する。
  * `$VAR` / `${VAR}` は `process.env` から引く（未定義は空。bash と同じ）。
@@ -41,7 +41,7 @@ function matchesName(name: string, pattern: string): boolean {
  * パスが秘密を指すか。**解決後の絶対パス**で見る。
  *
  * 解決できない（存在しない・読めない）場合は、**解決前のベース名**で規則を見る。
- * bash のトークンは `cat` のような存在しない語を含むので、それを全部止めると子が凍る（2026-09-24 の実演）。実体が無いものは読めないので、名前が秘密でなければ通す。
+ * bash のトークンは `cat` のような存在しない語を含むので、それを全部止めるとサブエージェントが凍る（2026-09-24 の実演）。実体が無いものは読めないので、名前が秘密でなければ通す。
  */
 export function isSecretPath(path: string, cwd: string): boolean {
   const absolute = isAbsolute(path) ? path : resolve(cwd, path);
@@ -146,7 +146,7 @@ function pathsFrom(name: string, input: unknown): string[] {
   return paths;
 }
 
-/** 親が渡す役割の許可。`CONSULT_POLICY` の中身 */
+/** メインエージェントが渡す役割の許可。`CONSULT_POLICY` の中身 */
 export type Limits =
   | { readonly state: 'open' }
   | { readonly state: 'broken' }
@@ -164,9 +164,9 @@ function asPatterns(value: unknown): string[] | undefined {
 }
 
 /**
- * 親が渡した許可を読む。読めなければ `broken`（親のバグ）。
+ * メインエージェントが渡した許可を読む。読めなければ `broken`（メインエージェントのバグ）。
  *
- * `broken` は書く道具と bash を止める。読むのは通す（調べられなくすると、子が理由を報告できなくなる）。
+ * `broken` は書く道具と bash を止める。読むのは通す（調べられなくすると、サブエージェントが理由を報告できなくなる）。
  */
 export function parseLimits(text: string | undefined): Limits {
   if (text === undefined || text.trim() === '') {
@@ -234,18 +234,21 @@ function judgeLimits(
     return {};
   }
   if (limits.state === 'broken') {
-    return { block: true, reason: '書けない: 親の許可を読めなかった（child-guard）' };
+    return {
+      block: true,
+      reason: '書けない: メインエージェントの許可を読めなかった（subagent-guard）',
+    };
   }
   if (runs) {
     const command = str(input, 'command');
     if (command !== undefined && !commandAllowed(command, limits.bash)) {
-      return { block: true, reason: `打てない: ${command} は許可されていない（child-guard）` };
+      return { block: true, reason: `打てない: ${command} は許可されていない（subagent-guard）` };
     }
     return {};
   }
   for (const path of pathsFrom(name, input)) {
     if (!pathAllowed(path, cwd, limits.paths)) {
-      return { block: true, reason: `書けない: ${path} は許可されていない（child-guard）` };
+      return { block: true, reason: `書けない: ${path} は許可されていない（subagent-guard）` };
     }
   }
   return {};
@@ -260,17 +263,17 @@ export function judgeToolCall(
 ): { block?: true; reason?: string } {
   for (const path of pathsFrom(name, input)) {
     if (path.includes(UNRESOLVED)) {
-      return { block: true, reason: '読めない: 展開できないトークンがある（child-guard）' };
+      return { block: true, reason: '読めない: 展開できないトークンがある（subagent-guard）' };
     }
     if (isSecretPath(path, cwd)) {
-      return { block: true, reason: `読めない: ${path} は秘密として扱う（child-guard）` };
+      return { block: true, reason: `読めない: ${path} は秘密として扱う（subagent-guard）` };
     }
   }
   return judgeLimits(name, input, cwd, limits);
 }
 
 export default function (pi: ExtensionAPI) {
-  // 親が渡した許可を、起動時に 1 度だけ読む（子が後から書き換えても効かない）。
+  // メインエージェントが渡した許可を、起動時に 1 度だけ読む（サブエージェントが後から書き換えても効かない）。
   const limits = parseLimits(process.env.CONSULT_POLICY);
   pi.on('tool_call', (event, ctx) => {
     try {
@@ -283,7 +286,7 @@ export default function (pi: ExtensionAPI) {
       return judgeToolCall(name, input, ctx.cwd, limits);
     } catch {
       // pi は投げた handler を捕まえない（止まらずに走ってしまう）。fail-closed で止める。
-      return { block: true, reason: '読めない: child-guard の判定に失敗した' };
+      return { block: true, reason: '読めない: subagent-guard の判定に失敗した' };
     }
   });
 }

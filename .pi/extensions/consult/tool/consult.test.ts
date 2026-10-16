@@ -1,7 +1,7 @@
 /**
  * consult 道具のバックグラウンドの面を、偽の API で確かめる。
  *
- * 子は起こさない。`createRuntime` に差し替えた `run` を渡し、完了のタイミングと届くメッセージを自分で決める。pi の `sendMessage` と slash command の `ctx.ui.notify` も記録する。
+ * サブエージェントは起こさない。`createRuntime` に差し替えた `run` を渡し、完了のタイミングと届くメッセージを自分で決める。pi の `sendMessage` と slash command の `ctx.ui.notify` も記録する。
  * 記録の置き場は `placeFor(tmpDir(), tmpDir())` で作り、session は `'test-session'` を渡す
  * （`parseRun` が空の session を弾くため、既定の `''` は使わない）。
  */
@@ -9,7 +9,7 @@
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  controlChild,
+  controlSubagent,
   createRuntime,
   type CommandContext,
   type ConsultContext,
@@ -35,7 +35,7 @@ import { placeFor, type Place } from '../run/place.ts';
 /** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
 const SESSION = 'test-session';
 
-// 道具の文脈は cwd だけ。ここは読み取り専用で、子は差し替えた `run` が受けるので本体を見ない。
+// 道具の文脈は cwd だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
 // 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
 
@@ -66,7 +66,7 @@ function setup(
 
 type RunParams = Parameters<ConsultRuntime['run']>[1];
 
-function startChild(runtime: ConsultRuntime, params: RunParams) {
+function startSubagent(runtime: ConsultRuntime, params: RunParams) {
   return runtime.run('call', params, undefined, undefined, toolCtx);
 }
 
@@ -106,7 +106,7 @@ function fakeCommandContext(): {
   return { ctx, notices };
 }
 
-/** 完了をテストが決める子。signal と resolve を記録する */
+/** 完了をテストが決めるサブエージェント。signal と resolve を記録する */
 function deferredRunner(): {
   run: ConsultRunner;
   signals: (AbortSignal | undefined)[];
@@ -131,10 +131,13 @@ function flush(): Promise<void> {
 }
 
 /** 走っている行を 1 本書く。pid が生きている間だけ述語は true */
-function seedRunning(place: Place, extra: { session?: string; child?: string; pid?: number } = {}) {
+function seedRunning(
+  place: Place,
+  extra: { session?: string; subagent?: string; pid?: number } = {},
+) {
   appendRun(place, {
     session: extra.session ?? SESSION,
-    child: extra.child ?? 'consult-9',
+    subagent: extra.subagent ?? 'consult-9',
     role: 'review',
     pid: extra.pid ?? process.pid,
     started: Date.now(),
@@ -142,27 +145,27 @@ function seedRunning(place: Place, extra: { session?: string; child?: string; pi
 }
 
 describe('run', () => {
-  it('review を 1 体起こす → id が返り、その時点で子は終わっていない', async () => {
+  it('review を 1 体起こす → id が返り、その時点でサブエージェントは終わっていない', async () => {
     const { pi, calls } = fakePi();
     const { run: runner, signals, resolvers } = deferredRunner();
     const { runtime } = setup(pi, runner);
 
-    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-1');
-    expect(runtime.children.size).toBe(1);
+    expect(runtime.subagents.size).toBe(1);
     expect(signals).toHaveLength(1);
     expect(resolvers).toHaveLength(1);
     expect(calls).toHaveLength(0);
   });
 
-  it('記録に consult-3 がある → 次の子は consult-4（reload で番号が戻らない）', async () => {
+  it('記録に consult-3 がある → 次のサブエージェントは consult-4（reload で番号が戻らない）', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    seedRunning(place, { child: 'consult-3' });
+    seedRunning(place, { subagent: 'consult-3' });
 
-    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-4');
   });
@@ -171,10 +174,10 @@ describe('run', () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    seedRunning(place, { child: 'consult-7' });
-    seedRunning(place, { child: 'consult-2' });
+    seedRunning(place, { subagent: 'consult-7' });
+    seedRunning(place, { subagent: 'consult-2' });
 
-    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-8');
   });
@@ -183,9 +186,9 @@ describe('run', () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    seedRunning(place, { child: 'consult-9', session: 'other-session' });
+    seedRunning(place, { subagent: 'consult-9', session: 'other-session' });
 
-    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-1');
   });
@@ -195,20 +198,20 @@ describe('run', () => {
     const { run: runner } = deferredRunner();
     const { runtime } = setup(pi, runner);
 
-    const first = await startChild(runtime, { role: 'review', task: '1 体目' });
-    const second = await startChild(runtime, { role: 'review', task: '2 体目' });
+    const first = await startSubagent(runtime, { role: 'review', task: '1 体目' });
+    const second = await startSubagent(runtime, { role: 'review', task: '2 体目' });
 
     expect(textOf(first)).toContain('started: consult-1');
     expect(textOf(second)).toContain('started: consult-2');
   });
 
-  it('終わった子の番号も数える → 次は consult-6', async () => {
+  it('終わったサブエージェントの番号も数える → 次は consult-6', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
     appendRun(place, {
       session: SESSION,
-      child: 'consult-5',
+      subagent: 'consult-5',
       role: 'review',
       pid: process.pid,
       started: Date.now() - 1000,
@@ -219,45 +222,45 @@ describe('run', () => {
       spend: '0.0001 usd',
     });
 
-    const result = await startChild(runtime, { role: 'review', task: '判定する' });
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
     expect(textOf(result)).toContain('started: consult-6');
   });
 
-  it('書き込むロール（code）で worktree を省くと、子を起こさずに拒む', async () => {
+  it('書き込むロール（code）で worktree を省くと、サブエージェントを起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
     const { runtime } = setup(pi, runner);
 
-    await expect(startChild(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
+    await expect(startSubagent(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
       /needs a worktree/,
     );
     expect(signals).toHaveLength(0);
-    expect(runtime.children.size).toBe(0);
+    expect(runtime.subagents.size).toBe(0);
   });
 
-  it('知らない worktree の id → 子を起こさずに拒む', async () => {
+  it('知らない worktree の id → サブエージェントを起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
     const { runtime } = setup(pi, runner);
 
     await expect(
-      startChild(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
+      startSubagent(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
     ).rejects.toThrow(/no such worktree/);
     expect(signals).toHaveLength(0);
-    expect(runtime.children.size).toBe(0);
+    expect(runtime.subagents.size).toBe(0);
   });
 });
 
 describe('完了の通知', () => {
-  it('子の完了 → 子のテキスト・ref:・[consult] 行がメッセージに入る', async () => {
+  it('サブエージェントの完了 → サブエージェントのテキスト・ref:・[consult] 行がメッセージに入る', async () => {
     const { pi, calls } = fakePi();
     const { run, resolvers } = deferredRunner();
     const { runtime } = setup(pi, run);
-    await startChild(runtime, { role: 'review', task: '直す' });
+    await startSubagent(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
-      text: 'the child text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
+      text: 'the subagent text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
       details: { type: 'review' },
     };
     resolvers[0]?.(outcome);
@@ -266,11 +269,11 @@ describe('完了の通知', () => {
     expect(calls).toHaveLength(1);
     const message = calls[0]?.message;
     expect(message?.customType).toBe('consult');
-    expect(message?.content).toContain('the child text');
+    expect(message?.content).toContain('the subagent text');
     expect(message?.content).toContain('ref: consult/code-1');
     expect(message?.content).toContain('[consult]');
     expect(calls[0]?.options).toEqual({ triggerTurn: true, deliverAs: 'followUp' });
-    expect(runtime.children.size).toBe(0);
+    expect(runtime.subagents.size).toBe(0);
   });
 });
 
@@ -279,7 +282,7 @@ describe('cancel', () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
     const { runtime } = setup(pi, run);
-    await startChild(runtime, { role: 'review', task: 'a' });
+    await startSubagent(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('consult-1', ctx);
@@ -292,27 +295,27 @@ describe('cancel', () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
     const { runtime } = setup(pi, run);
-    await startChild(runtime, { role: 'review', task: 'a' });
+    await startSubagent(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('consult-999', ctx);
 
-    expect(notices[0]?.message).toContain('no such child: consult-999');
+    expect(notices[0]?.message).toContain('no such subagent: consult-999');
     expect(notices[0]?.type).toBe('error');
     expect(signals[0]?.aborted).toBe(false);
   });
 });
 
-describe('controlChild: cancel', () => {
-  it('掴んでいる子 → abort で止まり、cancelled: true（kill は呼ばない）', () => {
+describe('controlSubagent: cancel', () => {
+  it('掴んでいるサブエージェント → abort で止まり、cancelled: true（kill は呼ばない）', () => {
     const kills: number[] = [];
     const controller = new AbortController();
-    const children = new Map([
+    const subagents = new Map([
       ['consult-1', { id: 'consult-1', type: 'review', task: 'a', startedAt: 1, controller }],
     ]);
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-1' },
-      children,
+      subagents,
       placeFor(tmpDir(), tmpDir()),
       SESSION,
       (pid) => {
@@ -325,11 +328,11 @@ describe('controlChild: cancel', () => {
     expect(kills).toEqual([]);
   });
 
-  it('掴んでいない子（記録だけ、pid 生存）→ kill がその pid で 1 回呼ばれ、cancelled: true', () => {
+  it('掴んでいないサブエージェント（記録だけ、pid 生存）→ kill がその pid で 1 回呼ばれ、cancelled: true', () => {
     const found = placeFor(tmpDir(), tmpDir());
     seedRunning(found, { pid: process.pid });
     const kills: number[] = [];
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-9' },
       new Map(),
       found,
@@ -344,11 +347,11 @@ describe('controlChild: cancel', () => {
     expect(outcome.text).toContain('cancelled consult-9');
   });
 
-  it('pid が死んでいる子 → kill を呼ばず、止められない理由を返す', () => {
+  it('pid が死んでいるサブエージェント → kill を呼ばず、止められない理由を返す', () => {
     const found = placeFor(tmpDir(), tmpDir());
     seedRunning(found, { pid: 999_999 });
     const kills: number[] = [];
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-9' },
       new Map(),
       found,
@@ -363,11 +366,11 @@ describe('controlChild: cancel', () => {
     expect(outcome.text).toContain('lost');
   });
 
-  it('終わった子 → kill を呼ばず、理由を返す', () => {
+  it('終わったサブエージェント → kill を呼ばず、理由を返す', () => {
     const found = placeFor(tmpDir(), tmpDir());
     appendRun(found, {
       session: SESSION,
-      child: 'consult-9',
+      subagent: 'consult-9',
       role: 'review',
       pid: process.pid,
       started: 1,
@@ -375,7 +378,7 @@ describe('controlChild: cancel', () => {
       state: 'done',
     });
     const kills: number[] = [];
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-9' },
       new Map(),
       found,
@@ -391,7 +394,7 @@ describe('controlChild: cancel', () => {
 
   it('記録に無い id → kill を呼ばず、理由を返す', () => {
     const kills: number[] = [];
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-999' },
       new Map(),
       placeFor(tmpDir(), tmpDir()),
@@ -403,14 +406,14 @@ describe('controlChild: cancel', () => {
 
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
-    expect(outcome.text).toContain('no such child: consult-999');
+    expect(outcome.text).toContain('no such subagent: consult-999');
   });
 
-  it('別の session の子 → 止めず、理由を返す', () => {
+  it('別の session のサブエージェント → 止めず、理由を返す', () => {
     const found = placeFor(tmpDir(), tmpDir());
     seedRunning(found, { session: 'other-session', pid: process.pid });
     const kills: number[] = [];
-    const outcome = controlChild(
+    const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-9' },
       new Map(),
       found,
@@ -428,16 +431,16 @@ describe('controlChild: cancel', () => {
 
 describe('音', () => {
   // 音そのもの（タイマー 1 本・述語で止まる・enabled）は `sound.test.ts` が見る。
-  // ここでは runtime 側の組み立てだけを見る: 子が走り出したら音が始まる、と、述語がこの session の子だけを見ること。
+  // ここでは runtime 側の組み立てだけを見る: サブエージェントが走り出したら音が始まる、と、述語がこの session のサブエージェントだけを見ること。
 
-  it('子を 1 体起こす → 音が始まる（述語はこの session の走行中だけを真にする）', async () => {
+  it('サブエージェントを 1 体起こす → 音が始まる（述語はこの session の走行中だけを真にする）', async () => {
     vi.useFakeTimers();
     try {
       const { pi } = fakePi();
       const { run } = deferredRunner();
       const { runtime, place } = setup(pi, run);
       seedRunning(place);
-      await startChild(runtime, { role: 'research', task: 'a' });
+      await startSubagent(runtime, { role: 'research', task: 'a' });
 
       expect(isSoundRunning()).toBe(true);
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
@@ -447,14 +450,14 @@ describe('音', () => {
     }
   });
 
-  it('別の session の子だけが走っている → 鳴らず、タイマーが消える', async () => {
+  it('別の session のサブエージェントだけが走っている → 鳴らず、タイマーが消える', async () => {
     vi.useFakeTimers();
     try {
       const { pi } = fakePi();
       const { run } = deferredRunner();
       const { runtime, place } = setup(pi, run);
       seedRunning(place, { session: 'other-session' });
-      await startChild(runtime, { role: 'review', task: 'a' });
+      await startSubagent(runtime, { role: 'review', task: 'a' });
 
       expect(isSoundRunning()).toBe(true);
       await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
@@ -486,15 +489,15 @@ describe('音', () => {
   });
 });
 
-describe('controlChild: list', () => {
-  it('子が 0 体なら、そう言う（空文字を返さない）', () => {
-    const outcome = controlChild(
+describe('controlSubagent: list', () => {
+  it('サブエージェントが 0 体なら、そう言う（空文字を返さない）', () => {
+    const outcome = controlSubagent(
       { action: 'list' },
       new Map(),
       placeFor(tmpDir(), tmpDir()),
       SESSION,
     );
-    expect(outcome.text).toContain('no child is running');
+    expect(outcome.text).toContain('no subagent is running');
   });
 });
 
@@ -519,12 +522,12 @@ describe('commands: 引数と空の一覧', () => {
     expect(notices[0]?.type).toBe('error');
   });
 
-  it('/consult-status は子が 0 体なら、そう言う', async () => {
+  it('/consult-status はサブエージェントが 0 体なら、そう言う', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime } = setup(pi, run);
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
-    expect(notices[0]?.message).toContain('no child is running');
+    expect(notices[0]?.message).toContain('no subagent is running');
   });
 });

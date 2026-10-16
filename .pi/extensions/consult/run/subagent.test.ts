@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { childEnv, prepare, sessionFile } from './subagent.ts';
+import { subagentEnv, prepare, sessionFile } from './subagent.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 
-// 実行場所の決め方だけを試す。子の起動は実際の pi が要るので扱わない。
+// 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
 const CONTEXT = { cwd: '/tmp/parent' } as const;
 
@@ -28,7 +28,7 @@ const WORKTREE: Worktree = {
 };
 
 describe('prepare', () => {
-  it('隔離しないロール → 親の木で走る（worktree は要らない）', () => {
+  it('隔離しないロール → ベースで走る（worktree は要らない）', () => {
     expect(prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false) })).toEqual({
       cwd: '/tmp/parent',
     });
@@ -49,22 +49,22 @@ describe('prepare', () => {
     expect(prepared.cwd).toBe(WORKTREE.path);
   });
 
-  it('隔離するロールで worktree が無い → 親の木で書かせずに投げる', () => {
+  it('隔離するロールで worktree が無い → ベースで書かせずに投げる', () => {
     expect(() => prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true) })).toThrow(
       /needs a worktree/,
     );
   });
 });
 
-describe('childEnv', () => {
-  it('親が解決した上限と許可だけを載せる（子は types.json を読まない）', () => {
-    const env = childEnv({ ...policy(false), paths: ['cycles/*/plan/*.md'], bash: ['git'] });
+describe('subagentEnv', () => {
+  it('メインエージェントが解決した上限と許可だけを載せる（サブエージェントは types.json を読まない）', () => {
+    const env = subagentEnv({ ...policy(false), paths: ['cycles/*/plan/*.md'], bash: ['git'] });
     expect(env.CONSULT_TURNS).toBe('20');
     expect(env.CONSULT_POLICY).toBe('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}');
   });
 
   it('上限 40 → CONSULT_TURNS は 40（値の振りを見る）', () => {
-    const env = childEnv({
+    const env = subagentEnv({
       ...policy(false),
       limits: { turns: 40, output: 8000 },
     });
