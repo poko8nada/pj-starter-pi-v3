@@ -201,7 +201,7 @@ describe('listWorktrees / findWorktree', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const root = ensureRoot(dir);
-    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その上
+    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その親ディレクトリ
     expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
 });
@@ -505,7 +505,7 @@ describe('unit の置き場', () => {
 
     expect(made.unitDir).not.toBe(made.path);
     expect(made.path.startsWith(made.unitDir)).toBe(true);
-    // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の上
+    // path は unitDir の下（<unitDir>/wt）、runRoot は unitDir の親ディレクトリ
     expect(made.path).toBe(join(made.unitDir, 'wt'));
     expect(dirname(made.unitDir)).toBe(ensureRoot(dir));
   });

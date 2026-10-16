@@ -135,7 +135,7 @@ export interface SubagentReport { /* … */ }    // 元 ChildReport
   - (happy) `.pi/extensions/consult` のテスト → slice 1 と同じ本数 + 1（新しい case）が緑
   - (happy) `grep -rn "ChildJob\|ChildResult\|runOneChild\|childEnv\|ChildState\|RunningChild\|ChildrenHost\|ChildrenArgs\|createChildrenTool\|ChildReport\|CHILDREN_PARAMETERS" .pi/extensions/consult` → 0 件
   - (happy) `grep -rn "startChild\|controlChild\|describeChild\|byChild\|nextChildId\|announceRunningChildren" .pi/extensions/consult` → 0 件
-  - (happy) `grep -rn "親" .pi/extensions/consult` → 0 件
+  - (happy) `grep -rn "親" .pi/extensions/consult` → 道の親子（`親ディレクトリ`）だけが残る（`run/worktree.test.ts:204,508`）
   - (happy) `grep -rn "subagent" .pi/extensions/consult/run/log.ts` → 記録の欄の名前に出る
   - (boundary values) `grep -n "killChild\|live.child" .pi/extensions/consult/run/run.ts` → 残る（spawn の呼び方）
   - (boundary values) 旧形の行を `parseRun` に読ませる → `undefined`（ADR 05 の決定）
@@ -226,21 +226,23 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
 
 ### Slice 1: ファイルとディレクトリを移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f7167a7
 
 ### Slice 2: 呼び方を揃える
 
 - Findings:
-- Unplanned:
-- Commit:
+  - 道の親子（`run/worktree.test.ts:204,508` の `親ディレクトリ`）はエージェントを指していないので `親` が残る
+    - left: 道の親子は呼び方の対象外のため（エージェント/サブエージェント・ベース/worktree のいずれでもない）
+- Unplanned: なし
+- Commit: 0463af0
 
 ### Slice 3: ツールの名前と場所の呼び方
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6007525
 
 ### Slice 4: 文書を揃える
 
