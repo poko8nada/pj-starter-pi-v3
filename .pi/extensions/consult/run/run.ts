@@ -7,7 +7,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { accountEvent, parseEvents, ranFrom, type Spent } from '../child/spec.ts';
+import { accountEvent, parseEvents, ranFrom, type Spent } from '../sub/spec.ts';
 import type { Limits } from '../policy/types.ts';
 import { gitEnv } from '../../../../lib/git-env.mjs';
 

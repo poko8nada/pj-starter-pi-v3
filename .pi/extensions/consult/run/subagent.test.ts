@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { childEnv, prepare, sessionFile } from './child.ts';
+import { childEnv, prepare, sessionFile } from './subagent.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 

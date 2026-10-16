@@ -11,7 +11,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
-import { runOneChild, type ChildJob } from '../run/child.ts';
+import { runOneChild, type ChildJob } from '../run/subagent.ts';
 import { findWorktree } from '../run/worktree.ts';
 import {
   appendRun,
@@ -22,7 +22,7 @@ import {
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
-import { latest } from './children.ts';
+import { latest } from './subagents.ts';
 import type { Delivery } from '../run/delivery.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
@@ -31,7 +31,7 @@ import {
   type RunRequest,
 } from './run.ts';
 import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
-import { parseEvents, usageFrom, type ConsultOptions } from '../child/spec.ts';
+import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, reportBlock, result, usageLine, type ChildReport } from './render.ts';
 import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';

@@ -5,7 +5,7 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../child/spec.ts';
+import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../sub/spec.ts';
 import type { ChildState, RunResult } from '../run/run.ts';
 
 /** 道具の戻り値。details は必須なので、必ず埋める */

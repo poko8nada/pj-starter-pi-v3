@@ -15,8 +15,8 @@ import {
   type RunResult,
 } from './run.ts';
 import { gitEnv } from '../../../../lib/git-env.mjs';
-import { buildPiArgs, joinPrompt, needsIsolation } from '../child/spec.ts';
-import type { ConsultOptions } from '../child/spec.ts';
+import { buildPiArgs, joinPrompt, needsIsolation } from '../sub/spec.ts';
+import type { ConsultOptions } from '../sub/spec.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 import type { ConsultContext } from '../tool/consult.ts';

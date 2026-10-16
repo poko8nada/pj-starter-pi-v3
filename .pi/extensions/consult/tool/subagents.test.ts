@@ -11,7 +11,7 @@ import {
   rowOf,
   rowsOf,
   type ChildrenArgs,
-} from './children.ts';
+} from './subagents.ts';
 
 // 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
 // 子は起こさない（記録と、runtime の偽物だけで試す）。

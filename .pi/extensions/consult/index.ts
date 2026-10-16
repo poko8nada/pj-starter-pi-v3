@@ -8,7 +8,7 @@
 import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
-import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/children.ts';
+import { PARAMETERS as CHILDREN_PARAMETERS, createChildrenTool } from './tool/subagents.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { startSound, stopSound } from './tool/sound.ts';
 import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
