@@ -162,6 +162,8 @@ interface Entry {
   - (boundary values) `--only cycles --run` → cycles だけ消え、状態は `product` になる
   - (error) `--only` に値が無い → exit 1、状態は `starter` のまま
   - (error) 無い root → `no such directory: <root>` の 1 行で exit 1（木を作らない）
+  - (error) 状態の道が無い → exit 1、木は残る
+  - (error) 状態が壊れている → exit 1、木は残る
   - (happy) `--only harness`（知らない label）→ `mode: …` と `no harness to remove` の 2 行、exit 0
 
 ## 4.統合: ハーネスのテストが既定で回らない
@@ -197,39 +199,61 @@ interface Entry {
 ### Slice 1: 状態のファイルと読み書き
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 0ce5303 consult(harness-tests): add harness mode file and read/write
 
 ### Slice 2: テストの対象を組む
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - scripts/harness.mjs の CLI 入口を直接実行時のみにした。config とテストが readList を import すると main がホストの argv で走り、エラーを出して exit 1 になっていた（緑でも）。
+- Commit: c9c0f7d consult(harness-tests): build test include list from mode
 
 ### Slice 3: product:ready を切り替えにする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: e9991d3 consult(harness-tests): switch product-ready to mode flip
 
 ### Slice 4: 統合: ハーネスのテストが既定で回らない
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: consult(harness-tests): document the mode flip
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `vitest.config.ts:21` の「product:ready が名指しを消すと0本になる」は旧機序のまま残る — 現行は `include` 否定で0にするため stale
+    - fixed: コメントを「product は include の否定で0本になる」に直した
+  - `scripts/product-ready/index.mjs:6` の「3種を順に回す」が残る — 現行 `STARTER_ONLY` は `cycles` の1行のみのため stale
+    - fixed: JSDoc を「cycles を消して状態を `product` にする入口」に直した
 - Unlisted:
+  - なし
 - Gaps:
+  - `scripts/product-ready/index.mjs:28` の状態ファイルが無い/壊れているときの `readMode` 失敗経路（exit 1）に Verify の bullet も `index.test.ts` の case も無い — 全 tree が mode を書くため未行使
+    - fixed: `index.test.ts` に無い場合と壊れている場合の 2 case を足した（exit 1・木は残る）
+  - `scripts/harness.mjs:441` の CLI 入口ガード変更後も `node scripts/harness.mjs pull/push` が口として動くことを確かめる Verify/test が無い
+    - left: `scripts/harness.test.ts` の 31 件が子プロセスで `node scripts/harness.mjs` を回しており、ガードの直接実行経路は既に押さえられているため足さない
 - Unproven:
+  - なし
 - Doubts:
+  - `test/README.md:7` の「ゼロから書く/開始時は0本」は run が0の意味では真にも読めるし、ファイルが残る現行とずれて読めもする。Files に無く確度が足りないので所見にしない
+  - `scripts/harness.mjs` は Files では bare だが diff が変えた。Files に名があり Notes Slice 2 Unplanned に記録があるため Unlisted にしない
+  - `scripts/harness-state.test.ts:93` の repo `harness.json` 検査は contains のみで `harness.mode.json` が `copy` に入っていないことまでは見ない。ただし Verify も contains で書くため所見にしない
+  - `scripts/product-ready/index.test.ts:73` の `--only cycles` 検査はその tree では全件==cycles のため filtering 故障でも緑だが、`--only harness` の検査が filtering を見るため所見にしない
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm typecheck`（`root: ok` / `.pi: ok`）、`pnpm test:run`（37 files / 608 tests 緑）、plan の検査（`pnpm vitest run scripts/product-ready scripts/harness-state.test.ts scripts/harness.test.ts` 85 緑）、slice 4 の cli 場面: 状態 `starter` で `pnpm test:run` 緑（608 本）→ 状態を `product` にして `pnpm test:run` が `No test files found, exiting with code 0`、`logs/probe.test.ts` を置くとその 1 本だけが回る（全部を外していない）、`pnpm test:related .pi/extensions/consult/tool/commit.ts` が 0 本、`pnpm typecheck` が `root: ok` / `.pi: ok`（ハーネスの型は product でも見る）→ `git checkout` で `starter` に戻して 608 本緑、probe を消した。grep 4 つ（`DEFINITION.md:40` の新しい行、古い文は 0 件、`README.md:28,44` と `README.ja.md:28,44` に `harness.mode.json`、`start from zero tests` は 0 件）。壊して赤を見た 3 つ: `includeList` の `product` の枝を潰す（`starter || product` で既定だけ返す）→ `scripts/harness-state.test.ts` 3 failed（16 本中）/ `product:ready` の `writeMode` を落とす → `scripts/product-ready` 4 failed（38 本中）/ `readMode` の値の検めを外す（`if (false)`）→ 1 failed。3 つとも `git checkout` で戻し、608 本緑と clean を確認
+- Findings: なし
+- Doubts: `index.test.ts` の「壊れている」は `{"mode":"half"}`（値不正）だけで、JSON 不正の変種は無い。同じ `catch` 経路なので検査の穴にはしない（Round 2 の Doubts をそのまま持つ）

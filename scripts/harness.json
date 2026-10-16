@@ -17,7 +17,9 @@
     "scripts/product-ready",
     "scripts/harness.mjs",
     "scripts/harness.json",
-    "scripts/harness.test.ts"
+    "scripts/harness.test.ts",
+    "scripts/harness-state.mjs",
+    "scripts/harness-state.test.ts"
   ],
-  "skip": ["logs", "harness.local.json"]
+  "skip": ["logs", "harness.local.json", "harness.mode.json"]
 }

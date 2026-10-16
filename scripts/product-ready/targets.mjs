@@ -1,27 +1,8 @@
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { basename, join, relative } from 'node:path';
+import { join } from 'node:path';
 
-/** 消す物の 1 行 */
-export const STARTER_ONLY = [
-  { label: 'harness', at: 'scripts/checks/scopes.json', pick: 'file' },
-  { label: 'tests', at: '.pi', pick: 'tests' },
-  { label: 'tests', at: 'scripts/product-ready', pick: 'tests' },
-  { label: 'tests', at: 'test/env.test.ts', pick: 'file' },
-  { label: 'tests', at: 'scripts/checks/typecheck-staged.test.ts', pick: 'file' },
-  { label: 'cycles', at: 'cycles', pick: 'dirs' },
-];
-
-// テストのファイルか（vitest の既定 include に合わせる）。
-// 既定は `**/*.{test,spec}.?(c|m)[jt]s?(x)`。ここがずれると（ゆるめる／狭める）、
-// 消し残しや食いすぎで「0本」が言えなくなるので、変えるときは両方を直す。
-// 名指しのファイルも同じ物差しで見る（テストでない名指しは拾わない）。
-/**
- * @param {string} name ファイル名
- * @returns {boolean} テストなら真
- */
-function isTestFile(name) {
-  return /\.(test|spec)\.(c|m)?[jt]sx?$/.test(name);
-}
+/** スターターだけの物の 1 行 */
+export const STARTER_ONLY = [{ label: 'cycles', at: 'cycles', pick: 'dirs' }];
 
 /**
  * 消す物を集める（純）。
@@ -35,49 +16,10 @@ export function plan(root, only) {
     throw new Error(`no such directory: ${root}`);
   }
   const rows = only === undefined ? STARTER_ONLY : STARTER_ONLY.filter((row) => row.label === only);
-  const walk = (dir) => {
-    const paths = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name === '.git') {
-          continue;
-        }
-        paths.push(...walk(path));
-      } else if (entry.isFile() && isTestFile(entry.name)) {
-        paths.push(path);
-      }
-    }
-    return paths;
-  };
   /** @type {{ readonly label: string, readonly at: string, readonly path: string }[]} */
   const out = [];
   for (const row of rows) {
-    if (row.pick === 'file') {
-      const full = join(root, row.at);
-      if (!existsSync(full)) {
-        continue;
-      }
-      out.push({ label: row.label, at: row.at, path: full });
-    } else if (row.pick === 'tests') {
-      const base = join(root, row.at);
-      if (!existsSync(base)) {
-        continue;
-      }
-      let isDir = false;
-      try {
-        isDir = statSync(base).isDirectory();
-      } catch (_unused) {
-        continue;
-      }
-      if (isDir) {
-        for (const hit of walk(base)) {
-          out.push({ label: row.label, at: relative(root, hit), path: hit });
-        }
-      } else if (isTestFile(basename(base))) {
-        out.push({ label: row.label, at: row.at, path: base });
-      }
-    } else if (row.pick === 'dirs') {
+    if (row.pick === 'dirs') {
       const base = join(root, row.at);
       if (!existsSync(base)) {
         continue;

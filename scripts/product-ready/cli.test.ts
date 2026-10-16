@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { parseArgs, planLines } from './cli.mjs';
+import { modeLine, parseArgs, planLines } from './cli.mjs';
+
+describe('modeLine', () => {
+  it('starter → product の1行', () => {
+    expect(modeLine('starter', 'product')).toBe('mode: starter → product');
+  });
+
+  it('product → product の1行', () => {
+    expect(modeLine('product', 'product')).toBe('mode: product → product');
+  });
+});
 
 describe('planLines', () => {
   it('空 → 消える物が無い旨の1行', () => {
