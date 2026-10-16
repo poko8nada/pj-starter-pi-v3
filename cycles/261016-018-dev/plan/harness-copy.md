@@ -220,7 +220,7 @@ interface Applied {
   - 前提: 「先」のツリーを `--root` にする。そこに `scripts/harness.json`（`copy: [".pi"]`、`skip: ["logs", "harness.local.json"]`）と `scripts/harness.local.json`（`{"starter":"<元のツリー>"}`）、`.pi/a.ts`（中身 A）と `.pi/old.ts` を置く。「元」のツリーに `.pi/a.ts`（中身 B）を置く
   - (happy) `node scripts/harness.mjs pull --root <先>` → `pull: <元> → <先>` の行と `copy (1):` / `remove (1):`、ツリーは変わらない
   - (happy) `node scripts/harness.mjs pull --root <先> --run` → 先の `.pi/a.ts` が中身 B になり、`.pi/old.ts` が消える
-  - (happy) 先に `.pi/new.ts` を足して `node scripts/harness.mjs push --root <先> --run` → 元の `.pi/a.ts` が中身 A になり、`.pi/new.ts` が元に足される
+  - (happy) 先の `.pi/a.ts` を中身 A に直し、`.pi/new.ts` を足して `node scripts/harness.mjs push --root <先> --run` → 元の `.pi/a.ts` が中身 A になり、`.pi/new.ts` が元に足され、元にだけあった物は消える
   - (happy) この repo の `scripts/harness.json` → `copy` に `scripts/checks` と `scripts/harness.json` があり、`skip` に `logs` と `harness.local.json` がある
   - (happy) `pnpm typecheck` → `root: ok` と `.pi: ok`、exit 0
   - (happy) `pnpm test:run` → 緑（ハーネスのテストはまだ外していない。外すのは 02）
@@ -278,6 +278,10 @@ interface Applied {
 
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm typecheck`（`root: ok` / `.pi: ok`）、`pnpm test:run`（36 files / 593 tests 緑）、plan の検査（`pnpm vitest run scripts/harness.test.ts scripts/checks scripts/product-ready` 6 files / 89 tests 緑）、slice 4 の CLI 場面（一時の 2 つの木で `pull` の表示 → `pull --run` → `push --run`。`copy` / `remove` の行と、木の読み返し）、grep 4 つ（README の `harness.mjs` / `devDependencies`、`.gitignore:41`、`DEFINITION.md:41`）。壊して赤を見た 3 つ: `diffSides` の `remove` を空にする → `scripts/harness.test.ts` 5 failed / `scripts/checks/typecheck.mjs` の一覧の道を外す → `pnpm typecheck` が `root: ok` だけになり `.pi: ok` が消える / `collectSide` の常時 `skipNames` から `logs` を落とす → 緑のまま（下の Findings 2）。3 つとも `git checkout` で戻し、緑を確認
 - Findings:
-- Doubts:
+  - slice 4 の push の case の文が逆（`pull --run` の後は先の `.pi/a.ts` が元の中身になっているので、`push` の前に先を書き換える必要がある）
+    - fixed: plan md の case を「先の `.pi/a.ts` を中身 A に直し、`.pi/new.ts` を足してから `push --run`」に直し、受け入れでその形を回して緑を見た
+  - `logs` を一覧に書かなくても常に降りない、という枝に case がない（`collectSide` の `skipNames` から `logs` を落としても `scripts/harness.test.ts` は 30/30 緑）
+    - fixed: `skip` に `logs` を書かない木で `logs/` の中身が両塊に出ない case を足し、`logs` を落とすと赤くなることを確かめた
+- Doubts: `harness.json` の `skip` に `logs` があるので、`collectSide` の常時 `logs` は今は重複している。片方に寄せるかは close で見る

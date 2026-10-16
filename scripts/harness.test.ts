@@ -151,6 +151,25 @@ describe('harness diff', () => {
     expect(out.stdout).not.toContain('logs/a.ts');
   });
 
+  it('skip に logs を書かなくても logs/ の中身は両塊に出ない（常時除外）', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeJson(join(local, 'scripts', 'harness.json'), {
+      copy: ['.pi'],
+      skip: ['harness.local.json'],
+    });
+    writeLocal(local, origin);
+    writeFile(join(origin, '.pi', 'logs', 'a.ts'), 'B\n');
+    writeFile(join(local, '.pi', 'logs', 'a.ts'), 'A\n');
+    writeFile(join(origin, '.pi', 'keep.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'keep.ts'), 'same\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('no files to copy');
+    expect(out.stdout).toContain('no files to remove');
+    expect(out.stdout).not.toContain('logs/a.ts');
+  });
+
   it('.pi の中の node_modules / .git は集めない → どちらの塊にも出ない', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'node_modules', 'a.ts'), 'B\n');
