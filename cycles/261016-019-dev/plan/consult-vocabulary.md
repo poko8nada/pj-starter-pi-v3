@@ -299,8 +299,30 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
   - 改名の外側への波及の受口が疑わしい。`.pi/extensions/consult/index.ts:172` の登録名変更に対し `cycles/261016-019-dev/plan/consult-vocabulary.md:159` は実行中セッションは旧名のまま・次回起動で新名として何もしないが、外側の自動化や手順書が旧名を呼ぶ場合の壊れをどこで受けるかの前提が見えない。finding ではなく前提への疑い。
   - spawn locals の `child` 残しの線引きが疑わしい。`.pi/extensions/consult/run/run.ts:191` の `killChild` 等を残すことは `cycles/261016-019-dev/plan/consult-vocabulary.md:114,140` で決めているが、将来の読み手が Node の `child_process` の子とサブエージェントの子のどちらの `child` か誤読する余地が残る。finding ではなく言葉の設計への疑い。
 
+### Round 2
+
+- Stale: なし（Round 1 の1件は直っている。slice 5 の Verify に旧形破棄テストの2行の扱いが追記されている：同 plan 223行目。`run/log.test.ts:207,208` が残ることと `node:child_process` の5行・spawn locals のみ残ることが一致する）
+
+- Unlisted: なし（Round 1 の2件は直っている。`## Files` に `tool/run.test.ts` と `tool/worktree.test.ts` の update が追記されている：同 plan 48行目・52行目）
+
+- Gaps: なし（Round 1 の fixed 5件は直っている。slice 2 の Verify に `stopped by the agent` の新旧 grep が追記されている：同 plan 142行目・現行 `run/run.ts:481` が新文、`the subagent's work` の新旧 grep が追記されている：同 plan 143行目・現行 `tool/commit.ts:61` が新文、4ファイルのサブエージェント文の grep が追記されている：同 plan 144行目・現行 `tool/run.ts`・`tool/worktree.ts`・`tool/sound.ts`・`policy/types.ts` にサブエージェント文あり、slice 5 の Verify に memo 差分空の case が追記されている：同 plan 229行目、`base はベース` の3か所は `base の既定は HEAD` の形に直っている：`README.ja.md:18`・`run/worktree.ts:8,198` に旧文なし）
+
+- Unproven: なし（Round 1 の fixed 2件は直っている。7分岐をまとめて頭を見る assertion がある：`tool/consult.test.ts:513,567-570` が7件、`cancel` 使い方の頭の assertion がある：同 `582`、Verify の文も「どの分岐でも」に直っている：同 plan 182行目。2つの rejects は `consult_subagents:` の頭を含んでいる：`tool/subagents.test.ts:263-264,279-280`・本体 `tool/subagents.ts:153,159` と一致。なお本数自動化の1件は Round 1 で left のため fixed 確認の対象外）
+
+- Doubts: なし（fixed 行の確認範囲では新しい疑いは無い）
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm typecheck` → `root: ok` と `.pi: ok`
+  - `pnpm test:run` → 37 files / 612 tests 緑
+  - `pnpm lint` → 緑
+  - slice 5 の grep 一式: `.ts` の `child\|parent` は 28 行（`node:child_process` の 5 行、`run/run.ts` の spawn の locals、`run/log.test.ts:207,208` の旧形の case）。`consult_children` は `.pi/` と root の README 2 つで 0 件。README 3 つに `child\|children\|parent` は 0 件。`.pi/skills` は 13 行で、変えない 4 か所だけ。`intent-router` の `consult_` は 1 件。`index.ts` に `consult_subagents` は 4 行
+  - 赤の確認 3 つ（壊して、確かめて、`git checkout` で戻した）
+    - `index.ts` の登録名を `consult_children` に戻す → `consult_children` の grep が 1 件（赤）
+    - `run/log.ts` の読む欄の名前を `child` に戻す → `run/log.test.ts` と `tool/subagents.test.ts` が 16 本赤
+    - `tool/subagents.ts` の場所の語を `'parent'` に戻す → `tool/subagents.test.ts` が 5 本赤
+- Findings: なし
 - Doubts:
+  - `memo/` の case（slice 5 の `git diff --name-only -- memo/consult-vocabulary.md`）は untracked のため、どこでも赤にならない。`memo/` は worktree からも触れないので、この行はそもそも振る舞いを持たない
+  - 旧記録（`child` 欄）を捨てる前提は「上げる瞬間に走っているサブエージェントが居ない」ことに乗っている。ADR 05 で確かめたが、次に同じ形の改名をするときも同じ確認が要る
