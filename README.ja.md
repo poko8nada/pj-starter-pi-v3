@@ -11,11 +11,11 @@ English: [README.md](README.md)
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
 - **サイクルの仕組み** — `.pi/skills/` の 5 つ（`adr` / `design` / `plan` / `work` / `close`）
 - **拡張** — `consult`（4 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）、`intent-router`（owner の発言を振り分け、調べすぎを止める）（`.pi/extensions/`）
-  - `consult_run` — ロールと行き先を指して、子の `pi` を 1 体だけ走らせる。この会話は見せない
-  - `consult_children` — このセッションの子を一覧し、1 体止める。記録を読むので reload をまたいでもこのセッションの子は出る
+  - `consult_run` — ロールと行き先を指して、サブエージェントの `pi` を 1 体だけ走らせる。この会話は見せない
+  - `consult_subagents` — このセッションのサブエージェントを一覧し、1 体止める。記録を読むので reload をまたいでもこのセッションのサブエージェントは出る
   - `consult_worktree` — unit の worktree を作り、一覧し、消す。明示しない限り残り、`remove` は取り込み済みのブランチも一緒に消す（未マージは残す）
-  - `consult_commit` — 子が worktree に残した仕事をコミットする。親のブランチへの取り込みは `git merge --no-ff consult/<unit-id>` を自分で打つ
-  - 置き場: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、base は親の `HEAD`
+  - `consult_commit` — サブエージェントが worktree に残した仕事をコミットする。メインエージェントのブランチへの取り込みは `git merge --no-ff consult/<unit-id>` を自分で打つ
+  - 置き場: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、base はベースの `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`（dispatch で agent を走らせる）
 - **サイクルの記録** — `cycles/`
 
