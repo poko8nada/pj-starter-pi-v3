@@ -42,6 +42,14 @@ pnpm install
 - **On push** — typecheck (the root and the harness) and test
 - **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
 
+## Harness
+
+The agent harness travels with `scripts/harness.mjs`:
+
+- `node scripts/harness.mjs pull` brings the starter's harness into this project, `node scripts/harness.mjs push` sends it back. Without `--run` it only shows what would move (`copy` / `remove`).
+- The list is `scripts/harness.json`. The starter's place goes in `scripts/harness.local.json` as `{ "starter": "~/..." }` (yours, never committed).
+- `package.json` is outside the list, so after a pull check its `scripts` and `devDependencies` by hand.
+
 ## Cycle
 
 One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.

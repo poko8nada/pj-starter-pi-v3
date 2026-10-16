@@ -245,9 +245,9 @@ interface Applied {
 
 ### Slice 3: 合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 空 dir の掃除は除外の名の区画に触らないようにした（plan は「一覧の内側で空になった dir」とだけ書くが、そのまま歩くと空だった `logs/` 等まで消しかねないため。`collectSide` と同じ名で避ける）。`snapTree` を外側の helper に置いた（`pnpm lint` の consistent-function-scoping が赤になったため）。
+- Commit: e52adb2
 
 ### Slice 4: 統合: ハーネスを運べる
 
