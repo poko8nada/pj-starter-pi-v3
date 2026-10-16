@@ -162,6 +162,8 @@ interface Entry {
   - (boundary values) `--only cycles --run` → cycles だけ消え、状態は `product` になる
   - (error) `--only` に値が無い → exit 1、状態は `starter` のまま
   - (error) 無い root → `no such directory: <root>` の 1 行で exit 1（木を作らない）
+  - (error) 状態の道が無い → exit 1、木は残る
+  - (error) 状態が壊れている → exit 1、木は残る
   - (happy) `--only harness`（知らない label）→ `mode: …` と `no harness to remove` の 2 行、exit 0
 
 ## 4.統合: ハーネスのテストが既定で回らない
