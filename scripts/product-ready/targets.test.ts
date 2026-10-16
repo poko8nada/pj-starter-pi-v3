@@ -20,7 +20,7 @@ function writeBase(root: string): {
   const piY = join(root, '.pi', 'dir', 'y.test.ts');
   const readyZ = join(root, 'scripts', 'product-ready', 'z.test.ts');
   const env = join(root, 'test', 'env.test.ts');
-  const stagedCheck = join(root, 'scripts', 'typecheck-staged.test.ts');
+  const stagedCheck = join(root, 'scripts', 'checks', 'typecheck-staged.test.ts');
   writeFile(piX);
   writeFile(piY);
   writeFile(readyZ);
@@ -45,7 +45,7 @@ describe('plan', () => {
     expect(found).toContainEqual({ label: 'tests', at: 'test/env.test.ts', path: base.env });
     expect(found).toContainEqual({
       label: 'tests',
-      at: 'scripts/typecheck-staged.test.ts',
+      at: 'scripts/checks/typecheck-staged.test.ts',
       path: base.stagedCheck,
     });
     for (const entry of found) {

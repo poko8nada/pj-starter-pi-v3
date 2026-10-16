@@ -260,10 +260,21 @@ interface Applied {
 ### Round 1
 
 - Stale:
+  - `scripts/product-ready/targets.test.ts:23` の fake が旧道 `scripts/typecheck-staged.test.ts` に書いたまま（期待値 `scripts/product-ready/targets.test.ts:48` も同道）。実物は slice 1 で `scripts/checks/typecheck-staged.test.ts` へ移動済みで、テストが実ツリーを写さなくなっている（`scripts/product-ready/targets.mjs:10` の行も旧道を指したまま）。
+    - fixed: `targets.mjs:10` の行と `targets.test.ts:23` の fake・`:48` の期待値を新道に直した。
 - Unlisted:
+  - なし（`git diff 9c53ad6..HEAD --stat` の 19 件は Files の add/drop/update に収まり、残る plan md の 1 件は記録。Files 末尾の動詞なし行 `lefthook.yaml` / `tsconfig.json` / `test/setup.ts` / `test/tmp.ts` / `.pi/extensions/quality-gate/checks.ts` 等に変更なし）。
 - Gaps:
+  - `scripts/harness.mjs:168` の `node_modules` / `.git` 常時除外に対応する検査がない。Steps は `logs` / `node_modules` / `.git` を常に降りないと決めているが、Verify と `scripts/harness.test.ts:143` は `logs` だけを見て、`node_modules` / `.git` が塊に混ざらないことを回していない。
+    - fixed: `.pi` の下の `node_modules` / `.git` に中身違いで書いても両塊に混ざらないテストを `harness.test.ts` に足した。
+  - 新道 `scripts/checks/typecheck-staged.test.ts` を `product:ready` が消す振る舞いをどの検査も回していない。`scripts/product-ready/targets.mjs:10` が旧道のままのため、`scripts/product-ready/targets.test.ts:23` は旧道に書く、`scripts/product-ready/index.test.ts:27` の木は当該ファイルを含まず、新道の `plan` / `remove` が空振りのまま緑になる。
+    - fixed: 上の Stale 直しで一覧の行を新道に戻し、`index.test.ts` の木に当該ファイルを足して表示時は残る・`--run` で消える・`--only harness` で残ることを見るようにした。
 - Unproven:
+  - `scripts/harness.test.ts:154` の一覧外テストは両側に同じ中身（`memo/a.md`・`src/x.ts`）を書くため、除外が壊れて取り込んでも中身一致で `copy` / `remove` 共に空になり緑のまま。`scripts/harness.test.ts:143` の `logs` が B/A と変えて壊れれば赤になるのと対照的で、違いか片側だけが必要。
+    - fixed: `memo/a.md` を両側で中身違いに、`src/x.ts` を片側だけに変えた（除外が壊れれば `copy` / `remove` に出て赤になる）。
 - Doubts:
+  - `scripts/harness.mjs:60` の `--root=<dir>` 形の受付は Steps に無い追加だが振る舞いを変えず、finding にしない。
+  - `scripts/harness.mjs:235` の Slice 2 Notes の `copy` 中身比較への変更は plan Types（元にある全部）と違うが、slice 3 の 2 回目 `--run` 空のためで検査が新振る舞いを押さえているため、finding にしない。
 
 ## Acceptance
 

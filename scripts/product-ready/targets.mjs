@@ -7,7 +7,7 @@ export const STARTER_ONLY = [
   { label: 'tests', at: '.pi', pick: 'tests' },
   { label: 'tests', at: 'scripts/product-ready', pick: 'tests' },
   { label: 'tests', at: 'test/env.test.ts', pick: 'file' },
-  { label: 'tests', at: 'scripts/typecheck-staged.test.ts', pick: 'file' },
+  { label: 'tests', at: 'scripts/checks/typecheck-staged.test.ts', pick: 'file' },
   { label: 'cycles', at: 'cycles', pick: 'dirs' },
 ];
 

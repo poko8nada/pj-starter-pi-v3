@@ -151,12 +151,26 @@ describe('harness diff', () => {
     expect(out.stdout).not.toContain('logs/a.ts');
   });
 
+  it('.pi の中の node_modules / .git は集めない → どちらの塊にも出ない', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'node_modules', 'a.ts'), 'B\n');
+    writeFile(join(local, '.pi', 'node_modules', 'a.ts'), 'A\n');
+    writeFile(join(origin, '.pi', '.git', 'b.ts'), 'B\n');
+    writeFile(join(local, '.pi', '.git', 'b.ts'), 'A\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('no files to copy');
+    expect(out.stdout).toContain('no files to remove');
+    expect(out.stdout).not.toContain('node_modules');
+    expect(out.stdout).not.toContain('.git');
+  });
+
   it('一覧の外（memo/a.md、scripts/harness.local.json、src/x.ts）→ どちらの塊にも出ない', () => {
     const { origin, local } = pair();
-    for (const root of [origin, local]) {
-      writeFile(join(root, 'memo', 'a.md'), 'memo\n');
-      writeFile(join(root, 'src', 'x.ts'), 'x\n');
-    }
+    // 除外が壊れたら赤になるよう、中身違いと片側だけにする（両側同内容だと copy / remove 共に空で緑のままになるため）
+    writeFile(join(origin, 'memo', 'a.md'), 'origin-memo\n');
+    writeFile(join(local, 'memo', 'a.md'), 'local-memo\n');
+    writeFile(join(local, 'src', 'x.ts'), 'x\n');
     const out = run(['pull', '--root', local]);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
