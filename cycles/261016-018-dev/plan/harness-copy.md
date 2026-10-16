@@ -239,9 +239,9 @@ interface Applied {
 
 ### Slice 2: 一覧と差分を組む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `copy` は中身まで見て違う物だけにした（plan は「元にある全部」と書くが、そのままだと slice 3 の 2 回目の `--run` が空にならないため。同じ道で中身違いは `copy` に残る）。catch で投げ直す箇所に `{ cause: error }` を付けた（`pnpm lint` の preserve-caught-error が赤になったため。振る舞いは変わらない）。
+- Commit: 6f074dc
 
 ### Slice 3: 合わせる
 

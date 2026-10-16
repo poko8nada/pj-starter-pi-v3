@@ -7,8 +7,15 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../test/tmp.ts';
 
@@ -65,6 +72,27 @@ function pair(): { readonly origin: string; readonly local: string } {
 
 function errorLines(out: RunOut): string[] {
   return out.stderr.trim().split('\n');
+}
+
+/** ツリー全体の写し（道の相対 → 中身）。エラー時に何も書いていないことの照合に使う */
+function snapTree(root: string): Readonly<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const walk = (dir: string): void => {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === '.git') {
+        continue;
+      }
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile()) {
+        out[relative(root, full).split(sep).join('/')] = readFileSync(full, 'utf8');
+      }
+    }
+  };
+  walk(root);
+  return out;
 }
 
 describe('harness diff', () => {
@@ -276,5 +304,166 @@ describe('harness errors', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
+  });
+});
+
+describe('harness apply (--run)', () => {
+  it('pull --run → 先の同じ道のファイルが元の中身になり、元にだけある物が足され、先にだけある物が消える', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(join(origin, '.pi', 'extra.ts'), 'extra\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(join(local, '.pi', 'old.ts'), 'old\n');
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('copy (2):');
+    expect(out.stdout).toContain('remove (1):');
+    expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
+    expect(readFileSync(join(local, '.pi', 'extra.ts'), 'utf8')).toBe('extra\n');
+    expect(existsSync(join(local, '.pi', 'old.ts'))).toBe(false);
+    expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
+  });
+
+  it('push --run → 向きが逆で同じ結果（元が先）', () => {
+    const { origin, local } = pair();
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(join(local, '.pi', 'extra.ts'), 'extra\n');
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(join(origin, '.pi', 'old.ts'), 'old\n');
+    const out = run(['push', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(`push: ${local} → ${origin}`);
+    expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('A\n');
+    expect(readFileSync(join(origin, '.pi', 'extra.ts'), 'utf8')).toBe('extra\n');
+    expect(existsSync(join(origin, '.pi', 'old.ts'))).toBe(false);
+    expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('A\n');
+  });
+
+  it('先にだけ old/ がある → その中のファイルが消え、空になった old/ も消える', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'keep.ts'), 'keep\n');
+    writeFile(join(local, '.pi', 'keep.ts'), 'keep\n');
+    writeFile(join(local, '.pi', 'old', 'x.ts'), 'x\n');
+    writeFile(join(local, '.pi', 'old', 'y.ts'), 'y\n');
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(existsSync(join(local, '.pi', 'old', 'x.ts'))).toBe(false);
+    expect(existsSync(join(local, '.pi', 'old'))).toBe(false);
+    expect(readFileSync(join(local, '.pi', 'keep.ts'), 'utf8')).toBe('keep\n');
+  });
+
+  it('元に空の dir だけがある → --run の後、先にその dir は作られない', () => {
+    const { origin, local } = pair();
+    mkdirSync(join(origin, '.pi', 'empty'), { recursive: true });
+    writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('no files to copy');
+    expect(existsSync(join(local, '.pi', 'empty'))).toBe(false);
+  });
+
+  it('logs の中と一覧の外のファイル → 両方向で残る', () => {
+    {
+      const { origin, local } = pair();
+      writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+      writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+      writeFile(join(origin, '.pi', 'logs', 's.ts'), 'origin-logs\n');
+      writeFile(join(local, '.pi', 'logs', 's.ts'), 'local-logs\n');
+      writeFile(join(origin, 'memo', 'a.md'), 'origin-memo\n');
+      writeFile(join(local, 'memo', 'a.md'), 'local-memo\n');
+      const out = run(['pull', '--root', local, '--run']);
+      expect(out.status).toBe(0);
+      expect(readFileSync(join(local, '.pi', 'logs', 's.ts'), 'utf8')).toBe('local-logs\n');
+      expect(readFileSync(join(local, 'memo', 'a.md'), 'utf8')).toBe('local-memo\n');
+      expect(readFileSync(join(origin, '.pi', 'logs', 's.ts'), 'utf8')).toBe('origin-logs\n');
+    }
+    {
+      const { origin, local } = pair();
+      writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+      writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+      writeFile(join(origin, '.pi', 'logs', 's.ts'), 'origin-logs\n');
+      writeFile(join(local, '.pi', 'logs', 's.ts'), 'local-logs\n');
+      writeFile(join(origin, 'src', 'x.ts'), 'origin-src\n');
+      writeFile(join(local, 'src', 'x.ts'), 'local-src\n');
+      const out = run(['push', '--root', local, '--run']);
+      expect(out.status).toBe(0);
+      expect(readFileSync(join(origin, '.pi', 'logs', 's.ts'), 'utf8')).toBe('origin-logs\n');
+      expect(readFileSync(join(origin, 'src', 'x.ts'), 'utf8')).toBe('origin-src\n');
+      expect(readFileSync(join(local, '.pi', 'logs', 's.ts'), 'utf8')).toBe('local-logs\n');
+    }
+  });
+
+  it('2回目の --run → no files to copy と no files to remove、exit 0、ツリーは同じ', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(join(local, '.pi', 'old.ts'), 'old\n');
+    const first = run(['pull', '--root', local, '--run']);
+    expect(first.status).toBe(0);
+    const before = snapTree(local);
+    const second = run(['pull', '--root', local, '--run']);
+    expect(second.status).toBe(0);
+    expect(second.stdout).toContain('no files to copy');
+    expect(second.stdout).toContain('no files to remove');
+    expect(snapTree(local)).toEqual(before);
+    expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
+  });
+
+  it('相手側の道が無いツリーでの --run → 何も書かず exit 1', () => {
+    const local = fakeRoot();
+    writeList(local);
+    writeJson(join(local, 'scripts', 'harness.local.json'), {
+      starter: join(local, 'no-such-starter'),
+    });
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    const before = snapTree(local);
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toBe('');
+    expect(errorLines(out)).toHaveLength(1);
+    expect(snapTree(local)).toEqual(before);
+  });
+
+  it('一覧が JSON として読めないツリーでの --run → 何も書かず exit 1', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(join(local, 'scripts', 'harness.json'), '{not json');
+    const before = snapTree(local);
+    const beforeOrigin = snapTree(origin);
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toBe('');
+    expect(errorLines(out)).toHaveLength(1);
+    expect(snapTree(local)).toEqual(before);
+    expect(snapTree(origin)).toEqual(beforeOrigin);
+  });
+
+  it('混ざったツリー（copy に 5、remove に 2）→ 表示の後、先が元の 5 つと同じ中身になる', () => {
+    const { origin, local } = pair();
+    const contents: Record<string, string> = {
+      '1.ts': 'one\n',
+      '2.ts': 'two\n',
+      '3.ts': 'three\n',
+      '4.ts': 'four\n',
+      '5.ts': 'five\n',
+    };
+    for (const [name, content] of Object.entries(contents)) {
+      writeFile(join(origin, '.pi', name), content);
+    }
+    writeFile(join(local, '.pi', '1.ts'), 'DIFFERENT-1\n');
+    writeFile(join(local, '.pi', '2.ts'), 'DIFFERENT-2\n');
+    writeFile(join(local, '.pi', 'old1.ts'), 'old1\n');
+    writeFile(join(local, '.pi', 'old2.ts'), 'old2\n');
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('copy (5):');
+    expect(out.stdout).toContain('remove (2):');
+    for (const [name, content] of Object.entries(contents)) {
+      expect(readFileSync(join(local, '.pi', name), 'utf8')).toBe(content);
+    }
+    expect(existsSync(join(local, '.pi', 'old1.ts'))).toBe(false);
+    expect(existsSync(join(local, '.pi', 'old2.ts'))).toBe(false);
   });
 });

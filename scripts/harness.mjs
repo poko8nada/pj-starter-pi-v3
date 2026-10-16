@@ -32,6 +32,11 @@ import * as path from 'node:path';
  */
 
 /**
+ * 実行した結果
+ * @typedef {{ readonly copied: Side, readonly removed: Side }} Applied
+ */
+
+/**
  * 引数を解釈する（純）。
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {Args}
@@ -285,7 +290,106 @@ function formatLines(direction, starter, root, diff) {
 }
 
 /**
- * 入口。引数なしは表示だけ、`--run` で実行する（実行は slice 3 で足す）。
+ * 差分を先に当てる（副作用）。`remove` を消して空の dir を払い、`copy` を写す。
+ * @param {string} fromRoot 元の根
+ * @param {string} toRoot 先の根
+ * @param {HarnessList} list 一覧
+ * @param {Diff} diff 差分
+ * @returns {Applied}
+ */
+export function applyTo(fromRoot, toRoot, list, diff) {
+  for (const rel of diff.remove) {
+    fs.rmSync(path.join(toRoot, rel), { force: true });
+  }
+  pruneEmptyDirs(toRoot, list);
+  for (const rel of diff.copy) {
+    const dst = path.join(toRoot, rel);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(path.join(fromRoot, rel), dst);
+  }
+  return { copied: diff.copy, removed: diff.remove };
+}
+
+/**
+ * 一覧の内側で空になった dir を消す（下から）。一覧自体の dir は残す。
+ * 除外の名の区画には触らない。
+ * @param {string} toRoot 先の根
+ * @param {HarnessList} list 一覧
+ */
+function pruneEmptyDirs(toRoot, list) {
+  /** @type {Set<string>} */
+  const skipNames = new Set(['logs', 'node_modules', '.git']);
+  for (const entry of list.skip) {
+    if (typeof entry !== 'string' || entry === '') {
+      continue;
+    }
+    const base = entry.split('/').pop();
+    if (base !== undefined && base !== '') {
+      skipNames.add(base);
+    }
+  }
+  /** @type {string[]} */
+  const roots = [];
+  for (const entry of list.copy) {
+    if (typeof entry !== 'string' || entry === '') {
+      continue;
+    }
+    const rel = entry.replace(/\/+$/, '');
+    if (rel === '' || rel === '.') {
+      continue;
+    }
+    const base = rel.split('/').pop();
+    if (base !== undefined && skipNames.has(base)) {
+      continue;
+    }
+    let stat;
+    try {
+      stat = fs.statSync(path.join(toRoot, rel));
+    } catch (_unused) {
+      continue;
+    }
+    if (stat.isDirectory()) {
+      roots.push(rel);
+    }
+  }
+  /** @type {string[]} */
+  const dirs = [];
+  /**
+   * @param {string} dir 絶対の dir
+   */
+  const walk = (dir) => {
+    /** @type {import('node:fs').Dirent[]} */
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (skipNames.has(entry.name)) {
+        continue;
+      }
+      if (entry.isDirectory()) {
+        const full = path.join(dir, entry.name);
+        dirs.push(full);
+        walk(full);
+      }
+    }
+  };
+  for (const rel of roots) {
+    try {
+      walk(path.join(toRoot, rel));
+    } catch (_unused) {
+      continue;
+    }
+  }
+  dirs.sort((a, b) => b.length - a.length);
+  for (const dir of dirs) {
+    try {
+      fs.rmdirSync(dir);
+    } catch (_unused) {
+      // 空でなければ残す
+    }
+  }
+}
+
+/**
+ * 入口。既定は表示だけ、`--run` で実行する。
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
  */
@@ -320,6 +424,15 @@ export function main(argv) {
   const diff = diffSides(fromRoot, toRoot, fromSide, toSide);
   for (const line of formatLines(args.direction, starter, root, diff)) {
     console.log(line);
+  }
+  if (!args.run) {
+    return 0;
+  }
+  try {
+    applyTo(fromRoot, toRoot, list, diff);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
   }
   return 0;
 }
