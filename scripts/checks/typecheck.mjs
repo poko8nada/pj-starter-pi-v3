@@ -1,13 +1,13 @@
 // すべての型チェックを回す（root とハーネス）。
-// 使い方: node scripts/typecheck.mjs
-// 仕組み: scripts/harness-scopes.json の各所のうち tsconfig.json がある物を、
+// 使い方: node scripts/checks/typecheck.mjs
+// 仕組み: scripts/checks/scopes.json の各所のうち tsconfig.json がある物を、
 // root の tsconfig.json と合わせて tsc -p で回す
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const root = process.cwd();
-const scopesFile = path.join(root, 'scripts', 'harness-scopes.json');
+const scopesFile = path.join(root, 'scripts', 'checks', 'scopes.json');
 
 // 一覧を読む。無い / 空配列なら root だけ。JSON として読めなければ exit 1
 let scopes;

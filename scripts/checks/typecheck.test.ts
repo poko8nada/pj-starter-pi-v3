@@ -1,5 +1,5 @@
 /**
- * `scripts/typecheck.mjs` の振る舞いを、子プロセスとして実行して試す。
+ * `scripts/checks/typecheck.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
  * fake root にツリーを作り、`node_modules/.bin/tsc` にスタブを置く。
  * スタブは渡された `-p` を出して、`STUB_FAIL` に含まれる所だけ exit 1 で落とす。
@@ -10,9 +10,9 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../test/tmp.ts';
+import { tmpDir } from '../../test/tmp.ts';
 
-const SCRIPT = join(process.cwd(), 'scripts', 'typecheck.mjs');
+const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck.mjs');
 
 interface RunOut {
   readonly status: number;
@@ -61,9 +61,9 @@ function writeTsconfig(root: string, rel: string): void {
 }
 
 function writeScopes(root: string, scopes: readonly string[]): void {
-  const dir = join(root, 'scripts');
+  const dir = join(root, 'scripts', 'checks');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'harness-scopes.json'), JSON.stringify(scopes));
+  writeFileSync(join(dir, 'scopes.json'), JSON.stringify(scopes));
 }
 
 describe('typecheck', () => {
@@ -132,9 +132,9 @@ describe('typecheck', () => {
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
-    const dir = join(root, 'scripts');
+    const dir = join(root, 'scripts', 'checks');
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'harness-scopes.json'), '{not json');
+    writeFileSync(join(dir, 'scopes.json'), '{not json');
     const out = run(root);
     expect(out.status).toBe(1);
     expect(`${out.stdout}\n${out.stderr}`).toContain('the list is not valid JSON');
@@ -142,15 +142,20 @@ describe('typecheck', () => {
 });
 
 describe('前提（このリポジトリ）', () => {
-  it('scripts/harness-scopes.json は [".pi", ".opencode"]', () => {
+  it('scripts/checks/scopes.json は [".pi"]', () => {
     const scopes = JSON.parse(
-      readFileSync(join(process.cwd(), 'scripts', 'harness-scopes.json'), 'utf8'),
+      readFileSync(join(process.cwd(), 'scripts', 'checks', 'scopes.json'), 'utf8'),
     );
-    expect(scopes).toEqual(['.pi', '.opencode']);
+    expect(scopes).toEqual(['.pi']);
   });
 
-  it('package.json の scripts.typecheck は node scripts/typecheck.mjs', () => {
+  it('package.json の scripts.typecheck は node scripts/checks/typecheck.mjs', () => {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
-    expect(pkg.scripts.typecheck).toBe('node scripts/typecheck.mjs');
+    expect(pkg.scripts.typecheck).toBe('node scripts/checks/typecheck.mjs');
+  });
+
+  it('package.json の scripts.typecheck:staged は node scripts/checks/typecheck-staged.mjs', () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+    expect(pkg.scripts['typecheck:staged']).toBe('node scripts/checks/typecheck-staged.mjs');
   });
 });

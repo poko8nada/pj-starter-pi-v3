@@ -31,16 +31,24 @@ pnpm install
 
 ## Checks
 
-| Command                             | What it does                 |
-| ----------------------------------- | ---------------------------- |
-| `pnpm test:run`                     | Run the tests once           |
-| `pnpm lint`                         | `oxlint`, warnings included  |
-| `pnpm typecheck`                    | `node scripts/typecheck.mjs` |
-| `pnpm format` / `pnpm format:check` | Format, or verify the format |
+| Command                             | What it does                        |
+| ----------------------------------- | ----------------------------------- |
+| `pnpm test:run`                     | Run the tests once                  |
+| `pnpm lint`                         | `oxlint`, warnings included         |
+| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
+| `pnpm format` / `pnpm format:check` | Format, or verify the format        |
 
 - **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
 - **On push** — typecheck (the root and the harness) and test
 - **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
+
+## Harness
+
+The agent harness travels with `scripts/harness.mjs`:
+
+- `node scripts/harness.mjs pull` brings the starter's harness into this project, `node scripts/harness.mjs push` sends it back. Without `--run` it only shows what would move (`copy` / `remove`).
+- The list is `scripts/harness.json`. The starter's place goes in `scripts/harness.local.json` as `{ "starter": "~/..." }` (yours, never committed).
+- `package.json` is outside the list, so after a pull check its `scripts` and `devDependencies` by hand.
 
 ## Cycle
 

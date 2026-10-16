@@ -20,7 +20,7 @@ function writeBase(root: string): {
   const piY = join(root, '.pi', 'dir', 'y.test.ts');
   const readyZ = join(root, 'scripts', 'product-ready', 'z.test.ts');
   const env = join(root, 'test', 'env.test.ts');
-  const stagedCheck = join(root, 'scripts', 'typecheck-staged.test.ts');
+  const stagedCheck = join(root, 'scripts', 'checks', 'typecheck-staged.test.ts');
   writeFile(piX);
   writeFile(piY);
   writeFile(readyZ);
@@ -45,7 +45,7 @@ describe('plan', () => {
     expect(found).toContainEqual({ label: 'tests', at: 'test/env.test.ts', path: base.env });
     expect(found).toContainEqual({
       label: 'tests',
-      at: 'scripts/typecheck-staged.test.ts',
+      at: 'scripts/checks/typecheck-staged.test.ts',
       path: base.stagedCheck,
     });
     for (const entry of found) {
@@ -53,15 +53,15 @@ describe('plan', () => {
     }
   });
 
-  it('scripts/harness-scopes.json があるツリー → harness の1つが入る', () => {
+  it('scripts/checks/scopes.json があるツリー → harness の1つが入る', () => {
     const root = tmpDir();
     writeBase(root);
-    const harness = join(root, 'scripts', 'harness-scopes.json');
+    const harness = join(root, 'scripts', 'checks', 'scopes.json');
     writeFile(harness);
     const found = plan(root);
     expect(found).toContainEqual({
       label: 'harness',
-      at: 'scripts/harness-scopes.json',
+      at: 'scripts/checks/scopes.json',
       path: harness,
     });
   });
@@ -88,7 +88,7 @@ describe('plan', () => {
   it("plan(root, 'tests') → harness と cycles の行が入らない", () => {
     const root = tmpDir();
     writeBase(root);
-    writeFile(join(root, 'scripts', 'harness-scopes.json'));
+    writeFile(join(root, 'scripts', 'checks', 'scopes.json'));
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const found = plan(root, 'tests');
     expect(found).toHaveLength(5);
@@ -101,17 +101,17 @@ describe('plan', () => {
     ]);
   });
 
-  it("plan(root, 'harness') → harness-scopes.json の1つだけ", () => {
+  it("plan(root, 'harness') → scopes.json の1つだけ", () => {
     const root = tmpDir();
     writeBase(root);
-    const harness = join(root, 'scripts', 'harness-scopes.json');
+    const harness = join(root, 'scripts', 'checks', 'scopes.json');
     writeFile(harness);
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const found = plan(root, 'harness');
-    expect(found).toEqual([{ label: 'harness', at: 'scripts/harness-scopes.json', path: harness }]);
+    expect(found).toEqual([{ label: 'harness', at: 'scripts/checks/scopes.json', path: harness }]);
   });
 
-  it("plan(root, 'harness') で scripts/harness-scopes.json が無い → []", () => {
+  it("plan(root, 'harness') で scripts/checks/scopes.json が無い → []", () => {
     const root = tmpDir();
     writeBase(root);
     expect(plan(root, 'harness')).toEqual([]);

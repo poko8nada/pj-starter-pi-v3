@@ -31,16 +31,24 @@ pnpm install
 
 ## 検査
 
-| コマンド                            | 何をするか                   |
-| ----------------------------------- | ---------------------------- |
-| `pnpm test:run`                     | テストを 1 回走らせる        |
-| `pnpm lint`                         | `oxlint`（警告も落とす）     |
-| `pnpm typecheck`                    | `node scripts/typecheck.mjs` |
-| `pnpm format` / `pnpm format:check` | 整形する / 確かめる          |
+| コマンド                            | 何をするか                          |
+| ----------------------------------- | ----------------------------------- |
+| `pnpm test:run`                     | テストを 1 回走らせる               |
+| `pnpm lint`                         | `oxlint`（警告も落とす）            |
+| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
+| `pnpm format` / `pnpm format:check` | 整形する / 確かめる                 |
 
 - **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related`
 - **push 時** — typecheck（ルートとハーネス）/ test
 - **エージェントのターンごと** — そのターンで変えた物があるときだけ。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えた物に
+
+## ハーネス
+
+エージェント用ハーネスは `scripts/harness.mjs` で運ぶ:
+
+- `node scripts/harness.mjs pull` でスターターのハーネスを取り込み、`node scripts/harness.mjs push` で戻す。`--run` が無ければ表示だけ（`copy` / `remove`）。
+- 一覧は `scripts/harness.json`。相手の道は `scripts/harness.local.json` に `{ "starter": "~/..." }` と書く（自分の物で commit しない）。
+- `package.json` は一覧の外にあるので、pull の後に `scripts` と `devDependencies` を手で見る。
 
 ## サイクル
 

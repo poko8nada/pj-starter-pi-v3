@@ -3,11 +3,11 @@ import { basename, join, relative } from 'node:path';
 
 /** 消す物の 1 行 */
 export const STARTER_ONLY = [
-  { label: 'harness', at: 'scripts/harness-scopes.json', pick: 'file' },
+  { label: 'harness', at: 'scripts/checks/scopes.json', pick: 'file' },
   { label: 'tests', at: '.pi', pick: 'tests' },
   { label: 'tests', at: 'scripts/product-ready', pick: 'tests' },
   { label: 'tests', at: 'test/env.test.ts', pick: 'file' },
-  { label: 'tests', at: 'scripts/typecheck-staged.test.ts', pick: 'file' },
+  { label: 'tests', at: 'scripts/checks/typecheck-staged.test.ts', pick: 'file' },
   { label: 'cycles', at: 'cycles', pick: 'dirs' },
 ];
 

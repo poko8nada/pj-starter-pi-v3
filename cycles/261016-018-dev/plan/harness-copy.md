@@ -220,7 +220,7 @@ interface Applied {
   - 前提: 「先」のツリーを `--root` にする。そこに `scripts/harness.json`（`copy: [".pi"]`、`skip: ["logs", "harness.local.json"]`）と `scripts/harness.local.json`（`{"starter":"<元のツリー>"}`）、`.pi/a.ts`（中身 A）と `.pi/old.ts` を置く。「元」のツリーに `.pi/a.ts`（中身 B）を置く
   - (happy) `node scripts/harness.mjs pull --root <先>` → `pull: <元> → <先>` の行と `copy (1):` / `remove (1):`、ツリーは変わらない
   - (happy) `node scripts/harness.mjs pull --root <先> --run` → 先の `.pi/a.ts` が中身 B になり、`.pi/old.ts` が消える
-  - (happy) 先に `.pi/new.ts` を足して `node scripts/harness.mjs push --root <先> --run` → 元の `.pi/a.ts` が中身 A になり、`.pi/new.ts` が元に足される
+  - (happy) 先の `.pi/a.ts` を中身 A に直し、`.pi/new.ts` を足して `node scripts/harness.mjs push --root <先> --run` → 元の `.pi/a.ts` が中身 A になり、`.pi/new.ts` が元に足され、元にだけあった物は消える
   - (happy) この repo の `scripts/harness.json` → `copy` に `scripts/checks` と `scripts/harness.json` があり、`skip` に `logs` と `harness.local.json` がある
   - (happy) `pnpm typecheck` → `root: ok` と `.pi: ok`、exit 0
   - (happy) `pnpm test:run` → 緑（ハーネスのテストはまだ外していない。外すのは 02）
@@ -233,40 +233,55 @@ interface Applied {
 
 ### Slice 1: 検査の一覧を `scripts/checks/` へ移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: README.md / README.ja.md の検査表の列幅を `oxfmt` で直した（新しい道が旧列幅に収まらず `pnpm format:check` が赤になったため。表の意味は変わらない）。
+- Commit: 665b288
 
 ### Slice 2: 一覧と差分を組む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `copy` は中身まで見て違う物だけにした（plan は「元にある全部」と書くが、そのままだと slice 3 の 2 回目の `--run` が空にならないため。同じ道で中身違いは `copy` に残る）。catch で投げ直す箇所に `{ cause: error }` を付けた（`pnpm lint` の preserve-caught-error が赤になったため。振る舞いは変わらない）。
+- Commit: 6f074dc
 
 ### Slice 3: 合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 空 dir の掃除は除外の名の区画に触らないようにした（plan は「一覧の内側で空になった dir」とだけ書くが、そのまま歩くと空だった `logs/` 等まで消しかねないため。`collectSide` と同じ名で避ける）。`snapTree` を外側の helper に置いた（`pnpm lint` の consistent-function-scoping が赤になったため）。
+- Commit: e52adb2
 
 ### Slice 4: 統合: ハーネスを運べる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: eb2f391
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `scripts/product-ready/targets.test.ts:23` の fake が旧道 `scripts/typecheck-staged.test.ts` に書いたまま（期待値 `scripts/product-ready/targets.test.ts:48` も同道）。実物は slice 1 で `scripts/checks/typecheck-staged.test.ts` へ移動済みで、テストが実ツリーを写さなくなっている（`scripts/product-ready/targets.mjs:10` の行も旧道を指したまま）。
+    - fixed: `targets.mjs:10` の行と `targets.test.ts:23` の fake・`:48` の期待値を新道に直した。
 - Unlisted:
+  - なし（`git diff 9c53ad6..HEAD --stat` の 19 件は Files の add/drop/update に収まり、残る plan md の 1 件は記録。Files 末尾の動詞なし行 `lefthook.yaml` / `tsconfig.json` / `test/setup.ts` / `test/tmp.ts` / `.pi/extensions/quality-gate/checks.ts` 等に変更なし）。
 - Gaps:
+  - `scripts/harness.mjs:168` の `node_modules` / `.git` 常時除外に対応する検査がない。Steps は `logs` / `node_modules` / `.git` を常に降りないと決めているが、Verify と `scripts/harness.test.ts:143` は `logs` だけを見て、`node_modules` / `.git` が塊に混ざらないことを回していない。
+    - fixed: `.pi` の下の `node_modules` / `.git` に中身違いで書いても両塊に混ざらないテストを `harness.test.ts` に足した。
+  - 新道 `scripts/checks/typecheck-staged.test.ts` を `product:ready` が消す振る舞いをどの検査も回していない。`scripts/product-ready/targets.mjs:10` が旧道のままのため、`scripts/product-ready/targets.test.ts:23` は旧道に書く、`scripts/product-ready/index.test.ts:27` の木は当該ファイルを含まず、新道の `plan` / `remove` が空振りのまま緑になる。
+    - fixed: 上の Stale 直しで一覧の行を新道に戻し、`index.test.ts` の木に当該ファイルを足して表示時は残る・`--run` で消える・`--only harness` で残ることを見るようにした。
 - Unproven:
+  - `scripts/harness.test.ts:154` の一覧外テストは両側に同じ中身（`memo/a.md`・`src/x.ts`）を書くため、除外が壊れて取り込んでも中身一致で `copy` / `remove` 共に空になり緑のまま。`scripts/harness.test.ts:143` の `logs` が B/A と変えて壊れれば赤になるのと対照的で、違いか片側だけが必要。
+    - fixed: `memo/a.md` を両側で中身違いに、`src/x.ts` を片側だけに変えた（除外が壊れれば `copy` / `remove` に出て赤になる）。
 - Doubts:
+  - `scripts/harness.mjs:60` の `--root=<dir>` 形の受付は Steps に無い追加だが振る舞いを変えず、finding にしない。
+  - `scripts/harness.mjs:235` の Slice 2 Notes の `copy` 中身比較への変更は plan Types（元にある全部）と違うが、slice 3 の 2 回目 `--run` 空のためで検査が新振る舞いを押さえているため、finding にしない。
 
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm typecheck`（`root: ok` / `.pi: ok`）、`pnpm test:run`（36 files / 594 tests 緑）、plan の検査（`pnpm vitest run scripts/harness.test.ts scripts/checks scripts/product-ready` 6 files / 90 tests 緑）、slice 4 の CLI 場面（一時の 2 つの木で `pull` の表示 → `pull --run` → `push --run`。`copy` / `remove` の行と、木の読み返し）、grep 4 つ（README の `harness.mjs` / `devDependencies`、`.gitignore:41`、`DEFINITION.md:41`）。壊して赤を見た 3 つ: `diffSides` の `remove` を空にする → `scripts/harness.test.ts` 5 failed（31 本中）/ `scripts/checks/typecheck.mjs` の一覧の道を外す → `pnpm typecheck` が `root: ok` だけになり `.pi: ok` が消える / `collectSide` の常時 `skipNames` から `logs` を落とす → 1 failed（Findings 2 の case）。3 つとも `git checkout` で戻し、緑を確認
 - Findings:
-- Doubts:
+  - slice 4 の push の case の文が逆（`pull --run` の後は先の `.pi/a.ts` が元の中身になっているので、`push` の前に先を書き換える必要がある）
+    - fixed: plan md の case を「先の `.pi/a.ts` を中身 A に直し、`.pi/new.ts` を足してから `push --run`」に直し、受け入れでその形を回して緑を見た
+  - `logs` を一覧に書かなくても常に降りない、という枝に case がない（`collectSide` の `skipNames` から `logs` を落としても `scripts/harness.test.ts` は 30/30 緑）
+    - fixed: `skip` に `logs` を書かない木で `logs/` の中身違いが両塊に出ない case を足し、`skipNames` から `logs` を落とすと 1 failed になることを確かめた（`8b229f0`）
+- Doubts: `harness.json` の `skip` に `logs` があるので、`collectSide` の常時 `logs` は今は重複している。片方に寄せるかは close で見る

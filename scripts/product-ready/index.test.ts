@@ -20,15 +20,17 @@ function makeTree(): {
   readonly nested: string;
   readonly tool: string;
   readonly env: string;
+  readonly stagedCheck: string;
   readonly kept: string;
   readonly cycleA: string;
 } {
   const root = tmpDir();
-  const harnessJson = join(root, 'scripts', 'harness-scopes.json');
+  const harnessJson = join(root, 'scripts', 'checks', 'scopes.json');
   const harness = join(root, '.pi', 'a.test.ts');
   const nested = join(root, '.pi', 'sub', 'b.test.ts');
   const tool = join(root, 'scripts', 'product-ready', 'tool.test.ts');
   const env = join(root, 'test', 'env.test.ts');
+  const stagedCheck = join(root, 'scripts', 'checks', 'typecheck-staged.test.ts');
   const kept = join(root, 'test', 'keep.test.ts');
   const cycleA = join(root, 'cycles', '001-a');
   writeFile(harnessJson);
@@ -36,10 +38,11 @@ function makeTree(): {
   writeFile(nested);
   writeFile(tool);
   writeFile(env);
+  writeFile(stagedCheck);
   writeFile(kept);
   writeFile(join(cycleA, 'note.txt'));
   writeFile(join(root, 'cycles', '002-b', 'note.txt'));
-  return { root, harnessJson, harness, nested, tool, env, kept, cycleA };
+  return { root, harnessJson, harness, nested, tool, env, stagedCheck, kept, cycleA };
 }
 
 function run(
@@ -69,6 +72,7 @@ describe('product-ready index', () => {
     expect(existsSync(tree.nested)).toBe(true);
     expect(existsSync(tree.tool)).toBe(true);
     expect(existsSync(tree.env)).toBe(true);
+    expect(existsSync(tree.stagedCheck)).toBe(true);
     expect(existsSync(tree.kept)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
@@ -103,6 +107,7 @@ describe('product-ready index', () => {
     expect(existsSync(tree.nested)).toBe(false);
     expect(existsSync(tree.tool)).toBe(false);
     expect(existsSync(tree.env)).toBe(false);
+    expect(existsSync(tree.stagedCheck)).toBe(false);
     expect(existsSync(tree.cycleA)).toBe(false);
     expect(existsSync(tree.kept)).toBe(true);
   });
@@ -115,6 +120,7 @@ describe('product-ready index', () => {
     expect(existsSync(tree.harness)).toBe(true);
     expect(existsSync(tree.nested)).toBe(true);
     expect(existsSync(tree.tool)).toBe(true);
+    expect(existsSync(tree.stagedCheck)).toBe(true);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 
