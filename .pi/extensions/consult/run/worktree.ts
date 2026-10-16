@@ -5,7 +5,7 @@
  *
  * 置き場はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
  *   `/tmp/pi-consult/<project>-<YYYYMMDD-HHMM>/<unit>/wt`
- * ブランチは `consult/<unit>`。base はベースの HEAD で、`main` を仮定しない。
+ * ブランチは `consult/<unit>`。base の既定は HEAD で、`main` を仮定しない。
  *
  * 台帳ファイルは持たない。一覧は `git worktree list` と `consult/*` ブランチから作る。
  */
@@ -195,7 +195,7 @@ export function findWorktree(cwd: string, id: string): WorktreeRow | undefined {
 /**
  * unit の作業場を作る。既にあれば同じ物を返す（2 回呼んでも増えない）。
  *
- * base は既定でベースの HEAD。`main` を仮定しない。
+ * base の既定は HEAD。`main` を仮定しない。
  */
 export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree {
   const existing = findWorktree(cwd, id);

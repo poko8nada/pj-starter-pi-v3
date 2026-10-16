@@ -45,9 +45,11 @@
     render.ts                    update
     render.test.ts               update
     run.ts                       update
+    run.test.ts                  update
     sound.ts                     update
     sound.test.ts                update
     worktree.ts                  update
+    worktree.test.ts             update
     children.ts                  drop
     children.test.ts             drop
 README.md                        update
@@ -137,6 +139,9 @@ export interface SubagentReport { /* … */ }    // 元 ChildReport
   - (happy) `grep -rn "startChild\|controlChild\|describeChild\|byChild\|nextChildId\|announceRunningChildren" .pi/extensions/consult` → 0 件
   - (happy) `grep -rn "親" .pi/extensions/consult` → 道の親子（`親ディレクトリ`）だけが残る（`run/worktree.test.ts:204,508`）
   - (happy) `grep -rn "subagent" .pi/extensions/consult/run/log.ts` → 記録の欄の名前に出る
+  - (happy) `grep -n "stopped by the agent" .pi/extensions/consult/run/run.ts` → 1 行、`grep -rn "stopped by the parent" .pi/extensions/consult` → 0 件
+  - (happy) `grep -n "the subagent's work" .pi/extensions/consult/tool/commit.ts` → 出る、`grep -rn "the child's work" .pi/extensions/consult --include="*.ts"` → 0 件
+  - (happy) `grep -rn "サブエージェント" .pi/extensions/consult/tool/run.ts .pi/extensions/consult/tool/worktree.ts .pi/extensions/consult/tool/sound.ts .pi/extensions/consult/policy/types.ts` → 出る
   - (boundary values) `grep -n "killChild\|live.child" .pi/extensions/consult/run/run.ts` → 残る（spawn の呼び方）
   - (boundary values) 旧形の行を `parseRun` に読ませる → `undefined`（ADR 05 の決定）
   - (error) `parseRun` の欄の名前を `child` に戻す → `pnpm vitest run .pi/extensions/consult/run/log.test.ts` と `tool/subagents.test.ts` が赤（書く側と読む側の名前が揃っていることを見る）
@@ -174,7 +179,7 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
   - (happy) `grep -rn "parent" .pi/extensions/consult --include="*.ts"` → 0 件
   - (boundary values) `grep -rn "consult_run\|consult_worktree\|consult_commit" .pi/extensions/consult --include="*.ts"` → 名前を変えないツールの行だけが残る（`index.ts` の登録、`policy/types.ts` の一覧、`tool/run.ts` の説明）
   - (error) `USAGE` の名前を戻す → 赤（新しい assertion が押さえる）
-  - (error) `consult_new:` を 1 か所戻す → 赤（新しい assertion が押さえる）
+  - (error) `consult_new:` を 1 か所戻す → 赤（どの分岐でも頭を見る新しい assertion が押さえる）
 
 ## 4.文書を揃える
 
@@ -215,12 +220,13 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
   - (happy) `pnpm typecheck` → `root: ok` と `.pi: ok`
   - (happy) `pnpm test:run` → 緑（着手前は 37 files / 608 tests）
   - (happy) `pnpm lint` → 緑
-  - (happy) `grep -rn "child\|parent" .pi/extensions/consult --include="*.ts"` → `node:child_process` の 5 行（`run/run.ts:7`、`run/worktree.ts:13`、`run/worktree.test.ts:2`、`run/git-env.ts:2`、`tool/sound.ts:12`）と、`run/run.ts` の spawn の locals だけ
+  - (happy) `grep -rn "child\|parent" .pi/extensions/consult --include="*.ts"` → `node:child_process` の 5 行（`run/run.ts:7`、`run/worktree.ts:13`、`run/worktree.test.ts:2`、`run/git-env.ts:2`、`tool/sound.ts:12`）と、`run/run.ts` の spawn の locals と、旧形破棄のテスト（`run/log.test.ts:207,208`）の 2 行だけ
   - (happy) `grep -rn "child\|children\|parent" .pi/extensions/consult/README.md README.md README.ja.md` → 0 件
   - (happy) `grep -rn "consult_children" .pi/ README.md README.ja.md` → 0 件
   - (happy) `grep -rn "parent\|children" .pi/skills` → 変えないと決めた 4 か所だけ（`.pi/skills/design/references/format.md:79,80`、`.pi/skills/adr/references/format.md:42` の `parentheses`、`.pi/skills/adr/scripts/scaffold.mjs:116-122` の `parentDir`、`.pi/skills/adr/scripts/scaffold.test.ts:98-111` の locals）
   - (happy) `grep -c "consult_" .pi/extensions/intent-router/state.ts` → 1（`consult_run`。名前を変えないツール）
   - (happy) `grep -n "consult_subagents" .pi/extensions/consult/index.ts` → 登録名、説明、起動の 1 行に出る
+  - (happy) `git diff --name-only -- memo/consult-vocabulary.md` → 空（触らない。close で消える）
 
 ## Notes
 
@@ -263,10 +269,35 @@ export const USAGE = 'consult_subagents: action is list (default) or cancel. can
 ### Round 1
 
 - Stale:
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:218` の期待（`child|parent` の grep は node:child_process の 5 行と `run/run.ts` の spawn locals だけ）は今のツリーと食い違う。`.pi/extensions/consult/run/log.test.ts:207,208` が旧欄名 `child` を字面に含み grep に残ることは `## Notes`（同 plan `cycles/261016-019-dev/plan/consult-vocabulary.md:256`）自身が認めており、Verify の文にその 2 行の扱いが無い。
+    - fixed: slice 5 の Verify に旧形破棄テストの 2 行の扱いを追記した
 - Unlisted:
+  - `.pi/extensions/consult/tool/run.test.ts:4` は差分にあるのに `## Files` に名指しが無い（`cycles/261016-019-dev/plan/consult-vocabulary.md:47` は `tool/run.ts` のみ）。現行 4 行目のサブエージェント文が語彙変更の対象。
+    - fixed: `## Files` に `tool/run.test.ts` の update を追記した
+  - `.pi/extensions/consult/tool/worktree.test.ts:73` は差分にあるのに `## Files` に名指しが無い（`cycles/261016-019-dev/plan/consult-vocabulary.md:50` は `tool/worktree.ts` のみ）。現行 73 行目のサブエージェント文などが語彙変更の対象（plan md 自体の差分は記録のため除外）。
+    - fixed: `## Files` に `tool/worktree.test.ts` の update を追記した
 - Gaps:
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:120` の Steps（`stopped by the parent` → `stopped by the agent`）に対応する case が同 slice の Verify（`cycles/261016-019-dev/plan/consult-vocabulary.md:133-142`）に無い。現行 `.pi/extensions/consult/run/run.ts:481` が新文を持つが、それを指す grep も assertion も無い。
+    - fixed: slice 2 の Verify に新旧の文を見る grep の case を追記し、回して緑を確認した
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:126` の Steps（`the child's work` → `the subagent's work`）に対応する case が Verify に無い。現行 `.pi/extensions/consult/tool/commit.ts:61` が新文を持つが、旧文の有無を見る case が無い。
+    - fixed: slice 2 の Verify に新旧の文を見る grep の case を追記し、回して緑を確認した
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:127` の Steps（`tool/run.ts`・`tool/worktree.ts`・`tool/sound.ts`・`policy/types.ts` の説明文と日本語コメント）にファイル名指しの case が Verify に無い。例 `.pi/extensions/consult/tool/sound.ts:2` のサブエージェント文など。
+    - fixed: slice 2 の Verify に 4 ファイルのサブエージェント文を見る case を追記し、回して緑を確認した
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:209` の Steps（`memo/consult-vocabulary.md` は触らない）に対応する case が同 slice の Verify（`cycles/261016-019-dev/plan/consult-vocabulary.md:214-223`）に無い。
+    - fixed: slice 5 の Verify に memo の差分が空を見る case を追記し、回して緑を確認した
+  - `README.ja.md:18` の「base はベースの `HEAD`」と `.pi/extensions/consult/run/worktree.ts:75,79` の同じ形の文は、`base` と「ベース」が続いて読みにくい（agent の指摘）
+    - fixed: 3 か所を「base の既定は HEAD（`HEAD`）」の形に直した
 - Unproven:
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:177`（`consult_new:` を 1 か所戻すと赤）は、新 assertion が空一覧の 1 文しか見ないため、他の 7 か所を戻しても vitest は緑のまま。`.pi/extensions/consult/tool/consult.test.ts:503-510` は `.pi/extensions/consult/tool/consult.ts:149` の空一覧文だけを見て、例 `.pi/extensions/consult/tool/consult.ts:166` の cancel 文などを押さえない。`grep consult_new → 0 件`（同 plan `cycles/261016-019-dev/plan/consult-vocabulary.md:171`）は手動で、vitest だけでは赤にならない。
+    - fixed: 7 分岐をまとめて頭を見る assertion と cancel 使い方の頭の assertion を足し、166 行目を戻すと赤になることを回して確認した。Verify の文も「どの分岐でも」に直した
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:135`（slice 1 と同じ本数 + 1 が緑）は本数自体を自動で押さえない。旧形破棄の 1 本 `.pi/extensions/consult/run/log.test.ts:207,208` を消しても残りは緑のまま。
+    - left: 本数を vitest で自動化する仕組みが無いため。旧形破棄の case 自体はあり、削除は差分で見るしかないので close に残す
+  - `cycles/261016-019-dev/plan/consult-vocabulary.md:160` の Steps のエラーの文の頭（例 `.pi/extensions/consult/tool/subagents.ts:153,159` の `consult_subagents:`）を旧名に戻しても vitest は緑のまま。`.pi/extensions/consult/tool/subagents.test.ts:263,277` は接尾辞（`/cancel needs id/`・`/action is list or cancel/`）しか見ず、頭を押さえない（頭を見るのは `USAGE` 定数の assertion `.pi/extensions/consult/tool/subagents.test.ts:280,281` だけ）。
+    - fixed: 2 つの rejects の正規表現に `consult_subagents:` の頭を含め、153 行目を戻すと赤になることを回して確認した
 - Doubts:
+  - 旧記録（`child` 欄）の破棄が走行中の引継ぎに何を起こすか、前提が疑わしい。`.pi/extensions/consult/run/log.ts:103-108` と `cycles/261016-019-dev/plan/consult-vocabulary.md:121,142`（古い `child` は受けない、ADR 05 の決定）では、上げ前後にまたがる走行中サブエージェントが一覧から消える扱いになるが、移行も両受けもしない理由の検討が見えない。finding ではなく設計への疑い。
+  - 改名の外側への波及の受口が疑わしい。`.pi/extensions/consult/index.ts:172` の登録名変更に対し `cycles/261016-019-dev/plan/consult-vocabulary.md:159` は実行中セッションは旧名のまま・次回起動で新名として何もしないが、外側の自動化や手順書が旧名を呼ぶ場合の壊れをどこで受けるかの前提が見えない。finding ではなく前提への疑い。
+  - spawn locals の `child` 残しの線引きが疑わしい。`.pi/extensions/consult/run/run.ts:191` の `killChild` 等を残すことは `cycles/261016-019-dev/plan/consult-vocabulary.md:114,140` で決めているが、将来の読み手が Node の `child_process` の子とサブエージェントの子のどちらの `child` か誤読する余地が残る。finding ではなく言葉の設計への疑い。
 
 ## Acceptance
 

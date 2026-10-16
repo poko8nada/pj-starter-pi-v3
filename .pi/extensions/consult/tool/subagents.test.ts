@@ -260,7 +260,9 @@ describe('createSubagentsTool', () => {
       undefined,
       { cwd: tmpDir() },
     ];
-    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(/cancel needs id/);
+    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
+      /consult_subagents: cancel needs id/,
+    );
     expect(USAGE).toContain('cancel needs id');
   });
 
@@ -274,7 +276,9 @@ describe('createSubagentsTool', () => {
       undefined,
       { cwd: tmpDir() },
     ];
-    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
+    await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
+      /consult_subagents: action is list or cancel/,
+    );
   });
 
   it('USAGE は consult_subagents: で始まる', () => {

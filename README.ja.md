@@ -15,7 +15,7 @@ English: [README.md](README.md)
   - `consult_subagents` — このセッションのサブエージェントを一覧し、1 体止める。記録を読むので reload をまたいでもこのセッションのサブエージェントは出る
   - `consult_worktree` — unit の worktree を作り、一覧し、消す。明示しない限り残り、`remove` は取り込み済みのブランチも一緒に消す（未マージは残す）
   - `consult_commit` — サブエージェントが worktree に残した仕事をコミットする。メインエージェントのブランチへの取り込みは `git merge --no-ff consult/<unit-id>` を自分で打つ
-  - 置き場: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、base はベースの `HEAD`
+  - 置き場: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、base の既定は `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`（dispatch で agent を走らせる）
 - **サイクルの記録** — `cycles/`
 

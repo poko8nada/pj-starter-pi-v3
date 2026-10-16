@@ -509,6 +509,66 @@ describe('controlSubagent: list', () => {
     );
     expect(outcome.text.startsWith('consult_subagents:')).toBe(true);
   });
+
+  it('知らせの文はどの分岐でも consult_subagents: で始まる', () => {
+    const controller = new AbortController();
+    const held = new Map([
+      ['consult-1', { id: 'consult-1', type: 'review', task: 'a', startedAt: 1, controller }],
+    ]);
+    const texts: string[] = [];
+    texts.push(
+      controlSubagent({ action: 'list' }, new Map(), placeFor(tmpDir(), tmpDir()), SESSION).text,
+    );
+    texts.push(
+      controlSubagent(
+        { action: 'cancel', id: 'consult-1' },
+        held,
+        placeFor(tmpDir(), tmpDir()),
+        SESSION,
+      ).text,
+    );
+    texts.push(
+      controlSubagent(
+        { action: 'cancel', id: 'consult-999' },
+        new Map(),
+        placeFor(tmpDir(), tmpDir()),
+        SESSION,
+      ).text,
+    );
+    const other = placeFor(tmpDir(), tmpDir());
+    seedRunning(other, { session: 'other-session', pid: process.pid });
+    texts.push(
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION).text,
+    );
+    const done = placeFor(tmpDir(), tmpDir());
+    appendRun(done, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: process.pid,
+      started: 1,
+      ended: 2,
+      state: 'done',
+    });
+    texts.push(
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), done, SESSION).text,
+    );
+    const lost = placeFor(tmpDir(), tmpDir());
+    seedRunning(lost, { pid: 999_999 });
+    texts.push(
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), lost, SESSION).text,
+    );
+    const live = placeFor(tmpDir(), tmpDir());
+    seedRunning(live, { pid: process.pid });
+    texts.push(
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), live, SESSION, () => {})
+        .text,
+    );
+    expect(texts).toHaveLength(7);
+    for (const text of texts) {
+      expect(text.startsWith('consult_subagents:')).toBe(true);
+    }
+  });
 });
 
 describe('commands: 引数と空の一覧', () => {
@@ -519,6 +579,7 @@ describe('commands: 引数と空の一覧', () => {
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('', ctx);
     expect(notices[0]?.message).toContain('needs an id');
+    expect(notices[0]?.message.startsWith('consult_subagents:')).toBe(true);
     expect(notices[0]?.type).toBe('error');
   });
 
