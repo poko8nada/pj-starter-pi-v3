@@ -38,7 +38,7 @@ export interface SubagentReport {
 
 /** 塊を 1 つのテキストにする。先頭に置いて、サブエージェントの本文が続く */
 export function reportBlock(report: SubagentReport): string {
-  const where = report.worktree === undefined ? 'parent tree' : `worktree ${report.worktree}`;
+  const where = report.worktree === undefined ? 'base' : `worktree ${report.worktree}`;
   // id はメインエージェントが振る物で、無いこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
   const label = report.id ?? 'consult';
   const lines = [

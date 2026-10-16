@@ -91,7 +91,7 @@ describe('rowOf / rowsOf', () => {
   });
 
   it('worktree が無いサブエージェントはベースと出す', () => {
-    expect(rowOf(record(), false, 0)).toContain('parent');
+    expect(rowOf(record(), false, 0)).toContain('base');
   });
 
   it('終わったサブエージェントは state と reason を出す。走っているサブエージェントは出さない', () => {
@@ -275,5 +275,9 @@ describe('createSubagentsTool', () => {
       { cwd: tmpDir() },
     ];
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(/action is list or cancel/);
+  });
+
+  it('USAGE は consult_subagents: で始まる', () => {
+    expect(USAGE.startsWith('consult_subagents:')).toBe(true);
   });
 });

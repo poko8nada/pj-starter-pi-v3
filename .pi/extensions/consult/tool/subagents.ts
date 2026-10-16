@@ -1,5 +1,5 @@
 /**
- * consult_children — サブエージェントの一覧と、止める手。
+ * consult_subagents — サブエージェントの一覧と、止める手。
  *
  * 一覧は記録（`run/log.ts` の日ごとのファイル）から作る。サブエージェントはメインエージェントのプロセスに従属しないので、
  * reload でメインエージェントが差し替わっても、同じ session のサブエージェントは出る。
@@ -52,7 +52,7 @@ type ExecuteArgs = [
 export type SubagentsArgs = ExecuteArgs;
 
 /** 知らない action や引数不足のときに添える使い方 */
-export const USAGE = 'consult_children: action is list (default) or cancel. cancel needs id';
+export const USAGE = 'consult_subagents: action is list (default) or cancel. cancel needs id';
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
 function result(
@@ -98,7 +98,7 @@ export function rowOf(record: RunRecord, running: boolean, now: number): string 
   const parts = [
     record.subagent,
     record.role,
-    record.worktree === undefined ? 'parent' : `worktree ${record.worktree}`,
+    record.worktree === undefined ? 'base' : `worktree ${record.worktree}`,
     state,
     elapsed(record, now),
     record.turns === undefined ? '(turns unknown)' : `${record.turns} turns`,
@@ -150,12 +150,12 @@ export function createSubagentsTool(host: SubagentsHost) {
     if (action === 'cancel') {
       const id = params.id;
       if (typeof id !== 'string' || id.trim() === '') {
-        throw new Error(`consult_children: cancel needs id. ${USAGE}`);
+        throw new Error(`consult_subagents: cancel needs id. ${USAGE}`);
       }
       const outcome = host.control({ action: 'cancel', id }, session);
       return result(outcome.text, { action, id, outcome: outcome.details });
     }
 
-    throw new Error(`consult_children: action is list or cancel. ${USAGE}`);
+    throw new Error(`consult_subagents: action is list or cancel. ${USAGE}`);
   };
 }

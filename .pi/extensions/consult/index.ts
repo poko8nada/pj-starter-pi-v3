@@ -92,7 +92,7 @@ function announceRunningSubagents(place: Place, announced: string, ctx: Extensio
   }
   const count = runningRuns(place, { session: announced }).length;
   ctx.ui.notify(
-    `consult: ${count} subagent(s) are still running from an earlier session (see consult_children)`,
+    `consult: ${count} subagent(s) are still running from an earlier session (see consult_subagents)`,
     'info',
   );
   startSound(() => runningRuns(place, { session: announced }).length > 0);
@@ -155,7 +155,7 @@ export default function (pi: ExtensionAPI) {
     name: 'consult_run',
     label: 'Consult run',
     description:
-      'Run one subagent pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one subagent; call it again for another. The subagent reads the files it needs itself, so name them in task. An isolated role needs a worktree (consult_worktree); one that is not runs in the parent tree when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
+      'Run one subagent pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one subagent; call it again for another. The subagent reads the files it needs itself, so name them in task. An isolated role needs a worktree (consult_worktree); one that is not runs in the base when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
     promptSnippet:
       'Run one background subagent pi with a role (research / review / trial / code) and a place',
     promptGuidelines: [
@@ -169,13 +169,13 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
-    name: 'consult_children',
+    name: 'consult_subagents',
     label: 'Consult subagents',
     description:
-      'Show the subagents of this session, and stop one: consult_children{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows subagents this session started (even ones from before a reload). cancel stops a running subagent of this session, including one a previous instance started (by process id); a subagent from another session is named in the reply and left alone.',
+      'Show the subagents of this session, and stop one: consult_subagents{action: list|cancel, id?}. Rows carry id, role, worktree, elapsed, turns and spend. The list comes from a record on disk, so it still shows subagents this session started (even ones from before a reload). cancel stops a running subagent of this session, including one a previous instance started (by process id); a subagent from another session is named in the reply and left alone.',
     promptSnippet: 'List the consult subagents (and stop one) — works across reloads',
     promptGuidelines: [
-      'Use consult_children to see what is still running before you wait or act: one call lists this session’s subagents, including ones from before a reload.',
+      'Use consult_subagents to see what is still running before you wait or act: one call lists this session’s subagents, including ones from before a reload.',
       'Use action: cancel with the id to stop one; a subagent started by another session cannot be stopped, and says so.',
     ],
     parameters: SUBAGENTS_PARAMETERS,

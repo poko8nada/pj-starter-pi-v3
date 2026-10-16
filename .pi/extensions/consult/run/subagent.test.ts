@@ -5,7 +5,7 @@ import type { Worktree } from './worktree.ts';
 
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
-const CONTEXT = { cwd: '/tmp/parent' } as const;
+const CONTEXT = { cwd: '/tmp/base' } as const;
 
 function policy(isolated: boolean): TypePolicy {
   return {
@@ -30,7 +30,7 @@ const WORKTREE: Worktree = {
 describe('prepare', () => {
   it('隔離しないロール → ベースで走る（worktree は要らない）', () => {
     expect(prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false) })).toEqual({
-      cwd: '/tmp/parent',
+      cwd: '/tmp/base',
     });
   });
 

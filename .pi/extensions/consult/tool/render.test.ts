@@ -36,7 +36,7 @@ describe('reportBlock', () => {
   it('素性・場所・回数・量・触った物を出す', () => {
     const block = reportBlock(base);
     expect(block).toContain('review / done');
-    expect(block).toContain('place: parent tree');
+    expect(block).toContain('place: base');
     expect(block).toContain('turns: 12 / 40');
     expect(block).toContain('spend: 0.0123 usd');
     expect(block).toContain('files: (none)');

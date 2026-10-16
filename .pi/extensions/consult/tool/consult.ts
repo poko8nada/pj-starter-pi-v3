@@ -39,7 +39,7 @@ import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 
-/** consult_new が使う ctx の面。cwd だけ見れば足りる（テストはこれをそのまま渡せる） */
+/** consult_subagents が使う ctx の面。cwd だけ見れば足りる（テストはこれをそのまま渡せる） */
 export interface ConsultContext {
   readonly cwd: string;
 }
@@ -146,7 +146,7 @@ export function controlSubagent(
     return {
       text:
         running.length === 0
-          ? 'consult_new: no subagent is running.'
+          ? 'consult_subagents: no subagent is running.'
           : running.map(describeSubagent).join('\n'),
       details: {
         action: 'list',
@@ -163,7 +163,7 @@ export function controlSubagent(
     // 掴んでいるサブエージェントは abort だけ（kill は送らない）
     held.controller.abort();
     return {
-      text: `consult_new: cancelled ${held.id} (${held.type})`,
+      text: `consult_subagents: cancelled ${held.id} (${held.type})`,
       details: { action: 'cancel', id: held.id, cancelled: true },
     };
   }
@@ -172,30 +172,30 @@ export function controlSubagent(
     const elsewhere = latest(readRuns(place)).find((run) => run.subagent === action.id);
     if (elsewhere !== undefined) {
       return {
-        text: `consult_new: ${action.id} belongs to another session (it cannot be stopped here)`,
+        text: `consult_subagents: ${action.id} belongs to another session (it cannot be stopped here)`,
         details: { action: 'cancel', id: action.id, cancelled: false },
       };
     }
     return {
-      text: `consult_new: no such subagent: ${action.id}`,
+      text: `consult_subagents: no such subagent: ${action.id}`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
   if (own.ended !== undefined) {
     return {
-      text: `consult_new: ${action.id} already finished (${own.state ?? 'done'})`,
+      text: `consult_subagents: ${action.id} already finished (${own.state ?? 'done'})`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
   if (!isRunning(own)) {
     return {
-      text: `consult_new: ${action.id} is not running (lost)`,
+      text: `consult_subagents: ${action.id} is not running (lost)`,
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
   kill(own.pid);
   return {
-    text: `consult_new: cancelled ${own.subagent} (${own.role})`,
+    text: `consult_subagents: cancelled ${own.subagent} (${own.role})`,
     details: { action: 'cancel', id: own.subagent, cancelled: true },
   };
 }
@@ -502,7 +502,7 @@ export function createRuntime(
         const id = args.trim();
         if (id === '') {
           ctx.ui.notify(
-            'consult_new: /consult-cancel needs an id. Usage: /consult-cancel <id>',
+            'consult_subagents: /consult-cancel needs an id. Usage: /consult-cancel <id>',
             'error',
           );
           return;

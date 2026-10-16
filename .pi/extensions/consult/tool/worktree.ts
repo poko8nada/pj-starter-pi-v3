@@ -32,7 +32,7 @@ export const PARAMETERS = Type.Object({
   ),
   base: Type.Optional(
     Type.String({
-      description: "What to branch from (for action=new). Defaults to the parent's HEAD",
+      description: 'What to branch from (for action=new). Defaults to the base HEAD',
     }),
   ),
   force: Type.Optional(

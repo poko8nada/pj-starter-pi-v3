@@ -499,6 +499,16 @@ describe('controlSubagent: list', () => {
     );
     expect(outcome.text).toContain('no subagent is running');
   });
+
+  it('知らせの文は consult_subagents: で始まる', () => {
+    const outcome = controlSubagent(
+      { action: 'list' },
+      new Map(),
+      placeFor(tmpDir(), tmpDir()),
+      SESSION,
+    );
+    expect(outcome.text.startsWith('consult_subagents:')).toBe(true);
+  });
 });
 
 describe('commands: 引数と空の一覧', () => {
