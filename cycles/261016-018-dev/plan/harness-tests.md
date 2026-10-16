@@ -254,6 +254,6 @@ interface Entry {
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm typecheck`（`root: ok` / `.pi: ok`）、`pnpm test:run`（37 files / 608 tests 緑）、plan の検査（`pnpm vitest run scripts/product-ready scripts/harness-state.test.ts scripts/harness.test.ts` 85 緑）、slice 4 の cli 場面: 状態 `starter` で `pnpm test:run` 緑（608 本）→ 状態を `product` にして `pnpm test:run` が `No test files found, exiting with code 0`、`logs/probe.test.ts` を置くとその 1 本だけが回る（全部を外していない）、`pnpm test:related .pi/extensions/consult/tool/commit.ts` が 0 本、`pnpm typecheck` が `root: ok` / `.pi: ok`（ハーネスの型は product でも見る）→ `git checkout` で `starter` に戻して 608 本緑、probe を消した。grep 4 つ（`DEFINITION.md:40` の新しい行、古い文は 0 件、`README.md:28,44` と `README.ja.md:28,44` に `harness.mode.json`、`start from zero tests` は 0 件）。壊して赤を見た 3 つ: `includeList` の `product` の枝を潰す（`starter || product` で既定だけ返す）→ `scripts/harness-state.test.ts` 3 failed（16 本中）/ `product:ready` の `writeMode` を落とす → `scripts/product-ready` 4 failed（38 本中）/ `readMode` の値の検めを外す（`if (false)`）→ 1 failed。3 つとも `git checkout` で戻し、608 本緑と clean を確認
+- Findings: なし
+- Doubts: `index.test.ts` の「壊れている」は `{"mode":"half"}`（値不正）だけで、JSON 不正の変種は無い。同じ `catch` 経路なので検査の穴にはしない（Round 2 の Doubts をそのまま持つ）
