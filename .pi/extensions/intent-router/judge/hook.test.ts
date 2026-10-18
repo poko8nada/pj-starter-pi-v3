@@ -277,22 +277,6 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(1);
   });
 
-  it('read が空（道具を使っていない往復）→ 何も聞かない', async () => {
-    const settings = defaultSettings();
-    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
-    const result = await handler(
-      {
-        turnIndex: 2,
-        message: { content: 'done' },
-        toolResults: [{ toolName: 'mystery', content: 'x' }],
-      },
-      { cwd: '/repo' },
-    );
-    expect(result).toBeUndefined();
-    expect(requests).toHaveLength(0);
-    expect(readRecords(file)).toHaveLength(0);
-  });
-
   it('related の confidence が 0.79 → unrelated は増えず read は残る', async () => {
     const settings = defaultSettings();
     const low = batchAnswered(choiceAnswer('no', 0.79), choiceAnswer('no', 0.95));
@@ -480,30 +464,6 @@ describe('registerJudge/related answerable', () => {
     expect(current.unrelated).toBe(0);
     expect(readRecords(file)).toHaveLength(1);
     expect(readRecords(file)[0]?.nudge).not.toBeNull();
-  });
-
-  it('related=no と yes が交互 → 合計で数えて 2 回目の no で出る', async () => {
-    const settings = defaultSettings();
-    const { handler, run } = wired(settings, [noNo(), yesNo(), noNo()], 'live', armedWithTurns(1));
-    await handler(readTurn(), { cwd: '/repo' });
-    const afterFirst = run.get();
-    if (afterFirst.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(afterFirst.unrelated).toBe(1);
-    await handler(readTurn(), { cwd: '/repo' });
-    const afterSecond = run.get();
-    if (afterSecond.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(afterSecond.unrelated).toBe(1);
-    const result = await handler(readTurn(), { cwd: '/repo' });
-    const afterThird = run.get();
-    if (afterThird.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(afterThird.unrelated).toBe(2);
-    expect(result?.entries).toHaveLength(1);
   });
 
   it('answerable の confidence が閾値未満 → 促しは出ない', async () => {

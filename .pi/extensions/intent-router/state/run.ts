@@ -156,16 +156,6 @@ export function countJudgement(run: Run, now: number): Run {
   return { ...run, judgements: run.judgements + 1, lastJudgedAt: now };
 }
 
-/** 「関係ない」と判定された回数を数える。関係ある側では戻さない（往復の中で数える） */
-export function noteVerdict(run: Armed, unhelpful: boolean): Armed;
-export function noteVerdict(run: Run, unhelpful: boolean): Run;
-export function noteVerdict(run: Run, unhelpful: boolean): Run {
-  if (run.kind !== 'armed') {
-    return run;
-  }
-  return { ...run, unrelated: unhelpful ? run.unrelated + 1 : run.unrelated };
-}
-
 export function nudge(run: Armed): Armed;
 export function nudge(run: Run): Run;
 export function nudge(run: Run): Run {

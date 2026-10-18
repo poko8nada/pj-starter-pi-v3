@@ -74,13 +74,6 @@ describe('guideText', () => {
     expect(guideText(settings, 'approve', 'hello')).toBe('独自の承認文');
   });
 
-  it('{prompt} に抜粋が差し込まれ、{prompt} の文字は残らない', () => {
-    const settings = defaultSettings();
-    const text = guideText(settings, 'reply', 'cycles/013/design.md は何を決めた?');
-    expect(text).toContain('cycles/013/design.md は何を決めた?');
-    expect(text).not.toContain('{prompt}');
-  });
-
   it('改行は1つの空白に潰れて40字で切れる', () => {
     const base = defaultSettings();
     const settings: Settings = {

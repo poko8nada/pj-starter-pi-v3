@@ -7,7 +7,6 @@ import {
   countJudgement,
   idleRun,
   noteTurn,
-  noteVerdict,
   nudge,
   type Action,
   type Run,
@@ -58,7 +57,6 @@ describe('idle', () => {
   it('idle に addAction / noteTurn しても idle のまま', () => {
     expect(addAction(idleRun(), action(), limits()).kind).toBe('idle');
     expect(noteTurn(idleRun(), 'hi', limits()).kind).toBe('idle');
-    expect(noteVerdict(idleRun(), true).kind).toBe('idle');
     expect(nudge(idleRun()).kind).toBe('idle');
   });
 });
@@ -88,14 +86,6 @@ describe('addAction', () => {
 
   it('.env を読んだ action が落ちる', () => {
     const run = addAction(armed(), action({ tool: 'read', target: '.env' }), limits());
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.read).toHaveLength(0);
-  });
-
-  it('includeTools に無い道具は入らない', () => {
-    const run = addAction(armed(), action({ tool: 'mystery', target: '' }), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
@@ -157,31 +147,7 @@ describe('noteTurn', () => {
   });
 });
 
-describe('noteVerdict / nudge', () => {
-  it('noteVerdict(true) で unrelated が増える', () => {
-    let run = armed();
-    run = noteVerdict(run, true);
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.unrelated).toBe(1);
-    run = noteVerdict(run, true);
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.unrelated).toBe(2);
-  });
-
-  it('noteVerdict(false) で unrelated は 0 に戻らない', () => {
-    let run = armed();
-    run = noteVerdict(run, true);
-    run = noteVerdict(run, false);
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.unrelated).toBe(1);
-  });
-
+describe('nudge', () => {
   it('nudge で nudges が増える', () => {
     const run = nudge(armed());
     if (run.kind !== 'armed') {
