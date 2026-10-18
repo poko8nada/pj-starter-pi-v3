@@ -161,8 +161,27 @@ export function routePayload(
   - `.pi/extensions/intent-router/record/recent.ts:12` の `isRecord` が `at` の有無しか見ず `state_chars`/`truncated` を要求しない。旧 JSONL の 1 行（新欄なし）が混ざると欠けたまま読めるが、plan Verify は旧形式＝配列 1 行のみを空と決めており単行旧欄の扱いは決めていないため finding にしない。
   - `.pi/extensions/intent-router/README.md:19` の例 `route.thresholds.approve 0.9` は `set` の使用例であり既定値の記述ではないため stale に数えていない。
 
+### Round 2
+
+- Stale: なし — 1 件は直っている。README の 3 か所が 0.8 になり、既定と一致する
+- Unlisted: なし — 3 件は直っている。`## Files` に 3 つが足され、`route/decide.ts` のコメントの記録も入っている
+- Gaps: なし — 2 件は直っている。促しの記録と、閾値未満の見送りの記録にも 2 欄が入る検査がある
+- Unproven: なし — 1 件は直っている。切る前の生の state より短いことを見る assert が入っている
+- Doubts: なし
+
 ## Acceptance
 
 - Ran:
+  - plan の検査: slice 1 の `pnpm vitest run .pi/extensions/intent-router/record` と slice 2 の `.../route` `.../judge` `.../state`（合わせて 12 ファイル / 171 件が緑）
+  - `pnpm test:run` → 41 ファイル / 669 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも ok
+  - `pnpm lint` → 緑
+  - 壊して赤を確かめた 3 件（同時に入れた）:
+    - `record/recent.ts` の書き込みを 1 行の配列に戻す → 30 件が赤（`record` の 6 件と、記録を読む `command` / `judge` / `index` を含む）
+    - `state/payload.ts` の `truncated` を常に false に → `truncated` のケースが赤（`payload` と `route` と `judge`）
+    - `route/hook.ts` の `state_chars` を切る前の字数に → 切った後の字数を見るケースが赤
+    - いずれも戻して緑に復帰
 - Findings:
+  - なし
 - Doubts:
+  - なし
