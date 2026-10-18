@@ -6,10 +6,10 @@ import type { Answer, Ask, AskOutcome, AskRequest } from '../ask/ask.ts';
 import { append, type IntentRecord } from '../record/log.ts';
 import { defaultSettings, type Settings } from '../settings/schema.ts';
 import { idleRun, type FlagsPort, type Mode, type Run, type RunPort } from '../state/run.ts';
-import { registerRoute, type RouteCtx, type RoutePiPort } from './hook.ts';
+import { registerRoute, type RouteCtx, type RoutePiPort, type RouteStart } from './hook.ts';
 
 type Handler = (
-  event: { readonly prompt: string; readonly images?: readonly unknown[] },
+  event: RouteStart,
   ctx: RouteCtx,
 ) => Promise<
   | {
@@ -161,7 +161,10 @@ describe('registerRoute', () => {
   it('expect が reply 0.87 → act で reply の guide が1回だけ差し込まれる（live）', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, answeredOutcome('reply', 0.87), 'live');
-    const result = await handler({ prompt: 'this design, what do you think?' }, { cwd: '/repo' });
+    const result = await handler(
+      { messageType: 'user', prompt: 'this design, what do you think?' },
+      { cwd: '/repo' },
+    );
     expect(result?.message.content).toBe(
       settings.route.guides.reply.split('{prompt}').join('this design, what do you think?'),
     );
@@ -174,7 +177,10 @@ describe('registerRoute', () => {
   it('expect が approve 0.92 → act で approve の guide', async () => {
     const settings = defaultSettings();
     const { handler } = wired(settings, answeredOutcome('approve', 0.92), 'live');
-    const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
+    const result = await handler(
+      { messageType: 'user', prompt: 'looks good, proceed' },
+      { cwd: '/repo' },
+    );
     expect(result?.message.content).toBe(
       settings.route.guides.approve.split('{prompt}').join('looks good, proceed'),
     );
@@ -187,7 +193,10 @@ describe('registerRoute', () => {
       answeredOutcome('approve', 0.75),
       'live',
     );
-    const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
+    const result = await handler(
+      { messageType: 'user', prompt: 'looks good, proceed' },
+      { cwd: '/repo' },
+    );
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');
     const records = readRecords(file);
@@ -200,7 +209,7 @@ describe('registerRoute', () => {
   it('other → idle（文を出さない）', async () => {
     const settings = defaultSettings();
     const { handler, file } = wired(settings, answeredOutcome('other', 0.9), 'live');
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const result = await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(readRecords(file)).toHaveLength(1);
   });
@@ -208,7 +217,7 @@ describe('registerRoute', () => {
   it('classify が失敗 → 記録1行だけ残して何も出さない', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, failedOutcome(), 'live');
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const result = await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');
     expect(readRecords(file)).toHaveLength(1);
@@ -217,7 +226,7 @@ describe('registerRoute', () => {
   it('セッションに前の発言が無い → agent_prev は空文字', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     expect(requests[0]?.state['agent_prev']).toBe('');
     expect(requests[0]?.state['owner_now']).toBe('hello');
   });
@@ -225,7 +234,10 @@ describe('registerRoute', () => {
   it('ctx.agentPrev が渡る → routePayload に入る', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'previous agent text' });
+    await handler(
+      { messageType: 'user', prompt: 'hello' },
+      { cwd: '/repo', agentPrev: 'previous agent text' },
+    );
     expect(requests[0]?.state['agent_prev']).toBe('previous agent text');
   });
 
@@ -233,7 +245,7 @@ describe('registerRoute', () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), 'live');
     const limit = settings.state.textChars;
-    await handler({ prompt: 'あ'.repeat(limit + 100) }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: 'あ'.repeat(limit + 100) }, { cwd: '/repo' });
     expect(String(requests[0]?.state['owner_now']).length).toBe(limit);
   });
 
@@ -241,14 +253,20 @@ describe('registerRoute', () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), 'live');
     const limit = settings.state.textChars;
-    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'あ'.repeat(limit + 50) });
+    await handler(
+      { messageType: 'user', prompt: 'hello' },
+      { cwd: '/repo', agentPrev: 'あ'.repeat(limit + 50) },
+    );
     expect(String(requests[0]?.state['agent_prev']).length).toBe(limit);
   });
 
   it('画像つきの発言 → 頭の state に画像を入れない', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello', images: [{ type: 'image' }] }, { cwd: '/repo' });
+    await handler(
+      { messageType: 'user', prompt: 'hello', images: [{ type: 'image' }] },
+      { cwd: '/repo' },
+    );
     const state = requests[0]?.state ?? {};
     expect(JSON.stringify(state)).not.toContain('data:image');
     expect(state['owner_now']).toBe('hello');
@@ -259,7 +277,7 @@ describe('registerRoute', () => {
   it('shadow → 差し込まずに記録だけ残る', async () => {
     const settings = defaultSettings();
     const { handler, file } = wired(settings, answeredOutcome('reply', 0.9), 'shadow');
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const result = await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     const records = readRecords(file);
     expect(records).toHaveLength(1);
@@ -273,7 +291,7 @@ describe('registerRoute', () => {
       answeredOutcome('reply', 0.9),
       'shadow',
     );
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const result = await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(1);
     expect(readRecords(file)).toHaveLength(1);
@@ -281,14 +299,14 @@ describe('registerRoute', () => {
 
   it('/ で始まる発言 → ask が呼ばれない', async () => {
     const { handler, requests } = wired(defaultSettings(), answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: '/intent off' }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: '/intent off' }, { cwd: '/repo' });
     expect(requests).toHaveLength(0);
   });
 
   it('短い往復 → route の記録の state_chars が、渡した state の JSON の字数と同じ', async () => {
     const settings = defaultSettings();
     const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
@@ -300,7 +318,7 @@ describe('registerRoute', () => {
     const limit = settings.state.textChars;
     const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
     const longPrompt = 'あ'.repeat(limit + 100);
-    await handler({ prompt: longPrompt }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: longPrompt }, { cwd: '/repo' });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
@@ -313,7 +331,7 @@ describe('registerRoute', () => {
     const limit = settings.state.textChars;
     const longPrev = 'あ'.repeat(limit + 50);
     const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: longPrev });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo', agentPrev: longPrev });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
@@ -326,14 +344,14 @@ describe('registerRoute', () => {
   it('どちらも短い → truncated が false', async () => {
     const settings = defaultSettings();
     const { handler, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'prev' });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo', agentPrev: 'prev' });
     expect(readRecords(file)[0]?.truncated).toBe(false);
   });
 
   it('classify が失敗 → 記録に state_chars と truncated が入る', async () => {
     const settings = defaultSettings();
     const { handler, requests, file } = wired(settings, failedOutcome(), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
@@ -343,10 +361,46 @@ describe('registerRoute', () => {
   it('other で見送り → route の記録に同じ 2 欄が入る', async () => {
     const settings = defaultSettings();
     const { handler, requests, file } = wired(settings, answeredOutcome('other', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    await handler({ messageType: 'user', prompt: 'hello' }, { cwd: '/repo' });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
     expect(records[0]?.truncated).toBe(false);
+  });
+
+  it('user の「これ直して」(shadow) → ask が1回呼ばれ記録が1行残る', async () => {
+    const { handler, requests, file } = wired(
+      defaultSettings(),
+      answeredOutcome('reply', 0.9),
+      'shadow',
+    );
+    const result = await handler({ messageType: 'user', prompt: 'これ直して' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(1);
+    expect(readRecords(file)).toHaveLength(1);
+  });
+
+  it('user の「/investigate」→ ask が呼ばれず記録も残らない', async () => {
+    const { handler, requests, file } = wired(
+      defaultSettings(),
+      answeredOutcome('reply', 0.9),
+      'shadow',
+    );
+    const result = await handler({ messageType: 'user', prompt: '/investigate' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
+  });
+
+  it('custom の走り出し → ask が呼ばれず記録も残らず undefined', async () => {
+    const { handler, requests, file } = wired(
+      defaultSettings(),
+      answeredOutcome('reply', 0.9),
+      'shadow',
+    );
+    const result = await handler({ messageType: 'custom' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 });

@@ -20,11 +20,15 @@ export interface RouteCtx {
   readonly agentPrev?: string;
 }
 
+export type RouteStart =
+  | { readonly messageType: 'user'; readonly prompt: string; readonly images?: readonly unknown[] }
+  | { readonly messageType: 'custom' };
+
 export interface RoutePiPort {
   on(
     event: 'before_agent_start',
     handler: (
-      event: { readonly prompt: string; readonly images?: readonly unknown[] },
+      event: RouteStart,
       ctx: RouteCtx,
     ) => Promise<
       | {
@@ -191,6 +195,9 @@ function settleRoute(deps: RouteDeps, input: RouteSettleInput): RouteMessage | u
 
 export function registerRoute(pi: RoutePiPort, deps: RouteDeps): void {
   pi.on('before_agent_start', async (event, ctx) => {
+    if (event.messageType !== 'user') {
+      return undefined;
+    }
     if (event.prompt.startsWith('/')) {
       return undefined;
     }

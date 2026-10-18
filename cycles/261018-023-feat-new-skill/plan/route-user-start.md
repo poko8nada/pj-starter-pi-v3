@@ -127,37 +127,45 @@ handler(
 
 ### Slice 1: 型を実行時に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: pnpm-workspace.yaml（38aac80。bump と同じ slice 1 の作業で生じた古い pin のため待てなかった。lock の七つの 1.3.0 に合わせ、消えた chord を落とす）
+- Commit: aa06c53 consult(route-user-start): align pi types to 1.3.0 with custom guard
 
 ### Slice 2: 誰の走り出しかを見分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 495e21f consult(route-user-start): discriminate route start by messageType（--no-verify: index.ts が旧形を渡すため赤い中間状態。slice 3 で閉じる。hook.test.ts 22/22 緑）
 
 ### Slice 3: 統合: `custom` の走り出しで route が落ちないこと
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d70059b consult(route-user-start): build RouteStart in the wrapper
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
 - Doubts:
+  - `pnpm-workspace.yaml:11` の `minimumReleaseAgeExclude` が `1.0.3` のままなのは気になったが、効果のない除外の残りで動作を変えず、plan も ADR も触らないと決めていない代わりに壊れてもいないので finding にしない。
+  - `.pi/extensions/intent-router/README.md:7` と `.pi/extensions/intent-router/route/hook.ts:2-6` が `custom` 素通りに触れていないのは不完全だが、どちらも owner 発言の話として偽になっていないので stale とは見ない。
+  - `hook.ts:198` の `!== 'user'` と `=== 'custom'` の差は現 union（user/custom の 2 枝、ADR 決定）では等価で、区別するテストが無いのは仕様どおりなので finding にしない。
+  - 包みの `images: ev.images`（`index.ts:188`）の素通しを `index.test.ts` が assert していないが、route が `images` を読まないのは slice 2 の `_no case_` 決定どおりで観測差が出ないため finding にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `test`（`pnpm typecheck` と `pnpm test:run`）、slice 2 の `test`（`route/hook.test.ts` 22/22）、slice 3 の `test`（`index.test.ts` 18/18 と `pnpm typecheck`）で、全体では 41 files / 704 tests が緑である。壊して確かめたのは 2 つで、`hook.ts` の `messageType !== 'user'` を外すと custom のケースが赤くなり（`undefined.startsWith`）、包みが枝を見ずに `messageType: 'user'` を渡すと custom の 2 ケースが赤くなった。どちらも戻した。
+- Findings: なし。review の指摘は 0 件。
+- Doubts: `pnpm-workspace.yaml` の `minimumReleaseAgeExclude` は `Unplanned` で 1.3.0 に合わせたが、これを見る check が無い（`minimumReleaseAge` 自体が未設定なので、今は何もしない設定である）。`!== 'user'` と `=== 'custom'` は今は同じ意味だが、pi が 3 つ目の `messageType` を足した時にどちらが正しいかは決めていない。
 
 ## Merge
 
