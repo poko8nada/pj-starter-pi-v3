@@ -95,18 +95,16 @@ describe('parseIntent', () => {
     expect(parseIntent('')).toMatchObject({ kind: 'show' });
   });
 
-  it('/intent last → 使い方を返す', () => {
-    expect(parseIntent('last')).toMatchObject({ kind: 'usage' });
-  });
-
-  it('/intent last 3 → 使い方を返し、その文に last の行が無い', () => {
-    const command = parseIntent('last 3');
-    expect(command).toMatchObject({ kind: 'usage' });
-    if (command.kind !== 'usage') {
-      throw new Error('last 3 must return usage');
+  it('消えた下位コマンド（last / last 3）→ 使い方を返し、文に last の行が無い', () => {
+    for (const args of ['last', 'last 3']) {
+      const command = parseIntent(args);
+      expect(command).toMatchObject({ kind: 'usage' });
+      if (command.kind !== 'usage') {
+        throw new Error(`${args} must return usage`);
+      }
+      expect(command.text).toContain('usage');
+      expect(command.text).not.toContain('last');
     }
-    expect(command.text).toContain('usage');
-    expect(command.text).not.toContain('last');
     expect(usageText()).not.toContain('last');
   });
 
@@ -146,7 +144,7 @@ describe('registerCommand', () => {
     expect(ctx.messages).toEqual(['intent-router: live']);
   });
 
-  it('/intent last と /intent last 3 → 使い方の文を返す（文に last の行が無い）', () => {
+  it('消えた下位コマンドを打つ → 使い方の文を返す（文に last の行が無い）', () => {
     const { handler } = wired(tmpDir());
     for (const args of ['last', 'last 3']) {
       const ctx = fakeCtx();

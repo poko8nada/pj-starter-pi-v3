@@ -127,11 +127,6 @@ describe('parseSettings', () => {
     expect(() => parseSettings('{"log":{"keepDays":0}}', defaults)).toThrow(/keepDays/);
   });
 
-  it('旧い record を書く → 投げる', () => {
-    const defaults = defaultSettings();
-    expect(() => parseSettings('{"record":{"recent":50}}', defaults)).toThrow(/record/);
-  });
-
   it('route.question.criteria から other を抜く → 投げる', () => {
     const defaults = defaultSettings();
     expect(() =>

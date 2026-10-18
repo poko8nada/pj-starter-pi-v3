@@ -385,10 +385,10 @@ describe('register', () => {
     const dayMs = 86400000;
     const now = Date.now();
     const oldFile = jstDayName(now - 2 * dayMs);
-    const recentFile = jstDayName(now - dayMs);
+    const keptFile = jstDayName(now - dayMs);
     const todayFile = jstDayName(now);
     writeFileSync(join(logDir, oldFile), 'dummy\n');
-    writeFileSync(join(logDir, recentFile), 'dummy\n');
+    writeFileSync(join(logDir, keptFile), 'dummy\n');
     writeFileSync(join(logDir, todayFile), 'dummy\n');
     const fake = fakePi();
     register(fake.api, { cwd });
@@ -397,7 +397,7 @@ describe('register', () => {
       fakeCtx(cwd, answeringRegistry(classifierModel(0)), []),
     );
     expect(existsSync(join(logDir, oldFile))).toBe(false);
-    expect(existsSync(join(logDir, recentFile))).toBe(true);
+    expect(existsSync(join(logDir, keptFile))).toBe(true);
     expect(existsSync(join(logDir, todayFile))).toBe(true);
   });
 });
