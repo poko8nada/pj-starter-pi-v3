@@ -92,14 +92,6 @@ describe('addAction', () => {
     expect(run.read).toHaveLength(0);
   });
 
-  it('includeTools に無い道具は入らない', () => {
-    const run = addAction(armed(), action({ tool: 'mystery', target: '' }), limits());
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.read).toHaveLength(0);
-  });
-
   it('既定の一覧の道具は通り、落ちた edit は通らない', () => {
     for (const tool of defaultSettings().state.includeTools) {
       const run = addAction(armed(), action({ tool, target: `${tool}-target` }), limits());

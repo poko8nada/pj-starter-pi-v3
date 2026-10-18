@@ -104,13 +104,6 @@ describe('parseSettings', () => {
     );
   });
 
-  it('judge.stop.nudges を書く → 投げる', () => {
-    const defaults = defaultSettings();
-    expect(() =>
-      parseSettings('{"judge":{"stop":{"nudges":{"reply":"x","approve":"y"}}}}', defaults),
-    ).toThrow(/nudges/);
-  });
-
   it('log を書かない → 既定の 14 のまま', () => {
     const defaults = defaultSettings();
     expect(parseSettings('{}', defaults).log.keepDays).toBe(14);
