@@ -42,7 +42,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
   - `Status` — `accepted` or `rejected`. A rejected entry carries its reason on the same line, in parentheses.
   - `Adopted` — the shape that was taken. It stays empty for a rejected entry.
   - `Options` — every option weighed, each with the reason it was not taken. A rejected entry lists the options the same way, because none of them was taken.
-- `Research & Trial` — the facts that were measured, and the trials that were run. The record is the ADR's, not the definition's.
+- `Research & Trial` — the facts the decision rests on. The record is the ADR's, not the definition's.
 - `Definition Change` — the lines of `DEFINITION.md` that move, and the last thing the entry leaves.
 
 ## Definition Change

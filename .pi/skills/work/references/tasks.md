@@ -1,6 +1,6 @@
 # Texts handed to subagents
 
-A subagent does not read this skill. What it knows is the task and the plan md, so the task carries the rules.
+A subagent does not read this skill. What it knows is the task, so the task carries the rules.
 
 ## Slices (a `code` subagent)
 

@@ -47,7 +47,7 @@ Where each answer comes from:
 
 ### 4. Stop
 
-- the work stops here: the owner opens the cycle, and the ADR decides
+- the work stops here: the candidates are on the table
 
 ## The end
 

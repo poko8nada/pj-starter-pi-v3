@@ -7,7 +7,8 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ```
 Answer the question the task carries, and nothing else.
 The type answers its own question:
-- the official information, the source — can it be built here, and does it fit the use
+- the official information — can it be built here, and does it fit the use
+- the source — can it be built here, and does it fit the use
 - the shape it is actually used in — how it is held up where it is already done
 Keep the source of each fact.
 Report the facts. A question you could not answer is a fact too: say what it is holding up.
