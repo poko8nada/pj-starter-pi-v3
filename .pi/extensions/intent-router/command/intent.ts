@@ -54,7 +54,7 @@ export function parseIntent(args: string, settings: Settings): IntentCommand {
   if (head === 'last') {
     const raw = parts[1];
     if (raw === undefined || raw === '') {
-      return { kind: 'last', count: settings.record.recent };
+      return { kind: 'last', count: settings.log.keepDays };
     }
     const count = Number(raw);
     if (!Number.isInteger(count) || count < 1) {

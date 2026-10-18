@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
@@ -12,6 +12,14 @@ type AnyHandler = (event: unknown, ctx: unknown) => Promise<unknown>;
 
 function logDirOf(cwd: string): string {
   return join(cwd, '.pi/extensions/intent-router/logs');
+}
+
+function jstDayName(time: number): string {
+  const jst = new Date(time + 9 * 60 * 60 * 1000);
+  const year = jst.getUTCFullYear();
+  const month = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(jst.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}.jsonl`;
 }
 
 function fakePi(): {
@@ -367,5 +375,29 @@ describe('register', () => {
     expect(readRecords(cwd)[1]?.guide).toBe(
       defaultSettings().route.guides.approve.split('{prompt}').join('hello'),
     );
+  });
+
+  it('セッションの始まりで、keepDays より古い日付のファイルだけが消える', async () => {
+    const cwd = tmpDir();
+    writeSettings(cwd, JSON.stringify({ log: { keepDays: 1 } }));
+    const logDir = logDirOf(cwd);
+    mkdirSync(logDir, { recursive: true });
+    const dayMs = 86400000;
+    const now = Date.now();
+    const oldFile = jstDayName(now - 2 * dayMs);
+    const recentFile = jstDayName(now - dayMs);
+    const todayFile = jstDayName(now);
+    writeFileSync(join(logDir, oldFile), 'dummy\n');
+    writeFileSync(join(logDir, recentFile), 'dummy\n');
+    writeFileSync(join(logDir, todayFile), 'dummy\n');
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    await fake.handlers.get('session_start')?.(
+      {},
+      fakeCtx(cwd, answeringRegistry(classifierModel(0)), []),
+    );
+    expect(existsSync(join(logDir, oldFile))).toBe(false);
+    expect(existsSync(join(logDir, recentFile))).toBe(true);
+    expect(existsSync(join(logDir, todayFile))).toBe(true);
   });
 });

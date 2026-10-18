@@ -52,11 +52,11 @@ Any other argument prints the usage instead of throwing.
 | `state.maxActions`           | `12`                                                                                                                                                                                        |
 | `state.maxStateChars`        | `24000`                                                                                                                                                                                     |
 | `state.includeTools`         | `read`, `write`, `quick_edit`, `target_edit`, `bash`, `grep`, `web_search`, `fetch_content`, `source_check`, `get_search_content`, `codemode`, `consult_run`, `consult_subagents` (default) |
-| `record.recent`              | `50`                                                                                                                                                                                        |
+| `log.keepDays`               | `14`                                                                                                                                                                                        |
 
 ## Record
 
-Every ask lands in `logs/recent.json` as JSONL (one line per entry), which keeps only the latest `record.recent` lines (overwritten, never appended; empty and unreadable lines are skipped). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`related` / `answerable`, judge only), the `unrelated`, the `nudge`, whether it was injected (`fired`), the `state_chars` (the passed state as JSON length, after cutting), and whether the state was cut (`truncated`). `/intent last` reads it back.
+Every ask is appended to `logs/<YYYY-MM-DD>.jsonl` as JSONL (one line per entry, never cut short; the date follows JST). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`related` / `answerable`, judge only), the `unrelated`, the `nudge`, whether it was injected (`fired`), the `state_chars` (the passed state as JSON length, after cutting), and whether the state was cut (`truncated`). At `session_start` the router deletes files older than `log.keepDays` days (by file name). `/intent last` reads it back.
 
 ## The code
 
@@ -71,7 +71,7 @@ judge/hook.ts       turn_end: asks related/answerable at once, injects the nudge
 state/run.ts        one prompt's run: armed/idle, read/related actions, unrelated, nudges
 state/payload.ts    builds the classifier state (owner_text, agent_text, read/related)
 command/intent.ts   /intent: show, on, off, set, last
-record/recent.ts    the latest records in logs/recent.json
+record/log.ts       one JSONL file per day in logs/<YYYY-MM-DD>.jsonl
 settings/schema.ts  the defaults and the partial override (unknown keys and out-of-range numbers throw)
 settings/read.ts    reads settings.json (fresh on every call)
 settings.json       the override on top of the defaults

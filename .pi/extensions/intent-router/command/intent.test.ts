@@ -149,7 +149,7 @@ describe('parseIntent', () => {
   it('/intent last → last（既定の数）', () => {
     expect(parseIntent('last', defaultSettings())).toMatchObject({
       kind: 'last',
-      count: defaultSettings().record.recent,
+      count: defaultSettings().log.keepDays,
     });
   });
 
