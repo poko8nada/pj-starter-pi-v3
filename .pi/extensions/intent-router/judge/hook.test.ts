@@ -306,9 +306,9 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(0);
   });
 
-  it('useful の confidence が 0.89 → 判断に使わず wait', async () => {
+  it('useful の confidence が 0.79 → 判断に使わず wait', async () => {
     const settings = defaultSettings();
-    const low = batchAnswered(choiceAnswer('no', 0.89), choiceAnswer('no', 0.95));
+    const low = batchAnswered(choiceAnswer('no', 0.79), choiceAnswer('no', 0.95));
     const { handler, run, requests, file } = wired(settings, [low], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();

@@ -329,8 +329,8 @@ describe('register', () => {
             expect: {
               type: 'choice',
               choice: 'approve',
-              probabilities: { approve: 0.85 },
-              confidence: 0.85,
+              probabilities: { approve: 0.75 },
+              confidence: 0.75,
             },
           },
           usage: usage(),
@@ -346,7 +346,7 @@ describe('register', () => {
     if (intentHandler === undefined) {
       throw new Error('intent command was not registered');
     }
-    intentHandler('set route.thresholds.approve 0.8', { ui: { notify: () => {} } });
+    intentHandler('set route.thresholds.approve 0.7', { ui: { notify: () => {} } });
     await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
     expect(readRecords(cwd)).toHaveLength(2);
     expect(readRecords(cwd)[1]).toMatchObject({ hook: 'route', choice: 'approve' });

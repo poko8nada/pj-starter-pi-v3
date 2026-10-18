@@ -3,12 +3,12 @@ import { choicesOf, JUDGE_QUESTIONS, ROUTE_QUESTION } from '../ask/questions.ts'
 import { defaultSettings, parseSettings } from './schema.ts';
 
 describe('defaultSettings', () => {
-  it('route.thresholds が reply 0.8 / approve 0.9', () => {
-    expect(defaultSettings().route.thresholds).toEqual({ reply: 0.8, approve: 0.9 });
+  it('route.thresholds が reply 0.8 / approve 0.8', () => {
+    expect(defaultSettings().route.thresholds).toEqual({ reply: 0.8, approve: 0.8 });
   });
 
-  it('judge.threshold が 0.9', () => {
-    expect(defaultSettings().judge.threshold).toBe(0.9);
+  it('judge.threshold が 0.8', () => {
+    expect(defaultSettings().judge.threshold).toBe(0.8);
   });
 
   it('第一候補が opencode/jev-1.13-free', () => {

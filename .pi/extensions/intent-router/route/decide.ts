@@ -18,7 +18,7 @@ function toChoice(choice: string): Choice | undefined {
   return undefined;
 }
 
-/** 閾値は選択肢ごと。`reply` 0.8、`approve` 0.9、`other` は idle。閾値は `>=` */
+/** 閾値は選択肢ごと。`reply` 0.8、`approve` 0.8、`other` は idle。閾値は `>=` */
 export function decideRoute(answer: Answer, settings: Settings): RouteDecision {
   if (answer.type !== 'choice') {
     return { kind: 'skip', reason: 'expected a choice answer' };

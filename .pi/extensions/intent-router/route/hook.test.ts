@@ -168,9 +168,9 @@ describe('registerRoute', () => {
     );
   });
 
-  it('approve 0.85 → idle（0.9 に届かない）', async () => {
+  it('approve 0.75 → idle（0.8 に届かない）', async () => {
     const settings = defaultSettings();
-    const { handler, run, file } = wired(settings, answeredOutcome('approve', 0.85), 'live');
+    const { handler, run, file } = wired(settings, answeredOutcome('approve', 0.75), 'live');
     const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');

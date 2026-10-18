@@ -62,8 +62,8 @@ describe('decideJudge', () => {
     });
   });
 
-  it('useful の confidence が 0.89 → 判断に使わず wait', () => {
-    expect(decideJudge(answers('no', 0.89, 'no', 0.95), defaultSettings())).toMatchObject({
+  it('useful の confidence が 0.79 → 判断に使わず wait', () => {
+    expect(decideJudge(answers('no', 0.79, 'no', 0.95), defaultSettings())).toMatchObject({
       kind: 'wait',
     });
   });
