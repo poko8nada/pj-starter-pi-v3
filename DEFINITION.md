@@ -34,7 +34,7 @@
 - usage-readme: owner が、このスターターの使い方を読むことができる
 - propose-skill: エージェントが、プロジェクトの状態から次の議題を提案できる
 - brief-skill: エージェントが、サイクルの要件を調べ、詰めて、ADR に渡せる
-- adr-skill: エージェントまたは owner が、決めるべきことを調べ、決めて記録できる
+- adr-skill: エージェントまたは owner が、決めるべきことを決めて記録できる
 - design-skill: エージェントが、サイクルを plan に切り、どこで走らせるかを決められる
 - plan-skill: エージェントが、1 plan 分の作業の形と順序を決めて書ける
 - work-skill: エージェントが、plan を 1 つずつ片付けられる
