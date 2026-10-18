@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
@@ -9,7 +9,7 @@ import {
   type CommandCtx,
   type CommandPiPort,
 } from './intent.ts';
-import { createRecent } from '../record/recent.ts';
+import { append, type IntentRecord } from '../record/log.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { readSettings } from '../settings/read.ts';
 import { arm, idleRun, type FlagsPort, type Mode, type Run, type RunPort } from '../state/run.ts';
@@ -67,9 +67,56 @@ function fakeCtx(): CommandCtx & { readonly messages: string[] } {
   };
 }
 
+function readAllRecords(logDir: string): IntentRecord[] {
+  let names: string[];
+  try {
+    names = readdirSync(logDir);
+  } catch {
+    return [];
+  }
+  names.sort();
+  const out: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
+    }
+    let text: string;
+    try {
+      text = readFileSync(join(logDir, name), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+          out.push(parsed as IntentRecord);
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  return out;
+}
+
 function wired(dir: string, mode: Mode = 'shadow') {
-  const file = join(dir, 'recent.json');
-  const recent = createRecent(50, file);
+  const file = join(dir, 'logs');
+  const recent = {
+    add: (record: IntentRecord): void => {
+      append(record, file);
+    },
+    tail: (count: number): readonly IntentRecord[] => {
+      const all = readAllRecords(file);
+      const n = Math.max(0, Math.floor(count));
+      return n >= all.length ? all : all.slice(all.length - n);
+    },
+  };
   const flags = fakeFlags(mode);
   const run = fakeRun(
     arm({
@@ -148,39 +195,12 @@ describe('registerCommand', () => {
 
   it('/intent last → 直近の記録を返す', () => {
     const dir = tmpDir();
-    const { handler } = wired(dir);
-    const recent = createRecent(50, join(dir, 'recent.json'));
-    recent.add({
-      at: '2026-10-20T00:00:00.000Z',
-      hook: 'route',
-      owner_now: 'hello',
-      agent_prev: '',
-      choice: 'reply',
-      confidence: 0.9,
-      threshold: 0.8,
-      guide: 'guide text',
-      verdicts: null,
-      unrelated: null,
-      nudge: null,
-      fired: true,
-      state_chars: 10,
-      truncated: false,
-    });
-    const ctx = fakeCtx();
-    handler('last', ctx);
-    expect(ctx.messages).toHaveLength(1);
-    expect(ctx.messages[0]).toContain('hello');
-  });
-
-  it('/intent last 3 → 3 件だけ返す', () => {
-    const dir = tmpDir();
-    const { handler } = wired(dir);
-    const recent = createRecent(50, join(dir, 'recent.json'));
-    for (let index = 0; index < 5; index += 1) {
-      recent.add({
-        at: `2026-10-20T00:00:0${index}.000Z`,
+    const { handler, file } = wired(dir);
+    append(
+      {
+        at: '2026-10-20T00:00:00.000Z',
         hook: 'route',
-        owner_now: `hello${index}`,
+        owner_now: 'hello',
         agent_prev: '',
         choice: 'reply',
         confidence: 0.9,
@@ -192,7 +212,38 @@ describe('registerCommand', () => {
         fired: true,
         state_chars: 10,
         truncated: false,
-      });
+      },
+      file,
+    );
+    const ctx = fakeCtx();
+    handler('last', ctx);
+    expect(ctx.messages).toHaveLength(1);
+    expect(ctx.messages[0]).toContain('hello');
+  });
+
+  it('/intent last 3 → 3 件だけ返す', () => {
+    const dir = tmpDir();
+    const { handler, file } = wired(dir);
+    for (let index = 0; index < 5; index += 1) {
+      append(
+        {
+          at: `2026-10-20T00:00:0${index}.000Z`,
+          hook: 'route',
+          owner_now: `hello${index}`,
+          agent_prev: '',
+          choice: 'reply',
+          confidence: 0.9,
+          threshold: 0.8,
+          guide: 'guide text',
+          verdicts: null,
+          unrelated: null,
+          nudge: null,
+          fired: true,
+          state_chars: 10,
+          truncated: false,
+        },
+        file,
+      );
     }
     const ctx = fakeCtx();
     handler('last 3', ctx);

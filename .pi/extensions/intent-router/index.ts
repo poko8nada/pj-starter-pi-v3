@@ -3,16 +3,17 @@
  *
  * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
  * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
- * 記録は `logs/recent.json` に直近だけ持つ。
+ * 記録は `logs/<YYYY-MM-DD>.jsonl` に日ごとに持つ。
  */
 
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts';
 import { registerCommand } from './command/intent.ts';
 import { registerJudge } from './judge/hook.ts';
 import { registerRoute } from './route/hook.ts';
-import { createRecent, type IntentRecord } from './record/recent.ts';
+import { append, type IntentRecord } from './record/log.ts';
 import { type Settings } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import { lastAssistantText } from './state/payload.ts';
@@ -109,6 +110,45 @@ function initialModeOf(settings: Settings): Mode {
   return settings.route.shadow || settings.judge.shadow ? 'shadow' : 'live';
 }
 
+function tailLog(dir: string, count: number): readonly IntentRecord[] {
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  names.sort();
+  const all: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
+    }
+    let text: string;
+    try {
+      text = readFileSync(join(dir, name), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+          all.push(parsed as IntentRecord);
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  const n = Math.max(0, Math.floor(count));
+  return n >= all.length ? all : all.slice(all.length - n);
+}
+
 function wiringFor(cwd: string, settingsDir: string) {
   const initial = readSettings(settingsDir);
   let current: Settings = initial;
@@ -118,12 +158,16 @@ function wiringFor(cwd: string, settingsDir: string) {
   };
   const state = createState(initialModeOf(initial));
   const cell = createLazyAsk(settingsDir);
-  const recent = createRecent(
-    initial.record.recent,
-    join(cwd, '.pi/extensions/intent-router/logs/recent.json'),
-  );
+  const logDir = join(cwd, '.pi/extensions/intent-router/logs');
   const log = (record: IntentRecord): void => {
-    recent.add(record);
+    append(record, logDir);
+  };
+  // `last` が残る間のつなぎ。日ごとの JSONL を古い順に読んで直近を返す
+  const recent = {
+    add: (record: IntentRecord): void => {
+      append(record, logDir);
+    },
+    tail: (count: number): readonly IntentRecord[] => tailLog(logDir, count),
   };
   const routeDeps = {
     get settings(): Settings {

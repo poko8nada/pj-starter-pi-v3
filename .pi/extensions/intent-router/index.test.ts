@@ -1,17 +1,17 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../test/tmp.ts';
 import type { RegistryModel } from './ask/ask.ts';
 import { register } from './index.ts';
-import type { IntentRecord } from './record/recent.ts';
+import type { IntentRecord } from './record/log.ts';
 import { defaultSettings } from './settings/schema.ts';
 
 type AnyHandler = (event: unknown, ctx: unknown) => Promise<unknown>;
 
-function recentFile(cwd: string): string {
-  return join(cwd, '.pi/extensions/intent-router/logs/recent.json');
+function logDirOf(cwd: string): string {
+  return join(cwd, '.pi/extensions/intent-router/logs');
 }
 
 function fakePi(): {
@@ -141,12 +141,27 @@ function isRecord(value: unknown): value is IntentRecord {
 }
 
 function readRecords(cwd: string): IntentRecord[] {
+  let names: string[];
   try {
-    const text = readFileSync(recentFile(cwd), 'utf8');
-    if (text.trim() === '') {
-      return [];
+    names = readdirSync(logDirOf(cwd));
+  } catch {
+    return [];
+  }
+  names.sort();
+  const out: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
     }
-    const out: IntentRecord[] = [];
+    let text: string;
+    try {
+      text = readFileSync(join(logDirOf(cwd), name), 'utf8');
+    } catch {
+      continue;
+    }
+    if (text.trim() === '') {
+      continue;
+    }
     for (const line of text.split('\n')) {
       if (line.trim() === '') {
         continue;
@@ -160,10 +175,8 @@ function readRecords(cwd: string): IntentRecord[] {
         continue;
       }
     }
-    return out;
-  } catch {
-    return [];
   }
+  return out;
 }
 
 function readTurn(): {

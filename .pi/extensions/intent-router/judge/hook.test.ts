@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import type { Answer, BatchAsk, BatchAskOutcome } from '../ask/ask.ts';
-import { createRecent, type IntentRecord } from '../record/recent.ts';
+import { append, type IntentRecord } from '../record/log.ts';
 import { defaultSettings, type Settings } from '../settings/schema.ts';
 import {
   addAction,
@@ -187,8 +187,7 @@ function wired(
   readonly file: string;
 } {
   const dir = tmpDir();
-  const file = join(dir, 'recent.json');
-  const recent = createRecent(50, file);
+  const file = join(dir, 'logs');
   const { askBatch, requests } = fakeAskBatch(outcomes);
   const run = fakeRun(initial);
   const { pi, handler } = fakePi();
@@ -198,38 +197,51 @@ function wired(
     run,
     flags: fakeFlags(mode),
     log: (record: IntentRecord) => {
-      recent.add(record);
+      append(record, file);
     },
   });
   return { handler: handler(), run, requests, file };
 }
 
 function readRecords(file: string): IntentRecord[] {
+  let names: string[];
   try {
-    const text = readFileSync(file, 'utf8');
-    if (text.trim() === '') {
-      return [];
+    names = readdirSync(file);
+  } catch {
+    return [];
+  }
+  names.sort();
+  const out: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
     }
-    const out: IntentRecord[] = [];
+    let text: string;
+    try {
+      text = readFileSync(join(file, name), 'utf8');
+    } catch {
+      continue;
+    }
+    if (text.trim() === '') {
+      continue;
+    }
     for (const line of text.split('\n')) {
       if (line.trim() === '') {
         continue;
       }
       try {
         const parsed: unknown = JSON.parse(line);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
         if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
           out.push(parsed as IntentRecord);
         }
       } catch {
         continue;
       }
     }
-    return out;
-  } catch {
-    return [];
   }
+  return out;
 }
 
 describe('registerJudge', () => {

@@ -15,7 +15,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { defaultSettings, parseSettings, type Settings } from '../settings/schema.ts';
 import { idleRun, type FlagsPort, type Mode, type RunPort } from '../state/run.ts';
-import type { IntentRecord } from '../record/recent.ts';
+import type { IntentRecord } from '../record/log.ts';
 
 export type { Mode };
 

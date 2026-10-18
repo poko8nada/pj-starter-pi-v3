@@ -8,7 +8,7 @@
 
 import type { Ask, AskOutcome } from '../ask/ask.ts';
 import type { Choice } from '../ask/questions.ts';
-import type { IntentRecord } from '../record/recent.ts';
+import type { IntentRecord } from '../record/log.ts';
 import type { Settings } from '../settings/schema.ts';
 import { arm, idleRun, type FlagsPort, type JsonObject, type RunPort } from '../state/run.ts';
 import { routePayload } from '../state/payload.ts';
