@@ -488,16 +488,10 @@ export function createRecent(
 
 ### Round 2
 
-- Stale:
-  - README の文言は either answer is no に直り judge の OR 条件と一致する。
-  - ask のコメントは state/payload.ts を指し state.ts への残存参照は無い。
-- Unlisted: fixed 行の範囲では新たな該当は無い。
-- Gaps:
-  - 初期 mode の検査 3 件があり両方 false なら live、片方 shadow なら shadow、ファイル無しなら shadow を確かめる。
-  - too soon の検査があり lastJudgedAt より前なら wait、同時刻なら due になる。minIntervalMs は現行に無く逆行 guard の説明はコードと合う。
-- Unproven:
-  - guideText は文面差し替えで変わる検査があり固定文でも緑になる状態は解消した。
-  - nudgeText も同様に文面差し替えの検査があり固定文でも緑になる状態は解消した。
+- Stale: なし — README の文言は either answer is no に直り judge の OR 条件と一致し、ask のコメントは state/payload.ts を指し state.ts への残存参照は無い。
+- Unlisted: なし — fixed 行の範囲では新たな該当は無い。
+- Gaps: なし — 初期 mode の検査 3 件（両方 false なら live、片方 shadow なら shadow、ファイル無しなら shadow）があり、too soon は lastJudgedAt より前なら wait、同時刻なら due になる。minIntervalMs は現行に無く、逆行 guard という説明はコードと合う。
+- Unproven: なし — guideText と nudgeText とも、文面差し替えで出る文が変わる検査があり、固定文でも緑になる状態は解消した。
 - Doubts: なし。
 
 ## Acceptance
