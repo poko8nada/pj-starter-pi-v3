@@ -1,0 +1,265 @@
+# PLAN `judge-questions`
+
+## Files
+
+```text
+.pi/extensions/intent-router/
+  ask/
+    questions.ts             update
+  settings/
+    schema.ts                update
+    schema.test.ts
+  settings.json              update
+  state/
+    run.ts                   update
+    run.test.ts
+    payload.ts               update
+    payload.test.ts
+  judge/
+    decide.ts                update
+    decide.test.ts
+    hook.ts                  update
+    hook.test.ts
+  record/
+    recent.ts                update
+  route/
+    hook.ts
+    hook.test.ts
+    decide.test.ts
+  command/
+    intent.ts
+    intent.test.ts
+  index.ts                   update
+  index.test.ts
+  README.md                  update
+README.md                    update
+README.ja.md                 update
+```
+
+## Slices
+
+## 1.state を 4 つに分ける
+
+### Types
+
+```ts
+/** state/run.ts — latest / earlier / streak を置き換える */
+readonly read: readonly Action[];     // まだ判定していない、読み込んだ物
+readonly related: readonly Action[];  // 関係あると判断して積んだ物
+readonly unrelated: number;           // この往復で「関係ない」と判定された回数
+
+/** state/payload.ts */
+export interface JudgePayload {
+  readonly owner_text: string;
+  readonly agent_text: string;
+  readonly read: readonly JsonObject[];
+  readonly related: readonly JsonObject[];
+}
+
+/** 画像を落とし、空白の連なりを 1 つに詰めて、字数で切る */
+export function minimizeText(text: string, limit: number): string;
+```
+
+### Steps
+
+1. `.pi/extensions/intent-router/state/run.ts`:
+   - `latest` → `read`、`earlier` → `related`、`streak` → `unrelated` に置き換える（`arm` の初期値と `noteTurn` / `noteVerdict` も合わせる）
+2. `.pi/extensions/intent-router/state/payload.ts`:
+   - `judgePayload` が `owner_text` / `agent_text` / `read` / `related` を組む。`minimizeText` を足す
+3. `.pi/extensions/intent-router/judge/hook.ts`:
+   - 新しい欄に合わせて呼び出しを直す（判定の中身はまだ変えない）
+4. `.pi/extensions/intent-router/state/run.test.ts` と `.pi/extensions/intent-router/state/payload.test.ts`:
+   - 新しい欄のケースに置き換える
+
+### Verify:
+
+- `test`: `.pi/extensions/intent-router/state/run.test.ts` と `.pi/extensions/intent-router/state/payload.test.ts`、`pnpm vitest run .pi/extensions/intent-router/state`
+  - (happy) `read` に足した action が payload の `read` に出る
+  - (happy) `related` の action が payload の `related` に出る
+  - (happy) 「関係ない」の往復で `unrelated` が 1 増え、次の「関係ある」の往復でも 0 に戻らない（往復の中で数える）
+  - (happy) `minimizeText('a\n\n b   c', 100)` → `'a b c'`（改行と連続した空白が 1 つの空白に詰まる）
+  - (happy) `minimizeText('x'.repeat(50), 10)` → 10 字（詰めたあとに切る）
+  - (happy) `minimizeText('see data:image/png;base64,iVBORw0KGgo=', 100)` → `'see [image omitted]'`
+  - (boundary values) `state.textChars` より長い owner の発言 → `owner_text` がその字数になる
+  - (happy) 直前のエージェント発言 → `agent_text` に入り、`state.assistantChars` で切れる
+  - (happy) 道具の呼び出しブロックを含む発言 → `agent_text` に呼び出しの中身が出ない（平文だけ）
+  - (empty) `read` も `related` も空 → payload の 2 つは空の配列
+  - _no case_: `state.textChars` の値 — plan が決めた値なので、ケースにならない
+
+## 2.問いと設定を新しい 2 問にする
+
+### Types
+
+```ts
+/** ask/questions.ts */
+export const JUDGE_QUESTIONS = { related: 'related', answerable: 'answerable' } as const;
+
+/** settings/schema.ts — judge と state の形 */
+readonly judge: {
+  readonly shadow: boolean;
+  readonly minTurns: number;      // 2
+  readonly everyNTurns: number;   // 1
+  readonly maxJudgements: number; // 12
+  readonly threshold: number;     // 0.8
+  readonly questions: {
+    readonly related: Question<'yes' | 'no'>;
+    readonly answerable: Question<'yes' | 'no'>;
+  };
+  readonly stop: {
+    readonly unrelated: number;   // 2
+    readonly maxNudges: number;   // 1
+    readonly nudge: string;
+  };
+};
+
+/** record/recent.ts */
+readonly verdicts: { readonly related: Verdict; readonly answerable: Verdict } | null;
+```
+
+### Steps
+
+1. `.pi/extensions/intent-router/settings/schema.ts`:
+   - `judge.questions` を `related` / `answerable` に、`judge.stop` を `unrelated` / `maxNudges` / `nudge` にする（`consecutive` と `nudges.reply` / `nudges.approve` は消える）。`judge.threshold` と `route.thresholds` を 0.8 に。`state.textChars` を 4000、`state.assistantChars` を 1000、`state.maxStateChars` を 24000 にする
+2. `.pi/extensions/intent-router/settings.json`:
+   - 同じ値を書く
+3. `.pi/extensions/intent-router/ask/questions.ts`:
+   - `JUDGE_QUESTIONS` を `related` と `answerable` に
+4. `.pi/extensions/intent-router/record/recent.ts`:
+   - `verdicts` の鍵を `related` / `answerable` に
+5. `.pi/extensions/intent-router/settings/schema.test.ts`:
+   - 新しい鍵のケースに置き換える
+6. `.pi/extensions/intent-router/README.md`:
+   - 設定の表と `Record` の節を合わせる
+7. `README.md` と `README.ja.md`:
+   - 途中の判定の説明を「関係あるか / 答えられるか」に
+8. `.pi/extensions/intent-router/command/intent.ts` と `.pi/extensions/intent-router/command/intent.test.ts`:
+   - 設定の鍵を出す所を合わせる（出していなければ触らない）
+
+### Verify:
+
+- `test`: `.pi/extensions/intent-router/settings/schema.test.ts`、`pnpm vitest run .pi/extensions/intent-router/settings .pi/extensions/intent-router/record .pi/extensions/intent-router/command`
+  - (happy) 既定の `judge.questions` の鍵が `related` と `answerable` の 2 つ
+  - (happy) 既定の `judge.stop` が `unrelated: 2`、`maxNudges: 1`、文面の `nudge` を持つ
+  - (happy) `judge.questions.related` だけ書く → `answerable` は既定のまま（部分上書き）
+  - (error) `judge.questions.related.criteria` から `no` を抜く → 投げる
+  - (boundary values) `judge.threshold` が 1.5 → 投げる
+  - (error) `judge.stop.consecutive` を書く → 投げる（旧形の残りが消えた）
+  - (error) `judge.stop.nudges` を書く → 投げる
+
+## 3.judge を reply だけで走らせ、促しの条件を変える
+
+### Types
+
+```ts
+/** judge/decide.ts */
+export interface JudgeAnswers {
+  readonly related: Answer;
+  readonly answerable: Answer;
+}
+
+export type JudgeDecision =
+  | { readonly kind: 'nudge'; readonly why: 'unrelated' | 'answerable'; readonly unrelated: number }
+  | { readonly kind: 'wait'; readonly reason: string; readonly unrelated: number };
+
+export function decideJudge(
+  answers: JudgeAnswers,
+  settings: Settings,
+  priorUnrelated: number,
+): JudgeDecision;
+```
+
+### Steps
+
+1. `.pi/extensions/intent-router/judge/decide.ts`:
+   - 促しの条件を「`related` が no で、`unrelated` が `stop.unrelated` に届いた」または「`answerable` が yes」にする。どちらも `threshold` を通った答えだけを数える。`due` に「`choice` が `reply` でなければ wait」を足す
+2. `.pi/extensions/intent-router/judge/hook.ts`:
+   - 2 問を `related` / `answerable` の名で 1 リクエストにまとめて聞く。`related` が yes ならその往復の `read` を `related` へ積み、no なら捨てて `unrelated` を 1 つ増やす。閾値を通らなかった往復は `read` を残して次の往復でまた聞く。促しの文は `stop.nudge` から読む
+3. `.pi/extensions/intent-router/judge/decide.test.ts` と `.pi/extensions/intent-router/judge/hook.test.ts`:
+   - 新しい条件のケースに置き換える
+4. `.pi/extensions/intent-router/route/hook.test.ts` と `.pi/extensions/intent-router/route/decide.test.ts`:
+   - 閾値 0.8 に合わせる（`approve` の境界のケース）
+5. `.pi/extensions/intent-router/index.ts` と `.pi/extensions/intent-router/index.test.ts`:
+   - 配線を合わせる
+
+### Verify:
+
+- `test`: `.pi/extensions/intent-router/judge/decide.test.ts` と `.pi/extensions/intent-router/judge/hook.test.ts`、`pnpm vitest run .pi/extensions/intent-router/judge .pi/extensions/intent-router/route .pi/extensions/intent-router/index.test.ts`
+  - (happy) `related=yes` `answerable=no`（どちらも閾値以上）→ 促しは出ない
+  - (happy) `answerable=yes`（閾値以上）→ 促しが 1 回出る（`why: 'answerable'`）
+  - (boundary values) `related=no` が 1 往復目 → 出ない。2 往復目 → 促しが出る（`why: 'unrelated'`）
+  - (boundary values) `related=no` と `related=yes` が交互 → 往復の中の合計で数えるので、2 回目の no で出る
+  - (boundary values) `related` の confidence が閾値未満 → `unrelated` は増えず、`read` は残る
+  - (boundary values) `answerable` の confidence が閾値未満 → 促しは出ない
+  - (happy) 1 回の ask の問いの鍵が `related` と `answerable` の 2 つ（1 リクエストにまとまる）
+  - (happy) `related=yes` の往復のあと、次の payload の `related` にその action が入る
+  - (happy) `approve` の往復 → 2 段目は走らない
+  - (empty) `read` が空の往復 → 何も聞かない
+  - (happy) 促しの文を差し替えると出す文も変わる。`reply` と `approve` で同じ文を使う（`choice` で文が変わらない）
+  - (boundary values) `route` の `approve` が 0.85 → act、0.75 → idle（閾値が 0.8 になった）
+  - (happy) `index` の配線で judge の往復を 1 回通すと、記録の 1 件に `related` と `answerable` の鍵が入る
+
+## 4.統合: 関係ある記録が積まれ、答えられるのときに促しが出る
+
+### Types
+
+```ts
+なし;
+```
+
+### Steps
+
+1. `.pi/extensions/intent-router/judge/hook.test.ts`:
+   - 何往復か続ける筋書きの検査を足す（`read` が積まれ、促しが出て、記録が 1 行ずつ残る）
+
+### Verify:
+
+- `test`: `.pi/extensions/intent-router/judge/hook.test.ts`、`pnpm vitest run .pi/extensions/intent-router`
+  - (happy) 1 往復目の `related` が 2 往復目の payload の `related` に出る
+  - (happy) 2 往復目で `answerable=yes` → 促しが 1 回だけ出て、記録の `nudge` に入る（shadow では `fired` は false）
+  - (happy) 3 往復で `related=no` / `related=yes` / `related=no` → 合計 2 回で促しが出る
+  - (boundary values) そのあと往復を重ねても促しは出ない（`maxNudges` が 1）
+  - (empty) `approve` の往復 → 2 段目が走らず、記録も増えない
+  - (error) ask が 2 回続けて失敗 → 記録は残り、促しは出ない
+  - (empty) 道具を使わない往復 → 記録が増えず、何も聞かない
+
+## Notes
+
+### Slice 1: state を 4 つに分ける
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 2: 問いと設定を新しい 2 問にする
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 3: judge を reply だけで走らせ、促しの条件を変える
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 4: 統合: 関係ある記録が積まれ、答えられるのときに促しが出る
+
+- Findings:
+- Unplanned:
+- Commit:
+
+## Review
+
+### Round 1
+
+- Stale:
+- Unlisted:
+- Gaps:
+- Unproven:
+- Doubts:
+
+## Acceptance
+
+- Ran:
+- Findings:
+- Doubts:
