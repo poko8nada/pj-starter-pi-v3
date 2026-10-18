@@ -33,32 +33,34 @@ README.ja.md                update
    - 積み残しの出どころを書く。`close.md` の `Triage` の `proposed` と、`archive` の ADR の `rejected` である。
    - 新しい Unit の出どころを書く。`DEFINITION.md` の全行と `Who` の `Needs` である。
    - 棚卸しの仕方を書く。`DEFINITION.md` の全行を `definition/rules.md` の規則に照らす。
-   - 収束点を 4 つ書く。`brief` と同じである。
+   - 収束点を 4 つ書く。吟味された候補が揃う、`Context` が埋まる、`Options` が埋まる、決定が乗る事実が `Research & Trial` に書ける。
+   - 候補を出すだけで、決めないことを書く。決めるのは ADR である。
    - 各候補に、なぜ今か、どの Unit が動くか、根拠を添えると書く。
-   - 推奨を 1 つ添え、owner が選ぶか見送ると書く。
+   - 推奨を 1 つ添えると書く。どの候補でサイクルを起こすかは owner が決めると書く。
    - ファイルを作らないこと、`DEFINITION.md` も `cycles/` も書かないことを書く。
-   - 使う名前をハーネスが配る物に限ることを書く。この repo の中身の名前は出さない。
    - 独立したスキルとして読めるように書く。`brief` から写したことを読む者に書かない。
 
 ### Verify:
 
 - read: `review` サブエージェントが `.pi/skills/propose/SKILL.md` を読み、次の各ケースを報告する
+  - (happy) frontmatter を読む → `name: propose` である
+  - (happy) description を読む → 次に何をするかを聞かれた時で発火する形になっている
+  - (boundary values) description を読む → 2 文であり、サイクル開始の宣言では発火しないと読める
   - (happy) 冒頭を読む → ADR の前段であり、決めたことを ADR が書くと書かれている
   - (happy) 3 つの問いの節を読む → 積み残し、新しい Unit、棚卸しの 3 つが並んでいる
   - (happy) 同じ節を読む → 3 つを 1 回で回し、重さで分けないと書かれている
   - (happy) 手順の最初を読む → コードベースの探索が最初で、リサーチが並行と書かれている
-  - (happy) 手順を読む → リサーチは承認を取らないと書かれている
+  - (happy) 手順を読む → リサーチは承認を取らず、探索で範囲が決まると書かれている
+  - (happy) リサーチの型を読む → 公式情報、ソースコード、実際に使われている形の 3 つが書かれている
   - (happy) 出どころの節を読む → 積み残しの出どころが `proposed` と `rejected` と書かれている
   - (happy) 出どころの節を読む → 新しい Unit の出どころが `DEFINITION.md` と `Who` の `Needs` と書かれている
   - (happy) 出どころの節を読む → 棚卸しが `definition/rules.md` に照らすと書かれている
-  - (happy) 収束点の節を読む → 4 つが並び、`brief` と同じだと書かれている
+  - (happy) 収束点の節を読む → 吟味された候補が揃うところまでで、決めないと書かれている
   - (happy) 候補の節を読む → なぜ今か、どの Unit が動くか、根拠を添えると書かれている
-  - (happy) 候補の節を読む → 推奨を 1 つ添え、owner が選ぶか見送ると書かれている
+  - (happy) 候補の節を読む → 推奨を 1 つ添え、どの候補でサイクルを起こすかを owner が決めると書かれている
   - (happy) 書かないことの節を読む → ファイルを作らず、`DEFINITION.md` も `cycles/` も書かないと書かれている
-  - (happy) 名前の節を読む → ハーネスが配る名前に限ると書かれている
-  - (happy) 本文を通して読む → `brief` から写したという記述が無く、独立して読める
-  - (boundary values) description を読む → 2 文であり、サイクル開始の宣言では発火しないと読める
-  - (error) 本文の名前に目を通す → repo 固有の名前（スキル、拡張、検査の道具）が出てこない
+  - (happy) 本文を 1 枚で読む → どの規則も `brief` を参照せず、それだけで意味が通る
+  - (error) 本文に目を通す → この repo 固有の名前（スキル名、拡張、検査の道具）が出てこない
   - _no case_: 3 つの問いの順序 — 順序で結果が変わらない
 
 ## 2.統合: `propose` が ADR に渡せる状態で終わること
@@ -82,8 +84,9 @@ README.ja.md                update
 
 - look: owner が `.pi/skills/propose/SKILL.md` と `git diff DEFINITION.md README.md README.ja.md` を読み、答える
   - (happy) owner が本文を読む → `propose` の終わりが ADR の `Context` と `Options` と `Research & Trial` に収まる、と答える
-  - (empty) `git diff DEFINITION.md` を見る → 増えた行は 1 行で、削除も変更も無い
-  - (boundary values) `git diff README.md README.ja.md` を見る → 数が 7 になり、足した行が隣の行と同じ字下げと同じ区切りになっている
+  - (empty) `git diff DEFINITION.md` を見る → 増えた 1 行が ADR 022 の 02 の `Definition Change` と同じ文で、削除も変更も無い
+  - (boundary values) `git diff README.md` を見る → 数が 7 になり、`propose` の 1 行が増え、既存の行と同じ形になっている
+  - (boundary values) `git diff README.ja.md` を見る → 数が 7 になり、`propose` の 1 行が増え、既存の行と同じ形になっている
   - (error) 定義の行の書き方を `definition/rules.md` と照らす → `Who` の側から読め、2 語の名前になっている
   - _no case_: 実際のサイクルで提案が当たるか — 次のサイクルで分かる
 
