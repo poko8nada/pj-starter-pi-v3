@@ -10,15 +10,15 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 describe('readSettings', () => {
   it('settings.json が無い → 既定を返す', () => {
-    expect(readSettings(tmpDir(), defaultSettings())).toEqual(defaultSettings());
+    expect(readSettings(tmpDir())).toEqual(defaultSettings());
   });
 
   it('置いたファイルが読める → 既定と同じ値になる', () => {
-    const committed = readSettings(join(HERE, '..'), defaultSettings());
+    const committed = readSettings(join(HERE, '..'));
     expect(committed).toEqual(defaultSettings());
-    // ファイル自体が thresholds と classifier を既定と同じ値で持つことも見る
+    // ファイル自体が route.thresholds と classifier を既定と同じ値で持つことも見る
     const parsed: unknown = JSON.parse(readFileSync(join(HERE, '../settings.json'), 'utf8'));
-    expect(parsed).toMatchObject({ thresholds: defaultSettings().thresholds });
+    expect(parsed).toMatchObject({ route: { thresholds: defaultSettings().route.thresholds } });
     expect(parsed).toMatchObject({
       classifier: {
         models: [...defaultSettings().classifier.models],
@@ -27,9 +27,29 @@ describe('readSettings', () => {
     });
   });
 
+  it('ファイルを書き換えてからもう一度呼ぶ → 新しい値が返る', () => {
+    const dir = tmpDir();
+    writeFileSync(
+      join(dir, 'settings.json'),
+      JSON.stringify({ route: { thresholds: { approve: 0.9 } } }),
+    );
+    expect(readSettings(dir).route.thresholds.approve).toBe(0.9);
+    writeFileSync(
+      join(dir, 'settings.json'),
+      JSON.stringify({ route: { thresholds: { approve: 0.7 } } }),
+    );
+    expect(readSettings(dir).route.thresholds.approve).toBe(0.7);
+  });
+
+  it('知らないキーを書く → 投げる', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ unknownKey: 1 }));
+    expect(() => readSettings(dir)).toThrow(/unknownKey/);
+  });
+
   it('壊れた settings.json → 投げる', () => {
     const dir = tmpDir();
     writeFileSync(join(dir, 'settings.json'), '{');
-    expect(() => readSettings(dir, defaultSettings())).toThrow(/not valid JSON/);
+    expect(() => readSettings(dir)).toThrow(/not valid JSON/);
   });
 });

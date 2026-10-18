@@ -1,10 +1,22 @@
 /**
- * intent-router のラベルと classifier への質問文。
+ * intent-router の問い。頭は 1 問（`expect`）、途中は 2 問（`useful` / `new`）。
  *
- * ラベルは route の criteria のキーそのもの。片方だけ増やすとずれるので、
- * テストで一致を見る。
+ * 旧ラベル（`Label`）は段階移行のため残す。新しい判定は `Choice` を使う。
  */
 
+import type { Choice, Question } from '../settings/schema.ts';
+
+export type { Choice, Verdict } from '../settings/schema.ts';
+
+export const ROUTE_QUESTION = 'expect' as const;
+export const JUDGE_QUESTIONS = { useful: 'useful', new: 'new' } as const;
+
+export function choicesOf<K extends string>(question: Question<K>): readonly K[] {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- criteria のキーが K であることは呼び出し側が保証する
+  return Object.keys(question.criteria) as K[];
+}
+
+// 旧来のラベルと問い。ask の旧道と既存テストの移行が終わるまで残す。
 export type Label = 'question' | 'design' | 'verify' | 'permission' | 'chat' | 'unknown';
 
 export const LABELS: readonly Label[] = [
@@ -16,6 +28,8 @@ export const LABELS: readonly Label[] = [
   'unknown',
 ];
 
+export const CHOICES: readonly Choice[] = ['reply', 'approve', 'other'];
+
 /** pi の classifier が受ける choice の質問の形（`ClassifierContext.questions` の1件） */
 export interface ClassifierChoiceQuestion {
   readonly type: 'choice';
@@ -23,26 +37,12 @@ export interface ClassifierChoiceQuestion {
   readonly criteria: Record<string, string>;
 }
 
-/** pi の classifier が受ける score の質問の形 */
+/** pi の classifier が受ける score の質問の形（旧道。ask が内部に写しを持つ） */
 export interface ClassifierScoreQuestion {
   readonly type: 'score';
   readonly instructions: string;
   readonly criteria: string[];
 }
-
-export const ROUTE_QUESTION: ClassifierChoiceQuestion = {
-  type: 'choice',
-  instructions: 'Classify the owner message into exactly one intent label.',
-  criteria: {
-    question:
-      'Asks for an explanation, an answer, or information. The owner wants an answer, not an edit',
-    design: 'Asks for an opinion, a review, or a design judgement on a proposal, plan, or design',
-    verify: 'Asks to check, confirm, or verify a fact, behavior, or result',
-    permission: 'A permission request, a confirmation, or an approval gate',
-    chat: 'Small talk, a greeting, thanks, or other casual chat',
-    unknown: 'Anything else that fits none of the above',
-  },
-};
 
 export const JUDGE_QUESTION: ClassifierScoreQuestion = {
   type: 'score',

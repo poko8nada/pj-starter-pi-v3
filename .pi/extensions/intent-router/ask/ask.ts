@@ -7,7 +7,7 @@
  */
 
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { JUDGE_QUESTION, ROUTE_QUESTION } from './questions.ts';
+import { JUDGE_QUESTION } from './questions.ts';
 import type { ClassifierCandidate, Settings } from '../settings/schema.ts';
 import type { JsonObject, Usage } from '../state/run.ts';
 
@@ -204,6 +204,21 @@ type Attempt =
   | { readonly kind: 'error'; readonly reason: string }
   | { readonly kind: 'aborted' };
 
+/** 旧道の問い。新しい設定問いに移るまで ask が内部に持つ（questions.ts の旧 ROUTE_QUESTION の写し） */
+const LEGACY_ROUTE_QUESTION = {
+  type: 'choice',
+  instructions: 'Classify the owner message into exactly one intent label.',
+  criteria: {
+    question:
+      'Asks for an explanation, an answer, or information. The owner wants an answer, not an edit',
+    design: 'Asks for an opinion, a review, or a design judgement on a proposal, plan, or design',
+    verify: 'Asks to check, confirm, or verify a fact, behavior, or result',
+    permission: 'A permission request, a confirmation, or an approval gate',
+    chat: 'Small talk, a greeting, thanks, or other casual chat',
+    unknown: 'Anything else that fits none of the above',
+  },
+} as const;
+
 async function attemptModel(
   registry: Registry,
   request: AskRequest,
@@ -217,7 +232,8 @@ async function attemptModel(
     model,
     {
       state,
-      questions: request.kind === 'choice' ? { route: ROUTE_QUESTION } : { judge: JUDGE_QUESTION },
+      questions:
+        request.kind === 'choice' ? { route: LEGACY_ROUTE_QUESTION } : { judge: JUDGE_QUESTION },
     },
     { signal },
   );

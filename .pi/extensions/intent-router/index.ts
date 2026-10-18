@@ -2,7 +2,8 @@
  * intent-router の入口。設定を読み、run と flags を持ち、route → judge → command の順に登録する。
  *
  * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
- * 壊れていれば投げる（黙って既定で走らない）。`logs/` の置き場はここで決める。
+ * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
+ * `logs/` の置き場はここで決める。
  */
 
 import { isAbsolute, join } from 'node:path';
@@ -12,7 +13,7 @@ import { registerCommand } from './command/intent.ts';
 import { registerJudge } from './judge/hook.ts';
 import { registerRoute } from './route/hook.ts';
 import { append, prune, type LogRecord } from './record/recent.ts';
-import { defaultSettings, type Settings } from './settings/schema.ts';
+import { type Settings } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import { idleRun, type FlagsPort, type Run, type RunPort } from './state/run.ts';
 
@@ -30,11 +31,12 @@ interface AskCell {
   readonly hold: (ctx: ExtensionContext) => void;
 }
 
-// pi の classifier はイベントの ctx からしか引けない。初回のイベントで作り、使い回す
-function createLazyAsk(settings: Settings): AskCell {
+// pi の classifier はイベントの ctx からしか引けない。初回のイベントで作り、使い回す。
+// 設定は ask のたびに読み直す。有料通知はセッションで1回だけ出す。
+function createLazyAsk(settingsDir: string): AskCell {
   let registry: Registry | undefined;
   let notifier: ((message: string) => void) | undefined;
-  let ask: Ask | undefined;
+  let paidNotified = false;
   return {
     ask: (request) => {
       if (registry === undefined) {
@@ -45,16 +47,18 @@ function createLazyAsk(settings: Settings): AskCell {
           latencyMs: 0,
         });
       }
-      if (ask === undefined) {
-        const current = registry;
-        ask = createAsk({
-          registry: current,
-          settings,
-          notify: (message) => {
+      const fresh = readSettings(settingsDir);
+      const current = registry;
+      const ask = createAsk({
+        registry: current,
+        settings: fresh,
+        notify: (message) => {
+          if (!paidNotified) {
+            paidNotified = true;
             notifier?.(message);
-          },
-        });
-      }
+          }
+        },
+      });
       return ask(request);
     },
     hold: (ctx) => {
@@ -92,32 +96,75 @@ function createState(): StateCell {
   };
 }
 
+function wiringFor(cwd: string, settingsDir: string) {
+  const initial = readSettings(settingsDir);
+  let current: Settings = initial;
+  const refresh = (): Settings => {
+    current = readSettings(settingsDir);
+    return current;
+  };
+  const logDirOf = (settings: Settings): string =>
+    isAbsolute(settings.log.dir) ? settings.log.dir : join(cwd, settings.log.dir);
+  const state = createState();
+  const cell = createLazyAsk(settingsDir);
+  const log = (record: LogRecord): void => {
+    append(record, logDirOf(current));
+  };
+  const routeDeps = {
+    get settings(): Settings {
+      return current;
+    },
+    ask: cell.ask,
+    run: state.run,
+    flags: state.flags,
+    log,
+  };
+  const judgeDeps = {
+    get settings(): Settings {
+      return current;
+    },
+    ask: cell.ask,
+    run: state.run,
+    flags: state.flags,
+    log,
+  };
+  return {
+    initial,
+    current: () => current,
+    refresh,
+    logDirOf,
+    state,
+    cell,
+    log,
+    routeDeps,
+    judgeDeps,
+  };
+}
+
 export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }): Wiring {
   const cwd = options?.cwd ?? process.cwd();
-  const settings = readSettings(join(cwd, '.pi/extensions/intent-router'), defaultSettings());
-  const logDir = isAbsolute(settings.log.dir) ? settings.log.dir : join(cwd, settings.log.dir);
-  const state = createState();
-  const cell = createLazyAsk(settings);
-  const log = (record: LogRecord): void => {
-    append(record, logDir);
-  };
+  const settingsDir = join(cwd, '.pi/extensions/intent-router');
+  const wired = wiringFor(cwd, settingsDir);
+  const { initial, refresh, logDirOf, state, cell, log, routeDeps, judgeDeps } = wired;
 
   registerRoute(
     {
       on: (event, handler) => {
         pi.on(event, (ev, ctx) => {
           cell.hold(ctx);
+          refresh();
           return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd });
         });
       },
     },
-    { settings, ask: cell.ask, run: state.run, flags: state.flags, log },
+    routeDeps,
   );
   registerJudge(
     {
       on: (event, handler) => {
         pi.on(event, (ev, ctx) => {
           cell.hold(ctx);
+          refresh();
           const content = 'content' in ev.message ? ev.message.content : '';
           return handler(
             { turnIndex: ev.turnIndex, message: { content }, toolResults: ev.toolResults },
@@ -131,10 +178,11 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
         });
       },
     },
-    { settings, ask: cell.ask, run: state.run, flags: state.flags, log },
+    judgeDeps,
   );
   pi.on('session_start', () => {
-    prune(logDir, settings.log.keepDays, new Date());
+    const settings = refresh();
+    prune(logDirOf(settings), settings.log.keepDays, new Date());
   });
   registerCommand(
     {
@@ -151,7 +199,7 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
     { flags: state.flags, run: state.run, log },
   );
 
-  return { settings, ...state.snapshot() };
+  return { settings: initial, ...state.snapshot() };
 }
 
 export default function (pi: ExtensionAPI): void {
