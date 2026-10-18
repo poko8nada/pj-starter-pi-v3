@@ -60,7 +60,7 @@ README.ja.md                update
   - (happy) 候補の節を読む → 推奨を 1 つ添え、どの候補でサイクルを起こすかを owner が決めると書かれている
   - (happy) 書かないことの節を読む → ファイルを作らず、`DEFINITION.md` も `cycles/` も書かないと書かれている
   - (happy) 本文を 1 枚で読む → どの規則も `brief` を参照せず、それだけで意味が通る
-  - (error) 本文に目を通す → この repo 固有の名前（スキル名、拡張、検査の道具）が出てこない
+  - (error) 本文に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`lefthook`、`oxlint`）が出てこない
   - _no case_: 3 つの問いの順序 — 順序で結果が変わらない
 
 ## 2.統合: `propose` が ADR に渡せる状態で終わること

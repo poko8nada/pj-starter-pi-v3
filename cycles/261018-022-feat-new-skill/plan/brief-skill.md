@@ -117,9 +117,9 @@ README.ja.md                update
 
 ### Slice 1: スキルの本文
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 本文と plan のケースのずれを 4 か所直した（`ADR` を repo 固有の名前に数えていた、`ソース` と `ソースコード`、手順 6 と手順 4 の取り違え、承認範囲の行が本文から落ちていた）。検査は本文を読むので、ケースが本文でなく plan を向いたままだと通らない。
+- Commit: e666834
 
 ### Slice 2: 統合: `brief` が ADR に渡せる状態で終わること
 
