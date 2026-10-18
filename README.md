@@ -58,7 +58,7 @@ One cycle is an ADR, a design, the plans, the work of carrying them out, then a 
 ```
 propose      read the state and lay the next candidates out (the three questions, the code, the research)
 brief        settle the owner's intent and lay the options out (the research, the trial, the talk)
-adr          decide what needs deciding (the options, the research, the trial, the decision)
+adr          decide what needs deciding (the options, the decision)
 design       cut the cycle into plans, and say where each runs
 plan         write one plan per worktree (the files, the types, the steps, the checks)
 work         carry a plan to done (the slices, the review, the acceptance, the merge)
