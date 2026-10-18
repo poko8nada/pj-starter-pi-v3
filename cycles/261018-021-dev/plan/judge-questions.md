@@ -242,9 +242,11 @@ export function decideJudge(
 
 ### Slice 3: judge を reply だけで走らせ、促しの条件を変える
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/hook.test.ts`が肥大化し`max-lines-per-function`で赤になったため、新問の7件を`registerJudge/related answerable`に分離した（lint緑のため）
+  - `route/decide.test.ts`に`approve 0.85→act`を追加、`index.test.ts`にjudge記録の`verdicts`鍵確認を追加（slice 3 Verifyのため）
+- Commit: ba07a28
 
 ### Slice 4: 統合: 関係ある記録が積まれ、答えられるのときに促しが出る
 
