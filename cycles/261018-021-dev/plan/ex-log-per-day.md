@@ -211,9 +211,11 @@ readonly log: {
 
 ### Slice 3: `/intent last` を消す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - slice 1 で置いた一時的な `tail` 互換（`index.ts` の `tailLog` とテストの `readAllRecords` など）を消した
+  - Record 節に残っていた `/intent last` の 1 文も消した
+- Commit: cf46cf4
 
 ### Slice 4: 統合: 1 日は 1 ファイルに足されていき、古い日付だけが消える
 
