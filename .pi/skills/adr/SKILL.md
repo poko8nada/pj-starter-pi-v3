@@ -1,6 +1,6 @@
 ---
 name: adr
-description: Use when the owner declares a cycle start, or raises a point about the definition or the cycle. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` and decides what the cycle does to `DEFINITION.md`.
+description: Use when the owner raises a point about the definition or the cycle, or when a question comes from `brief` or `propose` with its options laid out. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` and decides what the cycle does to `DEFINITION.md`.
 ---
 
 # adr
@@ -18,7 +18,7 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 
 ## Cycle
 
-- owner declares the cycle, and says what it is for
+- the question comes from the front: `brief` or `propose` has settled it, and its options are on the table
 - run the scaffold: `node .pi/skills/adr/scripts/scaffold.mjs`. It takes the cycle number from `cycles/` and `cycles/archive/`, the date from today, and the slug from the branch, and writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` with one entry's bones. It prints the directory it made
 - cycle's questions are the entries, and one entry is one question
 - each entry runs the flow below, in order
@@ -28,37 +28,28 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 
 ### 1. Fill
 
-- the scaffold leaves one entry's bones. Fill what you can before the talk: the entry's question, what is already known in `Context`, and a first pass at `Options`
+- the scaffold leaves one entry's bones. Fill what the front left: the entry's question, its `Context`, and the `Options` it laid out
 - a cycle raises several questions: add an entry per question, from the same bones
-- what you cannot fill is what the talk is for
+- what is still missing is what the front is asked for
 
-### 2. Context — the talk
+### 2. Context — where the front left it
 
-- talk with the owner about what is happening and what they want, and write the answers down as the entry's `Context`
-- organize them: what the question is, what is given, and what is not
-- this talk is required: an entry decided without it is the agent's guess
-- exchange itself is not recorded, and only organized context stays
+- the front's record is what goes into `Context`: what was asked, what was found, and what is not known
+- organize it: what the question is, what is given, and what is not
+- the question is not argued again here: the talk is the front's work
+- a point raised without a front is written down as the owner said it, and organized here
 
-### 3. Options — the talk
+### 3. Options — the front's set
 
-- put out options that could answer the context
-- drop the ones that cannot work in this setting, and say why
-- weigh the rest: what each buys, and what each costs
-- write them in `Options`, each with the reason it stands or falls
+- the options come from the front, and they are written here as the front laid them out: what each buys, what each costs, and the reason it stands or falls
+- a dropped option keeps the line that says why
 - pick is not made here, and the owner makes it at the decision, with the `Status`
 
-### 4. Research & Trial — when facts are missing
+### 4. Research & Trial — the ground of the decision
 
-- after the talk, when a fact is still missing, ask the owner first: a `research` subagent, a `trial` subagent, or neither. Neither is the answer when the options can be weighed without them
-- a `research` subagent runs with the type that fits. The type sets the questions:
-  - `triage` — a defect or a limitation: is it common, and is there a remedy in this setting
-  - `compare` — a choice: what are the candidates, what does each buy and cost, and does it clash with the `Ground`
-  - `mechanism` — a way of doing it: what does the tool offer, and what are its limits
-- keep sources and queries the subagent used, and carry them into `Research & Trial`
-- a `trial` subagent runs in a worktree, because the `trial` role writes. The task carries the candidate and its setting, and the subagent installs it, sets it up, and reports clashes, versions and the smallest working shape. Ask the owner before it touches the shared store
-- a `Stack` change is worth a trial
-- **Nothing a trial writes enters the product.** The trial is a bench, and what it leaves is the fact. The product changes through the design, the plan and the work, and nowhere else
-- what the two leave goes into the entry's `Research & Trial`
+- what is written here is only the fact the decision rests on, with its source
+- what the front looked up is not carried here: the front holds it, and only the fact the decision stands on comes over
+- a fact that is still missing goes back to the front: it is looked up there, and not here
 
 ### 5. Definition change
 
@@ -86,7 +77,7 @@ Two entries that touch the same name must not contradict, and a contradiction is
 
 An entry decided here is not work done: the design cuts it, the plan writes it, and the work carries it out.
 
-This skill keeps its own business — entry, research, trial and decision — and does not do theirs.
+This skill keeps its own business — the entry and the decision — and does not do theirs.
 
 ## How not to write this
 
