@@ -18,8 +18,8 @@ describe('decideRoute', () => {
     expect(decision).toMatchObject({ kind: 'act', choice: 'approve', confidence: 0.92 });
   });
 
-  it('approve 0.85 → idle（0.9 に届かない）', () => {
-    expect(decideRoute(choiceAnswer('approve', 0.85), defaultSettings())).toMatchObject({
+  it('approve 0.75 → idle（0.8 に届かない）', () => {
+    expect(decideRoute(choiceAnswer('approve', 0.75), defaultSettings())).toMatchObject({
       kind: 'idle',
     });
   });

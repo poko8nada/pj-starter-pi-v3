@@ -121,6 +121,7 @@ interface HoldInput {
   readonly outcome: BatchAskOutcome;
   readonly turnIndex: number;
   readonly truncated: boolean;
+  readonly stateChars: number;
   readonly verdicts: JudgeAnswers | undefined;
   readonly streak: number;
 }
@@ -146,6 +147,8 @@ function logHold(deps: JudgeDeps, input: HoldInput): void {
     streak: input.streak,
     nudge: null,
     fired: false,
+    state_chars: input.stateChars,
+    truncated: input.truncated,
   });
 }
 
@@ -158,6 +161,7 @@ interface NudgeInput {
   readonly outcome: Answered;
   readonly turnIndex: number;
   readonly truncated: boolean;
+  readonly stateChars: number;
   readonly answers: JudgeAnswers;
   readonly streak: number;
 }
@@ -182,11 +186,13 @@ function logNudge(
     streak: input.streak,
     nudge: input.text,
     fired: input.fired,
+    state_chars: input.stateChars,
+    truncated: input.truncated,
   });
 }
 
 function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefined {
-  const { run, turnIndex, truncated, answers, streak } = input;
+  const { run, turnIndex, truncated, stateChars, answers, streak } = input;
   const nudged = nudge(run);
   deps.run.set(nudged);
   const text = nudgeText(deps.settings, run.choice);
@@ -196,6 +202,7 @@ function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefin
     outcome: input.outcome,
     turnIndex,
     truncated,
+    stateChars,
     answers,
     streak,
     text,
@@ -203,6 +210,7 @@ function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefin
   });
   void turnIndex;
   void truncated;
+  void stateChars;
   if (!live) {
     return undefined;
   }
@@ -261,10 +269,12 @@ function finishTurn(deps: JudgeDeps, run: Armed, text: string): Armed {
 interface Asked {
   readonly outcome: BatchAskOutcome;
   readonly truncated: boolean;
+  readonly stateChars: number;
 }
 
 async function askTwoQuestions(deps: JudgeDeps, run: Armed): Promise<Asked> {
   const { payload, truncated } = judgePayload(run, deps.settings);
+  const stateChars = JSON.stringify(payload).length;
   const outcome = await deps.askBatch({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- JudgePayload は JSON 値だけで組む
     state: payload as unknown as JsonObject,
@@ -282,7 +292,7 @@ async function askTwoQuestions(deps: JudgeDeps, run: Armed): Promise<Asked> {
     },
     only: run.candidate,
   });
-  return { outcome, truncated };
+  return { outcome, truncated, stateChars };
 }
 
 async function settleJudge(
@@ -299,8 +309,8 @@ async function settleJudge(
     finishTurn(deps, run, messageText);
     return undefined;
   }
-  const { outcome, truncated } = await askTwoQuestions(deps, run);
-  return settleAnswered(deps, { run, outcome, turnIndex, messageText, truncated });
+  const { outcome, truncated, stateChars } = await askTwoQuestions(deps, run);
+  return settleAnswered(deps, { run, outcome, turnIndex, messageText, truncated, stateChars });
 }
 
 function settleAnswered(
@@ -311,28 +321,25 @@ function settleAnswered(
     readonly turnIndex: number;
     readonly messageText: string;
     readonly truncated: boolean;
+    readonly stateChars: number;
   },
 ): JudgeMessage | undefined {
-  const { run, outcome, turnIndex, messageText, truncated } = input;
+  const { run, outcome, turnIndex, messageText, truncated, stateChars } = input;
   const counted = countJudgement(run, Date.now());
   deps.run.set(counted);
+  const hold = (target: Armed, verdicts: JudgeAnswers | undefined, streak: number): void => {
+    logHold(deps, { run: target, outcome, turnIndex, truncated, stateChars, verdicts, streak });
+  };
   if (outcome.kind === 'failed') {
     finishTurn(deps, counted, messageText);
-    logHold(deps, {
-      run,
-      outcome,
-      turnIndex,
-      truncated,
-      verdicts: undefined,
-      streak: counted.streak,
-    });
+    hold(run, undefined, counted.streak);
     return undefined;
   }
   const useful = outcome.answers[JUDGE_QUESTIONS.useful];
   const fresh = outcome.answers[JUDGE_QUESTIONS.new];
   if (useful === undefined || fresh === undefined) {
     finishTurn(deps, counted, messageText);
-    logHold(deps, { run, outcome, turnIndex, truncated, verdicts: undefined, streak: 0 });
+    hold(run, undefined, 0);
     return undefined;
   }
   const answers: JudgeAnswers = { useful, new: fresh };
@@ -342,21 +349,22 @@ function settleAnswered(
       const cleared = noteVerdict(counted, false);
       deps.run.set(cleared);
       finishTurn(deps, cleared, messageText);
-      logHold(deps, { run, outcome, turnIndex, truncated, verdicts: answers, streak: 0 });
+      hold(run, answers, 0);
     } else {
       finishTurn(deps, counted, messageText);
-      logHold(deps, {
-        run,
-        outcome,
-        turnIndex,
-        truncated,
-        verdicts: answers,
-        streak: counted.streak,
-      });
+      hold(run, answers, counted.streak);
     }
     return undefined;
   }
-  return settleUnhelpful(deps, { counted, outcome, turnIndex, messageText, truncated, answers });
+  return settleUnhelpful(deps, {
+    counted,
+    outcome,
+    turnIndex,
+    messageText,
+    truncated,
+    stateChars,
+    answers,
+  });
 }
 
 function settleUnhelpful(
@@ -367,10 +375,11 @@ function settleUnhelpful(
     readonly turnIndex: number;
     readonly messageText: string;
     readonly truncated: boolean;
+    readonly stateChars: number;
     readonly answers: JudgeAnswers;
   },
 ): JudgeMessage | undefined {
-  const { counted, outcome, turnIndex, messageText, truncated, answers } = input;
+  const { counted, outcome, turnIndex, messageText, truncated, stateChars, answers } = input;
   const withStreak = noteVerdict(counted, true);
   deps.run.set(withStreak);
   if (
@@ -383,6 +392,7 @@ function settleUnhelpful(
       outcome,
       turnIndex,
       truncated,
+      stateChars,
       verdicts: answers,
       streak: withStreak.streak,
     });
@@ -396,6 +406,7 @@ function settleUnhelpful(
       outcome,
       turnIndex,
       truncated,
+      stateChars,
       verdicts: answers,
       streak: withStreak.streak,
     });
@@ -406,6 +417,7 @@ function settleUnhelpful(
     outcome,
     turnIndex,
     truncated,
+    stateChars,
     answers,
     streak: withStreak.streak,
   });

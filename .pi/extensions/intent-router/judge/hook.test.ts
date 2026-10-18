@@ -210,9 +210,23 @@ function readRecords(file: string): IntentRecord[] {
     if (text.trim() === '') {
       return [];
     }
-    const parsed: unknown = JSON.parse(text);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の形を読む
-    return Array.isArray(parsed) ? (parsed as IntentRecord[]) : [];
+    const out: IntentRecord[] = [];
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+          out.push(parsed as IntentRecord);
+        }
+      } catch {
+        continue;
+      }
+    }
+    return out;
   } catch {
     return [];
   }
@@ -292,9 +306,9 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(0);
   });
 
-  it('useful の confidence が 0.89 → 判断に使わず wait', async () => {
+  it('useful の confidence が 0.79 → 判断に使わず wait', async () => {
     const settings = defaultSettings();
-    const low = batchAnswered(choiceAnswer('no', 0.89), choiceAnswer('no', 0.95));
+    const low = batchAnswered(choiceAnswer('no', 0.79), choiceAnswer('no', 0.95));
     const { handler, run, requests, file } = wired(settings, [low], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
@@ -447,6 +461,80 @@ describe('registerJudge', () => {
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
     expect(readRecords(file)).toHaveLength(0);
+  });
+});
+
+describe('registerJudge/state chars', () => {
+  it('小さい往復 → judge の記録の state_chars が、渡した payload の JSON の字数と同じ', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[0]?.truncated).toBe(false);
+  });
+
+  it('state が maxStateChars を超える → state_chars が削った後の字数になり、truncated が true', async () => {
+    const settings = withMaxStateChars(defaultSettings(), 500);
+    let initial = arm({
+      ownerNow: 'hello',
+      choice: 'reply',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    for (let index = 0; index < 4; index += 1) {
+      initial = addAction(
+        initial,
+        toAction(1, 'read', { path: `f${index}.ts` }, 'x'.repeat(100), false, 300),
+        defaultSettings().state,
+      );
+      initial = noteTurn(initial, `text${index}`, defaultSettings().state);
+    }
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', initial);
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[0]?.state_chars).toBeLessThanOrEqual(500);
+    expect(records[0]?.truncated).toBe(true);
+  });
+
+  it('2 問の classify が失敗 → 記録に state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [batchFailed()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(typeof records[0]?.truncated).toBe('boolean');
+  });
+
+  it('促しが出る往復 → nudge の記録にも state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(
+      settings,
+      [noNo(), noNo()],
+      'live',
+      armedWithTurns(1),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    const records = readRecords(file);
+    expect(records).toHaveLength(2);
+    expect(records[1]?.nudge).not.toBeNull();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[1] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[1]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[1]?.truncated).toBe(false);
   });
 });
 

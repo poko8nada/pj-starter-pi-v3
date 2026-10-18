@@ -218,7 +218,7 @@ function defaultRoute(): Settings['route'] {
         other: 'Anything else that is neither a request for a reply nor an approval',
       },
     },
-    thresholds: { reply: 0.8, approve: 0.9 },
+    thresholds: { reply: 0.8, approve: 0.8 },
     guides: {
       reply:
         'Re: {prompt} — the owner wants an answer, not an edit. Do not edit, write, delete, or commit anything. Investigate only what the answer needs, then answer.',
@@ -234,7 +234,7 @@ function defaultJudge(): Settings['judge'] {
     minTurns: 2,
     everyNTurns: 1,
     maxJudgements: 12,
-    threshold: 0.9,
+    threshold: 0.8,
     questions: {
       useful: {
         instructions:
