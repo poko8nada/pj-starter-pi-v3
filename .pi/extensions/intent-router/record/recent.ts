@@ -26,6 +26,10 @@ export interface IntentRecord {
   readonly streak: number | null;
   readonly nudge: string | null;
   readonly fired: boolean;
+  /** 渡した state を JSON にしたときの字数（切った後） */
+  readonly state_chars: number;
+  /** 渡す前に切ったかどうか */
+  readonly truncated: boolean;
 }
 
 function readAll(file: string): IntentRecord[] {

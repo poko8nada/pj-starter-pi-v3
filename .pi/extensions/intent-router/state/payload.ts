@@ -163,11 +163,18 @@ export interface RoutePayload {
   readonly agent_prev: string;
 }
 
-export function routePayload(prompt: string, agentPrev: string, settings: Settings): RoutePayload {
+export function routePayload(
+  prompt: string,
+  agentPrev: string,
+  settings: Settings,
+): { readonly payload: RoutePayload; readonly truncated: boolean } {
   const limit = settings.state.textChars;
   return {
-    owner_now: prompt.slice(0, limit),
-    agent_prev: agentPrev.slice(0, limit),
+    payload: {
+      owner_now: prompt.slice(0, limit),
+      agent_prev: agentPrev.slice(0, limit),
+    },
+    truncated: prompt.length > limit || agentPrev.length > limit,
   };
 }
 

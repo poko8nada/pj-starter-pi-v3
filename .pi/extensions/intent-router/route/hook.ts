@@ -55,6 +55,8 @@ interface RouteLogInput {
   readonly threshold: number | null;
   readonly guide: string | null;
   readonly fired: boolean;
+  readonly stateChars: number;
+  readonly truncated: boolean;
 }
 
 function logRoute(deps: RouteDeps, input: RouteLogInput): void {
@@ -71,6 +73,8 @@ function logRoute(deps: RouteDeps, input: RouteLogInput): void {
     streak: null,
     nudge: null,
     fired: input.fired,
+    state_chars: input.stateChars,
+    truncated: input.truncated,
   });
 }
 
@@ -103,10 +107,12 @@ interface ActInput {
   readonly agentPrev: string;
   readonly outcome: Answered;
   readonly decision: Extract<RouteDecision, { readonly kind: 'act' }>;
+  readonly stateChars: number;
+  readonly truncated: boolean;
 }
 
 function settleAct(deps: RouteDeps, input: ActInput): RouteMessage | undefined {
-  const { ownerNow, agentPrev, outcome, decision } = input;
+  const { ownerNow, agentPrev, outcome, decision, stateChars, truncated } = input;
   deps.run.set(
     arm({
       ownerNow,
@@ -126,6 +132,8 @@ function settleAct(deps: RouteDeps, input: ActInput): RouteMessage | undefined {
     threshold: thresholdOf(deps.settings, decision.choice),
     guide: text,
     fired: live,
+    stateChars,
+    truncated,
   });
   if (!live) {
     return undefined;
@@ -135,12 +143,16 @@ function settleAct(deps: RouteDeps, input: ActInput): RouteMessage | undefined {
   };
 }
 
-function settleRoute(
-  deps: RouteDeps,
-  ownerNow: string,
-  agentPrev: string,
-  outcome: AskOutcome,
-): RouteMessage | undefined {
+interface RouteSettleInput {
+  readonly ownerNow: string;
+  readonly agentPrev: string;
+  readonly stateChars: number;
+  readonly truncated: boolean;
+  readonly outcome: AskOutcome;
+}
+
+function settleRoute(deps: RouteDeps, input: RouteSettleInput): RouteMessage | undefined {
+  const { ownerNow, agentPrev, stateChars, truncated, outcome } = input;
   if (outcome.kind === 'failed') {
     deps.run.set(idleRun());
     logRoute(deps, {
@@ -151,6 +163,8 @@ function settleRoute(
       threshold: null,
       guide: null,
       fired: false,
+      stateChars,
+      truncated,
     });
     return undefined;
   }
@@ -167,10 +181,12 @@ function settleRoute(
       threshold: decision.kind === 'skip' ? null : thresholdOf(deps.settings, decision.choice),
       guide: null,
       fired: false,
+      stateChars,
+      truncated,
     });
     return undefined;
   }
-  return settleAct(deps, { ownerNow, agentPrev, outcome, decision });
+  return settleAct(deps, { ownerNow, agentPrev, outcome, decision, stateChars, truncated });
 }
 
 export function registerRoute(pi: RoutePiPort, deps: RouteDeps): void {
@@ -179,7 +195,8 @@ export function registerRoute(pi: RoutePiPort, deps: RouteDeps): void {
       return undefined;
     }
     const agentPrev = ctx.agentPrev ?? '';
-    const payload = routePayload(event.prompt, agentPrev, deps.settings);
+    const { payload, truncated } = routePayload(event.prompt, agentPrev, deps.settings);
+    const stateChars = JSON.stringify(payload).length;
     const outcome = await deps.ask({
       kind: 'choice',
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- RoutePayload は JSON 値だけで組む
@@ -192,6 +209,6 @@ export function registerRoute(pi: RoutePiPort, deps: RouteDeps): void {
         },
       },
     });
-    return settleRoute(deps, event.prompt, agentPrev, outcome);
+    return settleRoute(deps, { ownerNow: event.prompt, agentPrev, stateChars, truncated, outcome });
   });
 }

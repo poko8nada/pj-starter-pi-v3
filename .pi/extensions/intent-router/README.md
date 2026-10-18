@@ -57,7 +57,7 @@ Any other argument prints the usage instead of throwing.
 
 ## Record
 
-Every ask lands in `logs/recent.json` as JSONL (one line per entry), which keeps only the latest `record.recent` lines (overwritten, never appended; empty and unreadable lines are skipped). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`useful` / `new`, judge only), the `streak`, the `nudge`, and whether it was injected (`fired`). `/intent last` reads it back.
+Every ask lands in `logs/recent.json` as JSONL (one line per entry), which keeps only the latest `record.recent` lines (overwritten, never appended; empty and unreadable lines are skipped). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`useful` / `new`, judge only), the `streak`, the `nudge`, whether it was injected (`fired`), the `state_chars` (the passed state as JSON length, after cutting), and whether the state was cut (`truncated`). `/intent last` reads it back.
 
 ## The code
 

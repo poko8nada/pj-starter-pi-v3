@@ -18,6 +18,8 @@ function routeRecord(ownerNow: string): IntentRecord {
     streak: null,
     nudge: null,
     fired: true,
+    state_chars: 10,
+    truncated: false,
   };
 }
 

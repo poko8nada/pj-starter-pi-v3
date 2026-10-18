@@ -90,8 +90,9 @@ describe('targetOf', () => {
 
 describe('routePayload', () => {
   it('owner_now と agent_prev の2つだけ', () => {
-    const payload = routePayload('hello', 'prev', defaultSettings());
+    const { payload, truncated } = routePayload('hello', 'prev', defaultSettings());
     expect(payload).toEqual({ owner_now: 'hello', agent_prev: 'prev' });
+    expect(truncated).toBe(false);
   });
 
   it('セッションに前の発言が無い → agent_prev は空文字', () => {
@@ -100,8 +101,35 @@ describe('routePayload', () => {
 
   it('owner_now が上限より長い → textChars で切れる', () => {
     const settings = defaultSettings();
-    const payload = routePayload('あ'.repeat(settings.state.textChars + 10), '', settings);
+    const { payload, truncated } = routePayload(
+      'あ'.repeat(settings.state.textChars + 10),
+      '',
+      settings,
+    );
     expect(payload.owner_now.length).toBe(settings.state.textChars);
+    expect(truncated).toBe(true);
+  });
+
+  it('owner だけが長い → truncated が true（片方だけ長い場合も含む）', () => {
+    const settings = defaultSettings();
+    const { truncated } = routePayload('あ'.repeat(settings.state.textChars + 1), '', settings);
+    expect(truncated).toBe(true);
+  });
+
+  it('owner は短く agent_prev だけが長い → truncated が true', () => {
+    const settings = defaultSettings();
+    const { payload, truncated } = routePayload(
+      'hello',
+      'あ'.repeat(settings.state.textChars + 1),
+      settings,
+    );
+    expect(payload.agent_prev.length).toBe(settings.state.textChars);
+    expect(truncated).toBe(true);
+  });
+
+  it('どちらも短い → truncated が false', () => {
+    const { truncated } = routePayload('hello', 'prev', defaultSettings());
+    expect(truncated).toBe(false);
   });
 
   it('前の発言が上限より長い → textChars で切れる', () => {
@@ -111,7 +139,7 @@ describe('routePayload', () => {
       settings.state.textChars,
     );
     expect(text.length).toBe(settings.state.textChars);
-    const payload = routePayload('hello', 'あ'.repeat(settings.state.textChars + 10), settings);
+    const { payload } = routePayload('hello', 'あ'.repeat(settings.state.textChars + 10), settings);
     expect(payload.agent_prev.length).toBe(settings.state.textChars);
   });
 });

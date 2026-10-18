@@ -163,6 +163,8 @@ describe('registerCommand', () => {
       streak: null,
       nudge: null,
       fired: true,
+      state_chars: 10,
+      truncated: false,
     });
     const ctx = fakeCtx();
     handler('last', ctx);
@@ -188,6 +190,8 @@ describe('registerCommand', () => {
         streak: null,
         nudge: null,
         fired: true,
+        state_chars: 10,
+        truncated: false,
       });
     }
     const ctx = fakeCtx();

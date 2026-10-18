@@ -275,4 +275,65 @@ describe('registerRoute', () => {
     await handler({ prompt: '/intent off' }, { cwd: '/repo' });
     expect(requests).toHaveLength(0);
   });
+
+  it('短い往復 → route の記録の state_chars が、渡した state の JSON の字数と同じ', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
+  });
+
+  it('owner_now が上限より長い → state_chars が切った後の字数になり、truncated が true', async () => {
+    const settings = defaultSettings();
+    const limit = settings.state.textChars;
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    const longPrompt = 'あ'.repeat(limit + 100);
+    await handler({ prompt: longPrompt }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(true);
+    expect(records[0]?.state_chars).toBeLessThan(JSON.stringify(longPrompt).length);
+  });
+
+  it('owner は短く agent_prev だけが長い → truncated が true', async () => {
+    const settings = defaultSettings();
+    const limit = settings.state.textChars;
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'あ'.repeat(limit + 50) });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(true);
+  });
+
+  it('どちらも短い → truncated が false', async () => {
+    const settings = defaultSettings();
+    const { handler, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'prev' });
+    expect(readRecords(file)[0]?.truncated).toBe(false);
+  });
+
+  it('classify が失敗 → 記録に state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, failedOutcome(), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(typeof records[0]?.truncated).toBe('boolean');
+  });
+
+  it('other で見送り → route の記録に同じ 2 欄が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, answeredOutcome('other', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
+  });
 });

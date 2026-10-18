@@ -464,6 +464,60 @@ describe('registerJudge', () => {
   });
 });
 
+describe('registerJudge/state chars', () => {
+  it('小さい往復 → judge の記録の state_chars が、渡した payload の JSON の字数と同じ', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[0]?.truncated).toBe(false);
+  });
+
+  it('state が maxStateChars を超える → state_chars が削った後の字数になり、truncated が true', async () => {
+    const settings = withMaxStateChars(defaultSettings(), 500);
+    let initial = arm({
+      ownerNow: 'hello',
+      choice: 'reply',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    for (let index = 0; index < 4; index += 1) {
+      initial = addAction(
+        initial,
+        toAction(1, 'read', { path: `f${index}.ts` }, 'x'.repeat(100), false, 300),
+        defaultSettings().state,
+      );
+      initial = noteTurn(initial, `text${index}`, defaultSettings().state);
+    }
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', initial);
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[0]?.state_chars).toBeLessThanOrEqual(500);
+    expect(records[0]?.truncated).toBe(true);
+  });
+
+  it('2 問の classify が失敗 → 記録に state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [batchFailed()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[0] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(typeof records[0]?.truncated).toBe('boolean');
+  });
+});
+
 describe('registerJudge/new tools', () => {
   it('fetch_content の往復 → latest に fetch_content と url が出る', async () => {
     const settings = defaultSettings();
