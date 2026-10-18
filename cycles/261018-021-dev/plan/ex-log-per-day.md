@@ -226,9 +226,13 @@ readonly log: {
 
 ### Slice 5: テストの棚卸し
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 棚卸しで消した物と理由:
+    - `schema.test.ts` の「旧い record を書く → 投げる」を消した。未知キー拒否は「知らないキー → 投げる」が既に見るため趣旨が重なり、文字どおりの `recent` 参照が残るため
+    - `intent.test.ts` の `last` 系 2 件を 1 件に寄せ、題名から `intent last` の並びを消した。parse と応答の両段で同じ趣旨（`last` は使い方文・文に `last` 行なし）を見るため
+    - `index.test.ts` の変数 `recentFile` を `keptFile` に改名した。`recent` 参照を残さないため（振る舞いは同じ）
+- Commit: 46b94f9
 
 ## Review
 
