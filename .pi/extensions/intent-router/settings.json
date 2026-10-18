@@ -29,36 +29,33 @@
     "maxJudgements": 12,
     "threshold": 0.8,
     "questions": {
-      "useful": {
-        "instructions": "Is the latest investigation useful for answering the owner message? Answer yes or no.",
+      "related": {
+        "instructions": "Is the information read in this round trip related to answering the owner message? Answer yes or no.",
         "criteria": {
-          "yes": "The latest findings help answer the owner message",
-          "no": "The latest findings do not help answer the owner message"
+          "yes": "The findings in this round help answer the owner message",
+          "no": "The findings in this round do not help answer the owner message"
         }
       },
-      "new": {
-        "instructions": "Did the latest investigation obtain new facts compared to the earlier investigation? Answer yes or no.",
+      "answerable": {
+        "instructions": "Can the owner message be answered from the related findings accumulated so far? Answer yes or no.",
         "criteria": {
-          "yes": "The latest findings contain new facts not seen in the earlier investigation",
-          "no": "The latest findings contain no new facts beyond the earlier investigation"
+          "yes": "The accumulated related findings are enough to answer the owner message",
+          "no": "The accumulated related findings are not enough to answer the owner message"
         }
       }
     },
     "stop": {
-      "consecutive": 2,
+      "unrelated": 2,
       "maxNudges": 1,
-      "nudges": {
-        "reply": "Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.",
-        "approve": "Enough has been investigated for the approved change. Stop investigating: no new tool calls. Proceed with the approved change from what you have."
-      }
+      "nudge": "Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm."
     }
   },
   "state": {
-    "textChars": 2000,
-    "assistantChars": 500,
+    "textChars": 4000,
+    "assistantChars": 1000,
     "resultChars": 300,
     "maxActions": 12,
-    "maxStateChars": 12000,
+    "maxStateChars": 24000,
     "includeTools": [
       "read",
       "write",

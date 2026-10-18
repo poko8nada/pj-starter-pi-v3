@@ -40,12 +40,12 @@ function choiceAnswer(choice: string, confidence: number): Answer {
   return { type: 'choice', choice, probabilities: { [choice]: confidence }, confidence };
 }
 
-function batchAnswered(useful: Answer, fresh: Answer): BatchAskOutcome {
+function batchAnswered(related: Answer, answerable: Answer): BatchAskOutcome {
   return {
     kind: 'answered',
     provider: 'opencode',
     model: 'jev-1.13-free',
-    answers: { useful, new: fresh },
+    answers: { related, answerable },
     usage: { input: 1, output: 0, cost: 0 },
     latencyMs: 5,
   };
@@ -233,7 +233,7 @@ function readRecords(file: string): IntentRecord[] {
 }
 
 describe('registerJudge', () => {
-  it('useful=no かつ new=no が 2 回続く → nudge（unrelated は 2）', async () => {
+  it('related=no かつ answerable=no が 2 回続く → nudge（unrelated は 2）', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, [noNo(), noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -252,7 +252,7 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(2);
   });
 
-  it('useful=yes かつ new=no が 2 回続く → nudge（new だけで促しになる）', async () => {
+  it('related=yes かつ answerable=no が 2 回続く → nudge（answerable だけで促しになる）', async () => {
     const settings = defaultSettings();
     const { handler, run } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -265,7 +265,7 @@ describe('registerJudge', () => {
     expect(result?.entries).toHaveLength(1);
   });
 
-  it('useful=no が 1 回だけ → wait で unrelated は 1', async () => {
+  it('related=no が 1 回だけ → wait で unrelated は 1', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
@@ -278,7 +278,7 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(1);
   });
 
-  it('useful=yes かつ new=yes → wait で unrelated は戻らない', async () => {
+  it('related=yes かつ answerable=yes → wait で unrelated は戻らない', async () => {
     const settings = defaultSettings();
     const { handler, run } = wired(settings, [noNo(), yesYes()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -306,7 +306,7 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(0);
   });
 
-  it('useful の confidence が 0.79 → 判断に使わず wait', async () => {
+  it('related の confidence が 0.79 → 判断に使わず wait', async () => {
     const settings = defaultSettings();
     const low = batchAnswered(choiceAnswer('no', 0.79), choiceAnswer('no', 0.95));
     const { handler, run, requests, file } = wired(settings, [low], 'live', armedWithTurns(1));
@@ -401,7 +401,7 @@ describe('registerJudge', () => {
     expect(result?.entries[0]).toMatchObject({ type: 'custom_message', customType: 'intent-stop' });
   });
 
-  it('2 問を 1 リクエストで聞く（useful と new）', async () => {
+  it('2 問を 1 リクエストで聞く（related と answerable）', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -411,7 +411,7 @@ describe('registerJudge', () => {
       readonly questions: Readonly<Record<string, unknown>>;
       readonly state: Readonly<Record<string, unknown>>;
     };
-    expect(Object.keys(request.questions).toSorted()).toEqual(['new', 'useful']);
+    expect(Object.keys(request.questions).toSorted()).toEqual(['answerable', 'related']);
     expect(request.state['owner_text']).toBe('hello');
     expect(Array.isArray(request.state['read'])).toBe(true);
     expect(Array.isArray(request.state['related'])).toBe(true);
@@ -539,7 +539,7 @@ describe('registerJudge/state chars', () => {
 });
 
 describe('registerJudge/new tools', () => {
-  it('fetch_content の往復 → latest に fetch_content と url が出る', async () => {
+  it('fetch_content の往復 → read に fetch_content と url が出る', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('fetch_content', { url: 'https://x' }, 'body'), { cwd: '/repo' });
@@ -547,7 +547,7 @@ describe('registerJudge/new tools', () => {
     expect(readOf(requests[0])).toMatchObject([{ tool: 'fetch_content', target: 'https://x' }]);
   });
 
-  it('codemode の往復 → latest に codemode が出る（的は空）', async () => {
+  it('codemode の往復 → read に codemode が出る（的は空）', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('codemode', { code: '...' }, 'body'), { cwd: '/repo' });
@@ -555,7 +555,7 @@ describe('registerJudge/new tools', () => {
     expect(readOf(requests[0])).toMatchObject([{ tool: 'codemode', target: '' }]);
   });
 
-  it('quick_edit の往復 → latest に quick_edit と path が出る', async () => {
+  it('quick_edit の往復 → read に quick_edit と path が出る', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('quick_edit', { path: 'a.ts' }, 'body'), { cwd: '/repo' });

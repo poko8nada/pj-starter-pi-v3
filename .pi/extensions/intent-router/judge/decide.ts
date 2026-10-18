@@ -1,5 +1,5 @@
 /**
- * `turn_end` の判定。2 問（`useful` / `new`）で効いていないかを見る。純関数だけを置く。
+ * `turn_end` の判定。2 問（`related` / `answerable`）で効いていないかを見る。純関数だけを置く。
  */
 
 import type { Answer } from '../ask/ask.ts';
@@ -7,8 +7,8 @@ import type { Settings } from '../settings/schema.ts';
 import type { Run } from '../state/run.ts';
 
 export interface JudgeAnswers {
-  readonly useful: Answer;
-  readonly new: Answer;
+  readonly related: Answer;
+  readonly answerable: Answer;
 }
 
 export type JudgeDecision =
@@ -28,15 +28,15 @@ function verdictOf(answer: Answer): 'yes' | 'no' | undefined {
 /** 両方が閾値以上で、どちらかが「効いていない」なら unhelpful */
 export function decideJudge(answers: JudgeAnswers, settings: Settings): JudgeDecision {
   const threshold = settings.judge.threshold;
-  if (answers.useful.confidence < threshold || answers.new.confidence < threshold) {
+  if (answers.related.confidence < threshold || answers.answerable.confidence < threshold) {
     return { kind: 'wait', streak: 0, reason: 'low confidence' };
   }
-  const useful = verdictOf(answers.useful);
-  const fresh = verdictOf(answers.new);
-  if (useful === undefined || fresh === undefined) {
+  const related = verdictOf(answers.related);
+  const answerable = verdictOf(answers.answerable);
+  if (related === undefined || answerable === undefined) {
     return { kind: 'wait', streak: 0, reason: 'expected yes/no answers' };
   }
-  if (useful === 'no' || fresh === 'no') {
+  if (related === 'no' || answerable === 'no') {
     return { kind: 'nudge', streak: 1 };
   }
   return { kind: 'wait', streak: 0, reason: 'helpful' };
@@ -70,6 +70,6 @@ export function due(
   return { kind: 'due' };
 }
 
-export function nudgeText(settings: Settings, choice: 'reply' | 'approve'): string {
-  return settings.judge.stop.nudges[choice];
+export function nudgeText(settings: Settings, _choice: 'reply' | 'approve'): string {
+  return settings.judge.stop.nudge;
 }

@@ -10,10 +10,10 @@ function choiceAnswer(choice: string, confidence: number): Answer {
   return { type: 'choice', choice, probabilities: { [choice]: confidence }, confidence };
 }
 
-function answers(useful: string, usefulConf: number, fresh: string, freshConf: number) {
+function answers(related: string, relatedConf: number, answerable: string, answerableConf: number) {
   return {
-    useful: choiceAnswer(useful, usefulConf),
-    new: choiceAnswer(fresh, freshConf),
+    related: choiceAnswer(related, relatedConf),
+    answerable: choiceAnswer(answerable, answerableConf),
   };
 }
 
@@ -37,32 +37,32 @@ function withJudge(settings: Settings, patch: Partial<Settings['judge']>): Setti
 }
 
 describe('decideJudge', () => {
-  it('useful=no かつ new=no → nudge', () => {
+  it('related=no かつ answerable=no → nudge', () => {
     expect(decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings())).toMatchObject({
       kind: 'nudge',
     });
   });
 
-  it('useful=yes かつ new=no → nudge（new だけで促しになる）', () => {
+  it('related=yes かつ answerable=no → nudge（answerable だけで促しになる）', () => {
     expect(decideJudge(answers('yes', 0.95, 'no', 0.95), defaultSettings())).toMatchObject({
       kind: 'nudge',
     });
   });
 
-  it('useful=no かつ new=yes → nudge', () => {
+  it('related=no かつ answerable=yes → nudge', () => {
     expect(decideJudge(answers('no', 0.95, 'yes', 0.95), defaultSettings())).toMatchObject({
       kind: 'nudge',
     });
   });
 
-  it('useful=yes かつ new=yes → wait で streak は 0', () => {
+  it('related=yes かつ answerable=yes → wait で streak は 0', () => {
     expect(decideJudge(answers('yes', 0.95, 'yes', 0.95), defaultSettings())).toMatchObject({
       kind: 'wait',
       streak: 0,
     });
   });
 
-  it('useful の confidence が 0.79 → 判断に使わず wait', () => {
+  it('related の confidence が 0.79 → 判断に使わず wait', () => {
     expect(decideJudge(answers('no', 0.79, 'no', 0.95), defaultSettings())).toMatchObject({
       kind: 'wait',
     });
@@ -72,8 +72,8 @@ describe('decideJudge', () => {
     expect(
       decideJudge(
         {
-          useful: { type: 'score', score: 1.8, confidence: 0.9 },
-          new: choiceAnswer('no', 0.95),
+          related: { type: 'score', score: 1.8, confidence: 0.9 },
+          answerable: choiceAnswer('no', 0.95),
         },
         defaultSettings(),
       ),
@@ -120,10 +120,10 @@ describe('due', () => {
 });
 
 describe('nudgeText', () => {
-  it('choice ごとの促しを返す', () => {
+  it('reply と approve で同じ文を使う', () => {
     const settings = defaultSettings();
-    expect(nudgeText(settings, 'reply')).toBe(settings.judge.stop.nudges.reply);
-    expect(nudgeText(settings, 'approve')).toBe(settings.judge.stop.nudges.approve);
+    expect(nudgeText(settings, 'reply')).toBe(settings.judge.stop.nudge);
+    expect(nudgeText(settings, 'approve')).toBe(settings.judge.stop.nudge);
   });
 
   it('文面を差し替えると出る文が変わる（固定文字列では緑にならない）', () => {
@@ -134,11 +134,11 @@ describe('nudgeText', () => {
         ...base.judge,
         stop: {
           ...base.judge.stop,
-          nudges: { reply: '独自の返信促し', approve: '独自の承認促し' },
+          nudge: '独自の促し',
         },
       },
     };
-    expect(nudgeText(settings, 'reply')).toBe('独自の返信促し');
-    expect(nudgeText(settings, 'approve')).toBe('独自の承認促し');
+    expect(nudgeText(settings, 'reply')).toBe('独自の促し');
+    expect(nudgeText(settings, 'approve')).toBe('独自の促し');
   });
 });

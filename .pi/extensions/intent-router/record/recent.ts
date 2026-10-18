@@ -2,7 +2,7 @@
  * 判定と差し込みの記録。1 つのファイル（`logs/recent.json`）に直近だけ持つ。
  *
  * 記録するのは ask した時だけ。聞く前にやめた場合（`/` 始まり・道具0件・
- * 助走・間隔・上限・`latest` 空）は行を作らない（作る側の責任）。
+ * 助走・間隔・上限・`read` 空）は行を作らない（作る側の責任）。
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,7 +22,7 @@ export interface IntentRecord {
   readonly confidence: number | null;
   readonly threshold: number | null;
   readonly guide: string | null;
-  readonly verdicts: { readonly useful: Verdict; readonly new: Verdict } | null;
+  readonly verdicts: { readonly related: Verdict; readonly answerable: Verdict } | null;
   readonly streak: number | null;
   readonly nudge: string | null;
   readonly fired: boolean;

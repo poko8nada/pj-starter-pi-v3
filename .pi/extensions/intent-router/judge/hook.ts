@@ -1,5 +1,5 @@
 /**
- * `turn_end` で 2 問（`useful` / `new`）を 1 リクエストで聞き、効いていないと同じ判断が
+ * `turn_end` で 2 問（`related` / `answerable`）を 1 リクエストで聞き、効いていないと同じ判断が
  * 続いたら促しを 1 回だけ差し込む。
  *
  * 道具を使った往復だけ判定する（道具0件・`read` 空なら何もログせず終える）。差し込みは
@@ -134,15 +134,15 @@ function logHold(deps: JudgeDeps, input: HoldInput): void {
     owner_now: input.run.ownerNow,
     agent_prev: null,
     choice: input.run.choice,
-    confidence: answers === undefined ? null : answers.useful.confidence,
+    confidence: answers === undefined ? null : answers.related.confidence,
     threshold: deps.settings.judge.threshold,
     guide: null,
     verdicts:
       answers === undefined
         ? null
         : {
-            useful: verdictOf(answers.useful),
-            new: verdictOf(answers.new),
+            related: verdictOf(answers.related),
+            answerable: verdictOf(answers.answerable),
           },
     streak: input.unrelated,
     nudge: null,
@@ -176,12 +176,12 @@ function logNudge(
     owner_now: input.run.ownerNow,
     agent_prev: null,
     choice: input.run.choice,
-    confidence: input.answers.useful.confidence,
+    confidence: input.answers.related.confidence,
     threshold: deps.settings.judge.threshold,
     guide: null,
     verdicts: {
-      useful: verdictOf(input.answers.useful),
-      new: verdictOf(input.answers.new),
+      related: verdictOf(input.answers.related),
+      answerable: verdictOf(input.answers.answerable),
     },
     streak: input.unrelated,
     nudge: input.text,
@@ -279,15 +279,15 @@ async function askTwoQuestions(deps: JudgeDeps, run: Armed): Promise<Asked> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- JudgePayload は JSON 値だけで組む
     state: payload as unknown as JsonObject,
     questions: {
-      [JUDGE_QUESTIONS.useful]: {
+      [JUDGE_QUESTIONS.related]: {
         type: 'choice',
-        instructions: deps.settings.judge.questions.useful.instructions,
-        criteria: { ...deps.settings.judge.questions.useful.criteria },
+        instructions: deps.settings.judge.questions.related.instructions,
+        criteria: { ...deps.settings.judge.questions.related.criteria },
       },
-      [JUDGE_QUESTIONS.new]: {
+      [JUDGE_QUESTIONS.answerable]: {
         type: 'choice',
-        instructions: deps.settings.judge.questions.new.instructions,
-        criteria: { ...deps.settings.judge.questions.new.criteria },
+        instructions: deps.settings.judge.questions.answerable.instructions,
+        criteria: { ...deps.settings.judge.questions.answerable.criteria },
       },
     },
     only: run.candidate,
@@ -335,14 +335,14 @@ function settleAnswered(
     hold(run, undefined, counted.unrelated);
     return undefined;
   }
-  const useful = outcome.answers[JUDGE_QUESTIONS.useful];
-  const fresh = outcome.answers[JUDGE_QUESTIONS.new];
-  if (useful === undefined || fresh === undefined) {
+  const related = outcome.answers[JUDGE_QUESTIONS.related];
+  const answerable = outcome.answers[JUDGE_QUESTIONS.answerable];
+  if (related === undefined || answerable === undefined) {
     finishTurn(deps, counted, messageText);
     hold(run, undefined, 0);
     return undefined;
   }
-  const answers: JudgeAnswers = { useful, new: fresh };
+  const answers: JudgeAnswers = { related, answerable };
   const decision = decideJudge(answers, deps.settings);
   if (decision.kind !== 'nudge') {
     if (decision.reason === 'helpful') {
@@ -383,7 +383,7 @@ function settleUnhelpful(
   const withUnrelated = noteVerdict(counted, true);
   deps.run.set(withUnrelated);
   if (
-    withUnrelated.unrelated < deps.settings.judge.stop.consecutive ||
+    withUnrelated.unrelated < deps.settings.judge.stop.unrelated ||
     withUnrelated.nudges >= deps.settings.judge.stop.maxNudges
   ) {
     finishTurn(deps, withUnrelated, messageText);

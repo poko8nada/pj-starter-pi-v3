@@ -96,13 +96,13 @@ function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets
       return Promise.resolve({
         stopReason: 'stop',
         answers: {
-          useful: {
+          related: {
             type: 'choice',
             choice: 'yes',
             probabilities: { yes: 0.9 },
             confidence: 0.9,
           },
-          new: {
+          answerable: {
             type: 'choice',
             choice: 'yes',
             probabilities: { yes: 0.9 },
