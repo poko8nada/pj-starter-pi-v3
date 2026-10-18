@@ -136,9 +136,10 @@ close の収集から: 2（使われていない `noteVerdict`）と 11（同じ
 
 ### Slice 3: 統合: 使われていない物と、二重の検査が残っていない
 
-- Findings:
-- Unplanned:
-- Commit:
+- noteVerdict の残り 0 件、消した題は hook 側 0 件（e の題は decide 側に残る）、残した組は a〜h の 8 行に記録。全体 41 ファイル 699 件緑
+- Findings: なし
+- Unplanned: なし
+- Commit: 5641697
 
 ## Review
 
