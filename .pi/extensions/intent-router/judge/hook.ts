@@ -15,7 +15,6 @@ import {
   addAction,
   countJudgement,
   noteTurn,
-  noteVerdict,
   nudge,
   type Armed,
   type FlagsPort,
@@ -339,87 +338,91 @@ function settleAnswered(
   const answerable = outcome.answers[JUDGE_QUESTIONS.answerable];
   if (related === undefined || answerable === undefined) {
     finishTurn(deps, counted, messageText);
-    hold(run, undefined, 0);
+    hold(run, undefined, counted.unrelated);
     return undefined;
   }
   const answers: JudgeAnswers = { related, answerable };
-  const decision = decideJudge(answers, deps.settings);
-  if (decision.kind !== 'nudge') {
-    if (decision.reason === 'helpful') {
-      const cleared = noteVerdict(counted, false);
-      deps.run.set(cleared);
-      finishTurn(deps, cleared, messageText);
-      hold(run, answers, 0);
-    } else {
-      finishTurn(deps, counted, messageText);
-      hold(run, answers, counted.unrelated);
+  const decision = decideJudge(answers, deps.settings, counted.unrelated);
+  const threshold = deps.settings.judge.threshold;
+  const relatedPass = related.confidence >= threshold;
+  const relatedYes = related.type === 'choice' && related.choice === 'yes';
+  const relatedNo = related.type === 'choice' && related.choice === 'no';
+  const stamped: Armed = { ...counted, unrelated: decision.unrelated };
+  deps.run.set(stamped);
+  if (!relatedPass || (!relatedYes && !relatedNo)) {
+    const moved = finishTurn(deps, stamped, messageText);
+    const kept: Armed = { ...moved, read: stamped.read, related: stamped.related };
+    deps.run.set(kept);
+    if (decision.kind === 'nudge') {
+      return settleNudgeFor(deps, { kept, outcome, turnIndex, truncated, stateChars, answers });
     }
+    hold(kept, answers, decision.unrelated);
     return undefined;
   }
-  return settleUnhelpful(deps, {
-    counted,
-    outcome,
-    turnIndex,
-    messageText,
-    truncated,
-    stateChars,
-    answers,
-  });
+  if (relatedYes) {
+    const moved = finishTurn(deps, stamped, messageText);
+    if (decision.kind === 'nudge') {
+      return settleNudgeFor(deps, {
+        kept: moved,
+        outcome,
+        turnIndex,
+        truncated,
+        stateChars,
+        answers,
+      });
+    }
+    hold(moved, answers, decision.unrelated);
+    return undefined;
+  }
+  const moved = finishTurn(deps, stamped, messageText);
+  const discarded: Armed = { ...moved, related: stamped.related };
+  deps.run.set(discarded);
+  if (decision.kind === 'nudge') {
+    return settleNudgeFor(deps, {
+      kept: discarded,
+      outcome,
+      turnIndex,
+      truncated,
+      stateChars,
+      answers,
+    });
+  }
+  hold(discarded, answers, decision.unrelated);
+  return undefined;
 }
 
-function settleUnhelpful(
+function settleNudgeFor(
   deps: JudgeDeps,
   input: {
-    readonly counted: Armed;
+    readonly kept: Armed;
     readonly outcome: Answered;
     readonly turnIndex: number;
-    readonly messageText: string;
     readonly truncated: boolean;
     readonly stateChars: number;
     readonly answers: JudgeAnswers;
   },
 ): JudgeMessage | undefined {
-  const { counted, outcome, turnIndex, messageText, truncated, stateChars, answers } = input;
-  const withUnrelated = noteVerdict(counted, true);
-  deps.run.set(withUnrelated);
-  if (
-    withUnrelated.unrelated < deps.settings.judge.stop.unrelated ||
-    withUnrelated.nudges >= deps.settings.judge.stop.maxNudges
-  ) {
-    finishTurn(deps, withUnrelated, messageText);
+  const { kept, outcome, turnIndex, truncated, stateChars, answers } = input;
+  if (kept.nudges >= deps.settings.judge.stop.maxNudges) {
     logHold(deps, {
-      run: withUnrelated,
+      run: kept,
       outcome,
       turnIndex,
       truncated,
       stateChars,
       verdicts: answers,
-      unrelated: withUnrelated.unrelated,
-    });
-    return undefined;
-  }
-  finishTurn(deps, withUnrelated, messageText);
-  const current = deps.run.get();
-  if (current.kind !== 'armed') {
-    logHold(deps, {
-      run: withUnrelated,
-      outcome,
-      turnIndex,
-      truncated,
-      stateChars,
-      verdicts: answers,
-      unrelated: withUnrelated.unrelated,
+      unrelated: kept.unrelated,
     });
     return undefined;
   }
   return settleNudge(deps, {
-    run: current,
+    run: kept,
     outcome,
     turnIndex,
     truncated,
     stateChars,
     answers,
-    unrelated: withUnrelated.unrelated,
+    unrelated: kept.unrelated,
   });
 }
 

@@ -18,10 +18,10 @@ function answers(related: string, relatedConf: number, answerable: string, answe
 }
 
 /** arm して noteTurn を回数ぶん重ねた run（turns を進めるのに使う） */
-function armedWithTurns(turns: number) {
+function armedWithTurns(turns: number, choice: 'reply' | 'approve' = 'reply') {
   let run = arm({
     ownerNow: 'hello',
-    choice: 'reply',
+    choice,
     confidence: 0.9,
     candidate: CANDIDATE,
     now: 1,
@@ -37,33 +37,63 @@ function withJudge(settings: Settings, patch: Partial<Settings['judge']>): Setti
 }
 
 describe('decideJudge', () => {
-  it('related=no かつ answerable=no → nudge', () => {
-    expect(decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings())).toMatchObject({
-      kind: 'nudge',
-    });
-  });
-
-  it('related=yes かつ answerable=no → nudge（answerable だけで促しになる）', () => {
-    expect(decideJudge(answers('yes', 0.95, 'no', 0.95), defaultSettings())).toMatchObject({
-      kind: 'nudge',
-    });
-  });
-
-  it('related=no かつ answerable=yes → nudge', () => {
-    expect(decideJudge(answers('no', 0.95, 'yes', 0.95), defaultSettings())).toMatchObject({
-      kind: 'nudge',
-    });
-  });
-
-  it('related=yes かつ answerable=yes → wait で streak は 0', () => {
-    expect(decideJudge(answers('yes', 0.95, 'yes', 0.95), defaultSettings())).toMatchObject({
+  it('related=yes answerable=no（どちらも閾値以上）→ 促しは出ない', () => {
+    expect(decideJudge(answers('yes', 0.95, 'no', 0.95), defaultSettings(), 0)).toMatchObject({
       kind: 'wait',
-      streak: 0,
     });
   });
 
-  it('related の confidence が 0.79 → 判断に使わず wait', () => {
-    expect(decideJudge(answers('no', 0.79, 'no', 0.95), defaultSettings())).toMatchObject({
+  it('answerable=yes（閾値以上）→ 促しが 1 回出る', () => {
+    expect(decideJudge(answers('yes', 0.95, 'yes', 0.95), defaultSettings(), 0)).toMatchObject({
+      kind: 'nudge',
+      why: 'answerable',
+    });
+  });
+
+  it('related=no が 1 往復目 → 出ない', () => {
+    expect(decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings(), 0)).toMatchObject({
+      kind: 'wait',
+      unrelated: 1,
+    });
+  });
+
+  it('related=no が 2 往復目 → 促しが出る', () => {
+    expect(decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings(), 1)).toMatchObject({
+      kind: 'nudge',
+      why: 'unrelated',
+      unrelated: 2,
+    });
+  });
+
+  it('related=no と yes が交互 → 合計で数えて 2 回目の no で出る', () => {
+    const first = decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings(), 0);
+    expect(first).toMatchObject({ kind: 'wait', unrelated: 1 });
+    if (first.kind !== 'wait') {
+      throw new Error('must be wait');
+    }
+    const second = decideJudge(
+      answers('yes', 0.95, 'no', 0.95),
+      defaultSettings(),
+      first.unrelated,
+    );
+    expect(second).toMatchObject({ kind: 'wait', unrelated: 1 });
+    if (second.kind !== 'wait') {
+      throw new Error('must be wait');
+    }
+    expect(
+      decideJudge(answers('no', 0.95, 'no', 0.95), defaultSettings(), second.unrelated),
+    ).toMatchObject({ kind: 'nudge', why: 'unrelated', unrelated: 2 });
+  });
+
+  it('related の confidence が閾値未満 → unrelated は増えない', () => {
+    expect(decideJudge(answers('no', 0.79, 'no', 0.95), defaultSettings(), 0)).toMatchObject({
+      kind: 'wait',
+      unrelated: 0,
+    });
+  });
+
+  it('answerable の confidence が閾値未満 → 促しは出ない', () => {
+    expect(decideJudge(answers('yes', 0.95, 'yes', 0.79), defaultSettings(), 0)).toMatchObject({
       kind: 'wait',
     });
   });
@@ -76,14 +106,21 @@ describe('decideJudge', () => {
           answerable: choiceAnswer('no', 0.95),
         },
         defaultSettings(),
+        0,
       ),
-    ).toMatchObject({ kind: 'wait' });
+    ).toMatchObject({ kind: 'wait', unrelated: 0 });
   });
 });
 
 describe('due', () => {
   it('idle の run → wait', () => {
     expect(due(idleRun(), defaultSettings(), 10)).toMatchObject({ kind: 'wait' });
+  });
+
+  it('approve の往復 → wait（2 段目は reply だけ）', () => {
+    expect(due(armedWithTurns(1, 'approve'), defaultSettings(), 10)).toMatchObject({
+      kind: 'wait',
+    });
   });
 
   it('turns: 0（minTurns: 2）→ wait、1 往復後（turns: 1 → 次は 2）→ due', () => {

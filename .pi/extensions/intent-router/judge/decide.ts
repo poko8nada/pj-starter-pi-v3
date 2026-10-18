@@ -12,8 +12,8 @@ export interface JudgeAnswers {
 }
 
 export type JudgeDecision =
-  | { readonly kind: 'nudge'; readonly streak: number }
-  | { readonly kind: 'wait'; readonly streak: number; readonly reason: string };
+  | { readonly kind: 'nudge'; readonly why: 'unrelated' | 'answerable'; readonly unrelated: number }
+  | { readonly kind: 'wait'; readonly reason: string; readonly unrelated: number };
 
 function verdictOf(answer: Answer): 'yes' | 'no' | undefined {
   if (answer.type !== 'choice') {
@@ -25,24 +25,44 @@ function verdictOf(answer: Answer): 'yes' | 'no' | undefined {
   return undefined;
 }
 
-/** 両方が閾値以上で、どちらかが「効いていない」なら unhelpful */
-export function decideJudge(answers: JudgeAnswers, settings: Settings): JudgeDecision {
+/** `related`がnoで合計が`stop.unrelated`に届いた、または`answerable`がyesなら促す。閾値を通った答えだけ数える */
+export function decideJudge(
+  answers: JudgeAnswers,
+  settings: Settings,
+  priorUnrelated: number,
+): JudgeDecision {
   const threshold = settings.judge.threshold;
-  if (answers.related.confidence < threshold || answers.answerable.confidence < threshold) {
-    return { kind: 'wait', streak: 0, reason: 'low confidence' };
+  const relatedPass = answers.related.confidence >= threshold;
+  const answerablePass = answers.answerable.confidence >= threshold;
+  const related = relatedPass ? verdictOf(answers.related) : undefined;
+  const answerable = answerablePass ? verdictOf(answers.answerable) : undefined;
+  if (related === undefined && answerable === undefined) {
+    if (!relatedPass || !answerablePass) {
+      return { kind: 'wait', reason: 'low confidence', unrelated: priorUnrelated };
+    }
+    return { kind: 'wait', reason: 'expected yes/no answers', unrelated: priorUnrelated };
   }
-  const related = verdictOf(answers.related);
-  const answerable = verdictOf(answers.answerable);
+  if (answerable === 'yes') {
+    const next = related === 'no' ? priorUnrelated + 1 : priorUnrelated;
+    return { kind: 'nudge', why: 'answerable', unrelated: next };
+  }
+  if (related === 'no') {
+    const next = priorUnrelated + 1;
+    if (next >= settings.judge.stop.unrelated) {
+      return { kind: 'nudge', why: 'unrelated', unrelated: next };
+    }
+    return { kind: 'wait', reason: 'unrelated count', unrelated: next };
+  }
+  if (!relatedPass || !answerablePass) {
+    return { kind: 'wait', reason: 'low confidence', unrelated: priorUnrelated };
+  }
   if (related === undefined || answerable === undefined) {
-    return { kind: 'wait', streak: 0, reason: 'expected yes/no answers' };
+    return { kind: 'wait', reason: 'expected yes/no answers', unrelated: priorUnrelated };
   }
-  if (related === 'no' || answerable === 'no') {
-    return { kind: 'nudge', streak: 1 };
-  }
-  return { kind: 'wait', streak: 0, reason: 'helpful' };
+  return { kind: 'wait', reason: 'related', unrelated: priorUnrelated };
 }
 
-/** 判定を出す番か。助走・間隔・上限を見る。道具の有無は見ない */
+/** 判定を出す番か。助走・間隔・上限を見る。`reply`の往復だけ走る。道具の有無は見ない */
 export function due(
   run: Run,
   settings: Settings,
@@ -50,6 +70,9 @@ export function due(
 ): { readonly kind: 'due' } | { readonly kind: 'wait'; readonly reason: string } {
   if (run.kind !== 'armed') {
     return { kind: 'wait', reason: 'not armed' };
+  }
+  if (run.choice !== 'reply') {
+    return { kind: 'wait', reason: 'not reply' };
   }
   if (run.judgements >= settings.judge.maxJudgements) {
     return { kind: 'wait', reason: 'judgement budget reached' };

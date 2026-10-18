@@ -210,6 +210,7 @@ describe('register', () => {
     expect(records[1]).toMatchObject({ hook: 'judge' });
     if (records[0]?.hook === 'route' && records[1]?.hook === 'judge') {
       expect(records[1].owner_now).toBe(records[0].owner_now);
+      expect(records[1].verdicts).toMatchObject({ related: 'yes', answerable: 'yes' });
     }
   });
 

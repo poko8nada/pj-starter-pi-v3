@@ -252,19 +252,6 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(2);
   });
 
-  it('related=yes かつ answerable=no が 2 回続く → nudge（answerable だけで促しになる）', async () => {
-    const settings = defaultSettings();
-    const { handler, run } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
-    await handler(readTurn(), { cwd: '/repo' });
-    const result = await handler(readTurn(), { cwd: '/repo' });
-    const current = run.get();
-    if (current.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(current.unrelated).toBe(2);
-    expect(result?.entries).toHaveLength(1);
-  });
-
   it('related=no が 1 回だけ → wait で unrelated は 1', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
@@ -276,18 +263,6 @@ describe('registerJudge', () => {
     }
     expect(current.unrelated).toBe(1);
     expect(readRecords(file)).toHaveLength(1);
-  });
-
-  it('related=yes かつ answerable=yes → wait で unrelated は戻らない', async () => {
-    const settings = defaultSettings();
-    const { handler, run } = wired(settings, [noNo(), yesYes()], 'live', armedWithTurns(1));
-    await handler(readTurn(), { cwd: '/repo' });
-    await handler(readTurn(), { cwd: '/repo' });
-    const current = run.get();
-    if (current.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(current.unrelated).toBe(1);
   });
 
   it('read が空（道具を使っていない往復）→ 何も聞かない', async () => {
@@ -306,7 +281,7 @@ describe('registerJudge', () => {
     expect(readRecords(file)).toHaveLength(0);
   });
 
-  it('related の confidence が 0.79 → 判断に使わず wait', async () => {
+  it('related の confidence が 0.79 → unrelated は増えず read は残る', async () => {
     const settings = defaultSettings();
     const low = batchAnswered(choiceAnswer('no', 0.79), choiceAnswer('no', 0.95));
     const { handler, run, requests, file } = wired(settings, [low], 'live', armedWithTurns(1));
@@ -318,6 +293,7 @@ describe('registerJudge', () => {
       throw new Error('must be armed');
     }
     expect(current.unrelated).toBe(0);
+    expect(current.read).toHaveLength(1);
     expect(readRecords(file)).toHaveLength(1);
   });
 
@@ -461,6 +437,116 @@ describe('registerJudge', () => {
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
     expect(readRecords(file)).toHaveLength(0);
+  });
+});
+
+describe('registerJudge/related answerable', () => {
+  it('related=yes answerable=no（どちらも閾値以上）→ 促しは出ない', async () => {
+    const settings = defaultSettings();
+    const { handler, run, file } = wired(settings, [yesNo()], 'live', armedWithTurns(1));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const current = run.get();
+    if (current.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(current.unrelated).toBe(0);
+    expect(current.related).toHaveLength(1);
+    expect(current.read).toEqual([]);
+    expect(readRecords(file)).toHaveLength(1);
+  });
+
+  it('answerable=yes（閾値以上）→ 促しが 1 回出る', async () => {
+    const settings = defaultSettings();
+    const { handler, run, file } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    const current = run.get();
+    if (current.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(current.unrelated).toBe(0);
+    expect(readRecords(file)).toHaveLength(1);
+    expect(readRecords(file)[0]?.nudge).not.toBeNull();
+  });
+
+  it('related=no と yes が交互 → 合計で数えて 2 回目の no で出る', async () => {
+    const settings = defaultSettings();
+    const { handler, run } = wired(settings, [noNo(), yesNo(), noNo()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    const afterFirst = run.get();
+    if (afterFirst.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(afterFirst.unrelated).toBe(1);
+    await handler(readTurn(), { cwd: '/repo' });
+    const afterSecond = run.get();
+    if (afterSecond.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(afterSecond.unrelated).toBe(1);
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    const afterThird = run.get();
+    if (afterThird.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(afterThird.unrelated).toBe(2);
+    expect(result?.entries).toHaveLength(1);
+  });
+
+  it('answerable の confidence が閾値未満 → 促しは出ない', async () => {
+    const settings = defaultSettings();
+    const low = batchAnswered(choiceAnswer('yes', 0.95), choiceAnswer('yes', 0.79));
+    const { handler, run, file } = wired(settings, [low], 'live', armedWithTurns(1));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const current = run.get();
+    if (current.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(current.unrelated).toBe(0);
+    expect(readRecords(file)).toHaveLength(1);
+  });
+
+  it('related=yes の往復のあと、次の payload の related にその action が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    await handler(readTurn(), { cwd: '/repo' });
+    expect(requests).toHaveLength(2);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const second = requests[1] as { readonly state: Readonly<Record<string, unknown>> };
+    const related = second.state['related'];
+    expect(Array.isArray(related)).toBe(true);
+    expect(related).toHaveLength(1);
+  });
+
+  it('approve の往復 → 2 段目は走らない', async () => {
+    const settings = defaultSettings();
+    let initial = arm({
+      ownerNow: 'hello',
+      choice: 'approve',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    initial = noteTurn(initial, 'text0', defaultSettings().state);
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', initial);
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
+  });
+
+  it('促しの文を差し替えると出す文も変わる', async () => {
+    const base = defaultSettings();
+    const settings: Settings = {
+      ...base,
+      judge: { ...base.judge, stop: { ...base.judge.stop, nudge: '独自の促し文' } },
+    };
+    const { handler } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries[0]?.content).toBe('独自の促し文');
   });
 });
 
