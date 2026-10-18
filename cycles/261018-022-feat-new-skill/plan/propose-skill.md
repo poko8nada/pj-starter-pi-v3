@@ -71,6 +71,7 @@ README.ja.md                update
   - (happy) 収束点の節を読む → 吟味された候補が揃う、`Context` が埋まる、`Options` が埋まる、決定が乗る事実が `Research & Trial` に書けるの 4 つが並び、決めないと書かれている
   - (happy) 候補の節を読む → 候補を出すだけで、決めるのは ADR であると書かれている
   - (happy) 候補の節を読む → なぜ今か、どの Unit が動くか、根拠を添えると書かれている
+  - (boundary values) 候補の節を読む → 候補は 2〜4 個と書かれている
   - (happy) 候補の節を読む → 推奨を 1 つ添え、どの候補でサイクルを起こすかを owner が決めると書かれている
   - (happy) そうしないの節を読む → `DEFINITION.md` も `cycles/` も書かず、決めないと書かれている
   - (happy) 本文を 1 枚で読む → どの規則も `brief` を参照せず、それだけで意味が通る
@@ -111,28 +112,35 @@ README.ja.md                update
 
 ### Slice 1: スキルの本文
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `brief` と同じく、ファイルを作らない規則は「そうしない」の節に寄せた。plan の step とケースもそれに合わせて直した。
+- Commit: d42f7a4
 
 ### Slice 2: 統合: `propose` が ADR に渡せる状態で終わること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e49170f
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `.pi/skills/adr/SKILL.md:3` と `.pi/skills/propose/SKILL.md:2-3` の重なり（サイクル開始の宣言・次に何をするかの問い）は design 通り `adr-front` が後置で直す前提のため本 change が古くしたものではなく、`README.md:12,59` と `README.ja.md:12,59` と `DEFINITION.md:35` に旧数表記の残存はない。
+- Unlisted: なし — `b9d1142..HEAD` の製品差分 5 件は Files（`cycles/261018-022-feat-new-skill/plan/propose-skill.md:5-15`）と一致し、`cycles/261018-022-feat-new-skill/plan/propose-skill.md` の変更 1 件は記録のため対象外とした（`cycles/261018-022-feat-new-skill/plan/propose-skill.md:115,122` の Notes 通り文言揃え）。
 - Gaps:
-- Unproven:
+  - `.pi/skills/propose/SKILL.md:43` の「two to four of them」が候補数の下限・上限を決めているが、`cycles/261018-022-feat-new-skill/plan/propose-skill.md:55-80` の Verify に対応する case がなく、数を外しても read が赤にならない。`cycles/261018-022-feat-new-skill/plan/propose-skill.md:43-45` の Steps と `cycles/261018-022-feat-new-skill/adr.md:72-82` の Adopted は数を決めていないため、ADR・plan 決定値の除外にも当たらない。
+    - fixed: plan の Verify に「候補は 2〜4 個」の boundary case を足した。
+- Unproven: なし — `cycles/261018-022-feat-new-skill/plan/propose-skill.md:77,80` の error は「など」を含む広い形で repo 固有名全般を見るため、`oxfmt` 等の別名が入っても緑のままにならない。他の happy/boundary の各 case も、対応する文を外せば赤になると読める弱さはない。
 - Doubts:
+  - `.pi/skills/propose/SKILL.md:30` の「the tests and what runs」は Steps の「コードベースの探索」の詳述であり、`cycles/261018-022-feat-new-skill/plan/propose-skill.md:65` の手順最初の case で押さえられると読めるため指摘にしなかった。
+  - `.pi/skills/propose/SKILL.md:8` の「one of the two fronts」の「two」は Steps にないが、`cycles/261018-022-feat-new-skill/adr.md:18` の前段 2 つと整合し、`cycles/261018-022-feat-new-skill/plan/propose-skill.md:59` の冒頭 case が前段性を押さえるため指摘にしなかった。
+  - `.pi/skills/propose/SKILL.md:48-50` の `4. Stop` は `cycles/261018-022-feat-new-skill/plan/propose-skill.md:44-46` の候補・owner 決定の繰り返しで新行為がなく、候補・収束点の case で押さえられると読めるため指摘にしなかった。
+  - `.pi/skills/propose/SKILL.md:68` の「and a plan writes」は Steps の「決めないこと」の補足で、`cycles/261018-022-feat-new-skill/plan/propose-skill.md:75` のそうしない case が `DEFINITION.md`・`cycles/`・決めないを押さえるため指摘にしなかった。
+  - `README.md:60-61` と `README.ja.md:60-61` の `adr` 行が調査・試作を残すことは `cycles/261018-022-feat-new-skill/plan/adr-front.md:56-60` が外す前提のため指摘にしなかった。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（26 ケース、1 回）と slice 2 の `look`（owner）、`pnpm typecheck`、`pnpm test:run`（41 files、699 tests）である。壊して確かめたのは 3 つで、候補の数（2〜4 個）、探索と並行、`proposed` を外すと、どれも赤になって戻した。
+- Findings: なし。review の 1 件は `fixed` で、Round 2 が確かめている。
+- Doubts: なし。`AGENTS.md` の 1 行（1 サイクルは brief か propose から始まり、ADR → design → plan → work → close）は owner の編集で、plan の `Files` の外にある。owner の指示でこの受け入れの commit に入れた。
