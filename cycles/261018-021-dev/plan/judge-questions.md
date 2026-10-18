@@ -286,15 +286,15 @@ export function decideJudge(
 ## Acceptance
 
 - Ran:
-  - plan の検査: slice 1〜4 の `Verify` を含む `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 210 件が緑
-  - `pnpm test:run` → 41 ファイル / 708 件が緑
+  - plan の検査: slice 1〜4 の `Verify` を含む `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 199 件が緑（重複 11 件を消した後）
+  - `pnpm test:run` → 41 ファイル / 697 件が緑
   - `pnpm typecheck` → ルートと `.pi` とも ok
   - `pnpm lint` → 緑
   - 壊して赤を確かめた 3 件（同時に入れた）:
     - `judge/decide.ts` の `answerable === 'yes'` の枝を止める
     - `judge/decide.ts` の `due` の「`reply` 以外は wait」を外す
     - `state/payload.ts` の `minimizeText` の空白の詰めを外す
-    - 3 件で合わせて 41 件が赤になり、戻すと緑に復帰
+    - 3 件で合わせて 40 件が赤になり、戻すと緑に復帰（重複 11 件を消した後にやり直した）
 - Findings:
   - テスト 12 ファイルの見直しで、消してよい検査が 11 件見つかった（重複・書き写し・弱い方）。
     - fixed: 重複11件を削除（`judge/hook`の2件、`recent`1件、`route/decide`1件、`route/hook`2件、`schema`2件、`payload`3件）。`pnpm vitest run .pi/extensions/intent-router`は210件→199件（11件減）、`pnpm test:run`は708件→697件で緑を維持
