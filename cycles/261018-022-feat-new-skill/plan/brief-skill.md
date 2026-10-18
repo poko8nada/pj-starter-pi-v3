@@ -66,6 +66,7 @@ README.ja.md                update
   - (happy) 手順 2 を読む → 3 つの型と、型ごとに何に答えるか（実現可能性と用途への適切さ、それを補強する材料）が書かれている
   - (happy) 手順 2 を読む → 研究の問いが 2 つ、発見（`compare`）と確認（`mechanism`、`triage`）と書かれている
   - (happy) 手順 2 を読む → 発見はやり方が見えていない時だけと書かれている
+  - (happy) 手順 2 を読む → 型と問いの組で提案し、その答えが何を決めるかを添えると書かれている
   - (happy) 手順 2 を読む → 調べるのは `research` サブエージェントで走と書かれている
   - (happy) 手順 3 を読む → 承認された範囲だけを調べ、事実を出所つきで受け取ると書かれている
   - (happy) 手順 3 を読む → 答えられなかった問いは、何を止めているかと一緒に受け取ると書かれている
@@ -77,13 +78,15 @@ README.ja.md                update
   - (happy) 手順 6 を読む → トライアルの対象が Stack かその場でできる確認事項と書かれている
   - (happy) 手順 6 を読む → トライアルは `trial` サブエージェントで worktree を走ると書かれている
   - (happy) 手順 6 を読む → 共有の置き場に触る前に owner に聞くと書かれている
+  - (happy) 手順 6 を読む → トライアルが書いた物は製品に入らないと書かれている
   - (happy) 手順 7 を読む → 決めるのは ADR であり、ここでは決めないと書かれている
   - (happy) そうしないの節を読む → 選択肢を定義の行にしないと書かれている
   - (boundary values) description を読む → owner がサイクルを始めると言った時で発火する形で、2 文である
-  - (error) 本文に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`lefthook`、`oxlint`）が出てこない
+  - (error) 本文に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`sound-notify`、`lefthook`、`oxlint`、`oxfmt`、`tsc`、`vitest` など、このリポジトリの開発用の道具や拡張の名前）が出てこない
   - (happy) `tasks.md` の `research` の節を読む → 型ごとに何に答えるか、出所を残すこと、答えられなかった問いは何を止めているかを添えると書かれている
-  - (happy) `tasks.md` の `trial` の節を読む → worktree で走り、共有の置き場の前に owner に聞き、書いた物が製品に入らないと書かれている
-  - (error) `tasks.md` に目を通す → このハーネスの開発にだけある名前が出てこない
+  - (happy) `tasks.md` の `trial` の節を読む → worktree で走り、対象と設定と、報告する 3 つ（ぶつかる物、版、最小の形）と、共有の置き場の前に owner に聞き、書いた物が製品に入らないと書かれている
+  - (happy) `tasks.md` の形を読む → 前書きと、節ごとの囲みと、その下の箇条になっている
+  - (error) `tasks.md` に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`sound-notify`、`lefthook`、`oxlint`、`oxfmt`、`tsc`、`vitest` など）が出てこない
   - _no case_: 文面の読みやすさ — 読む者の判断であり、機械では決まらない
 
 ## 2.統合: `brief` が ADR に渡せる状態で終わること
@@ -123,22 +126,36 @@ README.ja.md                update
 
 ### Slice 2: 統合: `brief` が ADR に渡せる状態で終わること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: da0af61
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `.pi/skills/adr/SKILL.md:3` と `.pi/skills/brief/SKILL.md:3` の重なりは design の通り `adr-front` が後置で直す前提のため本 change が古くしたものではなく、`README.md:12,59` と `README.ja.md:12,59` と `DEFINITION.md:35` に旧数表記の残存はない。
+- Unlisted: なし — `ccbb98c..HEAD` の製品差分 5 件は Files と一致し、`cycles/` 下 3 件は記録のため対象外とした。
 - Gaps:
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:40` の型と問いの組で提案し何を決めるかを添えるに対応する case が Verify になく `cycles/261018-022-feat-new-skill/plan/brief-skill.md:69` は走らせることだけのため現行 `.pi/skills/brief/SKILL.md:39` を押さえない。
+    - fixed: plan の Verify に「型と問いの組で提案し、その答えが何を決めるかを添える」のケースを足した。
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:45` の書いた物が製品に入らないことに対応する case が Verify になく `cycles/261018-022-feat-new-skill/plan/brief-skill.md:76-79` は合意対象subagent共有置き場だけのため現行 `.pi/skills/brief/SKILL.md:68` を押さえない。
+    - fixed: 「トライアルが書いた物は製品に入らない」のケースを足した。
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:51` の対象と設定報告する3つに対応する case が Verify になく `cycles/261018-022-feat-new-skill/plan/brief-skill.md:85` はworktree共有置き場製品だけのため現行 `.pi/skills/brief/references/tasks.md:22-24` を押さえない。
+    - fixed: `tasks.md` の `trial` の節のケースに、対象と設定と報告する 3 つを足した。
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:52` の他スキルと同じ形に対応する case が Verify になく現行 `.pi/skills/brief/references/tasks.md:1-30` の形を押さえない。
+    - fixed: `tasks.md` の形を読むケースを足した。
 - Unproven:
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:83` の error は5名だけのため現行 `.pi/skills/brief/SKILL.md` に `oxfmt` 等別のrepo固有名が入っても緑のままになる。
+    - fixed: error のケースを、この repo の開発用の名前全般（`sound-notify`、`oxfmt`、`tsc`、`vitest` など）を見る形に広げた。
+  - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:86` の error も同じ 5 名だけのため現行 `.pi/skills/brief/references/tasks.md` に同種別名が入っても緑のままになる。
+    - fixed: 同じく広げた。
 - Doubts:
+  - `README.md:60` と `README.ja.md:60` の `adr` 行が調査試作を残すことは `cycles/261018-022-feat-new-skill/plan/adr-front.md:56-60` が外す前提のため指摘にしなかった。
+  - `cycles/261018-022-feat-new-skill/plan/propose-skill.md:63` の1行変更は本 plan の Files 外だが他 plan の文言揃えであり Unlisted にしなかった。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（33 ケース、1 回）と slice 2 の `look`（owner）、`pnpm typecheck`、`pnpm test:run`（41 files、699 tests）である。壊して確かめたのは 3 つで、owner の合意の一文、`### 7. Stop` の一文、手順 2 の型ごとの答えを外すと、どれも赤になって戻した。
+- Findings: なし。review の 6 件は `fixed` で、Round 2 が確かめている。
+- Doubts: `tasks.md` の形が他のスキルの `references/tasks.md` と同じかどうかは、突き合わせていない。
