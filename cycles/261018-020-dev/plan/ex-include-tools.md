@@ -102,15 +102,15 @@ const includeTools: readonly string[] = [
 
 ### Slice 1: 一覧と訳をこの環境の道具に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1efac90
 
 ### Slice 2: 統合: 調べた往復が記録に載る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 07b4a1b
 
 ## Review
 
