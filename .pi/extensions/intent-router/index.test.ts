@@ -89,7 +89,20 @@ function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets
       }
       return Promise.resolve({
         stopReason: 'stop',
-        answers: { judge: { type: 'score', score: 1.8, confidence: 0.8 } },
+        answers: {
+          useful: {
+            type: 'choice',
+            choice: 'yes',
+            probabilities: { yes: 0.9 },
+            confidence: 0.9,
+          },
+          new: {
+            type: 'choice',
+            choice: 'yes',
+            probabilities: { yes: 0.9 },
+            confidence: 0.9,
+          },
+        },
         usage: usage(),
       });
     },

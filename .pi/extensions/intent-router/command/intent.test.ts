@@ -131,8 +131,8 @@ describe('registerCommand', () => {
     const flags = fakeFlags(true);
     const run = fakeRun(
       arm({
-        prompt: 'hello',
-        label: 'question',
+        ownerNow: 'hello',
+        choice: 'reply',
         confidence: 0.9,
         candidate: { provider: 'opencode', model: 'jev-1.13-free' },
         now: 1,

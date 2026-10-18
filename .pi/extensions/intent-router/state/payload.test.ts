@@ -4,7 +4,7 @@ import { defaultSettings } from '../settings/schema.ts';
 import { addAction, arm, type Action, type Run } from './run.ts';
 import {
   asInput,
-  judgeState,
+  judgePayload,
   lastAssistantText,
   routePayload,
   targetOf,
@@ -14,7 +14,7 @@ import {
 const CANDIDATE: ClassifierCandidate = { provider: 'opencode', model: 'jev-1.13-free' };
 
 function armed(): Run {
-  return arm({ prompt: 'hello', label: 'question', confidence: 0.9, candidate: CANDIDATE, now: 1 });
+  return arm({ ownerNow: 'hello', choice: 'reply', confidence: 0.9, candidate: CANDIDATE, now: 1 });
 }
 
 function action(overrides: Partial<Action> = {}): Action {
@@ -131,7 +131,18 @@ describe('lastAssistantText', () => {
   });
 });
 
-describe('judgeState', () => {
+describe('judgePayload', () => {
+  it('owner_now / agent_text / latest / earlier の 4 つを組む', () => {
+    let run = armed();
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    const { payload, truncated } = judgePayload(run, defaultSettings());
+    expect(payload.owner_now).toBe('hello');
+    expect(payload.agent_text).toBe('');
+    expect(payload.latest).toHaveLength(1);
+    expect(payload.earlier).toHaveLength(0);
+    expect(truncated).toBe(false);
+  });
+
   it('画像・base64 の文字列を含まない', () => {
     let run = armed();
     run = addAction(
@@ -139,22 +150,21 @@ describe('judgeState', () => {
       action({ tool: 'read', target: 'img.ts', result: 'see data:image/png;base64,iVBORw0KGgo=' }),
       limits(),
     );
-    const state = judgeState(run, 12000);
-    expect(JSON.stringify(state)).not.toContain('data:image');
-    expect(JSON.stringify(state)).not.toContain('iVBORw0KGgo');
+    const { payload } = judgePayload(run, defaultSettings());
+    expect(JSON.stringify(payload)).not.toContain('data:image');
+    expect(JSON.stringify(payload)).not.toContain('iVBORw0KGgo');
   });
 
-  it('maxChars を超える actions で末尾を落とし、truncated が true', () => {
+  it('state が maxStateChars を超える → earlier を後ろから削る', () => {
+    const settings = {
+      ...defaultSettings(),
+      state: { ...defaultSettings().state, maxStateChars: 500 },
+    };
     let run = armed();
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < 4; index += 1) {
       run = addAction(run, action({ target: `f${index}.ts`, result: 'x'.repeat(100) }), limits());
     }
-    const state = judgeState(run, 200);
-    expect(state['truncated']).toBe(true);
-    const investigation = state['investigation'];
-    expect(Array.isArray(investigation)).toBe(true);
-    if (Array.isArray(investigation)) {
-      expect(investigation.length).toBeLessThan(5);
-    }
+    const { truncated } = judgePayload(run, settings);
+    expect(truncated).toBe(true);
   });
 });

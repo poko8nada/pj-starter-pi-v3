@@ -96,6 +96,33 @@ export interface Ask {
   (request: AskRequest): Promise<AskOutcome>;
 }
 
+export interface BatchAskRequest {
+  readonly state: JsonObject;
+  readonly questions: Readonly<Record<string, ClassifierQuestion>>;
+  readonly only?: ClassifierCandidate;
+  readonly signal?: AbortSignal;
+}
+
+export type BatchAskOutcome =
+  | {
+      readonly kind: 'answered';
+      readonly provider: string;
+      readonly model: string;
+      readonly answers: Readonly<Record<string, Answer>>;
+      readonly usage: Usage;
+      readonly latencyMs: number;
+    }
+  | {
+      readonly kind: 'failed';
+      readonly tried: readonly string[];
+      readonly reason: string;
+      readonly latencyMs: number;
+    };
+
+export interface BatchAsk {
+  (request: BatchAskRequest): Promise<BatchAskOutcome>;
+}
+
 export interface ClassifierDeps {
   readonly registry: Registry;
   readonly settings: Settings;
@@ -325,6 +352,131 @@ export function createAsk(deps: ClassifierDeps): Ask {
             kind: 'failed',
             tried,
             reason: `classify timeout after ${timeoutMs}ms`,
+            latencyMs: clock() - startedAt,
+          };
+        }
+        return {
+          kind: 'failed',
+          tried,
+          reason: 'classify aborted',
+          latencyMs: clock() - startedAt,
+        };
+      }
+      return {
+        kind: 'failed',
+        tried,
+        reason: firstReason ?? 'no classifier available',
+        latencyMs: clock() - startedAt,
+      };
+    } finally {
+      arm.cleanup();
+    }
+  };
+}
+
+type BatchAttempt =
+  | {
+      readonly kind: 'answered';
+      readonly answers: Readonly<Record<string, Answer>>;
+      readonly usage: Usage;
+    }
+  | { readonly kind: 'miss'; readonly reason: string }
+  | { readonly kind: 'error'; readonly reason: string }
+  | { readonly kind: 'aborted' };
+
+async function attemptBatchModel(
+  registry: Registry,
+  request: BatchAskRequest,
+  model: RegistryModel,
+  signal: AbortSignal,
+): Promise<BatchAttempt> {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 自前の JsonObject を SDK の state に渡す
+  const state = request.state as unknown as Parameters<Registry['classify']>[1]['state'];
+  const result = await registry.classify(
+    model,
+    { state, questions: { ...request.questions } },
+    { signal },
+  );
+  if (result.stopReason === 'aborted') {
+    return { kind: 'aborted' };
+  }
+  if (result.stopReason === 'error') {
+    return {
+      kind: 'error',
+      reason: result.errorMessage ?? 'classifier error from ' + nameOfModel(model),
+    };
+  }
+  const answers: Record<string, Answer> = {};
+  for (const key of Object.keys(request.questions)) {
+    const raw = result.answers[key] as RegistryAnswer | undefined;
+    const answer = raw === undefined ? undefined : fromRegistryAnswer('choice', raw);
+    if (answer === undefined) {
+      return { kind: 'miss', reason: 'unexpected answer shape from ' + nameOfModel(model) };
+    }
+    answers[key] = answer;
+  }
+  return { kind: 'answered', answers, usage: usageOf(result) };
+}
+
+export function createBatchAsk(deps: ClassifierDeps): BatchAsk {
+  const clock = deps.now ?? Date.now;
+  const timer = deps.timer ?? defaultTimer;
+  let paidNotified = false;
+
+  return async (request: BatchAskRequest): Promise<BatchAskOutcome> => {
+    const startedAt = clock();
+    const timeoutMs = deps.settings.budget.timeoutMs;
+    const arm = armAbort(
+      { kind: 'choice', state: request.state, only: request.only, signal: request.signal },
+      timeoutMs,
+      timer,
+    );
+    try {
+      const resolved = await resolveModels(deps.registry, deps.settings, request.only);
+      if (resolved.reason !== undefined) {
+        return {
+          kind: 'failed',
+          tried: [],
+          reason: resolved.reason,
+          latencyMs: clock() - startedAt,
+        };
+      }
+      const tried: string[] = [];
+      let firstReason: string | undefined;
+      for (const model of resolved.models) {
+        tried.push(nameOfModel(model));
+        // eslint-disable-next-line no-await-in-loop -- 候補は順に試し、答えた所で止める
+        const attempt = await attemptBatchModel(deps.registry, request, model, arm.signal);
+        if (attempt.kind === 'answered') {
+          if (model.cost.input > 0 && !paidNotified) {
+            paidNotified = true;
+            deps.notify('intent-router: using paid classifier ' + nameOfModel(model));
+          }
+          return {
+            kind: 'answered',
+            provider: model.provider,
+            model: model.id,
+            answers: attempt.answers,
+            usage: attempt.usage,
+            latencyMs: clock() - startedAt,
+          };
+        }
+        if (attempt.kind === 'aborted') {
+          break;
+        }
+        if (firstReason === undefined) {
+          firstReason = attempt.reason;
+        }
+        if (arm.signal.aborted) {
+          break;
+        }
+      }
+      if (arm.signal.aborted || arm.timedOut()) {
+        if (arm.timedOut()) {
+          return {
+            kind: 'failed',
+            tried,
+            reason: 'classify timeout after ' + timeoutMs + 'ms',
             latencyMs: clock() - startedAt,
           };
         }

@@ -122,8 +122,8 @@ function settleAct(deps: RouteDeps, input: ActInput): RouteMessage | undefined {
   const { prompt, outcome, decision, probabilities } = input;
   deps.run.set(
     arm({
-      prompt,
-      label: decision.choice,
+      ownerNow: prompt,
+      choice: decision.choice,
       confidence: decision.confidence,
       candidate: { provider: outcome.provider, model: outcome.model },
       now: Date.now(),

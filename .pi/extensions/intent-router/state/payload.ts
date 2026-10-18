@@ -97,35 +97,42 @@ function actionView(action: Action): JsonObject {
   };
 }
 
-export function judgeState(run: Run, maxChars: number): JsonObject {
+export interface JudgePayload {
+  readonly owner_now: string;
+  readonly agent_text: string;
+  readonly latest: readonly JsonObject[];
+  readonly earlier: readonly JsonObject[];
+}
+
+export function judgePayload(
+  run: Run,
+  settings: Settings,
+): { readonly payload: JudgePayload; readonly truncated: boolean } {
   if (run.kind !== 'armed') {
-    return { owner_prompt: '', investigation: [], truncated: false };
+    return {
+      payload: { owner_now: '', agent_text: '', latest: [], earlier: [] },
+      truncated: false,
+    };
   }
-  const base: JsonObject = {
-    owner_prompt: run.prompt.slice(0, 2000),
-    label: run.label,
-    confidence: run.confidence,
-    assistant_last: run.assistantLast,
-    turns: run.turns,
-    truncated: run.truncated,
-    investigation: [],
-  };
-  const views = run.actions.map(actionView);
-  const kept: JsonObject[] = [];
+  const limit = settings.state.textChars;
+  const maxChars = settings.state.maxStateChars;
+  const latest = run.latest.map(actionView);
+  let earlier = run.earlier.map(actionView);
   let truncated = run.truncated;
-  for (const view of views) {
-    const next = [...kept, view];
-    const size = JSON.stringify({ ...base, investigation: next }).length;
-    if (size > maxChars) {
-      truncated = true;
-      break;
-    }
-    kept.push(view);
-  }
-  if (kept.length < views.length) {
+  const base = {
+    owner_now: run.ownerNow.slice(0, limit),
+    agent_text: run.assistantLast,
+  };
+  const sizeOf = (earlierViews: readonly JsonObject[]): number =>
+    JSON.stringify({ ...base, latest, earlier: earlierViews }).length;
+  while (earlier.length > 0 && sizeOf(earlier) > maxChars) {
+    earlier = earlier.slice(1);
     truncated = true;
   }
-  return { ...base, investigation: kept, truncated };
+  if (sizeOf(earlier) > maxChars) {
+    truncated = true;
+  }
+  return { payload: { ...base, latest, earlier }, truncated };
 }
 
 export interface RoutePayload {

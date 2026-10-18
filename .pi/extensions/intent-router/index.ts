@@ -8,7 +8,7 @@
 
 import { isAbsolute, join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createAsk, type Ask } from './ask/ask.ts';
+import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts';
 import { registerCommand } from './command/intent.ts';
 import { registerJudge } from './judge/hook.ts';
 import { registerRoute } from './route/hook.ts';
@@ -29,6 +29,7 @@ type Registry = ExtensionContext['modelRegistry'];
 
 interface AskCell {
   readonly ask: Ask;
+  readonly askBatch: BatchAsk;
   readonly hold: (ctx: ExtensionContext) => void;
 }
 
@@ -61,6 +62,29 @@ function createLazyAsk(settingsDir: string): AskCell {
         },
       });
       return ask(request);
+    },
+    askBatch: (request) => {
+      if (registry === undefined) {
+        return Promise.resolve({
+          kind: 'failed',
+          tried: [],
+          reason: 'no model registry',
+          latencyMs: 0,
+        });
+      }
+      const fresh = readSettings(settingsDir);
+      const current = registry;
+      const askBatch = createBatchAsk({
+        registry: current,
+        settings: fresh,
+        notify: (message) => {
+          if (!paidNotified) {
+            paidNotified = true;
+            notifier?.(message);
+          }
+        },
+      });
+      return askBatch(request);
     },
     hold: (ctx) => {
       registry = ctx.modelRegistry;
@@ -124,7 +148,7 @@ function wiringFor(cwd: string, settingsDir: string) {
     get settings(): Settings {
       return current;
     },
-    ask: cell.ask,
+    askBatch: cell.askBatch,
     run: state.run,
     flags: state.flags,
     log,

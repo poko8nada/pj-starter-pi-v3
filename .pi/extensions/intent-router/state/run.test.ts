@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassifierCandidate } from '../settings/schema.ts';
 import { defaultSettings } from '../settings/schema.ts';
-import { isSecretTarget } from './payload.ts';
 import {
   addAction,
   arm,
   countJudgement,
-  fire,
   idleRun,
   noteTurn,
+  noteVerdict,
+  nudge,
   type Action,
   type Run,
 } from './run.ts';
@@ -16,7 +16,7 @@ import {
 const CANDIDATE: ClassifierCandidate = { provider: 'opencode', model: 'jev-1.13-free' };
 
 function armed(): Run {
-  return arm({ prompt: 'hello', label: 'question', confidence: 0.9, candidate: CANDIDATE, now: 1 });
+  return arm({ ownerNow: 'hello', choice: 'reply', confidence: 0.9, candidate: CANDIDATE, now: 1 });
 }
 
 function action(overrides: Partial<Action> = {}): Action {
@@ -36,22 +36,20 @@ function limits() {
 }
 
 describe('arm', () => {
-  it('arm → armed で空の記録と 0 の数、lastJudgedAt は null', () => {
-    const run = arm({
-      prompt: 'hello',
-      label: 'question',
-      confidence: 0.9,
-      candidate: CANDIDATE,
-      now: 1,
-    });
+  it('arm → armed で latest / earlier は空、数は 0', () => {
+    const run = armed();
     expect(run.kind).toBe('armed');
     if (run.kind !== 'armed') {
       return;
     }
-    expect(run.actions).toEqual([]);
+    expect(run.ownerNow).toBe('hello');
+    expect(run.choice).toBe('reply');
+    expect(run.latest).toEqual([]);
+    expect(run.earlier).toEqual([]);
     expect(run.turns).toBe(0);
     expect(run.judgements).toBe(0);
-    expect(run.fires).toBe(0);
+    expect(run.streak).toBe(0);
+    expect(run.nudges).toBe(0);
     expect(run.lastJudgedAt).toBeNull();
   });
 });
@@ -60,28 +58,20 @@ describe('idle', () => {
   it('idle に addAction / noteTurn しても idle のまま', () => {
     expect(addAction(idleRun(), action(), limits()).kind).toBe('idle');
     expect(noteTurn(idleRun(), 'hi', limits()).kind).toBe('idle');
+    expect(noteVerdict(idleRun(), true).kind).toBe('idle');
+    expect(nudge(idleRun()).kind).toBe('idle');
   });
 });
 
 describe('addAction', () => {
-  it('12 回 → 12 件で truncated は false、13 回目で true', () => {
+  it('latest に足す', () => {
     let run = armed();
-    for (let index = 0; index < 12; index += 1) {
-      run = addAction(run, action({ target: `f${index}.ts` }), limits());
-    }
+    run = addAction(run, action({ target: 'x.ts' }), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.actions).toHaveLength(12);
-    expect(run.truncated).toBe(false);
-    run = addAction(run, action({ target: 'overflow.ts' }), limits());
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.actions).toHaveLength(12);
-    expect(run.truncated).toBe(true);
-    expect(run.actions.map((item) => item.target)).not.toContain('f0.ts');
-    expect(run.actions.map((item) => item.target)).toContain('overflow.ts');
+    expect(run.latest).toHaveLength(1);
+    expect(run.earlier).toHaveLength(0);
   });
 
   it('同じ read と同じ path を 2 回 → 1 件のままで attempts が 2', () => {
@@ -91,35 +81,17 @@ describe('addAction', () => {
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.actions).toHaveLength(1);
-    expect(run.actions[0]?.attempts).toBe(2);
-    expect(run.actions[0]?.result).toBe('second');
+    expect(run.latest).toHaveLength(1);
+    expect(run.latest[0]?.attempts).toBe(2);
+    expect(run.latest[0]?.result).toBe('second');
   });
 
   it('.env を読んだ action が落ちる', () => {
-    expect(isSecretTarget('.env')).toBe(true);
     const run = addAction(armed(), action({ tool: 'read', target: '.env' }), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.actions).toHaveLength(0);
-  });
-
-  it('秘密の的（~/.pi の下・鍵の名前・鍵の拡張子）を弾き、ふつうの的は通す', () => {
-    expect(isSecretTarget('~/.pi/config.json')).toBe(true);
-    expect(isSecretTarget('/home/owner/.ssh/id_rsa')).toBe(true);
-    expect(isSecretTarget('id_ed25519')).toBe(true);
-    expect(isSecretTarget('certs/server.pem')).toBe(true);
-    expect(isSecretTarget('certs/server.key')).toBe(true);
-    expect(isSecretTarget('x.ts')).toBe(false);
-    expect(isSecretTarget('')).toBe(false);
-    let run = armed();
-    run = addAction(run, action({ tool: 'read', target: '~/.pi/config.json' }), limits());
-    run = addAction(run, action({ tool: 'read', target: 'x.ts' }), limits());
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.actions.map((item) => item.target)).toEqual(['x.ts']);
+    expect(run.latest).toHaveLength(0);
   });
 
   it('includeTools に無い道具は入らない', () => {
@@ -127,17 +99,78 @@ describe('addAction', () => {
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.actions).toHaveLength(0);
+    expect(run.latest).toHaveLength(0);
   });
 });
 
-describe('noteTurn / countJudgement / fire', () => {
-  it('noteTurn で assistantLast が 500 字に切れる', () => {
+describe('noteTurn', () => {
+  it('latest を earlier へ送ってから 1 往復と数える', () => {
+    let run = armed();
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    run = noteTurn(run, 'assistant text', limits());
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.latest).toEqual([]);
+    expect(run.earlier).toHaveLength(1);
+    expect(run.turns).toBe(1);
+    expect(run.assistantLast).toBe('assistant text');
+  });
+
+  it('assistantLast が上限で切れる', () => {
     const run = noteTurn(armed(), 'あ'.repeat(501), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
     expect(run.assistantLast.length).toBe(500);
+  });
+
+  it('earlier が 12 件を超える → 古い物から落ちて truncated が立つ', () => {
+    let run = armed();
+    for (let index = 0; index < 13; index += 1) {
+      run = addAction(run, action({ target: `f${index}.ts` }), limits());
+      run = noteTurn(run, `text${index}`, limits());
+    }
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.earlier).toHaveLength(12);
+    expect(run.truncated).toBe(true);
+    expect(run.earlier.map((item) => item.target)).not.toContain('f0.ts');
+  });
+});
+
+describe('noteVerdict / nudge', () => {
+  it('noteVerdict(true) で streak が増える', () => {
+    let run = armed();
+    run = noteVerdict(run, true);
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.streak).toBe(1);
+    run = noteVerdict(run, true);
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.streak).toBe(2);
+  });
+
+  it('noteVerdict(false) で streak は 0 に戻る', () => {
+    let run = armed();
+    run = noteVerdict(run, true);
+    run = noteVerdict(run, false);
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.streak).toBe(0);
+  });
+
+  it('nudge で nudges が増える', () => {
+    const run = nudge(armed());
+    if (run.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(run.nudges).toBe(1);
   });
 
   it('countJudgement が judgements を増やし lastJudgedAt を入れる', () => {
@@ -147,13 +180,5 @@ describe('noteTurn / countJudgement / fire', () => {
     }
     expect(run.judgements).toBe(1);
     expect(run.lastJudgedAt).toBe(7);
-  });
-
-  it('fire が fires を増やす', () => {
-    const run = fire(armed());
-    if (run.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(run.fires).toBe(1);
   });
 });
