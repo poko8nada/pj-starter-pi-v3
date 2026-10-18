@@ -26,34 +26,34 @@ Any other argument prints the usage instead of throwing.
 
 `settings.json` sits next to this file and holds a partial override: only the written fields apply, the rest stay at their defaults. Unknown keys, out-of-range numbers, and wrong types throw instead of being silently ignored.
 
-| Setting                     | Default                                                                                      |
-| --------------------------- | -------------------------------------------------------------------------------------------- |
-| `classifier.models`         | `opencode/jev-1.13-free`, `openrouter/~typesafe/jev-latest` (tried in this order)            |
-| `classifier.allowPaid`      | `true` (`false` keeps only free models; the first paid answer is notified once per session)  |
-| `route.shadow`              | `true`                                                                                       |
-| `route.question`            | instructions + criteria for `reply` / `approve` / `other` (see `settings.json`)              |
-| `route.thresholds.reply`    | `0.8`                                                                                        |
-| `route.thresholds.approve`  | `0.9`                                                                                        |
-| `route.guides.reply`        | reply guide text (see `settings.json`)                                                       |
-| `route.guides.approve`      | approve guide text (see `settings.json`)                                                     |
-| `judge.shadow`              | `true`                                                                                       |
-| `judge.minTurns`            | `2`                                                                                          |
-| `judge.everyNTurns`         | `1`                                                                                          |
-| `judge.maxJudgements`       | `12`                                                                                         |
-| `judge.threshold`           | `0.9`                                                                                        |
-| `judge.questions.useful`    | instructions + criteria for `yes` / `no` (see `settings.json`)                               |
-| `judge.questions.new`       | instructions + criteria for `yes` / `no` (see `settings.json`)                               |
-| `judge.stop.consecutive`    | `2`                                                                                          |
-| `judge.stop.maxNudges`      | `1`                                                                                          |
-| `judge.stop.nudges.reply`   | reply nudge text (see `settings.json`)                                                       |
-| `judge.stop.nudges.approve` | approve nudge text (see `settings.json`)                                                     |
-| `state.textChars`           | `2000`                                                                                       |
-| `state.assistantChars`      | `500`                                                                                        |
-| `state.resultChars`         | `300`                                                                                        |
-| `state.maxActions`          | `12`                                                                                         |
-| `state.maxStateChars`       | `12000`                                                                                      |
-| `state.includeTools`        | `read`, `bash`, `grep`, `find`, `ls`, `write`, `edit`, `web_search`, `consult_run` (default) |
-| `record.recent`             | `50`                                                                                         |
+| Setting                     | Default                                                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `classifier.models`         | `opencode/jev-1.13-free`, `openrouter/~typesafe/jev-latest` (tried in this order)                                                                                                           |
+| `classifier.allowPaid`      | `true` (`false` keeps only free models; the first paid answer is notified once per session)                                                                                                 |
+| `route.shadow`              | `true`                                                                                                                                                                                      |
+| `route.question`            | instructions + criteria for `reply` / `approve` / `other` (see `settings.json`)                                                                                                             |
+| `route.thresholds.reply`    | `0.8`                                                                                                                                                                                       |
+| `route.thresholds.approve`  | `0.9`                                                                                                                                                                                       |
+| `route.guides.reply`        | reply guide text (see `settings.json`)                                                                                                                                                      |
+| `route.guides.approve`      | approve guide text (see `settings.json`)                                                                                                                                                    |
+| `judge.shadow`              | `true`                                                                                                                                                                                      |
+| `judge.minTurns`            | `2`                                                                                                                                                                                         |
+| `judge.everyNTurns`         | `1`                                                                                                                                                                                         |
+| `judge.maxJudgements`       | `12`                                                                                                                                                                                        |
+| `judge.threshold`           | `0.9`                                                                                                                                                                                       |
+| `judge.questions.useful`    | instructions + criteria for `yes` / `no` (see `settings.json`)                                                                                                                              |
+| `judge.questions.new`       | instructions + criteria for `yes` / `no` (see `settings.json`)                                                                                                                              |
+| `judge.stop.consecutive`    | `2`                                                                                                                                                                                         |
+| `judge.stop.maxNudges`      | `1`                                                                                                                                                                                         |
+| `judge.stop.nudges.reply`   | reply nudge text (see `settings.json`)                                                                                                                                                      |
+| `judge.stop.nudges.approve` | approve nudge text (see `settings.json`)                                                                                                                                                    |
+| `state.textChars`           | `2000`                                                                                                                                                                                      |
+| `state.assistantChars`      | `500`                                                                                                                                                                                       |
+| `state.resultChars`         | `300`                                                                                                                                                                                       |
+| `state.maxActions`          | `12`                                                                                                                                                                                        |
+| `state.maxStateChars`       | `12000`                                                                                                                                                                                     |
+| `state.includeTools`        | `read`, `write`, `quick_edit`, `target_edit`, `bash`, `grep`, `web_search`, `fetch_content`, `source_check`, `get_search_content`, `codemode`, `consult_run`, `consult_subagents` (default) |
+| `record.recent`             | `50`                                                                                                                                                                                        |
 
 ## Record
 

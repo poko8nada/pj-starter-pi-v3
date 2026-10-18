@@ -61,14 +61,18 @@
     "maxStateChars": 12000,
     "includeTools": [
       "read",
+      "write",
+      "quick_edit",
+      "target_edit",
       "bash",
       "grep",
-      "find",
-      "ls",
-      "write",
-      "edit",
       "web_search",
-      "consult_run"
+      "fetch_content",
+      "source_check",
+      "get_search_content",
+      "codemode",
+      "consult_run",
+      "consult_subagents"
     ]
   },
   "record": { "recent": 50 }

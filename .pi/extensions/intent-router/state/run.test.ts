@@ -101,6 +101,21 @@ describe('addAction', () => {
     }
     expect(run.latest).toHaveLength(0);
   });
+
+  it('既定の一覧の道具は通り、落ちた edit は通らない', () => {
+    for (const tool of defaultSettings().state.includeTools) {
+      const run = addAction(armed(), action({ tool, target: `${tool}-target` }), limits());
+      if (run.kind !== 'armed') {
+        throw new Error('must be armed');
+      }
+      expect(run.latest).toHaveLength(1);
+    }
+    const dropped = addAction(armed(), action({ tool: 'edit', target: 'x.ts' }), limits());
+    if (dropped.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(dropped.latest).toHaveLength(0);
+  });
 });
 
 describe('noteTurn', () => {
