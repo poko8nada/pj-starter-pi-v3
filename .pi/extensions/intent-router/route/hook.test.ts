@@ -123,9 +123,23 @@ function readRecords(file: string): IntentRecord[] {
     if (text.trim() === '') {
       return [];
     }
-    const parsed: unknown = JSON.parse(text);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の形を読む
-    return Array.isArray(parsed) ? (parsed as IntentRecord[]) : [];
+    const out: IntentRecord[] = [];
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の 1 行を読む
+          out.push(parsed as IntentRecord);
+        }
+      } catch {
+        continue;
+      }
+    }
+    return out;
   } catch {
     return [];
   }

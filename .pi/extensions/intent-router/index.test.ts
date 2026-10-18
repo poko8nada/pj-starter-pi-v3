@@ -146,11 +146,21 @@ function readRecords(cwd: string): IntentRecord[] {
     if (text.trim() === '') {
       return [];
     }
-    const parsed: unknown = JSON.parse(text);
-    if (!Array.isArray(parsed)) {
-      return [];
+    const out: IntentRecord[] = [];
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        if (isRecord(parsed)) {
+          out.push(parsed);
+        }
+      } catch {
+        continue;
+      }
     }
-    return parsed.filter(isRecord);
+    return out;
   } catch {
     return [];
   }

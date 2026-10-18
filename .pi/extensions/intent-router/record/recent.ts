@@ -9,6 +9,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Choice, Verdict } from '../ask/questions.ts';
 
+function isRecord(value: unknown): value is IntentRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && 'at' in value;
+}
+
 export interface IntentRecord {
   readonly at: string;
   readonly hook: 'route' | 'judge';
@@ -42,23 +46,31 @@ function readAll(file: string): IntentRecord[] {
   if (text.trim() === '') {
     return [];
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return [];
+  const out: IntentRecord[] = [];
+  for (const line of text.split('\n')) {
+    if (line.trim() === '') {
+      continue;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (isRecord(parsed)) {
+      out.push(parsed);
+    }
   }
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-  return parsed.filter(
-    (item): item is IntentRecord => typeof item === 'object' && item !== null && 'at' in item,
-  );
+  return out;
 }
 
 function writeAll(file: string, records: readonly IntentRecord[]): void {
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify([...records])}\n`, 'utf8');
+  if (records.length === 0) {
+    writeFileSync(file, '', 'utf8');
+    return;
+  }
+  writeFileSync(file, `${records.map((record) => JSON.stringify(record)).join('\n')}\n`, 'utf8');
 }
 
 /** 直近 `limit` 件だけを 1 ファイルに持つ。書き込みは上書き、読むのは `tail` から */
