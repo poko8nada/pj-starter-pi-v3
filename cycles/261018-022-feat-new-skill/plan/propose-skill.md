@@ -43,7 +43,7 @@ README.ja.md                update
    - 候補を出すだけで、決めないことを書く。決めるのは ADR である。
    - 各候補に、なぜ今か、どの Unit が動くか、根拠を添えると書く。
    - 推奨を 1 つ添えると書く。どの候補でサイクルを起こすかは owner が決めると書く。
-   - ファイルを作らないこと、`DEFINITION.md` も `cycles/` も書かないことを書く。
+   - `DEFINITION.md` も `cycles/` も書かないこと、決めないことを「そうしない」の節に書く。
    - 独立したスキルとして読めるように書く。`brief` から写したことを読む者に書かない。
 
 2. `.pi/skills/propose/references/tasks.md`:
@@ -72,7 +72,7 @@ README.ja.md                update
   - (happy) 候補の節を読む → 候補を出すだけで、決めるのは ADR であると書かれている
   - (happy) 候補の節を読む → なぜ今か、どの Unit が動くか、根拠を添えると書かれている
   - (happy) 候補の節を読む → 推奨を 1 つ添え、どの候補でサイクルを起こすかを owner が決めると書かれている
-  - (happy) 書かないことの節を読む → ファイルを作らず、`DEFINITION.md` も `cycles/` も書かないと書かれている
+  - (happy) そうしないの節を読む → `DEFINITION.md` も `cycles/` も書かず、決めないと書かれている
   - (happy) 本文を 1 枚で読む → どの規則も `brief` を参照せず、それだけで意味が通る
   - (error) 本文に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`sound-notify`、`lefthook`、`oxlint`、`oxfmt`、`tsc`、`vitest` など、このリポジトリの開発用の道具や拡張の名前）が出てこない
   - (happy) `tasks.md` の `research` の節を読む → 型ごとに何に答えるか、出所を残すこと、答えられなかった問いは何を止めているかを添えると書かれている
