@@ -226,9 +226,11 @@ export function decideJudge(
 
 ### Slice 1: state を 4 つに分ける
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/hook.test.ts` の `streak`/`latest`参照を `unrelated`/`read`に合わせ、`yesYes`後の期待値を0→1に変えた（`noteVerdict(false)`で戻さない規則のため。型を通す必須手当て）
+  - `state/run.test.ts` の上限値を固定値から `limits()`由来に変えた（slice 2の値変更に耐えるため）
+- Commit: 69d0f00
 
 ### Slice 2: 問いと設定を新しい 2 問にする
 
