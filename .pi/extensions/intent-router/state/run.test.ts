@@ -36,7 +36,7 @@ function limits() {
 }
 
 describe('arm', () => {
-  it('arm → armed で latest / earlier は空、数は 0', () => {
+  it('arm → armed で read / related は空、数は 0', () => {
     const run = armed();
     expect(run.kind).toBe('armed');
     if (run.kind !== 'armed') {
@@ -44,11 +44,11 @@ describe('arm', () => {
     }
     expect(run.ownerNow).toBe('hello');
     expect(run.choice).toBe('reply');
-    expect(run.latest).toEqual([]);
-    expect(run.earlier).toEqual([]);
+    expect(run.read).toEqual([]);
+    expect(run.related).toEqual([]);
     expect(run.turns).toBe(0);
     expect(run.judgements).toBe(0);
-    expect(run.streak).toBe(0);
+    expect(run.unrelated).toBe(0);
     expect(run.nudges).toBe(0);
     expect(run.lastJudgedAt).toBeNull();
   });
@@ -64,14 +64,14 @@ describe('idle', () => {
 });
 
 describe('addAction', () => {
-  it('latest に足す', () => {
+  it('read に足す', () => {
     let run = armed();
     run = addAction(run, action({ target: 'x.ts' }), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.latest).toHaveLength(1);
-    expect(run.earlier).toHaveLength(0);
+    expect(run.read).toHaveLength(1);
+    expect(run.related).toHaveLength(0);
   });
 
   it('同じ read と同じ path を 2 回 → 1 件のままで attempts が 2', () => {
@@ -81,9 +81,9 @@ describe('addAction', () => {
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.latest).toHaveLength(1);
-    expect(run.latest[0]?.attempts).toBe(2);
-    expect(run.latest[0]?.result).toBe('second');
+    expect(run.read).toHaveLength(1);
+    expect(run.read[0]?.attempts).toBe(2);
+    expect(run.read[0]?.result).toBe('second');
   });
 
   it('.env を読んだ action が落ちる', () => {
@@ -91,7 +91,7 @@ describe('addAction', () => {
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.latest).toHaveLength(0);
+    expect(run.read).toHaveLength(0);
   });
 
   it('includeTools に無い道具は入らない', () => {
@@ -99,7 +99,7 @@ describe('addAction', () => {
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.latest).toHaveLength(0);
+    expect(run.read).toHaveLength(0);
   });
 
   it('既定の一覧の道具は通り、落ちた edit は通らない', () => {
@@ -108,76 +108,78 @@ describe('addAction', () => {
       if (run.kind !== 'armed') {
         throw new Error('must be armed');
       }
-      expect(run.latest).toHaveLength(1);
+      expect(run.read).toHaveLength(1);
     }
     const dropped = addAction(armed(), action({ tool: 'edit', target: 'x.ts' }), limits());
     if (dropped.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(dropped.latest).toHaveLength(0);
+    expect(dropped.read).toHaveLength(0);
   });
 });
 
 describe('noteTurn', () => {
-  it('latest を earlier へ送ってから 1 往復と数える', () => {
+  it('read を related へ送ってから 1 往復と数える', () => {
     let run = armed();
     run = addAction(run, action({ target: 'x.ts' }), limits());
     run = noteTurn(run, 'assistant text', limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.latest).toEqual([]);
-    expect(run.earlier).toHaveLength(1);
+    expect(run.read).toEqual([]);
+    expect(run.related).toHaveLength(1);
     expect(run.turns).toBe(1);
     expect(run.assistantLast).toBe('assistant text');
   });
 
   it('assistantLast が上限で切れる', () => {
-    const run = noteTurn(armed(), 'あ'.repeat(501), limits());
+    const max = limits().assistantChars;
+    const run = noteTurn(armed(), 'あ'.repeat(max + 1), limits());
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.assistantLast.length).toBe(500);
+    expect(run.assistantLast.length).toBe(max);
   });
 
-  it('earlier が 12 件を超える → 古い物から落ちて truncated が立つ', () => {
+  it('related が上限を超える → 古い物から落ちて truncated が立つ', () => {
     let run = armed();
-    for (let index = 0; index < 13; index += 1) {
+    const max = limits().maxActions;
+    for (let index = 0; index < max + 1; index += 1) {
       run = addAction(run, action({ target: `f${index}.ts` }), limits());
       run = noteTurn(run, `text${index}`, limits());
     }
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.earlier).toHaveLength(12);
+    expect(run.related).toHaveLength(max);
     expect(run.truncated).toBe(true);
-    expect(run.earlier.map((item) => item.target)).not.toContain('f0.ts');
+    expect(run.related.map((item) => item.target)).not.toContain('f0.ts');
   });
 });
 
 describe('noteVerdict / nudge', () => {
-  it('noteVerdict(true) で streak が増える', () => {
+  it('noteVerdict(true) で unrelated が増える', () => {
     let run = armed();
     run = noteVerdict(run, true);
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.streak).toBe(1);
+    expect(run.unrelated).toBe(1);
     run = noteVerdict(run, true);
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.streak).toBe(2);
+    expect(run.unrelated).toBe(2);
   });
 
-  it('noteVerdict(false) で streak は 0 に戻る', () => {
+  it('noteVerdict(false) で unrelated は 0 に戻らない', () => {
     let run = armed();
     run = noteVerdict(run, true);
     run = noteVerdict(run, false);
     if (run.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(run.streak).toBe(0);
+    expect(run.unrelated).toBe(1);
   });
 
   it('nudge で nudges が増える', () => {

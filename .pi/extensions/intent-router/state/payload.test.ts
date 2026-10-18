@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassifierCandidate } from '../settings/schema.ts';
 import { defaultSettings } from '../settings/schema.ts';
-import { addAction, arm, type Action, type Run } from './run.ts';
+import { addAction, arm, noteTurn, type Action, type Run } from './run.ts';
 import {
   asInput,
   judgePayload,
   lastAssistantText,
+  minimizeText,
   routePayload,
   targetOf,
   toAction,
@@ -183,16 +184,96 @@ describe('lastAssistantText', () => {
   });
 });
 
+describe('minimizeText', () => {
+  it('改行と連続した空白を 1 つの空白に詰める', () => {
+    expect(minimizeText('a\n\n b   c', 100)).toBe('a b c');
+  });
+
+  it('詰めたあとに切る', () => {
+    expect(minimizeText('x'.repeat(50), 10).length).toBe(10);
+  });
+
+  it('画像の base64 を落とす', () => {
+    expect(minimizeText('see data:image/png;base64,iVBORw0KGgo=', 100)).toBe('see [image omitted]');
+  });
+});
+
 describe('judgePayload', () => {
-  it('owner_now / agent_text / latest / earlier の 4 つを組む', () => {
+  it('owner_text / agent_text / read / related の 4 つを組む', () => {
     let run = armed();
     run = addAction(run, action({ target: 'x.ts' }), limits());
     const { payload, truncated } = judgePayload(run, defaultSettings());
-    expect(payload.owner_now).toBe('hello');
+    expect(payload.owner_text).toBe('hello');
     expect(payload.agent_text).toBe('');
-    expect(payload.latest).toHaveLength(1);
-    expect(payload.earlier).toHaveLength(0);
+    expect(payload.read).toHaveLength(1);
+    expect(payload.related).toHaveLength(0);
     expect(truncated).toBe(false);
+  });
+
+  it('read に足した action が payload の read に出る', () => {
+    let run = armed();
+    run = addAction(run, action({ target: 'read-target.ts' }), limits());
+    const { payload } = judgePayload(run, defaultSettings());
+    expect(payload.read).toHaveLength(1);
+    expect(payload.read[0]).toMatchObject({ tool: 'read', target: 'read-target.ts' });
+  });
+
+  it('related の action が payload の related に出る', () => {
+    let run = armed();
+    run = addAction(run, action({ target: 'related-target.ts' }), limits());
+    run = noteTurn(run, 'assistant text', limits());
+    const { payload } = judgePayload(run, defaultSettings());
+    expect(payload.read).toHaveLength(0);
+    expect(payload.related).toHaveLength(1);
+    expect(payload.related[0]).toMatchObject({ tool: 'read', target: 'related-target.ts' });
+  });
+
+  it('state.textChars より長い owner の発言 → owner_text がその字数になる', () => {
+    const settings = defaultSettings();
+    const longOwner = 'あ'.repeat(settings.state.textChars + 10);
+    let run = arm({
+      ownerNow: longOwner,
+      choice: 'reply',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    const { payload } = judgePayload(run, settings);
+    expect(payload.owner_text.length).toBe(settings.state.textChars);
+  });
+
+  it('直前のエージェント発言 → agent_text に入り、state.assistantChars で切れる', () => {
+    const settings = defaultSettings();
+    const max = settings.state.assistantChars;
+    let run = armed();
+    run = noteTurn(run, 'あ'.repeat(max + 10), limits());
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    const { payload } = judgePayload(run, settings);
+    expect(payload.agent_text.length).toBe(max);
+  });
+
+  it('道具の呼び出しブロックを含む発言 → agent_text に呼び出しの中身が出ない', () => {
+    const text = lastAssistantText(
+      [
+        {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'plain answer' },
+            { type: 'toolCall', name: 'read', arguments: { path: 'secret.ts' } },
+          ],
+        },
+      ],
+      2000,
+    );
+    expect(text).toBe('plain answer');
+    expect(text).not.toContain('secret.ts');
+  });
+
+  it('read も related も空 → payload の 2 つは空の配列', () => {
+    const { payload } = judgePayload(armed(), defaultSettings());
+    expect(payload.read).toEqual([]);
+    expect(payload.related).toEqual([]);
   });
 
   it('画像・base64 の文字列を含まない', () => {
@@ -207,7 +288,7 @@ describe('judgePayload', () => {
     expect(JSON.stringify(payload)).not.toContain('iVBORw0KGgo');
   });
 
-  it('state が maxStateChars を超える → earlier を後ろから削る', () => {
+  it('state が maxStateChars を超える → related を後ろから削る', () => {
     const settings = {
       ...defaultSettings(),
       state: { ...defaultSettings().state, maxStateChars: 500 },
@@ -216,6 +297,7 @@ describe('judgePayload', () => {
     for (let index = 0; index < 4; index += 1) {
       run = addAction(run, action({ target: `f${index}.ts`, result: 'x'.repeat(100) }), limits());
     }
+    run = noteTurn(run, 'text', limits());
     const { truncated } = judgePayload(run, settings);
     expect(truncated).toBe(true);
   });

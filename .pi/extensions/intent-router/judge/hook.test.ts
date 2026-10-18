@@ -167,12 +167,12 @@ function toolTurn(name: string, args: Record<string, unknown>, text: string): Ju
   };
 }
 
-function latestOf(request: unknown): Record<string, unknown>[] {
+function readOf(request: unknown): Record<string, unknown>[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
   const state = (request as { readonly state: Readonly<Record<string, unknown>> }).state;
-  const latest = state['latest'];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- latest の形を読む
-  return Array.isArray(latest) ? (latest as Record<string, unknown>[]) : [];
+  const read = state['read'];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- read の形を読む
+  return Array.isArray(read) ? (read as Record<string, unknown>[]) : [];
 }
 
 function wired(
@@ -233,7 +233,7 @@ function readRecords(file: string): IntentRecord[] {
 }
 
 describe('registerJudge', () => {
-  it('useful=no かつ new=no が 2 回続く → nudge（streak は 2）', async () => {
+  it('useful=no かつ new=no が 2 回続く → nudge（unrelated は 2）', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, [noNo(), noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -241,13 +241,13 @@ describe('registerJudge', () => {
     if (afterFirst.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(afterFirst.streak).toBe(1);
+    expect(afterFirst.unrelated).toBe(1);
     const result = await handler(readTurn(), { cwd: '/repo' });
     const afterSecond = run.get();
     if (afterSecond.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(afterSecond.streak).toBe(2);
+    expect(afterSecond.unrelated).toBe(2);
     expect(result?.entries).toHaveLength(1);
     expect(readRecords(file)).toHaveLength(2);
   });
@@ -261,11 +261,11 @@ describe('registerJudge', () => {
     if (current.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(current.streak).toBe(2);
+    expect(current.unrelated).toBe(2);
     expect(result?.entries).toHaveLength(1);
   });
 
-  it('useful=no が 1 回だけ → wait で streak は 1', async () => {
+  it('useful=no が 1 回だけ → wait で unrelated は 1', async () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
@@ -274,11 +274,11 @@ describe('registerJudge', () => {
     if (current.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(current.streak).toBe(1);
+    expect(current.unrelated).toBe(1);
     expect(readRecords(file)).toHaveLength(1);
   });
 
-  it('useful=yes かつ new=yes → wait で streak は 0 に戻る', async () => {
+  it('useful=yes かつ new=yes → wait で unrelated は戻らない', async () => {
     const settings = defaultSettings();
     const { handler, run } = wired(settings, [noNo(), yesYes()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
@@ -287,10 +287,10 @@ describe('registerJudge', () => {
     if (current.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(current.streak).toBe(0);
+    expect(current.unrelated).toBe(1);
   });
 
-  it('latest が空（道具を使っていない往復）→ 何も聞かない', async () => {
+  it('read が空（道具を使っていない往復）→ 何も聞かない', async () => {
     const settings = defaultSettings();
     const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(
@@ -317,7 +317,7 @@ describe('registerJudge', () => {
     if (current.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(current.streak).toBe(0);
+    expect(current.unrelated).toBe(0);
     expect(readRecords(file)).toHaveLength(1);
   });
 
@@ -412,13 +412,13 @@ describe('registerJudge', () => {
       readonly state: Readonly<Record<string, unknown>>;
     };
     expect(Object.keys(request.questions).toSorted()).toEqual(['new', 'useful']);
-    expect(request.state['owner_now']).toBe('hello');
-    expect(Array.isArray(request.state['latest'])).toBe(true);
-    expect(Array.isArray(request.state['earlier'])).toBe(true);
+    expect(request.state['owner_text']).toBe('hello');
+    expect(Array.isArray(request.state['read'])).toBe(true);
+    expect(Array.isArray(request.state['related'])).toBe(true);
     expect(JSON.stringify(request.state)).not.toContain('data:image');
   });
 
-  it('state が maxStateChars を超える → earlier を後ろから削る', async () => {
+  it('state が maxStateChars を超える → related を後ろから削る', async () => {
     const settings = withMaxStateChars(defaultSettings(), 500);
     let initial = arm({
       ownerNow: 'hello',
@@ -544,7 +544,7 @@ describe('registerJudge/new tools', () => {
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('fetch_content', { url: 'https://x' }, 'body'), { cwd: '/repo' });
     expect(requests).toHaveLength(1);
-    expect(latestOf(requests[0])).toMatchObject([{ tool: 'fetch_content', target: 'https://x' }]);
+    expect(readOf(requests[0])).toMatchObject([{ tool: 'fetch_content', target: 'https://x' }]);
   });
 
   it('codemode の往復 → latest に codemode が出る（的は空）', async () => {
@@ -552,7 +552,7 @@ describe('registerJudge/new tools', () => {
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('codemode', { code: '...' }, 'body'), { cwd: '/repo' });
     expect(requests).toHaveLength(1);
-    expect(latestOf(requests[0])).toMatchObject([{ tool: 'codemode', target: '' }]);
+    expect(readOf(requests[0])).toMatchObject([{ tool: 'codemode', target: '' }]);
   });
 
   it('quick_edit の往復 → latest に quick_edit と path が出る', async () => {
@@ -560,10 +560,10 @@ describe('registerJudge/new tools', () => {
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     await handler(toolTurn('quick_edit', { path: 'a.ts' }, 'body'), { cwd: '/repo' });
     expect(requests).toHaveLength(1);
-    expect(latestOf(requests[0])).toMatchObject([{ tool: 'quick_edit', target: 'a.ts' }]);
+    expect(readOf(requests[0])).toMatchObject([{ tool: 'quick_edit', target: 'a.ts' }]);
   });
 
-  it('action が無い往復 → latest は空のまま', async () => {
+  it('action が無い往復 → read は空のまま', async () => {
     const settings = defaultSettings();
     const { handler, requests, run } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     const result = await handler(
@@ -576,10 +576,10 @@ describe('registerJudge/new tools', () => {
     if (current.kind !== 'armed') {
       throw new Error('must be armed');
     }
-    expect(current.latest).toEqual([]);
+    expect(current.read).toEqual([]);
   });
 
-  it('一覧から落ちた edit の往復 → latest に入らない', async () => {
+  it('一覧から落ちた edit の往復 → read に入らない', async () => {
     const settings = defaultSettings();
     const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
     const result = await handler(toolTurn('edit', { path: 'x.ts' }, 'body'), { cwd: '/repo' });

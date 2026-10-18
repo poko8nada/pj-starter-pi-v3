@@ -1,5 +1,5 @@
 /**
- * owner の発言1つ分の状態。途中判定は latest / earlier / streak / nudges を持つ。
+ * owner の発言1つ分の状態。途中判定は read / related / unrelated / nudges を持つ。
  *
  * 状態は判別可能な union（`idle` / `armed`）。arm 前に来た物は捨てる。
  * 純関数の集まりで、`now` は引数で受ける。
@@ -35,12 +35,12 @@ export type Run =
       readonly candidate: ClassifierCandidate;
       readonly startedAt: number;
       readonly lastJudgedAt: number | null;
-      readonly latest: readonly Action[];
-      readonly earlier: readonly Action[];
+      readonly read: readonly Action[];
+      readonly related: readonly Action[];
       readonly assistantLast: string;
       readonly turns: number;
       readonly judgements: number;
-      readonly streak: number;
+      readonly unrelated: number;
       readonly nudges: number;
       readonly truncated: boolean;
     };
@@ -80,18 +80,18 @@ export function arm(input: {
     candidate: input.candidate,
     startedAt: input.now,
     lastJudgedAt: null,
-    latest: [],
-    earlier: [],
+    read: [],
+    related: [],
     assistantLast: '',
     turns: 0,
     judgements: 0,
-    streak: 0,
+    unrelated: 0,
     nudges: 0,
     truncated: false,
   };
 }
 
-/** 記録に入れない的（秘密）は捨てる。latest に足す */
+/** 記録に入れない的（秘密）は捨てる。read に足す */
 export function addAction(run: Armed, action: Action, limits: Settings['state']): Armed;
 export function addAction(run: Run, action: Action, limits: Settings['state']): Run;
 export function addAction(run: Run, action: Action, limits: Settings['state']): Run {
@@ -104,15 +104,15 @@ export function addAction(run: Run, action: Action, limits: Settings['state']): 
   if (isSecretTarget(action.target)) {
     return run;
   }
-  const at = run.latest.findIndex(
+  const at = run.read.findIndex(
     (item) => item.tool === action.tool && item.target === action.target,
   );
   if (at >= 0) {
-    const found = run.latest[at];
+    const found = run.read[at];
     if (found === undefined) {
       return run;
     }
-    const next = [...run.latest];
+    const next = [...run.read];
     next[at] = {
       turn: action.turn,
       tool: found.tool,
@@ -121,26 +121,26 @@ export function addAction(run: Run, action: Action, limits: Settings['state']): 
       attempts: found.attempts + 1,
       error: action.error,
     };
-    return { ...run, latest: next };
+    return { ...run, read: next };
   }
-  return { ...run, latest: [...run.latest, action] };
+  return { ...run, read: [...run.read, action] };
 }
 
-/** latest を earlier へ送ってから 1 往復と数える */
+/** read を related へ送ってから 1 往復と数える */
 export function noteTurn(run: Armed, text: string, limits: Settings['state']): Armed;
 export function noteTurn(run: Run, text: string, limits: Settings['state']): Run;
 export function noteTurn(run: Run, text: string, limits: Settings['state']): Run {
   if (run.kind !== 'armed') {
     return run;
   }
-  const moved = [...run.earlier, ...run.latest];
+  const moved = [...run.related, ...run.read];
   const maxActions = limits.maxActions;
   const truncated = run.truncated || moved.length > maxActions;
-  const earlier = moved.length > maxActions ? moved.slice(moved.length - maxActions) : moved;
+  const related = moved.length > maxActions ? moved.slice(moved.length - maxActions) : moved;
   return {
     ...run,
-    earlier,
-    latest: [],
+    related,
+    read: [],
     assistantLast: text.slice(0, limits.assistantChars),
     turns: run.turns + 1,
     truncated,
@@ -156,13 +156,14 @@ export function countJudgement(run: Run, now: number): Run {
   return { ...run, judgements: run.judgements + 1, lastJudgedAt: now };
 }
 
+/** 「関係ない」と判定された回数を数える。関係ある側では戻さない（往復の中で数える） */
 export function noteVerdict(run: Armed, unhelpful: boolean): Armed;
 export function noteVerdict(run: Run, unhelpful: boolean): Run;
 export function noteVerdict(run: Run, unhelpful: boolean): Run {
   if (run.kind !== 'armed') {
     return run;
   }
-  return { ...run, streak: unhelpful ? run.streak + 1 : 0 };
+  return { ...run, unrelated: unhelpful ? run.unrelated + 1 : run.unrelated };
 }
 
 export function nudge(run: Armed): Armed;

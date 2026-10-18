@@ -2,7 +2,7 @@
  * `turn_end` で 2 問（`useful` / `new`）を 1 リクエストで聞き、効いていないと同じ判断が
  * 続いたら促しを 1 回だけ差し込む。
  *
- * 道具を使った往復だけ判定する（道具0件・`latest` 空なら何もログせず終える）。差し込みは
+ * 道具を使った往復だけ判定する（道具0件・`read` 空なら何もログせず終える）。差し込みは
  * `{ entries: [custom_message] }` を返すだけで、`continue` は返さない。
  * 何もしない時は `undefined` を返す。
  * live（`flags.mode === 'live'`）の時だけ差し込み、shadow は記録だけ残す。
@@ -123,7 +123,7 @@ interface HoldInput {
   readonly truncated: boolean;
   readonly stateChars: number;
   readonly verdicts: JudgeAnswers | undefined;
-  readonly streak: number;
+  readonly unrelated: number;
 }
 
 function logHold(deps: JudgeDeps, input: HoldInput): void {
@@ -144,7 +144,7 @@ function logHold(deps: JudgeDeps, input: HoldInput): void {
             useful: verdictOf(answers.useful),
             new: verdictOf(answers.new),
           },
-    streak: input.streak,
+    streak: input.unrelated,
     nudge: null,
     fired: false,
     state_chars: input.stateChars,
@@ -163,7 +163,7 @@ interface NudgeInput {
   readonly truncated: boolean;
   readonly stateChars: number;
   readonly answers: JudgeAnswers;
-  readonly streak: number;
+  readonly unrelated: number;
 }
 
 function logNudge(
@@ -183,7 +183,7 @@ function logNudge(
       useful: verdictOf(input.answers.useful),
       new: verdictOf(input.answers.new),
     },
-    streak: input.streak,
+    streak: input.unrelated,
     nudge: input.text,
     fired: input.fired,
     state_chars: input.stateChars,
@@ -192,7 +192,7 @@ function logNudge(
 }
 
 function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefined {
-  const { run, turnIndex, truncated, stateChars, answers, streak } = input;
+  const { run, turnIndex, truncated, stateChars, answers, unrelated } = input;
   const nudged = nudge(run);
   deps.run.set(nudged);
   const text = nudgeText(deps.settings, run.choice);
@@ -204,7 +204,7 @@ function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefin
     truncated,
     stateChars,
     answers,
-    streak,
+    unrelated,
     text,
     fired: live,
   });
@@ -226,7 +226,7 @@ function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefin
   };
 }
 
-/** 道具の結果を latest に足す。arm されていなければ undefined */
+/** 道具の結果を read に足す。arm されていなければ undefined */
 function recordActions(deps: JudgeDeps, event: JudgeTurnEvent): Armed | undefined {
   let run: Run = deps.run.get();
   if (run.kind !== 'armed') {
@@ -301,7 +301,7 @@ async function settleJudge(
   turnIndex: number,
   messageText: string,
 ): Promise<JudgeMessage | undefined> {
-  if (run.latest.length === 0) {
+  if (run.read.length === 0) {
     finishTurn(deps, run, messageText);
     return undefined;
   }
@@ -327,12 +327,12 @@ function settleAnswered(
   const { run, outcome, turnIndex, messageText, truncated, stateChars } = input;
   const counted = countJudgement(run, Date.now());
   deps.run.set(counted);
-  const hold = (target: Armed, verdicts: JudgeAnswers | undefined, streak: number): void => {
-    logHold(deps, { run: target, outcome, turnIndex, truncated, stateChars, verdicts, streak });
+  const hold = (target: Armed, verdicts: JudgeAnswers | undefined, unrelated: number): void => {
+    logHold(deps, { run: target, outcome, turnIndex, truncated, stateChars, verdicts, unrelated });
   };
   if (outcome.kind === 'failed') {
     finishTurn(deps, counted, messageText);
-    hold(run, undefined, counted.streak);
+    hold(run, undefined, counted.unrelated);
     return undefined;
   }
   const useful = outcome.answers[JUDGE_QUESTIONS.useful];
@@ -352,7 +352,7 @@ function settleAnswered(
       hold(run, answers, 0);
     } else {
       finishTurn(deps, counted, messageText);
-      hold(run, answers, counted.streak);
+      hold(run, answers, counted.unrelated);
     }
     return undefined;
   }
@@ -380,35 +380,35 @@ function settleUnhelpful(
   },
 ): JudgeMessage | undefined {
   const { counted, outcome, turnIndex, messageText, truncated, stateChars, answers } = input;
-  const withStreak = noteVerdict(counted, true);
-  deps.run.set(withStreak);
+  const withUnrelated = noteVerdict(counted, true);
+  deps.run.set(withUnrelated);
   if (
-    withStreak.streak < deps.settings.judge.stop.consecutive ||
-    withStreak.nudges >= deps.settings.judge.stop.maxNudges
+    withUnrelated.unrelated < deps.settings.judge.stop.consecutive ||
+    withUnrelated.nudges >= deps.settings.judge.stop.maxNudges
   ) {
-    finishTurn(deps, withStreak, messageText);
+    finishTurn(deps, withUnrelated, messageText);
     logHold(deps, {
-      run: withStreak,
+      run: withUnrelated,
       outcome,
       turnIndex,
       truncated,
       stateChars,
       verdicts: answers,
-      streak: withStreak.streak,
+      unrelated: withUnrelated.unrelated,
     });
     return undefined;
   }
-  finishTurn(deps, withStreak, messageText);
+  finishTurn(deps, withUnrelated, messageText);
   const current = deps.run.get();
   if (current.kind !== 'armed') {
     logHold(deps, {
-      run: withStreak,
+      run: withUnrelated,
       outcome,
       turnIndex,
       truncated,
       stateChars,
       verdicts: answers,
-      streak: withStreak.streak,
+      unrelated: withUnrelated.unrelated,
     });
     return undefined;
   }
@@ -419,7 +419,7 @@ function settleUnhelpful(
     truncated,
     stateChars,
     answers,
-    streak: withStreak.streak,
+    unrelated: withUnrelated.unrelated,
   });
 }
 
