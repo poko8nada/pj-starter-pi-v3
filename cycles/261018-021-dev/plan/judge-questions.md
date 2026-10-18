@@ -274,8 +274,37 @@ export function decideJudge(
   - index.ts は plan Files で update だが差分なし。配線は変えずに済み、index.test の verdicts 確認は緑。閉じる上では問題ないと見る
   - state/run.ts:160 の noteVerdict は hook から呼ばれず、生産の数えは decide と hook の stamped で行われる。run.test は緑のまま残る。消すか残すかは別 cycle の判断にしたい
 
+### Round 2
+
+- Stale: なし — fixed 指定の4件だけを対象としたため、旧名残りの再走査はしていない
+- Unlisted: なし — fixed 指定の4件はいずれも plan 通りの検査追加であり、対象外の差分は見ていない
+- Gaps: なし — fixed の2件が穴を塞ぐことを確認した。1件目は道具呼び出し混じり往復で次の payload の agent_text が平文のみになる検査であり、引数混入では赤になる形だった。2件目は related no かつ answerable yes の組み合わせで、decide 単体と hook 筋書きの両方で促しと加算を確かめる形だった
+- Unproven: なし — fixed の2件が順序と適用を証明できることを確認した。1件目は詰めてから切る順序を字数4の末尾空白で見る検査であり、逆順では赤になる形だった。2件目は owner と agent の詰めを改行混じり文で見る検査であり、単位検査と hook 経路の両方で確かめる形だった
+- Doubts:
+  - 実行による緑は確かめていない。読み合わせでの確認にとどまるため、最終の緑は別途の実行記録に任せたい
+
 ## Acceptance
 
 - Ran:
+  - plan の検査: slice 1〜4 の `Verify` を含む `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 210 件が緑
+  - `pnpm test:run` → 41 ファイル / 708 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも ok
+  - `pnpm lint` → 緑
+  - 壊して赤を確かめた 3 件（同時に入れた）:
+    - `judge/decide.ts` の `answerable === 'yes'` の枝を止める
+    - `judge/decide.ts` の `due` の「`reply` 以外は wait」を外す
+    - `state/payload.ts` の `minimizeText` の空白の詰めを外す
+    - 3 件で合わせて 41 件が赤になり、戻すと緑に復帰
 - Findings:
+  - テスト 12 ファイルの見直しで、消してよい検査が 11 件見つかった（重複・書き写し・弱い方）。
+    - `judge/hook.test.ts:799` と `:628` が同じファイルの `:430` / `:511` と同じ振る舞い。
+    - `record/recent.test.ts:64` が `:48` と同じ（件数違いだけ）。
+    - `route/decide.test.ts:27` が `:16` と同じ（値違いだけ）。
+    - `route/hook.test.ts:267` と `:188` が `:149` / `:162` と同じ（文面違いだけ）。
+    - `settings/schema.test.ts:122` と `:126` が定数の文字を写しただけ。
+    - `state/payload.test.ts:114` が `:103` と同じ。
+    - `state/payload.test.ts:160` と `:192` が同じ関数の中の重複。
+  - 記録の欄 `streak` が、いまは「関係ないと判定された回数」を入れている（`judge/hook.ts` が `streak: input.unrelated` と書く）。欄の名を `unrelated` に直す（README と関係するテストも）。
 - Doubts:
+  - テストの見直しで「同じ枝に見える」として残した 10 件: `judge/hook.test.ts:268` と `:815`、`state/run.test.ts:97` と `:105`、`settings/schema.test.ts:96` と `:103`、`state/payload.test.ts:136` と `:120`、`route/decide.test.ts:84`、`judge/hook.test.ts:676`、`record/recent.test.ts:143`、`ask/ask.test.ts:174`。
+  - テストの構造の揺れ: 記録を読む小さな道具が 3 つのテストに写されている、`payload.test.ts` の題と中身のずれ、数値かどうかだけを見る書き方。
