@@ -250,9 +250,9 @@ export function decideJudge(
 
 ### Slice 4: 統合: 関係ある記録が積まれ、答えられるのときに促しが出る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ee22a9c
 
 ## Review
 
