@@ -58,6 +58,30 @@ describe('targetOf', () => {
     expect(targetOf('mystery', {})).toBe('');
   });
 
+  it('fetch_content は url を抜く（無ければ urls の先頭）', () => {
+    expect(targetOf('fetch_content', { url: 'https://x' })).toBe('https://x');
+    expect(targetOf('fetch_content', { urls: ['https://a', 'https://b'] })).toBe('https://a');
+  });
+
+  it('quick_edit と target_edit は path を抜く', () => {
+    expect(targetOf('quick_edit', { path: 'a.ts' })).toBe('a.ts');
+    expect(targetOf('target_edit', { path: 'a.ts' })).toBe('a.ts');
+  });
+
+  it('調べ物の的を抜く（source_check / get_search_content / consult_subagents）', () => {
+    expect(targetOf('source_check', { claim: 'c' })).toBe('c');
+    expect(targetOf('get_search_content', { responseId: 'r1' })).toBe('r1');
+    expect(targetOf('consult_subagents', { action: 'list' })).toBe('list');
+  });
+
+  it('codemode の的は空（1 回の束ねた呼び出しを 1 件として数える）', () => {
+    expect(targetOf('codemode', { code: '...' })).toBe('');
+  });
+
+  it('fetch_content に url も urls も無い → 空', () => {
+    expect(targetOf('fetch_content', {})).toBe('');
+  });
+
   it('asInput が記録以外を {} にする', () => {
     expect(asInput({ path: 'x.ts' })).toEqual({ path: 'x.ts' });
     expect(asInput('x.ts')).toEqual({});

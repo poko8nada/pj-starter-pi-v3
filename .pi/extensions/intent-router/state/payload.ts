@@ -20,12 +20,20 @@ function asText(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function asFirstUrl(value: unknown): string {
+  if (!Array.isArray(value)) {
+    return '';
+  }
+  const first: unknown = value.at(0);
+  return asText(first);
+}
+
 export function targetOf(tool: string, input: Record<string, unknown>): string {
   switch (tool) {
     case 'read':
     case 'write':
-    case 'edit':
-    case 'ls':
+    case 'quick_edit':
+    case 'target_edit':
       return asText(input['path']);
     case 'bash':
       return asText(input['command']).split(/\s+/).at(0) ?? '';
@@ -36,6 +44,21 @@ export function targetOf(tool: string, input: Record<string, unknown>): string {
       return asText(input['role']);
     case 'web_search':
       return asText(input['query']);
+    case 'fetch_content': {
+      const url = asText(input['url']);
+      if (url !== '') {
+        return url;
+      }
+      return asFirstUrl(input['urls']);
+    }
+    case 'source_check':
+      return asText(input['claim']);
+    case 'get_search_content':
+      return asText(input['responseId']);
+    case 'consult_subagents':
+      return asText(input['action']);
+    case 'codemode':
+      return '';
     default:
       return '';
   }
