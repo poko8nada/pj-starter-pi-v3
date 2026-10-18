@@ -116,15 +116,23 @@ close の収集から: 2（使われていない `noteVerdict`）と 11（同じ
 
 ### Slice 1: 使われていない `noteVerdict` を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 44e71ea
 
 ### Slice 2: 同じ枝に見える組を、コードを読んで確かめて消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- a: 消した `read が空（道具を使っていない往復）→ 何も聞かない`、残した `一覧から落ちた edit の往復 → read に入らない`。壊しは addAction の includeTools 判定外し。赤は両方。理由は edit 除外の記録を残すため
+- b: 消した `includeTools に無い道具は入らない`、残した `既定の一覧の道具は通り、落ちた edit は通らない`。壊しは同上。赤は両方。理由は残す側が肯定と否定の両方を覆うため
+- c: 消した `judge.stop.nudges を書く → 投げる`、残した `judge.stop.consecutive を書く → 投げる`。壊しは JudgeStopSchema の追加欄許可。赤は両方。理由は未知欄拒否の枝が同じため
+- d: 両方残す。違いは 114 が truncated の旗、130 が直前発言の切り詰め（旗固定壊しでは 114 のみ赤）
+- e: 消した hook の `related=no と yes が交互 → 合計で数えて 2 回目の no で出る`、残した `3 往復で related=no/yes/no → 合計 2 回で促しが出て、その後は出ない`。壊しは decideJudge の加算外し。赤は両方。理由は計数は decide 側が覆い残す側が1回限りまで見るため
+- f: 消した `{prompt} に抜粋が差し込まれ、{prompt} の文字は残らない`、残した `reply と approve で文面を選ぶ` と `改行は1つの空白に潰れて40字で切れる`。壊しは guideText の置換なし。赤は 3 件全赤
+- g: 消した latencyMs の型表明1行（同 it は残す）。数が型で決まるため
+- h: 対象外。record/recent.test.ts は存在しない
+- Findings: なし
+- Unplanned: なし
+- Commit: 5641697
 
 ### Slice 3: 統合: 使われていない物と、二重の検査が残っていない
 
