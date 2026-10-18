@@ -624,6 +624,93 @@ describe('registerJudge/state chars', () => {
   });
 });
 
+describe('registerJudge/integration', () => {
+  it('1 往復目の related が 2 往復目の payload の related に出る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
+    await handler(readTurn(), { cwd: '/repo' });
+    await handler(readTurn(), { cwd: '/repo' });
+    expect(requests).toHaveLength(2);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const first = requests[0] as { readonly state: Readonly<Record<string, unknown>> };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const second = requests[1] as { readonly state: Readonly<Record<string, unknown>> };
+    expect(first.state['read']).toHaveLength(1);
+    expect(second.state['related']).toHaveLength(1);
+  });
+
+  it('2 往復目で answerable=yes → 促しが 1 回だけ出て記録の nudge に入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(
+      settings,
+      [yesNo(), yesYes()],
+      'live',
+      armedWithTurns(1),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    expect(requests).toHaveLength(2);
+    const records = readRecords(file);
+    expect(records).toHaveLength(2);
+    expect(records[0]?.nudge).toBeNull();
+    expect(records[1]?.nudge).not.toBeNull();
+  });
+
+  it('shadow では answerable の促しも差し込まず記録だけ残る', async () => {
+    const { handler, file } = wired(
+      defaultSettings(),
+      [yesNo(), yesYes()],
+      'shadow',
+      armedWithTurns(1),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const records = readRecords(file);
+    expect(records).toHaveLength(2);
+    expect(records[1]).toMatchObject({ hook: 'judge', fired: false });
+    expect(typeof records[1]?.nudge).toBe('string');
+  });
+
+  it('3 往復で related=no/yes/no → 合計 2 回で促しが出て、その後は出ない', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(
+      settings,
+      [noNo(), yesNo(), noNo(), noNo()],
+      'live',
+      armedWithTurns(1),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    await handler(readTurn(), { cwd: '/repo' });
+    const third = await handler(readTurn(), { cwd: '/repo' });
+    expect(third?.entries).toHaveLength(1);
+    const fourth = await handler(readTurn(), { cwd: '/repo' });
+    expect(fourth).toBeUndefined();
+    expect(requests).toHaveLength(3);
+    expect(readRecords(file)).toHaveLength(3);
+  });
+
+  it('ask が 2 回続けて失敗 → 記録は残り促しは出ない', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(
+      settings,
+      [batchFailed(), batchFailed()],
+      'live',
+      armedWithTurns(1),
+    );
+    const first = await handler(readTurn(), { cwd: '/repo' });
+    expect(first).toBeUndefined();
+    const second = await handler(readTurn(), { cwd: '/repo' });
+    expect(second).toBeUndefined();
+    expect(requests).toHaveLength(2);
+    const records = readRecords(file);
+    expect(records).toHaveLength(2);
+    expect(records[0]?.nudge).toBeNull();
+    expect(records[1]?.nudge).toBeNull();
+  });
+});
+
 describe('registerJudge/new tools', () => {
   it('fetch_content の往復 → read に fetch_content と url が出る', async () => {
     const settings = defaultSettings();
