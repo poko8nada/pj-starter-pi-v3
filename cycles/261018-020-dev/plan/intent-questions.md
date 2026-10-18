@@ -460,9 +460,9 @@ export function createRecent(
 
 ### Slice 6: 統合: 意図通りに動ける
 
-- Findings: 旧設定形の残存（`thresholds`/`budget`/`enabled`/`actOn`/`actionChars` 等）を `schema.ts` から除去。`JUDGE_QUESTIONS`（複数形・新形）は plan 通りのため残す（単数形は 0 件）。`logs/` は gitignore 済みで repo に日付ファイルなし。review は subagent 口が無いため直接実施：設定表は `settings.json` と一致（`includeTools` を `settings.json` に追加して一致させた）、コマンドは 5 種と一致、説明は 3 択と促しの形。
-- Unplanned: 旧単発 score 経路（`LEGACY_JUDGE_QUESTION`/`LEGACY_ROUTE_QUESTION`、`AskRequest.kind: 'score'`）を除去（本番では route が常に自前の choice 1 問を送るため）。`fromRegistryAnswer` を choice 専用にし、`armAbort` の引数を `{ signal }` に狭めた。`toAction` の引数名を `resultChars` に揃えた。`ask.test.ts` の timer 仮名 `fire` を `trigger` に変えた。
-- Commit: （統合コミット後に記入）
+- Findings: `ls .pi/extensions/intent-router/logs` は現物が repo に無い（gitignore 済み）ため `git ls-files` で代用し、日付ファイルの残存が無いことを確認した。実行時にできるのは `logs/recent.json` だけ。`JUDGE_QUESTIONS`（複数形・新形）は plan 通りのため残す（単数形の旧名は 0 件）。review は subagent 口が無いため直接実施：設定表は `settings.json` と一致、コマンドは 5 種と一致、説明は 3 択と促しの形。
+- Unplanned: 旧設定形の除去（`0890ec1`、`87487a5` の 2 件。`settings/schema.test.ts` の旧ケース削除、`ask/ask.ts` の旧単発 score 経路の除去、`AskRequest.kind` を `'choice'` に狭め、`fromRegistryAnswer` を choice 専用化、`armAbort` の引数を `{ signal }` に狭め、未使用の `assertJudgeShape` を削除、`toAction` の引数名を `resultChars` に統一、`ask.test.ts` の timer 仮名 `fire` を `trigger` に変更）。`Record` が TS の組込み名と衝突したため記録型を `IntentRecord` に改名。README の表に合わせて `state.includeTools` を `settings.json` に追加して残した。
+- Commit: 1040ec9
 
 ## Review
 
