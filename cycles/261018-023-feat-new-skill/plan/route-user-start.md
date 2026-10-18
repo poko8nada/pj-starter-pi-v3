@@ -163,9 +163,9 @@ handler(
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `test`（`pnpm typecheck` と `pnpm test:run`）、slice 2 の `test`（`route/hook.test.ts` 22/22）、slice 3 の `test`（`index.test.ts` 18/18 と `pnpm typecheck`）で、全体では 41 files / 704 tests が緑である。壊して確かめたのは 2 つで、`hook.ts` の `messageType !== 'user'` を外すと custom のケースが赤くなり（`undefined.startsWith`）、包みが枝を見ずに `messageType: 'user'` を渡すと custom の 2 ケースが赤くなった。どちらも戻した。
+- Findings: なし。review の指摘は 0 件。
+- Doubts: `pnpm-workspace.yaml` の `minimumReleaseAgeExclude` は `Unplanned` で 1.3.0 に合わせたが、これを見る check が無い（`minimumReleaseAge` 自体が未設定なので、今は何もしない設定である）。`!== 'user'` と `=== 'custom'` は今は同じ意味だが、pi が 3 つ目の `messageType` を足した時にどちらが正しいかは決めていない。
 
 ## Merge
 
