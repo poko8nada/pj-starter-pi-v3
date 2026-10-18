@@ -8,12 +8,10 @@
  * 検証と型が食い違わない。未知のキーはスキーマ（`Type.Object` は追加の欄を許さない）が弾く。
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { Check, Errors } from 'typebox/value';
 import { Type, type Static } from 'typebox';
-import type { Label } from './questions.ts';
-import { LABELS } from './questions.ts';
+import type { Label } from '../ask/questions.ts';
+import { LABELS } from '../ask/questions.ts';
 
 /** ラベル。`questions.ts` の一覧と同じ所から出る（増やしたらここも増える） */
 const LabelSchema = Type.Union(LABELS.map((label) => Type.Literal(label)));
@@ -286,28 +284,4 @@ export function parseSettings(text: string, defaults: Settings): Settings {
     state: overlaid(defaults.state, written.state),
     log: overlaid(defaults.log, written.log),
   };
-}
-
-function errorCode(error: unknown): string | undefined {
-  if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code?: unknown }).code;
-    return typeof code === 'string' ? code : undefined;
-  }
-  return undefined;
-}
-
-/** `<dir>/settings.json` を読む。無ければ既定、読めて壊れていれば投げる */
-export function readSettings(dir: string, defaults: Settings): Settings {
-  const file = join(dir, SETTINGS_FILE);
-  let text: string;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch (error) {
-    if (errorCode(error) === 'ENOENT') {
-      return defaults;
-    }
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`intent-router settings: could not read ${file} (${detail})`, { cause: error });
-  }
-  return parseSettings(text, defaults);
 }

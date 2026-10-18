@@ -7,13 +7,14 @@
 
 import { isAbsolute, join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createAsk, type Ask } from './classifier.ts';
-import { registerCommand } from './command.ts';
-import { registerJudge } from './hook/judge.ts';
-import { registerRoute } from './hook/route.ts';
-import { append, prune, type LogRecord } from './log.ts';
-import { defaultSettings, readSettings, type Settings } from './settings.ts';
-import { idleRun, type FlagsPort, type Run, type RunPort } from './state.ts';
+import { createAsk, type Ask } from './ask/ask.ts';
+import { registerCommand } from './command/intent.ts';
+import { registerJudge } from './judge/hook.ts';
+import { registerRoute } from './route/hook.ts';
+import { append, prune, type LogRecord } from './record/recent.ts';
+import { defaultSettings, type Settings } from './settings/schema.ts';
+import { readSettings } from './settings/read.ts';
+import { idleRun, type FlagsPort, type Run, type RunPort } from './state/run.ts';
 
 // index.ts が持つ物。入口はこれだけを公開する
 export interface Wiring {

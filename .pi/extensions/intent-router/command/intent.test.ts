@@ -1,11 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../test/tmp.ts';
-import { intentMessage, registerCommand, type CommandCtx, type CommandPiPort } from './command.ts';
-import { append, type LogRecord } from './log.ts';
-import { defaultSettings, readSettings } from './settings.ts';
-import { arm, idleRun, type FlagsPort, type Run, type RunPort } from './state.ts';
+import { tmpDir } from '../../../../test/tmp.ts';
+import { intentMessage, registerCommand, type CommandCtx, type CommandPiPort } from './intent.ts';
+import { append, type LogRecord } from '../record/recent.ts';
+import { defaultSettings } from '../settings/schema.ts';
+import { readSettings } from '../settings/read.ts';
+import { arm, idleRun, type FlagsPort, type Run, type RunPort } from '../state/run.ts';
 
 function fakeFlags(enabled: boolean): FlagsPort {
   let current = { enabled };
@@ -53,7 +54,7 @@ function fakeCtx(): CommandCtx & { readonly messages: string[] } {
   return {
     messages,
     ui: {
-      notify: (message: string) => {
+      notify: (message) => {
         messages.push(message);
       },
     },

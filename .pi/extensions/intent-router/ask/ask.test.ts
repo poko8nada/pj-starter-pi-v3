@@ -6,8 +6,8 @@ import {
   type Registry,
   type RegistryAnswer,
   type RegistryModel,
-} from './classifier.ts';
-import { defaultSettings, type Settings } from './settings.ts';
+} from './ask.ts';
+import { defaultSettings, type Settings } from '../settings/schema.ts';
 
 type RegistryResultOf = Awaited<ReturnType<Registry['classify']>>;
 

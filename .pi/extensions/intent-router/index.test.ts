@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../test/tmp.ts';
-import type { RegistryModel } from './classifier.ts';
+import type { RegistryModel } from './ask/ask.ts';
 import { register } from './index.ts';
-import type { LogRecord } from './log.ts';
-import { defaultSettings } from './settings.ts';
+import type { LogRecord } from './record/recent.ts';
+import { defaultSettings } from './settings/schema.ts';
 
 type AnyHandler = (event: unknown, ctx: unknown) => Promise<unknown>;
 

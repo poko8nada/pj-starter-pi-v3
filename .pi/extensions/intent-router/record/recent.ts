@@ -7,9 +7,9 @@
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Label } from './questions.ts';
-import type { Thresholds } from './settings.ts';
-import type { Usage } from './state.ts';
+import type { Label } from '../ask/questions.ts';
+import type { Thresholds } from '../settings/schema.ts';
+import type { Usage } from '../state/run.ts';
 
 export type OutcomeView =
   | {

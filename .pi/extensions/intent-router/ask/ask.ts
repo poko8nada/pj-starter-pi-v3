@@ -8,8 +8,8 @@
 
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { JUDGE_QUESTION, ROUTE_QUESTION } from './questions.ts';
-import type { ClassifierCandidate, Settings } from './settings.ts';
-import type { JsonObject, Usage } from './state.ts';
+import type { ClassifierCandidate, Settings } from '../settings/schema.ts';
+import type { JsonObject, Usage } from '../state/run.ts';
 
 export type Registry = ExtensionContext['modelRegistry'];
 export type RegistryModel = Parameters<Registry['classify']>[0];

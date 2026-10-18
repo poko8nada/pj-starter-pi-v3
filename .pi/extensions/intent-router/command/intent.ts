@@ -4,8 +4,8 @@
  * `off` は `run` を捨て（arm 済みを捨てる）、`hook: 'command'` のログを1行残す。
  */
 
-import type { LogRecord } from './log.ts';
-import { idleRun, type FlagsPort, type RunPort } from './state.ts';
+import type { LogRecord } from '../record/recent.ts';
+import { idleRun, type FlagsPort, type RunPort } from '../state/run.ts';
 
 export interface CommandCtx {
   readonly ui: { readonly notify: (message: string) => void };
