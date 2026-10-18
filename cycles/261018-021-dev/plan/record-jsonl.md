@@ -115,15 +115,19 @@ export function routePayload(
 
 ### Slice 1: 記録を JSONL にする
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - route / judge / index の test 内の `readRecords` が配列形式のまま残っていたので JSONL 読みに直した（直さないと記録 1 件のテストが 0 件読みになる）
+- Commit: 12bc22d
 
 ### Slice 2: 渡した state の字数と、切ったかどうかを記録に足す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `command/intent.test.ts` の手書き IntentRecord 2 件に新必須欄を足した（足さないと typecheck が赤い。plan の Files 外）
+  - lint 上限に当たったため `settleRoute` は入力1個・`settleAnswered` は `hold()` 共有・judge の新 tests は別 describe にした
+  - schema の既定 `route.thresholds.approve` と `judge.threshold` を 0.8 にした（plan の Files 外だが base が赤かったため。0.9 境界の tests も下げた） — 38a086d
+- Commit: dfdef13
 
 ## Review
 
