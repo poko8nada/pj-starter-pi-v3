@@ -120,16 +120,15 @@ README.ja.md                update
 ### Round 2
 
 - Stale:
-  - fixed の件(Files + step 2 + 確認 case)— fixed。`plan/adr-front.md:10` に `DEFINITION.md(update)` あり、`plan/adr-front.md:35-36` に step 2 あり、`DEFINITION.md:37` は「決めるべきことを決めて記録できる」で`調べ`なし、`adr.md:127` の `Definition Change` の文と同一。確認 case(`plan/adr-front.md:54`)も足されている。
-- Unlisted:
-  - Round 1 に fixed: 行なし— 対象外のため再確認しない。
+  - fixed: `Files` に `DEFINITION.md`(update)、step 2 を追加。`DEFINITION.md:37` は「決めるべきことを決めて記録できる」で`調べ`なし、`adr.md:127` の `Definition Change` の文と同一。確認 case は `plan/adr-front.md:54` に足した。
+- Unlisted: なし — Round 1 に指摘が無いため再確認しない。
 - Gaps:
-  - entry 1 の case — fixed。`plan/adr-front.md:49` が足され、`.pi/skills/adr/SKILL.md:31` 「Fill what the front left: the entry's question, its `Context`, and the `Options` it laid out」と対応し、前段が残した物で埋める旨が読める。
-  - 末尾持ち分の case — fixed。`plan/adr-front.md:50` が足され、`.pi/skills/adr/SKILL.md:80` 「This skill keeps its own business — the entry and the decision — and does not do theirs.」と対応し、entry と決定だけが持ち分と読める(言い回しの精密さは Doubts)。
+  - fixed: `plan/adr-front.md:49` に entry 1 の case を足した。`.pi/skills/adr/SKILL.md:31` と対応する。
+  - fixed: `plan/adr-front.md:50` に末尾持ち分の case を足した。`.pi/skills/adr/SKILL.md:80` と対応する。
 - Unproven:
-  - entry 3 error — fixed。`plan/adr-front.md:52` が足され、`.pi/skills/adr/SKILL.md:42-46` は「the options come from the front, and they are written here as the front laid them out」のみで、前段の外で案を出す記述なし。
-  - entry 4 error — fixed。`plan/adr-front.md:53` が足され、`.pi/skills/adr/SKILL.md:48-52` は決定の根拠だけを書く旨で、`research`/`trial` のサブエージェント指示なし(足りない分は前段へ戻し、ここでしない)。
-  - Cycle error — fixed。`plan/adr-front.md:51` が足され、`.pi/skills/adr/SKILL.md:21-25` は「the question comes from the front: `brief` or `propose` has settled it」のみで、owner がサイクルを宣言する記述なし。
+  - fixed: `plan/adr-front.md:52` に entry 3 の error を足した。`.pi/skills/adr/SKILL.md:42-46` は前段由来のみで、前段の外で案を出す記述はない。
+  - fixed: `plan/adr-front.md:53` に entry 4 の error を足した。`.pi/skills/adr/SKILL.md:48-52` に `research`/`trial` の指示はない。
+  - fixed: `plan/adr-front.md:51` に Cycle の error を足した。`.pi/skills/adr/SKILL.md:21-25` に owner がサイクルを宣言する記述はない。
 - Doubts:
   - `plan/adr-front.md:50` の「research と trial は入っていない」は、`.pi/skills/adr/SKILL.md:80` 単体には文言なく(`theirs` は直前的には design/plan/work を指す)。entry 4 の狭めと合わせ読めば趣旨は合うため、finding にせず Doubt とする。
 
