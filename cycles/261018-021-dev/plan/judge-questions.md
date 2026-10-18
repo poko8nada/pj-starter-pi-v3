@@ -297,6 +297,7 @@ export function decideJudge(
     - 3 件で合わせて 41 件が赤になり、戻すと緑に復帰
 - Findings:
   - テスト 12 ファイルの見直しで、消してよい検査が 11 件見つかった（重複・書き写し・弱い方）。
+    - fixed: 重複11件を削除（`judge/hook`の2件、`recent`1件、`route/decide`1件、`route/hook`2件、`schema`2件、`payload`3件）。`pnpm vitest run .pi/extensions/intent-router`は210件→199件（11件減）、`pnpm test:run`は708件→697件で緑を維持
     - `judge/hook.test.ts:799` と `:628` が同じファイルの `:430` / `:511` と同じ振る舞い。
     - `record/recent.test.ts:64` が `:48` と同じ（件数違いだけ）。
     - `route/decide.test.ts:27` が `:16` と同じ（値違いだけ）。
@@ -305,6 +306,7 @@ export function decideJudge(
     - `state/payload.test.ts:114` が `:103` と同じ。
     - `state/payload.test.ts:160` と `:192` が同じ関数の中の重複。
   - 記録の欄 `streak` が、いまは「関係ないと判定された回数」を入れている（`judge/hook.ts` が `streak: input.unrelated` と書く）。欄の名を `unrelated` に直す（README と関係するテストも）。
+    - fixed: 記録欄を`streak`→`unrelated`に改名（`recent.ts`/`judge/hook.ts`/`route/hook.ts`/README/関係テスト）。`git grep -n streak`は`.pi/extensions/intent-router/`で0件
 - Doubts:
   - テストの見直しで「同じ枝に見える」として残した 10 件: `judge/hook.test.ts:268` と `:815`、`state/run.test.ts:97` と `:105`、`settings/schema.test.ts:96` と `:103`、`state/payload.test.ts:136` と `:120`、`route/decide.test.ts:84`、`judge/hook.test.ts:676`、`record/recent.test.ts:143`、`ask/ask.test.ts:174`。
   - テストの構造の揺れ: 記録を読む小さな道具が 3 つのテストに写されている、`payload.test.ts` の題と中身のずれ、数値かどうかだけを見る書き方。
