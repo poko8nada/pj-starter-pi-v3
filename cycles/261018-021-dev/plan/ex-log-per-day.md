@@ -219,9 +219,10 @@ readonly log: {
 
 ### Slice 4: 統合: 1 日は 1 ファイルに足されていき、古い日付だけが消える
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 追加の 4 件で `describe` が行数制限に触れたため、`register daily logs` に分けた
+- Commit: f8057f4
 
 ### Slice 5: テストの棚卸し
 
