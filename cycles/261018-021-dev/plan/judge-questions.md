@@ -226,40 +226,87 @@ export function decideJudge(
 
 ### Slice 1: state を 4 つに分ける
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/hook.test.ts` の `streak`/`latest`参照を `unrelated`/`read`に合わせ、`yesYes`後の期待値を0→1に変えた（`noteVerdict(false)`で戻さない規則のため。型を通す必須手当て）
+  - `state/run.test.ts` の上限値を固定値から `limits()`由来に変えた（slice 2の値変更に耐えるため）
+- Commit: 69d0f00
 
 ### Slice 2: 問いと設定を新しい 2 問にする
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/decide.ts`と`judge/hook.ts`を新鍵（`related`/`answerable`、`stop.unrelated`/`stop.nudge`）に合わせた（型を通す必須手当て。判定は旧ORのまま slice 3で変える）
+  - `judge/decide.test.ts`・`judge/hook.test.ts`・`index.test.ts`の問名と`nudgeText`期待値を新形に合わせた（`reply`/`approve`で同文。全テスト緑のため）
+- Commit: 3dfb70f
 
 ### Slice 3: judge を reply だけで走らせ、促しの条件を変える
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/hook.test.ts`が肥大化し`max-lines-per-function`で赤になったため、新問の7件を`registerJudge/related answerable`に分離した（lint緑のため）
+  - `route/decide.test.ts`に`approve 0.85→act`を追加、`index.test.ts`にjudge記録の`verdicts`鍵確認を追加（slice 3 Verifyのため）
+- Commit: ba07a28
 
 ### Slice 4: 統合: 関係ある記録が積まれ、答えられるのときに促しが出る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ee22a9c
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 旧名 useful new consecutive nudges latest earlier の残り、コメントの頭書き、README 3 枚の設定表と Record 節を確認。いずれも新名に揃い、残りはなかった
+- Unlisted: なし — git diff 158aff2 から HEAD の stat 19 件と plan Files の一覧を突き合わせ。全ての変更ファイルは Files に載り、載っていないファイルの変更はなかった
 - Gaps:
+  - 道具呼び出しを含む発言の agent_text は検査されていない。plan は agent_text に呼び出しの中身が出ないことを求めるが、state/payload.test.ts:256 は lastAssistantText を見て judge 用の道を見ない。judge 用は .pi/extensions/intent-router/judge/hook.ts:84 の textOf から noteTurn を経て作られ、hook 側の落としを確かめる検査がない
+    - fixed: `judge/hook.test.ts`のintegrationにtoolCall混じり往復→2回目payloadの`agent_text`が平文のみの検査を追加
+  - related no かつ answerable yes の組み合わせは検査されていない。.pi/extensions/intent-router/judge/decide.ts:45 の answerable yes の枝で unrelated を足す振る舞いは、.pi/extensions/intent-router/judge/decide.test.ts:46 の yes yes だけでは通らず、hook 側にも no yes の筋書きがない
+    - fixed: `decide.test.ts`にno+yesでnudgeかつunrelated+1の検査、`hook.test.ts`integrationに同組み合わせの筋書き検査を追加
 - Unproven:
+  - 詰めてから切る順序は証明されていない。.pi/extensions/intent-router/state/payload.ts:113 は落として詰めてから切るが、.pi/extensions/intent-router/state/payload.test.ts:192 は空白なし 50 字の長さだけ見るため、切ってから詰める壊れ方でも緑のまま。もう一方の詰めの検査も上限 100 で順序を見ない
+    - fixed: `payload.test.ts`に`minimizeText('xxx\n\n\nyyy', 4)`が`'xxx '`になる順序検査を追加
+  - owner_text と agent_text に minimize が使われることは証明されていない。.pi/extensions/intent-router/state/payload.ts:152 は minimizeText で組むが、.pi/extensions/intent-router/state/payload.test.ts:231 と 246 は あ の繰り返しの長さだけ見るため、slice に戻しても緑のまま。空白や画像を含む owner 発言の検査がない
+    - fixed: `payload.test.ts`に改行空白混じり発言のowner/agent詰め検査、`hook.test.ts`integrationにpayload側minimize検査を追加
 - Doubts:
+  - index.ts は plan Files で update だが差分なし。配線は変えずに済み、index.test の verdicts 確認は緑。閉じる上では問題ないと見る
+  - state/run.ts:160 の noteVerdict は hook から呼ばれず、生産の数えは decide と hook の stamped で行われる。run.test は緑のまま残る。消すか残すかは別 cycle の判断にしたい
+
+### Round 2
+
+- Stale: なし — fixed 指定の4件だけを対象としたため、旧名残りの再走査はしていない
+- Unlisted: なし — fixed 指定の4件はいずれも plan 通りの検査追加であり、対象外の差分は見ていない
+- Gaps: なし — fixed の2件が穴を塞ぐことを確認した。1件目は道具呼び出し混じり往復で次の payload の agent_text が平文のみになる検査であり、引数混入では赤になる形だった。2件目は related no かつ answerable yes の組み合わせで、decide 単体と hook 筋書きの両方で促しと加算を確かめる形だった
+- Unproven: なし — fixed の2件が順序と適用を証明できることを確認した。1件目は詰めてから切る順序を字数4の末尾空白で見る検査であり、逆順では赤になる形だった。2件目は owner と agent の詰めを改行混じり文で見る検査であり、単位検査と hook 経路の両方で確かめる形だった
+- Doubts:
+  - 実行による緑は確かめていない。読み合わせでの確認にとどまるため、最終の緑は別途の実行記録に任せたい
 
 ## Acceptance
 
 - Ran:
+  - plan の検査: slice 1〜4 の `Verify` を含む `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 199 件が緑（重複 11 件を消した後）
+  - `pnpm test:run` → 41 ファイル / 697 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも ok
+  - `pnpm lint` → 緑
+  - 壊して赤を確かめた 3 件（同時に入れた）:
+    - `judge/decide.ts` の `answerable === 'yes'` の枝を止める
+    - `judge/decide.ts` の `due` の「`reply` 以外は wait」を外す
+    - `state/payload.ts` の `minimizeText` の空白の詰めを外す
+    - 3 件で合わせて 40 件が赤になり、戻すと緑に復帰（重複 11 件を消した後にやり直した）
 - Findings:
+  - テスト 12 ファイルの見直しで、消してよい検査が 11 件見つかった（重複・書き写し・弱い方）。
+    - fixed: 重複11件を削除（`judge/hook`の2件、`recent`1件、`route/decide`1件、`route/hook`2件、`schema`2件、`payload`3件）。`pnpm vitest run .pi/extensions/intent-router`は210件→199件（11件減）、`pnpm test:run`は708件→697件で緑を維持
+    - `judge/hook.test.ts:799` と `:628` が同じファイルの `:430` / `:511` と同じ振る舞い。
+    - `record/recent.test.ts:64` が `:48` と同じ（件数違いだけ）。
+    - `route/decide.test.ts:27` が `:16` と同じ（値違いだけ）。
+    - `route/hook.test.ts:267` と `:188` が `:149` / `:162` と同じ（文面違いだけ）。
+    - `settings/schema.test.ts:122` と `:126` が定数の文字を写しただけ。
+    - `state/payload.test.ts:114` が `:103` と同じ。
+    - `state/payload.test.ts:160` と `:192` が同じ関数の中の重複。
+  - 記録の欄 `streak` が、いまは「関係ないと判定された回数」を入れている（`judge/hook.ts` が `streak: input.unrelated` と書く）。欄の名を `unrelated` に直す（README と関係するテストも）。
+    - fixed: 記録欄を`streak`→`unrelated`に改名（`recent.ts`/`judge/hook.ts`/`route/hook.ts`/README/関係テスト）。`git grep -n streak`は`.pi/extensions/intent-router/`で0件
 - Doubts:
+  - テストの見直しで「同じ枝に見える」として残した 10 件: `judge/hook.test.ts:268` と `:815`、`state/run.test.ts:97` と `:105`、`settings/schema.test.ts:96` と `:103`、`state/payload.test.ts:136` と `:120`、`route/decide.test.ts:84`、`judge/hook.test.ts:676`、`record/recent.test.ts:143`、`ask/ask.test.ts:174`。
+  - テストの構造の揺れ: 記録を読む小さな道具が 3 つのテストに写されている、`payload.test.ts` の題と中身のずれ、数値かどうかだけを見る書き方。

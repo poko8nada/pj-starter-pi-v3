@@ -96,13 +96,13 @@ function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets
       return Promise.resolve({
         stopReason: 'stop',
         answers: {
-          useful: {
+          related: {
             type: 'choice',
             choice: 'yes',
             probabilities: { yes: 0.9 },
             confidence: 0.9,
           },
-          new: {
+          answerable: {
             type: 'choice',
             choice: 'yes',
             probabilities: { yes: 0.9 },
@@ -210,6 +210,7 @@ describe('register', () => {
     expect(records[1]).toMatchObject({ hook: 'judge' });
     if (records[0]?.hook === 'route' && records[1]?.hook === 'judge') {
       expect(records[1].owner_now).toBe(records[0].owner_now);
+      expect(records[1].verdicts).toMatchObject({ related: 'yes', answerable: 'yes' });
     }
   });
 

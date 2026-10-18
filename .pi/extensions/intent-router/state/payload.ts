@@ -109,6 +109,12 @@ function stripImages(text: string): string {
   return text.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[image omitted]');
 }
 
+/** 画像を落とし、空白の連なりを 1 つに詰めて、字数で切る */
+export function minimizeText(text: string, limit: number): string {
+  const collapsed = stripImages(text).replace(/\s+/g, ' ').trim();
+  return collapsed.slice(0, limit);
+}
+
 function actionView(action: Action): JsonObject {
   return {
     turn: action.turn,
@@ -121,10 +127,10 @@ function actionView(action: Action): JsonObject {
 }
 
 export interface JudgePayload {
-  readonly owner_now: string;
+  readonly owner_text: string;
   readonly agent_text: string;
-  readonly latest: readonly JsonObject[];
-  readonly earlier: readonly JsonObject[];
+  readonly read: readonly JsonObject[];
+  readonly related: readonly JsonObject[];
 }
 
 export function judgePayload(
@@ -133,29 +139,29 @@ export function judgePayload(
 ): { readonly payload: JudgePayload; readonly truncated: boolean } {
   if (run.kind !== 'armed') {
     return {
-      payload: { owner_now: '', agent_text: '', latest: [], earlier: [] },
+      payload: { owner_text: '', agent_text: '', read: [], related: [] },
       truncated: false,
     };
   }
   const limit = settings.state.textChars;
   const maxChars = settings.state.maxStateChars;
-  const latest = run.latest.map(actionView);
-  let earlier = run.earlier.map(actionView);
+  const read = run.read.map(actionView);
+  let related = run.related.map(actionView);
   let truncated = run.truncated;
   const base = {
-    owner_now: run.ownerNow.slice(0, limit),
-    agent_text: run.assistantLast,
+    owner_text: minimizeText(run.ownerNow, limit),
+    agent_text: minimizeText(run.assistantLast, settings.state.assistantChars),
   };
-  const sizeOf = (earlierViews: readonly JsonObject[]): number =>
-    JSON.stringify({ ...base, latest, earlier: earlierViews }).length;
-  while (earlier.length > 0 && sizeOf(earlier) > maxChars) {
-    earlier = earlier.slice(1);
+  const sizeOf = (relatedViews: readonly JsonObject[]): number =>
+    JSON.stringify({ ...base, read, related: relatedViews }).length;
+  while (related.length > 0 && sizeOf(related) > maxChars) {
+    related = related.slice(1);
     truncated = true;
   }
-  if (sizeOf(earlier) > maxChars) {
+  if (sizeOf(related) > maxChars) {
     truncated = true;
   }
-  return { payload: { ...base, latest, earlier }, truncated };
+  return { payload: { ...base, read, related }, truncated };
 }
 
 export interface RoutePayload {
