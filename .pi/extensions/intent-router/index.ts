@@ -2,38 +2,49 @@
  * intent-router の入口。設定を読み、run と flags を持ち、route → judge → command の順に登録する。
  *
  * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
- * 壊れていれば投げる（黙って既定で走らない）。`logs/` の置き場はここで決める。
+ * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
+ * 記録は `logs/recent.json` に直近だけ持つ。
  */
 
-import { isAbsolute, join } from 'node:path';
+import { join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createAsk, type Ask } from './classifier.ts';
-import { registerCommand } from './command.ts';
-import { registerJudge } from './hook/judge.ts';
-import { registerRoute } from './hook/route.ts';
-import { append, prune, type LogRecord } from './log.ts';
-import { defaultSettings, readSettings, type Settings } from './settings.ts';
-import { idleRun, type FlagsPort, type Run, type RunPort } from './state.ts';
+import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts';
+import { registerCommand } from './command/intent.ts';
+import { registerJudge } from './judge/hook.ts';
+import { registerRoute } from './route/hook.ts';
+import { createRecent, type IntentRecord } from './record/recent.ts';
+import { type Settings } from './settings/schema.ts';
+import { readSettings } from './settings/read.ts';
+import { lastAssistantText } from './state/payload.ts';
+import { idleRun, type FlagsPort, type Mode, type Run, type RunPort } from './state/run.ts';
 
 // index.ts が持つ物。入口はこれだけを公開する
 export interface Wiring {
   readonly settings: Settings;
   readonly run: Run;
-  readonly flags: { readonly enabled: boolean };
+  readonly flags: { readonly mode: Mode };
 }
 
 type Registry = ExtensionContext['modelRegistry'];
 
 interface AskCell {
   readonly ask: Ask;
+  readonly askBatch: BatchAsk;
   readonly hold: (ctx: ExtensionContext) => void;
 }
 
-// pi の classifier はイベントの ctx からしか引けない。初回のイベントで作り、使い回す
-function createLazyAsk(settings: Settings): AskCell {
+// pi の classifier はイベントの ctx からしか引けない。初回のイベントで作り、使い回す。
+// 設定は ask のたびに読み直す。有料通知はセッションで1回だけ出す。
+function createLazyAsk(settingsDir: string): AskCell {
   let registry: Registry | undefined;
   let notifier: ((message: string) => void) | undefined;
-  let ask: Ask | undefined;
+  let paidNotified = false;
+  const notify = (message: string): void => {
+    if (!paidNotified) {
+      paidNotified = true;
+      notifier?.(message);
+    }
+  };
   return {
     ask: (request) => {
       if (registry === undefined) {
@@ -44,17 +55,20 @@ function createLazyAsk(settings: Settings): AskCell {
           latencyMs: 0,
         });
       }
-      if (ask === undefined) {
-        const current = registry;
-        ask = createAsk({
-          registry: current,
-          settings,
-          notify: (message) => {
-            notifier?.(message);
-          },
+      const fresh = readSettings(settingsDir);
+      return createAsk({ registry, settings: fresh, notify })(request);
+    },
+    askBatch: (request) => {
+      if (registry === undefined) {
+        return Promise.resolve({
+          kind: 'failed',
+          tried: [],
+          reason: 'no model registry',
+          latencyMs: 0,
         });
       }
-      return ask(request);
+      const fresh = readSettings(settingsDir);
+      return createBatchAsk({ registry, settings: fresh, notify })(request);
     },
     hold: (ctx) => {
       registry = ctx.modelRegistry;
@@ -68,12 +82,12 @@ function createLazyAsk(settings: Settings): AskCell {
 interface StateCell {
   readonly run: RunPort;
   readonly flags: FlagsPort;
-  readonly snapshot: () => { readonly run: Run; readonly flags: { readonly enabled: boolean } };
+  readonly snapshot: () => { readonly run: Run; readonly flags: { readonly mode: Mode } };
 }
 
-function createState(): StateCell {
+function createState(initialMode: Mode): StateCell {
   let run: Run = idleRun();
-  let flags = { enabled: true };
+  let flags = { mode: initialMode };
   return {
     run: {
       get: () => run,
@@ -91,32 +105,98 @@ function createState(): StateCell {
   };
 }
 
+function initialModeOf(settings: Settings): Mode {
+  return settings.route.shadow || settings.judge.shadow ? 'shadow' : 'live';
+}
+
+function wiringFor(cwd: string, settingsDir: string) {
+  const initial = readSettings(settingsDir);
+  let current: Settings = initial;
+  const refresh = (): Settings => {
+    current = readSettings(settingsDir);
+    return current;
+  };
+  const state = createState(initialModeOf(initial));
+  const cell = createLazyAsk(settingsDir);
+  const recent = createRecent(
+    initial.record.recent,
+    join(cwd, '.pi/extensions/intent-router/logs/recent.json'),
+  );
+  const log = (record: IntentRecord): void => {
+    recent.add(record);
+  };
+  const routeDeps = {
+    get settings(): Settings {
+      return current;
+    },
+    ask: cell.ask,
+    run: state.run,
+    flags: state.flags,
+    log,
+  };
+  const judgeDeps = {
+    get settings(): Settings {
+      return current;
+    },
+    askBatch: cell.askBatch,
+    run: state.run,
+    flags: state.flags,
+    log,
+  };
+  return {
+    initial,
+    current: () => current,
+    refresh,
+    state,
+    cell,
+    log,
+    recent,
+    routeDeps,
+    judgeDeps,
+  };
+}
+
+function readAgentPrev(ctx: ExtensionContext, maxChars: number): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- sessionManager の拡張口を読む
+    const manager = ctx.sessionManager as unknown as {
+      buildContextEntries?: () => unknown;
+    };
+    const entries = manager.buildContextEntries?.();
+    if (!Array.isArray(entries)) {
+      return '';
+    }
+    return lastAssistantText(entries, maxChars);
+  } catch {
+    return '';
+  }
+}
+
 export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }): Wiring {
   const cwd = options?.cwd ?? process.cwd();
-  const settings = readSettings(join(cwd, '.pi/extensions/intent-router'), defaultSettings());
-  const logDir = isAbsolute(settings.log.dir) ? settings.log.dir : join(cwd, settings.log.dir);
-  const state = createState();
-  const cell = createLazyAsk(settings);
-  const log = (record: LogRecord): void => {
-    append(record, logDir);
-  };
+  const settingsDir = join(cwd, '.pi/extensions/intent-router');
+  const wired = wiringFor(cwd, settingsDir);
+  const { initial, refresh, state, cell, routeDeps, judgeDeps, recent } = wired;
 
   registerRoute(
     {
       on: (event, handler) => {
         pi.on(event, (ev, ctx) => {
           cell.hold(ctx);
-          return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd });
+          const settings = refresh();
+          const agentPrev = readAgentPrev(ctx, settings.state.textChars);
+          return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd, agentPrev });
         });
       },
     },
-    { settings, ask: cell.ask, run: state.run, flags: state.flags, log },
+    routeDeps,
   );
   registerJudge(
     {
       on: (event, handler) => {
         pi.on(event, (ev, ctx) => {
           cell.hold(ctx);
+          refresh();
           const content = 'content' in ev.message ? ev.message.content : '';
           return handler(
             { turnIndex: ev.turnIndex, message: { content }, toolResults: ev.toolResults },
@@ -130,11 +210,8 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
         });
       },
     },
-    { settings, ask: cell.ask, run: state.run, flags: state.flags, log },
+    judgeDeps,
   );
-  pi.on('session_start', () => {
-    prune(logDir, settings.log.keepDays, new Date());
-  });
   registerCommand(
     {
       registerCommand: (name, opts) => {
@@ -147,10 +224,15 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
         });
       },
     },
-    { flags: state.flags, run: state.run, log },
+    {
+      flags: state.flags,
+      run: state.run,
+      recent,
+      settingsFile: join(settingsDir, 'settings.json'),
+    },
   );
 
-  return { settings, ...state.snapshot() };
+  return { settings: initial, ...state.snapshot() };
 }
 
 export default function (pi: ExtensionAPI): void {

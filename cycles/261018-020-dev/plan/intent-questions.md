@@ -430,52 +430,93 @@ export function createRecent(
 
 ### Slice 1: ファイルを段階ごとに分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4196c86
 
 ### Slice 2: 設定を外へ出す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6a6325f
 
 ### Slice 3: 頭の判定を 3 択にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dc91384
 
 ### Slice 4: 途中の判定を 2 問にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4c7d42e
 
 ### Slice 5: 切り替えと調整の道具を入れる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 476250c
 
 ### Slice 6: 統合: 意図通りに動ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: `ls .pi/extensions/intent-router/logs` は現物が repo に無い（gitignore 済み）ため `git ls-files` で代用し、日付ファイルの残存が無いことを確認した。実行時にできるのは `logs/recent.json` だけ。`JUDGE_QUESTIONS`（複数形・新形）は plan 通りのため残す（単数形の旧名は 0 件）。review は subagent 口が無いため直接実施：設定表は `settings.json` と一致、コマンドは 5 種と一致、説明は 3 択と促しの形。
+- Unplanned: 旧設定形の除去（`0890ec1`、`87487a5` の 2 件。`settings/schema.test.ts` の旧ケース削除、`ask/ask.ts` の旧単発 score 経路の除去、`AskRequest.kind` を `'choice'` に狭め、`fromRegistryAnswer` を choice 専用化、`armAbort` の引数を `{ signal }` に狭め、未使用の `assertJudgeShape` を削除、`toAction` の引数名を `resultChars` に統一、`ask.test.ts` の timer 仮名 `fire` を `trigger` に変更）。`Record` が TS の組込み名と衝突したため記録型を `IntentRecord` に改名。README の表に合わせて `state.includeTools` を `settings.json` に追加して残した。
+- Commit: 1040ec9
 
 ## Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - README.md:8 の「both answers are no」と judge/decide.ts:39 の || が食い違う。実装では片方の no で streak が進む。
+    fixed: コードが正しいので README を「either answer is no」に直した。
+  - ask/ask.ts:240 のコメントが消えた state.ts を指したまま残っている。
+    fixed: コメントの指し先を state/payload.ts に直した（他に state.ts 残存なし）。
+- Unlisted: なし
 - Gaps:
+  - index.ts:109 の初期 mode の決め方を確かめる検査が無い。
+    fixed: index.test.ts に 3 件足した（両方 false → live、片方 shadow → shadow、ファイル無し → shadow）。
+  - judge/decide.ts:64 の too soon の分岐を通る検査が無い。
+    fixed: `now` が `lastJudgedAt` より前で `wait`（too soon）、同時刻で `due` になる検査を足した（`minIntervalMs` は budget 除去時に消えており、現行分岐は時刻の逆行 guard）。
 - Unproven:
-- Doubts:
+  - route/decide.test.ts:54 の guideText の検査は既定値照合だけで固定文字列でも緑になる。
+    fixed: 文面を差し替えた settings で出る文が変わる検査を足した。
+  - judge/decide.test.ts:117 の nudgeText の検査も同じ理由で固定文字列でも緑になる。
+    fixed: 文面を差し替えた settings で出る文が変わる検査を足した。
+- Doubts: Notes で把握済みとして logs の扱いと Record から IntentRecord への改名と旧 shape の除去と includeTools の残置は指摘にしなかった。
+
+### Round 2
+
+- Stale:
+  - README の文言は either answer is no に直り judge の OR 条件と一致する。
+  - ask のコメントは state/payload.ts を指し state.ts への残存参照は無い。
+- Unlisted: fixed 行の範囲では新たな該当は無い。
+- Gaps:
+  - 初期 mode の検査 3 件があり両方 false なら live、片方 shadow なら shadow、ファイル無しなら shadow を確かめる。
+  - too soon の検査があり lastJudgedAt より前なら wait、同時刻なら due になる。minIntervalMs は現行に無く逆行 guard の説明はコードと合う。
+- Unproven:
+  - guideText は文面差し替えで変わる検査があり固定文でも緑になる状態は解消した。
+  - nudgeText も同様に文面差し替えの検査があり固定文でも緑になる状態は解消した。
+- Doubts: なし。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 142 件が緑
+  - `pnpm test:run` → 41 ファイル / 640 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも緑
+  - `pnpm lint` → 緑
+  - `ls .pi/extensions/intent-router/logs` → 作業場にはまだ無い（実行時に `recent.json` ができる）。`git ls-files` で日付の jsonl は 0 件
+  - `grep -n "意図通りに動ける" DEFINITION.md` → 28 行目に 1 件
+  - 壊して赤を確かめた 4 件:
+    - `judge/decide.ts` の `||` を `&&` に → 11 件が赤（`useful=yes` かつ `new=no` のケースを含む）
+    - `route/decide.ts` の `>=` を `>` に → `reply 0.8 → act` が赤
+    - `guideText` を固定文字列に → guide の 3 件が赤
+    - `guideText` の `{prompt}` の差し込みを外す → 7 件が赤
+    - いずれも戻して緑に復帰
 - Findings:
+  - `{prompt}` が差し込まれない。`settings.json:21` と `settings/schema.ts:224` の guide の文に `{prompt}` が残っているが、`guideText` は文面をそのまま返し、`route/hook.ts` も差し込まない。live では `{prompt}` という文字がそのまま会話に入る
+    - fixed: `guideText(settings, choice, prompt)` にし、改行を 1 つの空白に潰して 40 字までの抜粋を `{prompt}` に差し込むようにした。`route/hook.ts` からは `event.prompt` を渡す。差し込み・不残留・40 字切りの検査を足した（`682aba4`）
 - Doubts:
+  - なし

@@ -1,14 +1,75 @@
 {
-  "thresholds": {
-    "routeConfidence": 0.5,
-    "judgeConfidence": 0.5,
-    "judgeScore": 1.5
-  },
   "classifier": {
     "models": [
       { "provider": "opencode", "model": "jev-1.13-free" },
       { "provider": "openrouter", "model": "~typesafe/jev-latest" }
     ],
     "allowPaid": true
-  }
+  },
+  "route": {
+    "shadow": true,
+    "question": {
+      "instructions": "Classify the owner message into exactly one intent: reply, approve, or other.",
+      "criteria": {
+        "reply": "The owner asks for an explanation, an answer, or information. The owner wants a reply, not an edit",
+        "approve": "The owner approves a proposal, a plan, or the previous agent action. The owner allows the agent to proceed",
+        "other": "Anything else that is neither a request for a reply nor an approval"
+      }
+    },
+    "thresholds": { "reply": 0.8, "approve": 0.9 },
+    "guides": {
+      "reply": "Re: {prompt} — the owner wants an answer, not an edit. Do not edit, write, delete, or commit anything. Investigate only what the answer needs, then answer.",
+      "approve": "Approved: {prompt} — the owner approved the proposal or previous action. Proceed with the approved change and report the result."
+    }
+  },
+  "judge": {
+    "shadow": true,
+    "minTurns": 2,
+    "everyNTurns": 1,
+    "maxJudgements": 12,
+    "threshold": 0.9,
+    "questions": {
+      "useful": {
+        "instructions": "Is the latest investigation useful for answering the owner message? Answer yes or no.",
+        "criteria": {
+          "yes": "The latest findings help answer the owner message",
+          "no": "The latest findings do not help answer the owner message"
+        }
+      },
+      "new": {
+        "instructions": "Did the latest investigation obtain new facts compared to the earlier investigation? Answer yes or no.",
+        "criteria": {
+          "yes": "The latest findings contain new facts not seen in the earlier investigation",
+          "no": "The latest findings contain no new facts beyond the earlier investigation"
+        }
+      }
+    },
+    "stop": {
+      "consecutive": 2,
+      "maxNudges": 1,
+      "nudges": {
+        "reply": "Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.",
+        "approve": "Enough has been investigated for the approved change. Stop investigating: no new tool calls. Proceed with the approved change from what you have."
+      }
+    }
+  },
+  "state": {
+    "textChars": 2000,
+    "assistantChars": 500,
+    "resultChars": 300,
+    "maxActions": 12,
+    "maxStateChars": 12000,
+    "includeTools": [
+      "read",
+      "bash",
+      "grep",
+      "find",
+      "ls",
+      "write",
+      "edit",
+      "web_search",
+      "consult_run"
+    ]
+  },
+  "record": { "recent": 50 }
 }
