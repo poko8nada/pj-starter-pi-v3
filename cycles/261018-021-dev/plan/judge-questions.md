@@ -234,9 +234,11 @@ export function decideJudge(
 
 ### Slice 2: 問いと設定を新しい 2 問にする
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `judge/decide.ts`と`judge/hook.ts`を新鍵（`related`/`answerable`、`stop.unrelated`/`stop.nudge`）に合わせた（型を通す必須手当て。判定は旧ORのまま slice 3で変える）
+  - `judge/decide.test.ts`・`judge/hook.test.ts`・`index.test.ts`の問名と`nudgeText`期待値を新形に合わせた（`reply`/`approve`で同文。全テスト緑のため）
+- Commit: 3dfb70f
 
 ### Slice 3: judge を reply だけで走らせ、促しの条件を変える
 
