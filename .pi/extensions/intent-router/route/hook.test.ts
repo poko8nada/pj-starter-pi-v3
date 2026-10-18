@@ -170,13 +170,19 @@ describe('registerRoute', () => {
 
   it('approve 0.75 → idle（0.8 に届かない）', async () => {
     const settings = defaultSettings();
-    const { handler, run, file } = wired(settings, answeredOutcome('approve', 0.75), 'live');
+    const { handler, run, requests, file } = wired(
+      settings,
+      answeredOutcome('approve', 0.75),
+      'live',
+    );
     const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ hook: 'route', fired: false });
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
   });
 
   it('other → idle（文を出さない）', async () => {
@@ -302,11 +308,15 @@ describe('registerRoute', () => {
   it('owner は短く agent_prev だけが長い → truncated が true', async () => {
     const settings = defaultSettings();
     const limit = settings.state.textChars;
+    const longPrev = 'あ'.repeat(limit + 50);
     const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'あ'.repeat(limit + 50) });
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: longPrev });
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.state_chars).toBeLessThan(
+      JSON.stringify({ owner_now: 'hello', agent_prev: longPrev }).length,
+    );
     expect(records[0]?.truncated).toBe(true);
   });
 

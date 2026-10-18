@@ -4,6 +4,8 @@
 
 ```text
 .pi/extensions/intent-router/
+  command/
+    intent.test.ts
   record/
     recent.ts                update
     recent.test.ts
@@ -11,11 +13,13 @@
     payload.ts               update
     payload.test.ts
   route/
+    decide.ts
     hook.ts                  update
     hook.test.ts
   judge/
     hook.ts                  update
     hook.test.ts
+  index.test.ts
   README.md                  update
 ```
 
@@ -127,6 +131,7 @@ export function routePayload(
   - `command/intent.test.ts` の手書き IntentRecord 2 件に新必須欄を足した（足さないと typecheck が赤い。plan の Files 外）
   - lint 上限に当たったため `settleRoute` は入力1個・`settleAnswered` は `hold()` 共有・judge の新 tests は別 describe にした
   - schema の既定 `route.thresholds.approve` と `judge.threshold` を 0.8 にした（plan の Files 外だが base が赤かったため。0.9 境界の tests も下げた） — 38a086d
+  - 閾値の既定を 0.8 に合わせたのに伴い `route/decide.ts:21` のコメントも直した
 - Commit: dfdef13
 
 ## Review
@@ -134,10 +139,27 @@ export function routePayload(
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/intent-router/README.md:7`、`README.md:36`、`README.md:43` が閾値 `0.9` のまま古くなった — `.pi/extensions/intent-router/settings/schema.ts:221`（`approve: 0.8`）・`:237`（`judge.threshold 0.8`）と `.pi/extensions/intent-router/settings.json:19,30`（いずれも `0.8`）が ADR `02` 決定値「すべて `0.8`」に揃ったのに、本文の `How it moves` と設定表だけ `reply 0.8 / approve 0.9`、`judge.threshold 0.9` のまま。plan の README 更新は Record 節のみで閾値に触れていない。
+    - fixed: README の `How it moves` と設定表の `0.9` 3 箇所を `0.8` に直した（`:19` の `set` 例は既定値の記述ではないため触らない）
 - Unlisted:
+  - `.pi/extensions/intent-router/command/intent.test.ts:166`（同 `:193`）手書き `IntentRecord` 2 件への新必須欄追加 — plan の Files に無いファイルの変更。Notes Slice 2 に記録はあるが Files 外であることに変わりはなく、閾値（既知扱い）ではなく型追加のため finding とする。
+    - fixed: `## Files` に `command/intent.test.ts` を追従ファイルとして足した（印なし）
+  - `.pi/extensions/intent-router/index.test.ts:143`（`readRecords` の JSONL 化、`:149-162`）— plan の Files に無い。Notes Slice 1 に記録はあるが Files 外。なお同ファイルの境界値書換え（`:329` の `0.75`、`:346` の `0.7`）は ADR 決定値＋記録済みのため除く。
+    - fixed: `## Files` に `index.test.ts` を追従ファイルとして足した（印なし）
+  - `.pi/extensions/intent-router/route/decide.ts:21` コメントの `approve 0.9` → `0.8` 書換え — plan の Files に無く Notes にも記録が無い。閾値 `0.8` 自体は ADR 決定値なので値は問わないが、ファイル自体が Files 外で変わっているため finding とする。
+    - fixed: `## Files` に `route/decide.ts`（印なし）を足し、`### Slice 2` の `Unplanned` にコメント修正を記録した
 - Gaps:
+  - `.pi/extensions/intent-router/judge/hook.ts:169` `logNudge`（nudge 時の記録）経路の 2 欄が検証されていない — 新 tests `.pi/extensions/intent-router/judge/hook.test.ts:467`（`registerJudge/state chars`）は小さい往復（hold 相当）、`maxStateChars` 超え（hold 相当）、classify 失敗のみで、2 回続いた後の nudge（`logNudge` → `streak`/`nudge` あり）の `state_chars`/`truncated` を assert していない。Steps は judge の全記録に同じ 2 欄を求めている。
+    - fixed: `judge/hook.test.ts` の `registerJudge/state chars` に促し往復の 2 欄ケースを足した（2 回 `noNo` → nudge 記録の `state_chars` が送信 payload 長と一致、`truncated` は false）
+  - `.pi/extensions/intent-router/route/hook.test.ts:171`（`approve 0.75 → idle`＝閾値未満見送り）が `fired` のみ見て `state_chars`/`truncated` を assert していない — Steps は `other`／閾値未満の見送りにも同じ 2 欄を求めており、`other` の同 2 欄（`:330`）はあるが閾値未満の同 2 欄が無い。
+    - fixed: 同テストの assert に 2 欄（送信 state 長との一致、`truncated` false）を足した
 - Unproven:
+  - `.pi/extensions/intent-router/route/hook.test.ts:302`（`owner は短く agent_prev だけが長い → truncated が true`）は `state_chars == 送信 state 長` と `truncated == true` のみで、兄弟の owner-long（`:289`）にある `toBeLessThan(生の字数)` が無い — `routePayload`（`.pi/extensions/intent-router/state/payload.ts:170`）が `agent_prev` を切らずに返しても送信と記録が同じ未切断で一致するため緑のまま。切った後の字数であることが証明できていない。
+    - fixed: 切る前の生 state（`{ owner_now, agent_prev }` 全体）の字数より短いことの assert を足した（兄弟 `:289` と同じ形）
 - Doubts:
+  - `.pi/extensions/intent-router/judge/hook.ts:211` の `void turnIndex; void truncated; void stateChars;` は `logNudge` に渡しているのに void しており意図が読めない。動作に影響しないため finding にしない。
+  - `.pi/extensions/intent-router/record/recent.ts:12` の `isRecord` が `at` の有無しか見ず `state_chars`/`truncated` を要求しない。旧 JSONL の 1 行（新欄なし）が混ざると欠けたまま読めるが、plan Verify は旧形式＝配列 1 行のみを空と決めており単行旧欄の扱いは決めていないため finding にしない。
+  - `.pi/extensions/intent-router/README.md:19` の例 `route.thresholds.approve 0.9` は `set` の使用例であり既定値の記述ではないため stale に数えていない。
 
 ## Acceptance
 

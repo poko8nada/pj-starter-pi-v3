@@ -516,6 +516,26 @@ describe('registerJudge/state chars', () => {
     expect(records[0]?.state_chars).toBe(JSON.stringify(state).length);
     expect(typeof records[0]?.truncated).toBe('boolean');
   });
+
+  it('促しが出る往復 → nudge の記録にも state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(
+      settings,
+      [noNo(), noNo()],
+      'live',
+      armedWithTurns(1),
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    const records = readRecords(file);
+    expect(records).toHaveLength(2);
+    expect(records[1]?.nudge).not.toBeNull();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const state = (requests[1] as { readonly state: Readonly<Record<string, unknown>> }).state;
+    expect(records[1]?.state_chars).toBe(JSON.stringify(state).length);
+    expect(records[1]?.truncated).toBe(false);
+  });
 });
 
 describe('registerJudge/new tools', () => {
