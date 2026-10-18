@@ -23,7 +23,7 @@ export interface IntentRecord {
   readonly threshold: number | null;
   readonly guide: string | null;
   readonly verdicts: { readonly related: Verdict; readonly answerable: Verdict } | null;
-  readonly streak: number | null;
+  readonly unrelated: number | null;
   readonly nudge: string | null;
   readonly fired: boolean;
   /** 渡した state を JSON にしたときの字数（切った後） */

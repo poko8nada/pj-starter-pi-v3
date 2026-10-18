@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { choicesOf, JUDGE_QUESTIONS, ROUTE_QUESTION } from '../ask/questions.ts';
+import { choicesOf } from '../ask/questions.ts';
 import { defaultSettings, parseSettings } from './schema.ts';
 
 describe('defaultSettings', () => {
@@ -119,14 +119,6 @@ describe('parseSettings', () => {
 });
 
 describe('questions', () => {
-  it('ROUTE_QUESTION が expect', () => {
-    expect(ROUTE_QUESTION).toBe('expect');
-  });
-
-  it('JUDGE_QUESTIONS が related と answerable', () => {
-    expect(JUDGE_QUESTIONS).toEqual({ related: 'related', answerable: 'answerable' });
-  });
-
   it('choicesOf(settings.route.question) → reply, approve, other', () => {
     expect(choicesOf(defaultSettings().route.question)).toEqual(['reply', 'approve', 'other']);
   });

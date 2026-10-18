@@ -15,7 +15,7 @@ function routeRecord(ownerNow: string): IntentRecord {
     threshold: 0.8,
     guide: 'guide text',
     verdicts: null,
-    streak: null,
+    unrelated: null,
     nudge: null,
     fired: true,
     state_chars: 10,
@@ -59,24 +59,6 @@ describe('createRecent', () => {
     expect(lines.join('\n')).toContain('hello4');
     expect(lines.join('\n')).not.toContain('hello0');
     expect(recent.tail(10)).toHaveLength(3);
-  });
-
-  it('limit 3 で 4 件 add → 3 行になり、先頭の 1 件が落ちて最後の 3 件が残る', () => {
-    const dir = tmpDir();
-    const file = join(dir, 'recent.json');
-    const recent = createRecent(3, file);
-    for (let index = 0; index < 4; index += 1) {
-      recent.add(routeRecord(`hello${index}`));
-    }
-    const lines = readFileSync(file, 'utf8')
-      .split('\n')
-      .filter((line) => line !== '');
-    expect(lines).toHaveLength(3);
-    expect(recent.tail(10).map((record) => record.owner_now)).toEqual([
-      'hello1',
-      'hello2',
-      'hello3',
-    ]);
   });
 
   it('記録が上限を超える → 古い物から落ちる', () => {

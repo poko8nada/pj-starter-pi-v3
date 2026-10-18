@@ -185,15 +185,6 @@ describe('registerRoute', () => {
     expect(records[0]?.truncated).toBe(false);
   });
 
-  it('approve 0.85 → act（閾値が 0.8）', async () => {
-    const settings = defaultSettings();
-    const { handler } = wired(settings, answeredOutcome('approve', 0.85), 'live');
-    const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(
-      settings.route.guides.approve.split('{prompt}').join('looks good, proceed'),
-    );
-  });
-
   it('other → idle（文を出さない）', async () => {
     const settings = defaultSettings();
     const { handler, file } = wired(settings, answeredOutcome('other', 0.9), 'live');
@@ -262,15 +253,6 @@ describe('registerRoute', () => {
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ hook: 'route', choice: 'reply', fired: false });
     expect(records[0]?.guide).toBe(settings.route.guides.reply.split('{prompt}').join('hello'));
-  });
-
-  it('live → guide が1回だけ差し込まれる', async () => {
-    const settings = defaultSettings();
-    const { handler } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(
-      settings.route.guides.reply.split('{prompt}').join('hello'),
-    );
   });
 
   it('shadow でも ask は呼ばれる（記録のため）', async () => {

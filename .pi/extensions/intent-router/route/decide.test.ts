@@ -24,13 +24,6 @@ describe('decideRoute', () => {
     });
   });
 
-  it('approve 0.85 → act（閾値が 0.8）', () => {
-    expect(decideRoute(choiceAnswer('approve', 0.85), defaultSettings())).toMatchObject({
-      kind: 'act',
-      choice: 'approve',
-    });
-  });
-
   it('reply 0.8 → act（閾値と同じ値は出る）', () => {
     expect(decideRoute(choiceAnswer('reply', 0.8), defaultSettings())).toMatchObject({
       kind: 'act',

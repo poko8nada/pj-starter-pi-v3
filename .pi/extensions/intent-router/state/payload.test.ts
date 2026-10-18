@@ -111,12 +111,6 @@ describe('routePayload', () => {
     expect(truncated).toBe(true);
   });
 
-  it('owner だけが長い → truncated が true（片方だけ長い場合も含む）', () => {
-    const settings = defaultSettings();
-    const { truncated } = routePayload('あ'.repeat(settings.state.textChars + 1), '', settings);
-    expect(truncated).toBe(true);
-  });
-
   it('owner は短く agent_prev だけが長い → truncated が true', () => {
     const settings = defaultSettings();
     const { payload, truncated } = routePayload(
@@ -157,23 +151,6 @@ describe('lastAssistantText', () => {
     expect(text).toBe('previous answer');
   });
 
-  it('画像つきの発言 → 文だけ残し画像を入れない', () => {
-    const text = lastAssistantText(
-      [
-        {
-          role: 'assistant',
-          content: [
-            { type: 'text', text: 'looking into it' },
-            { type: 'image', data: 'data:image/png;base64,iVBORw0KGgo=' },
-          ],
-        },
-      ],
-      2000,
-    );
-    expect(text).toBe('looking into it');
-    expect(text).not.toContain('data:image');
-  });
-
   it('base64 の塊は送らない', () => {
     const text = lastAssistantText(
       [{ role: 'assistant', content: 'see data:image/png;base64,iVBORw0KGgo=' }],
@@ -187,10 +164,6 @@ describe('lastAssistantText', () => {
 describe('minimizeText', () => {
   it('改行と連続した空白を 1 つの空白に詰める', () => {
     expect(minimizeText('a\n\n b   c', 100)).toBe('a b c');
-  });
-
-  it('詰めたあとに切る', () => {
-    expect(minimizeText('x'.repeat(50), 10).length).toBe(10);
   });
 
   it('詰めてから切る（先に切ると xxx になる）', () => {

@@ -70,7 +70,7 @@ function logRoute(deps: RouteDeps, input: RouteLogInput): void {
     threshold: input.threshold,
     guide: input.guide,
     verdicts: null,
-    streak: null,
+    unrelated: null,
     nudge: null,
     fired: input.fired,
     state_chars: input.stateChars,

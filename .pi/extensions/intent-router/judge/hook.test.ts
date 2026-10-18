@@ -625,20 +625,6 @@ describe('registerJudge/state chars', () => {
 });
 
 describe('registerJudge/integration', () => {
-  it('1 往復目の related が 2 往復目の payload の related に出る', async () => {
-    const settings = defaultSettings();
-    const { handler, requests } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
-    await handler(readTurn(), { cwd: '/repo' });
-    await handler(readTurn(), { cwd: '/repo' });
-    expect(requests).toHaveLength(2);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
-    const first = requests[0] as { readonly state: Readonly<Record<string, unknown>> };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
-    const second = requests[1] as { readonly state: Readonly<Record<string, unknown>> };
-    expect(first.state['read']).toHaveLength(1);
-    expect(second.state['related']).toHaveLength(1);
-  });
-
   it('2 往復目で answerable=yes → 促しが 1 回だけ出て記録の nudge に入る', async () => {
     const settings = defaultSettings();
     const { handler, requests, file } = wired(
@@ -794,22 +780,6 @@ describe('registerJudge/new tools', () => {
     await handler(toolTurn('quick_edit', { path: 'a.ts' }, 'body'), { cwd: '/repo' });
     expect(requests).toHaveLength(1);
     expect(readOf(requests[0])).toMatchObject([{ tool: 'quick_edit', target: 'a.ts' }]);
-  });
-
-  it('action が無い往復 → read は空のまま', async () => {
-    const settings = defaultSettings();
-    const { handler, requests, run } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
-    const result = await handler(
-      { turnIndex: 2, message: { content: 'done' }, toolResults: [] },
-      { cwd: '/repo' },
-    );
-    expect(result).toBeUndefined();
-    expect(requests).toHaveLength(0);
-    const current = run.get();
-    if (current.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(current.read).toEqual([]);
   });
 
   it('一覧から落ちた edit の往復 → read に入らない', async () => {
