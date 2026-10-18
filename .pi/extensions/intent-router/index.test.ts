@@ -403,6 +403,31 @@ describe('register', () => {
     expect(existsSync(join(logDir, keptFile))).toBe(true);
     expect(existsSync(join(logDir, todayFile))).toBe(true);
   });
+
+  it('custom の走り出し → 例外にならず route の行が出ない', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await expect(
+      fake.handlers.get('before_agent_start')?.({ messageType: 'custom' }, ctx),
+    ).resolves.toBeUndefined();
+    expect(readRecords(cwd)).toHaveLength(0);
+  });
+
+  it('custom の次に user が来る → route の行が1行出る', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'custom' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
+    const records = readRecords(cwd);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route' });
+  });
 });
 
 describe('register daily logs', () => {

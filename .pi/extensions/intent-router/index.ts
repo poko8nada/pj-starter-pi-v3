@@ -183,10 +183,12 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
           cell.hold(ctx);
           const settings = refresh();
           const agentPrev = readAgentPrev(ctx, settings.state.textChars);
-          if (ev.messageType !== 'user') {
-            return undefined;
-          }
-          return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd, agentPrev });
+          return handler(
+            ev.messageType === 'user'
+              ? { messageType: 'user', prompt: ev.prompt, images: ev.images }
+              : { messageType: 'custom' },
+            { cwd: ctx.cwd, agentPrev },
+          );
         });
       },
     },
