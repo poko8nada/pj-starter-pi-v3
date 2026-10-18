@@ -5,7 +5,6 @@
  * - `on`: live（頭も途中も実際に出す）
  * - `off`: shadow（どちらも記録だけ）
  * - `set <道> <値>`: settings.json を書く
- * - `last [数]`: 直近の記録を返す
  * - その他: 使い方を返す（投げない）
  *
  * `on` / `off` では抱えている run を捨てる。
@@ -13,9 +12,8 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { defaultSettings, parseSettings, type Settings } from '../settings/schema.ts';
+import { defaultSettings, parseSettings } from '../settings/schema.ts';
 import { idleRun, type FlagsPort, type Mode, type RunPort } from '../state/run.ts';
-import type { IntentRecord } from '../record/log.ts';
 
 export type { Mode };
 
@@ -27,10 +25,9 @@ export type IntentCommand =
   | { readonly kind: 'show' }
   | { readonly kind: 'mode'; readonly mode: Mode }
   | { readonly kind: 'set'; readonly path: string; readonly value: string }
-  | { readonly kind: 'last'; readonly count: number }
   | { readonly kind: 'usage'; readonly text: string };
 
-export function parseIntent(args: string, settings: Settings): IntentCommand {
+export function parseIntent(args: string): IntentCommand {
   const trimmed = args.trim();
   if (trimmed === '') {
     return { kind: 'show' };
@@ -51,17 +48,6 @@ export function parseIntent(args: string, settings: Settings): IntentCommand {
     }
     return { kind: 'set', path, value };
   }
-  if (head === 'last') {
-    const raw = parts[1];
-    if (raw === undefined || raw === '') {
-      return { kind: 'last', count: settings.log.keepDays };
-    }
-    const count = Number(raw);
-    if (!Number.isInteger(count) || count < 1) {
-      return { kind: 'usage', text: usageText() };
-    }
-    return { kind: 'last', count };
-  }
   return { kind: 'usage', text: usageText() };
 }
 
@@ -72,7 +58,6 @@ export function usageText(): string {
     '/intent on - switch to live',
     '/intent off - switch to shadow',
     '/intent set <path> <value> - update settings.json',
-    '/intent last [count] - show recent records',
   ].join('\n');
 }
 
@@ -127,10 +112,6 @@ export interface CommandPiPort {
 export interface IntentPorts {
   readonly flags: FlagsPort;
   readonly run: RunPort;
-  readonly recent: {
-    readonly add: (record: IntentRecord) => void;
-    readonly tail: (count: number) => readonly IntentRecord[];
-  };
   readonly settingsFile: string;
 }
 
@@ -156,10 +137,9 @@ function readDoc(file: string): unknown {
 
 export function registerCommand(pi: CommandPiPort, deps: IntentPorts): void {
   pi.registerCommand('intent', {
-    description: 'Show mode, switch live/shadow, set settings, or show recent records',
+    description: 'Show mode, switch live/shadow, or set settings',
     handler: (args, ctx) => {
-      const settings = defaultSettings();
-      const command = parseIntent(args, settings);
+      const command = parseIntent(args);
       if (command.kind === 'show') {
         ctx.ui.notify(`intent-router: ${deps.flags.get().mode}`);
         return;
@@ -168,15 +148,6 @@ export function registerCommand(pi: CommandPiPort, deps: IntentPorts): void {
         deps.flags.set({ mode: command.mode });
         deps.run.set(idleRun());
         ctx.ui.notify(`intent-router: ${command.mode}`);
-        return;
-      }
-      if (command.kind === 'last') {
-        const records = deps.recent.tail(command.count);
-        if (records.length === 0) {
-          ctx.ui.notify('intent-router: まだ無い (no records yet)');
-          return;
-        }
-        ctx.ui.notify(records.map((record) => JSON.stringify(record)).join('\n'));
         return;
       }
       if (command.kind === 'set') {

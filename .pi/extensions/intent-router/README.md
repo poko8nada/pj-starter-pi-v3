@@ -17,7 +17,6 @@ Keeps the agent moving the way the owner meant. Before the agent starts, it clas
 /intent on                   switch to live
 /intent off                  switch to shadow
 /intent set <path> <value>   update settings.json (e.g. route.thresholds.approve 0.9)
-/intent last [count]         show the recent records (says so when there are none)
 ```
 
 Any other argument prints the usage instead of throwing.
@@ -56,7 +55,7 @@ Any other argument prints the usage instead of throwing.
 
 ## Record
 
-Every ask is appended to `logs/<YYYY-MM-DD>.jsonl` as JSONL (one line per entry, never cut short; the date follows JST). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`related` / `answerable`, judge only), the `unrelated`, the `nudge`, whether it was injected (`fired`), the `state_chars` (the passed state as JSON length, after cutting), and whether the state was cut (`truncated`). At `session_start` the router deletes files older than `log.keepDays` days (by file name). `/intent last` reads it back.
+Every ask is appended to `logs/<YYYY-MM-DD>.jsonl` as JSONL (one line per entry, never cut short; the date follows JST). One entry carries the hook (`route` / `judge`), `owner_now`, `agent_prev`, the `choice`, its `confidence` and the `threshold` in force, the `guide` (route only), the `verdicts` (`related` / `answerable`, judge only), the `unrelated`, the `nudge`, whether it was injected (`fired`), the `state_chars` (the passed state as JSON length, after cutting), and whether the state was cut (`truncated`). At `session_start` the router deletes files older than `log.keepDays` days (by file name).
 
 ## The code
 
@@ -70,7 +69,7 @@ judge/decide.ts     the two-question decision and the nudge text
 judge/hook.ts       turn_end: asks related/answerable at once, injects the nudge once when stalled
 state/run.ts        one prompt's run: armed/idle, read/related actions, unrelated, nudges
 state/payload.ts    builds the classifier state (owner_text, agent_text, read/related)
-command/intent.ts   /intent: show, on, off, set, last
+command/intent.ts   /intent: show, on, off, set
 record/log.ts       one JSONL file per day in logs/<YYYY-MM-DD>.jsonl
 settings/schema.ts  the defaults and the partial override (unknown keys and out-of-range numbers throw)
 settings/read.ts    reads settings.json (fresh on every call)

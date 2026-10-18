@@ -7,7 +7,6 @@
  * セッションの始まりに `log.keepDays` より古い日付のファイルを 1 回消す。
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts';
@@ -111,45 +110,6 @@ function initialModeOf(settings: Settings): Mode {
   return settings.route.shadow || settings.judge.shadow ? 'shadow' : 'live';
 }
 
-function tailLog(dir: string, count: number): readonly IntentRecord[] {
-  let names: string[];
-  try {
-    names = readdirSync(dir);
-  } catch {
-    return [];
-  }
-  names.sort();
-  const all: IntentRecord[] = [];
-  for (const name of names) {
-    if (!name.endsWith('.jsonl')) {
-      continue;
-    }
-    let text: string;
-    try {
-      text = readFileSync(join(dir, name), 'utf8');
-    } catch {
-      continue;
-    }
-    for (const line of text.split('\n')) {
-      if (line.trim() === '') {
-        continue;
-      }
-      try {
-        const parsed: unknown = JSON.parse(line);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
-        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
-          all.push(parsed as IntentRecord);
-        }
-      } catch {
-        continue;
-      }
-    }
-  }
-  const n = Math.max(0, Math.floor(count));
-  return n >= all.length ? all : all.slice(all.length - n);
-}
-
 function wiringFor(cwd: string, settingsDir: string) {
   const initial = readSettings(settingsDir);
   let current: Settings = initial;
@@ -162,13 +122,6 @@ function wiringFor(cwd: string, settingsDir: string) {
   const logDir = join(cwd, '.pi/extensions/intent-router/logs');
   const log = (record: IntentRecord): void => {
     append(record, logDir);
-  };
-  // `last` が残る間のつなぎ。日ごとの JSONL を古い順に読んで直近を返す
-  const recent = {
-    add: (record: IntentRecord): void => {
-      append(record, logDir);
-    },
-    tail: (count: number): readonly IntentRecord[] => tailLog(logDir, count),
   };
   const routeDeps = {
     get settings(): Settings {
@@ -196,7 +149,6 @@ function wiringFor(cwd: string, settingsDir: string) {
     cell,
     log,
     logDir,
-    recent,
     routeDeps,
     judgeDeps,
   };
@@ -222,7 +174,7 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
   const cwd = options?.cwd ?? process.cwd();
   const settingsDir = join(cwd, '.pi/extensions/intent-router');
   const wired = wiringFor(cwd, settingsDir);
-  const { initial, refresh, state, cell, routeDeps, judgeDeps, recent, logDir } = wired;
+  const { initial, refresh, state, cell, routeDeps, judgeDeps, logDir } = wired;
 
   registerRoute(
     {
@@ -273,7 +225,6 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
     {
       flags: state.flags,
       run: state.run,
-      recent,
       settingsFile: join(settingsDir, 'settings.json'),
     },
   );
