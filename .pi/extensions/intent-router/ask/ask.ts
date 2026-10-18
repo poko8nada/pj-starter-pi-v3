@@ -28,38 +28,23 @@ export type Answer =
     }
   | { readonly type: 'score'; readonly score: number; readonly confidence: number };
 
-/** 質問の型に合う答えだけを返す。合わなければ undefined */
-export function fromRegistryAnswer(
-  kind: 'choice' | 'score',
-  raw: RegistryAnswer,
-): Answer | undefined {
-  if (kind === 'choice') {
-    if (raw.type !== 'choice') {
-      return undefined;
-    }
-    if (typeof raw.choice !== 'string' || raw.choice === '') {
-      return undefined;
-    }
-    if (typeof raw.confidence !== 'number' || !Number.isFinite(raw.confidence)) {
-      return undefined;
-    }
-    return {
-      type: 'choice',
-      choice: raw.choice,
-      probabilities: raw.probabilities,
-      confidence: raw.confidence,
-    };
-  }
-  if (raw.type !== 'score') {
+/** choice の答えだけを返す。合わなければ undefined */
+export function fromRegistryAnswer(raw: RegistryAnswer): Answer | undefined {
+  if (raw.type !== 'choice') {
     return undefined;
   }
-  if (typeof raw.score !== 'number' || !Number.isFinite(raw.score)) {
+  if (typeof raw.choice !== 'string' || raw.choice === '') {
     return undefined;
   }
   if (typeof raw.confidence !== 'number' || !Number.isFinite(raw.confidence)) {
     return undefined;
   }
-  return { type: 'score', score: raw.score, confidence: raw.confidence };
+  return {
+    type: 'choice',
+    choice: raw.choice,
+    probabilities: raw.probabilities,
+    confidence: raw.confidence,
+  };
 }
 
 export type AskOutcome =
@@ -85,13 +70,13 @@ export interface ClassifierQuestion {
 }
 
 export interface AskRequest {
-  readonly kind: 'choice' | 'score';
+  readonly kind: 'choice';
   readonly state: JsonObject;
   /** 同じプロンプトの中では、route が選んだ候補を使い回す */
   readonly only?: ClassifierCandidate;
   readonly signal?: AbortSignal;
-  /** 新道の問い。あるときは固定の旧問いではなくこちらを送る */
-  readonly questions?: Readonly<Record<string, ClassifierQuestion>>;
+  /** 送る1問。呼び出し側が設定から組む */
+  readonly questions: Readonly<Record<string, ClassifierQuestion>>;
 }
 
 export interface Ask {
@@ -183,7 +168,7 @@ interface AbortArm {
 }
 
 function armAbort(
-  request: AskRequest,
+  request: { readonly signal?: AbortSignal },
   timeoutMs: number,
   timer: (ms: number, fire: () => void) => void,
 ): AbortArm {
@@ -241,63 +226,22 @@ type Attempt =
   | { readonly kind: 'error'; readonly reason: string }
   | { readonly kind: 'aborted' };
 
-/** 旧道の score 問い。ask が内部に持つ（pi の classifier が受ける形） */
-const LEGACY_JUDGE_QUESTION: {
-  readonly type: 'score';
-  readonly instructions: string;
-  readonly criteria: string[];
-} = {
-  type: 'score',
-  instructions:
-    'How ready is the investigation to answer the owner question? Rate the investigation state.',
-  criteria: [
-    '0: almost nothing has been investigated yet; answering now would be a guess',
-    '1: partly investigated; key evidence is still missing',
-    '2: enough has been investigated to answer; stop investigating and answer from what is known',
-  ],
-};
-
-/** 旧道の問い。新しい設定問いに移るまで ask が内部に持つ（questions.ts の旧 ROUTE_QUESTION の写し） */
-const LEGACY_ROUTE_QUESTION = {
-  type: 'choice',
-  instructions: 'Classify the owner message into exactly one intent label.',
-  criteria: {
-    question:
-      'Asks for an explanation, an answer, or information. The owner wants an answer, not an edit',
-    design: 'Asks for an opinion, a review, or a design judgement on a proposal, plan, or design',
-    verify: 'Asks to check, confirm, or verify a fact, behavior, or result',
-    permission: 'A permission request, a confirmation, or an approval gate',
-    chat: 'Small talk, a greeting, thanks, or other casual chat',
-    unknown: 'Anything else that fits none of the above',
-  },
-} as const;
-
 async function attemptModel(
   registry: Registry,
   request: AskRequest,
   model: RegistryModel,
   signal: AbortSignal,
 ): Promise<Attempt> {
-  const custom = request.questions;
-  const customKeys = custom === undefined ? [] : Object.keys(custom);
-  const key =
-    customKeys.length === 1 && customKeys[0] !== undefined
-      ? customKeys[0]
-      : request.kind === 'choice'
-        ? 'route'
-        : 'judge';
+  const keys = Object.keys(request.questions);
+  const key = keys.length === 1 && keys[0] !== undefined ? keys[0] : undefined;
+  if (key === undefined) {
+    return { kind: 'miss', reason: 'one question expected' };
+  }
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 自前の JsonObject を SDK の state に渡す（値は state.ts が JSON 値だけで組む）
   const state = request.state as unknown as Parameters<Registry['classify']>[1]['state'];
   const result = await registry.classify(
     model,
-    {
-      state,
-      questions:
-        custom ??
-        (request.kind === 'choice'
-          ? { route: LEGACY_ROUTE_QUESTION }
-          : { judge: LEGACY_JUDGE_QUESTION }),
-    },
+    { state, questions: request.questions },
     { signal },
   );
   if (result.stopReason === 'aborted') {
@@ -310,7 +254,7 @@ async function attemptModel(
     };
   }
   const raw = result.answers[key] as RegistryAnswer | undefined;
-  const answer = raw === undefined ? undefined : fromRegistryAnswer(request.kind, raw);
+  const answer = raw === undefined ? undefined : fromRegistryAnswer(raw);
   if (answer === undefined) {
     return { kind: 'miss', reason: `unexpected answer shape from ${nameOfModel(model)}` };
   }
@@ -429,7 +373,7 @@ async function attemptBatchModel(
   const answers: Record<string, Answer> = {};
   for (const key of Object.keys(request.questions)) {
     const raw = result.answers[key] as RegistryAnswer | undefined;
-    const answer = raw === undefined ? undefined : fromRegistryAnswer('choice', raw);
+    const answer = raw === undefined ? undefined : fromRegistryAnswer(raw);
     if (answer === undefined) {
       return { kind: 'miss', reason: 'unexpected answer shape from ' + nameOfModel(model) };
     }
@@ -446,11 +390,7 @@ export function createBatchAsk(deps: ClassifierDeps): BatchAsk {
   return async (request: BatchAskRequest): Promise<BatchAskOutcome> => {
     const startedAt = clock();
     const timeoutMs = CLASSIFY_TIMEOUT_MS;
-    const arm = armAbort(
-      { kind: 'choice', state: request.state, only: request.only, signal: request.signal },
-      timeoutMs,
-      timer,
-    );
+    const arm = armAbort({ signal: request.signal }, timeoutMs, timer);
     try {
       const resolved = await resolveModels(deps.registry, deps.settings, request.only);
       if (resolved.reason !== undefined) {

@@ -140,7 +140,13 @@ function settingsWith(models: Settings['classifier']['models'], allowPaid: boole
 }
 
 function choiceAsk(state: Record<string, unknown> = { owner_prompt: 'hi' }): AskRequest {
-  return { kind: 'choice', state };
+  return {
+    kind: 'choice',
+    state,
+    questions: {
+      route: { type: 'choice', instructions: 'classify', criteria: { design: 'd' } },
+    },
+  };
 }
 
 describe('createAsk', () => {
@@ -167,22 +173,6 @@ describe('createAsk', () => {
     expect(outcome.usage.input).toBe(10);
     expect(typeof outcome.latencyMs).toBe('number');
     expect(notified).toEqual([]);
-  });
-
-  it('score を聞いて score が返る → answer.score が 1.8', async () => {
-    const free = model('opencode', 'jev-1.13-free', 0);
-    const fake = fakeRegistry([free], [scoreResult('opencode', 'jev-1.13-free', 1.8)]);
-    const ask = createAsk({
-      registry: fake.registry,
-      settings: defaultSettings(),
-      notify: () => {},
-    });
-    const outcome = await ask({ kind: 'score', state: { owner_prompt: 'hi' } });
-    expect(outcome.kind).toBe('answered');
-    if (outcome.kind !== 'answered') {
-      return;
-    }
-    expect(outcome.answer).toMatchObject({ type: 'score', score: 1.8 });
   });
 
   it('1つ目が error、2つ目が答え → answered（2件試した）', async () => {
@@ -262,11 +252,7 @@ describe('createAsk', () => {
     });
     const controller = new AbortController();
     controller.abort();
-    const outcome = await ask({
-      kind: 'choice',
-      state: { owner_prompt: 'hi' },
-      signal: controller.signal,
-    });
+    const outcome = await ask({ ...choiceAsk(), signal: controller.signal });
     expect(outcome.kind).toBe('failed');
     if (outcome.kind !== 'failed') {
       return;
@@ -281,8 +267,8 @@ describe('createAsk', () => {
       registry: fake.registry,
       settings: defaultSettings(),
       notify: () => {},
-      timer: (_ms, fire) => {
-        fire();
+      timer: (_ms, trigger) => {
+        trigger();
       },
     });
     const outcome = await ask(choiceAsk());
@@ -306,19 +292,14 @@ describe('createAsk', () => {
       notify: () => {},
     });
     const outcome = await ask({
-      kind: 'choice',
-      state: { owner_prompt: 'hi' },
+      ...choiceAsk(),
       only: { provider: 'openrouter', model: '~typesafe/jev-latest' },
     });
     expect(outcome.kind).toBe('answered');
     expect(fake.calls).toHaveLength(1);
     expect(fake.calls[0]?.id).toBe('~typesafe/jev-latest');
 
-    const missing = await ask({
-      kind: 'choice',
-      state: { owner_prompt: 'hi' },
-      only: { provider: 'nope', model: 'nothing' },
-    });
+    const missing = await ask({ ...choiceAsk(), only: { provider: 'nope', model: 'nothing' } });
     expect(missing.kind).toBe('failed');
   });
 
