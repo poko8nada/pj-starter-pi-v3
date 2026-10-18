@@ -196,9 +196,11 @@ readonly log: {
 
 ### Slice 1: 記録を日ごとの JSONL にする
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `index.ts` とテストに一時的な `tail` 互換を置いた（slice 3 で消える物）
+  - `route/hook.ts` / `judge/hook.ts` / `command/intent.ts` の型の輸入先を `record/log.ts` に移した
+- Commit: f57ae0d
 
 ### Slice 2: 設定と配線を日ごとのファイルに合わせる
 
