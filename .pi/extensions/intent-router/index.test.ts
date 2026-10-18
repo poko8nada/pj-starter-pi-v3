@@ -223,7 +223,10 @@ describe('register', () => {
     const notifies: string[] = [];
     const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
     const prompt = 'cycles/013-2026-10-09/design.md は何を決めた?';
-    await fake.handlers.get('before_agent_start')?.({ prompt, images: [] }, ctx);
+    await fake.handlers.get('before_agent_start')?.(
+      { messageType: 'user', prompt, images: [] },
+      ctx,
+    );
     await fake.handlers.get('turn_end')?.(readTurn(), ctx);
     const records = readRecords(cwd);
     expect(records).toHaveLength(2);
@@ -267,7 +270,7 @@ describe('register', () => {
       { type: 'message', message: { role: 'user', content: 'hello' } },
       { type: 'message', message: { role: 'assistant', content: 'previous agent text' } },
     ]);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     expect(seen[0]).toMatchObject({ agent_prev: 'previous agent text' });
   });
 
@@ -314,7 +317,7 @@ describe('register', () => {
     register(fake.api, { cwd });
     const notifies: string[] = [];
     const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0), reused, targets), notifies);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     await fake.handlers.get('turn_end')?.(readTurn(), ctx);
     expect(targets).toEqual(['jev-1.13-free', 'jev-1.13-reused']);
     expect(readRecords(cwd)).toHaveLength(2);
@@ -326,7 +329,7 @@ describe('register', () => {
     register(fake.api, { cwd });
     const notifies: string[] = [];
     const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(1)), notifies);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     expect(notifies).toHaveLength(1);
     expect(notifies[0]).toMatch(/paid/);
   });
@@ -360,7 +363,7 @@ describe('register', () => {
       },
     };
     const ctx = fakeCtx(cwd, registry, notifies);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     expect(readRecords(cwd)).toHaveLength(1);
     expect(readRecords(cwd)[0]).toMatchObject({ hook: 'route', choice: 'approve' });
     expect(readRecords(cwd)[0]?.guide).toBeNull();
@@ -369,7 +372,7 @@ describe('register', () => {
       throw new Error('intent command was not registered');
     }
     intentHandler('set route.thresholds.approve 0.7', { ui: { notify: () => {} } });
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     expect(readRecords(cwd)).toHaveLength(2);
     expect(readRecords(cwd)[1]).toMatchObject({ hook: 'route', choice: 'approve' });
     expect(readRecords(cwd)[1]?.guide).toBe(
@@ -409,10 +412,13 @@ describe('register daily logs', () => {
     register(fake.api, { cwd });
     const notifies: string[] = [];
     const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     const first = readRecords(cwd);
     expect(first).toHaveLength(1);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello again' }, ctx);
+    await fake.handlers.get('before_agent_start')?.(
+      { messageType: 'user', prompt: 'hello again' },
+      ctx,
+    );
     const records = readRecords(cwd);
     expect(records).toHaveLength(2);
     expect(records[0]).toEqual(first[0]);
@@ -459,7 +465,7 @@ describe('register daily logs', () => {
     register(fake.api, { cwd });
     const notifies: string[] = [];
     const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     expect(readRecords(cwd)).toHaveLength(1);
     await fake.handlers.get('turn_end')?.(
       { turnIndex: 0, message: { content: 'done' }, toolResults: [] },
@@ -478,7 +484,7 @@ describe('register daily logs', () => {
       classify: (): Promise<never> => Promise.reject(new Error('must not be called')),
     };
     const ctx = fakeCtx(cwd, emptyRegistry, []);
-    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    await fake.handlers.get('before_agent_start')?.({ messageType: 'user', prompt: 'hello' }, ctx);
     const records = readRecords(cwd);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ hook: 'route', choice: null });
