@@ -193,6 +193,10 @@ describe('minimizeText', () => {
     expect(minimizeText('x'.repeat(50), 10).length).toBe(10);
   });
 
+  it('詰めてから切る（先に切ると xxx になる）', () => {
+    expect(minimizeText('xxx\n\n\nyyy', 4)).toBe('xxx ');
+  });
+
   it('画像の base64 を落とす', () => {
     expect(minimizeText('see data:image/png;base64,iVBORw0KGgo=', 100)).toBe('see [image omitted]');
   });
@@ -251,6 +255,29 @@ describe('judgePayload', () => {
     run = addAction(run, action({ target: 'x.ts' }), limits());
     const { payload } = judgePayload(run, settings);
     expect(payload.agent_text.length).toBe(max);
+  });
+
+  it('owner_text は minimize で詰める（改行が残らない）', () => {
+    let run = arm({
+      ownerNow: 'a\n\n b   c',
+      choice: 'reply',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    const { payload } = judgePayload(run, defaultSettings());
+    expect(payload.owner_text).toBe('a b c');
+    expect(payload.owner_text).not.toContain('\n');
+  });
+
+  it('agent_text は minimize で詰める（改行が残らない）', () => {
+    let run = armed();
+    run = noteTurn(run, 'x\n\n  y', limits());
+    run = addAction(run, action({ target: 'x.ts' }), limits());
+    const { payload } = judgePayload(run, defaultSettings());
+    expect(payload.agent_text).toBe('x y');
+    expect(payload.agent_text).not.toContain('\n');
   });
 
   it('道具の呼び出しブロックを含む発言 → agent_text に呼び出しの中身が出ない', () => {

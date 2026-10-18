@@ -258,11 +258,21 @@ export function decideJudge(
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 旧名 useful new consecutive nudges latest earlier の残り、コメントの頭書き、README 3 枚の設定表と Record 節を確認。いずれも新名に揃い、残りはなかった
+- Unlisted: なし — git diff 158aff2 から HEAD の stat 19 件と plan Files の一覧を突き合わせ。全ての変更ファイルは Files に載り、載っていないファイルの変更はなかった
 - Gaps:
+  - 道具呼び出しを含む発言の agent_text は検査されていない。plan は agent_text に呼び出しの中身が出ないことを求めるが、state/payload.test.ts:256 は lastAssistantText を見て judge 用の道を見ない。judge 用は .pi/extensions/intent-router/judge/hook.ts:84 の textOf から noteTurn を経て作られ、hook 側の落としを確かめる検査がない
+    - fixed: `judge/hook.test.ts`のintegrationにtoolCall混じり往復→2回目payloadの`agent_text`が平文のみの検査を追加
+  - related no かつ answerable yes の組み合わせは検査されていない。.pi/extensions/intent-router/judge/decide.ts:45 の answerable yes の枝で unrelated を足す振る舞いは、.pi/extensions/intent-router/judge/decide.test.ts:46 の yes yes だけでは通らず、hook 側にも no yes の筋書きがない
+    - fixed: `decide.test.ts`にno+yesでnudgeかつunrelated+1の検査、`hook.test.ts`integrationに同組み合わせの筋書き検査を追加
 - Unproven:
+  - 詰めてから切る順序は証明されていない。.pi/extensions/intent-router/state/payload.ts:113 は落として詰めてから切るが、.pi/extensions/intent-router/state/payload.test.ts:192 は空白なし 50 字の長さだけ見るため、切ってから詰める壊れ方でも緑のまま。もう一方の詰めの検査も上限 100 で順序を見ない
+    - fixed: `payload.test.ts`に`minimizeText('xxx\n\n\nyyy', 4)`が`'xxx '`になる順序検査を追加
+  - owner_text と agent_text に minimize が使われることは証明されていない。.pi/extensions/intent-router/state/payload.ts:152 は minimizeText で組むが、.pi/extensions/intent-router/state/payload.test.ts:231 と 246 は あ の繰り返しの長さだけ見るため、slice に戻しても緑のまま。空白や画像を含む owner 発言の検査がない
+    - fixed: `payload.test.ts`に改行空白混じり発言のowner/agent詰め検査、`hook.test.ts`integrationにpayload側minimize検査を追加
 - Doubts:
+  - index.ts は plan Files で update だが差分なし。配線は変えずに済み、index.test の verdicts 確認は緑。閉じる上では問題ないと見る
+  - state/run.ts:160 の noteVerdict は hook から呼ばれず、生産の数えは decide と hook の stamped で行われる。run.test は緑のまま残る。消すか残すかは別 cycle の判断にしたい
 
 ## Acceptance
 

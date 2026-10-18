@@ -85,6 +85,14 @@ describe('decideJudge', () => {
     ).toMatchObject({ kind: 'nudge', why: 'unrelated', unrelated: 2 });
   });
 
+  it('related=no かつ answerable=yes → 促しが出て unrelated が 1 増える', () => {
+    expect(decideJudge(answers('no', 0.95, 'yes', 0.95), defaultSettings(), 0)).toMatchObject({
+      kind: 'nudge',
+      why: 'answerable',
+      unrelated: 1,
+    });
+  });
+
   it('related の confidence が閾値未満 → unrelated は増えない', () => {
     expect(decideJudge(answers('no', 0.79, 'no', 0.95), defaultSettings(), 0)).toMatchObject({
       kind: 'wait',

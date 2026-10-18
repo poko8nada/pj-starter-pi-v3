@@ -709,6 +709,66 @@ describe('registerJudge/integration', () => {
     expect(records[0]?.nudge).toBeNull();
     expect(records[1]?.nudge).toBeNull();
   });
+
+  it('related=no かつ answerable=yes → 促しが出て unrelated が 1 増える', async () => {
+    const settings = defaultSettings();
+    const both = batchAnswered(choiceAnswer('no', 0.95), choiceAnswer('yes', 0.95));
+    const { handler, run, file } = wired(settings, [both], 'live', armedWithTurns(1));
+    const result = await handler(readTurn(), { cwd: '/repo' });
+    expect(result?.entries).toHaveLength(1);
+    const current = run.get();
+    if (current.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(current.unrelated).toBe(1);
+    expect(readRecords(file)).toHaveLength(1);
+    expect(readRecords(file)[0]?.nudge).not.toBeNull();
+  });
+
+  it('toolCall を含む往復 → payload の agent_text に呼び出しの中身が出ない', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
+    await handler(
+      {
+        turnIndex: 2,
+        message: {
+          content: [
+            { type: 'text', text: 'plain answer here' },
+            { type: 'toolCall', id: '1', name: 'read', arguments: { path: 'secret-arg-file.ts' } },
+          ],
+        },
+        toolResults: [
+          { toolName: 'read', content: [{ type: 'text', text: 'file body' }], isError: false },
+        ],
+      },
+      { cwd: '/repo' },
+    );
+    await handler(readTurn(), { cwd: '/repo' });
+    expect(requests).toHaveLength(2);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const second = requests[1] as { readonly state: Readonly<Record<string, unknown>> };
+    expect(second.state['agent_text']).toBe('plain answer here');
+    expect(String(second.state['agent_text'])).not.toContain('secret-arg-file');
+  });
+
+  it('owner_text と agent_text は minimize で詰める', async () => {
+    const settings = defaultSettings();
+    let initial = arm({
+      ownerNow: 'a\n\n b   c',
+      choice: 'reply',
+      confidence: 0.9,
+      candidate: CANDIDATE,
+      now: 1,
+    });
+    initial = noteTurn(initial, 'x\n\n  y', defaultSettings().state);
+    const { handler, requests } = wired(settings, [yesNo()], 'live', initial);
+    await handler(readTurn(), { cwd: '/repo' });
+    expect(requests).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+    const first = requests[0] as { readonly state: Readonly<Record<string, unknown>> };
+    expect(first.state['owner_text']).toBe('a b c');
+    expect(first.state['agent_text']).toBe('x y');
+  });
 });
 
 describe('registerJudge/new tools', () => {
