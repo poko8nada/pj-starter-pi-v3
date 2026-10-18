@@ -127,21 +127,21 @@ handler(
 
 ### Slice 1: 型を実行時に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし（型エラーは index.ts に出たが Files 済み。index.test.ts の呼び側も Files 済みのため Files 追加なし）
+- Commit: aa06c53 consult(route-user-start): align pi types to 1.3.0 with custom guard
 
 ### Slice 2: 誰の走り出しかを見分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 495e21f consult(route-user-start): discriminate route start by messageType（--no-verify: index.ts が旧形を渡すため赤い中間状態。slice 3 で閉じる。hook.test.ts 22/22 緑）
 
 ### Slice 3: 統合: `custom` の走り出しで route が落ちないこと
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d70059b consult(route-user-start): build RouteStart in the wrapper
 
 ## Review
 
