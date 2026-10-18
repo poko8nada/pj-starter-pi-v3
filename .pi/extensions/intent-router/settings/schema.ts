@@ -128,9 +128,9 @@ const StateSchema = Type.Object(
   { additionalProperties: false },
 );
 
-const RecordSchema = Type.Object(
+const LogSchema = Type.Object(
   {
-    recent: Type.Optional(Type.Integer({ minimum: 1 })),
+    keepDays: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   { additionalProperties: false },
 );
@@ -146,7 +146,7 @@ const SettingsSchema = Type.Object(
     route: Type.Optional(RouteSchema),
     judge: Type.Optional(JudgeSchema),
     state: Type.Optional(StateSchema),
-    record: Type.Optional(RecordSchema),
+    log: Type.Optional(LogSchema),
   },
   { additionalProperties: false },
 );
@@ -196,7 +196,7 @@ export type Settings = {
     readonly resultChars: number;
     readonly maxStateChars: number;
   };
-  readonly record: { readonly recent: number };
+  readonly log: { readonly keepDays: number };
 };
 
 export const SETTINGS_FILE = 'settings.json';
@@ -299,7 +299,7 @@ export function defaultSettings(): Settings {
     route: defaultRoute(),
     judge: defaultJudge(),
     state: defaultState(),
-    record: { recent: 50 },
+    log: { keepDays: 14 },
   };
 }
 
@@ -411,7 +411,7 @@ function mergeSettings(defaults: Settings, written: Written): Settings {
       },
     },
     state: overlaid(defaults.state, written.state),
-    record: overlaid(defaults.record, written.record),
+    log: overlaid(defaults.log, written.log),
   };
 }
 

@@ -1,17 +1,25 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../test/tmp.ts';
 import type { RegistryModel } from './ask/ask.ts';
 import { register } from './index.ts';
-import type { IntentRecord } from './record/recent.ts';
+import { append, logPath, type IntentRecord } from './record/log.ts';
 import { defaultSettings } from './settings/schema.ts';
 
 type AnyHandler = (event: unknown, ctx: unknown) => Promise<unknown>;
 
-function recentFile(cwd: string): string {
-  return join(cwd, '.pi/extensions/intent-router/logs/recent.json');
+function logDirOf(cwd: string): string {
+  return join(cwd, '.pi/extensions/intent-router/logs');
+}
+
+function jstDayName(time: number): string {
+  const jst = new Date(time + 9 * 60 * 60 * 1000);
+  const year = jst.getUTCFullYear();
+  const month = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(jst.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}.jsonl`;
 }
 
 function fakePi(): {
@@ -141,12 +149,27 @@ function isRecord(value: unknown): value is IntentRecord {
 }
 
 function readRecords(cwd: string): IntentRecord[] {
+  let names: string[];
   try {
-    const text = readFileSync(recentFile(cwd), 'utf8');
-    if (text.trim() === '') {
-      return [];
+    names = readdirSync(logDirOf(cwd));
+  } catch {
+    return [];
+  }
+  names.sort();
+  const out: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
     }
-    const out: IntentRecord[] = [];
+    let text: string;
+    try {
+      text = readFileSync(join(logDirOf(cwd), name), 'utf8');
+    } catch {
+      continue;
+    }
+    if (text.trim() === '') {
+      continue;
+    }
     for (const line of text.split('\n')) {
       if (line.trim() === '') {
         continue;
@@ -160,10 +183,8 @@ function readRecords(cwd: string): IntentRecord[] {
         continue;
       }
     }
-    return out;
-  } catch {
-    return [];
   }
+  return out;
 }
 
 function readTurn(): {
@@ -354,5 +375,112 @@ describe('register', () => {
     expect(readRecords(cwd)[1]?.guide).toBe(
       defaultSettings().route.guides.approve.split('{prompt}').join('hello'),
     );
+  });
+
+  it('セッションの始まりで、keepDays より古い日付のファイルだけが消える', async () => {
+    const cwd = tmpDir();
+    writeSettings(cwd, JSON.stringify({ log: { keepDays: 1 } }));
+    const logDir = logDirOf(cwd);
+    mkdirSync(logDir, { recursive: true });
+    const dayMs = 86400000;
+    const now = Date.now();
+    const oldFile = jstDayName(now - 2 * dayMs);
+    const keptFile = jstDayName(now - dayMs);
+    const todayFile = jstDayName(now);
+    writeFileSync(join(logDir, oldFile), 'dummy\n');
+    writeFileSync(join(logDir, keptFile), 'dummy\n');
+    writeFileSync(join(logDir, todayFile), 'dummy\n');
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    await fake.handlers.get('session_start')?.(
+      {},
+      fakeCtx(cwd, answeringRegistry(classifierModel(0)), []),
+    );
+    expect(existsSync(join(logDir, oldFile))).toBe(false);
+    expect(existsSync(join(logDir, keptFile))).toBe(true);
+    expect(existsSync(join(logDir, todayFile))).toBe(true);
+  });
+});
+
+describe('register daily logs', () => {
+  it('同じ配線で往復 2 回 → その日のファイルに 2 行足され、1 行目は変わらない', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    const first = readRecords(cwd);
+    expect(first).toHaveLength(1);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello again' }, ctx);
+    const records = readRecords(cwd);
+    expect(records).toHaveLength(2);
+    expect(records[0]).toEqual(first[0]);
+  });
+
+  it('古い日付で append したファイル → セッションの始まりの prune で消える', async () => {
+    const cwd = tmpDir();
+    const logDir = logDirOf(cwd);
+    mkdirSync(logDir, { recursive: true });
+    const oldAt = new Date(Date.now() - 30 * 86400000).toISOString();
+    append(
+      {
+        at: oldAt,
+        hook: 'route',
+        owner_now: 'old hello',
+        agent_prev: '',
+        choice: 'reply',
+        confidence: 0.9,
+        threshold: 0.8,
+        guide: 'guide text',
+        verdicts: null,
+        unrelated: null,
+        nudge: null,
+        fired: false,
+        state_chars: 10,
+        truncated: false,
+      },
+      logDir,
+    );
+    const oldFile = logPath(logDir, new Date(oldAt));
+    expect(existsSync(oldFile)).toBe(true);
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    await fake.handlers.get('session_start')?.(
+      {},
+      fakeCtx(cwd, answeringRegistry(classifierModel(0)), []),
+    );
+    expect(existsSync(oldFile)).toBe(false);
+  });
+
+  it('道具を使わない往復 → 行が増えない', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    expect(readRecords(cwd)).toHaveLength(1);
+    await fake.handlers.get('turn_end')?.(
+      { turnIndex: 0, message: { content: 'done' }, toolResults: [] },
+      ctx,
+    );
+    expect(readRecords(cwd)).toHaveLength(1);
+  });
+
+  it('ask が失敗した往復 → 1 行残る', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const emptyRegistry = {
+      getAvailableOfType: (): Promise<RegistryModel[]> => Promise.resolve([]),
+      findOfType: (): RegistryModel | undefined => undefined,
+      classify: (): Promise<never> => Promise.reject(new Error('must not be called')),
+    };
+    const ctx = fakeCtx(cwd, emptyRegistry, []);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    const records = readRecords(cwd);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', choice: null });
   });
 });

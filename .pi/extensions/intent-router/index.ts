@@ -3,7 +3,8 @@
  *
  * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
  * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
- * 記録は `logs/recent.json` に直近だけ持つ。
+ * 記録は `logs/<YYYY-MM-DD>.jsonl` に日ごとに持つ。
+ * セッションの始まりに `log.keepDays` より古い日付のファイルを 1 回消す。
  */
 
 import { join } from 'node:path';
@@ -12,7 +13,7 @@ import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts
 import { registerCommand } from './command/intent.ts';
 import { registerJudge } from './judge/hook.ts';
 import { registerRoute } from './route/hook.ts';
-import { createRecent, type IntentRecord } from './record/recent.ts';
+import { append, prune, type IntentRecord } from './record/log.ts';
 import { type Settings } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import { lastAssistantText } from './state/payload.ts';
@@ -118,12 +119,9 @@ function wiringFor(cwd: string, settingsDir: string) {
   };
   const state = createState(initialModeOf(initial));
   const cell = createLazyAsk(settingsDir);
-  const recent = createRecent(
-    initial.record.recent,
-    join(cwd, '.pi/extensions/intent-router/logs/recent.json'),
-  );
+  const logDir = join(cwd, '.pi/extensions/intent-router/logs');
   const log = (record: IntentRecord): void => {
-    recent.add(record);
+    append(record, logDir);
   };
   const routeDeps = {
     get settings(): Settings {
@@ -150,7 +148,7 @@ function wiringFor(cwd: string, settingsDir: string) {
     state,
     cell,
     log,
-    recent,
+    logDir,
     routeDeps,
     judgeDeps,
   };
@@ -176,7 +174,7 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
   const cwd = options?.cwd ?? process.cwd();
   const settingsDir = join(cwd, '.pi/extensions/intent-router');
   const wired = wiringFor(cwd, settingsDir);
-  const { initial, refresh, state, cell, routeDeps, judgeDeps, recent } = wired;
+  const { initial, refresh, state, cell, routeDeps, judgeDeps, logDir } = wired;
 
   registerRoute(
     {
@@ -227,10 +225,17 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
     {
       flags: state.flags,
       run: state.run,
-      recent,
       settingsFile: join(settingsDir, 'settings.json'),
     },
   );
+
+  pi.on('session_start', async () => {
+    try {
+      prune(logDir, refresh().log.keepDays, new Date());
+    } catch {
+      // 掃除の失敗でセッションを止めない
+    }
+  });
 
   return { settings: initial, ...state.snapshot() };
 }

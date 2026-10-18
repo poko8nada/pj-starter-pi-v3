@@ -9,7 +9,7 @@
  */
 
 import type { BatchAsk, BatchAskOutcome } from '../ask/ask.ts';
-import type { IntentRecord } from '../record/recent.ts';
+import type { IntentRecord } from '../record/log.ts';
 import type { Settings } from '../settings/schema.ts';
 import {
   addAction,

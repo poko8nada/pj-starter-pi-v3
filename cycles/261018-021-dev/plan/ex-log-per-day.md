@@ -196,46 +196,70 @@ readonly log: {
 
 ### Slice 1: 記録を日ごとの JSONL にする
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `index.ts` とテストに一時的な `tail` 互換を置いた（slice 3 で消える物）
+  - `route/hook.ts` / `judge/hook.ts` / `command/intent.ts` の型の輸入先を `record/log.ts` に移した
+- Commit: f57ae0d
 
 ### Slice 2: 設定と配線を日ごとのファイルに合わせる
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `parseIntent('last')` の既定値を `settings.log.keepDays` に付け替えた（`last` 自体の削除は slice 3。`record` が消えて型が通らなくなるため）
+- Commit: f461945
 
 ### Slice 3: `/intent last` を消す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - slice 1 で置いた一時的な `tail` 互換（`index.ts` の `tailLog` とテストの `readAllRecords` など）を消した
+  - Record 節に残っていた `/intent last` の 1 文も消した
+- Commit: cf46cf4
 
 ### Slice 4: 統合: 1 日は 1 ファイルに足されていき、古い日付だけが消える
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 追加の 4 件で `describe` が行数制限に触れたため、`register daily logs` に分けた
+- Commit: f8057f4
 
 ### Slice 5: テストの棚卸し
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 棚卸しで消した物と理由:
+    - `schema.test.ts` の「旧い record を書く → 投げる」を消した。未知キー拒否は「知らないキー → 投げる」が既に見るため趣旨が重なり、文字どおりの `recent` 参照が残るため
+    - `intent.test.ts` の `last` 系 2 件を 1 件に寄せ、題名から `intent last` の並びを消した。parse と応答の両段で同じ趣旨（`last` は使い方文・文に `last` 行なし）を見るため
+    - `index.test.ts` の変数 `recentFile` を `keptFile` に改名した。`recent` 参照を残さないため（振る舞いは同じ）
+- Commit: 46b94f9
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — 古い記録の呼び名や last への言及が残っていないことを確かめた。extension の README の設定表と Record 節、入口の説明、使い方の文を確認した。対象として .pi/extensions/intent-router/README.md:54 と同:58 と同 index.ts:6 と同 command/intent.ts:54 を見た。
+- Unlisted: なし — Files に名前が無い変更は route と judge の輸入先の付け替えと検証補助の読み替えだけで、slice 1 の手順で指示済みのため指摘にしない。対象として .pi/extensions/intent-router/route/hook.ts:11 と同 judge/hook.ts:12 と計画の cycles/261018-021-dev/plan/ex-log-per-day.md:68 を見た。
+- Gaps: なし — 各 slice の検査と検証の対応を確認した。slice 1 は .pi/extensions/intent-router/record/log.test.ts:51 と同:63 と同:38 と同:125 と同:148 で満たす。slice 2 は .pi/extensions/intent-router/settings/schema.test.ts:36 と同:114 と同:120 と同:125 と同 index.test.ts:380 で満たす。slice 3 は .pi/extensions/intent-router/command/intent.test.ts:98 と同:147 で満たす。slice 4 は .pi/extensions/intent-router/index.test.ts:406 と同:421 と同:456 と同:471 で満たす。旧い record の検査の削除は slice 5 の棚卸しと Notes の理由付けの範囲のため指摘にしない。
+- Unproven: なし — 代表的な壊し方を当てはめても検証が赤くなることを確かめた。日付を協定時にすると .pi/extensions/intent-router/record/log.test.ts:38 が赤くなる。境界を等号に変えると同:125 が赤くなる。使い方の文に last の行を残すと .pi/extensions/intent-router/command/intent.test.ts:106 が赤くなる。始まりの掃除を止めると .pi/extensions/intent-router/index.test.ts:380 が赤くなる。
 - Doubts:
+  - 始まりの掃除の失敗を握りつぶす点 .pi/extensions/intent-router/index.ts:232 は計画に指示が無く、通常の動きを変えないため指摘にしない。失敗が見えなくなる点は心に留める。
+  - 日付として読めない名前の扱い .pi/extensions/intent-router/record/log.ts:64 は計画が正常な日付名だけを想定し、実害が無いため指摘にしない。
 
 ## Acceptance
 
 - Ran:
+  - plan の検査: slice 1〜5 の `Verify` を含む `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 208 件が緑
+  - `pnpm test:run` → 41 ファイル / 706 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも ok
+  - `pnpm lint` → 緑
+  - `git grep -n "recent" -- .pi/extensions/intent-router` と `git grep -n "intent last" -- .pi/extensions/intent-router` → どちらも 0 件
+  - 壊して赤を確かめた 3 件（同時に入れた）:
+    - `record/log.ts` の JST のずれを 0 にする（協定時で日付を取る）→ `logPath` の JST の 2 件と、`append` の日の 1 件が赤
+    - `append` を切り詰めに（`writeFileSync`）→ 2 回書いて 2 行になる筋と、日付で分かれる筋が赤（記録を読む hook と index の検査を含む）
+    - `prune` の境を 1 日ずらす（`>=`）→ `prune` の境の 1 件と、`session_start` の 1 件が赤
+    - 3 件で合わせて 18 件が赤になり、戻すと緑に復帰
 - Findings:
+  - なし
 - Doubts:
+  - なし

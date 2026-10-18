@@ -33,6 +33,10 @@ describe('defaultSettings', () => {
     expect(state.maxStateChars).toBe(24000);
   });
 
+  it('既定の log.keepDays が 14', () => {
+    expect(defaultSettings().log.keepDays).toBe(14);
+  });
+
   it('第一候補が opencode/jev-1.13-free', () => {
     expect(defaultSettings().classifier.models[0]).toEqual({
       provider: 'opencode',
@@ -105,6 +109,22 @@ describe('parseSettings', () => {
     expect(() =>
       parseSettings('{"judge":{"stop":{"nudges":{"reply":"x","approve":"y"}}}}', defaults),
     ).toThrow(/nudges/);
+  });
+
+  it('log を書かない → 既定の 14 のまま', () => {
+    const defaults = defaultSettings();
+    expect(parseSettings('{}', defaults).log.keepDays).toBe(14);
+    expect(parseSettings('{"route":{}}', defaults).log.keepDays).toBe(14);
+  });
+
+  it('log.keepDays が 1 → 通る', () => {
+    const defaults = defaultSettings();
+    expect(parseSettings('{"log":{"keepDays":1}}', defaults).log.keepDays).toBe(1);
+  });
+
+  it('log.keepDays が 0 → 投げる', () => {
+    const defaults = defaultSettings();
+    expect(() => parseSettings('{"log":{"keepDays":0}}', defaults)).toThrow(/keepDays/);
   });
 
   it('route.question.criteria から other を抜く → 投げる', () => {

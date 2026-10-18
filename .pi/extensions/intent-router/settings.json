@@ -72,5 +72,5 @@
       "consult_subagents"
     ]
   },
-  "record": { "recent": 50 }
+  "log": { "keepDays": 14 }
 }
