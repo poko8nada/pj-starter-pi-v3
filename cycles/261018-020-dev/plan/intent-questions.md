@@ -503,19 +503,20 @@ export function createRecent(
 ## Acceptance
 
 - Ran:
-  - `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 141 件が緑
-  - `pnpm test:run` → 41 ファイル / 639 件が緑
+  - `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 142 件が緑
+  - `pnpm test:run` → 41 ファイル / 640 件が緑
   - `pnpm typecheck` → ルートと `.pi` とも緑
   - `pnpm lint` → 緑
   - `ls .pi/extensions/intent-router/logs` → 作業場にはまだ無い（実行時に `recent.json` ができる）。`git ls-files` で日付の jsonl は 0 件
   - `grep -n "意図通りに動ける" DEFINITION.md` → 28 行目に 1 件
-  - 壊して赤を確かめた 3 件:
+  - 壊して赤を確かめた 4 件:
     - `judge/decide.ts` の `||` を `&&` に → 11 件が赤（`useful=yes` かつ `new=no` のケースを含む）
     - `route/decide.ts` の `>=` を `>` に → `reply 0.8 → act` が赤
     - `guideText` を固定文字列に → guide の 3 件が赤
+    - `guideText` の `{prompt}` の差し込みを外す → 7 件が赤
     - いずれも戻して緑に復帰
 - Findings:
-  - `{prompt}` が差し込まれない。`settings.json:21` と `settings/schema.ts:224` の guide の文に `{prompt}` が残っているが、`route/decide.ts:40` の `guideText` は文面をそのまま返し、`route/hook.ts:119` も差し込まない。live では `{prompt}` という文字がそのまま会話に入る
-    fixed: `guideText(settings, choice, prompt)` にして `{prompt}` を抜粋で差し替えた（改行を1空白に潰して40字まで、旧 `guideMessage` と同じ形）。`route/hook.ts` からは `event.prompt`（= `ownerNow`）を渡す。差し込み・改行潰し・40字切りの検査を足した。
+  - `{prompt}` が差し込まれない。`settings.json:21` と `settings/schema.ts:224` の guide の文に `{prompt}` が残っているが、`guideText` は文面をそのまま返し、`route/hook.ts` も差し込まない。live では `{prompt}` という文字がそのまま会話に入る
+    - fixed: `guideText(settings, choice, prompt)` にし、改行を 1 つの空白に潰して 40 字までの抜粋を `{prompt}` に差し込むようにした。`route/hook.ts` からは `event.prompt` を渡す。差し込み・不残留・40 字切りの検査を足した（`682aba4`）
 - Doubts:
   - なし
