@@ -5,7 +5,7 @@ import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../test/tmp.ts';
 import type { RegistryModel } from './ask/ask.ts';
 import { register } from './index.ts';
-import type { IntentRecord } from './record/log.ts';
+import { append, logPath, type IntentRecord } from './record/log.ts';
 import { defaultSettings } from './settings/schema.ts';
 
 type AnyHandler = (event: unknown, ctx: unknown) => Promise<unknown>;
@@ -399,5 +399,88 @@ describe('register', () => {
     expect(existsSync(join(logDir, oldFile))).toBe(false);
     expect(existsSync(join(logDir, recentFile))).toBe(true);
     expect(existsSync(join(logDir, todayFile))).toBe(true);
+  });
+});
+
+describe('register daily logs', () => {
+  it('同じ配線で往復 2 回 → その日のファイルに 2 行足され、1 行目は変わらない', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    const first = readRecords(cwd);
+    expect(first).toHaveLength(1);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello again' }, ctx);
+    const records = readRecords(cwd);
+    expect(records).toHaveLength(2);
+    expect(records[0]).toEqual(first[0]);
+  });
+
+  it('古い日付で append したファイル → セッションの始まりの prune で消える', async () => {
+    const cwd = tmpDir();
+    const logDir = logDirOf(cwd);
+    mkdirSync(logDir, { recursive: true });
+    const oldAt = new Date(Date.now() - 30 * 86400000).toISOString();
+    append(
+      {
+        at: oldAt,
+        hook: 'route',
+        owner_now: 'old hello',
+        agent_prev: '',
+        choice: 'reply',
+        confidence: 0.9,
+        threshold: 0.8,
+        guide: 'guide text',
+        verdicts: null,
+        unrelated: null,
+        nudge: null,
+        fired: false,
+        state_chars: 10,
+        truncated: false,
+      },
+      logDir,
+    );
+    const oldFile = logPath(logDir, new Date(oldAt));
+    expect(existsSync(oldFile)).toBe(true);
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    await fake.handlers.get('session_start')?.(
+      {},
+      fakeCtx(cwd, answeringRegistry(classifierModel(0)), []),
+    );
+    expect(existsSync(oldFile)).toBe(false);
+  });
+
+  it('道具を使わない往復 → 行が増えない', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const ctx = fakeCtx(cwd, answeringRegistry(classifierModel(0)), notifies);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    expect(readRecords(cwd)).toHaveLength(1);
+    await fake.handlers.get('turn_end')?.(
+      { turnIndex: 0, message: { content: 'done' }, toolResults: [] },
+      ctx,
+    );
+    expect(readRecords(cwd)).toHaveLength(1);
+  });
+
+  it('ask が失敗した往復 → 1 行残る', async () => {
+    const cwd = tmpDir();
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const emptyRegistry = {
+      getAvailableOfType: (): Promise<RegistryModel[]> => Promise.resolve([]),
+      findOfType: (): RegistryModel | undefined => undefined,
+      classify: (): Promise<never> => Promise.reject(new Error('must not be called')),
+    };
+    const ctx = fakeCtx(cwd, emptyRegistry, []);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    const records = readRecords(cwd);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', choice: null });
   });
 });
