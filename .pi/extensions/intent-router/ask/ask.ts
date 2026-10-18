@@ -7,7 +7,6 @@
  */
 
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { JUDGE_QUESTION } from './questions.ts';
 import type { ClassifierCandidate, Settings } from '../settings/schema.ts';
 import type { JsonObject, Usage } from '../state/run.ts';
 
@@ -15,6 +14,9 @@ export type Registry = ExtensionContext['modelRegistry'];
 export type RegistryModel = Parameters<Registry['classify']>[0];
 type RegistryResult = Awaited<ReturnType<Registry['classify']>>;
 export type RegistryAnswer = RegistryResult['answers'][string];
+
+/** ask の時間切れ。設定に置かず固定する */
+const CLASSIFY_TIMEOUT_MS = 1500;
 
 /** 自前の答え。SDK の答え（RegistryAnswer）から作る */
 export type Answer =
@@ -239,6 +241,22 @@ type Attempt =
   | { readonly kind: 'error'; readonly reason: string }
   | { readonly kind: 'aborted' };
 
+/** 旧道の score 問い。ask が内部に持つ（pi の classifier が受ける形） */
+const LEGACY_JUDGE_QUESTION: {
+  readonly type: 'score';
+  readonly instructions: string;
+  readonly criteria: string[];
+} = {
+  type: 'score',
+  instructions:
+    'How ready is the investigation to answer the owner question? Rate the investigation state.',
+  criteria: [
+    '0: almost nothing has been investigated yet; answering now would be a guess',
+    '1: partly investigated; key evidence is still missing',
+    '2: enough has been investigated to answer; stop investigating and answer from what is known',
+  ],
+};
+
 /** 旧道の問い。新しい設定問いに移るまで ask が内部に持つ（questions.ts の旧 ROUTE_QUESTION の写し） */
 const LEGACY_ROUTE_QUESTION = {
   type: 'choice',
@@ -276,7 +294,9 @@ async function attemptModel(
       state,
       questions:
         custom ??
-        (request.kind === 'choice' ? { route: LEGACY_ROUTE_QUESTION } : { judge: JUDGE_QUESTION }),
+        (request.kind === 'choice'
+          ? { route: LEGACY_ROUTE_QUESTION }
+          : { judge: LEGACY_JUDGE_QUESTION }),
     },
     { signal },
   );
@@ -304,7 +324,7 @@ export function createAsk(deps: ClassifierDeps): Ask {
 
   return async (request: AskRequest): Promise<AskOutcome> => {
     const startedAt = clock();
-    const timeoutMs = deps.settings.budget.timeoutMs;
+    const timeoutMs = CLASSIFY_TIMEOUT_MS;
     const arm = armAbort(request, timeoutMs, timer);
     try {
       const resolved = await resolveModels(deps.registry, deps.settings, request.only);
@@ -425,7 +445,7 @@ export function createBatchAsk(deps: ClassifierDeps): BatchAsk {
 
   return async (request: BatchAskRequest): Promise<BatchAskOutcome> => {
     const startedAt = clock();
-    const timeoutMs = deps.settings.budget.timeoutMs;
+    const timeoutMs = CLASSIFY_TIMEOUT_MS;
     const arm = armAbort(
       { kind: 'choice', state: request.state, only: request.only, signal: request.signal },
       timeoutMs,

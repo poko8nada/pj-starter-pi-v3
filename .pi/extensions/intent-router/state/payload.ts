@@ -68,14 +68,14 @@ export function toAction(
   input: unknown,
   resultText: string,
   isError: boolean,
-  actionChars: number,
+  resultChars: number,
 ): Action {
   const raw = isError ? `error: ${resultText}` : resultText;
   return {
     turn,
     tool,
     target: targetOf(tool, asInput(input)),
-    result: raw.slice(0, actionChars),
+    result: raw.slice(0, resultChars),
     attempts: 1,
     error: isError,
   };

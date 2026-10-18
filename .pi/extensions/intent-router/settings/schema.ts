@@ -1,4 +1,3 @@
-/* eslint-disable eslint/max-lines -- 旧道と新道の移行中のため。slices 3-5 で旧を落として480以下に戻す */
 /**
  * intent-router の設定。既定はコード、上書きは `settings.json` の部分だけ。
  *
@@ -11,13 +10,6 @@
 
 import { Check, Errors } from 'typebox/value';
 import { Type, type Static } from 'typebox';
-import type { Label } from '../ask/questions.ts';
-import { CHOICES, LABELS } from '../ask/questions.ts';
-
-/** ラベル。`questions.ts` の一覧と同じ所から出る（増やしたらここも増える） */
-const LabelSchema = Type.Union(LABELS.map((label) => Type.Literal(label)));
-const ChoiceSchema = Type.Union(CHOICES.map((choice) => Type.Literal(choice)));
-const VerdictSchema = Type.Union(['yes', 'no'].map((v) => Type.Literal(v)));
 
 const CandidateSchema = Type.Object(
   {
@@ -31,25 +23,6 @@ const ClassifierSchema = Type.Object(
   {
     models: Type.Optional(Type.Array(CandidateSchema, { minItems: 1 })),
     allowPaid: Type.Optional(Type.Boolean()),
-  },
-  { additionalProperties: false },
-);
-
-const BudgetSchema = Type.Object(
-  {
-    maxJudgementsPerPrompt: Type.Optional(Type.Integer({ minimum: 1 })),
-    maxStateChars: Type.Optional(Type.Integer({ minimum: 1 })),
-    minIntervalMs: Type.Optional(Type.Integer({ minimum: 0 })),
-    timeoutMs: Type.Optional(Type.Integer({ minimum: 1 })),
-  },
-  { additionalProperties: false },
-);
-
-const ThresholdsSchema = Type.Object(
-  {
-    routeConfidence: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
-    judgeConfidence: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
-    judgeScore: Type.Optional(Type.Number({ minimum: 0, maximum: 2 })),
   },
   { additionalProperties: false },
 );
@@ -105,10 +78,7 @@ const RouteGuidesSchema = Type.Object(
 
 const RouteSchema = Type.Object(
   {
-    enabled: Type.Optional(Type.Boolean()),
     shadow: Type.Optional(Type.Boolean()),
-    actOn: Type.Optional(Type.Array(LabelSchema)),
-    idleOn: Type.Optional(Type.Array(LabelSchema)),
     question: Type.Optional(ChoiceQuestionSchema),
     thresholds: Type.Optional(RouteThresholdsSchema),
     guides: Type.Optional(RouteGuidesSchema),
@@ -129,20 +99,15 @@ const JudgeStopSchema = Type.Object(
     consecutive: Type.Optional(Type.Integer({ minimum: 1 })),
     maxNudges: Type.Optional(Type.Integer({ minimum: 0 })),
     nudges: Type.Optional(RouteGuidesSchema),
-    enabled: Type.Optional(Type.Boolean()),
-    display: Type.Optional(Type.Boolean()),
-    text: Type.Optional(Type.String({ minLength: 1 })),
   },
   { additionalProperties: false },
 );
 
 const JudgeSchema = Type.Object(
   {
-    enabled: Type.Optional(Type.Boolean()),
     shadow: Type.Optional(Type.Boolean()),
     minTurns: Type.Optional(Type.Integer({ minimum: 1 })),
     everyNTurns: Type.Optional(Type.Integer({ minimum: 1 })),
-    maxFires: Type.Optional(Type.Integer({ minimum: 1 })),
     maxJudgements: Type.Optional(Type.Integer({ minimum: 1 })),
     threshold: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
     questions: Type.Optional(JudgeQuestionsSchema),
@@ -151,41 +116,14 @@ const JudgeSchema = Type.Object(
   { additionalProperties: false },
 );
 
-const GuideSchema = Type.Object(
-  {
-    enabled: Type.Optional(Type.Boolean()),
-    display: Type.Optional(Type.Boolean()),
-    text: Type.Optional(Type.String({ minLength: 1 })),
-  },
-  { additionalProperties: false },
-);
-
-const StopSchema = Type.Object(
-  {
-    enabled: Type.Optional(Type.Boolean()),
-    display: Type.Optional(Type.Boolean()),
-    text: Type.Optional(Type.String({ minLength: 1 })),
-  },
-  { additionalProperties: false },
-);
-
 const StateSchema = Type.Object(
   {
     maxActions: Type.Optional(Type.Integer({ minimum: 1 })),
-    actionChars: Type.Optional(Type.Integer({ minimum: 1 })),
     assistantChars: Type.Optional(Type.Integer({ minimum: 1 })),
     includeTools: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
     textChars: Type.Optional(Type.Integer({ minimum: 1 })),
     resultChars: Type.Optional(Type.Integer({ minimum: 1 })),
     maxStateChars: Type.Optional(Type.Integer({ minimum: 1 })),
-  },
-  { additionalProperties: false },
-);
-
-const LogSchema = Type.Object(
-  {
-    dir: Type.Optional(Type.String({ minLength: 1 })),
-    keepDays: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   { additionalProperties: false },
 );
@@ -205,28 +143,15 @@ const RecordSchema = Type.Object(
 const SettingsSchema = Type.Object(
   {
     classifier: Type.Optional(ClassifierSchema),
-    budget: Type.Optional(BudgetSchema),
-    thresholds: Type.Optional(ThresholdsSchema),
     route: Type.Optional(RouteSchema),
     judge: Type.Optional(JudgeSchema),
-    guide: Type.Optional(GuideSchema),
-    stop: Type.Optional(StopSchema),
     state: Type.Optional(StateSchema),
-    log: Type.Optional(LogSchema),
     record: Type.Optional(RecordSchema),
   },
   { additionalProperties: false },
 );
 
 export type ClassifierCandidate = Static<typeof CandidateSchema>;
-/** 設定ファイルに書かれた形（3 つとも Optional）。スキーマから出る */
-export type WrittenThresholds = Static<typeof ThresholdsSchema>;
-/** 既定に重ねた後の形（3 つとも埋まっている） */
-export type Thresholds = {
-  readonly routeConfidence: number;
-  readonly judgeConfidence: number;
-  readonly judgeScore: number;
-};
 
 export type Choice = 'reply' | 'approve' | 'other';
 export type Verdict = 'yes' | 'no';
@@ -241,28 +166,16 @@ export type Settings = {
     readonly models: readonly ClassifierCandidate[];
     readonly allowPaid: boolean;
   };
-  readonly budget: {
-    readonly maxJudgementsPerPrompt: number;
-    readonly maxStateChars: number;
-    readonly minIntervalMs: number;
-    readonly timeoutMs: number;
-  };
-  readonly thresholds: Thresholds;
   readonly route: {
-    readonly enabled: boolean;
     readonly shadow: boolean;
-    readonly actOn: readonly Label[];
-    readonly idleOn: readonly Label[];
     readonly question: Question<Choice>;
     readonly thresholds: Readonly<Record<'reply' | 'approve', number>>;
     readonly guides: Readonly<Record<'reply' | 'approve', string>>;
   };
   readonly judge: {
-    readonly enabled: boolean;
     readonly shadow: boolean;
     readonly minTurns: number;
     readonly everyNTurns: number;
-    readonly maxFires: number;
     readonly maxJudgements: number;
     readonly threshold: number;
     readonly questions: {
@@ -273,23 +186,16 @@ export type Settings = {
       readonly consecutive: number;
       readonly maxNudges: number;
       readonly nudges: Readonly<Record<'reply' | 'approve', string>>;
-      readonly enabled: boolean;
-      readonly display: boolean;
-      readonly text: string;
     };
   };
-  readonly guide: { readonly enabled: boolean; readonly display: boolean; readonly text: string };
-  readonly stop: { readonly enabled: boolean; readonly display: boolean; readonly text: string };
   readonly state: {
     readonly maxActions: number;
-    readonly actionChars: number;
     readonly assistantChars: number;
     readonly includeTools: readonly string[];
     readonly textChars: number;
     readonly resultChars: number;
     readonly maxStateChars: number;
   };
-  readonly log: { readonly dir: string; readonly keepDays: number };
   readonly record: { readonly recent: number };
 };
 
@@ -301,10 +207,7 @@ function fail(message: string): never {
 
 function defaultRoute(): Settings['route'] {
   return {
-    enabled: true,
     shadow: true,
-    actOn: ['question', 'design', 'verify'],
-    idleOn: ['permission', 'chat', 'unknown'],
     question: {
       instructions: 'Classify the owner message into exactly one intent: reply, approve, or other.',
       criteria: {
@@ -327,11 +230,9 @@ function defaultRoute(): Settings['route'] {
 
 function defaultJudge(): Settings['judge'] {
   return {
-    enabled: true,
     shadow: true,
     minTurns: 2,
     everyNTurns: 1,
-    maxFires: 1,
     maxJudgements: 12,
     threshold: 0.9,
     questions: {
@@ -361,9 +262,6 @@ function defaultJudge(): Settings['judge'] {
         approve:
           'Enough has been investigated for the approved change. Stop investigating: no new tool calls. Proceed with the approved change from what you have.',
       },
-      enabled: true,
-      display: true,
-      text: 'Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.',
     },
   };
 }
@@ -371,7 +269,6 @@ function defaultJudge(): Settings['judge'] {
 function defaultState(): Settings['state'] {
   return {
     maxActions: 12,
-    actionChars: 300,
     assistantChars: 500,
     includeTools: [
       'read',
@@ -399,34 +296,9 @@ export function defaultSettings(): Settings {
       ],
       allowPaid: true,
     },
-    budget: {
-      maxJudgementsPerPrompt: 12,
-      maxStateChars: 12000,
-      minIntervalMs: 400,
-      timeoutMs: 1500,
-    },
-    thresholds: {
-      routeConfidence: 0.5,
-      judgeConfidence: 0.5,
-      judgeScore: 1.5,
-    },
     route: defaultRoute(),
     judge: defaultJudge(),
-    guide: {
-      enabled: true,
-      display: true,
-      text: 'Re: {prompt} — kind: {label}. The owner wants an answer, not an edit. Do not edit, write, delete, or commit anything. Investigate only what the answer needs, then answer.',
-    },
-    stop: {
-      enabled: true,
-      display: true,
-      text: 'Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.',
-    },
     state: defaultState(),
-    log: {
-      dir: '.pi/extensions/intent-router/logs',
-      keepDays: 14,
-    },
     record: { recent: 50 },
   };
 }
@@ -482,7 +354,6 @@ type Written = Static<typeof SettingsSchema>;
 
 function assertNewShape(written: Written): void {
   const routeWritten = written.route;
-  const judgeWritten = written.judge;
   if (routeWritten?.question?.criteria !== undefined) {
     const criteria = routeWritten.question.criteria;
     for (const key of ['reply', 'approve', 'other'] as const) {
@@ -506,65 +377,69 @@ function assertNewShape(written: Written): void {
       }
     }
   }
+}
+
+function mergeSettings(defaults: Settings, written: Written): Settings {
+  const routeWritten = written.route;
+  const judgeWritten = written.judge;
   const judgeQuestionsWritten = judgeWritten?.questions;
-  if (judgeQuestionsWritten?.useful?.criteria !== undefined) {
+  assertJudgeQuestions(judgeQuestionsWritten);
+  return {
+    classifier: overlaid(defaults.classifier, written.classifier),
+    route: {
+      ...overlaid(defaults.route, routeWritten),
+      question: overlaidQuestion(defaults.route.question, routeWritten?.question),
+      thresholds: { ...defaults.route.thresholds, ...routeWritten?.thresholds },
+      guides: { ...defaults.route.guides, ...routeWritten?.guides },
+    },
+    judge: {
+      ...overlaid(defaults.judge, judgeWritten),
+      maxJudgements: judgeWritten?.maxJudgements ?? defaults.judge.maxJudgements,
+      threshold: judgeWritten?.threshold ?? defaults.judge.threshold,
+      questions: {
+        useful: overlaidQuestion(defaults.judge.questions.useful, judgeQuestionsWritten?.useful),
+        new: overlaidQuestion(defaults.judge.questions.new, judgeQuestionsWritten?.new),
+      },
+      stop: {
+        ...overlaid(defaults.judge.stop, judgeWritten?.stop),
+        consecutive: judgeWritten?.stop?.consecutive ?? defaults.judge.stop.consecutive,
+        maxNudges: judgeWritten?.stop?.maxNudges ?? defaults.judge.stop.maxNudges,
+        nudges: { ...defaults.judge.stop.nudges, ...judgeWritten?.stop?.nudges },
+      },
+    },
+    state: overlaid(defaults.state, written.state),
+    record: overlaid(defaults.record, written.record),
+  };
+}
+
+function assertJudgeQuestions(
+  questions:
+    | {
+        readonly useful?: {
+          readonly instructions?: string;
+          readonly criteria?: Partial<Record<'yes' | 'no', string>>;
+        };
+        readonly new?: {
+          readonly instructions?: string;
+          readonly criteria?: Partial<Record<'yes' | 'no', string>>;
+        };
+      }
+    | undefined,
+): void {
+  if (questions?.useful?.criteria !== undefined) {
     for (const key of ['yes', 'no'] as const) {
-      if (judgeQuestionsWritten.useful.criteria[key] === undefined) {
+      if (questions.useful.criteria[key] === undefined) {
         fail(
           `the config.judge.questions.useful.criteria.${key} is required when criteria is written`,
         );
       }
     }
   }
-  if (judgeQuestionsWritten?.new?.criteria !== undefined) {
+  if (questions?.new?.criteria !== undefined) {
     for (const key of ['yes', 'no'] as const) {
-      if (judgeQuestionsWritten.new.criteria[key] === undefined) {
+      if (questions.new.criteria[key] === undefined) {
         fail(`the config.judge.questions.new.criteria.${key} is required when criteria is written`);
       }
     }
   }
 }
-
-function mergeSettings(defaults: Settings, written: Written): Settings {
-  const routeWritten = written.route;
-  const judgeWritten = written.judge;
-  const stateWritten = written.state;
-  const judgeQuestionsWritten = judgeWritten?.questions;
-  const baseRoute = defaults.route;
-  const baseJudge = defaults.judge;
-  return {
-    classifier: overlaid(defaults.classifier, written.classifier),
-    budget: overlaid(defaults.budget, written.budget),
-    thresholds: overlaid(defaults.thresholds, written.thresholds),
-    route: {
-      ...overlaid(baseRoute, routeWritten),
-      question: overlaidQuestion(baseRoute.question, routeWritten?.question),
-      thresholds: { ...baseRoute.thresholds, ...routeWritten?.thresholds },
-      guides: { ...baseRoute.guides, ...routeWritten?.guides },
-    },
-    judge: {
-      ...overlaid(baseJudge, judgeWritten),
-      maxJudgements: judgeWritten?.maxJudgements ?? baseJudge.maxJudgements,
-      threshold: judgeWritten?.threshold ?? baseJudge.threshold,
-      questions: {
-        useful: overlaidQuestion(baseJudge.questions.useful, judgeQuestionsWritten?.useful),
-        new: overlaidQuestion(baseJudge.questions.new, judgeQuestionsWritten?.new),
-      },
-      stop: {
-        ...overlaid(baseJudge.stop, judgeWritten?.stop),
-        consecutive: judgeWritten?.stop?.consecutive ?? baseJudge.stop.consecutive,
-        maxNudges: judgeWritten?.stop?.maxNudges ?? baseJudge.stop.maxNudges,
-        nudges: { ...baseJudge.stop.nudges, ...judgeWritten?.stop?.nudges },
-      },
-    },
-    guide: overlaid(defaults.guide, written.guide),
-    stop: overlaid(defaults.stop, written.stop),
-    state: overlaid(defaults.state, stateWritten),
-    log: overlaid(defaults.log, written.log),
-    record: overlaid(defaults.record, written.record),
-  };
-}
-
-// 旧道との対応を保つための参照。消さない。
-void ChoiceSchema;
-void VerdictSchema;
