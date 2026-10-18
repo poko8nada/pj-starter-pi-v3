@@ -58,7 +58,18 @@
     "assistantChars": 500,
     "resultChars": 300,
     "maxActions": 12,
-    "maxStateChars": 12000
+    "maxStateChars": 12000,
+    "includeTools": [
+      "read",
+      "bash",
+      "grep",
+      "find",
+      "ls",
+      "write",
+      "edit",
+      "web_search",
+      "consult_run"
+    ]
   },
   "record": { "recent": 50 }
 }

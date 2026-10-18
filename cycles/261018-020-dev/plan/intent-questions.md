@@ -430,39 +430,39 @@ export function createRecent(
 
 ### Slice 1: ファイルを段階ごとに分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4196c86
 
 ### Slice 2: 設定を外へ出す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6a6325f
 
 ### Slice 3: 頭の判定を 3 択にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dc91384
 
 ### Slice 4: 途中の判定を 2 問にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4c7d42e
 
 ### Slice 5: 切り替えと調整の道具を入れる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 476250c
 
 ### Slice 6: 統合: 意図通りに動ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: 旧設定形の残存（`thresholds`/`budget`/`enabled`/`actOn`/`actionChars` 等）を `schema.ts` から除去。`JUDGE_QUESTIONS`（複数形・新形）は plan 通りのため残す（単数形は 0 件）。`logs/` は gitignore 済みで repo に日付ファイルなし。review は subagent 口が無いため直接実施：設定表は `settings.json` と一致（`includeTools` を `settings.json` に追加して一致させた）、コマンドは 5 種と一致、説明は 3 択と促しの形。
+- Unplanned: 旧単発 score 経路（`LEGACY_JUDGE_QUESTION`/`LEGACY_ROUTE_QUESTION`、`AskRequest.kind: 'score'`）を除去（本番では route が常に自前の choice 1 問を送るため）。`fromRegistryAnswer` を choice 専用にし、`armAbort` の引数を `{ signal }` に狭めた。`toAction` の引数名を `resultChars` に揃えた。`ask.test.ts` の timer 仮名 `fire` を `trigger` に変えた。
+- Commit: （統合コミット後に記入）
 
 ## Review
 

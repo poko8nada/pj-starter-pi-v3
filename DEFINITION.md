@@ -25,7 +25,7 @@
 - quality-gate: エージェントが、そのターンでの変更分に対し、検査結果を受け取れる
 - sound-notify: owner が、pi からの通知、commit が通ったことに気づける
 - lefthook-gate: エージェントが、検査を通した上で commit も push もできる
-- intent-router: エージェントが、owner の発言の種類に合わせて、調べ方と答え方を変えられる
+- intent-router: エージェントが、owner の発言の意図通りに動ける
 - format-check: エージェントが、コードの形を揃えられる
 - lint-check: エージェントが、リンターの指摘を受け取れる
 - type-check: エージェントが、型に対する指摘を受け取れる
