@@ -92,26 +92,6 @@ function withShadow(settings: Settings, shadow: boolean): Settings {
   return { ...settings, route: { ...settings.route, shadow } };
 }
 
-function withRouteEnabled(settings: Settings, enabled: boolean): Settings {
-  return { ...settings, route: { ...settings.route, enabled } };
-}
-
-function withGuideEnabled(settings: Settings, enabled: boolean): Settings {
-  return { ...settings, guide: { ...settings.guide, enabled } };
-}
-
-function withGuideDisplay(settings: Settings, display: boolean): Settings {
-  return { ...settings, guide: { ...settings.guide, display } };
-}
-
-function withRouteLabels(
-  settings: Settings,
-  actOn: Settings['route']['actOn'],
-  idleOn: Settings['route']['idleOn'],
-): Settings {
-  return { ...settings, route: { ...settings.route, actOn, idleOn } };
-}
-
 function wired(
   settings: Settings,
   outcome: AskOutcome,
@@ -163,33 +143,110 @@ function readRecords(dir: string): LogRecord[] {
 }
 
 describe('registerRoute', () => {
-  it('design 0.9 → guide の文を一字一句そのまま返す', async () => {
-    const { handler } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('design', 0.9),
-      true,
-    );
-    const result = await handler({ prompt: 'この設計どう思う' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(
-      'Re: この設計どう思う — kind: design. The owner wants an answer, not an edit. Do not edit, write, delete, or commit anything. Investigate only what the answer needs, then answer.',
-    );
+  it('expect が reply 0.87 → act で reply の guide が1回だけ差し込まれる（live）', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, run, dir } = wired(settings, answeredOutcome('reply', 0.87), true);
+    const result = await handler({ prompt: 'this design, what do you think?' }, { cwd: '/repo' });
+    expect(result?.message.content).toBe(settings.route.guides.reply);
+    expect(run.get().kind).toBe('armed');
+    expect(readRecords(dir)).toHaveLength(1);
   });
 
-  it('confidence 0.49 → undefined で run は idle', async () => {
-    const { handler, run } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('design', 0.49),
-      true,
-    );
-    const result = await handler({ prompt: 'この設計どう思う' }, { cwd: '/repo' });
+  it('expect が approve 0.92 → act で approve の guide', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler } = wired(settings, answeredOutcome('approve', 0.92), true);
+    const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
+    expect(result?.message.content).toBe(settings.route.guides.approve);
+  });
+
+  it('approve 0.85 → idle（0.9 に届かない）', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, run, dir } = wired(settings, answeredOutcome('approve', 0.85), true);
+    const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');
+    expect(readRecords(dir)).toHaveLength(1);
+  });
+
+  it('other → idle（文を出さない）', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, dir } = wired(settings, answeredOutcome('other', 0.9), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(readRecords(dir)).toHaveLength(1);
+  });
+
+  it('classify が失敗 → 記録1行だけ残して何も出さない', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, run, dir } = wired(settings, failedOutcome(), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(run.get().kind).toBe('idle');
+    expect(readRecords(dir)).toHaveLength(1);
+  });
+
+  it('セッションに前の発言が無い → agent_prev は空文字', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), true);
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(requests[0]?.state['agent_prev']).toBe('');
+    expect(requests[0]?.state['owner_now']).toBe('hello');
+  });
+
+  it('ctx.agentPrev が渡る → routePayload に入る', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), true);
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'previous agent text' });
+    expect(requests[0]?.state['agent_prev']).toBe('previous agent text');
+  });
+
+  it('owner_now が上限より長い → textChars で切れる', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), true);
+    const limit = settings.state.textChars;
+    await handler({ prompt: 'あ'.repeat(limit + 100) }, { cwd: '/repo' });
+    expect(String(requests[0]?.state['owner_now']).length).toBe(limit);
+  });
+
+  it('前の発言が上限より長い → textChars で切れる', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), true);
+    const limit = settings.state.textChars;
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'あ'.repeat(limit + 50) });
+    expect(String(requests[0]?.state['agent_prev']).length).toBe(limit);
+  });
+
+  it('画像つきの発言 → 頭の state に画像を入れない', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler, requests } = wired(settings, answeredOutcome('reply', 0.9), true);
+    await handler({ prompt: 'hello', images: [{ type: 'image' }] }, { cwd: '/repo' });
+    const state = requests[0]?.state ?? {};
+    expect(JSON.stringify(state)).not.toContain('data:image');
+    expect(state['owner_now']).toBe('hello');
+    expect('cwd_basename' in state).toBe(false);
+    expect('has_images' in state).toBe(false);
+  });
+
+  it('shadow → 差し込まずに記録だけ残る', async () => {
+    const { handler, dir } = wired(defaultSettings(), answeredOutcome('reply', 0.9), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    const records = readRecords(dir);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ hook: 'route', guide: 'would' });
+  });
+
+  it('live → guide が1回だけ差し込まれる', async () => {
+    const settings = withShadow(defaultSettings(), false);
+    const { handler } = wired(settings, answeredOutcome('reply', 0.9), true);
+    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    expect(result?.message.content).toBe(settings.route.guides.reply);
   });
 
   it('flags が off → ask が呼ばれない', async () => {
     const { handler, requests, dir } = wired(
       defaultSettings(),
-      answeredOutcome('design', 0.9),
+      answeredOutcome('reply', 0.9),
       false,
     );
     const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
@@ -198,146 +255,9 @@ describe('registerRoute', () => {
     expect(readRecords(dir)).toHaveLength(0);
   });
 
-  it('settings.route.enabled が false → ask が呼ばれない', async () => {
-    const { handler, requests } = wired(
-      withRouteEnabled(defaultSettings(), false),
-      answeredOutcome('design', 0.9),
-      true,
-    );
-    await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(requests).toHaveLength(0);
-  });
-
   it('/ で始まる発言 → ask が呼ばれない', async () => {
-    const { handler, requests } = wired(defaultSettings(), answeredOutcome('design', 0.9), true);
+    const { handler, requests } = wired(defaultSettings(), answeredOutcome('reply', 0.9), true);
     await handler({ prompt: '/intent off' }, { cwd: '/repo' });
     expect(requests).toHaveLength(0);
-  });
-
-  it('ask が failed → undefined で run は idle、ログは idle・label null・failed', async () => {
-    const { handler, run, dir } = wired(
-      withShadow(defaultSettings(), false),
-      failedOutcome(),
-      true,
-    );
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    expect(run.get().kind).toBe('idle');
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', decision: 'idle', label: null });
-    if (records[0]?.hook === 'route') {
-      expect(records[0].outcome).toMatchObject({ kind: 'failed' });
-    }
-  });
-
-  it('shadow: true で act → undefined でログの guide が would、text に文面', async () => {
-    const { handler, dir } = wired(defaultSettings(), answeredOutcome('design', 0.9), true);
-    const result = await handler({ prompt: 'この設計どう思う' }, { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', decision: 'act', guide: 'would' });
-    if (records[0]?.hook === 'route') {
-      expect(records[0].text).toContain('kind: design');
-    }
-  });
-
-  it('2回目の発言 → prompt が入れ替わり actions が空、state も入れ替わる', async () => {
-    const { handler, run, requests } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('question', 0.9),
-      true,
-    );
-    await handler({ prompt: 'first' }, { cwd: '/repo' });
-    await handler({ prompt: 'second' }, { cwd: '/repo' });
-    const current = run.get();
-    if (current.kind !== 'armed') {
-      throw new Error('must be armed');
-    }
-    expect(current.prompt).toBe('second');
-    expect(current.actions).toEqual([]);
-    expect(requests).toHaveLength(2);
-    expect(requests[1]?.state['owner_prompt']).toBe('second');
-  });
-
-  it('ctx.cwd が routeState の cwd_basename に入る', async () => {
-    const { handler, requests } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('question', 0.9),
-      true,
-    );
-    await handler({ prompt: 'hello' }, { cwd: '/work/repo' });
-    expect(requests[0]?.state['cwd_basename']).toBe('repo');
-  });
-
-  it('どちらの一覧にも無いラベル → undefined でログは skip', async () => {
-    const settings = withRouteLabels(withShadow(defaultSettings(), false), ['question'], ['chat']);
-    const { handler, run, dir } = wired(settings, answeredOutcome('design', 0.9), true);
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    expect(run.get().kind).toBe('idle');
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', decision: 'skip', label: 'design' });
-  });
-
-  it('知らないラベル文字列の答え → undefined でログは skip・label null', async () => {
-    const outcome: AskOutcome = {
-      kind: 'answered',
-      provider: 'opencode',
-      model: 'jev-1.13-free',
-      answer: { type: 'choice', choice: 'weird', probabilities: { weird: 0.9 }, confidence: 0.9 },
-      usage: { input: 1, output: 0, cost: 0 },
-      latencyMs: 5,
-    };
-    const { handler, dir } = wired(withShadow(defaultSettings(), false), outcome, true);
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', decision: 'skip', label: null });
-  });
-
-  it('guide.enabled が false → act でも文を返さずログの guide が none', async () => {
-    const settings = withGuideEnabled(withShadow(defaultSettings(), false), false);
-    const { handler, dir } = wired(settings, answeredOutcome('design', 0.9), true);
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', decision: 'act', guide: 'none', text: null });
-  });
-
-  it('画像つきの発言 → state の has_images が true', async () => {
-    const { handler, requests } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('question', 0.9),
-      true,
-    );
-    await handler({ prompt: 'hello', images: [{ type: 'image' }] }, { cwd: '/repo' });
-    expect(requests[0]?.state['has_images']).toBe(true);
-  });
-
-  it('2000 字超の発言 → ログの truncated が true', async () => {
-    const { handler, dir } = wired(
-      withShadow(defaultSettings(), false),
-      answeredOutcome('question', 0.9),
-      true,
-    );
-    await handler({ prompt: 'あ'.repeat(2500) }, { cwd: '/repo' });
-    const records = readRecords(dir);
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'route', truncated: true });
-  });
-
-  it('guide.display が false → 返す文の display が false', async () => {
-    const { handler } = wired(
-      withGuideDisplay(withShadow(defaultSettings(), false), false),
-      answeredOutcome('design', 0.9),
-      true,
-    );
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result?.message.display).toBe(false);
   });
 });

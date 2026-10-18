@@ -8,7 +8,7 @@
 
 import type { Ask, AskOutcome } from '../ask/ask.ts';
 import type { LogRecord, OutcomeView } from '../record/recent.ts';
-import type { Label } from '../ask/questions.ts';
+import type { Choice, Label } from '../ask/questions.ts';
 import type { Settings } from '../settings/schema.ts';
 import {
   addAction,
@@ -115,7 +115,7 @@ type Answered = Extract<AskOutcome, { readonly kind: 'answered' }>;
 
 interface JudgeLogInput {
   readonly prompt: string;
-  readonly label: Label;
+  readonly label: Label | Choice;
   readonly score: number | null;
   readonly confidence: number | null;
   readonly decision: 'fire' | 'hold';

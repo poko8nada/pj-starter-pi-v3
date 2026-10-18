@@ -1,8 +1,7 @@
 /**
  * `settings.json` の読み込み。無ければ既定、読めて壊れていれば投げる。
  *
- * 呼ぶたびにファイルを読む。既定は引数で受けず、内部で `defaultSettings()` を使う。
- * 移行中の旧呼び出し（第2引数つき）も受け付ける。
+ * 呼ぶたびにファイルを読む。既定は引数で受けない。
  */
 
 import { readFileSync } from 'node:fs';
@@ -18,8 +17,8 @@ function errorCode(error: unknown): string | undefined {
 }
 
 /** `<dir>/settings.json` を読む。無ければ既定、読めて壊れていれば投げる */
-export function readSettings(dir: string, defaults?: Settings): Settings {
-  const base = defaults ?? defaultSettings();
+export function readSettings(dir: string): Settings {
+  const base = defaultSettings();
   const file = join(dir, SETTINGS_FILE);
   let text: string;
   try {

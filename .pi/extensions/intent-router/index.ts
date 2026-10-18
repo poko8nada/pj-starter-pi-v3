@@ -16,6 +16,7 @@ import { append, prune, type LogRecord } from './record/recent.ts';
 import { type Settings } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import { idleRun, type FlagsPort, type Run, type RunPort } from './state/run.ts';
+import { lastAssistantText } from './state/payload.ts';
 
 // index.ts が持つ物。入口はこれだけを公開する
 export interface Wiring {
@@ -141,6 +142,22 @@ function wiringFor(cwd: string, settingsDir: string) {
   };
 }
 
+function readAgentPrev(ctx: ExtensionContext, maxChars: number): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- sessionManager の拡張口を読む
+    const manager = ctx.sessionManager as unknown as {
+      buildContextEntries?: () => unknown;
+    };
+    const entries = manager.buildContextEntries?.();
+    if (!Array.isArray(entries)) {
+      return '';
+    }
+    return lastAssistantText(entries, maxChars);
+  } catch {
+    return '';
+  }
+}
+
 export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }): Wiring {
   const cwd = options?.cwd ?? process.cwd();
   const settingsDir = join(cwd, '.pi/extensions/intent-router');
@@ -152,8 +169,9 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
       on: (event, handler) => {
         pi.on(event, (ev, ctx) => {
           cell.hold(ctx);
-          refresh();
-          return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd });
+          const settings = refresh();
+          const agentPrev = readAgentPrev(ctx, settings.state.textChars);
+          return handler({ prompt: ev.prompt, images: ev.images }, { cwd: ctx.cwd, agentPrev });
         });
       },
     },

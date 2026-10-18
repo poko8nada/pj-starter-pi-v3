@@ -7,7 +7,7 @@
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Label } from '../ask/questions.ts';
+import type { Choice, Label } from '../ask/questions.ts';
 import type { Thresholds } from '../settings/schema.ts';
 import type { Usage } from '../state/run.ts';
 
@@ -32,7 +32,7 @@ export type LogRecord =
       readonly at: string;
       readonly hook: 'route';
       readonly owner_prompt: string;
-      readonly label: Label | null;
+      readonly label: Label | Choice | null;
       readonly confidence: number | null;
       readonly probabilities: Readonly<Record<string, number>>;
       readonly thresholds: Thresholds;
@@ -47,7 +47,7 @@ export type LogRecord =
       readonly at: string;
       readonly hook: 'judge';
       readonly owner_prompt: string;
-      readonly label: Label;
+      readonly label: Label | Choice;
       readonly score: number | null;
       readonly confidence: number | null;
       readonly thresholds: Thresholds;

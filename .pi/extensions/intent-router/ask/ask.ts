@@ -76,12 +76,20 @@ export type AskOutcome =
       readonly latencyMs: number;
     };
 
+export interface ClassifierQuestion {
+  readonly type: 'choice';
+  readonly instructions: string;
+  readonly criteria: Readonly<Record<string, string>>;
+}
+
 export interface AskRequest {
   readonly kind: 'choice' | 'score';
   readonly state: JsonObject;
   /** 同じプロンプトの中では、route が選んだ候補を使い回す */
   readonly only?: ClassifierCandidate;
   readonly signal?: AbortSignal;
+  /** 新道の問い。あるときは固定の旧問いではなくこちらを送る */
+  readonly questions?: Readonly<Record<string, ClassifierQuestion>>;
 }
 
 export interface Ask {
@@ -225,7 +233,14 @@ async function attemptModel(
   model: RegistryModel,
   signal: AbortSignal,
 ): Promise<Attempt> {
-  const key = request.kind === 'choice' ? 'route' : 'judge';
+  const custom = request.questions;
+  const customKeys = custom === undefined ? [] : Object.keys(custom);
+  const key =
+    customKeys.length === 1 && customKeys[0] !== undefined
+      ? customKeys[0]
+      : request.kind === 'choice'
+        ? 'route'
+        : 'judge';
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 自前の JsonObject を SDK の state に渡す（値は state.ts が JSON 値だけで組む）
   const state = request.state as unknown as Parameters<Registry['classify']>[1]['state'];
   const result = await registry.classify(
@@ -233,7 +248,8 @@ async function attemptModel(
     {
       state,
       questions:
-        request.kind === 'choice' ? { route: LEGACY_ROUTE_QUESTION } : { judge: JUDGE_QUESTION },
+        custom ??
+        (request.kind === 'choice' ? { route: LEGACY_ROUTE_QUESTION } : { judge: JUDGE_QUESTION }),
     },
     { signal },
   );

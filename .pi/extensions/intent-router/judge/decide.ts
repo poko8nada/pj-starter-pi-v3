@@ -3,7 +3,7 @@
  */
 
 import type { Answer } from '../ask/ask.ts';
-import type { Label } from '../ask/questions.ts';
+import type { Choice, Label } from '../ask/questions.ts';
 import type { Settings, Thresholds } from '../settings/schema.ts';
 import type { Run } from '../state/run.ts';
 
@@ -50,6 +50,6 @@ export function due(
   return { kind: 'due' };
 }
 
-export function stopMessage(template: string, label: Label): string {
+export function stopMessage(template: string, label: Label | Choice): string {
   return template.split('{label}').join(label);
 }

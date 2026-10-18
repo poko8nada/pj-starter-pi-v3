@@ -5,7 +5,7 @@
  * 純関数の集まりで、`now` は引数で受ける。
  */
 
-import type { Label } from '../ask/questions.ts';
+import type { Choice, Label } from '../ask/questions.ts';
 import type { ClassifierCandidate, Settings } from '../settings/schema.ts';
 import { isSecretTarget } from './payload.ts';
 
@@ -31,7 +31,7 @@ export type Run =
   | {
       readonly kind: 'armed';
       readonly prompt: string;
-      readonly label: Label;
+      readonly label: Label | Choice;
       readonly confidence: number;
       readonly candidate: ClassifierCandidate;
       readonly startedAt: number;
@@ -62,7 +62,7 @@ export function idleRun(): Run {
 
 export function arm(input: {
   readonly prompt: string;
-  readonly label: Label;
+  readonly label: Label | Choice;
   readonly confidence: number;
   readonly candidate: ClassifierCandidate;
   readonly now: number;

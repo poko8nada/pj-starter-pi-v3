@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { ClassifierCandidate } from '../settings/schema.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { addAction, arm, type Action, type Run } from './run.ts';
-import { asInput, judgeState, routeState, targetOf, toAction } from './payload.ts';
+import {
+  asInput,
+  judgeState,
+  lastAssistantText,
+  routePayload,
+  targetOf,
+  toAction,
+} from './payload.ts';
 
 const CANDIDATE: ClassifierCandidate = { provider: 'opencode', model: 'jev-1.13-free' };
 
@@ -57,13 +64,70 @@ describe('targetOf', () => {
   });
 });
 
-describe('routeState', () => {
-  it('owner_prompt が 2000 字までで、has_images が真偽だけ', () => {
-    const state = routeState('a\nb', 'repo', true);
-    expect(state['owner_prompt']).toBe('a\nb');
-    expect(state['has_images']).toBe(true);
-    const long = routeState('a'.repeat(2500), 'repo', false);
-    expect(String(long['owner_prompt']).length).toBe(2000);
+describe('routePayload', () => {
+  it('owner_now と agent_prev の2つだけ', () => {
+    const payload = routePayload('hello', 'prev', defaultSettings());
+    expect(payload).toEqual({ owner_now: 'hello', agent_prev: 'prev' });
+  });
+
+  it('セッションに前の発言が無い → agent_prev は空文字', () => {
+    expect(lastAssistantText([], 2000)).toBe('');
+  });
+
+  it('owner_now が上限より長い → textChars で切れる', () => {
+    const settings = defaultSettings();
+    const payload = routePayload('あ'.repeat(settings.state.textChars + 10), '', settings);
+    expect(payload.owner_now.length).toBe(settings.state.textChars);
+  });
+
+  it('前の発言が上限より長い → textChars で切れる', () => {
+    const settings = defaultSettings();
+    const text = lastAssistantText(
+      [{ role: 'assistant', content: 'あ'.repeat(settings.state.textChars + 10) }],
+      settings.state.textChars,
+    );
+    expect(text.length).toBe(settings.state.textChars);
+    const payload = routePayload('hello', 'あ'.repeat(settings.state.textChars + 10), settings);
+    expect(payload.agent_prev.length).toBe(settings.state.textChars);
+  });
+});
+
+describe('lastAssistantText', () => {
+  it('最後のエージェントの文を抜く', () => {
+    const text = lastAssistantText(
+      [
+        { role: 'user', content: 'hello' },
+        { role: 'assistant', content: 'previous answer' },
+      ],
+      2000,
+    );
+    expect(text).toBe('previous answer');
+  });
+
+  it('画像つきの発言 → 文だけ残し画像を入れない', () => {
+    const text = lastAssistantText(
+      [
+        {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'looking into it' },
+            { type: 'image', data: 'data:image/png;base64,iVBORw0KGgo=' },
+          ],
+        },
+      ],
+      2000,
+    );
+    expect(text).toBe('looking into it');
+    expect(text).not.toContain('data:image');
+  });
+
+  it('base64 の塊は送らない', () => {
+    const text = lastAssistantText(
+      [{ role: 'assistant', content: 'see data:image/png;base64,iVBORw0KGgo=' }],
+      2000,
+    );
+    expect(text).not.toContain('data:image');
+    expect(text).not.toContain('iVBORw0KGgo');
   });
 });
 

@@ -73,14 +73,14 @@ function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets
       context: { readonly questions: Readonly<Record<string, unknown>> },
     ) => {
       targets?.push(target.id);
-      if ('route' in context.questions) {
+      if ('expect' in context.questions || 'route' in context.questions) {
         return Promise.resolve({
           stopReason: 'stop',
           answers: {
-            route: {
+            expect: {
               type: 'choice',
-              choice: 'question',
-              probabilities: { question: 0.9 },
+              choice: 'reply',
+              probabilities: { reply: 0.9 },
               confidence: 0.9,
             },
           },
@@ -96,10 +96,13 @@ function answeringRegistry(model: RegistryModel, reused?: RegistryModel, targets
   };
 }
 
-function fakeCtx(cwd: string, registry: unknown, notifies: string[]) {
+function fakeCtx(cwd: string, registry: unknown, notifies: string[], entries: unknown[] = []) {
   return {
     cwd,
     modelRegistry: registry,
+    sessionManager: {
+      buildContextEntries: () => entries,
+    },
     ui: {
       notify: (message: string) => {
         notifies.push(message);
@@ -207,6 +210,44 @@ describe('register', () => {
     if (records[0]?.hook === 'route' && records[1]?.hook === 'judge') {
       expect(records[1].owner_prompt).toBe(records[0].owner_prompt);
     }
+  });
+
+  it('セッションの最後の発言がエージェントの物 → agent_prev に入る（偽の ctx）', async () => {
+    const cwd = tmpDir();
+    const logs = join(cwd, 'logs');
+    writeSettings(cwd, JSON.stringify({ log: { dir: logs } }));
+    const fake = fakePi();
+    register(fake.api, { cwd });
+    const notifies: string[] = [];
+    const seen: unknown[] = [];
+    const registry = {
+      getAvailableOfType: (): Promise<RegistryModel[]> => Promise.resolve([classifierModel(0)]),
+      findOfType: (): RegistryModel | undefined => classifierModel(0),
+      classify: (
+        _target: RegistryModel,
+        context: { readonly state: Readonly<Record<string, unknown>> },
+      ) => {
+        seen.push(context.state);
+        return Promise.resolve({
+          stopReason: 'stop',
+          answers: {
+            expect: {
+              type: 'choice',
+              choice: 'reply',
+              probabilities: { reply: 0.9 },
+              confidence: 0.9,
+            },
+          },
+          usage: usage(),
+        });
+      },
+    };
+    const ctx = fakeCtx(cwd, registry, notifies, [
+      { type: 'message', message: { role: 'user', content: 'hello' } },
+      { type: 'message', message: { role: 'assistant', content: 'previous agent text' } },
+    ]);
+    await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
+    expect(seen[0]).toMatchObject({ agent_prev: 'previous agent text' });
   });
 
   it('壊れた settings.json → 投げる（黙って既定で走らない）', () => {

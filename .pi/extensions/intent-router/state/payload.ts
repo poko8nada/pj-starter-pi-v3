@@ -3,6 +3,7 @@
  */
 
 import type { Action, JsonObject, Run } from './run.ts';
+import type { Settings } from '../settings/schema.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -127,10 +128,67 @@ export function judgeState(run: Run, maxChars: number): JsonObject {
   return { ...base, investigation: kept, truncated };
 }
 
-export function routeState(prompt: string, cwdBase: string, hasImages: boolean): JsonObject {
+export interface RoutePayload {
+  readonly owner_now: string;
+  readonly agent_prev: string;
+}
+
+export function routePayload(prompt: string, agentPrev: string, settings: Settings): RoutePayload {
+  const limit = settings.state.textChars;
   return {
-    owner_prompt: prompt.slice(0, 2000),
-    cwd_basename: cwdBase,
-    has_images: hasImages,
+    owner_now: prompt.slice(0, limit),
+    agent_prev: agentPrev.slice(0, limit),
   };
+}
+
+/** セッションの最後のエージェント発言の文を抜く。画像は入れない */
+export function lastAssistantText(entries: readonly unknown[], maxChars: number): string {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    const { role, content } = splitEntry(entry);
+    if (role !== 'assistant' && role !== 'agent') {
+      continue;
+    }
+    const text = textOfEntry(content);
+    if (text !== '') {
+      return stripImages(text).slice(0, maxChars);
+    }
+  }
+  return '';
+}
+
+function splitEntry(entry: unknown): { readonly role: unknown; readonly content: unknown } {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    return { role: undefined, content: undefined };
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- SessionEntry の形を narrow に読む
+  const record = entry as Record<string, unknown>;
+  const inner = record['message'];
+  if (typeof inner === 'object' && inner !== null && !Array.isArray(inner)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- message の中を読む
+    const message = inner as Record<string, unknown>;
+    return { role: message['role'], content: message['content'] };
+  }
+  return { role: record['role'], content: record['content'] };
+}
+
+function textOfEntry(content: unknown): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  if (!Array.isArray(content)) {
+    return '';
+  }
+  const parts: string[] = [];
+  for (const block of content) {
+    if (typeof block !== 'object' || block === null || Array.isArray(block)) {
+      continue;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- content の block を読む
+    const record = block as Record<string, unknown>;
+    if (record['type'] === 'text' && typeof record['text'] === 'string') {
+      parts.push(record['text']);
+    }
+  }
+  return parts.join('\n');
 }

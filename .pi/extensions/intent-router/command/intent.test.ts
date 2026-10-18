@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { intentMessage, registerCommand, type CommandCtx, type CommandPiPort } from './intent.ts';
 import { append, type LogRecord } from '../record/recent.ts';
-import { defaultSettings } from '../settings/schema.ts';
 import { readSettings } from '../settings/read.ts';
 import { arm, idleRun, type FlagsPort, type Run, type RunPort } from '../state/run.ts';
 
@@ -155,12 +154,12 @@ describe('registerCommand', () => {
   });
 
   it('off の前後で settings.json は同じ値（セッション限り）', () => {
-    const before = readSettings('.pi/extensions/intent-router', defaultSettings());
+    const before = readSettings('.pi/extensions/intent-router');
     const flags = fakeFlags(true);
     const { pi, handler } = fakePi();
     registerCommand(pi, { flags, run: fakeRun(), log: () => {} });
     handler()('off', fakeCtx());
-    const after = readSettings('.pi/extensions/intent-router', defaultSettings());
+    const after = readSettings('.pi/extensions/intent-router');
     expect(after).toEqual(before);
   });
 
