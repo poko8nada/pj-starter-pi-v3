@@ -171,7 +171,6 @@ describe('createAsk', () => {
     expect(outcome.model).toBe('jev-1.13-free');
     expect(outcome.answer).toMatchObject({ type: 'choice', choice: 'design' });
     expect(outcome.usage.input).toBe(10);
-    expect(typeof outcome.latencyMs).toBe('number');
     expect(notified).toEqual([]);
   });
 

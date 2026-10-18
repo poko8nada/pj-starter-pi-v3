@@ -9,8 +9,6 @@ import {
   type CommandCtx,
   type CommandPiPort,
 } from './intent.ts';
-import { createRecent } from '../record/recent.ts';
-import { defaultSettings } from '../settings/schema.ts';
 import { readSettings } from '../settings/read.ts';
 import { arm, idleRun, type FlagsPort, type Mode, type Run, type RunPort } from '../state/run.ts';
 
@@ -68,8 +66,6 @@ function fakeCtx(): CommandCtx & { readonly messages: string[] } {
 }
 
 function wired(dir: string, mode: Mode = 'shadow') {
-  const file = join(dir, 'recent.json');
-  const recent = createRecent(50, file);
   const flags = fakeFlags(mode);
   const run = fakeRun(
     arm({
@@ -82,36 +78,38 @@ function wired(dir: string, mode: Mode = 'shadow') {
   );
   const settingsFile = join(dir, 'settings.json');
   const { pi, handler } = fakePi();
-  registerCommand(pi, { flags, run, recent, settingsFile });
-  return { handler: handler(), flags, run, file, settingsFile };
+  registerCommand(pi, { flags, run, settingsFile });
+  return { handler: handler(), flags, run, settingsFile };
 }
 
 describe('parseIntent', () => {
   it('/intent on → live', () => {
-    expect(parseIntent('on', defaultSettings())).toMatchObject({ kind: 'mode', mode: 'live' });
+    expect(parseIntent('on')).toMatchObject({ kind: 'mode', mode: 'live' });
   });
 
   it('/intent off → shadow', () => {
-    expect(parseIntent('off', defaultSettings())).toMatchObject({ kind: 'mode', mode: 'shadow' });
+    expect(parseIntent('off')).toMatchObject({ kind: 'mode', mode: 'shadow' });
   });
 
   it('引数なし → show', () => {
-    expect(parseIntent('', defaultSettings())).toMatchObject({ kind: 'show' });
+    expect(parseIntent('')).toMatchObject({ kind: 'show' });
   });
 
-  it('/intent last → last（既定の数）', () => {
-    expect(parseIntent('last', defaultSettings())).toMatchObject({
-      kind: 'last',
-      count: defaultSettings().record.recent,
-    });
-  });
-
-  it('/intent last 3 → last 3', () => {
-    expect(parseIntent('last 3', defaultSettings())).toMatchObject({ kind: 'last', count: 3 });
+  it('消えた下位コマンド（last / last 3）→ 使い方を返し、文に last の行が無い', () => {
+    for (const args of ['last', 'last 3']) {
+      const command = parseIntent(args);
+      expect(command).toMatchObject({ kind: 'usage' });
+      if (command.kind !== 'usage') {
+        throw new Error(`${args} must return usage`);
+      }
+      expect(command.text).toContain('usage');
+      expect(command.text).not.toContain('last');
+    }
+    expect(usageText()).not.toContain('last');
   });
 
   it('/intent foo → 使い方', () => {
-    expect(parseIntent('foo', defaultSettings())).toMatchObject({ kind: 'usage' });
+    expect(parseIntent('foo')).toMatchObject({ kind: 'usage' });
   });
 });
 
@@ -146,64 +144,17 @@ describe('registerCommand', () => {
     expect(ctx.messages).toEqual(['intent-router: live']);
   });
 
-  it('/intent last → 直近の記録を返す', () => {
-    const dir = tmpDir();
-    const { handler } = wired(dir);
-    const recent = createRecent(50, join(dir, 'recent.json'));
-    recent.add({
-      at: '2026-10-20T00:00:00.000Z',
-      hook: 'route',
-      owner_now: 'hello',
-      agent_prev: '',
-      choice: 'reply',
-      confidence: 0.9,
-      threshold: 0.8,
-      guide: 'guide text',
-      verdicts: null,
-      streak: null,
-      nudge: null,
-      fired: true,
-    });
-    const ctx = fakeCtx();
-    handler('last', ctx);
-    expect(ctx.messages).toHaveLength(1);
-    expect(ctx.messages[0]).toContain('hello');
-  });
-
-  it('/intent last 3 → 3 件だけ返す', () => {
-    const dir = tmpDir();
-    const { handler } = wired(dir);
-    const recent = createRecent(50, join(dir, 'recent.json'));
-    for (let index = 0; index < 5; index += 1) {
-      recent.add({
-        at: `2026-10-20T00:00:0${index}.000Z`,
-        hook: 'route',
-        owner_now: `hello${index}`,
-        agent_prev: '',
-        choice: 'reply',
-        confidence: 0.9,
-        threshold: 0.8,
-        guide: 'guide text',
-        verdicts: null,
-        streak: null,
-        nudge: null,
-        fired: true,
-      });
-    }
-    const ctx = fakeCtx();
-    handler('last 3', ctx);
-    expect(ctx.messages).toHaveLength(1);
-    const lines = (ctx.messages[0] ?? '').split('\n').filter((line) => line !== '');
-    expect(lines).toHaveLength(3);
-    expect(ctx.messages[0]).toContain('hello4');
-  });
-
-  it('記録が 1 件も無い → 「まだ無い」を返す', () => {
+  it('消えた下位コマンドを打つ → 使い方の文を返す（文に last の行が無い）', () => {
     const { handler } = wired(tmpDir());
-    const ctx = fakeCtx();
-    handler('last', ctx);
-    expect(ctx.messages).toHaveLength(1);
-    expect(ctx.messages[0]).toContain('まだ無い');
+    for (const args of ['last', 'last 3']) {
+      const ctx = fakeCtx();
+      expect(() => {
+        handler(args, ctx);
+      }).not.toThrow();
+      expect(ctx.messages).toHaveLength(1);
+      expect(ctx.messages[0]).toContain('usage');
+      expect(ctx.messages[0]).not.toContain('last');
+    }
   });
 
   it('/intent foo → 使い方を返す（投げない）', () => {

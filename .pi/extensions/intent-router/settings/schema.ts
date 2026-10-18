@@ -88,17 +88,17 @@ const RouteSchema = Type.Object(
 
 const JudgeQuestionsSchema = Type.Object(
   {
-    useful: Type.Optional(VerdictQuestionSchema),
-    new: Type.Optional(VerdictQuestionSchema),
+    related: Type.Optional(VerdictQuestionSchema),
+    answerable: Type.Optional(VerdictQuestionSchema),
   },
   { additionalProperties: false },
 );
 
 const JudgeStopSchema = Type.Object(
   {
-    consecutive: Type.Optional(Type.Integer({ minimum: 1 })),
+    unrelated: Type.Optional(Type.Integer({ minimum: 1 })),
     maxNudges: Type.Optional(Type.Integer({ minimum: 0 })),
-    nudges: Type.Optional(RouteGuidesSchema),
+    nudge: Type.Optional(Type.String({ minLength: 1 })),
   },
   { additionalProperties: false },
 );
@@ -128,9 +128,9 @@ const StateSchema = Type.Object(
   { additionalProperties: false },
 );
 
-const RecordSchema = Type.Object(
+const LogSchema = Type.Object(
   {
-    recent: Type.Optional(Type.Integer({ minimum: 1 })),
+    keepDays: Type.Optional(Type.Integer({ minimum: 1 })),
   },
   { additionalProperties: false },
 );
@@ -146,7 +146,7 @@ const SettingsSchema = Type.Object(
     route: Type.Optional(RouteSchema),
     judge: Type.Optional(JudgeSchema),
     state: Type.Optional(StateSchema),
-    record: Type.Optional(RecordSchema),
+    log: Type.Optional(LogSchema),
   },
   { additionalProperties: false },
 );
@@ -179,13 +179,13 @@ export type Settings = {
     readonly maxJudgements: number;
     readonly threshold: number;
     readonly questions: {
-      readonly useful: Question<Verdict>;
-      readonly new: Question<Verdict>;
+      readonly related: Question<Verdict>;
+      readonly answerable: Question<Verdict>;
     };
     readonly stop: {
-      readonly consecutive: number;
+      readonly unrelated: number;
       readonly maxNudges: number;
-      readonly nudges: Readonly<Record<'reply' | 'approve', string>>;
+      readonly nudge: string;
     };
   };
   readonly state: {
@@ -196,7 +196,7 @@ export type Settings = {
     readonly resultChars: number;
     readonly maxStateChars: number;
   };
-  readonly record: { readonly recent: number };
+  readonly log: { readonly keepDays: number };
 };
 
 export const SETTINGS_FILE = 'settings.json';
@@ -218,7 +218,7 @@ function defaultRoute(): Settings['route'] {
         other: 'Anything else that is neither a request for a reply nor an approval',
       },
     },
-    thresholds: { reply: 0.8, approve: 0.9 },
+    thresholds: { reply: 0.8, approve: 0.8 },
     guides: {
       reply:
         'Re: {prompt} — the owner wants an answer, not an edit. Do not edit, write, delete, or commit anything. Investigate only what the answer needs, then answer.',
@@ -234,34 +234,30 @@ function defaultJudge(): Settings['judge'] {
     minTurns: 2,
     everyNTurns: 1,
     maxJudgements: 12,
-    threshold: 0.9,
+    threshold: 0.8,
     questions: {
-      useful: {
+      related: {
         instructions:
-          'Is the latest investigation useful for answering the owner message? Answer yes or no.',
+          'Is the information read in this round trip related to answering the owner message? Answer yes or no.',
         criteria: {
-          yes: 'The latest findings help answer the owner message',
-          no: 'The latest findings do not help answer the owner message',
+          yes: 'The findings in this round help answer the owner message',
+          no: 'The findings in this round do not help answer the owner message',
         },
       },
-      new: {
+      answerable: {
         instructions:
-          'Did the latest investigation obtain new facts compared to the earlier investigation? Answer yes or no.',
+          'Can the owner message be answered from the related findings accumulated so far? Answer yes or no.',
         criteria: {
-          yes: 'The latest findings contain new facts not seen in the earlier investigation',
-          no: 'The latest findings contain no new facts beyond the earlier investigation',
+          yes: 'The accumulated related findings are enough to answer the owner message',
+          no: 'The accumulated related findings are not enough to answer the owner message',
         },
       },
     },
     stop: {
-      consecutive: 2,
+      unrelated: 2,
       maxNudges: 1,
-      nudges: {
-        reply:
-          'Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.',
-        approve:
-          'Enough has been investigated for the approved change. Stop investigating: no new tool calls. Proceed with the approved change from what you have.',
-      },
+      nudge:
+        'Enough has been investigated to answer. Stop investigating: no new tool calls. Answer the owner from what you have, and name anything you could not confirm.',
     },
   };
 }
@@ -269,7 +265,7 @@ function defaultJudge(): Settings['judge'] {
 function defaultState(): Settings['state'] {
   return {
     maxActions: 12,
-    assistantChars: 500,
+    assistantChars: 1000,
     includeTools: [
       'read',
       'write',
@@ -285,9 +281,9 @@ function defaultState(): Settings['state'] {
       'consult_run',
       'consult_subagents',
     ],
-    textChars: 2000,
+    textChars: 4000,
     resultChars: 300,
-    maxStateChars: 12000,
+    maxStateChars: 24000,
   };
 }
 
@@ -303,7 +299,7 @@ export function defaultSettings(): Settings {
     route: defaultRoute(),
     judge: defaultJudge(),
     state: defaultState(),
-    record: { recent: 50 },
+    log: { keepDays: 14 },
   };
 }
 
@@ -401,48 +397,53 @@ function mergeSettings(defaults: Settings, written: Written): Settings {
       maxJudgements: judgeWritten?.maxJudgements ?? defaults.judge.maxJudgements,
       threshold: judgeWritten?.threshold ?? defaults.judge.threshold,
       questions: {
-        useful: overlaidQuestion(defaults.judge.questions.useful, judgeQuestionsWritten?.useful),
-        new: overlaidQuestion(defaults.judge.questions.new, judgeQuestionsWritten?.new),
+        related: overlaidQuestion(defaults.judge.questions.related, judgeQuestionsWritten?.related),
+        answerable: overlaidQuestion(
+          defaults.judge.questions.answerable,
+          judgeQuestionsWritten?.answerable,
+        ),
       },
       stop: {
         ...overlaid(defaults.judge.stop, judgeWritten?.stop),
-        consecutive: judgeWritten?.stop?.consecutive ?? defaults.judge.stop.consecutive,
+        unrelated: judgeWritten?.stop?.unrelated ?? defaults.judge.stop.unrelated,
         maxNudges: judgeWritten?.stop?.maxNudges ?? defaults.judge.stop.maxNudges,
-        nudges: { ...defaults.judge.stop.nudges, ...judgeWritten?.stop?.nudges },
+        nudge: judgeWritten?.stop?.nudge ?? defaults.judge.stop.nudge,
       },
     },
     state: overlaid(defaults.state, written.state),
-    record: overlaid(defaults.record, written.record),
+    log: overlaid(defaults.log, written.log),
   };
 }
 
 function assertJudgeQuestions(
   questions:
     | {
-        readonly useful?: {
+        readonly related?: {
           readonly instructions?: string;
           readonly criteria?: Partial<Record<'yes' | 'no', string>>;
         };
-        readonly new?: {
+        readonly answerable?: {
           readonly instructions?: string;
           readonly criteria?: Partial<Record<'yes' | 'no', string>>;
         };
       }
     | undefined,
 ): void {
-  if (questions?.useful?.criteria !== undefined) {
+  if (questions?.related?.criteria !== undefined) {
     for (const key of ['yes', 'no'] as const) {
-      if (questions.useful.criteria[key] === undefined) {
+      if (questions.related.criteria[key] === undefined) {
         fail(
-          `the config.judge.questions.useful.criteria.${key} is required when criteria is written`,
+          `the config.judge.questions.related.criteria.${key} is required when criteria is written`,
         );
       }
     }
   }
-  if (questions?.new?.criteria !== undefined) {
+  if (questions?.answerable?.criteria !== undefined) {
     for (const key of ['yes', 'no'] as const) {
-      if (questions.new.criteria[key] === undefined) {
-        fail(`the config.judge.questions.new.criteria.${key} is required when criteria is written`);
+      if (questions.answerable.criteria[key] === undefined) {
+        fail(
+          `the config.judge.questions.answerable.criteria.${key} is required when criteria is written`,
+        );
       }
     }
   }

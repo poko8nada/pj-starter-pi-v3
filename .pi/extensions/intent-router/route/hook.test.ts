@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import type { Answer, Ask, AskOutcome, AskRequest } from '../ask/ask.ts';
-import { createRecent, type IntentRecord } from '../record/recent.ts';
+import { append, type IntentRecord } from '../record/log.ts';
 import { defaultSettings, type Settings } from '../settings/schema.ts';
 import { idleRun, type FlagsPort, type Mode, type Run, type RunPort } from '../state/run.ts';
 import { registerRoute, type RouteCtx, type RoutePiPort } from './hook.ts';
@@ -100,8 +100,7 @@ function wired(
   readonly file: string;
 } {
   const dir = tmpDir();
-  const file = join(dir, 'recent.json');
-  const recent = createRecent(50, file);
+  const file = join(dir, 'logs');
   const { ask, requests } = fakeAsk(outcome);
   const run = fakeRun();
   const { pi, handler } = fakePi();
@@ -111,24 +110,51 @@ function wired(
     run,
     flags: fakeFlags(mode),
     log: (record: IntentRecord) => {
-      recent.add(record);
+      append(record, file);
     },
   });
   return { handler: handler(), run, requests, dir, file };
 }
 
 function readRecords(file: string): IntentRecord[] {
+  let names: string[];
   try {
-    const text = readFileSync(file, 'utf8');
-    if (text.trim() === '') {
-      return [];
-    }
-    const parsed: unknown = JSON.parse(text);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の形を読む
-    return Array.isArray(parsed) ? (parsed as IntentRecord[]) : [];
+    names = readdirSync(file);
   } catch {
     return [];
   }
+  names.sort();
+  const out: IntentRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.jsonl')) {
+      continue;
+    }
+    let text: string;
+    try {
+      text = readFileSync(join(file, name), 'utf8');
+    } catch {
+      continue;
+    }
+    if (text.trim() === '') {
+      continue;
+    }
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(line);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+        if (typeof parsed === 'object' && parsed !== null && 'at' in parsed) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 日ごとの JSONL の 1 行を読む
+          out.push(parsed as IntentRecord);
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  return out;
 }
 
 describe('registerRoute', () => {
@@ -154,15 +180,21 @@ describe('registerRoute', () => {
     );
   });
 
-  it('approve 0.85 → idle（0.9 に届かない）', async () => {
+  it('approve 0.75 → idle（0.8 に届かない）', async () => {
     const settings = defaultSettings();
-    const { handler, run, file } = wired(settings, answeredOutcome('approve', 0.85), 'live');
+    const { handler, run, requests, file } = wired(
+      settings,
+      answeredOutcome('approve', 0.75),
+      'live',
+    );
     const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(run.get().kind).toBe('idle');
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ hook: 'route', fired: false });
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
   });
 
   it('other → idle（文を出さない）', async () => {
@@ -235,15 +267,6 @@ describe('registerRoute', () => {
     expect(records[0]?.guide).toBe(settings.route.guides.reply.split('{prompt}').join('hello'));
   });
 
-  it('live → guide が1回だけ差し込まれる', async () => {
-    const settings = defaultSettings();
-    const { handler } = wired(settings, answeredOutcome('reply', 0.9), 'live');
-    const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(
-      settings.route.guides.reply.split('{prompt}').join('hello'),
-    );
-  });
-
   it('shadow でも ask は呼ばれる（記録のため）', async () => {
     const { handler, requests, file } = wired(
       defaultSettings(),
@@ -260,5 +283,70 @@ describe('registerRoute', () => {
     const { handler, requests } = wired(defaultSettings(), answeredOutcome('reply', 0.9), 'live');
     await handler({ prompt: '/intent off' }, { cwd: '/repo' });
     expect(requests).toHaveLength(0);
+  });
+
+  it('短い往復 → route の記録の state_chars が、渡した state の JSON の字数と同じ', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
+  });
+
+  it('owner_now が上限より長い → state_chars が切った後の字数になり、truncated が true', async () => {
+    const settings = defaultSettings();
+    const limit = settings.state.textChars;
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    const longPrompt = 'あ'.repeat(limit + 100);
+    await handler({ prompt: longPrompt }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(true);
+    expect(records[0]?.state_chars).toBeLessThan(JSON.stringify(longPrompt).length);
+  });
+
+  it('owner は短く agent_prev だけが長い → truncated が true', async () => {
+    const settings = defaultSettings();
+    const limit = settings.state.textChars;
+    const longPrev = 'あ'.repeat(limit + 50);
+    const { handler, requests, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: longPrev });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.state_chars).toBeLessThan(
+      JSON.stringify({ owner_now: 'hello', agent_prev: longPrev }).length,
+    );
+    expect(records[0]?.truncated).toBe(true);
+  });
+
+  it('どちらも短い → truncated が false', async () => {
+    const settings = defaultSettings();
+    const { handler, file } = wired(settings, answeredOutcome('reply', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo', agentPrev: 'prev' });
+    expect(readRecords(file)[0]?.truncated).toBe(false);
+  });
+
+  it('classify が失敗 → 記録に state_chars と truncated が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, failedOutcome(), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(typeof records[0]?.truncated).toBe('boolean');
+  });
+
+  it('other で見送り → route の記録に同じ 2 欄が入る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, answeredOutcome('other', 0.9), 'live');
+    await handler({ prompt: 'hello' }, { cwd: '/repo' });
+    const records = readRecords(file);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.state_chars).toBe(JSON.stringify(requests[0]?.state).length);
+    expect(records[0]?.truncated).toBe(false);
   });
 });
