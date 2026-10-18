@@ -53,10 +53,12 @@ export interface RunPort {
   readonly set: (next: Run) => void;
 }
 
-/** セッション中の on/off の持ち主 */
+export type Mode = 'shadow' | 'live';
+
+/** セッション中の shadow / live の持ち主 */
 export interface FlagsPort {
-  readonly get: () => { readonly enabled: boolean };
-  readonly set: (next: { readonly enabled: boolean }) => void;
+  readonly get: () => { readonly mode: Mode };
+  readonly set: (next: { readonly mode: Mode }) => void;
 }
 
 export function idleRun(): Run {

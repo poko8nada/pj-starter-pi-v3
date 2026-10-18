@@ -5,10 +5,11 @@
  * 道具を使った往復だけ判定する（道具0件・`latest` 空なら何もログせず終える）。差し込みは
  * `{ entries: [custom_message] }` を返すだけで、`continue` は返さない。
  * 何もしない時は `undefined` を返す。
+ * live（`flags.mode === 'live'`）の時だけ差し込み、shadow は記録だけ残す。
  */
 
 import type { BatchAsk, BatchAskOutcome } from '../ask/ask.ts';
-import type { LogRecord, OutcomeView } from '../record/recent.ts';
+import type { IntentRecord } from '../record/recent.ts';
 import type { Settings } from '../settings/schema.ts';
 import {
   addAction,
@@ -16,6 +17,7 @@ import {
   noteTurn,
   noteVerdict,
   nudge,
+  type Armed,
   type FlagsPort,
   type JsonObject,
   type Run,
@@ -63,7 +65,7 @@ export interface JudgeDeps {
   readonly askBatch: BatchAsk;
   readonly run: RunPort;
   readonly flags: FlagsPort;
-  readonly log: (record: LogRecord) => void;
+  readonly log: (record: IntentRecord) => void;
 }
 
 interface JudgeMessage {
@@ -112,56 +114,108 @@ function toolInputsFrom(
   return out;
 }
 
-type Armed = Extract<Run, { readonly kind: 'armed' }>;
 type Answered = Extract<BatchAskOutcome, { readonly kind: 'answered' }>;
 
-interface JudgeLogInput {
-  readonly prompt: string;
-  readonly choice: 'reply' | 'approve';
-  readonly decision: 'fire' | 'hold';
-  readonly stop: 'fired' | 'would' | 'none';
-  readonly text: string | null;
+interface HoldInput {
+  readonly run: Armed;
+  readonly outcome: BatchAskOutcome;
   readonly turnIndex: number;
   readonly truncated: boolean;
-  readonly outcome: BatchAskOutcome;
+  readonly verdicts: JudgeAnswers | undefined;
+  readonly streak: number;
 }
 
-function toOutcome(outcome: BatchAskOutcome): OutcomeView {
-  if (outcome.kind === 'answered') {
-    return {
-      kind: 'answered',
-      provider: outcome.provider,
-      model: outcome.model,
-      stopReason: 'stop',
-      usage: outcome.usage,
-      latencyMs: outcome.latencyMs,
-    };
-  }
-  return {
-    kind: 'failed',
-    reason: outcome.reason,
-    tried: outcome.tried,
-    latencyMs: outcome.latencyMs,
-  };
-}
-
-function logJudge(deps: JudgeDeps, input: JudgeLogInput): void {
+function logHold(deps: JudgeDeps, input: HoldInput): void {
+  const answers = input.verdicts;
   deps.log({
     at: new Date().toISOString(),
     hook: 'judge',
-    owner_prompt: input.prompt,
-    label: input.choice,
-    score: null,
-    confidence: null,
-    thresholds: deps.settings.thresholds,
-    decision: input.decision,
-    shadow: deps.settings.judge.shadow,
-    stop: input.stop,
-    text: input.text,
-    truncated: input.truncated,
-    turn_index: input.turnIndex,
-    outcome: toOutcome(input.outcome),
+    owner_now: input.run.ownerNow,
+    agent_prev: null,
+    choice: input.run.choice,
+    confidence: answers === undefined ? null : answers.useful.confidence,
+    threshold: deps.settings.judge.threshold,
+    guide: null,
+    verdicts:
+      answers === undefined
+        ? null
+        : {
+            useful: verdictOf(answers.useful),
+            new: verdictOf(answers.new),
+          },
+    streak: input.streak,
+    nudge: null,
+    fired: false,
   });
+}
+
+function verdictOf(answer: { readonly type: string; readonly choice?: string }): 'yes' | 'no' {
+  return answer.type === 'choice' && answer.choice === 'yes' ? 'yes' : 'no';
+}
+
+interface NudgeInput {
+  readonly run: Armed;
+  readonly outcome: Answered;
+  readonly turnIndex: number;
+  readonly truncated: boolean;
+  readonly answers: JudgeAnswers;
+  readonly streak: number;
+}
+
+function logNudge(
+  deps: JudgeDeps,
+  input: NudgeInput & { readonly text: string; readonly fired: boolean },
+): void {
+  deps.log({
+    at: new Date().toISOString(),
+    hook: 'judge',
+    owner_now: input.run.ownerNow,
+    agent_prev: null,
+    choice: input.run.choice,
+    confidence: input.answers.useful.confidence,
+    threshold: deps.settings.judge.threshold,
+    guide: null,
+    verdicts: {
+      useful: verdictOf(input.answers.useful),
+      new: verdictOf(input.answers.new),
+    },
+    streak: input.streak,
+    nudge: input.text,
+    fired: input.fired,
+  });
+}
+
+function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefined {
+  const { run, turnIndex, truncated, answers, streak } = input;
+  const nudged = nudge(run);
+  deps.run.set(nudged);
+  const text = nudgeText(deps.settings, run.choice);
+  const live = deps.flags.get().mode === 'live';
+  logNudge(deps, {
+    run,
+    outcome: input.outcome,
+    turnIndex,
+    truncated,
+    answers,
+    streak,
+    text,
+    fired: live,
+  });
+  void turnIndex;
+  void truncated;
+  if (!live) {
+    return undefined;
+  }
+  return {
+    entries: [
+      {
+        type: 'custom_message',
+        customType: 'intent-stop',
+        content: text,
+        display: true,
+      },
+    ],
+  };
 }
 
 /** 道具の結果を latest に足す。arm されていなければ undefined */
@@ -201,75 +255,7 @@ function recordActions(deps: JudgeDeps, event: JudgeTurnEvent): Armed | undefine
 function finishTurn(deps: JudgeDeps, run: Armed, text: string): Armed {
   const next = noteTurn(run, text, deps.settings.state);
   deps.run.set(next);
-  return next.kind === 'armed' ? next : run;
-}
-
-interface NudgeInput {
-  readonly run: Armed;
-  readonly outcome: Answered;
-  readonly turnIndex: number;
-  readonly truncated: boolean;
-}
-
-function settleNudge(deps: JudgeDeps, input: NudgeInput): JudgeMessage | undefined {
-  const { run, outcome, turnIndex, truncated } = input;
-  const nudged = nudge(run);
-  deps.run.set(nudged);
-  const text = nudgeText(deps.settings, run.choice);
-  if (deps.settings.judge.shadow) {
-    logJudge(deps, {
-      prompt: run.ownerNow,
-      choice: run.choice,
-      decision: 'fire',
-      stop: 'would',
-      text,
-      turnIndex,
-      truncated,
-      outcome,
-    });
-    return undefined;
-  }
-  logJudge(deps, {
-    prompt: run.ownerNow,
-    choice: run.choice,
-    decision: 'fire',
-    stop: 'fired',
-    text,
-    turnIndex,
-    truncated,
-    outcome,
-  });
-  return {
-    entries: [
-      {
-        type: 'custom_message',
-        customType: 'intent-stop',
-        content: text,
-        display: true,
-      },
-    ],
-  };
-}
-
-interface HoldInput {
-  readonly run: Armed;
-  readonly outcome: BatchAskOutcome;
-  readonly turnIndex: number;
-  readonly truncated: boolean;
-}
-
-function settleHold(deps: JudgeDeps, input: HoldInput): undefined {
-  logJudge(deps, {
-    prompt: input.run.ownerNow,
-    choice: input.run.choice,
-    decision: 'hold',
-    stop: 'none',
-    text: null,
-    turnIndex: input.turnIndex,
-    truncated: input.truncated,
-    outcome: input.outcome,
-  });
-  return undefined;
+  return next;
 }
 
 interface Asked {
@@ -332,15 +318,13 @@ function settleAnswered(
   deps.run.set(counted);
   if (outcome.kind === 'failed') {
     finishTurn(deps, counted, messageText);
-    logJudge(deps, {
-      prompt: run.ownerNow,
-      choice: run.choice,
-      decision: 'hold',
-      stop: 'none',
-      text: null,
+    logHold(deps, {
+      run,
+      outcome,
       turnIndex,
       truncated,
-      outcome,
+      verdicts: undefined,
+      streak: counted.streak,
     });
     return undefined;
   }
@@ -348,7 +332,7 @@ function settleAnswered(
   const fresh = outcome.answers[JUDGE_QUESTIONS.new];
   if (useful === undefined || fresh === undefined) {
     finishTurn(deps, counted, messageText);
-    settleHold(deps, { run, outcome, turnIndex, truncated });
+    logHold(deps, { run, outcome, turnIndex, truncated, verdicts: undefined, streak: 0 });
     return undefined;
   }
   const answers: JudgeAnswers = { useful, new: fresh };
@@ -358,13 +342,21 @@ function settleAnswered(
       const cleared = noteVerdict(counted, false);
       deps.run.set(cleared);
       finishTurn(deps, cleared, messageText);
+      logHold(deps, { run, outcome, turnIndex, truncated, verdicts: answers, streak: 0 });
     } else {
       finishTurn(deps, counted, messageText);
+      logHold(deps, {
+        run,
+        outcome,
+        turnIndex,
+        truncated,
+        verdicts: answers,
+        streak: counted.streak,
+      });
     }
-    settleHold(deps, { run, outcome, turnIndex, truncated });
     return undefined;
   }
-  return settleUnhelpful(deps, { counted, outcome, turnIndex, messageText, truncated });
+  return settleUnhelpful(deps, { counted, outcome, turnIndex, messageText, truncated, answers });
 }
 
 function settleUnhelpful(
@@ -375,9 +367,10 @@ function settleUnhelpful(
     readonly turnIndex: number;
     readonly messageText: string;
     readonly truncated: boolean;
+    readonly answers: JudgeAnswers;
   },
 ): JudgeMessage | undefined {
-  const { counted, outcome, turnIndex, messageText, truncated } = input;
+  const { counted, outcome, turnIndex, messageText, truncated, answers } = input;
   const withStreak = noteVerdict(counted, true);
   deps.run.set(withStreak);
   if (
@@ -385,27 +378,42 @@ function settleUnhelpful(
     withStreak.nudges >= deps.settings.judge.stop.maxNudges
   ) {
     finishTurn(deps, withStreak, messageText);
-    settleHold(deps, { run: counted, outcome, turnIndex, truncated });
+    logHold(deps, {
+      run: withStreak,
+      outcome,
+      turnIndex,
+      truncated,
+      verdicts: answers,
+      streak: withStreak.streak,
+    });
     return undefined;
   }
   finishTurn(deps, withStreak, messageText);
   const current = deps.run.get();
   if (current.kind !== 'armed') {
-    settleHold(deps, { run: counted, outcome, turnIndex, truncated });
+    logHold(deps, {
+      run: withStreak,
+      outcome,
+      turnIndex,
+      truncated,
+      verdicts: answers,
+      streak: withStreak.streak,
+    });
     return undefined;
   }
-  return settleNudge(deps, { run: current, outcome, turnIndex, truncated });
+  return settleNudge(deps, {
+    run: current,
+    outcome,
+    turnIndex,
+    truncated,
+    answers,
+    streak: withStreak.streak,
+  });
 }
 
 export function registerJudge(pi: JudgePiPort, deps: JudgeDeps): void {
   pi.on('turn_end', async (event, _ctx) => {
     if (event.toolResults.length === 0) {
-      return undefined;
-    }
-    if (!deps.flags.get().enabled) {
-      return undefined;
-    }
-    if (!deps.settings.judge.enabled) {
       return undefined;
     }
     const run = recordActions(deps, event);

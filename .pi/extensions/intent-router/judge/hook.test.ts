@@ -1,9 +1,9 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import type { Answer, BatchAsk, BatchAskOutcome } from '../ask/ask.ts';
-import { append, type LogRecord } from '../record/recent.ts';
+import { createRecent, type IntentRecord } from '../record/recent.ts';
 import { defaultSettings, type Settings } from '../settings/schema.ts';
 import {
   addAction,
@@ -12,6 +12,7 @@ import {
   idleRun,
   noteTurn,
   type FlagsPort,
+  type Mode,
   type Run,
   type RunPort,
 } from '../state/run.ts';
@@ -90,8 +91,8 @@ function fakeRun(initial?: Run): RunPort {
   };
 }
 
-function fakeFlags(enabled: boolean): FlagsPort {
-  let current = { enabled };
+function fakeFlags(mode: Mode): FlagsPort {
+  let current = { mode };
   return {
     get: () => current,
     set: (next) => {
@@ -159,15 +160,17 @@ function readTurn(): JudgeTurnEvent {
 function wired(
   settings: Settings,
   outcomes: BatchAskOutcome[],
-  enabled: boolean,
+  mode: Mode,
   initial?: Run,
 ): {
   readonly handler: Handler;
   readonly run: RunPort;
   readonly requests: unknown[];
-  readonly dir: string;
+  readonly file: string;
 } {
   const dir = tmpDir();
+  const file = join(dir, 'recent.json');
+  const recent = createRecent(50, file);
   const { askBatch, requests } = fakeAskBatch(outcomes);
   const run = fakeRun(initial);
   const { pi, handler } = fakePi();
@@ -175,42 +178,32 @@ function wired(
     settings,
     askBatch,
     run,
-    flags: fakeFlags(enabled),
-    log: (record: LogRecord) => {
-      append(record, dir);
+    flags: fakeFlags(mode),
+    log: (record: IntentRecord) => {
+      recent.add(record);
     },
   });
-  return { handler: handler(), run, requests, dir };
+  return { handler: handler(), run, requests, file };
 }
 
-function isLogRecord(value: unknown): value is LogRecord {
-  return typeof value === 'object' && value !== null && 'hook' in value && 'at' in value;
-}
-
-function readRecords(dir: string): LogRecord[] {
-  const out: LogRecord[] = [];
-  for (const name of readdirSync(dir)) {
-    if (!name.endsWith('.jsonl')) {
-      continue;
+function readRecords(file: string): IntentRecord[] {
+  try {
+    const text = readFileSync(file, 'utf8');
+    if (text.trim() === '') {
+      return [];
     }
-    const text = readFileSync(join(dir, name), 'utf8');
-    for (const line of text.split('\n')) {
-      if (line === '') {
-        continue;
-      }
-      const parsed: unknown = JSON.parse(line);
-      if (isLogRecord(parsed)) {
-        out.push(parsed);
-      }
-    }
+    const parsed: unknown = JSON.parse(text);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- recent.json の形を読む
+    return Array.isArray(parsed) ? (parsed as IntentRecord[]) : [];
+  } catch {
+    return [];
   }
-  return out;
 }
 
 describe('registerJudge', () => {
   it('useful=no かつ new=no が 2 回続く → nudge（streak は 2）', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, run, dir } = wired(settings, [noNo(), noNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, run, file } = wired(settings, [noNo(), noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
     const afterFirst = run.get();
     if (afterFirst.kind !== 'armed') {
@@ -224,12 +217,12 @@ describe('registerJudge', () => {
     }
     expect(afterSecond.streak).toBe(2);
     expect(result?.entries).toHaveLength(1);
-    expect(readRecords(dir)).toHaveLength(2);
+    expect(readRecords(file)).toHaveLength(2);
   });
 
   it('useful=yes かつ new=no が 2 回続く → nudge（new だけで促しになる）', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, run } = wired(settings, [yesNo(), yesNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, run } = wired(settings, [yesNo(), yesNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
     const result = await handler(readTurn(), { cwd: '/repo' });
     const current = run.get();
@@ -241,8 +234,8 @@ describe('registerJudge', () => {
   });
 
   it('useful=no が 1 回だけ → wait で streak は 1', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, run, dir } = wired(settings, [noNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, run, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     const current = run.get();
@@ -250,12 +243,12 @@ describe('registerJudge', () => {
       throw new Error('must be armed');
     }
     expect(current.streak).toBe(1);
-    expect(readRecords(dir)).toHaveLength(1);
+    expect(readRecords(file)).toHaveLength(1);
   });
 
   it('useful=yes かつ new=yes → wait で streak は 0 に戻る', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, run } = wired(settings, [noNo(), yesYes()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, run } = wired(settings, [noNo(), yesYes()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
     await handler(readTurn(), { cwd: '/repo' });
     const current = run.get();
@@ -266,9 +259,8 @@ describe('registerJudge', () => {
   });
 
   it('latest が空（道具を使っていない往復）→ 何も聞かない', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests, dir } = wired(settings, [noNo()], true, armedWithTurns(1));
-    // includeTools に無い道具だけ → latest が空のまま
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(
       {
         turnIndex: 2,
@@ -279,13 +271,13 @@ describe('registerJudge', () => {
     );
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 
   it('useful の confidence が 0.89 → 判断に使わず wait', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
+    const settings = defaultSettings();
     const low = batchAnswered(choiceAnswer('no', 0.89), choiceAnswer('no', 0.95));
-    const { handler, run, requests, dir } = wired(settings, [low], true, armedWithTurns(1));
+    const { handler, run, requests, file } = wired(settings, [low], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(1);
@@ -294,15 +286,15 @@ describe('registerJudge', () => {
       throw new Error('must be armed');
     }
     expect(current.streak).toBe(0);
-    expect(readRecords(dir)).toHaveLength(1);
+    expect(readRecords(file)).toHaveLength(1);
   });
 
   it('促しを 1 回出した後の往復 → nudge は出ない（maxNudges）', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
+    const settings = defaultSettings();
     const { handler, requests } = wired(
       settings,
       [noNo(), noNo(), noNo()],
-      true,
+      'live',
       armedWithTurns(1),
     );
     await handler(readTurn(), { cwd: '/repo' });
@@ -314,59 +306,63 @@ describe('registerJudge', () => {
   });
 
   it('往復が minTurns 未満 → 聞かない', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests, dir } = wired(settings, [noNo()], true, armedWithTurns(0));
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(0));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 
   it('turns が everyNTurns で割り切れない → 聞かない（interval）', async () => {
-    const settings = withJudge(withJudge(defaultSettings(), { shadow: false }), {
-      everyNTurns: 2,
-    });
-    const { handler, requests, dir } = wired(settings, [noNo()], true, armedWithTurns(0));
+    const settings = withJudge(defaultSettings(), { everyNTurns: 2 });
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(0));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 
   it('判断の回数が maxJudgements に達した → 聞かない', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
+    const settings = defaultSettings();
     let initial = armedWithTurns(1);
     for (let index = 0; index < 12; index += 1) {
       initial = countJudgement(initial, 10 + index);
     }
-    const { handler, requests, dir } = wired(settings, [noNo()], true, initial);
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', initial);
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 
   it('2 問の classify が失敗 → 記録 1 行だけ残して何も出さない', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, dir } = wired(settings, [batchFailed()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, file } = wired(settings, [batchFailed()], 'live', armedWithTurns(1));
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
-    expect(readRecords(dir)).toHaveLength(1);
+    expect(readRecords(file)).toHaveLength(1);
   });
 
   it('shadow → 促しを差し込まずに記録だけ残る', async () => {
-    const { handler, dir } = wired(defaultSettings(), [noNo(), noNo()], true, armedWithTurns(1));
+    const { handler, file } = wired(
+      defaultSettings(),
+      [noNo(), noNo()],
+      'shadow',
+      armedWithTurns(1),
+    );
     await handler(readTurn(), { cwd: '/repo' });
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
-    const records = readRecords(dir);
+    const records = readRecords(file);
     expect(records).toHaveLength(2);
-    expect(records[1]).toMatchObject({ hook: 'judge', decision: 'fire', stop: 'would' });
+    expect(records[1]).toMatchObject({ hook: 'judge', fired: false });
+    expect(typeof records[1]?.nudge).toBe('string');
   });
 
   it('live → 促しが 1 回だけ差し込まれる', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler } = wired(settings, [noNo(), noNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler } = wired(settings, [noNo(), noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result?.entries).toHaveLength(1);
@@ -374,8 +370,8 @@ describe('registerJudge', () => {
   });
 
   it('2 問を 1 リクエストで聞く（useful と new）', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests } = wired(settings, [noNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     await handler(readTurn(), { cwd: '/repo' });
     expect(requests).toHaveLength(1);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
@@ -391,7 +387,7 @@ describe('registerJudge', () => {
   });
 
   it('state が maxStateChars を超える → earlier を後ろから削る', async () => {
-    const settings = withMaxStateChars(withJudge(defaultSettings(), { shadow: false }), 300);
+    const settings = withMaxStateChars(defaultSettings(), 500);
     let initial = arm({
       ownerNow: 'hello',
       choice: 'reply',
@@ -407,39 +403,31 @@ describe('registerJudge', () => {
       );
       initial = noteTurn(initial, `text${index}`, defaultSettings().state);
     }
-    const { handler, dir } = wired(settings, [noNo()], true, initial);
+    const { handler, file } = wired(settings, [noNo()], 'live', initial);
     await handler(readTurn(), { cwd: '/repo' });
-    const records = readRecords(dir);
+    const records = readRecords(file);
     expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ hook: 'judge', truncated: true });
-  });
-
-  it('flags が off → undefined', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests } = wired(settings, [noNo()], false, armedWithTurns(1));
-    const result = await handler(readTurn(), { cwd: '/repo' });
-    expect(result).toBeUndefined();
-    expect(requests).toHaveLength(0);
+    expect(records[0]).toMatchObject({ hook: 'judge', fired: false });
   });
 
   it('idle のまま → ask が呼ばれずログも増えない', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests, dir } = wired(settings, [noNo()], true);
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live');
     const result = await handler(readTurn(), { cwd: '/repo' });
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 
   it('道具0件の turn_end → ask が呼ばれず undefined', async () => {
-    const settings = withJudge(defaultSettings(), { shadow: false });
-    const { handler, requests, dir } = wired(settings, [noNo()], true, armedWithTurns(1));
+    const settings = defaultSettings();
+    const { handler, requests, file } = wired(settings, [noNo()], 'live', armedWithTurns(1));
     const result = await handler(
       { turnIndex: 2, message: { content: 'done' }, toolResults: [] },
       { cwd: '/repo' },
     );
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
-    expect(readRecords(dir)).toHaveLength(0);
+    expect(readRecords(file)).toHaveLength(0);
   });
 });

@@ -3,26 +3,26 @@
  *
  * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
  * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
- * `logs/` の置き場はここで決める。
+ * 記録は `logs/recent.json` に直近だけ持つ。
  */
 
-import { isAbsolute, join } from 'node:path';
+import { join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createAsk, createBatchAsk, type Ask, type BatchAsk } from './ask/ask.ts';
 import { registerCommand } from './command/intent.ts';
 import { registerJudge } from './judge/hook.ts';
 import { registerRoute } from './route/hook.ts';
-import { append, prune, type LogRecord } from './record/recent.ts';
+import { createRecent, type IntentRecord } from './record/recent.ts';
 import { type Settings } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
-import { idleRun, type FlagsPort, type Run, type RunPort } from './state/run.ts';
 import { lastAssistantText } from './state/payload.ts';
+import { idleRun, type FlagsPort, type Mode, type Run, type RunPort } from './state/run.ts';
 
 // index.ts が持つ物。入口はこれだけを公開する
 export interface Wiring {
   readonly settings: Settings;
   readonly run: Run;
-  readonly flags: { readonly enabled: boolean };
+  readonly flags: { readonly mode: Mode };
 }
 
 type Registry = ExtensionContext['modelRegistry'];
@@ -39,6 +39,12 @@ function createLazyAsk(settingsDir: string): AskCell {
   let registry: Registry | undefined;
   let notifier: ((message: string) => void) | undefined;
   let paidNotified = false;
+  const notify = (message: string): void => {
+    if (!paidNotified) {
+      paidNotified = true;
+      notifier?.(message);
+    }
+  };
   return {
     ask: (request) => {
       if (registry === undefined) {
@@ -50,18 +56,7 @@ function createLazyAsk(settingsDir: string): AskCell {
         });
       }
       const fresh = readSettings(settingsDir);
-      const current = registry;
-      const ask = createAsk({
-        registry: current,
-        settings: fresh,
-        notify: (message) => {
-          if (!paidNotified) {
-            paidNotified = true;
-            notifier?.(message);
-          }
-        },
-      });
-      return ask(request);
+      return createAsk({ registry, settings: fresh, notify })(request);
     },
     askBatch: (request) => {
       if (registry === undefined) {
@@ -73,18 +68,7 @@ function createLazyAsk(settingsDir: string): AskCell {
         });
       }
       const fresh = readSettings(settingsDir);
-      const current = registry;
-      const askBatch = createBatchAsk({
-        registry: current,
-        settings: fresh,
-        notify: (message) => {
-          if (!paidNotified) {
-            paidNotified = true;
-            notifier?.(message);
-          }
-        },
-      });
-      return askBatch(request);
+      return createBatchAsk({ registry, settings: fresh, notify })(request);
     },
     hold: (ctx) => {
       registry = ctx.modelRegistry;
@@ -98,12 +82,12 @@ function createLazyAsk(settingsDir: string): AskCell {
 interface StateCell {
   readonly run: RunPort;
   readonly flags: FlagsPort;
-  readonly snapshot: () => { readonly run: Run; readonly flags: { readonly enabled: boolean } };
+  readonly snapshot: () => { readonly run: Run; readonly flags: { readonly mode: Mode } };
 }
 
-function createState(): StateCell {
+function createState(initialMode: Mode): StateCell {
   let run: Run = idleRun();
-  let flags = { enabled: true };
+  let flags = { mode: initialMode };
   return {
     run: {
       get: () => run,
@@ -121,6 +105,10 @@ function createState(): StateCell {
   };
 }
 
+function initialModeOf(settings: Settings): Mode {
+  return settings.route.shadow || settings.judge.shadow ? 'shadow' : 'live';
+}
+
 function wiringFor(cwd: string, settingsDir: string) {
   const initial = readSettings(settingsDir);
   let current: Settings = initial;
@@ -128,12 +116,14 @@ function wiringFor(cwd: string, settingsDir: string) {
     current = readSettings(settingsDir);
     return current;
   };
-  const logDirOf = (settings: Settings): string =>
-    isAbsolute(settings.log.dir) ? settings.log.dir : join(cwd, settings.log.dir);
-  const state = createState();
+  const state = createState(initialModeOf(initial));
   const cell = createLazyAsk(settingsDir);
-  const log = (record: LogRecord): void => {
-    append(record, logDirOf(current));
+  const recent = createRecent(
+    initial.record.recent,
+    join(cwd, '.pi/extensions/intent-router/logs/recent.json'),
+  );
+  const log = (record: IntentRecord): void => {
+    recent.add(record);
   };
   const routeDeps = {
     get settings(): Settings {
@@ -157,10 +147,10 @@ function wiringFor(cwd: string, settingsDir: string) {
     initial,
     current: () => current,
     refresh,
-    logDirOf,
     state,
     cell,
     log,
+    recent,
     routeDeps,
     judgeDeps,
   };
@@ -186,7 +176,7 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
   const cwd = options?.cwd ?? process.cwd();
   const settingsDir = join(cwd, '.pi/extensions/intent-router');
   const wired = wiringFor(cwd, settingsDir);
-  const { initial, refresh, logDirOf, state, cell, log, routeDeps, judgeDeps } = wired;
+  const { initial, refresh, state, cell, routeDeps, judgeDeps, recent } = wired;
 
   registerRoute(
     {
@@ -222,10 +212,6 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
     },
     judgeDeps,
   );
-  pi.on('session_start', () => {
-    const settings = refresh();
-    prune(logDirOf(settings), settings.log.keepDays, new Date());
-  });
   registerCommand(
     {
       registerCommand: (name, opts) => {
@@ -238,7 +224,12 @@ export function register(pi: ExtensionAPI, options?: { readonly cwd?: string }):
         });
       },
     },
-    { flags: state.flags, run: state.run, log },
+    {
+      flags: state.flags,
+      run: state.run,
+      recent,
+      settingsFile: join(settingsDir, 'settings.json'),
+    },
   );
 
   return { settings: initial, ...state.snapshot() };

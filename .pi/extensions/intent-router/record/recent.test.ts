@@ -1,114 +1,83 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { append, logPath, prune, type LogRecord } from './recent.ts';
-import { defaultSettings } from '../settings/schema.ts';
+import { createRecent, type IntentRecord } from './recent.ts';
 
-function routeRecord(): LogRecord {
+function routeRecord(ownerNow: string): IntentRecord {
   return {
-    at: '2026-10-09T12:00:00',
+    at: '2026-10-20T12:00:00.000Z',
     hook: 'route',
-    owner_prompt: 'hello',
-    label: 'question',
+    owner_now: ownerNow,
+    agent_prev: '',
+    choice: 'reply',
     confidence: 0.9,
-    probabilities: { question: 0.9 },
-    thresholds: defaultSettings().thresholds,
-    decision: 'act',
-    shadow: true,
-    guide: 'would',
-    text: 'guide text',
-    truncated: false,
-    outcome: {
-      kind: 'answered',
-      provider: 'opencode',
-      model: 'jev-1.13-free',
-      stopReason: 'stop',
-      usage: { input: 1, output: 0, cost: 0 },
-      latencyMs: 5,
-    },
+    threshold: 0.8,
+    guide: 'guide text',
+    verdicts: null,
+    streak: null,
+    nudge: null,
+    fired: true,
   };
 }
 
-function judgeRecord(): LogRecord {
-  return {
-    at: '2026-10-09T12:01:00',
-    hook: 'judge',
-    owner_prompt: 'hello',
-    label: 'question',
-    score: 1.8,
-    confidence: 0.8,
-    thresholds: defaultSettings().thresholds,
-    decision: 'fire',
-    shadow: true,
-    stop: 'would',
-    text: 'stop text',
-    truncated: false,
-    turn_index: 2,
-    outcome: {
-      kind: 'answered',
-      provider: 'opencode',
-      model: 'jev-1.13-free',
-      stopReason: 'stop',
-      usage: { input: 1, output: 0, cost: 0 },
-      latencyMs: 5,
-    },
-  };
-}
-
-function dayName(at: Date): string {
-  return `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(
-    at.getDate(),
-  ).padStart(2, '0')}.jsonl`;
-}
-
-describe('append', () => {
-  it('route と judge の2件 → 1行1件の JSONL', () => {
+describe('createRecent', () => {
+  it('createRecent(3, recent.json) → そのパスの 1 ファイルに直近 3 件だけが入る', () => {
     const dir = tmpDir();
-    append(routeRecord(), dir);
-    append(judgeRecord(), dir);
-    const text = readFileSync(join(dir, '2026-10-09.jsonl'), 'utf8');
-    const lines = text.split('\n').filter((line) => line !== '');
-    expect(lines).toHaveLength(2);
-    const first: unknown = JSON.parse(lines[0] ?? '');
-    const second: unknown = JSON.parse(lines[1] ?? '');
-    expect(first).toMatchObject({ hook: 'route' });
-    expect(second).toMatchObject({ hook: 'judge' });
+    const file = join(dir, 'recent.json');
+    const recent = createRecent(3, file);
+    for (let index = 0; index < 5; index += 1) {
+      recent.add(routeRecord(`hello${index}`));
+    }
+    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    expect(Array.isArray(parsed)).toBe(true);
+    if (!Array.isArray(parsed)) {
+      return;
+    }
+    expect(parsed).toHaveLength(3);
+    expect(JSON.stringify(parsed)).toContain('hello4');
+    expect(JSON.stringify(parsed)).not.toContain('hello0');
+    expect(recent.tail(10)).toHaveLength(3);
   });
 
-  it('ディレクトリが無い所へ append → 作って書く', () => {
-    const dir = join(tmpDir(), 'nest', 'logs');
-    append(routeRecord(), dir);
-    expect(readFileSync(join(dir, '2026-10-09.jsonl'), 'utf8')).toContain('"route"');
-  });
-});
-
-describe('logPath', () => {
-  it('日付の境でファイルが替わる', () => {
+  it('記録が上限を超える → 古い物から落ちる', () => {
     const dir = tmpDir();
-    expect(logPath(dir, new Date('2026-10-09T23:59:59'))).toBe(join(dir, '2026-10-09.jsonl'));
-    expect(logPath(dir, new Date('2026-10-10T00:00:01'))).toBe(join(dir, '2026-10-10.jsonl'));
-  });
-});
-
-describe('prune', () => {
-  it('14日前は残り、15日前は消える', () => {
-    const dir = tmpDir();
-    const at = new Date(2026, 9, 20, 12, 0, 0);
-    const keep = new Date(2026, 9, 6, 12, 0, 0);
-    const drop = new Date(2026, 9, 5, 12, 0, 0);
-    writeFileSync(join(dir, dayName(keep)), '{}\n');
-    writeFileSync(join(dir, dayName(drop)), '{}\n');
-    writeFileSync(join(dir, dayName(at)), '{}\n');
-    const removed = prune(dir, 14, at);
-    expect(removed).toBe(1);
-    expect(readFileSync(join(dir, dayName(keep)), 'utf8')).toBe('{}\n');
+    const file = join(dir, 'recent.json');
+    const recent = createRecent(2, file);
+    recent.add(routeRecord('first'));
+    recent.add(routeRecord('second'));
+    recent.add(routeRecord('third'));
+    expect(recent.tail(10).map((record) => record.owner_now)).toEqual(['second', 'third']);
   });
 
-  it('memo.txt は消えず、戻りは 0', () => {
+  it('limit が 1 → 直近 1 件だけ残る', () => {
     const dir = tmpDir();
-    writeFileSync(join(dir, 'memo.txt'), 'hello\n');
-    expect(prune(dir, 14, new Date(2026, 9, 20, 12, 0, 0))).toBe(0);
-    expect(readFileSync(join(dir, 'memo.txt'), 'utf8')).toBe('hello\n');
+    const file = join(dir, 'recent.json');
+    const recent = createRecent(1, file);
+    recent.add(routeRecord('first'));
+    recent.add(routeRecord('second'));
+    expect(recent.tail(10)).toHaveLength(1);
+    expect(recent.tail(10)[0]?.owner_now).toBe('second');
+  });
+
+  it('tail(count) → 直近 count 件', () => {
+    const dir = tmpDir();
+    const file = join(dir, 'recent.json');
+    const recent = createRecent(10, file);
+    for (let index = 0; index < 5; index += 1) {
+      recent.add(routeRecord(`hello${index}`));
+    }
+    expect(recent.tail(3)).toHaveLength(3);
+    expect(recent.tail(3).map((record) => record.owner_now)).toEqual([
+      'hello2',
+      'hello3',
+      'hello4',
+    ]);
+  });
+
+  it('空の recent → tail は空', () => {
+    const dir = tmpDir();
+    const recent = createRecent(3, join(dir, 'recent.json'));
+    expect(recent.tail(3)).toEqual([]);
   });
 });
