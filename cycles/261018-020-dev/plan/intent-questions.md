@@ -486,8 +486,35 @@ export function createRecent(
     fixed: 文面を差し替えた settings で出る文が変わる検査を足した。
 - Doubts: Notes で把握済みとして logs の扱いと Record から IntentRecord への改名と旧 shape の除去と includeTools の残置は指摘にしなかった。
 
+### Round 2
+
+- Stale:
+  - README の文言は either answer is no に直り judge の OR 条件と一致する。
+  - ask のコメントは state/payload.ts を指し state.ts への残存参照は無い。
+- Unlisted: fixed 行の範囲では新たな該当は無い。
+- Gaps:
+  - 初期 mode の検査 3 件があり両方 false なら live、片方 shadow なら shadow、ファイル無しなら shadow を確かめる。
+  - too soon の検査があり lastJudgedAt より前なら wait、同時刻なら due になる。minIntervalMs は現行に無く逆行 guard の説明はコードと合う。
+- Unproven:
+  - guideText は文面差し替えで変わる検査があり固定文でも緑になる状態は解消した。
+  - nudgeText も同様に文面差し替えの検査があり固定文でも緑になる状態は解消した。
+- Doubts: なし。
+
 ## Acceptance
 
 - Ran:
+  - `pnpm vitest run .pi/extensions/intent-router` → 12 ファイル / 141 件が緑
+  - `pnpm test:run` → 41 ファイル / 639 件が緑
+  - `pnpm typecheck` → ルートと `.pi` とも緑
+  - `pnpm lint` → 緑
+  - `ls .pi/extensions/intent-router/logs` → 作業場にはまだ無い（実行時に `recent.json` ができる）。`git ls-files` で日付の jsonl は 0 件
+  - `grep -n "意図通りに動ける" DEFINITION.md` → 28 行目に 1 件
+  - 壊して赤を確かめた 3 件:
+    - `judge/decide.ts` の `||` を `&&` に → 11 件が赤（`useful=yes` かつ `new=no` のケースを含む）
+    - `route/decide.ts` の `>=` を `>` に → `reply 0.8 → act` が赤
+    - `guideText` を固定文字列に → guide の 3 件が赤
+    - いずれも戻して緑に復帰
 - Findings:
+  - `{prompt}` が差し込まれない。`settings.json:21` と `settings/schema.ts:224` の guide の文に `{prompt}` が残っているが、`route/decide.ts:40` の `guideText` は文面をそのまま返し、`route/hook.ts:119` も差し込まない。live では `{prompt}` という文字がそのまま会話に入る
 - Doubts:
+  - なし
