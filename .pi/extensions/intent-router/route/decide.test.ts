@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Answer } from '../ask/ask.ts';
-import { defaultSettings } from '../settings/schema.ts';
+import { defaultSettings, type Settings } from '../settings/schema.ts';
 import { decideRoute, guideText } from './decide.ts';
 
 function choiceAnswer(choice: string, confidence: number): Answer {
@@ -59,5 +59,18 @@ describe('guideText', () => {
   it('approve の guide を返す', () => {
     const settings = defaultSettings();
     expect(guideText(settings, 'approve')).toBe(settings.route.guides.approve);
+  });
+
+  it('文面を差し替えると出る文が変わる（固定文字列では緑にならない）', () => {
+    const base = defaultSettings();
+    const settings: Settings = {
+      ...base,
+      route: {
+        ...base.route,
+        guides: { reply: '独自の返信文', approve: '独自の承認文' },
+      },
+    };
+    expect(guideText(settings, 'reply')).toBe('独自の返信文');
+    expect(guideText(settings, 'approve')).toBe('独自の承認文');
   });
 });

@@ -111,6 +111,12 @@ describe('due', () => {
     run = nudge(run);
     expect(due(run, defaultSettings(), 10)).toMatchObject({ kind: 'wait' });
   });
+
+  it('now が lastJudgedAt より前 → wait（too soon）、同じ時刻なら due', () => {
+    const run = countJudgement(armedWithTurns(1), 10);
+    expect(due(run, defaultSettings(), 9)).toMatchObject({ kind: 'wait', reason: 'too soon' });
+    expect(due(run, defaultSettings(), 10)).toMatchObject({ kind: 'due' });
+  });
 });
 
 describe('nudgeText', () => {
@@ -118,5 +124,21 @@ describe('nudgeText', () => {
     const settings = defaultSettings();
     expect(nudgeText(settings, 'reply')).toBe(settings.judge.stop.nudges.reply);
     expect(nudgeText(settings, 'approve')).toBe(settings.judge.stop.nudges.approve);
+  });
+
+  it('文面を差し替えると出る文が変わる（固定文字列では緑にならない）', () => {
+    const base = defaultSettings();
+    const settings: Settings = {
+      ...base,
+      judge: {
+        ...base.judge,
+        stop: {
+          ...base.judge.stop,
+          nudges: { reply: '独自の返信促し', approve: '独自の承認促し' },
+        },
+      },
+    };
+    expect(nudgeText(settings, 'reply')).toBe('独自の返信促し');
+    expect(nudgeText(settings, 'approve')).toBe('独自の承認促し');
   });
 });

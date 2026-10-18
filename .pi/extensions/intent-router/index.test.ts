@@ -252,6 +252,27 @@ describe('register', () => {
     expect(wiring.settings).toEqual(defaultSettings());
   });
 
+  it('route.shadow と judge.shadow が両方 false → 初期 mode は live', () => {
+    const cwd = tmpDir();
+    writeSettings(cwd, JSON.stringify({ route: { shadow: false }, judge: { shadow: false } }));
+    const fake = fakePi();
+    expect(register(fake.api, { cwd }).flags.mode).toBe('live');
+  });
+
+  it('片方でも shadow なら初期 mode は shadow', () => {
+    const first = tmpDir();
+    writeSettings(first, JSON.stringify({ route: { shadow: true }, judge: { shadow: false } }));
+    expect(register(fakePi().api, { cwd: first }).flags.mode).toBe('shadow');
+    const second = tmpDir();
+    writeSettings(second, JSON.stringify({ route: { shadow: false }, judge: { shadow: true } }));
+    expect(register(fakePi().api, { cwd: second }).flags.mode).toBe('shadow');
+  });
+
+  it('settings.json が無い → 初期 mode は shadow（既定）', () => {
+    const fake = fakePi();
+    expect(register(fake.api, { cwd: tmpDir() }).flags.mode).toBe('shadow');
+  });
+
   it('judge は route が選んだ候補を使い回す（only）', async () => {
     const cwd = tmpDir();
     writeSettings(cwd, JSON.stringify({ judge: { minTurns: 1 } }));

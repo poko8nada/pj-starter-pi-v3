@@ -237,7 +237,7 @@ async function attemptModel(
   if (key === undefined) {
     return { kind: 'miss', reason: 'one question expected' };
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 自前の JsonObject を SDK の state に渡す（値は state.ts が JSON 値だけで組む）
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 自前の JsonObject を SDK の state に渡す（値は state/payload.ts が JSON 値だけで組む）
   const state = request.state as unknown as Parameters<Registry['classify']>[1]['state'];
   const result = await registry.classify(
     model,

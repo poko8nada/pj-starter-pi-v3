@@ -469,10 +469,22 @@ export function createRecent(
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - README.md:8 の「both answers are no」と judge/decide.ts:39 の || が食い違う。実装では片方の no で streak が進む。
+    fixed: コードが正しいので README を「either answer is no」に直した。
+  - ask/ask.ts:240 のコメントが消えた state.ts を指したまま残っている。
+    fixed: コメントの指し先を state/payload.ts に直した（他に state.ts 残存なし）。
+- Unlisted: なし
 - Gaps:
+  - index.ts:109 の初期 mode の決め方を確かめる検査が無い。
+    fixed: index.test.ts に 3 件足した（両方 false → live、片方 shadow → shadow、ファイル無し → shadow）。
+  - judge/decide.ts:64 の too soon の分岐を通る検査が無い。
+    fixed: `now` が `lastJudgedAt` より前で `wait`（too soon）、同時刻で `due` になる検査を足した（`minIntervalMs` は budget 除去時に消えており、現行分岐は時刻の逆行 guard）。
 - Unproven:
-- Doubts:
+  - route/decide.test.ts:54 の guideText の検査は既定値照合だけで固定文字列でも緑になる。
+    fixed: 文面を差し替えた settings で出る文が変わる検査を足した。
+  - judge/decide.test.ts:117 の nudgeText の検査も同じ理由で固定文字列でも緑になる。
+    fixed: 文面を差し替えた settings で出る文が変わる検査を足した。
+- Doubts: Notes で把握済みとして logs の扱いと Record から IntentRecord への改名と旧 shape の除去と includeTools の残置は指摘にしなかった。
 
 ## Acceptance
 

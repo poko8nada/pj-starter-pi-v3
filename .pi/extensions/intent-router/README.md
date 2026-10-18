@@ -5,7 +5,7 @@ Keeps the agent moving the way the owner meant. Before the agent starts, it clas
 ## How it moves
 
 - Head (`before_agent_start`): one question (`expect`). `reply` at 0.8 or `approve` at 0.9 acts and injects the guide once; `other` stays idle. Prompts starting with `/` are never classified. When the ask fails, nothing is injected (fail-open) and the failure is logged.
-- Middle (`turn_end`): two questions (`useful`, `new`) in a single request. When both answers are `no` for `consecutive` round trips in a row, it injects the nudge once (up to `maxNudges` per prompt).
+- Middle (`turn_end`): two questions (`useful`, `new`) in a single request. When either answer is `no` for `consecutive` round trips in a row, it injects the nudge once (up to `maxNudges` per prompt).
 - Both hooks re-read `settings.json` on every ask, so `/intent set` applies to the next ask without a reload.
 
 ## Commands
