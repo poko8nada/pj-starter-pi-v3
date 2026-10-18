@@ -9,7 +9,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
-- **Cycle mechanism** — six skills in `.pi/skills/` (`brief` / `adr` / `design` / `plan` / `work` / `close`)
+- **Cycle mechanism** — seven skills in `.pi/skills/` (`propose` / `brief` / `adr` / `design` / `plan` / `work` / `close`)
 - **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), `intent-router` (classifies the owner's message into reply/approve/other and asks whether the findings are related and answerable; every ask is appended to one JSONL file per day) (`.pi/extensions/`)
   - `consult_run` — runs one subagent `pi` with a role and a place, without showing it this conversation
   - `consult_subagents` — lists the subagents of this session and stops one; it reads a record, so the list still shows this session's subagents across a reload
@@ -56,6 +56,7 @@ The agent harness travels with `scripts/harness.mjs`:
 One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
 
 ```
+propose      read the state and lay the next candidates out (the three questions, the code, the research)
 brief        settle the owner's intent and lay the options out (the research, the trial, the talk)
 adr          decide what needs deciding (the options, the research, the trial, the decision)
 design       cut the cycle into plans, and say where each runs
