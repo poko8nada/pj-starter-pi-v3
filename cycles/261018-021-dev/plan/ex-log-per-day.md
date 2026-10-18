@@ -204,9 +204,10 @@ readonly log: {
 
 ### Slice 2: 設定と配線を日ごとのファイルに合わせる
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `parseIntent('last')` の既定値を `settings.log.keepDays` に付け替えた（`last` 自体の削除は slice 3。`record` が消えて型が通らなくなるため）
+- Commit: f461945
 
 ### Slice 3: `/intent last` を消す
 
