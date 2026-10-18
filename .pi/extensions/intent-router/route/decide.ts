@@ -37,6 +37,8 @@ export function decideRoute(answer: Answer, settings: Settings): RouteDecision {
   return { kind: 'idle', choice, confidence: answer.confidence };
 }
 
-export function guideText(settings: Settings, choice: 'reply' | 'approve'): string {
-  return settings.route.guides[choice];
+/** `{prompt}` を抜粋で埋める。抜粋は改行を 1 つの空白に潰して 40 字まで */
+export function guideText(settings: Settings, choice: 'reply' | 'approve', prompt: string): string {
+  const excerpt = prompt.replace(/\s*\r?\n\s*/g, ' ').slice(0, 40);
+  return settings.route.guides[choice].split('{prompt}').join(excerpt);
 }

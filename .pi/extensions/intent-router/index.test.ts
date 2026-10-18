@@ -340,6 +340,8 @@ describe('register', () => {
     await fake.handlers.get('before_agent_start')?.({ prompt: 'hello' }, ctx);
     expect(readRecords(cwd)).toHaveLength(2);
     expect(readRecords(cwd)[1]).toMatchObject({ hook: 'route', choice: 'approve' });
-    expect(readRecords(cwd)[1]?.guide).toBe(defaultSettings().route.guides.approve);
+    expect(readRecords(cwd)[1]?.guide).toBe(
+      defaultSettings().route.guides.approve.split('{prompt}').join('hello'),
+    );
   });
 });

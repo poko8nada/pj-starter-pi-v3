@@ -136,7 +136,9 @@ describe('registerRoute', () => {
     const settings = defaultSettings();
     const { handler, run, file } = wired(settings, answeredOutcome('reply', 0.87), 'live');
     const result = await handler({ prompt: 'this design, what do you think?' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(settings.route.guides.reply);
+    expect(result?.message.content).toBe(
+      settings.route.guides.reply.split('{prompt}').join('this design, what do you think?'),
+    );
     expect(run.get().kind).toBe('armed');
     const records = readRecords(file);
     expect(records).toHaveLength(1);
@@ -147,7 +149,9 @@ describe('registerRoute', () => {
     const settings = defaultSettings();
     const { handler } = wired(settings, answeredOutcome('approve', 0.92), 'live');
     const result = await handler({ prompt: 'looks good, proceed' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(settings.route.guides.approve);
+    expect(result?.message.content).toBe(
+      settings.route.guides.approve.split('{prompt}').join('looks good, proceed'),
+    );
   });
 
   it('approve 0.85 → idle（0.9 に届かない）', async () => {
@@ -228,14 +232,16 @@ describe('registerRoute', () => {
     const records = readRecords(file);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ hook: 'route', choice: 'reply', fired: false });
-    expect(records[0]?.guide).toBe(settings.route.guides.reply);
+    expect(records[0]?.guide).toBe(settings.route.guides.reply.split('{prompt}').join('hello'));
   });
 
   it('live → guide が1回だけ差し込まれる', async () => {
     const settings = defaultSettings();
     const { handler } = wired(settings, answeredOutcome('reply', 0.9), 'live');
     const result = await handler({ prompt: 'hello' }, { cwd: '/repo' });
-    expect(result?.message.content).toBe(settings.route.guides.reply);
+    expect(result?.message.content).toBe(
+      settings.route.guides.reply.split('{prompt}').join('hello'),
+    );
   });
 
   it('shadow でも ask は呼ばれる（記録のため）', async () => {

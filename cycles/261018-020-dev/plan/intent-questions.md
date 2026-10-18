@@ -516,5 +516,6 @@ export function createRecent(
     - いずれも戻して緑に復帰
 - Findings:
   - `{prompt}` が差し込まれない。`settings.json:21` と `settings/schema.ts:224` の guide の文に `{prompt}` が残っているが、`route/decide.ts:40` の `guideText` は文面をそのまま返し、`route/hook.ts:119` も差し込まない。live では `{prompt}` という文字がそのまま会話に入る
+    fixed: `guideText(settings, choice, prompt)` にして `{prompt}` を抜粋で差し替えた（改行を1空白に潰して40字まで、旧 `guideMessage` と同じ形）。`route/hook.ts` からは `event.prompt`（= `ownerNow`）を渡す。差し込み・改行潰し・40字切りの検査を足した。
 - Doubts:
   - なし

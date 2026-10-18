@@ -116,7 +116,7 @@ function settleAct(deps: RouteDeps, input: ActInput): RouteMessage | undefined {
       now: Date.now(),
     }),
   );
-  const text = guideText(deps.settings, decision.choice);
+  const text = guideText(deps.settings, decision.choice, ownerNow);
   const live = deps.flags.get().mode === 'live';
   logRoute(deps, {
     ownerNow,
