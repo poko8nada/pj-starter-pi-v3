@@ -157,6 +157,24 @@ function readTurn(): JudgeTurnEvent {
   };
 }
 
+function toolTurn(name: string, args: Record<string, unknown>, text: string): JudgeTurnEvent {
+  return {
+    turnIndex: 2,
+    message: {
+      content: [{ type: 'toolCall', id: '1', name, arguments: args }],
+    },
+    toolResults: [{ toolName: name, content: [{ type: 'text', text }], isError: false }],
+  };
+}
+
+function latestOf(request: unknown): Record<string, unknown>[] {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽 ask が受けた request の形を読む
+  const state = (request as { readonly state: Readonly<Record<string, unknown>> }).state;
+  const latest = state['latest'];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- latest の形を読む
+  return Array.isArray(latest) ? (latest as Record<string, unknown>[]) : [];
+}
+
 function wired(
   settings: Settings,
   outcomes: BatchAskOutcome[],
@@ -429,5 +447,55 @@ describe('registerJudge', () => {
     expect(result).toBeUndefined();
     expect(requests).toHaveLength(0);
     expect(readRecords(file)).toHaveLength(0);
+  });
+});
+
+describe('registerJudge/new tools', () => {
+  it('fetch_content の往復 → latest に fetch_content と url が出る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    await handler(toolTurn('fetch_content', { url: 'https://x' }, 'body'), { cwd: '/repo' });
+    expect(requests).toHaveLength(1);
+    expect(latestOf(requests[0])).toMatchObject([{ tool: 'fetch_content', target: 'https://x' }]);
+  });
+
+  it('codemode の往復 → latest に codemode が出る（的は空）', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    await handler(toolTurn('codemode', { code: '...' }, 'body'), { cwd: '/repo' });
+    expect(requests).toHaveLength(1);
+    expect(latestOf(requests[0])).toMatchObject([{ tool: 'codemode', target: '' }]);
+  });
+
+  it('quick_edit の往復 → latest に quick_edit と path が出る', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    await handler(toolTurn('quick_edit', { path: 'a.ts' }, 'body'), { cwd: '/repo' });
+    expect(requests).toHaveLength(1);
+    expect(latestOf(requests[0])).toMatchObject([{ tool: 'quick_edit', target: 'a.ts' }]);
+  });
+
+  it('action が無い往復 → latest は空のまま', async () => {
+    const settings = defaultSettings();
+    const { handler, requests, run } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    const result = await handler(
+      { turnIndex: 2, message: { content: 'done' }, toolResults: [] },
+      { cwd: '/repo' },
+    );
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
+    const current = run.get();
+    if (current.kind !== 'armed') {
+      throw new Error('must be armed');
+    }
+    expect(current.latest).toEqual([]);
+  });
+
+  it('一覧から落ちた edit の往復 → latest に入らない', async () => {
+    const settings = defaultSettings();
+    const { handler, requests } = wired(settings, [yesYes()], 'live', armedWithTurns(1));
+    const result = await handler(toolTurn('edit', { path: 'x.ts' }, 'body'), { cwd: '/repo' });
+    expect(result).toBeUndefined();
+    expect(requests).toHaveLength(0);
   });
 });
