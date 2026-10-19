@@ -108,21 +108,21 @@
 
 ### Slice 1: 調査のステージを足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `## What is not here` の行を「files the plan changes」に直した。path を design が持つようになり、plan が決める file と同じ物に読めたため。
+- Commit: f70c123
 
 ### Slice 2: `## Refactor` の文を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d77f47d
 
 ### Slice 3: 統合: design が調べて切る手順になっていること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
