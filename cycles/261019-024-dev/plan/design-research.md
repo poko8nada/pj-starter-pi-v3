@@ -128,14 +128,16 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — `README.md:62` と `DEFINITION.md:38` の旧文言は `cycles/261019-024-dev/plan/common-docs.md:21-29` で `common-docs` が直す前提のため本 change が古くしたものではなく、`.pi/skills/plan/SKILL.md:61` と `.pi/skills/close/scripts/collect.mjs:20,226` の `## Refactor` 残存は本 plan の `_no case_`（plan-rules／close-words）が直す前提のため指摘にしなかった。`.pi/skills/design/` 外に古くした doc／comment／test はない。
+- Unlisted: なし — `123a15e..HEAD` の製品差分は `.pi/skills/design/SKILL.md` と `.pi/skills/design/references/format.md` と `.pi/skills/design/references/tasks.md` の 3 件で Files と一致し、`cycles/261019-024-dev/plan/design-research.md:108-125` の記録 1 件は対象外とした。
+- Gaps: なし — slice 1 の Steps（`cycles/261019-024-dev/plan/design-research.md:25-41`）の各行に対応する case が slice 1 の Verify（`cycles/261019-024-dev/plan/design-research.md:45-61`）にあり、slice 2 も Steps（`cycles/261019-024-dev/plan/design-research.md:71-76`）の 2 行に対応する case が Verify（`cycles/261019-024-dev/plan/design-research.md:79-83`）にある。slice 3 は `look` のため対象外とした。
+- Unproven: なし — slice 1・2 の各 `read` は named した振る舞いを外すと赤になることを確かめた（例：`.pi/skills/design/SKILL.md:27` の並行 `research` を外す、`.pi/skills/design/references/tasks.md:15-16` の既存・重複を外す、`.pi/skills/design/references/format.md:60` の path／file の書き分けを戻す、`## Refactor` を戻すと各 error／happy が赤になる）。
 - Doubts:
+  - `README.md:62` と `DEFINITION.md:38` の旧文言残存は `common-docs` が直す前提（`cycles/261019-024-dev/plan/common-docs.md:21-29`）のため指摘にしなかった。
+  - `cycles/261019-024-dev/plan/design-research.md:112` の Unplanned 1 行（What is not here）は Verify に対応する case がないが Notes に記録のため Gaps にしなかった。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（15 ケース、1 回）、slice 2 の `read`（3 ケース、1 回）、slice 3 の `look`（オーナー）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、手順 2 の「per `accepted` entry, at once」を落とすと、`## Cut` の 3 番目を元の文に戻すと、どちらも赤になって戻した。
+- Findings: なし。review の Round 1 は 4 つの観点とも なし で、そこでレビューは終わった。
+- Doubts: `## Possibly related files` に何を残すか（cut に要らない path を落とすか）は、このサイクルでは手で選んだ。research の返した物をそのまま書くのかどうかは、次のサイクルで分かる。
