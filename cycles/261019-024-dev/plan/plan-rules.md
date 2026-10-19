@@ -67,15 +67,15 @@
 
 ### Slice 1: 規則と書き戻しを消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 手順 8 の「組が見つかった時」に、新しい行き先を 1 文だけ書いた。書き戻しの 3 手順を消すと、そこで何をするかが宙に浮くため。番号の付け替えは要らなかった（手順 8 は残る）。
+- Commit: 39dcb44
 
 ### Slice 2: 統合: plan が自分の plan だけを見る手順になっていること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
