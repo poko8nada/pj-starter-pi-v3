@@ -9,6 +9,12 @@ Section and field names are English; the content is Japanese.
 ```md
 # DESIGN <NNN>
 
+## Possibly related files
+
+### <NN>: <entry の問い>
+
+- `<path>`
+
 ## `<plan id>`
 
 ### ADR & Where
@@ -30,6 +36,13 @@ Section and field names are English; the content is Japanese.
     - Version: <値>
 ```
 
+## Possibly related files
+
+- The top of the file. One `### <NN>: <entry の問い>` per `accepted` entry, in the entries' order.
+- Under it, the paths the entry touches across Units, as the research reported them: what the change reads, what reads it, what checks it, the generated files, the documents.
+- A path is a fact, not a decision: only what exists now is written here.
+- Do not drop a repeat. The same path under two entries is what the cut reads.
+
 ## One plan is one worktree
 
 - A plan is one worktree, one branch and one merge. The plan md, the steps and the checks are written from it.
@@ -45,7 +58,7 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 - Split only when the inputs differ and the halves can run at once. Ask of a split:
   1. does a half leave the branch failing lint, typecheck or test? then keep it together
   2. is a half not usable on its own? then keep it together
-  3. do the two touch the same Unit? then order them, or keep it together. The files are not known here; the plan stage finds them
+  3. do the two touch the same path? then keep them together — the paths are in `## Possibly related files` — or order them. Whether a file exists, and its shape, is the plan's
   4. does a piece depend on more than one plan? then it is its own plan, after all of them
 - A description never merges before the behaviour it describes.
 
