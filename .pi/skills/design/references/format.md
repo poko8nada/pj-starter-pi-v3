@@ -48,7 +48,6 @@ Section and field names are English; the content is Japanese.
 - A plan is one worktree, one branch and one merge. The plan md, the steps and the checks are written from it.
 - The plan id is the name of the change, so a plan can span Units.
 - A plan that depends on other plans waits for all of them.
-- A plan found while the plans are written (a shared piece two plans would make under two names) sits at the top of this file as `## Refactor`, and the plans that use it name it in their `Boundary.Plans`.
 
 ## Cut
 

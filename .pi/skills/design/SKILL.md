@@ -62,8 +62,6 @@ One list of plans, each with its scope and its boundary. They read the cut, and 
 
 Design is edited to match, and git holds the diff.
 
-A plan found while the plans are written comes back here: the top of this file gains `## Refactor`, and the plans that use it name it in their `Boundary.Plans`.
-
 ## What is not here
 
 | what                                                                                | where       |
