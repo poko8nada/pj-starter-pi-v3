@@ -62,7 +62,7 @@ adr          decide what needs deciding (the options, the decision)
 design       cut the cycle into plans, and say where each runs
 plan         write one plan per worktree (the files, the types, the steps, the checks)
 work         carry a plan to done (the slices, the review, the acceptance, the merge)
-close        judge the cycle (the integration test, where each leftover goes)
+close        judge the cycle (where each leftover goes)
 ```
 
 The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
