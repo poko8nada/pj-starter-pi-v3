@@ -24,8 +24,6 @@ Read that file before writing. It holds sections, slice, `Types`, type rules, ch
 
 Walk what the change touches: what imports it, calls it, renders it, documents it, checks it. Write the tree: what changes, with a marker, and what follows, without one.
 
-A file whose structure does not follow the project's rules, and that the plan touches anyway, is fixed in this plan — the step says why.
-
 ### 3. Cut the work into slices
 
 One slice is one closing: work that ends when its check passes. A subagent may carry several in one run. Inside a slice, one step is one file: what to do in it.
@@ -56,11 +54,7 @@ A `test` check is written on top of the test file it names: read that file first
 
 When every plan of the cycle is written, read them together — the `Types` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
 
-A pair found is a change to cut. The owner decides. Then write:
-
-- the design: `## Refactor` at the top, and the plans that use it name it in their `Boundary.Plans`
-- the plans that used to make it: their `Files` drop it, and the step that made it becomes a step that uses it
-- the refactor plan's own md: its `Files`, `Slices` and checks
+A pair found is a change to cut. The owner decides, and the plans are written again: one makes the shared piece, and the others use it, naming it in their `Boundary.Plans`.
 
 ### 9. Review of each plan
 
