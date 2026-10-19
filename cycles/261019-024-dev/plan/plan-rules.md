@@ -81,14 +81,16 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — `.pi/skills/plan/SKILL.md:23-25` と `.pi/skills/plan/references/format.md:76-80` に `project's rules` 無し、`.pi/skills/design/SKILL.md:18-51` に書き戻し・`Refactor` 無し、`README.md:63` の plan 行に規則の話無し。`.pi/skills/close/scripts/collect.mjs:20,226` の `Refactor` 残存は `cycles/261019-024-dev/plan/close-words.md:46-64` が直す前提のため指摘にしなかった。
+- Unlisted: なし — `cycles/261019-024-dev/plan/plan-rules.md:5-12` の Files 2 件と `.pi/skills/plan/SKILL.md` ・ `.pi/skills/plan/references/format.md` の現行内容が対応し、`.pi/skills/plan/references/tasks.md:1-8` に `Refactor` ・ `project's rules` 無く変更の痕跡が無い。
+- Gaps: なし — slice 1 の Steps（`cycles/261019-024-dev/plan/plan-rules.md:24-31`）各行に対応する case が Verify（`cycles/261019-024-dev/plan/plan-rules.md:35-43`）にあり、slice 2 も Steps（`cycles/261019-024-dev/plan/plan-rules.md:53-55`）に対応する case が Verify（`cycles/261019-024-dev/plan/plan-rules.md:59-64`）にある。slice 2 は `look` のため対象外とした。
+- Unproven: なし — slice 1 の各 `read` は named した振る舞いを戻すと赤になる読みであることを確かめた（例：`.pi/skills/plan/SKILL.md:23-25` に規則文を戻すと happy が赤、`.pi/skills/plan/SKILL.md:54-57` に書き戻しを戻すと happy が赤、`.pi/skills/plan/references/format.md:76-80` に規則文を戻すと happy が赤、`Refactor` を戻すと error が赤）。
 - Doubts:
+  - `cycles/261019-024-dev/plan/plan-rules.md:71` の Unplanned 1 文（`.pi/skills/plan/SKILL.md:57` の `Boundary.Plans` に命名の行）に対応する Verify の case が無いが Notes に記録のため Gaps にしなかった。
+  - `git diff a340e03..HEAD -- .pi/skills/plan cycles/261019-024-dev/plan/plan-rules.md` は subagent-guard で bash が不許可のため実行できず、boundary-values ・ Unlisted は現行ファイルの読み（`.pi/skills/plan/SKILL.md:1-69` ・ `.pi/skills/plan/references/format.md:1-80` ・ `.pi/skills/plan/references/tasks.md:1-8`）で代替した。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（6 ケース、1 回）、slice 2 の `look`（オーナー）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、規則の 1 文と手順 8 の書き戻しを戻すと、どちらも赤になって戻した。
+- Findings: なし。review の Round 1 は 4 つの観点とも なし で、そこでレビューは終わった。
+- Doubts: review のサブエージェントは bash を許されておらず、`git diff <base hash>..HEAD` を自分で走らせられない。手順 5 の「plan md と diff を渡す」は、diff の中身をタスクに載せることを指すと読むべきである。
