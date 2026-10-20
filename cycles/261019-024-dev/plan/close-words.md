@@ -35,11 +35,11 @@
 
 - read: `review` サブエージェントが `.pi/skills/close/SKILL.md` と `.pi/skills/close/references/format.md` を読み、次の各ケースを報告する
   - (happy) `SKILL.md` の Close の手順を読む → `criteria` の語が無い
-  - (happy) `SKILL.md` を読む → 矛盾、穴、壊れている、古いままの 4 つが並んでいる
+  - (happy) `SKILL.md` を読む → a contradiction、a hole、something broken、something left stale の 4 つが並んでいる
   - (happy) `SKILL.md` を読む → 4 つに当てはまる leftover は `ex-` を検討すると書かれている
   - (happy) `SKILL.md` を読む → `DEFINITION.md` の 1 行を動かす leftover は `proposed` に行くと残っている
   - (happy) `SKILL.md` を読む → `dropped` の条件が残っている
-  - (happy) `references/format.md` を読む → `criteria` の語が無く、同じ 4 つが書かれている
+  - (happy) `references/format.md` を読む → `criteria` の語が無く、同じ 4 つ（a contradiction、a hole、something broken、something left stale）が書かれている
   - (error) 2 つを読む → 4 つのどれにも当てはまらない leftover を `ex-` にすると書いていない
   - _no case_: 文面の読みやすさ — 読む者の判断であり、機械では決まらない
 

@@ -38,7 +38,7 @@
 ## Triage
 
 - One line per leftover: its number, where it goes, the part of the definition it belongs to, and why. The part is the `ADR` entry and the line of `DEFINITION.md` the leftover lands on.
-- `ex-plan <plan id>` — it breaks the criteria. The plan is named `ex-<what it fixes>`, and it has no design. It fixes code only: a leftover that moves a line of `DEFINITION.md` goes to `proposed`.
+- `ex-plan <plan id>` — it is one of four: a contradiction, a hole, something broken, something left stale. The plan is named `ex-<what it fixes>`, and it has no design. It fixes code only: a leftover that moves a line of `DEFINITION.md` goes to `proposed`.
 - `proposed` — it breaks nothing, but leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
 - `dropped` — rare, and the fix weighs more.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.

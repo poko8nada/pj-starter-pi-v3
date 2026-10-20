@@ -26,7 +26,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
 - the ADR: the `accepted` entries, and what each `Definition Change` decides
 - the design: the cut, and the `Boundary.Plans`
 - each plan md: its `## Acceptance`, its `## Review` and its `## Notes`
-- do not read the criteria from memory: the files hold them
+- do not read the cut from memory: the files hold it, and the plan mds hold what they left
 - a change an entry decided that no plan's `Files` or `Scope` carries is a hole: find it here, and add it in step 3
 
 ### 3. Collect
@@ -39,8 +39,9 @@ This skill collects them, triages them with the owner, and closes the cycle.
 
 ### 4. Triage, with the owner
 
+- a leftover that is a contradiction, a hole, something broken, or something left stale is looked at as `ex-`
 - one destination per leftover, and the owner confirms. The shape is in `references/format.md`
-  - `ex-plan`: it breaks the criteria, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged: its line carries `done <commit>`
+  - `ex-plan`: it is one of those four, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged: its line carries `done <commit>`
   - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes
   - `dropped`: rare, and the fix weighs more
 - a leftover that moves a line of `DEFINITION.md` is not an `ex-` plan: it goes to `proposed`
