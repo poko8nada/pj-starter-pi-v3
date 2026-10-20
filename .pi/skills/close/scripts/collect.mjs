@@ -17,7 +17,7 @@ const LABELS =
   /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Doubts):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
-/** design の plan 節。`## \`<plan id>\`` の形。backtick の無い `##`（`## Refactor` 等）は plan ではない */
+/** design の plan 節。`## \`<plan id>\`` の形。backtick の無い `##` は plan ではない */
 const PLAN_HEAD = /^## `(.+)`\s*$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
 /** `### Scope` の節。ここから下のバレットが変える物 */
@@ -223,7 +223,7 @@ const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 /**
  * design.md から plan ごとの `ADR` と `Scope` を読む。
  *
- * plan 節は backtick 付きの `##` だけ。`## Refactor` などは plan ではない。
+ * plan 節は backtick 付きの `##` だけ。backtick の無い見出しは plan ではない。
  * 節や欄が読めない plan は `未特定` になる。
  *
  * @param {string} text
