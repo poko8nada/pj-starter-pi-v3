@@ -108,14 +108,16 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — `.pi/skills/close/SKILL.md:29,42,44` と `.pi/skills/close/references/format.md:41` に `criteria` 無し、`.pi/skills/close/scripts/collect.mjs:20,226` に `Refactor` 無し。`README.md:65` の close 行は汎用文言で古びず、他に古くした doc/comment/test はない。
+- Unlisted: なし — 差分は `cycles/261019-024-dev/plan/close-words.md:5-14` の Files が名指す 3 件だけで、`.pi/skills/close/SKILL.md`・`.pi/skills/close/references/format.md`・`.pi/skills/close/scripts/collect.mjs` の現行内容と対応し、名指し外の変更はない。
+- Gaps: なし — slice 1 の Steps（`cycles/261019-024-dev/plan/close-words.md:26-32`）各行に対応する case が Verify（`cycles/261019-024-dev/plan/close-words.md:36-44`）にあり、slice 2 も Steps（`cycles/261019-024-dev/plan/close-words.md:54-56`）に対応する case が Verify（`cycles/261019-024-dev/plan/close-words.md:60-64`）にある。slice 3 は `look`（`cycles/261019-024-dev/plan/close-words.md:80-85`）のため対象外とした。
+- Unproven: なし — slice 1・2 の各 `read` は名指した振る舞いを戻すと赤になる読みであることを確かめた（例：`.pi/skills/close/SKILL.md:42` の 4 つを外すと happy が赤、`.pi/skills/close/SKILL.md:44`・`.pi/skills/close/references/format.md:41` に `criteria` を戻すと happy/error が赤、`.pi/skills/close/scripts/collect.mjs:20,226` に `Refactor` を戻すと happy が赤）。全スライス `Types: なし`（`cycles/261019-024-dev/plan/close-words.md:20,48,68`）のため自動テストなし。
 - Doubts:
+  - `.pi/skills/close/SKILL.md:29` 後段の追加句（`and the plan mds hold what they left`）は Steps の文言にないが Files が `update` と名指した内の詳述であり slice 3 の `look` が覆うため Unlisted/Gaps にしない。
+  - `.pi/skills/close/SKILL.md:44` の `those four` は直前行の 4 つを指す読みで、文面の読みやすさは `_no case_`（`cycles/261019-024-dev/plan/close-words.md:44`）のため指摘にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（7 ケース、2 回。1 回目はケースの言葉の誤りで 2 件が赤、ケースを直して再実行）、slice 2 の `read`（3 ケース、1 回）、slice 3 の `look`（オーナー）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、`SKILL.md:42` の 4 つの文を消すとケース 38 が赤、`collect.mjs:20` のコメントに `Refactor` を戻すとケースが赤になって戻した。
+- Findings: なし。review の Round 1 は 4 観点とも なし で、そこでレビューは終わった。
+- Doubts: 壊し確認の 1 回目で、4 つの文を消した時にケース 39（「4 つに当てはまる leftover は `ex-` を検討」）は緑のままだった。ケース 38 が同じ 4 語を見ているので、ケース 39 は単独では弱い。
