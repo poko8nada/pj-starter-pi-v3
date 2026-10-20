@@ -94,21 +94,21 @@
 
 ### Slice 1: テストの整理のステージを足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1994105
 
 ### Slice 2: マージの後に base の依存を揃える段を足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6324faf
 
 ### Slice 3: 統合: work が、テストの整理と依存の揃えを含む手順になっていること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: テストの整理の走らせる者に、base の plan では agent がやると添えた。base の plan には `code` サブエージェントが居ないため。
+- Commit: 78a8ea8
 
 ## Review
 
