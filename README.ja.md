@@ -25,7 +25,7 @@ English: [README.md](README.md)
 pnpm install
 ```
 
-1. `pnpm product:ready` で clone を自分の物にする（一度きり） — `cycles/` を消して状態を `product` にする。テストは消えない。`product` ではハーネスのテストが既定で回らない（状態は `scripts/harness.mode.json`）。消すのは `--run` を足したときだけ。1種だけなら `--only <label>` を足す
+1. `pnpm product:ready` で clone を自分の物にする（一度きり） — `cycles/` を消し、`test`・`test:run`・`test:related` から ` --config vitest.starter.config.ts` を外し、`vitest.starter.config.ts` を消す。テストは消えない。`product` ではハーネスのテストが既定で回らない（starter config が無くなり、product config が外す）。消すのは `--run` を足したときだけ。1種だけなら `--only <label>` を足す
 2. `.pi/extensions/consult/types.json` がリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 
@@ -41,15 +41,16 @@ pnpm install
 - **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related`
 - **push 時** — typecheck（ルートとハーネス）/ test
 - **エージェントのターンごと** — そのターンで変えた物があるときだけ。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えた物に
-- **ハーネスのテスト** — `product` では既定で回らない。回したいときは状態を `starter` に戻す（`scripts/harness.mode.json`）
+- **ハーネスのテスト** — starter config で回り（`pnpm test:run` は `vitest.starter.config.ts` を使う）、product config（`vitest.config.ts` がハーネスの道を外す）では外れる
 
 ## ハーネス
 
-エージェント用ハーネスは `scripts/harness.mjs` で運ぶ:
+エージェント用ハーネスは `scripts/harness/` で運ぶ:
 
-- `node scripts/harness.mjs pull` でスターターのハーネスを取り込み、`node scripts/harness.mjs push` で戻す。`--run` が無ければ表示だけ（`copy` / `remove`）。
-- 一覧は `scripts/harness.json`。相手の道は `scripts/harness.local.json` に `{ "starter": "~/..." }` と書く（自分の物で commit しない）。
+- `pnpm harness:pull` でスターターのハーネスを取り込み、`pnpm harness:push` で戻す。`--run` が無ければ表示だけ（`copy` / `remove` / `legacy`）。
+- 一覧は `scripts/harness/harness.json`。相手の道は `scripts/harness/starter.json` に `{ "starter": "~/..." }` と書く（commit する）。
 - `package.json` は一覧の外にあるので、pull の後に `scripts` と `devDependencies` を手で見る。
+- この形より前に作ったプロダクトは、一度だけ `--run` 付きで pull する：古い平置きの6件（`scripts/harness.mjs`、`scripts/harness-state.mjs`、`scripts/harness.json`、`scripts/harness.mode.json`、`scripts/harness.test.ts`、`scripts/harness-state.test.ts`）は `legacy` として消える。
 
 ## サイクル
 
