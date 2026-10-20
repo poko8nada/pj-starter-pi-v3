@@ -8,6 +8,27 @@ import * as path from 'node:path';
  */
 
 /**
+ * テストの除外を作る（純）。`copy` の各道から `<道>` と `<道>/**` を作る。末の `/` は落とす。空と `.` は飛ばす。
+ * @param {HarnessList} list 一覧
+ * @returns {readonly string[]} 除外の glob（一覧の順）
+ */
+export function harnessExcludes(list) {
+  /** @type {string[]} */
+  const out = [];
+  for (const entry of list.copy ?? []) {
+    if (typeof entry !== 'string' || entry === '') {
+      continue;
+    }
+    const rel = entry.replace(/\/+$/, '');
+    if (rel === '' || rel === '.') {
+      continue;
+    }
+    out.push(rel, `${rel}/**`);
+  }
+  return out;
+}
+
+/**
  * 一覧を読む。無い / JSON として読めない / `copy` が配列でない / `legacy` が配列でない → 道を入れた 1 つのエラーで投げる。
  * @param {string} root リポジトリのルート
  * @returns {HarnessList}
