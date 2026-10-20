@@ -80,24 +80,25 @@ function parseArgs(argv) {
 }
 
 /**
- * 相手側の道を読む。無い / 道が無い / 道に物が無い → 1 行で投げる。
- * `~` で始まる道は `os.homedir()` で開く。
+ * スターターの道を読む。`scripts/harness/starter.json` を読み、`~` は HOME に開き、相対は `root` から解決する。
+ * 解決した道が `root` と同じなら `self`、違えば `other` を返す。無い / JSON でない / 中身が無い / 道に物が無い → 1 行で投げる。
  * @param {string} root こちら側のルート
- * @returns {string} 相手側の絶対の道
+ * @returns {{ readonly kind: 'self' | 'other', readonly path: string }} スターターの向きと絶対の道
  */
 function readStarter(root) {
-  const file = path.join(root, 'scripts', 'harness.local.json');
+  const file = path.join(root, 'scripts', 'harness', 'starter.json');
+  const oldFile = path.join(root, 'scripts', 'harness.local.json');
   let text;
   try {
     text = fs.readFileSync(file, 'utf8');
   } catch (error) {
-    throw new Error(`no such file: ${file}`, { cause: error });
+    throw new Error(`no such file: ${file} (was ${oldFile})`, { cause: error });
   }
   let data;
   try {
     data = JSON.parse(text);
   } catch (error) {
-    throw new Error(`the list is not valid JSON: ${file}`, { cause: error });
+    throw new Error(`the starter is not valid JSON: ${file}`, { cause: error });
   }
   const raw = typeof data === 'object' && data !== null ? data.starter : undefined;
   if (typeof raw !== 'string' || raw === '') {
@@ -109,11 +110,17 @@ function readStarter(root) {
   } else if (expanded.startsWith('~')) {
     expanded = path.join(os.homedir(), expanded.slice(1));
   }
-  const starter = path.isAbsolute(expanded) ? expanded : path.resolve(expanded);
+  const rootAbs = path.isAbsolute(root) ? path.resolve(root) : path.resolve(root);
+  const starter = path.isAbsolute(expanded)
+    ? path.resolve(expanded)
+    : path.resolve(rootAbs, expanded);
   if (!fs.existsSync(starter)) {
     throw new Error(`no such directory: ${starter}`);
   }
-  return starter;
+  if (starter === rootAbs) {
+    return { kind: 'self', path: starter };
+  }
+  return { kind: 'other', path: starter };
 }
 
 /**
@@ -409,7 +416,18 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  const root = path.isAbsolute(args.root) ? args.root : path.resolve(args.root);
+  const root = path.isAbsolute(args.root) ? path.resolve(args.root) : path.resolve(args.root);
+  let starter;
+  try {
+    starter = readStarter(root);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+  if (starter.kind === 'self') {
+    console.log(`same: ${starter.path}`);
+    return 0;
+  }
   /** @type {import('./list.mjs').HarnessList} */
   let list;
   try {
@@ -418,20 +436,13 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  let starter;
-  try {
-    starter = readStarter(root);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    return 1;
-  }
-  const fromRoot = args.direction === 'pull' ? starter : root;
-  const toRoot = args.direction === 'pull' ? root : starter;
+  const fromRoot = args.direction === 'pull' ? starter.path : root;
+  const toRoot = args.direction === 'pull' ? root : starter.path;
   const fromSide = collectSide(fromRoot, list.copy, list.skip);
   const toSide = collectSide(toRoot, list.copy, list.skip);
   const base = diffSides(fromRoot, toRoot, fromSide, toSide);
   const diff = { ...base, legacy: collectLegacy(toRoot, list.legacy) };
-  for (const line of formatLines(args.direction, starter, root, diff)) {
+  for (const line of formatLines(args.direction, starter.path, root, diff)) {
     console.log(line);
   }
   if (!args.run) {
