@@ -3,7 +3,7 @@
  *
  * fake の 2 つのツリー（元と先）を `tmpDir()` で作り、
  * `node scripts/harness/index.mjs` を子プロセスで呼ぶ（`product-ready/index.test.ts` と同じ道）。
- * 向き、`--root`、表示の行、exit を見る。
+ * 向き、表示の行、exit を見る。
  */
 
 import { spawnSync } from 'node:child_process';
@@ -105,7 +105,7 @@ describe('harness diff', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stderr).toBe('');
     expect(out.stdout).toContain(`pull: ${origin} → ${local}`);
@@ -119,7 +119,7 @@ describe('harness diff', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
     writeFile(join(origin, '.pi', 'extra.ts'), 'extra\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/extra.ts');
@@ -130,7 +130,7 @@ describe('harness diff', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'old.ts'), 'old\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('remove (1):');
@@ -139,7 +139,7 @@ describe('harness diff', () => {
 
   it('両側とも空 → no files to copy と no files to remove、exit 0', () => {
     const { local } = pair();
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('no files to remove');
@@ -149,7 +149,7 @@ describe('harness diff', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'logs', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'logs', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('no files to remove');
@@ -169,7 +169,7 @@ describe('harness diff', () => {
     writeFile(join(local, '.pi', 'logs', 'a.ts'), 'A\n');
     writeFile(join(origin, '.pi', 'keep.ts'), 'same\n');
     writeFile(join(local, '.pi', 'keep.ts'), 'same\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('no files to remove');
@@ -182,7 +182,7 @@ describe('harness diff', () => {
     writeFile(join(local, '.pi', 'node_modules', 'a.ts'), 'A\n');
     writeFile(join(origin, '.pi', '.git', 'b.ts'), 'B\n');
     writeFile(join(local, '.pi', '.git', 'b.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('no files to remove');
@@ -196,7 +196,7 @@ describe('harness diff', () => {
     writeFile(join(origin, 'memo', 'a.md'), 'origin-memo\n');
     writeFile(join(local, 'memo', 'a.md'), 'local-memo\n');
     writeFile(join(local, 'src', 'x.ts'), 'x\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(out.stdout).toContain('no files to remove');
@@ -208,7 +208,7 @@ describe('harness diff', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'a\n');
     writeFile(join(origin, '.pi', 'sub', 'b.ts'), 'b\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (2):');
     expect(out.stdout).toContain('.pi/a.ts');
@@ -219,12 +219,12 @@ describe('harness diff', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
-    const out = run(['push', '--root', local]);
+    const out = run(['push'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(`push: ${local} → ${origin}`);
   });
 
-  it('--root を省く → cwd のツリーを root として読む', () => {
+  it('cwd のツリーを root として読む', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
@@ -242,7 +242,7 @@ describe('harness diff', () => {
     writeList(local);
     writeStarter(local, '~/starter');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local], undefined, { HOME: home });
+    const out = run(['pull'], local, { HOME: home });
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/a.ts');
@@ -252,7 +252,7 @@ describe('harness diff', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
     expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('A\n');
@@ -263,11 +263,11 @@ describe('harness errors', () => {
   it('scripts/harness/harness.json が無い → 1行、exit 1', () => {
     const { local } = pair();
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     // 一覧を消してから回す
     const fresh = fakeRoot();
     writeStarter(fresh, local);
-    const missing = run(['pull', '--root', fresh]);
+    const missing = run(['pull'], fresh);
     expect(missing.status).toBe(1);
     expect(missing.stdout).toBe('');
     expect(errorLines(missing)).toHaveLength(1);
@@ -277,30 +277,29 @@ describe('harness errors', () => {
   it('一覧の copy が配列でない（{"copy":"x"}）→ 1行、exit 1', () => {
     const { local } = pair();
     writeJson(join(local, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
   });
 
-  it('scripts/harness/starter.json が無い → 1行、exit 1（古い道を含む）', () => {
+  it('scripts/harness/starter.json が無い → 1行、exit 1', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
     writeList(local);
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
     expect(errorLines(out)[0]).toContain('scripts/harness/starter.json');
-    expect(errorLines(out)[0]).toContain('scripts/harness.local.json');
   });
 
   it('starter.json が JSON でない → 1行、exit 1', () => {
     const { local } = pair();
     writeFile(join(local, 'scripts', 'harness', 'starter.json'), '{not json');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -309,7 +308,7 @@ describe('harness errors', () => {
   it('{ "starter": "" } → 1行、exit 1', () => {
     const { local } = pair();
     writeJson(join(local, 'scripts', 'harness', 'starter.json'), { starter: '' });
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -318,7 +317,7 @@ describe('harness errors', () => {
   it('starter.json が {} → 1行、exit 1', () => {
     const { local } = pair();
     writeJson(join(local, 'scripts', 'harness', 'starter.json'), {});
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -326,7 +325,7 @@ describe('harness errors', () => {
 
   it('向きが無い → 1行、exit 1', () => {
     const { local } = pair();
-    const out = run(['--root', local]);
+    const out = run([], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -334,7 +333,7 @@ describe('harness errors', () => {
 
   it('知らない向き → 1行、exit 1', () => {
     const { local } = pair();
-    const out = run(['fetch', '--root', local]);
+    const out = run(['fetch'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -342,15 +341,7 @@ describe('harness errors', () => {
 
   it('未知の引数 → 1行、exit 1', () => {
     const { local } = pair();
-    const out = run(['pull', '--root', local, '--bogus']);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toBe('');
-    expect(errorLines(out)).toHaveLength(1);
-  });
-
-  it('--root に値が無い → 1行、exit 1', () => {
-    const { local } = pair();
-    const out = run(['pull', '--root'], local);
+    const out = run(['pull', '--bogus'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -364,7 +355,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(origin, '.pi', 'extra.ts'), 'extra\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     writeFile(join(local, '.pi', 'old.ts'), 'old\n');
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (2):');
     expect(out.stdout).toContain('remove (1):');
@@ -380,7 +371,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(local, '.pi', 'extra.ts'), 'extra\n');
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(origin, '.pi', 'old.ts'), 'old\n');
-    const out = run(['push', '--root', local, '--run']);
+    const out = run(['push', '--run'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(`push: ${local} → ${origin}`);
     expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('A\n');
@@ -395,7 +386,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(local, '.pi', 'keep.ts'), 'keep\n');
     writeFile(join(local, '.pi', 'old', 'x.ts'), 'x\n');
     writeFile(join(local, '.pi', 'old', 'y.ts'), 'y\n');
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(0);
     expect(existsSync(join(local, '.pi', 'old', 'x.ts'))).toBe(false);
     expect(existsSync(join(local, '.pi', 'old'))).toBe(false);
@@ -407,7 +398,7 @@ describe('harness apply (--run)', () => {
     mkdirSync(join(origin, '.pi', 'empty'), { recursive: true });
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no files to copy');
     expect(existsSync(join(local, '.pi', 'empty'))).toBe(false);
@@ -422,7 +413,7 @@ describe('harness apply (--run)', () => {
       writeFile(join(local, '.pi', 'logs', 's.ts'), 'local-logs\n');
       writeFile(join(origin, 'memo', 'a.md'), 'origin-memo\n');
       writeFile(join(local, 'memo', 'a.md'), 'local-memo\n');
-      const out = run(['pull', '--root', local, '--run']);
+      const out = run(['pull', '--run'], local);
       expect(out.status).toBe(0);
       expect(readFileSync(join(local, '.pi', 'logs', 's.ts'), 'utf8')).toBe('local-logs\n');
       expect(readFileSync(join(local, 'memo', 'a.md'), 'utf8')).toBe('local-memo\n');
@@ -436,7 +427,7 @@ describe('harness apply (--run)', () => {
       writeFile(join(local, '.pi', 'logs', 's.ts'), 'local-logs\n');
       writeFile(join(origin, 'src', 'x.ts'), 'origin-src\n');
       writeFile(join(local, 'src', 'x.ts'), 'local-src\n');
-      const out = run(['push', '--root', local, '--run']);
+      const out = run(['push', '--run'], local);
       expect(out.status).toBe(0);
       expect(readFileSync(join(origin, '.pi', 'logs', 's.ts'), 'utf8')).toBe('origin-logs\n');
       expect(readFileSync(join(origin, 'src', 'x.ts'), 'utf8')).toBe('origin-src\n');
@@ -449,10 +440,10 @@ describe('harness apply (--run)', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     writeFile(join(local, '.pi', 'old.ts'), 'old\n');
-    const first = run(['pull', '--root', local, '--run']);
+    const first = run(['pull', '--run'], local);
     expect(first.status).toBe(0);
     const before = snapTree(local);
-    const second = run(['pull', '--root', local, '--run']);
+    const second = run(['pull', '--run'], local);
     expect(second.status).toBe(0);
     expect(second.stdout).toContain('no files to copy');
     expect(second.stdout).toContain('no files to remove');
@@ -468,7 +459,7 @@ describe('harness apply (--run)', () => {
     });
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     const before = snapTree(local);
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -482,7 +473,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(local, 'scripts', 'harness', 'harness.json'), '{not json');
     const before = snapTree(local);
     const beforeOrigin = snapTree(origin);
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -506,7 +497,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(local, '.pi', '2.ts'), 'DIFFERENT-2\n');
     writeFile(join(local, '.pi', 'old1.ts'), 'old1\n');
     writeFile(join(local, '.pi', 'old2.ts'), 'old2\n');
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (5):');
     expect(out.stdout).toContain('remove (2):');
@@ -528,7 +519,7 @@ describe('harness legacy', () => {
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, 'scripts', 'harness.mjs'), 'old\n');
     const beforeOrigin = snapTree(origin);
-    const out = run(['pull', '--root', local, '--run']);
+    const out = run(['pull', '--run'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('legacy (1):');
     expect(out.stdout).toContain('scripts/harness.mjs');
@@ -544,7 +535,7 @@ describe('harness legacy', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, 'scripts', 'harness.mjs'), 'old\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('legacy (1):');
     expect(existsSync(join(local, 'scripts', 'harness.mjs'))).toBe(true);
@@ -554,7 +545,7 @@ describe('harness legacy', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no legacy to remove');
   });
@@ -566,7 +557,7 @@ describe('harness legacy', () => {
     writeStarter(local, origin);
     writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
     writeFile(join(local, '.pi', 'a.ts'), 'same\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('no legacy to remove');
   });
@@ -578,7 +569,7 @@ describe('harness legacy', () => {
     writeStarter(local, origin);
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -591,7 +582,7 @@ describe('harness legacy', () => {
       skip: [],
       legacy: 'x',
     });
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
@@ -609,7 +600,7 @@ describe('harness starter', () => {
     writeFile(join(origin, 'scripts', 'harness', 'other.txt'), 'same\n');
     writeFile(join(local, 'scripts', 'harness', 'other.txt'), 'same\n');
     const before = snapTree(local);
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).not.toContain('starter.json');
     expect(out.stdout).toContain('no files to copy');
@@ -625,7 +616,7 @@ describe('harness starter', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     const beforeLocal = snapTree(local);
     const beforeOrigin = snapTree(origin);
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout.trim().split('\n')).toHaveLength(1);
     expect(out.stdout).toContain(`same: ${local}`);
@@ -647,7 +638,7 @@ describe('harness starter', () => {
     writeJson(join(local, 'scripts', 'harness', 'starter.json'), { starter: '../starter' });
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
+    const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/a.ts');
@@ -660,7 +651,7 @@ describe('harness starter', () => {
     writeList(local);
     writeStarter(local, '~');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local], undefined, { HOME: home });
+    const out = run(['pull'], local, { HOME: home });
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/a.ts');
@@ -674,7 +665,7 @@ describe('harness starter', () => {
     writeList(local);
     writeStarter(local, '~foo');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local], undefined, { HOME: home });
+    const out = run(['pull'], local, { HOME: home });
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/a.ts');

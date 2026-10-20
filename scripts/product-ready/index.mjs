@@ -21,14 +21,15 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
+  const root = process.cwd();
   let entries;
   try {
-    entries = plan(args.root, args.only);
+    entries = plan(root, args.only);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  const packageFile = path.join(args.root, 'package.json');
+  const packageFile = path.join(root, 'package.json');
   let packageText;
   try {
     packageText = fs.readFileSync(packageFile, 'utf8');
@@ -57,7 +58,7 @@ export function main(argv) {
       flagged.push(name);
     }
   }
-  const configExists = fs.existsSync(path.join(args.root, STARTER_CONFIG_AT));
+  const configExists = fs.existsSync(path.join(root, STARTER_CONFIG_AT));
   for (const line of [
     ...switchLines({ config: configExists, scripts: flagged }),
     ...planLines(labels(args.only), entries),
@@ -84,7 +85,7 @@ export function main(argv) {
       fs.writeFileSync(packageFile, `${JSON.stringify(packageData, null, 2)}\n`);
     }
     if (configExists) {
-      fs.rmSync(path.join(args.root, STARTER_CONFIG_AT), { force: true });
+      fs.rmSync(path.join(root, STARTER_CONFIG_AT), { force: true });
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

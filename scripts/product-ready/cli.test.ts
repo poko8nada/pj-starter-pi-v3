@@ -54,24 +54,15 @@ describe('planLines', () => {
 });
 
 describe('parseArgs', () => {
-  it('無し → カレントと表示だけ', () => {
-    expect(parseArgs([])).toEqual({ root: process.cwd(), run: false, only: undefined });
+  it('無し → 表示だけ', () => {
+    expect(parseArgs([])).toEqual({ run: false, only: undefined });
   });
 
-  it('--run と --root を読む', () => {
-    expect(parseArgs(['--run', '--root', '/x'])).toEqual({
-      root: '/x',
+  it('--run を読む', () => {
+    expect(parseArgs(['--run'])).toEqual({
       run: true,
       only: undefined,
     });
-  });
-
-  it('--root の値が無い → 投げる', () => {
-    expect(() => parseArgs(['--root'])).toThrow();
-  });
-
-  it('--root=/x の形も読む', () => {
-    expect(parseArgs(['--root=/x'])).toEqual({ root: '/x', run: false, only: undefined });
   });
 
   it('未知の引数 → 投げる', () => {
@@ -80,7 +71,6 @@ describe('parseArgs', () => {
 
   it('--only tests を読む', () => {
     expect(parseArgs(['--only', 'tests'])).toEqual({
-      root: process.cwd(),
       run: false,
       only: 'tests',
     });
@@ -88,7 +78,6 @@ describe('parseArgs', () => {
 
   it('--only=tests の形も読む', () => {
     expect(parseArgs(['--only=tests'])).toEqual({
-      root: process.cwd(),
       run: false,
       only: 'tests',
     });

@@ -53,15 +53,16 @@ function makeTree(): {
 function run(
   script: string,
   args: readonly string[],
+  cwd: string,
 ): { readonly status: number; readonly output: string; readonly errors: string } {
-  const result = spawnSync('node', [script, ...args], { encoding: 'utf8' });
+  const result = spawnSync('node', [script, ...args], { encoding: 'utf8', cwd });
   return { status: result.status ?? 1, output: result.stdout ?? '', errors: result.stderr ?? '' };
 }
 
 describe('product-ready index', () => {
   it('--run → cycles が消え、3 つのスクリプトから flag が消え、vitest.starter.config.ts が消える', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const result = run(INDEX, ['--run'], tree.root);
     expect(result.status).toBe(0);
     expect(existsSync(tree.cycleA)).toBe(false);
     expect(existsSync(join(tree.root, 'cycles', '002-b'))).toBe(false);
@@ -76,7 +77,7 @@ describe('product-ready index', () => {
     const tree = makeTree();
     const beforePkg = readFileSync(join(tree.root, 'package.json'), 'utf8');
     const beforeConfig = readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8');
-    const result = run(INDEX, ['--root', tree.root]);
+    const result = run(INDEX, [], tree.root);
     expect(result.status).toBe(0);
     expect(result.output).toContain('config: vitest.starter.config.ts');
     expect(result.output).toContain('scripts: test, test:run, test:related');
@@ -88,8 +89,8 @@ describe('product-ready index', () => {
 
   it('もう一度 --run → no scripts to change と no config to remove、exit 0', () => {
     const tree = makeTree();
-    expect(run(INDEX, ['--root', tree.root, '--run']).status).toBe(0);
-    const second = run(INDEX, ['--root', tree.root, '--run']);
+    expect(run(INDEX, ['--run'], tree.root).status).toBe(0);
+    const second = run(INDEX, ['--run'], tree.root);
     expect(second.status).toBe(0);
     expect(second.output).toContain('no scripts to change');
     expect(second.output).toContain('no config to remove');
@@ -102,7 +103,7 @@ describe('product-ready index', () => {
       'test:run': `vitest run${FLAG}`,
       'test:related': `vitest related --run${FLAG}`,
     });
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const result = run(INDEX, ['--run'], tree.root);
     expect(result.status).toBe(0);
     const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
     expect(pkg.scripts.test).toBe('vitest');
@@ -116,7 +117,7 @@ describe('product-ready index', () => {
       join(tree.root, 'package.json'),
       `${JSON.stringify({ name: 't', private: true }, null, 2)}\n`,
     );
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const result = run(INDEX, ['--run'], tree.root);
     expect(result.status).toBe(0);
     expect(result.output).toContain('no scripts to change');
     expect(existsSync(tree.cycleA)).toBe(false);
@@ -126,7 +127,7 @@ describe('product-ready index', () => {
   it('1鍵欠けの package.json → 欠けた鍵は作らず、ある鍵の flag だけ外す', () => {
     const tree = makeTree();
     writePackageJson(tree.root, { test: `vitest${FLAG}` });
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const result = run(INDEX, ['--run'], tree.root);
     expect(result.status).toBe(0);
     const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
     expect(pkg.scripts.test).toBe('vitest');
@@ -139,7 +140,7 @@ describe('product-ready index', () => {
     const cycleA = join(root, 'cycles', '001-a');
     writeFile(join(cycleA, 'note.txt'));
     writeStarterConfig(root);
-    const result = run(INDEX, ['--root', root, '--run']);
+    const result = run(INDEX, ['--run'], root);
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
@@ -151,7 +152,7 @@ describe('product-ready index', () => {
     writeFileSync(join(tree.root, 'package.json'), '{not json');
     const beforeCycles = existsSync(tree.cycleA);
     const beforeConfig = readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8');
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const result = run(INDEX, ['--run'], tree.root);
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
@@ -159,25 +160,16 @@ describe('product-ready index', () => {
     expect(readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8')).toBe(beforeConfig);
   });
 
-  it('無い root → 1行の置き場エラーで exit 1', () => {
-    const missing = join(tmpDir(), 'no-such');
-    const result = run(INDEX, ['--root', missing, '--run']);
-    expect(result.status).toBe(1);
-    expect(result.output).toBe('');
-    expect(result.errors.trim()).toBe(`no such directory: ${missing}`);
-    expect(existsSync(missing)).toBe(false);
-  });
-
   it('--only に値が無い → exit 1', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only']);
+    const result = run(INDEX, ['--only'], tree.root);
     expect(result.status).toBe(1);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 
   it('未知の引数 → exit 1', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--bogus']);
+    const result = run(INDEX, ['--bogus'], tree.root);
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe('unknown argument: --bogus');
