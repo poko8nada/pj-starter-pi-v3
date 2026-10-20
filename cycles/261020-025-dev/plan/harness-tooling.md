@@ -353,8 +353,18 @@ switchLines(plan: SwitchPlan): readonly string[]
   - Slice 5 の `pnpm harness:pull -- --root <dir>` が `unknown argument: --` で exit 1 になる件 (`cycles/261020-025-dev/plan/harness-tooling.md:286` 対 `scripts/harness/index.mjs:63-64`)。Notes の通り `--` 無しでは `same:`・exit 0 を確認済みで、Steps が変えない指定のため直さなかった。Verify の `--` が pnpm の渡し方の書き誤りか、素の `--` を終端子として無視すべき仕様かのどちらかが plan だけでは決まらない。finding ではなく doubt とする。
     - left: `--` 対応は CLI 契約の変更で plan の Types/Steps 外のため、Round 1 では直さず Slice 5 の finding として残す。
 
+### Round 2
+
+- Stale: なし — 1件は直っている。`scripts/harness/index.mjs:4` が「古い道は `legacy` として消す」になり、`applyTo:297-300` の `rmSync` と `formatLines:267-275` の `legacy` 節と一致する
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし — 2件は直っている。`scripts/product-ready/index.test.ts:113` の `scripts` 無しと `:126` の 1鍵欠けが `index.mjs:54-56` の `undefined` 飛ばしを叩き、`scripts/harness/index.test.ts:656` の `~` と `:669` の `~foo` が `index.mjs:108-112` の分岐を叩く
+- Unproven: なし — 1件は直っている。`vitest.config.ts:29` が `[['default', { summary: false }]]` に戻り、`scripts/harness/config.test.ts:20-28` が `toEqual(expected)` の完全一致で `['WRONG']` を緑にしない
+- Doubts: なし（fixed 行の確認範囲では新しい疑いは無い）
+
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: `pnpm test:run` 42 files / 711 tests、`pnpm exec vitest run` 0 files / exit 0、`pnpm typecheck` root ok / .pi ok、`pnpm lint` exit 0、`pnpm format:check` 緑。`pnpm harness:pull --root <self>` と `pnpm harness:push --root <self>` はどちらも `same: <self>` / exit 0。`pnpm product:ready`（`--run` なし）は `config: vitest.starter.config.ts`、`scripts: test, test:run, test:related`、cycles の見出しを出した。壊し確認は 3 つ: `scripts/harness/index.mjs:120` の self 分岐を `if (false)` にすると `scripts/harness/index.test.ts` の `same` が赤（1 failed）、`scripts/harness/list.mjs:26` の `${rel}/**` を落とすと `scripts/harness/list.test.ts` の 3 件と `scripts/harness/config.test.ts` の 1 件が赤（4 failed）、`scripts/product-ready/index.mjs:80` の `replaceAll` を外すと `scripts/product-ready/index.test.ts` の 4 件が赤。いずれも戻して、全体が緑に戻ることを確かめた。
+- Findings: なし。review Round 1 の 4 件は fixed し、Round 2 で確認した。壊し確認の 3 つはすべて赤になった。
 - Doubts:
+  - plan の Slice 5 の Verify は `pnpm harness:pull -- --root <dir>` と書くが、素の `--` で exit 1 になる。`--root` だけなら `same:` で通る。Notes の Slice 5 に `left:` として残した。
+  - このサイクルより前のプロダクトは、`scripts/harness.local.json` の値を `scripts/harness/starter.json` へ手で移す必要がある。`starter.json` は `skip` なので pull では作られない。README の移行の行に書いた。
