@@ -63,28 +63,30 @@
 
 ### Slice 1: レビューに、diff を自分で読ませる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6f9440d
 
 ### Slice 2: 統合: レビューの依頼と手順が、同じ diff の読み方を指すこと
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
 - Doubts:
+  - `this diff` の受けは配置で保たれている (tasks.md:35 が :36 の直前) が、配置を名指しする Verify ケースは無い。囲み全体を読む happy ケース (ex-review-diff.md:35) で目に入るため finding にはしない。
+  - diff は plan md 自体 (cycles/261019-024-dev/plan/ex-review-diff.md) にも触れるが、中身は ## Notes の記録欄の記入のみで、Steps/Verify/Files の変更は無い。計画自体の記録のため Unlisted にはしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（4 ケース、worktree で）、slice 2 の `read`（3 ケース、worktree で）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests、worktree で）である。壊して確かめたのは 2 つで、`tasks.md` の diff の行を落とすと赤、`SKILL.md:58` を元の書き方に戻すと赤になって戻した。
+- Findings: なし。review の Round 1 は 4 観点とも なし で、そこでレビューは終わった。レビューは自分で `git diff 61f8719..HEAD` を打って判定した。
+- Doubts: 3 つ目のケース（diff をタスクに貼るとは書かれていない）は、字面の不在を見るので、壊しを入れても赤にならない。
