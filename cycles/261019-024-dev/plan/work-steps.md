@@ -115,10 +115,18 @@
 ### Round 1
 
 - Stale:
+  - review の開始条件が `when slices are done` のまま残り、直前に足されたテスト整理の後を指していない — 本変更が古くした: `.pi/skills/work/SKILL.md:58`
+    - fixed: 開始条件を「スライスとテストの整理が終わった時」に直した。
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
 - Doubts:
+  - `.pi/skills/work/SKILL.md:3` の説明と `:12` の列挙にテスト整理が無いが、元から手順の全体列挙ではなく本変更が古くした物ではないため finding にしない。
+  - `.pi/skills/work/SKILL.md:52` の `drops them, and keeps the suite green` と `:53` 後段 `and a slice carries a Verify of its own` は Steps の文言に無いが、Files が `update` と名指した内の詳述であり、base 括弧は `## Notes` の Unplanned に記録済みのため Unlisted/Gaps にしない。
+  - Slice 3 の 6 つの順序・番号連続・参照実在は `look` の check が覆うため、指示通り Gaps/Unproven にしない。
 
 ## Acceptance
 
