@@ -34,15 +34,18 @@
 
 - read: `review` サブエージェントが `.pi/skills/yolo/SKILL.md` を読み、次の各ケースを報告する
   - (happy) frontmatter を読む → `name: yolo` で、`disable-model-invocation: true` がある
-  - (happy) description を読む → オーナーが起こす形になっている
+  - (happy) description を読む → オーナーが起こす形で、任意のタイミングであることと、close のトリアージで止まることが書かれている
   - (happy) 冒頭を読む → 確認を飛ばして 1 サイクルを走り切ると書かれている
-  - (happy) 冒頭を読む → accepted の後でだけ発動し、前は無効と書かれている
+  - (happy) `## When it runs` を読む → 任意のタイミング（any time after every entry of the ADR is accepted）と書かれている
+  - (happy) `## When it runs` を読む → 済んだ段は歩き直さない（walks from where the cycle stands）と書かれている
+  - (empty) `## When it runs` を読む → ADR の前は無効で、何も走らないと書かれている
+  - (happy) `## When it runs` を読む → ADR の entry を accepted にも検査にもしないと書かれている
   - (happy) 手順を読む → design、plan、work、close の 4 つの段が並んでいる
   - (happy) 各段を読む → その段が飛ばす確認が、その段の下に書かれている（design の段に design の確認がある）
   - (happy) 飛ばす確認を読む → 4 つの名前（`## Possibly related files` を見せる段、plan md を見せる段、acceptance、トリアージのオーナー判断）が並んでいる
-  - (happy) 不測の事態の所を読む → 止まってオーナーに報告し、指示を仰ぐと書かれている
-  - (happy) 4 つのどれにも当てはまらない leftover の所を読む → 止まってオーナーに指示を仰ぐと書かれている
-  - (empty) accepted の前に起こされた時を読む → 何もせず止まり、そう言うと書かれている
+  - (happy) close の段を読む → そこで終わると書かれ、判断の後の仕事はこのスキルの仕事ではないと書かれている
+  - (happy) `## When it stops early` を読む → 止まるのは agent の仕事と書かれ、3 つの条件が並んでいる
+  - (happy) `## When it stops early` を読む → `Unplanned` は止まる条件ではないと書かれている
   - (happy) 読む → 他のスキルを参照していない
   - (error) 本文に目を通す → このハーネスの開発にだけある名前が出てこない
   - _no case_: 実際に走らせた時の止まり方 — 次に使うサイクルで分かる
