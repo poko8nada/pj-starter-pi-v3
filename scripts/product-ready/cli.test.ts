@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { modeLine, parseArgs, planLines } from './cli.mjs';
+import { parseArgs, planLines, switchLines } from './cli.mjs';
 
-describe('modeLine', () => {
-  it('starter → product の1行', () => {
-    expect(modeLine('starter', 'product')).toBe('mode: starter → product');
+describe('switchLines', () => {
+  it("config あり・scripts 2件 → 'config: ...' と 'scripts: ...' の2行", () => {
+    expect(switchLines({ config: true, scripts: ['test', 'test:run'] })).toEqual([
+      'config: vitest.starter.config.ts',
+      'scripts: test, test:run',
+    ]);
   });
 
-  it('product → product の1行', () => {
-    expect(modeLine('product', 'product')).toBe('mode: product → product');
+  it('空 → 消す物が無い旨の2行', () => {
+    expect(switchLines({ config: false, scripts: [] })).toEqual([
+      'no config to remove',
+      'no scripts to change',
+    ]);
   });
 });
 

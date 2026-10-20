@@ -4,4 +4,4 @@
 
 - `setup.ts` は保険。`GIT_*` を落とし、`HOME` を一時ディレクトリへ逃がす。フックの中で走っても、本体のリポジトリを見ない。
 - `tmp.ts` は規約の土台。一時ディレクトリは `tmpDir()` を通して OS の一時領域に作り、後始末も helper がする。リポジトリの中には書かない。
-- テストはプロダクトが自分の分を書く。ハーネスのテストは残っていて、状態が `product` の間は既定で回らない（`scripts/harness.mode.json`。回すなら `starter` に戻す）。プロダクトのテストがまだ 0 本でも緑。
+- テストはプロダクトが自分の分を書く。ハーネスのテストは残っていて、starter config（`vitest.starter.config.ts`）で回り、product config（`vitest.config.ts`）の `exclude` で外れる。プロダクトのテストがまだ 0 本でも緑。

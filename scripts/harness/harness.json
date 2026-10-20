@@ -15,11 +15,15 @@
     ".oxfmtrc.json",
     "scripts/checks",
     "scripts/product-ready",
-    "scripts/harness.mjs",
-    "scripts/harness.json",
-    "scripts/harness.test.ts",
-    "scripts/harness-state.mjs",
-    "scripts/harness-state.test.ts"
+    "scripts/harness"
   ],
-  "skip": ["logs", "harness.local.json", "harness.mode.json"]
+  "skip": ["logs", "starter.json"],
+  "legacy": [
+    "scripts/harness.mjs",
+    "scripts/harness-state.mjs",
+    "scripts/harness.json",
+    "scripts/harness.mode.json",
+    "scripts/harness.test.ts",
+    "scripts/harness-state.test.ts"
+  ]
 }

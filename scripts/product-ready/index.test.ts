@@ -7,44 +7,47 @@ import { tmpDir } from '../../test/tmp.ts';
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
 
 const INDEX = join(process.cwd(), 'scripts', 'product-ready', 'index.mjs');
+const FLAG = ' --config vitest.starter.config.ts';
 
 function writeFile(path: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, 'x\n');
 }
 
-function writeMode(root: string, mode: string): void {
-  const file = join(root, 'scripts', 'harness.mode.json');
+function writePackageJson(root: string, scripts: Record<string, string>): void {
+  const file = join(root, 'package.json');
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `{\n  "mode": "${mode}"\n}\n`);
+  writeFileSync(file, `${JSON.stringify({ name: 't', private: true, scripts }, null, 2)}\n`);
 }
 
-function readMode(root: string): string {
-  return JSON.parse(readFileSync(join(root, 'scripts', 'harness.mode.json'), 'utf8')).mode;
+function defaultScripts(): Record<string, string> {
+  return {
+    test: `vitest${FLAG}`,
+    'test:run': `vitest run${FLAG}`,
+    'test:related': `vitest related --run${FLAG}`,
+  };
+}
+
+function writeStarterConfig(root: string): void {
+  const file = join(root, 'vitest.starter.config.ts');
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    "import { defineConfig } from 'vitest/config';\nexport default defineConfig({});\n",
+  );
 }
 
 function makeTree(): {
   readonly root: string;
-  readonly keptTest: string;
-  readonly readyTest: string;
-  readonly envTest: string;
-  readonly scopes: string;
   readonly cycleA: string;
 } {
   const root = tmpDir();
-  const keptTest = join(root, '.pi', 'a.test.ts');
-  const readyTest = join(root, 'scripts', 'product-ready', 'tool.test.ts');
-  const envTest = join(root, 'test', 'env.test.ts');
-  const scopes = join(root, 'scripts', 'checks', 'scopes.json');
   const cycleA = join(root, 'cycles', '001-a');
-  writeMode(root, 'starter');
-  writeFile(keptTest);
-  writeFile(readyTest);
-  writeFile(envTest);
-  writeFile(scopes);
   writeFile(join(cycleA, 'note.txt'));
   writeFile(join(root, 'cycles', '002-b', 'note.txt'));
-  return { root, keptTest, readyTest, envTest, scopes, cycleA };
+  writePackageJson(root, defaultScripts());
+  writeStarterConfig(root);
+  return { root, cycleA };
 }
 
 function run(
@@ -56,81 +59,104 @@ function run(
 }
 
 describe('product-ready index', () => {
-  it('表示だけ → mode の1行と cycles の見出しが出て、ツリーと状態は変わらない', () => {
-    const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root]);
-    expect(result.status).toBe(0);
-    const lines = result.output.split('\n');
-    expect(lines[0]).toBe('mode: starter → product');
-    expect(result.output).toContain('cycles (');
-    expect(result.output).not.toContain('harness (');
-    expect(result.output).not.toContain('tests (');
-    expect(result.output).toContain('001-a');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readMode(tree.root)).toBe('starter');
-  });
-
-  it('--only cycles → cycles の見出しだけ', () => {
-    const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only', 'cycles']);
-    expect(result.status).toBe(0);
-    expect(result.output).toContain('cycles (');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readMode(tree.root)).toBe('starter');
-  });
-
-  it('--run → cycles の下の dir が消え、状態が product になる', () => {
+  it('--run → cycles が消え、3 つのスクリプトから flag が消え、vitest.starter.config.ts が消える', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root, '--run']);
     expect(result.status).toBe(0);
     expect(existsSync(tree.cycleA)).toBe(false);
     expect(existsSync(join(tree.root, 'cycles', '002-b'))).toBe(false);
-    expect(readMode(tree.root)).toBe('product');
+    const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
+    expect(pkg.scripts.test).toBe('vitest');
+    expect(pkg.scripts['test:run']).toBe('vitest run');
+    expect(pkg.scripts['test:related']).toBe('vitest related --run');
+    expect(existsSync(join(tree.root, 'vitest.starter.config.ts'))).toBe(false);
   });
 
-  it('--run で旧 label の物は残る', () => {
+  it('--run なし → switchLines の2行と cycles の見出しが出て、cycles は残り、package.json と config は変わらない', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--run']);
+    const beforePkg = readFileSync(join(tree.root, 'package.json'), 'utf8');
+    const beforeConfig = readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8');
+    const result = run(INDEX, ['--root', tree.root]);
     expect(result.status).toBe(0);
-    expect(existsSync(tree.keptTest)).toBe(true);
-    expect(existsSync(tree.readyTest)).toBe(true);
-    expect(existsSync(tree.envTest)).toBe(true);
-    expect(existsSync(tree.scopes)).toBe(true);
+    expect(result.output).toContain('config: vitest.starter.config.ts');
+    expect(result.output).toContain('scripts: test, test:run, test:related');
+    expect(result.output).toContain('cycles (');
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(beforePkg);
+    expect(readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8')).toBe(beforeConfig);
   });
 
-  it('cycles の無いツリーで --run → no cycles to remove と mode: starter → product、状態が product になる', () => {
-    const root = tmpDir();
-    writeMode(root, 'starter');
-    const result = run(INDEX, ['--root', root, '--run']);
-    expect(result.status).toBe(0);
-    expect(result.output).toContain('no cycles to remove');
-    expect(result.output).toContain('mode: starter → product');
-    expect(readMode(root)).toBe('product');
-  });
-
-  it('--run をもう一度 → mode: product → product、exit 0', () => {
+  it('もう一度 --run → no scripts to change と no config to remove、exit 0', () => {
     const tree = makeTree();
     expect(run(INDEX, ['--root', tree.root, '--run']).status).toBe(0);
     const second = run(INDEX, ['--root', tree.root, '--run']);
     expect(second.status).toBe(0);
-    expect(second.output).toContain('no cycles to remove');
-    expect(second.output).toContain('mode: product → product');
+    expect(second.output).toContain('no scripts to change');
+    expect(second.output).toContain('no config to remove');
   });
 
-  it('--only cycles --run → cycles だけ消え、状態は product になる', () => {
+  it('flag の無いスクリプトが混ざる → その1つは残り、他は変わる', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only', 'cycles', '--run']);
+    writePackageJson(tree.root, {
+      test: 'vitest',
+      'test:run': `vitest run${FLAG}`,
+      'test:related': `vitest related --run${FLAG}`,
+    });
+    const result = run(INDEX, ['--root', tree.root, '--run']);
     expect(result.status).toBe(0);
-    expect(existsSync(tree.cycleA)).toBe(false);
-    expect(readMode(tree.root)).toBe('product');
+    const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
+    expect(pkg.scripts.test).toBe('vitest');
+    expect(pkg.scripts['test:run']).toBe('vitest run');
+    expect(pkg.scripts['test:related']).toBe('vitest related --run');
   });
 
-  it('--only に値が無い → exit 1、状態は starter のまま', () => {
+  it('scripts が無い package.json でも --run → cycles と config は消える', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only']);
+    writeFileSync(
+      join(tree.root, 'package.json'),
+      `${JSON.stringify({ name: 't', private: true }, null, 2)}\n`,
+    );
+    const result = run(INDEX, ['--root', tree.root, '--run']);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('no scripts to change');
+    expect(existsSync(tree.cycleA)).toBe(false);
+    expect(existsSync(join(tree.root, 'vitest.starter.config.ts'))).toBe(false);
+  });
+
+  it('1鍵欠けの package.json → 欠けた鍵は作らず、ある鍵の flag だけ外す', () => {
+    const tree = makeTree();
+    writePackageJson(tree.root, { test: `vitest${FLAG}` });
+    const result = run(INDEX, ['--root', tree.root, '--run']);
+    expect(result.status).toBe(0);
+    const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
+    expect(pkg.scripts.test).toBe('vitest');
+    expect('test:run' in pkg.scripts).toBe(false);
+    expect('test:related' in pkg.scripts).toBe(false);
+  });
+
+  it('package.json が無い → 1行、exit 1、cycles は残る', () => {
+    const root = tmpDir();
+    const cycleA = join(root, 'cycles', '001-a');
+    writeFile(join(cycleA, 'note.txt'));
+    writeStarterConfig(root);
+    const result = run(INDEX, ['--root', root, '--run']);
     expect(result.status).toBe(1);
-    expect(readMode(tree.root)).toBe('starter');
-    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(existsSync(cycleA)).toBe(true);
+  });
+
+  it('package.json が JSON でない → 1行、exit 1、何も変わらない', () => {
+    const tree = makeTree();
+    writeFileSync(join(tree.root, 'package.json'), '{not json');
+    const beforeCycles = existsSync(tree.cycleA);
+    const beforeConfig = readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8');
+    const result = run(INDEX, ['--root', tree.root, '--run']);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(existsSync(tree.cycleA)).toBe(beforeCycles);
+    expect(readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8')).toBe(beforeConfig);
   });
 
   it('無い root → 1行の置き場エラーで exit 1', () => {
@@ -142,36 +168,10 @@ describe('product-ready index', () => {
     expect(existsSync(missing)).toBe(false);
   });
 
-  it('状態の道が無い → exit 1（道を指す1行を出す）', () => {
-    const root = tmpDir();
-    mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
-    const result = run(INDEX, ['--root', root]);
-    expect(result.status).toBe(1);
-    expect(result.output).toBe('');
-    expect(result.errors.trim()).toContain('scripts/harness.mode.json');
-    expect(existsSync(join(root, 'cycles', '001-a'))).toBe(true);
-  });
-
-  it('状態が壊れている → exit 1', () => {
-    const root = tmpDir();
-    mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
-    const modeFile = join(root, 'scripts', 'harness.mode.json');
-    mkdirSync(dirname(modeFile), { recursive: true });
-    writeFileSync(modeFile, '{"mode":"half"}\n');
-    const result = run(INDEX, ['--root', root, '--run']);
-    expect(result.status).toBe(1);
-    expect(result.output).toBe('');
-    expect(existsSync(join(root, 'cycles', '001-a'))).toBe(true);
-  });
-
-  it('--only harness（知らない label）→ mode と no harness to remove の2行、exit 0', () => {
+  it('--only に値が無い → exit 1', () => {
     const tree = makeTree();
-    const result = run(INDEX, ['--root', tree.root, '--only', 'harness']);
-    expect(result.status).toBe(0);
-    expect(result.output.trim().split('\n')).toEqual([
-      'mode: starter → product',
-      'no harness to remove',
-    ]);
+    const result = run(INDEX, ['--root', tree.root, '--only']);
+    expect(result.status).toBe(1);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 

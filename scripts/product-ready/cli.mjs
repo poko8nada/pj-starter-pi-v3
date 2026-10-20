@@ -51,14 +51,25 @@ export function parseArgs(argv) {
 }
 
 /**
- * 状態の切り替えの 1 行（純）。
+ * 切り替えの 2 行（純）。
  *
- * @param {string} from 今の状態
- * @param {string} to 変える先の状態
- * @returns {string} `mode: <from> → <to>` の 1 行
+ * @param {{ readonly config: boolean, readonly scripts: readonly string[] }} plan 残る物
+ * @returns {readonly string[]} 表示の行
  */
-export function modeLine(from, to) {
-  return `mode: ${from} → ${to}`;
+export function switchLines(plan) {
+  /** @type {string[]} */
+  const lines = [];
+  if (plan.config) {
+    lines.push('config: vitest.starter.config.ts');
+  } else {
+    lines.push('no config to remove');
+  }
+  if (plan.scripts.length === 0) {
+    lines.push('no scripts to change');
+  } else {
+    lines.push(`scripts: ${plan.scripts.join(', ')}`);
+  }
+  return lines;
 }
 
 /**

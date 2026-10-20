@@ -297,46 +297,74 @@ switchLines(plan: SwitchPlan): readonly string[]
 
 ### Slice 1: 置き場と登録
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: aa7ed32
 
 ### Slice 2: 相手の道を `starter.json` に分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c1b5789
 
 ### Slice 3: テストのスイッチを config に移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 23a4b8d
 
 ### Slice 4: `product` の説明を書き換える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 67388af
 
 ### Slice 5: 統合: ハーネスの形
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `pnpm harness:pull -- --root <dir>`（`push` も同じ）が `unknown argument: --` で exit 1 になる
+    - left: `parseArgs` が素の `--` を終端子として無視せず、Slice 5 の Steps が変えない指定のため直さなかった。`--` 無しの `pnpm harness:pull --root <dir>` では `same: <dir>`・exit 0 を確認済み
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
+
+### Test cleanup
+
+- `scripts/harness/index.test.ts` から 4 件を削除（いずれも同じ枝の二重検査）：`starter.json が別のツリーを指す` は先頭の pull copy と同じため残さず、`指す道が無い` は `--run` 付きの相手側なし検査に統合、`一覧が JSON として読めない` は `--run` 付きの同名検査に統合、`この repo の一覧` の raw JSON 版は `list.test.ts` の `readList` 版に統合。消えた振る舞いの検査・死んだ分岐の検査は残っていなかった。
+- 緑を維持：`vitest --config vitest.starter.config.ts` で 5 files 77 passed、`pnpm typecheck` root ok / .pi ok、`pnpm lint` exit 0、`pnpm format:check` 緑。
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - 頂きの仕組み書きが copy/remove のまま残り、legacy 消しを述べていない — `scripts/harness/index.mjs:4` は「元にある物は写し、先にだけある物は消す」と書くが、この diff は `applyTo` で `legacy` を `rmSync(recursive:true, force:true)` で消し (`scripts/harness/index.mjs:297-300`)、`formatLines` で `legacy` 節を出す (`scripts/harness/index.mjs:267-275`)。頂きだけが古い。
+    - fixed: `scripts/harness/index.mjs:4` の仕組み書きに `legacy` 消しを追記した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `無いスクリプトは飛ばす` を試す検査が無い — `scripts/product-ready/index.mjs:54-56` は `TARGET_SCRIPTS` を舐めて `undefined` を飛ばすが、`scripts/product-ready/index.test.ts:98-111` の boundary は 3 鍵そろい (1 つが flag 無し) で、鍵自体が無い `package.json` (例: `scripts` 無し・1 鍵欠け) の検査が無い。Steps 7 の枝が Verify のどこにも出ない。
+    - fixed: `scripts/product-ready/index.test.ts` に `scripts` 無しと 1 鍵欠けの 2 件を追加した。
+  - 素の `~` / `~foo` (`/` 無し) を試す検査が無い — `scripts/harness/index.mjs:108-112` は `~` 単体と `~/` と `~...` を分けるが、検査は `~/starter` (`scripts/harness/index.test.ts:237-249`) と `../starter` (`scripts/harness/index.test.ts:636-652`) だけで、素の `~` と `~foo` の解決の検査が無い。Steps 2 の「`~` を HOME に開く」の枝が Verify のどこにも出ない。
+    - fixed: `scripts/harness/index.test.ts` に `~` 単体（HOME そのもの）と `~foo`（HOME/foo）の 2 件を追加した。
 - Unproven:
+  - `reporters` の値が壊れても緑のまま — `vitest.config.ts:27` は `verbose ? ['verbose'] : ['default']` に変わった (前は `[['default', { summary: false }]]`) のに、`scripts/harness/config.test.ts:25` は `not.toHaveLength(0)` だけ見る。`['WRONG']` でも `[]` でなく緑であり、Verify の「空でない `reporters` を持つ」(`cycles/261020-025-dev/plan/harness-tooling.md:227`) を満たすまま値の正しさを証明しない。
+    - fixed: `vitest.config.ts` の `reporters` を `verbose ? ['verbose'] : [['default', { summary: false }]]` に戻し、`config.test.ts` で完全一致を検証するようにした。
 - Doubts:
+  - Slice 5 の `pnpm harness:pull -- --root <dir>` が `unknown argument: --` で exit 1 になる件 (`cycles/261020-025-dev/plan/harness-tooling.md:286` 対 `scripts/harness/index.mjs:63-64`)。Notes の通り `--` 無しでは `same:`・exit 0 を確認済みで、Steps が変えない指定のため直さなかった。Verify の `--` が pnpm の渡し方の書き誤りか、素の `--` を終端子として無視すべき仕様かのどちらかが plan だけでは決まらない。finding ではなく doubt とする。
+    - left: `--` 対応は CLI 契約の変更で plan の Types/Steps 外のため、Round 1 では直さず Slice 5 の finding として残す。
+
+### Round 2
+
+- Stale: なし — 1件は直っている。`scripts/harness/index.mjs:4` が「古い道は `legacy` として消す」になり、`applyTo:297-300` の `rmSync` と `formatLines:267-275` の `legacy` 節と一致する
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし — 2件は直っている。`scripts/product-ready/index.test.ts:113` の `scripts` 無しと `:126` の 1鍵欠けが `index.mjs:54-56` の `undefined` 飛ばしを叩き、`scripts/harness/index.test.ts:656` の `~` と `:669` の `~foo` が `index.mjs:108-112` の分岐を叩く
+- Unproven: なし — 1件は直っている。`vitest.config.ts:29` が `[['default', { summary: false }]]` に戻り、`scripts/harness/config.test.ts:20-28` が `toEqual(expected)` の完全一致で `['WRONG']` を緑にしない
+- Doubts: なし（fixed 行の確認範囲では新しい疑いは無い）
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: `pnpm test:run` 42 files / 711 tests、`pnpm exec vitest run` 0 files / exit 0、`pnpm typecheck` root ok / .pi ok、`pnpm lint` exit 0、`pnpm format:check` 緑。`pnpm harness:pull --root <self>` と `pnpm harness:push --root <self>` はどちらも `same: <self>` / exit 0。`pnpm product:ready`（`--run` なし）は `config: vitest.starter.config.ts`、`scripts: test, test:run, test:related`、cycles の見出しを出した。壊し確認は 3 つ: `scripts/harness/index.mjs:120` の self 分岐を `if (false)` にすると `scripts/harness/index.test.ts` の `same` が赤（1 failed）、`scripts/harness/list.mjs:26` の `${rel}/**` を落とすと `scripts/harness/list.test.ts` の 3 件と `scripts/harness/config.test.ts` の 1 件が赤（4 failed）、`scripts/product-ready/index.mjs:80` の `replaceAll` を外すと `scripts/product-ready/index.test.ts` の 4 件が赤。いずれも戻して、全体が緑に戻ることを確かめた。
+- Findings: なし。review Round 1 の 4 件は fixed し、Round 2 で確認した。壊し確認の 3 つはすべて赤になった。
 - Doubts:
+  - plan の Slice 5 の Verify は `pnpm harness:pull -- --root <dir>` と書くが、素の `--` で exit 1 になる。`--root` だけなら `same:` で通る。Notes の Slice 5 に `left:` として残した。
+  - このサイクルより前のプロダクトは、`scripts/harness.local.json` の値を `scripts/harness/starter.json` へ手で移す必要がある。`starter.json` は `skip` なので pull では作られない。README の移行の行に書いた。
