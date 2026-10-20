@@ -110,6 +110,30 @@ describe('product-ready index', () => {
     expect(pkg.scripts['test:related']).toBe('vitest related --run');
   });
 
+  it('scripts が無い package.json でも --run → cycles と config は消える', () => {
+    const tree = makeTree();
+    writeFileSync(
+      join(tree.root, 'package.json'),
+      `${JSON.stringify({ name: 't', private: true }, null, 2)}\n`,
+    );
+    const result = run(INDEX, ['--root', tree.root, '--run']);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('no scripts to change');
+    expect(existsSync(tree.cycleA)).toBe(false);
+    expect(existsSync(join(tree.root, 'vitest.starter.config.ts'))).toBe(false);
+  });
+
+  it('1鍵欠けの package.json → 欠けた鍵は作らず、ある鍵の flag だけ外す', () => {
+    const tree = makeTree();
+    writePackageJson(tree.root, { test: `vitest${FLAG}` });
+    const result = run(INDEX, ['--root', tree.root, '--run']);
+    expect(result.status).toBe(0);
+    const pkg = JSON.parse(readFileSync(join(tree.root, 'package.json'), 'utf8'));
+    expect(pkg.scripts.test).toBe('vitest');
+    expect('test:run' in pkg.scripts).toBe(false);
+    expect('test:related' in pkg.scripts).toBe(false);
+  });
+
   it('package.json が無い → 1行、exit 1、cycles は残る', () => {
     const root = tmpDir();
     const cycleA = join(root, 'cycles', '001-a');

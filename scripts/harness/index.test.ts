@@ -652,4 +652,31 @@ describe('harness starter', () => {
     expect(out.stdout).toContain('copy (1):');
     expect(out.stdout).toContain('.pi/a.ts');
   });
+
+  it('~ 単体 → HOME そのものを starter として copy する', () => {
+    const home = fakeRoot();
+    writeFile(join(home, '.pi', 'a.ts'), 'B\n');
+    const local = fakeRoot();
+    writeList(local);
+    writeStarter(local, '~');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    const out = run(['pull', '--root', local], undefined, { HOME: home });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('copy (1):');
+    expect(out.stdout).toContain('.pi/a.ts');
+  });
+
+  it('~foo（`/` 無し）→ HOME/foo を starter として copy する', () => {
+    const home = fakeRoot();
+    const origin = join(home, 'foo');
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    const local = fakeRoot();
+    writeList(local);
+    writeStarter(local, '~foo');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    const out = run(['pull', '--root', local], undefined, { HOME: home });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('copy (1):');
+    expect(out.stdout).toContain('.pi/a.ts');
+  });
 });

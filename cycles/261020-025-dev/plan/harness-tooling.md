@@ -337,10 +337,21 @@ switchLines(plan: SwitchPlan): readonly string[]
 ### Round 1
 
 - Stale:
+  - 頂きの仕組み書きが copy/remove のまま残り、legacy 消しを述べていない — `scripts/harness/index.mjs:4` は「元にある物は写し、先にだけある物は消す」と書くが、この diff は `applyTo` で `legacy` を `rmSync(recursive:true, force:true)` で消し (`scripts/harness/index.mjs:297-300`)、`formatLines` で `legacy` 節を出す (`scripts/harness/index.mjs:267-275`)。頂きだけが古い。
+    - fixed: `scripts/harness/index.mjs:4` の仕組み書きに `legacy` 消しを追記した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `無いスクリプトは飛ばす` を試す検査が無い — `scripts/product-ready/index.mjs:54-56` は `TARGET_SCRIPTS` を舐めて `undefined` を飛ばすが、`scripts/product-ready/index.test.ts:98-111` の boundary は 3 鍵そろい (1 つが flag 無し) で、鍵自体が無い `package.json` (例: `scripts` 無し・1 鍵欠け) の検査が無い。Steps 7 の枝が Verify のどこにも出ない。
+    - fixed: `scripts/product-ready/index.test.ts` に `scripts` 無しと 1 鍵欠けの 2 件を追加した。
+  - 素の `~` / `~foo` (`/` 無し) を試す検査が無い — `scripts/harness/index.mjs:108-112` は `~` 単体と `~/` と `~...` を分けるが、検査は `~/starter` (`scripts/harness/index.test.ts:237-249`) と `../starter` (`scripts/harness/index.test.ts:636-652`) だけで、素の `~` と `~foo` の解決の検査が無い。Steps 2 の「`~` を HOME に開く」の枝が Verify のどこにも出ない。
+    - fixed: `scripts/harness/index.test.ts` に `~` 単体（HOME そのもの）と `~foo`（HOME/foo）の 2 件を追加した。
 - Unproven:
+  - `reporters` の値が壊れても緑のまま — `vitest.config.ts:27` は `verbose ? ['verbose'] : ['default']` に変わった (前は `[['default', { summary: false }]]`) のに、`scripts/harness/config.test.ts:25` は `not.toHaveLength(0)` だけ見る。`['WRONG']` でも `[]` でなく緑であり、Verify の「空でない `reporters` を持つ」(`cycles/261020-025-dev/plan/harness-tooling.md:227`) を満たすまま値の正しさを証明しない。
+    - fixed: `vitest.config.ts` の `reporters` を `verbose ? ['verbose'] : [['default', { summary: false }]]` に戻し、`config.test.ts` で完全一致を検証するようにした。
 - Doubts:
+  - Slice 5 の `pnpm harness:pull -- --root <dir>` が `unknown argument: --` で exit 1 になる件 (`cycles/261020-025-dev/plan/harness-tooling.md:286` 対 `scripts/harness/index.mjs:63-64`)。Notes の通り `--` 無しでは `same:`・exit 0 を確認済みで、Steps が変えない指定のため直さなかった。Verify の `--` が pnpm の渡し方の書き誤りか、素の `--` を終端子として無視すべき仕様かのどちらかが plan だけでは決まらない。finding ではなく doubt とする。
+    - left: `--` 対応は CLI 契約の変更で plan の Types/Steps 外のため、Round 1 では直さず Slice 5 の finding として残す。
 
 ## Acceptance
 
