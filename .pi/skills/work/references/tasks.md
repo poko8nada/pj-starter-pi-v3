@@ -15,6 +15,19 @@ If you cannot finish, write where you stopped (Stopped) and stop.
 - Agent passes `worktree` (for a worktree plan) and `continue: true` after the first run. Role's own permissions (`types.json`) are what the subagent works under.
 - Check comes before the commit: a filled `Commit` means that slice's check passed.
 
+## Clean the tests (the `code` subagent, continued)
+
+```
+After the slices, clean the tests in the test files the plan's `Files` updates:
+- two or more tests that check the same behavior
+- a test for a behavior that is gone
+- a test for a branch this plan's change stops making
+Drop what you find, and keep the suite green.
+Write it in the plan md's ## Notes, as a section that is not a slice.
+```
+
+- It is not a slice: what went stale is known only after the change.
+
 ## Review (a `review` subagent)
 
 ```

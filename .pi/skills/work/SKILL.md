@@ -45,7 +45,15 @@ Texts handed to subagents are in `references/tasks.md`.
   - what work cannot absorb: the owner decides. Drop the plan (write `Stopped` and the reason in the agent's plan md, commit it in the base, remove the worktree, no merge), or carry it to the close
 - a `base` plan: the agent does the slices. Show the owner after each one, and wait for their OK before committing
 
-### 5. Review
+### 5. Clean the tests
+
+- the `code` subagent that ran the slices continues: it reads the plan md, and the test files the plan's `Files` updates
+- in each of those files, what this change left: two or more tests that check the same behavior, a test for a behavior that is gone, a test for a branch this plan's change stops making
+- it drops them, and keeps the suite green
+- it is not a slice: what went stale is known only after the change, and a slice carries a `Verify` of its own
+- it writes it in the plan md's `## Notes`, as a section that is not a slice
+
+### 6. Review
 
 - when slices are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
 - it writes `## Review`, `### Round 1`, under the four viewpoints and `Doubts`
@@ -54,7 +62,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - Round 2 is the last look: the review ends there, and what is still open is fixed once more. No third round
 - a doubt or a note that is not a finding goes under `- Doubts:` in the round it came from, and nowhere else
 
-### 6. Acceptance
+### 7. Acceptance
 
 - the agent runs the plan's checks (integration slice included) and the whole typecheck and test, in the worktree (or the base)
 - and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
@@ -62,7 +70,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
 - commit it in the worktree: `consult(<plan id>): acceptance`
 
-### 7. Merge
+### 8. Merge
 
 - in the agent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there
 - one constraint rules the order: a plan that waits for another (the design's `Why`) has not merged yet. Nothing else fixes the order: a done plan merges when it is done
@@ -71,7 +79,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - green means done: `consult_worktree remove <plan id>`
 - a `base` plan has nothing to merge
 
-### 8. Report
+### 9. Report
 
 - once, to the owner: what the plan delivered, the holes the record holds, and what the next plan waits on
 
