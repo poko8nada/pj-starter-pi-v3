@@ -47,7 +47,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 5. Clean the tests
 
-- the `code` subagent that ran the slices continues: it reads the plan md, and the test files the plan's `Files` updates
+- the `code` subagent that ran the slices continues (a `base` plan's agent does it): it reads the plan md, and the test files the plan's `Files` updates
 - in each of those files, what this change left: two or more tests that check the same behavior, a test for a behavior that is gone, a test for a branch this plan's change stops making
 - it drops them, and keeps the suite green
 - it is not a slice: what went stale is known only after the change, and a slice carries a `Verify` of its own
