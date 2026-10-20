@@ -297,33 +297,40 @@ switchLines(plan: SwitchPlan): readonly string[]
 
 ### Slice 1: 置き場と登録
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: aa7ed32
 
 ### Slice 2: 相手の道を `starter.json` に分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c1b5789
 
 ### Slice 3: テストのスイッチを config に移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 23a4b8d
 
 ### Slice 4: `product` の説明を書き換える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 67388af
 
 ### Slice 5: 統合: ハーネスの形
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `pnpm harness:pull -- --root <dir>`（`push` も同じ）が `unknown argument: --` で exit 1 になる
+    - left: `parseArgs` が素の `--` を終端子として無視せず、Slice 5 の Steps が変えない指定のため直さなかった。`--` 無しの `pnpm harness:pull --root <dir>` では `same: <dir>`・exit 0 を確認済み
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
+
+### Test cleanup
+
+- `scripts/harness/index.test.ts` から 4 件を削除（いずれも同じ枝の二重検査）：`starter.json が別のツリーを指す` は先頭の pull copy と同じため残さず、`指す道が無い` は `--run` 付きの相手側なし検査に統合、`一覧が JSON として読めない` は `--run` 付きの同名検査に統合、`この repo の一覧` の raw JSON 版は `list.test.ts` の `readList` 版に統合。消えた振る舞いの検査・死んだ分岐の検査は残っていなかった。
+- 緑を維持：`vitest --config vitest.starter.config.ts` で 5 files 77 passed、`pnpm typecheck` root ok / .pi ok、`pnpm lint` exit 0、`pnpm format:check` 緑。
 
 ## Review
 

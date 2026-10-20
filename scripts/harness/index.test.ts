@@ -274,15 +274,6 @@ describe('harness errors', () => {
     expect(out.status).toBe(0);
   });
 
-  it('一覧が JSON として読めない → 1行、exit 1', () => {
-    const { local } = pair();
-    writeFile(join(local, 'scripts', 'harness', 'harness.json'), '{not json');
-    const out = run(['pull', '--root', local]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toBe('');
-    expect(errorLines(out)).toHaveLength(1);
-  });
-
   it('一覧の copy が配列でない（{"copy":"x"}）→ 1行、exit 1', () => {
     const { local } = pair();
     writeJson(join(local, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
@@ -318,18 +309,6 @@ describe('harness errors', () => {
   it('{ "starter": "" } → 1行、exit 1', () => {
     const { local } = pair();
     writeJson(join(local, 'scripts', 'harness', 'starter.json'), { starter: '' });
-    const out = run(['pull', '--root', local]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toBe('');
-    expect(errorLines(out)).toHaveLength(1);
-  });
-
-  it('指す道が無い → 1行、exit 1', () => {
-    const local = fakeRoot();
-    writeList(local);
-    writeJson(join(local, 'scripts', 'harness', 'starter.json'), {
-      starter: join(local, 'no-such-starter'),
-    });
     const out = run(['pull', '--root', local]);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
@@ -617,34 +596,9 @@ describe('harness legacy', () => {
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
   });
-
-  it('この repo の一覧 → copy に scripts/harness があり、旧5つの道が無い', () => {
-    const raw = readFileSync(join(process.cwd(), 'scripts', 'harness', 'harness.json'), 'utf8');
-    const data = JSON.parse(raw);
-    expect(data.copy).toContain('scripts/harness');
-    for (const old of [
-      'scripts/harness.mjs',
-      'scripts/harness.json',
-      'scripts/harness.test.ts',
-      'scripts/harness-state.mjs',
-      'scripts/harness-state.test.ts',
-    ]) {
-      expect(data.copy).not.toContain(old);
-    }
-  });
 });
 
 describe('harness starter', () => {
-  it('starter.json が別のツリーを指す → pull がそのツリーから copy する', () => {
-    const { origin, local } = pair();
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull', '--root', local]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('copy (1):');
-    expect(out.stdout).toContain('.pi/a.ts');
-  });
-
   it('scripts/harness を copy に入れ、両側の starter.json が違い、skip に starter.json がある → copy/remove に starter.json が出ず、local の中身が変わらない', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
