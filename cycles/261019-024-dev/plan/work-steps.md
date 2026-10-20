@@ -128,8 +128,16 @@
   - `.pi/skills/work/SKILL.md:52` の `drops them, and keeps the suite green` と `:53` 後段 `and a slice carries a Verify of its own` は Steps の文言に無いが、Files が `update` と名指した内の詳述であり、base 括弧は `## Notes` の Unplanned に記録済みのため Unlisted/Gaps にしない。
   - Slice 3 の 6 つの順序・番号連続・参照実在は `look` の check が覆うため、指示通り Gaps/Unproven にしない。
 
+### Round 2
+
+- Stale: なし（Round 1 の1件は直っている。`.pi/skills/work/SKILL.md:58` が `when the slices and the test cleanup are done` になっており、手順 §4 Run the slices → §5 Clean the tests → §6 Review の順序と一致する。旧文言 `when slices are done` は同ファイルに残っていない）
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし（Round 1 に fixed 行なし。確認対象なし）
+- Unproven: なし（Round 1 に fixed 行なし。確認対象なし）
+- Doubts: なし（fixed 行の確認範囲では新しい疑いは無い）
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（10 ケース、1 回）、slice 2 の `read`（4 ケース、1 回）、slice 3 の `look`（オーナー）、review の Round 1（1 件、fixed）と Round 2（なし）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、走査の対象を全テストに、マージの後の依存揃えの段を落とすと、どちらも赤になって戻した。
+- Findings: なし。review の Round 1 の 1 件は `fixed` で、Round 2 が確かめている。
+- Doubts: `SKILL.md:3` の description は手順を全部は挙げていないので、テストの整理を足しても古びていないと読んだ（review の Doubt のとおり）。
