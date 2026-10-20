@@ -190,4 +190,4 @@
 
 ### Definition Change
 
-- `Unit.yolo-skill`(added): エージェントが、オーナーの確認を挟まずにクローズのトリアージまで進めることができる。
+- `Unit.yolo-skill`(added): エージェントが、オーナーの確認を挟まずにクローズのトリアージまで進めることができる

@@ -9,7 +9,7 @@ English: [README.md](README.md)
 - **検査** — `oxlint` / `oxfmt` / `tsc` / `vitest` と、それを走らせる `pnpm` スクリプト
 - **ゲート** — commit と push で検査を通す `lefthook` と、ターンごとにそのターンで変えた分だけを検査する `quality-gate`
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
-- **サイクルの仕組み** — `.pi/skills/` の 7 つ（`propose` / `brief` / `adr` / `design` / `plan` / `work` / `close`）
+- **サイクルの仕組み** — `.pi/skills/` の 8 つ（`propose` / `brief` / `adr` / `design` / `plan` / `work` / `close` / `yolo`）
 - **拡張** — `consult`（4 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）、`intent-router`（owner の発言を返信・承認・その他に分け、調べ物が関係あるか・答えられるかを問い、ask のたびに日ごとの JSONL へ 1 行足す）（`.pi/extensions/`）
   - `consult_run` — ロールと行き先を指して、サブエージェントの `pi` を 1 体だけ走らせる。この会話は見せない
   - `consult_subagents` — このセッションのサブエージェントを一覧し、1 体止める。記録を読むので reload をまたいでもこのセッションのサブエージェントは出る
@@ -59,10 +59,11 @@ pnpm install
 propose      状態を読み、次の候補を並べる（3 つの問い / コード / リサーチ）
 brief        意図を詰め、選択肢を並べる（調査 / 試作 / 議論）
 adr          決めるべきことを決める（選択肢 / 決定）
-design       サイクルをプランに切り、どこで走らせるかを決める
+design       entry ごとに何に触れるかを調べ、サイクルをプランに切り、どこで走らせるかを決める
 plan         1 プラン = 1 枚を書く（ファイル / 型 / 手順 / 検査）
-work         1 プランを片付ける（スライス / レビュー / 受け入れ / マージ）
-close        サイクルを裁く（残り物の行き先）
+work         1 プランを片付ける（スライス / テストの整理 / レビュー / 受け入れ / マージと、その後の base の依存揃え）
+close        サイクルを裁く（残り物は 4 つのどれか。`ex-` の plan / `proposed` / `dropped`）
+yolo         オーナーの確認を挟まずに 1 サイクルを歩く
 ```
 
 記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つので、チェックマークも状態欄も無い。
