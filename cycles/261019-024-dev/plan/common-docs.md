@@ -75,15 +75,15 @@ README.ja.md                update
 
 ### Slice 1: 定義の行と一覧を、このサイクルの変更に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 検査で 2 件赤になった。(1) `DEFINITION.md` の `yolo-skill` の行が ADR の文と 1 字違い（ADR 側にだけ文末の `。`）だったので、`DEFINITION.md` の他の行に `。` が無いことに合わせて ADR の `。` を取った。(2) `README.md` の close の行に `ex-` の語が無かったので入れた（日本語側も）。
+- Commit: 58f21c7
 
 ### Slice 2: 統合: 定義と README が、8 つのスキルとこのサイクルの変更を写していること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
