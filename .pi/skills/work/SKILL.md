@@ -74,6 +74,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - in the agent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there
 - one constraint rules the order: a plan that waits for another (the design's `Why`) has not merged yet. Nothing else fixes the order: a done plan merges when it is done
+- then, in the base, set the dependencies again; the command follows the lockfile — a `pnpm-lock.yaml` means `pnpm install`
 - then run the whole typecheck and test on the base: the merge counts as done only when they are green
 - red means the combination is broken: undo the merge (`git reset --hard ORIG_HEAD`), keep the worktree, and fix it in the plan (its subagent continues); merge again when it is green
 - green means done: `consult_worktree remove <plan id>`
