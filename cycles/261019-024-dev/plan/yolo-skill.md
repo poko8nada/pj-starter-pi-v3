@@ -91,14 +91,19 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — 差分は `.pi/skills/yolo/SKILL.md:1-65` の add 1 件だけで `cycles/261019-024-dev/plan/yolo-skill.md:5-10` の Files と一致する。`README.md:12` の seven skills と `DEFINITION.md:35-41` の yolo 無しは古くなるが `cycles/261019-024-dev/plan/common-docs.md:23,26` が 8 つ・yolo 行を直す前提のため本 change の stale に数えない。他に古くした doc/comment/test はない。
+- Unlisted: なし — 差分は `cycles/261019-024-dev/plan/yolo-skill.md:5-10` が名指す `.pi/skills/yolo/SKILL.md` の add だけで、名指し外の変更はない。
+- Gaps: なし — slice 1 の Steps（`cycles/261019-024-dev/plan/yolo-skill.md:22-31`）各行に対応する case が Verify（`cycles/261019-024-dev/plan/yolo-skill.md:35-51`）にある（frontmatter→:36、description→:37、冒頭→:38、any time→:39、walks from→:40、invalid→:41、ADR 不干渉→:42、4 段→:43、skips 位置→:44、4 名→:45、close 終わり→:46、停止 3→:47、Unplanned→:48、他スキル参照無し→:49、harness 名無し→:50）。slice 2 は `look`（`cycles/261019-024-dev/plan/yolo-skill.md:67-73`）のため指示通り対象外とした。
+- Unproven: なし — slice 1 の各 `read` は名指した振る舞いを外すと赤になる読みであることを確かめた（例：`.pi/skills/yolo/SKILL.md:2` の name 外し・`:4` の disable 外し→:36 が赤、`:26` の `## Possibly related files` 外し・`:33` の plan mds 外し・`:40` の acceptance 外し・`:47` の triage judgement 外し→:45 が赤、`vitest` 戻し→:50 が赤）。全スライス `Types: なし`（`cycles/261019-024-dev/plan/yolo-skill.md:16,55`）のため自動テストなし。slice 2 は `look` のため対象外とした。
 - Doubts:
+  - `.pi/skills/yolo/SKILL.md:9` の冒頭に ADR accepted 後発動が無いが、`description:3` と `:13` が持つため finding にしない。Steps（`cycles/261019-024-dev/plan/yolo-skill.md:25`）の位置指定だが意味は覆われる。
+  - `.pi/skills/yolo/SKILL.md:14` の `and it says so` は case（`cycles/261019-024-dev/plan/yolo-skill.md:41`）文言に明示が無いが、product は持ち、case は bullet 全体を読むため Gaps/Unproven にしない。
+  - `.pi/skills/yolo/SKILL.md:40` の `their OK after each slice of a plan that runs in the base` は Steps（`cycles/261019-024-dev/plan/yolo-skill.md:28`）の 4 名に無いが、`.pi/skills/work/SKILL.md:46` の詳述であり Files が `add` と名指した内の詳述＋`look`（`cycles/261019-024-dev/plan/yolo-skill.md:71`）が覆うため Unlisted/Gaps にしない。
+  - `.pi/skills/yolo/SKILL.md:46` の destinations は `DEFINITION.md` 1 行→`proposed`（`.pi/skills/close/SKILL.md:47`）と research（`.pi/skills/close/SKILL.md:48`）を省くが、plan が求めず close 決定値のため指摘にしない。
+  - `.pi/skills/yolo/SKILL.md:20` の `Each keeps its work, and loses only its look` と `:24-25,31-32,38-39,45-46` の作業詳述に単独 read case は無いが、yolo 概念自体（ADR 06 決定値）＋`look`（`cycles/261019-024-dev/plan/yolo-skill.md:68`）が本文を読むため対象外とした。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（15 ケース、1 回）、slice 2 の `look`（オーナー）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、`disable-model-invocation: true` を落とすと赤、close の「it ends here」の箇条と段落の両方を落とすと赤になって戻した。
+- Findings: なし。review の Round 1 は 4 観点とも なし で、そこでレビューは終わった。
+- Doubts: close の「そこで終わる」は、箇条だけ落としても段落が意味を担ってケースは緑のままだった。両方落とすと赤になる。同じ意味の文が 2 つ並んでいる。
