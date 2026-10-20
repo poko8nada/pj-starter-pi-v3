@@ -63,15 +63,15 @@
 
 ### Slice 1: レビューに、diff を自分で読ませる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6f9440d
 
 ### Slice 2: 統合: レビューの依頼と手順が、同じ diff の読み方を指すこと
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
