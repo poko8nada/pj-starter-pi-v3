@@ -89,25 +89,32 @@ type ProductArgs = { readonly run: boolean; readonly only: string | undefined };
 
 ### Slice 1: `--root` を消し、ルートは cwd だけにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: baf7120
 
 ### Slice 2: 統合: 2 つのスクリプトが引数なしで動く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 63e803b
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし（scripts/ ・ README.md ・ package.json に `--root` の残りなし。残存ヒットは vitest 自体の `--root` ・別スクリプト scaffold ・過去 plan の記録のみ）
+- Unlisted: なし（diff は Files の 6 件のみ。`scripts/harness/index.mjs` ・ `scripts/harness/index.test.ts` ・ `scripts/product-ready/cli.mjs` ・ `scripts/product-ready/cli.test.ts` ・ `scripts/product-ready/index.mjs` ・ `scripts/product-ready/index.test.ts`）
 - Gaps:
+  - plan が test に求める `(happy) \`--only cycles\`` が index レベルで一切行われていない（`cycles/261020-025-dev/plan/ex-harness-root.md:59`）。`scripts/product-ready/index.test.ts:163`は`--only` の値無し異常系のみで、`--only` 付き happy（cycles だけ消える）は無い（`scripts/product-ready/cli.test.ts:72` は parseArgs の読みのみ）
+    - fixed: `scripts/product-ready/index.test.ts` に `--only cycles` 付き `--run` の happy を追加し、tree の cwd で cycles が消えることを確かめた
 - Unproven:
+  - `scripts/harness/index.test.ts:296` は新道の存在だけ確かめ、旧道の不在を確かめない。plan は「新しい道だけを名指す」（`cycles/261020-025-dev/plan/ex-harness-root.md:32,62`）を求めるので、`(was ...)` が残っても緑のまま
+    - fixed: 期待を完全一致に変え、新しい道だけを名指すことを確かめた
 - Doubts:
+  - `scripts/harness/index.mjs:98` の三項は両枝同一の残骸に見えるが、コードの冗長であり Stale（文書・コメント・テスト）の定義外なので finding にしない
+  - `cycles/261020-025-dev/plan/harness-tooling.md:286` の `--root` 付き例は今は通らないが、過去 cycle の記録であり現行文書ではないので finding にしない
+  - push の表示テスト（`scripts/harness/index.test.ts:218`）は同内容で label のみ見るが、向き違いの実写は --run テスト（`scripts/harness/index.test.ts:368`）が賄うので finding にしない
 
 ## Acceptance
 

@@ -87,6 +87,15 @@ describe('product-ready index', () => {
     expect(readFileSync(join(tree.root, 'vitest.starter.config.ts'), 'utf8')).toBe(beforeConfig);
   });
 
+  it('--only cycles 付き --run → tree の cwd で cycles が消え、exit 0', () => {
+    const tree = makeTree();
+    const result = run(INDEX, ['--run', '--only', 'cycles'], tree.root);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('cycles (2):');
+    expect(existsSync(tree.cycleA)).toBe(false);
+    expect(existsSync(join(tree.root, 'cycles', '002-b'))).toBe(false);
+  });
+
   it('もう一度 --run → no scripts to change と no config to remove、exit 0', () => {
     const tree = makeTree();
     expect(run(INDEX, ['--run'], tree.root).status).toBe(0);

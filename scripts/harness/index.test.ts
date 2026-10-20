@@ -293,7 +293,9 @@ describe('harness errors', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
-    expect(errorLines(out)[0]).toContain('scripts/harness/starter.json');
+    expect(errorLines(out)[0]).toBe(
+      `no such file: ${join(local, 'scripts', 'harness', 'starter.json')}`,
+    );
   });
 
   it('starter.json が JSON でない → 1行、exit 1', () => {
