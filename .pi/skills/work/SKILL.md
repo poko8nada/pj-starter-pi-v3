@@ -55,7 +55,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 6. Review
 
-- when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and the diff `<base hash>..HEAD`
+- when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself
 - it writes `## Review`, `### Round 1`, under the four viewpoints and `Doubts`
 - fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review

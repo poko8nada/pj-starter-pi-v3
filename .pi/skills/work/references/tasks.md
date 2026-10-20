@@ -32,6 +32,7 @@ Write it in the plan md's ## Notes, as a section that is not a slice.
 
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md (## Files, the slices' `### Verify`, ## Notes).
+Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git status`, `git log` are allowed for this role).
 Answer one question: can this diff close the plan? By four viewpoints:
 - Stale: a document, a comment or a test this change makes stale
 - Unlisted: a change the plan's Files does not name
