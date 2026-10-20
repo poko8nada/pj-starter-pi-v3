@@ -25,7 +25,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 pnpm install
 ```
 
-1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/`, removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. Tests are not deleted: in `product` the harness tests do not run by default (the starter config is gone and the product config excludes them). Nothing is deleted until you add `--run`. Add `--only <label>` to target one kind
+1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/`, removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. The product `test` scripts use `vitest.config.ts`, which excludes the harness paths; the starter `test` scripts use `vitest.starter.config.ts`, which covers all tests. Without `--run` it only shows what would change. Add `--only <label>` to target one kind
 2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
@@ -50,7 +50,7 @@ The agent harness travels with `scripts/harness/`:
 - `pnpm harness:pull` brings the starter's harness into this project, `pnpm harness:push` sends it back. Without `--run` it only shows what would move (`copy` / `remove` / `legacy`).
 - The list is `scripts/harness/harness.json`. The starter's place is in `scripts/harness/starter.json` as `{ "starter": "~/..." }` (committed).
 - `package.json` is outside the list, so after a pull check its `scripts` and `devDependencies` by hand.
-- If your product was made before this layout, pull once with `--run`: the old flat files (`scripts/harness.mjs`, `scripts/harness-state.mjs`, `scripts/harness.json`, `scripts/harness.mode.json`, `scripts/harness.test.ts`, `scripts/harness-state.test.ts`) are listed as `legacy` and removed.
+- If your product was made before this layout, move the `starter` value in `scripts/harness.local.json` to `scripts/harness/starter.json`, then pull once with `--run`: the flat 6 files (`scripts/harness.mjs`, `scripts/harness-state.mjs`, `scripts/harness.json`, `scripts/harness.mode.json`, `scripts/harness.test.ts`, `scripts/harness-state.test.ts`) are listed as `legacy` and removed.
 
 ## Cycle
 

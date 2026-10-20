@@ -41,22 +41,30 @@ test/README.md               update
 
 ### Slice 1: 移行の手順と、現在の形だけを書く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 275215a
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし — README.md:28, README.md:44, README.md:53 と test/README.md:7・README.ja.md:28,44,53 は整合し、他文書を陳腐化させない
 - Unlisted:
+  - なし — diff は README.md・README.ja.md のみで Files の 2 行に収まる (cycles/261020-025-dev/plan/ex-migration-doc.md:6-7)
 - Gaps:
+  - なし — 移行順序・平置き6件・肯定形・exclude は Verify の happy/empty で exercise される (cycles/261020-025-dev/plan/ex-migration-doc.md:33-37)
 - Unproven:
+  - なし — Types なしで自動テストがなく (cycles/261020-025-dev/plan/ex-migration-doc.md:15)、旧否定文が残れば read/empty が赤になる
 - Doubts:
+  - `mode` の部分一致は README.md:29 の `models`・README.md:53/README.ja.md:53 の `harness.mode.json` に当たるが否定文ではないため empty は文単位で判定する前提とし finding としない
+  - JA の `2 か所` (cycles/261020-025-dev/plan/ex-migration-doc.md:35) と Steps の `3 か所` の数え方の差は empty が Checks 等を覆うため finding としない
+  - test/README.md は Files に update とあるが Steps で clean なら据え置きと決められており (cycles/261020-025-dev/plan/ex-migration-doc.md:27-28)、無変更は finding としない
+  - 結論: diff は plan を閉じられる
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: acceptance の再 `read`（5 ケースすべて pass）、`pnpm typecheck` root ok / .pi ok、`pnpm test:run` 42 files / 711 tests。壊し確認は 2 つ: `README.md:53` から移行の順序を消し、`README.md:28` に `Tests are not deleted: the starter config is gone.` を戻すと、`read` は移行・Getting started・英日一致・grep の 4 ケースが fail。戻すと 5 ケースすべて pass。
+- Findings: なし。review Round 1 は 4 観点とも なし。
+- Doubts: なし
