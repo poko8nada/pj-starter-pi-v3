@@ -11,9 +11,8 @@ const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
-    // starter は全本、product はハーネスの一覧を否定で外す。
+    // starter は全てが対象、product はハーネスの一覧を否定で外す。
     // 状態の切り替えは `scripts/harness.mode.json` を手で書く。
-    // 戻しは `git checkout -- scripts/harness.mode.json`。
     include: [...includeList(readList(root), readMode(root))],
     // テストの足場（`test/setup.ts`）。理由はファイルを確認。
     setupFiles: ['./test/setup.ts'],

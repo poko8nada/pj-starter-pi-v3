@@ -27,7 +27,7 @@ function writeJson(abs: string, data: unknown): void {
 }
 
 describe('readMode', () => {
-  it('{ "mode": "starter" } を置いた木 → starter', () => {
+  it('{ "mode": "starter" } を置いたツリー → starter', () => {
     const root = tmpDir();
     writeJson(join(root, MODE_AT), { mode: 'starter' });
     expect(readMode(root)).toBe('starter');
@@ -70,7 +70,7 @@ describe('readMode', () => {
 });
 
 describe('readList', () => {
-  it('{ "copy": [...], "skip": [...] } を置いた木 → 同じ物を返す', () => {
+  it('{ "copy": [...], "skip": [...] } を置いたツリー → 同じ物を返す', () => {
     const root = tmpDir();
     writeJson(join(root, 'scripts', 'harness.json'), {
       copy: ['.pi', 'scripts/harness.mjs'],

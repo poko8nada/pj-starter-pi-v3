@@ -1,7 +1,7 @@
 /**
  * intent-router の入口。設定を読み、run と flags を持ち、route → judge → command の順に登録する。
  *
- * 設定はセッションの木から読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
+ * 設定はセッションのツリーから読む（`<cwd>/.pi/extensions/intent-router/settings.json`）。
  * 壊れていれば投げる（黙って既定で走らない）。ask のたびにファイルを読み直す。
  * 記録は `logs/<YYYY-MM-DD>.jsonl` に日ごとに持つ。
  * セッションの始まりに `log.keepDays` より古い日付のファイルを 1 回消す。

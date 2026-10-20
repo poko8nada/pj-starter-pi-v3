@@ -102,8 +102,8 @@ export function changedSince(
  * 未コミットのファイルの指紋を取る。git が答えられなければ undefined を返し、
  * 呼び出し側が edit/write の記録に落ちる。
  *
- * status のパスはリポジトリ根からの相対なので、根を前置して絶対パスに直す
- * （サブディレクトリから実行しても根からの相対で返る）。
+ * status のパスはリポジトリルートからの相対なので、ルートを前置して絶対パスに直す
+ * （サブディレクトリから実行してもルートからの相対で返る）。
  */
 export async function snapshot(
   pi: ExtensionAPI,
@@ -119,7 +119,7 @@ export async function snapshot(
     return undefined;
   }
 
-  // 根が取れないと status の相対パスを絶対パスに直せない。推測せずに代替へ落ちる。
+  // ルートが取れないと status の相対パスを絶対パスに直せない。推測せずに代替へ落ちる。
   const root = await pi.exec('git', ['rev-parse', '--show-toplevel'], { cwd });
   if (root.code !== 0) {
     return undefined;

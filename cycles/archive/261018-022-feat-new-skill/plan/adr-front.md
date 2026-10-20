@@ -113,7 +113,7 @@ README.ja.md                update
   - `cycles/261018-022-feat-new-skill/plan/adr-front.md:38` の Cycle happy は、旧「owner declares the cycle」が残っていても緑のままになる。旧文の削除を確かめる error がない。
     - fixed: owner がサイクルを宣言する記述が残っていないことを見る error の case を足した。
 - Doubts:
-  - `.pi/skills/adr/references/format.md:45` は新文面とずれて見えるが、`cycles/261018-022-feat-new-skill/plan/adr-front.md:32` が触らないと決め `cycles/261018-022-feat-new-skill/adr.md:114` も節名を変えないと決めたため指摘にしなかった。
+  - `.pi/skills/adr/references/format.md:45` は新文面とずれて見えるが、`cycles/261018-022-feat-new-skill/plan/adr-front.md:32` が触らないと決め `cycles/261018-022-feat-new-skill/adr.md:114` もセクション名を変えないと決めたため指摘にしなかった。
   - `.pi/skills/adr/SKILL.md:40` の前段なし直接点は entry 2 error が押さえると読めるため Gap にしなかった。
   - `README.md:70` と `README.ja.md:70` の「どの段からでも書ける」は元から広いため指摘にしなかった。
 

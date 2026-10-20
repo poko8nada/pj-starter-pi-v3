@@ -32,7 +32,7 @@ export function dayName(at: Date): string {
   return `${at.getFullYear()}-${month}-${day}`;
 }
 
-/** 根と頂点から置き場を作る。作らない（決めるだけ） */
+/** ルートと頂点から置き場を作る。作らない（決めるだけ） */
 export function placeFor(root: string, toplevel: string): Place {
   return { dir: join(root, 'records', projectKey(toplevel)), toplevel };
 }

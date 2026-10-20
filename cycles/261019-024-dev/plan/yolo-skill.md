@@ -59,16 +59,16 @@
 ### Steps
 
 1. `.pi/skills/yolo/SKILL.md`:
-   - 4 つの段の名前と、各段で名指す確認の名前を、他のスキルの手順の節の名前と突き合わせて揃える。
+   - 4 つの段の名前と、各段で名指す確認の名前を、他のスキルの手順のセクションの名前と突き合わせて揃える。
    - 段の順番を、`AGENTS.md` の cycle の順序と揃える。
 
 ### Verify:
 
 - look: owner が `git status --short .pi/skills/yolo/` と `git diff <base hash> .pi/skills/yolo/` と `.pi/skills/yolo/SKILL.md` を読み、答える
   - (happy) owner が本文を読む → design、plan、work、close の 4 つの段があり、飛ばす確認が 4 つ名指され、止まる所が書かれている
-  - (happy) owner が段の名前を他のスキルの `SKILL.md` と照らす → 4 つの段の名前が、それぞれのスキルの手順の節の名前と一致している
+  - (happy) owner が段の名前を他のスキルの `SKILL.md` と照らす → 4 つの段の名前が、それぞれのスキルの手順のセクションの名前と一致している
   - (happy) owner が段の順番を `AGENTS.md` と照らす → design、plan、work、close の順で一致している
-  - (happy) owner が各段を読む → 飛ばす確認の名前が、他のスキルの手順の節と一致している
+  - (happy) owner が各段を読む → 飛ばす確認の名前が、他のスキルの手順のセクションと一致している
   - (empty) `git status .pi/skills/yolo/` を見る → 足したのは 1 ファイルだけ
   - (error) frontmatter を pi の skills の資料（`disable-model-invocation`）と照らす → エージェントからは起こせず、オーナーの明示でだけ発火する書き方になっている
   - _no case_: 次のサイクルで使いやすいか — 次のサイクルで分かる

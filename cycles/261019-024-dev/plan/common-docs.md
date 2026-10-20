@@ -26,7 +26,7 @@ README.ja.md                update
    - skill の一覧を 8 つにし、`yolo` の 1 行を足す。既存の行と同じ形にする。
    - `design` の行を、サイクルを切る材料を調べる形に直す。
    - `plan` の行から、規則の話を外す。`work` の行に、テストの整理と、マージの後の依存揃えを足す。
-   - `close` の行を、4 つで裁く形に直す。サイクルの節の close の記述も合わせる。
+   - `close` の行を、4 つで裁く形に直す。サイクルのセクションの close の記述も合わせる。
 
 3. `README.ja.md`:
    - 同じ 3 つを、日本語側で行う。数と並びを `README.md` と揃える。
@@ -41,7 +41,7 @@ README.ja.md                update
   - (happy) `README.md` の design の行を読む → 材料を調べ、切り方と、どこで走らせるかを決めると書かれている
   - (happy) `README.md` の plan の行を読む → 規則（the project's rules）の話が無い
   - (happy) `README.md` の work の行を読む → テストの整理と、マージの後の依存揃えが書かれている
-  - (happy) `README.md` の close の行とサイクルの節を読む → leftover を 4 つで見て `ex-` を検討すると書かれている
+  - (happy) `README.md` の close の行とサイクルのセクションを読む → leftover を 4 つで見て `ex-` を検討すると書かれている
   - (happy) `README.ja.md` の各行を読む → `README.md` の同じ行と同じ内容である
   - (boundary values) `README.md:12` と `README.ja.md:12` を照らす → 数が 8 で、並びが `DEFINITION.md` の行の並びと同じである
   - (error) `yolo-skill` の行を `definition/rules.md` と照らす → `Who` の側から読め、2 語の名前の行になっている

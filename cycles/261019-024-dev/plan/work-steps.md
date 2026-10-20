@@ -43,7 +43,7 @@
   - (happy) `SKILL.md` を読む → 記録が plan md の `## Notes` のスライス以外のセクションと書かれている
   - (happy) `SKILL.md` を読む → テストの整理を plan のスライスにしないことと、その理由（何が古くなったかは変更の後にしか分からない）が書かれている
   - (happy) `tasks.md` を読む → 同じ 3 つの条件と、走査の対象をその plan の `Files` が `update` するテストファイルとし、記録の置き場を plan md の `## Notes` のスライス以外のセクションとして書いている
-  - (happy) `tasks.md` の形を読む → スライスの段と同じ形（節の囲みと、その下の箇条）になっている
+  - (happy) `tasks.md` の形を読む → スライスの段と同じ形（セクションの囲みと、その下の箇条）になっている
   - (empty) `SKILL.md` の手順を読む → スライス、review、acceptance、merge の段が消えずに残っている
   - (error) 2 つを読む → テストの整理を plan のスライスにするとも、対象を全テストとするとも書いていない
   - _no case_: 文面の読みやすさ — 読む者の判断であり、機械では決まらない
@@ -80,7 +80,7 @@
 
 1. `.pi/skills/work/SKILL.md`:
    - 手順の全体を通して読み、スライス、テストの整理、review、acceptance、merge、マージの後の依存揃えの順に並んでいることを確かめる。
-   - `references/tasks.md` の名前と、節の番号を揃える。
+   - `references/tasks.md` の名前と、セクションの番号を揃える。
 
 ### Verify:
 

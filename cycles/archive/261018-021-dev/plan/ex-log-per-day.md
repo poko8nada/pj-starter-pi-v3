@@ -107,7 +107,7 @@ readonly log: {
 5. `.pi/extensions/intent-router/index.test.ts`:
    - `session_start` で古い日付のファイルが消えることを見るケースを足す（既存のやり方に合わせる）
 6. `.pi/extensions/intent-router/README.md`:
-   - 設定の表（`record.recent` → `log.keepDays`）と `Record` の節を、日ごとの JSONL に合わせる
+   - 設定の表（`record.recent` → `log.keepDays`）と `Record` のセクションを、日ごとの JSONL に合わせる
 7. `README.md` と `README.ja.md`:
    - 記録の説明を日ごとの JSONL に合わせる
 
@@ -214,7 +214,7 @@ readonly log: {
 - Findings: なし
 - Unplanned:
   - slice 1 で置いた一時的な `tail` 互換（`index.ts` の `tailLog` とテストの `readAllRecords` など）を消した
-  - Record 節に残っていた `/intent last` の 1 文も消した
+  - Record セクションに残っていた `/intent last` の 1 文も消した
 - Commit: cf46cf4
 
 ### Slice 4: 統合: 1 日は 1 ファイルに足されていき、古い日付だけが消える
@@ -238,7 +238,7 @@ readonly log: {
 
 ### Round 1
 
-- Stale: なし — 古い記録の呼び名や last への言及が残っていないことを確かめた。extension の README の設定表と Record 節、入口の説明、使い方の文を確認した。対象として .pi/extensions/intent-router/README.md:54 と同:58 と同 index.ts:6 と同 command/intent.ts:54 を見た。
+- Stale: なし — 古い記録の呼び名や last への言及が残っていないことを確かめた。extension の README の設定表と Record セクション、入口の説明、使い方の文を確認した。対象として .pi/extensions/intent-router/README.md:54 と同:58 と同 index.ts:6 と同 command/intent.ts:54 を見た。
 - Unlisted: なし — Files に名前が無い変更は route と judge の輸入先の付け替えと検証補助の読み替えだけで、slice 1 の手順で指示済みのため指摘にしない。対象として .pi/extensions/intent-router/route/hook.ts:11 と同 judge/hook.ts:12 と計画の cycles/261018-021-dev/plan/ex-log-per-day.md:68 を見た。
 - Gaps: なし — 各 slice の検査と検証の対応を確認した。slice 1 は .pi/extensions/intent-router/record/log.test.ts:51 と同:63 と同:38 と同:125 と同:148 で満たす。slice 2 は .pi/extensions/intent-router/settings/schema.test.ts:36 と同:114 と同:120 と同:125 と同 index.test.ts:380 で満たす。slice 3 は .pi/extensions/intent-router/command/intent.test.ts:98 と同:147 で満たす。slice 4 は .pi/extensions/intent-router/index.test.ts:406 と同:421 と同:456 と同:471 で満たす。旧い record の検査の削除は slice 5 の棚卸しと Notes の理由付けの範囲のため指摘にしない。
 - Unproven: なし — 代表的な壊し方を当てはめても検証が赤くなることを確かめた。日付を協定時にすると .pi/extensions/intent-router/record/log.test.ts:38 が赤くなる。境界を等号に変えると同:125 が赤くなる。使い方の文に last の行を残すと .pi/extensions/intent-router/command/intent.test.ts:106 が赤くなる。始まりの掃除を止めると .pi/extensions/intent-router/index.test.ts:380 が赤くなる。

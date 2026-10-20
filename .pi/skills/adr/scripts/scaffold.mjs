@@ -88,7 +88,7 @@ function extractNNN(name) {
 }
 
 /**
- * 両根を合流させた名前の並びから次番号を決める。合わない物は飛ばす。空 → 1。
+ * 両ルートを合流させた名前の並びから次番号を決める。合わない物は飛ばす。空 → 1。
  * @param {readonly string[]} names
  * @returns {number}
  */
@@ -153,7 +153,7 @@ export function parseArgs(argv) {
 }
 
 /**
- * `cycles/` と `cycles/archive/` の下の dir 名を集める。番号でない物（`archive`）も入る。無い根は空として扱う。
+ * `cycles/` と `cycles/archive/` の下の dir 名を集める。番号でない物（`archive`）も入る。無いルートは空として扱う。
  * @param {string} cyclesDir
  * @param {string} archiveDir
  * @returns {readonly string[]}

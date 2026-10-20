@@ -48,7 +48,7 @@ export function includeList(list, mode) {
 
 /**
  * 状態を読む。無い / JSON として読めない / starter でも product でもない → 道を入れた 1 つのエラーで投げる。
- * @param {string} root リポジトリの根
+ * @param {string} root リポジトリのルート
  * @returns {Mode} 状態
  */
 export function readMode(root) {
@@ -74,7 +74,7 @@ export function readMode(root) {
 
 /**
  * 状態を書く。
- * @param {string} root リポジトリの根
+ * @param {string} root リポジトリのルート
  * @param {Mode} mode 書く状態
  * @returns {void}
  */

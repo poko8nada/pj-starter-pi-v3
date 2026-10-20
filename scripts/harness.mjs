@@ -38,7 +38,7 @@ import { fileURLToPath } from 'node:url';
  */
 
 /**
- * 引数を解釈する（純）。
+ * 引数を解釈する
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {Args}
  */
@@ -85,7 +85,7 @@ function parseArgs(argv) {
 
 /**
  * 一覧を読む。無い / JSON として読めない / `copy` が配列でない → 道を入れた 1 つのエラーで投げる。02 もこれを読む
- * @param {string} root リポジトリの根
+ * @param {string} root リポジトリのルート
  * @returns {HarnessList}
  */
 export function readList(root) {
@@ -112,7 +112,7 @@ export function readList(root) {
 /**
  * 相手側の道を読む。無い / 道が無い / 道に物が無い → 1 行で投げる。
  * `~` で始まる道は `os.homedir()` で開く。
- * @param {string} root こちら側の根
+ * @param {string} root こちら側のルート
  * @returns {string} 相手側の絶対の道
  */
 function readStarter(root) {
@@ -148,7 +148,7 @@ function readStarter(root) {
 
 /**
  * `/` 区切りの相対に直す。
- * @param {string} sideRoot 側の根
+ * @param {string} sideRoot 側のルート
  * @param {string} full 絶対の道
  * @returns {string}
  */
@@ -159,7 +159,7 @@ function toPosixRel(sideRoot, full) {
 /**
  * 一方の側の、一覧の内側のファイルを集める。`skip` の名を持つ区画には降りない。
  * `logs`、`node_modules`、`.git` は常に降りない。
- * @param {string} sideRoot 側の根
+ * @param {string} sideRoot 側のルート
  * @param {readonly unknown[]} copy 一覧の `copy`
  * @param {readonly unknown[]} skip 一覧の `skip`
  * @returns {Side} 辞書順
@@ -227,8 +227,8 @@ function collectSide(sideRoot, copy, skip) {
 
 /**
  * 両側の差分を作る（純）。`copy` は元にあって先と中身が違う物か先に無い物、`remove` は先にだけある物。
- * @param {string} fromRoot 元の根
- * @param {string} toRoot 先の根
+ * @param {string} fromRoot 元のルート
+ * @param {string} toRoot 先のルート
  * @param {Side} fromSide 元の側
  * @param {Side} toSide 先の側
  * @returns {Diff}
@@ -263,7 +263,7 @@ function diffSides(fromRoot, toRoot, fromSide, toSide) {
  * 表示の行を作る（純）。
  * @param {Direction} direction 向き
  * @param {string} starter 相手側の道
- * @param {string} root こちら側の根
+ * @param {string} root こちら側のルート
  * @param {Diff} diff 差分
  * @returns {readonly string[]}
  */
@@ -292,8 +292,8 @@ function formatLines(direction, starter, root, diff) {
 
 /**
  * 差分を先に当てる（副作用）。`remove` を消して空の dir を払い、`copy` を写す。
- * @param {string} fromRoot 元の根
- * @param {string} toRoot 先の根
+ * @param {string} fromRoot 元のルート
+ * @param {string} toRoot 先のルート
  * @param {HarnessList} list 一覧
  * @param {Diff} diff 差分
  * @returns {Applied}
@@ -314,7 +314,7 @@ export function applyTo(fromRoot, toRoot, list, diff) {
 /**
  * 一覧の内側で空になった dir を消す（下から）。一覧自体の dir は残す。
  * 除外の名の区画には触らない。
- * @param {string} toRoot 先の根
+ * @param {string} toRoot 先のルート
  * @param {HarnessList} list 一覧
  */
 function pruneEmptyDirs(toRoot, list) {

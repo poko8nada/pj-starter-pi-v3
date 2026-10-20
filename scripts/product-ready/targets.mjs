@@ -7,7 +7,7 @@ export const STARTER_ONLY = [{ label: 'cycles', at: 'cycles', pick: 'dirs' }];
 /**
  * 消す物を集める（純）。
  *
- * @param {string} root リポジトリの根
+ * @param {string} root リポジトリのルート
  * @param {string} [only] 絞る label（undefined なら全行）
  * @returns {readonly { readonly label: string, readonly at: string, readonly path: string }[]} 見つけた物（`at` の昇順）
  */

@@ -82,7 +82,7 @@ describe('buildGateMessage', () => {
         ],
       }),
     );
-    // ok の節は 3 連バッククォートを伴わない
+    // ok のセクションは 3 連バッククォートを伴わない
     expect(text).toContain('### lint: ok');
     expect(text).not.toContain('### lint: ok\n```');
     expect(text).toContain('### typecheck: FAILED\n```');

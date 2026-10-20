@@ -29,7 +29,7 @@ function run(root: string, env: Record<string, string> = {}): RunOut {
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
-/** node_modules を持たない代わりにスタブを置ける木 */
+/** node_modules を持たない代わりにスタブを置けるツリー */
 function fakeRoot(): string {
   // macOS では /var が /private/var への symlink。process.cwd() は実体に解けるので、
   // 据えないと path.relative ではなく -p の道の比較が狂う

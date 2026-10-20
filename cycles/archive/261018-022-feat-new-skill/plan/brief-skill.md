@@ -44,12 +44,12 @@ README.ja.md                update
    - トライアルの対象を書く。Stack か、その場で簡単にできる確認事項である。
    - トライアルは `trial` サブエージェントで走らせ、worktree で動くこと、書いた物が製品に入らないこと、共有の置き場に触る前に owner に聞くことを書く。
    - 採らなかった案と一行の理由は ADR の `Options` に残るので、ここでは残さないと書く。
-   - 選択肢を定義の行にしないことを「そうしない」の節に書く。
+   - 選択肢を定義の行にしないことを「そうしない」のセクションに書く。
 
 2. `.pi/skills/brief/references/tasks.md`:
    - `research` サブエージェントへ渡す文を書く。問い、型ごとに何に答えるか、各事実の出所を残すこと、答えられなかった問いは何を止めているかを添えることを含める。
    - `trial` サブエージェントへ渡す文を書く。対象と設定、worktree で動くこと、報告する 3 つ（ぶつかる物、版、最小の形）、共有の置き場に触る前に owner に聞くこと、書いた物が製品に入らないことを含める。
-   - 他のスキルの `references/tasks.md` と同じ形にする。前書きと、節ごとの囲みと、その下の箇条。
+   - 他のスキルの `references/tasks.md` と同じ形にする。前書きと、セクションごとの囲みと、その下の箇条。
 
 ### Verify:
 
@@ -57,8 +57,8 @@ README.ja.md                update
   - (happy) frontmatter を読む → `name: brief` である
   - (happy) 冒頭を読む → ADR の前段であり、決めたことを ADR が書くと書かれている
   - (happy) 本文を読む → `references/tasks.md` にサブエージェントへ渡す文があると書かれている
-  - (happy) 収束点の節を読む → 吟味された選択肢が揃う、`Context` が埋まる、`Options` が埋まる、決定が乗る事実が `Research & Trial` に書けるの 4 つが並んでいる
-  - (happy) 収束点の節を読む → 選択肢の数では測れないと書かれている
+  - (happy) 収束点のセクションを読む → 吟味された選択肢が揃う、`Context` が埋まる、`Options` が埋まる、決定が乗る事実が `Research & Trial` に書けるの 4 つが並んでいる
+  - (happy) 収束点のセクションを読む → 選択肢の数では測れないと書かれている
   - (happy) 手順を読む → 意図を詰める、調べる内容を提案する、調べる、選択肢を出す、owner と議論する、合意を得てトライアルする、止まるの 7 段が番号つきで並んでいる
   - (happy) 手順 1 を読む → 「こう理解した」と先に書き、owner に直してもらうと書かれている
   - (happy) 手順 1 を読む → 意図が、後のすべての尺度になると書かれている
@@ -80,12 +80,12 @@ README.ja.md                update
   - (happy) 手順 6 を読む → 共有の置き場に触る前に owner に聞くと書かれている
   - (happy) 手順 6 を読む → トライアルが書いた物は製品に入らないと書かれている
   - (happy) 手順 7 を読む → 決めるのは ADR であり、ここでは決めないと書かれている
-  - (happy) そうしないの節を読む → 選択肢を定義の行にしないと書かれている
+  - (happy) そうしないのセクションを読む → 選択肢を定義の行にしないと書かれている
   - (boundary values) description を読む → owner がサイクルを始めると言った時で発火する形で、2 文である
   - (error) 本文に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`sound-notify`、`lefthook`、`oxlint`、`oxfmt`、`tsc`、`vitest` など、このリポジトリの開発用の道具や拡張の名前）が出てこない
-  - (happy) `tasks.md` の `research` の節を読む → 型ごとに何に答えるか、出所を残すこと、答えられなかった問いは何を止めているかを添えると書かれている
-  - (happy) `tasks.md` の `trial` の節を読む → worktree で走り、対象と設定と、報告する 3 つ（ぶつかる物、版、最小の形）と、共有の置き場の前に owner に聞き、書いた物が製品に入らないと書かれている
-  - (happy) `tasks.md` の形を読む → 前書きと、節ごとの囲みと、その下の箇条になっている
+  - (happy) `tasks.md` の `research` のセクションを読む → 型ごとに何に答えるか、出所を残すこと、答えられなかった問いは何を止めているかを添えると書かれている
+  - (happy) `tasks.md` の `trial` のセクションを読む → worktree で走り、対象と設定と、報告する 3 つ（ぶつかる物、版、最小の形）と、共有の置き場の前に owner に聞き、書いた物が製品に入らないと書かれている
+  - (happy) `tasks.md` の形を読む → 前書きと、セクションごとの囲みと、その下の箇条になっている
   - (error) `tasks.md` に目を通す → このハーネスの開発にだけある名前（`intent-router`、`quality-gate`、`consult`、`sound-notify`、`lefthook`、`oxlint`、`oxfmt`、`tsc`、`vitest` など）が出てこない
   - _no case_: 文面の読みやすさ — 読む者の判断であり、機械では決まらない
 
@@ -142,7 +142,7 @@ README.ja.md                update
   - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:45` の書いた物が製品に入らないことに対応する case が Verify になく `cycles/261018-022-feat-new-skill/plan/brief-skill.md:76-79` は合意対象subagent共有置き場だけのため現行 `.pi/skills/brief/SKILL.md:68` を押さえない。
     - fixed: 「トライアルが書いた物は製品に入らない」のケースを足した。
   - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:51` の対象と設定報告する3つに対応する case が Verify になく `cycles/261018-022-feat-new-skill/plan/brief-skill.md:85` はworktree共有置き場製品だけのため現行 `.pi/skills/brief/references/tasks.md:22-24` を押さえない。
-    - fixed: `tasks.md` の `trial` の節のケースに、対象と設定と報告する 3 つを足した。
+    - fixed: `tasks.md` の `trial` のセクションのケースに、対象と設定と報告する 3 つを足した。
   - `cycles/261018-022-feat-new-skill/plan/brief-skill.md:52` の他スキルと同じ形に対応する case が Verify になく現行 `.pi/skills/brief/references/tasks.md:1-30` の形を押さえない。
     - fixed: `tasks.md` の形を読むケースを足した。
 - Unproven:

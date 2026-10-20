@@ -129,7 +129,7 @@ readonly verdicts: { readonly related: Verdict; readonly answerable: Verdict } |
 5. `.pi/extensions/intent-router/settings/schema.test.ts`:
    - 新しい鍵のケースに置き換える
 6. `.pi/extensions/intent-router/README.md`:
-   - 設定の表と `Record` の節を合わせる
+   - 設定の表と `Record` のセクションを合わせる
 7. `README.md` と `README.ja.md`:
    - 途中の判定の説明を「関係あるか / 答えられるか」に
 8. `.pi/extensions/intent-router/command/intent.ts` と `.pi/extensions/intent-router/command/intent.test.ts`:
@@ -258,7 +258,7 @@ export function decideJudge(
 
 ### Round 1
 
-- Stale: なし — 旧名 useful new consecutive nudges latest earlier の残り、コメントの頭書き、README 3 枚の設定表と Record 節を確認。いずれも新名に揃い、残りはなかった
+- Stale: なし — 旧名 useful new consecutive nudges latest earlier の残り、コメントの頭書き、README 3 枚の設定表と Record セクションを確認。いずれも新名に揃い、残りはなかった
 - Unlisted: なし — git diff 158aff2 から HEAD の stat 19 件と plan Files の一覧を突き合わせ。全ての変更ファイルは Files に載り、載っていないファイルの変更はなかった
 - Gaps:
   - 道具呼び出しを含む発言の agent_text は検査されていない。plan は agent_text に呼び出しの中身が出ないことを求めるが、state/payload.test.ts:256 は lastAssistantText を見て judge 用の道を見ない。judge 用は .pi/extensions/intent-router/judge/hook.ts:84 の textOf から noteTurn を経て作られ、hook 側の落としを確かめる検査がない

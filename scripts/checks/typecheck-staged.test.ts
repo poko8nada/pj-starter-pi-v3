@@ -27,7 +27,7 @@ function run(root: string, args: readonly string[]): RunOut {
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
-/** node_modules を持たない代わりにスタブを置ける木 */
+/** node_modules を持たない代わりにスタブを置けるツリー */
 function fakeRoot(): string {
   // macOS では /var が /private/var への symlink。process.cwd() は実体に解けるので、
   // 据えないと path.relative(root, abs) が狂う（ハーネス判定が .pi に当たらなくなる）
@@ -95,7 +95,7 @@ describe('typecheck-staged', () => {
     }
   });
 
-  it('一覧に .pi がある木 → .pi の下は .pi の group で回る', () => {
+  it('一覧に .pi があるツリー → .pi の下は .pi の group で回る', () => {
     const root = fakeRoot();
     stubTsc(root);
     // ルートの tsconfig は置かない。.pi の tsconfig だけがある
@@ -108,7 +108,7 @@ describe('typecheck-staged', () => {
     expect(out.stdout).toContain(join(root, '.pi'));
   });
 
-  it('一覧に .pi が無い木 → .pi の下は root の group に落ちる', () => {
+  it('一覧に .pi が無いツリー → .pi の下は root の group に落ちる', () => {
     const root = fakeRoot();
     stubTsc(root);
     writeFile(root, 'tsconfig.json', '{}');
@@ -122,7 +122,7 @@ describe('typecheck-staged', () => {
     expect(out.stdout).not.toContain(join(root, '.pi'));
   });
 
-  it('一覧が無い木 → root の group で回る', () => {
+  it('一覧が無いツリー → root の group で回る', () => {
     const root = fakeRoot();
     stubTsc(root);
     writeFile(root, 'tsconfig.json', '{}');

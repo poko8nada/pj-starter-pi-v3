@@ -29,7 +29,7 @@ export interface Worktree {
 }
 
 export interface WorktreeRow extends Worktree {
-  /** 実行の根（`<project>-<stamp>`）。1 回の実行に複数の unit が同居しうる */
+  /** 実行のルート（`<project>-<stamp>`）。1 回の実行に複数の unit が同居しうる */
   readonly runRoot: string;
   /** コミットしていない変更があるか */
   readonly dirty: boolean;
@@ -93,7 +93,7 @@ function stamp(now: Date = new Date()): string {
   ].join('');
 }
 
-/** リポジトリの根。project の名前はここから取る */
+/** リポジトリのルート。project の名前はここから取る */
 export function topLevel(cwd: string): string {
   const result = git(cwd, ['rev-parse', '--show-toplevel']);
   if (result.status !== 0) {
@@ -112,9 +112,9 @@ export function resolveReal(path: string): string {
 }
 
 /**
- * 実行の根（runRoot）を読み取るだけ。作らない。
+ * 実行のルート（runRoot）を読み取るだけ。作らない。
  *
- * 既に consult の worktree があれば、その実行の根を返す。無ければ `undefined`
+ * 既に consult の worktree があれば、その実行のルートを返す。無ければ `undefined`
  *（読む経路が置き場を作ると、呼ぶたびに場所が変わり、記録を読む側が迷子になる）。
  */
 export function rootFor(cwd: string): string | undefined {
@@ -125,9 +125,9 @@ export function rootFor(cwd: string): string | undefined {
 }
 
 /**
- * 実行の根（runRoot）を決める。1 回だけ作る。
+ * 実行のルート（runRoot）を決める。1 回だけ作る。
  *
- * 既に consult の worktree があれば、その実行の根を引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここには無い。
+ * 既に consult の worktree があれば、その実行のルートを引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここには無い。
  */
 export function ensureRoot(cwd: string): string {
   const existing = rootFor(cwd);
@@ -172,8 +172,8 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
       id: branch.slice(prefix.length),
       branch: branch.slice('refs/heads/'.length),
       path,
-      // 実行の根（runRoot）と unit のディレクトリ（unitDir）を分けて持つ。
-      // worktree のパスは <runRoot>/<unit>/wt なので、1 つ上が unit、もう 1 つ上が実行の根
+      // 実行のルート（runRoot）と unit のディレクトリ（unitDir）を分けて持つ。
+      // worktree のパスは <runRoot>/<unit>/wt なので、1 つ上が unit、もう 1 つ上が実行のルート
       runRoot: dirname(dirname(path)),
       unitDir: dirname(path),
       dirty: status.stdout.trim() !== '',

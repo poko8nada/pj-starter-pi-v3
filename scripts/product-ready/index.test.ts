@@ -56,7 +56,7 @@ function run(
 }
 
 describe('product-ready index', () => {
-  it('表示だけ → mode の1行と cycles の見出しが出て、木と状態は変わらない', () => {
+  it('表示だけ → mode の1行と cycles の見出しが出て、ツリーと状態は変わらない', () => {
     const tree = makeTree();
     const result = run(INDEX, ['--root', tree.root]);
     expect(result.status).toBe(0);
@@ -98,7 +98,7 @@ describe('product-ready index', () => {
     expect(existsSync(tree.scopes)).toBe(true);
   });
 
-  it('cycles の無い木で --run → no cycles to remove と mode: starter → product、状態が product になる', () => {
+  it('cycles の無いツリーで --run → no cycles to remove と mode: starter → product、状態が product になる', () => {
     const root = tmpDir();
     writeMode(root, 'starter');
     const result = run(INDEX, ['--root', root, '--run']);

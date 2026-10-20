@@ -23,7 +23,7 @@ const ROOT_KEY = 'CONSULT_ROOT';
  * worktree に git を打つ。だめなときは投げる。
  *
  * `runGit` は `GIT_DIR` / `GIT_WORK_TREE` を repo 用に固定するので worktree の中では使えない
- * （cwd を worktree にしても、repo の作業木を見てしまう。実際にこの検査で嵌まった）。
+ * （cwd を worktree にしても、repo の作業ツリーを見てしまう。実際にこの検査で嵌まった）。
  */
 function gitInWorktree(path: string, args: readonly string[]): void {
   const result = spawnSync('git', [...args], {
@@ -94,7 +94,7 @@ describe('rootFor', () => {
 });
 
 describe('ensureRoot', () => {
-  it('2 回呼ぶと、同じ根を返し、作るのは 1 回だけ', () => {
+  it('2 回呼ぶと、同じルートを返し、作るのは 1 回だけ', () => {
     const { dir } = repo();
     const root = process.env[ROOT_KEY] ?? '';
     createWorktree(dir, '1-a');
@@ -201,7 +201,7 @@ describe('listWorktrees / findWorktree', () => {
     const { dir } = repo();
     createWorktree(dir, '1-a');
     const root = ensureRoot(dir);
-    // root の中は unit の入れ物だけ（unitDir）。実行の根は runRootで、 その親ディレクトリ
+    // root の中は unit の入れ物だけ（unitDir）。実行のルートは runRootで、 その親ディレクトリ
     expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
 });
@@ -366,7 +366,7 @@ describe('removeWorktree', () => {
     const { dir } = repo();
     const first = createWorktree(dir, '1-a');
     const second = createWorktree(dir, '1-b');
-    // 同じ実行の根に同居している
+    // 同じ実行のルートに同居している
     expect(dirname(second.unitDir)).toBe(dirname(first.unitDir));
 
     // 1-b が残っているので、掃除は 1-a の枝だけを報告する（1-b は checkout 中で孤児でない）
@@ -374,7 +374,7 @@ describe('removeWorktree', () => {
     expect(result.outcome).toBe('removed');
     expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
 
-    // 1-a の unit は消え、実行の根と 1-b の unit は残る
+    // 1-a の unit は消え、実行のルートと 1-b の unit は残る
     expect(existsSync(first.unitDir)).toBe(false);
     expect(existsSync(dirname(second.unitDir))).toBe(true);
     expect(existsSync(second.unitDir)).toBe(true);

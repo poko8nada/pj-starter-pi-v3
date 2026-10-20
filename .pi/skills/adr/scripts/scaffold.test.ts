@@ -19,7 +19,7 @@ describe('adrSkeleton', () => {
     expect(adrSkeleton(1).startsWith('# ADR 001\n')).toBe(true);
   });
 
-  it('エントリの見出しと、4 つの節を持つ', () => {
+  it('エントリの見出しと、4 つのセクションを持つ', () => {
     const body = adrSkeleton(17);
     expect(body).toContain('## 01: ');
     for (const section of [
@@ -32,7 +32,7 @@ describe('adrSkeleton', () => {
     }
   });
 
-  it('節の並びは Research & Trial → Definition Change', () => {
+  it('セクションの並びは Research & Trial → Definition Change', () => {
     const body = adrSkeleton(17);
     expect(body.indexOf('### Research & Trial')).toBeLessThan(
       body.indexOf('### Definition Change'),
@@ -117,7 +117,7 @@ describe('createLeafDir', () => {
 });
 
 describe('dirNames', () => {
-  it('両根の dir 名を集める（`archive` も入る）', () => {
+  it('両ルートの dir 名を集める（`archive` も入る）', () => {
     const root = tmpDir();
     const cyclesDir = join(root, 'cycles');
     const archiveDir = join(cyclesDir, 'archive');
@@ -130,7 +130,7 @@ describe('dirNames', () => {
     ]);
   });
 
-  it('無い根は空として扱う', () => {
+  it('無いルートは空として扱う', () => {
     const root = tmpDir();
     expect(dirNames(join(root, 'cycles'), join(root, 'cycles', 'archive'))).toEqual([]);
   });

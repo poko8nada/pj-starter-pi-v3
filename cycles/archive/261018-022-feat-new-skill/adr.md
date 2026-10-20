@@ -111,12 +111,12 @@
   - entry 3 は「前段が並べた選択肢を書く」に書き換える。案を出すのも前段の仕事になるためである。決めるのは entry 6 のままにする。
   - `Research & Trial` は「決定の根拠だけを書く」に狭める。前段で調べたことは書かない。
   - `adr` の description を狭める。`brief` か `propose` を経た問いを受け、選択肢が並んだ状態から始まる形にする。サイクル開始の宣言は `brief` が受け、次に何をするかの問いは `propose` が受ける。
-  - `references/format.md` は変えない。節の名前はそのままにする。
+  - `references/format.md` は変えない。セクションの名前はそのままにする。
 - Options:
   - entry 2 を消し、`Context` は前段から来ると SKILL.md の頭に書く（短いが、番号が飛ぶ）。
   - `Research & Trial` をそのまま残す（前段の調査も書けるが、置き場が二重になる）。
   - `adr` の description を広いまま残す（サイクル開始の宣言でも ADR に入る）。
-  - `format.md` の節の名前を変える（前段から来た内容に合わなくなる）。
+  - `format.md` のセクションの名前を変える（前段から来た内容に合わなくなる）。
 
 ### Research & Trial
 

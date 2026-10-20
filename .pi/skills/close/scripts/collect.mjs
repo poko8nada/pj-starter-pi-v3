@@ -12,15 +12,15 @@ import { pathToFileURL } from 'node:url';
  * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
  */
 
-/** 節や観点の見出し（穴ではない行） */
+/** セクションや観点の見出し（穴ではない行） */
 const LABELS =
   /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Doubts):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
-/** design の plan 節。`## \`<plan id>\`` の形。backtick の無い `##` は plan ではない */
+/** design の plan セクション。`## \`<plan id>\`` の形。backtick の無い `##` は plan ではない */
 const PLAN_HEAD = /^## `(.+)`\s*$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
-/** `### Scope` の節。ここから下のバレットが変える物 */
+/** `### Scope` のセクション。ここから下のバレットが変える物 */
 const SCOPE_HEAD = /^###\s+Scope\s*$/;
 const SCOPE_ITEM = /^\s*-\s*([^:]+):/;
 /** 読めなかった所の印。close はこれを探して埋める */
@@ -38,7 +38,7 @@ const indentOf = (line) => line.length - line.trimStart().length;
 const bulletText = (line) => line.replace(/^\s*- /, '').trim();
 
 /**
- * `## ` で節に切る。`at` は最初の中身の行の行番号（1 起点）。
+ * `## ` でセクションに切る。`at` は最初の中身の行の行番号（1 起点）。
  *
  * @param {string} text
  * @returns {{ name: string, lines: string[], at: number }[]}
@@ -223,8 +223,8 @@ const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 /**
  * design.md から plan ごとの `ADR` と `Scope` を読む。
  *
- * plan 節は backtick 付きの `##` だけ。backtick の無い見出しは plan ではない。
- * 節や欄が読めない plan は `未特定` になる。
+ * plan セクションは backtick 付きの `##` だけ。backtick の無い見出しは plan ではない。
+ * セクションや欄が読めない plan は `未特定` になる。
  *
  * @param {string} text
  * @returns {Map<string, { adr: string, scope: string }>}
@@ -365,7 +365,7 @@ function readContexts(text) {
 }
 
 /**
- * close.md の `## Triage` の節を、あればそのまま返す。無ければ見出しだけ。
+ * close.md の `## Triage` のセクションを、あればそのまま返す。無ければ見出しだけ。
  *
  * @param {string} text
  * @returns {string}

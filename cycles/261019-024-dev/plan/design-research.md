@@ -27,7 +27,7 @@
    - 挙げる組を 5 つ書く。この変更が読む物、この変更の結果を読む物、これを検査する物、生成物、文書。
    - 今存在する path だけを、path と短い理由の組で返させる。重複は消させない。
    - 事実だけを返させ、決定を書かせない。
-   - 他のスキルの `references/tasks.md` と同じ形にする。前書きと、節ごとの囲みと、その下の箇条。
+   - 他のスキルの `references/tasks.md` と同じ形にする。前書きと、セクションごとの囲みと、その下の箇条。
 
 2. `.pi/skills/design/SKILL.md`:
    - 手順に調査のステージを足す。ADR の accepted の entry ごとに並行で `research` を走らせ、結果を design.md の `## Possibly related files` に書く。
@@ -36,7 +36,7 @@
    - frontmatter の description と冒頭を、調べることを含む形にする。
 
 3. `.pi/skills/design/references/format.md`:
-   - 冒頭に `## Possibly related files` の節を足す。entry ごとに `### NN: <entry の問い>` を置き、その下に path の一覧を書く。
+   - 冒頭に `## Possibly related files` のセクションを足す。entry ごとに `### NN: <entry の問い>` を置き、その下に path の一覧を書く。
    - 重複を消さないことと、path は事実であって決定ではないことを書く。
    - ファイルの話を plan へ送っている 1 行を書き換える。path はここが持ち、file の存在と形は plan が決める。
 
@@ -53,10 +53,10 @@
   - (happy) `tasks.md` を読む → 今存在する path だけを、path と理由の組で返させると書かれている
   - (happy) `tasks.md` を読む → 重複を消させないと書かれている
   - (happy) `tasks.md` を読む → 事実だけを返させ、決定を書かせないと書かれている
-  - (happy) `tasks.md` の形を読む → 前書きと、節ごとの囲みと、その下の箇条になっている
+  - (happy) `tasks.md` の形を読む → 前書きと、セクションごとの囲みと、その下の箇条になっている
   - (happy) `format.md` の冒頭の `## Possibly related files` を読む → entry ごとに `### NN: <entry の問い>` と path の一覧を書くと書かれている
   - (happy) `format.md` を読む → 重複を消さないことと、path は事実であって決定ではないことが書かれている
-  - (empty) `format.md` の他の節を読む → 既存の節（`## Cut`、`## No`、`## Scope`、`## Boundary`、`## Writing`）が消えずに残っている
+  - (empty) `format.md` の他のセクションを読む → 既存のセクション（`## Cut`、`## No`、`## Scope`、`## Boundary`、`## Writing`）が消えずに残っている
   - (error) `format.md` のファイルの話を読む → ファイルはここでは分からないと書いておらず、path はここが持ち、file の存在と形は plan が決めると書かれている
   - _no case_: 文面の読みやすさ — 読む者の判断であり、機械では決まらない
 
@@ -79,7 +79,7 @@
 - read: `review` サブエージェントが `.pi/skills/design/SKILL.md` と `.pi/skills/design/references/format.md` を読み、次の各ケースを報告する
   - (happy) 2 ファイルを読む → `## Refactor` の語が無い
   - (happy) `SKILL.md` の手順を読む → plan から design へ戻る段が無い
-  - (empty) `format.md` の設計書の形を読む → 先頭が `## Possibly related files` で、節の並びが変わっていない
+  - (empty) `format.md` の設計書の形を読む → 先頭が `## Possibly related files` で、セクションの並びが変わっていない
   - _no case_: `.pi/skills/plan/SKILL.md` の書き戻しの段 — `plan-rules` が消す
   - _no case_: `.pi/skills/close/scripts/collect.mjs` のコメント — `close-words` が直す
 
@@ -93,7 +93,7 @@
 
 1. `.pi/skills/design/SKILL.md`:
    - 手順の全体を通して読み、`references/format.md` と `references/tasks.md` の 2 つを名指していることを確かめる。
-   - 節の番号と、本文からの参照を揃える。
+   - セクションの番号と、本文からの参照を揃える。
 
 ### Verify:
 

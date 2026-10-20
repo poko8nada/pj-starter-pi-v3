@@ -40,7 +40,7 @@
 2. `.pi/extensions/intent-router/record/recent.test.ts`:
    - ファイルの行の規則のケースを足す（既存のやり方に合わせる）
 3. `.pi/extensions/intent-router/README.md`:
-   - `Record` の節を JSONL に合わせる
+   - `Record` のセクションを JSONL に合わせる
 
 ### Verify:
 
@@ -139,7 +139,7 @@ export function routePayload(
 ### Round 1
 
 - Stale:
-  - `.pi/extensions/intent-router/README.md:7`、`README.md:36`、`README.md:43` が閾値 `0.9` のまま古くなった — `.pi/extensions/intent-router/settings/schema.ts:221`（`approve: 0.8`）・`:237`（`judge.threshold 0.8`）と `.pi/extensions/intent-router/settings.json:19,30`（いずれも `0.8`）が ADR `02` 決定値「すべて `0.8`」に揃ったのに、本文の `How it moves` と設定表だけ `reply 0.8 / approve 0.9`、`judge.threshold 0.9` のまま。plan の README 更新は Record 節のみで閾値に触れていない。
+  - `.pi/extensions/intent-router/README.md:7`、`README.md:36`、`README.md:43` が閾値 `0.9` のまま古くなった — `.pi/extensions/intent-router/settings/schema.ts:221`（`approve: 0.8`）・`:237`（`judge.threshold 0.8`）と `.pi/extensions/intent-router/settings.json:19,30`（いずれも `0.8`）が ADR `02` 決定値「すべて `0.8`」に揃ったのに、本文の `How it moves` と設定表だけ `reply 0.8 / approve 0.9`、`judge.threshold 0.9` のまま。plan の README 更新は Record セクションのみで閾値に触れていない。
     - fixed: README の `How it moves` と設定表の `0.9` 3 箇所を `0.8` に直した（`:19` の `set` 例は既定値の記述ではないため触らない）
 - Unlisted:
   - `.pi/extensions/intent-router/command/intent.test.ts:166`（同 `:193`）手書き `IntentRecord` 2 件への新必須欄追加 — plan の Files に無いファイルの変更。Notes Slice 2 に記録はあるが Files 外であることに変わりはなく、閾値（既知扱い）ではなく型追加のため finding とする。
