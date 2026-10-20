@@ -77,15 +77,15 @@
 
 ### Slice 1: yolo のスキルを書く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 本文を owner の指摘で何度か書き直した。close の段がオーナー判断の後まで含んでいた、`## When it runs` が ADR を検査して accepted にするように読めた、description が「任意のタイミング」と「済んだ段」を写していなかった、`## When it stops early` が抽象的で `Unplanned` との違いが無かった。最後は owner が書き直した。検査のケースも本文に合わせて 15 個にした。
+- Commit: caa6106
 
 ### Slice 2: 統合: yolo が 1 サイクルを 1 つで走り切れるスキルになっていること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
