@@ -89,14 +89,16 @@ README.ja.md                update
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし — 現行に古く残る物はない。7/7つ・旧 design/work/close 文言・`the project's rules`・`Refactor`・`criteria` は live に無く、archive と `cycles/261019-024-dev/adr.md:31,187` の引用は記録である。`README.md:12`・`README.ja.md:12` の 8 つは `.pi/skills/yolo/SKILL.md:1-5` を含む 8 つと一致し、`DEFINITION.md:38,42` は `cycles/261019-024-dev/adr.md:39,193` と一致する。`work/SKILL.md:3` の description 省略は `cycles/261019-024-dev/plan/work-steps.md:127` の決定値、`README.md:65` の旧汎用文言は `cycles/261019-024-dev/plan/close-words.md:111` の決定値、`AGENTS.md:3` の段列挙は yolo を段にしない決定値のため数えない。
+- Unlisted: なし — 差分は `cycles/261019-024-dev/plan/common-docs.md:5-9` の Files が名指す 3 件だけである。`DEFINITION.md:38` の書き換え 1 行と `:42` の増え 1 行、`README.md:12,62,64-66` と `README.ja.md:12,62,64-66` の数・yolo 増・design/work/close の書き換えだけで、他が動いていない。`README.md:63`・`README.ja.md:63` の plan 行が静かなのは base が既に規則無し（`cycles/261019-024-dev/plan/plan-rules.md:84`）のためで、名指し外の変更はない。
+- Gaps: なし — slice 1 の Steps（`cycles/261019-024-dev/plan/common-docs.md:21-32`）各行に対応する case が Verify（`:36-47`）にある（design 行→:37、yolo 行→:38、形→:39、一覧 8→:40、design→:41、plan 規則無し→:42、work→:43、close 4 と `ex-`→:44、日英一致→:45、数と並び→:46、`Who` と 2 語→:47）。slice 2 は `look`（`:66-71`）のため指示通り対象外とした。
+- Unproven: なし — slice 1 の各 `read` は名指した振る舞いを外すと赤になる読みである。`DEFINITION.md:38` を旧文言に戻すと `:37` が赤、`DEFINITION.md:42` の形崩し→`:38-39` が赤、`README.md:65` から `ex-` を落とすと `:44` が赤になることは `cycles/261019-024-dev/plan/common-docs.md:79` が記録する。`README.md:63` に規則を戻すと `:42` が赤、`README.md:12` を 7 に戻すと `:40,46` が赤になる。全スライス `Types: なし` のため自動テストなし。slice 2 は `look` のため対象外とした。
 - Doubts:
+  - `cycles/261019-024-dev/adr.md:193` の文末`。`を `DEFINITION.md:42` に合わせて取ったことは `cycles/261019-024-dev/plan/common-docs.md:79` に記録済みで、意味は変わらず現行の両者は一致するため finding にしない。
+  - `README.md:63`・`README.ja.md:63` が差分で動かないのは base が既に規則の話無しで Steps の「規則を外す」が空振りになったため。`cycles/261019-024-dev/plan/plan-rules.md:84` が同行の規則無しを確認し、Verify の `:42` は現行を読むため緑になる。finding にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: slice 1 の `read`（11 ケース、2 回。1 回目は 2 件が赤、直して再実行）、slice 2 の `look`（オーナー）、`pnpm typecheck`（root: ok、`.pi`: ok）、`pnpm test:run`（41 files、704 tests）である。壊して確かめたのは 2 つで、`README.md:12` を 7 に戻すと赤、`DEFINITION.md` から `yolo-skill` の行を落とすと赤になって戻した。
+- Findings: なし。review の Round 1 は 4 観点とも なし で、そこでレビューは終わった。
+- Doubts: なし。
