@@ -1,5 +1,5 @@
 /**
- * @typedef {{ readonly root: string, readonly run: boolean, readonly only: string | undefined }} Args
+ * @typedef {{ readonly run: boolean, readonly only: string | undefined }} Args
  */
 
 /**
@@ -9,7 +9,6 @@
  * @returns {Args}
  */
 export function parseArgs(argv) {
-  let root = process.cwd();
   let run = false;
   /** @type {string | undefined} */
   let only;
@@ -17,19 +16,6 @@ export function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--run') {
       run = true;
-    } else if (arg === '--root') {
-      const value = argv[i + 1];
-      if (value === undefined) {
-        throw new Error('missing a value for --root');
-      }
-      root = value;
-      i += 1;
-    } else if (typeof arg === 'string' && arg.startsWith('--root=')) {
-      const value = arg.slice('--root='.length);
-      if (value === '') {
-        throw new Error('missing a value for --root');
-      }
-      root = value;
     } else if (arg === '--only') {
       const value = argv[i + 1];
       if (value === undefined) {
@@ -47,7 +33,7 @@ export function parseArgs(argv) {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  return { root, run, only };
+  return { run, only };
 }
 
 /**

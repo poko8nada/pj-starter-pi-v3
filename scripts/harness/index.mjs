@@ -1,5 +1,5 @@
 // ハーネスを運ぶ（スターターとプロダクトの間で差分で合わせる）。
-// 使い方: node scripts/harness/index.mjs pull|push [--root <dir>] [--run]
+// 使い方: node scripts/harness/index.mjs pull|push [--run]
 // 仕組み: scripts/harness/harness.json の一覧の内側のファイルを両側で集め、
 // 元にある物は写し、先にだけある物は消し、古い道は `legacy` として消す。既定は表示だけ、`--run` で実行する
 import * as fs from 'node:fs';
@@ -15,7 +15,7 @@ import { readList } from './list.mjs';
 
 /**
  * 引数（純）
- * @typedef {{ readonly direction: Direction, readonly root: string, readonly run: boolean }} Args
+ * @typedef {{ readonly direction: Direction, readonly run: boolean }} Args
  */
 
 /**
@@ -39,7 +39,6 @@ import { readList } from './list.mjs';
  * @returns {Args}
  */
 function parseArgs(argv) {
-  let root = process.cwd();
   let run = false;
   /** @type {string[]} */
   const positionals = [];
@@ -47,19 +46,6 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--run') {
       run = true;
-    } else if (arg === '--root') {
-      const value = argv[i + 1];
-      if (value === undefined) {
-        throw new Error('missing a value for --root');
-      }
-      root = value;
-      i += 1;
-    } else if (typeof arg === 'string' && arg.startsWith('--root=')) {
-      const value = arg.slice('--root='.length);
-      if (value === '') {
-        throw new Error('missing a value for --root');
-      }
-      root = value;
     } else if (typeof arg === 'string' && arg.startsWith('--')) {
       throw new Error(`unknown argument: ${arg}`);
     } else {
@@ -76,7 +62,7 @@ function parseArgs(argv) {
   if (first !== 'pull' && first !== 'push') {
     throw new Error(`unknown direction: ${first}`);
   }
-  return { direction: first, root, run };
+  return { direction: first, run };
 }
 
 /**
@@ -87,12 +73,11 @@ function parseArgs(argv) {
  */
 function readStarter(root) {
   const file = path.join(root, 'scripts', 'harness', 'starter.json');
-  const oldFile = path.join(root, 'scripts', 'harness.local.json');
   let text;
   try {
     text = fs.readFileSync(file, 'utf8');
   } catch (error) {
-    throw new Error(`no such file: ${file} (was ${oldFile})`, { cause: error });
+    throw new Error(`no such file: ${file}`, { cause: error });
   }
   let data;
   try {
@@ -416,7 +401,7 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  const root = path.isAbsolute(args.root) ? path.resolve(args.root) : path.resolve(args.root);
+  const root = process.cwd();
   let starter;
   try {
     starter = readStarter(root);
