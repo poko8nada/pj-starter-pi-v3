@@ -88,21 +88,21 @@
 
 ### Slice 1: `criteria` を 4 つに置き換える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 検査のケースが 4 つを日本語で求めていたが、skill の本文は英語なので赤になった。ケースを英語の 4 語に直した（plan md を合わせて編集。owner の決定）。
+- Commit: 067f908
 
 ### Slice 2: `## Refactor` のコメントを直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 274f3c4
 
 ### Slice 3: 統合: close が leftover を 4 つで裁く形になっていること
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（読み直しだけで、ファイルは動いていない）
 
 ## Review
 
