@@ -2,7 +2,7 @@
  * `scripts/harness-state.mjs` の振る舞いを fake root で試す。
  *
  * fake root を `tmpDir()` で作り、道を作ってから読む / 書く。
- * 一覧の読み（`readList`）は `./harness-state.mjs` が `./harness.mjs` から借りた物をそのまま使う。
+ * 一覧の読み（`readList`）は `./harness-state.mjs` が `./harness/list.mjs` から借りた物をそのまま使う。
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -72,55 +72,58 @@ describe('readMode', () => {
 describe('readList', () => {
   it('{ "copy": [...], "skip": [...] } を置いたツリー → 同じ物を返す', () => {
     const root = tmpDir();
-    writeJson(join(root, 'scripts', 'harness.json'), {
+    writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
       copy: ['.pi', 'scripts/harness.mjs'],
       skip: ['logs'],
     });
-    expect(readList(root)).toEqual({ copy: ['.pi', 'scripts/harness.mjs'], skip: ['logs'] });
+    expect(readList(root)).toEqual({
+      copy: ['.pi', 'scripts/harness.mjs'],
+      skip: ['logs'],
+      legacy: [],
+    });
   });
 
-  it('一覧の道が無い → 投げる。エラーに scripts/harness.json が入る', () => {
+  it('一覧の道が無い → 投げる。エラーに scripts/harness/harness.json が入る', () => {
     const root = tmpDir();
-    expect(() => readList(root)).toThrow('scripts/harness.json');
+    expect(() => readList(root)).toThrow('scripts/harness/harness.json');
   });
 
   it('一覧が {"copy":"x"} → 投げる', () => {
     const root = tmpDir();
-    writeJson(join(root, 'scripts', 'harness.json'), { copy: 'x' });
+    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
     expect(() => readList(root)).toThrow();
   });
 
-  it('この repo の scripts/harness.json → skip と copy に新しい道が入っている', () => {
+  it('この repo の scripts/harness/harness.json → copy に scripts/harness があり、旧5つの道が無い', () => {
     const list = readList(process.cwd());
-    expect(list.skip).toContain('harness.mode.json');
-    expect(list.copy).toContain('scripts/harness-state.mjs');
-    expect(list.copy).toContain('scripts/harness-state.test.ts');
+    expect(list.copy).toContain('scripts/harness');
+    expect(list.copy).not.toContain('scripts/harness.mjs');
+    expect(list.copy).not.toContain('scripts/harness.json');
+    expect(list.copy).not.toContain('scripts/harness.test.ts');
+    expect(list.copy).not.toContain('scripts/harness-state.mjs');
+    expect(list.copy).not.toContain('scripts/harness-state.test.ts');
   });
 });
 
 describe('includeList', () => {
   it('starter → [TEST_GLOB] だけ（skip は出ない）', () => {
     expect(
-      includeList({ copy: ['.pi', 'scripts/harness.json'], skip: ['logs'] }, 'starter'),
+      includeList({ copy: ['.pi', 'scripts/harness.json'], skip: ['logs'], legacy: [] }, 'starter'),
     ).toEqual([TEST_GLOB]);
   });
 
   it('product → [TEST_GLOB, 各道の否定2つずつ]（一覧の順のまま）', () => {
-    expect(includeList({ copy: ['.pi', 'scripts/harness.json'], skip: [] }, 'product')).toEqual([
-      TEST_GLOB,
-      '!.pi',
-      '!.pi/**',
-      '!scripts/harness.json',
-      '!scripts/harness.json/**',
-    ]);
+    expect(
+      includeList({ copy: ['.pi', 'scripts/harness.json'], skip: [], legacy: [] }, 'product'),
+    ).toEqual([TEST_GLOB, '!.pi', '!.pi/**', '!scripts/harness.json', '!scripts/harness.json/**']);
   });
 
   it('product で copy: [] → [TEST_GLOB]', () => {
-    expect(includeList({ copy: [], skip: [] }, 'product')).toEqual([TEST_GLOB]);
+    expect(includeList({ copy: [], skip: [], legacy: [] }, 'product')).toEqual([TEST_GLOB]);
   });
 
   it('".pi/" → "!.pi"（末の / は落とす）', () => {
-    expect(includeList({ copy: ['.pi/'], skip: [] }, 'product')).toEqual([
+    expect(includeList({ copy: ['.pi/'], skip: [], legacy: [] }, 'product')).toEqual([
       TEST_GLOB,
       '!.pi',
       '!.pi/**',
@@ -128,7 +131,7 @@ describe('includeList', () => {
   });
 
   it('skip は includeList に出ない', () => {
-    expect(includeList({ copy: ['.pi'], skip: ['logs'] }, 'product')).toEqual([
+    expect(includeList({ copy: ['.pi'], skip: ['logs'], legacy: [] }, 'product')).toEqual([
       TEST_GLOB,
       '!.pi',
       '!.pi/**',

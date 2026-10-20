@@ -1,8 +1,8 @@
-// ハーネスの状態を読む・書く。一覧の形と読みは `./harness.mjs` の `readList` を借りる。
+// ハーネスの状態を読む・書く。一覧の形と読みは `./harness/list.mjs` の `readList` を借りる。
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-export { readList } from './harness.mjs';
+export { readList } from './harness/list.mjs';
 
 /**
  * ハーネスの状態
@@ -23,7 +23,7 @@ export const TEST_GLOB = '**/*.{test,spec}.?(c|m)[jt]s?(x)';
 
 /**
  * テストの対象を組む（純）。product のときだけ、一覧の各道を否定で足す。
- * @param {import('./harness.mjs').HarnessList} list 一覧
+ * @param {import('./harness/list.mjs').HarnessList} list 一覧
  * @param {Mode} mode 状態
  * @returns {readonly string[]} vitest の `include`
  */

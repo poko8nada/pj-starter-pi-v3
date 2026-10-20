@@ -1,11 +1,12 @@
 // ハーネスを運ぶ（スターターとプロダクトの間で差分で合わせる）。
-// 使い方: node scripts/harness.mjs pull|push [--root <dir>] [--run]
-// 仕組み: scripts/harness.json の一覧の内側のファイルを両側で集め、
+// 使い方: node scripts/harness/index.mjs pull|push [--root <dir>] [--run]
+// 仕組み: scripts/harness/harness.json の一覧の内側のファイルを両側で集め、
 // 元にある物は写し、先にだけある物は消す。既定は表示だけ、`--run` で実行する
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readList } from './list.mjs';
 
 /**
  * どちらへ運ぶか
@@ -18,23 +19,18 @@ import { fileURLToPath } from 'node:url';
  */
 
 /**
- * `scripts/harness.json` の形
- * @typedef {{ readonly copy: readonly string[], readonly skip: readonly string[] }} HarnessList
- */
-
-/**
  * 一方の側にある、一覧の内側のファイル。root からの相対で `/` 区切り、辞書順
  * @typedef {readonly string[]} Side
  */
 
 /**
- * 両側の差分
- * @typedef {{ readonly copy: Side, readonly remove: Side }} Diff
+ * 両側の差分と先に残る古い道
+ * @typedef {{ readonly copy: Side, readonly remove: Side, readonly legacy: Side }} Diff
  */
 
 /**
  * 実行した結果
- * @typedef {{ readonly copied: Side, readonly removed: Side }} Applied
+ * @typedef {{ readonly copied: Side, readonly removed: Side, readonly legacy: Side }} Applied
  */
 
 /**
@@ -81,32 +77,6 @@ function parseArgs(argv) {
     throw new Error(`unknown direction: ${first}`);
   }
   return { direction: first, root, run };
-}
-
-/**
- * 一覧を読む。無い / JSON として読めない / `copy` が配列でない → 道を入れた 1 つのエラーで投げる。02 もこれを読む
- * @param {string} root リポジトリのルート
- * @returns {HarnessList}
- */
-export function readList(root) {
-  const file = path.join(root, 'scripts', 'harness.json');
-  let text;
-  try {
-    text = fs.readFileSync(file, 'utf8');
-  } catch (error) {
-    throw new Error(`no such file: ${file}`, { cause: error });
-  }
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (error) {
-    throw new Error(`the list is not valid JSON: ${file}`, { cause: error });
-  }
-  if (typeof data !== 'object' || data === null || !Array.isArray(data.copy)) {
-    throw new Error(`the list is not valid JSON: ${file}`);
-  }
-  const skip = Array.isArray(data.skip) ? data.skip : [];
-  return { copy: data.copy, skip };
 }
 
 /**
@@ -264,7 +234,7 @@ function diffSides(fromRoot, toRoot, fromSide, toSide) {
  * @param {Direction} direction 向き
  * @param {string} starter 相手側の道
  * @param {string} root こちら側のルート
- * @param {Diff} diff 差分
+ * @param {Diff} diff 差分と古い道
  * @returns {readonly string[]}
  */
 function formatLines(direction, starter, root, diff) {
@@ -287,15 +257,24 @@ function formatLines(direction, starter, root, diff) {
       lines.push(`  ${rel}`);
     }
   }
+  const legacy = diff.legacy ?? [];
+  if (legacy.length === 0) {
+    lines.push('no legacy to remove');
+  } else {
+    lines.push(`legacy (${legacy.length}):`);
+    for (const rel of legacy) {
+      lines.push(`  ${rel}`);
+    }
+  }
   return lines;
 }
 
 /**
- * 差分を先に当てる（副作用）。`remove` を消して空の dir を払い、`copy` を写す。
+ * 差分を先に当てる（副作用）。`remove` を消して空の dir を払い、`copy` を写し、後に `legacy` を消す。
  * @param {string} fromRoot 元のルート
  * @param {string} toRoot 先のルート
- * @param {HarnessList} list 一覧
- * @param {Diff} diff 差分
+ * @param {import('./list.mjs').HarnessList} list 一覧
+ * @param {Diff} diff 差分と古い道
  * @returns {Applied}
  */
 export function applyTo(fromRoot, toRoot, list, diff) {
@@ -308,14 +287,18 @@ export function applyTo(fromRoot, toRoot, list, diff) {
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     fs.copyFileSync(path.join(fromRoot, rel), dst);
   }
-  return { copied: diff.copy, removed: diff.remove };
+  const legacy = diff.legacy ?? [];
+  for (const rel of legacy) {
+    fs.rmSync(path.join(toRoot, rel), { recursive: true, force: true });
+  }
+  return { copied: diff.copy, removed: diff.remove, legacy };
 }
 
 /**
  * 一覧の内側で空になった dir を消す（下から）。一覧自体の dir は残す。
  * 除外の名の区画には触らない。
  * @param {string} toRoot 先のルート
- * @param {HarnessList} list 一覧
+ * @param {import('./list.mjs').HarnessList} list 一覧
  */
 function pruneEmptyDirs(toRoot, list) {
   /** @type {Set<string>} */
@@ -390,6 +373,30 @@ function pruneEmptyDirs(toRoot, list) {
 }
 
 /**
+ * 先に残る古い道のうち、実在する物だけを集める（一覧の順）。
+ * @param {string} toRoot 先のルート
+ * @param {readonly unknown[]} legacy 一覧の `legacy`
+ * @returns {Side}
+ */
+function collectLegacy(toRoot, legacy) {
+  /** @type {string[]} */
+  const out = [];
+  for (const entry of legacy ?? []) {
+    if (typeof entry !== 'string' || entry === '') {
+      continue;
+    }
+    try {
+      if (fs.existsSync(path.join(toRoot, entry))) {
+        out.push(entry);
+      }
+    } catch (_unused) {
+      continue;
+    }
+  }
+  return out;
+}
+
+/**
  * 入口。既定は表示だけ、`--run` で実行する。
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
@@ -403,7 +410,7 @@ export function main(argv) {
     return 1;
   }
   const root = path.isAbsolute(args.root) ? args.root : path.resolve(args.root);
-  /** @type {HarnessList} */
+  /** @type {import('./list.mjs').HarnessList} */
   let list;
   try {
     list = readList(root);
@@ -422,7 +429,8 @@ export function main(argv) {
   const toRoot = args.direction === 'pull' ? root : starter;
   const fromSide = collectSide(fromRoot, list.copy, list.skip);
   const toSide = collectSide(toRoot, list.copy, list.skip);
-  const diff = diffSides(fromRoot, toRoot, fromSide, toSide);
+  const base = diffSides(fromRoot, toRoot, fromSide, toSide);
+  const diff = { ...base, legacy: collectLegacy(toRoot, list.legacy) };
   for (const line of formatLines(args.direction, starter, root, diff)) {
     console.log(line);
   }

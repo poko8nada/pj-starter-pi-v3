@@ -1,8 +1,8 @@
 /**
- * `scripts/harness.mjs` の振る舞いを、子プロセスとして実行して試す。
+ * `scripts/harness/index.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
  * fake の 2 つのツリー（元と先）を `tmpDir()` で作り、
- * `node scripts/harness.mjs` を子プロセスで呼ぶ（`product-ready/index.test.ts` と同じ道）。
+ * `node scripts/harness/index.mjs` を子プロセスで呼ぶ（`product-ready/index.test.ts` と同じ道）。
  * 向き、`--root`、表示の行、exit を見る。
  */
 
@@ -17,9 +17,9 @@ import {
 } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../test/tmp.ts';
+import { tmpDir } from '../../test/tmp.ts';
 
-const SCRIPT = join(process.cwd(), 'scripts', 'harness.mjs');
+const SCRIPT = join(process.cwd(), 'scripts', 'harness', 'index.mjs');
 
 interface RunOut {
   readonly status: number;
@@ -50,10 +50,15 @@ function writeJson(abs: string, data: unknown): void {
   writeFile(abs, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-function writeList(root: string, copy: readonly string[] = ['.pi']): void {
-  writeJson(join(root, 'scripts', 'harness.json'), {
+function writeList(
+  root: string,
+  copy: readonly string[] = ['.pi'],
+  legacy: readonly string[] = [],
+): void {
+  writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
     copy,
-    skip: ['logs', 'harness.local.json'],
+    skip: ['logs', 'harness.local.json', 'harness.mode.json'],
+    legacy,
   });
 }
 
@@ -154,9 +159,10 @@ describe('harness diff', () => {
   it('skip に logs を書かなくても logs/ の中身は両塊に出ない（常時除外）', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
-    writeJson(join(local, 'scripts', 'harness.json'), {
+    writeJson(join(local, 'scripts', 'harness', 'harness.json'), {
       copy: ['.pi'],
       skip: ['harness.local.json'],
+      legacy: [],
     });
     writeLocal(local, origin);
     writeFile(join(origin, '.pi', 'logs', 'a.ts'), 'B\n');
@@ -254,7 +260,7 @@ describe('harness diff', () => {
 });
 
 describe('harness errors', () => {
-  it('scripts/harness.json が無い → 1行、exit 1', () => {
+  it('scripts/harness/harness.json が無い → 1行、exit 1', () => {
     const { local } = pair();
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     const out = run(['pull', '--root', local]);
@@ -270,7 +276,7 @@ describe('harness errors', () => {
 
   it('一覧が JSON として読めない → 1行、exit 1', () => {
     const { local } = pair();
-    writeFile(join(local, 'scripts', 'harness.json'), '{not json');
+    writeFile(join(local, 'scripts', 'harness', 'harness.json'), '{not json');
     const out = run(['pull', '--root', local]);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
@@ -279,7 +285,7 @@ describe('harness errors', () => {
 
   it('一覧の copy が配列でない（{"copy":"x"}）→ 1行、exit 1', () => {
     const { local } = pair();
-    writeJson(join(local, 'scripts', 'harness.json'), { copy: 'x' });
+    writeJson(join(local, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
     const out = run(['pull', '--root', local]);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
@@ -462,7 +468,7 @@ describe('harness apply (--run)', () => {
     const { origin, local } = pair();
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    writeFile(join(local, 'scripts', 'harness.json'), '{not json');
+    writeFile(join(local, 'scripts', 'harness', 'harness.json'), '{not json');
     const before = snapTree(local);
     const beforeOrigin = snapTree(origin);
     const out = run(['pull', '--root', local, '--run']);
@@ -498,5 +504,100 @@ describe('harness apply (--run)', () => {
     }
     expect(existsSync(join(local, '.pi', 'old1.ts'))).toBe(false);
     expect(existsSync(join(local, '.pi', 'old2.ts'))).toBe(false);
+  });
+});
+
+describe('harness legacy', () => {
+  it('先にだけ scripts/harness.mjs があり、一覧の legacy にそれが入っている → legacy (1) に出て、--run で消える。元の側は変わらない', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeList(local, ['.pi'], ['scripts/harness.mjs']);
+    writeLocal(local, origin);
+    writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, 'scripts', 'harness.mjs'), 'old\n');
+    const beforeOrigin = snapTree(origin);
+    const out = run(['pull', '--root', local, '--run']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('legacy (1):');
+    expect(out.stdout).toContain('scripts/harness.mjs');
+    expect(existsSync(join(local, 'scripts', 'harness.mjs'))).toBe(false);
+    expect(snapTree(origin)).toEqual(beforeOrigin);
+  });
+
+  it('同じツリーで --run なし → legacy (1) は出るが、scripts/harness.mjs は消えない', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeList(local, ['.pi'], ['scripts/harness.mjs']);
+    writeLocal(local, origin);
+    writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, 'scripts', 'harness.mjs'), 'old\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('legacy (1):');
+    expect(existsSync(join(local, 'scripts', 'harness.mjs'))).toBe(true);
+  });
+
+  it('legacy が無い一覧 → no legacy to remove', () => {
+    const { origin, local } = pair();
+    writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('no legacy to remove');
+  });
+
+  it('legacy にある道が先に無い → no legacy to remove、exit 0', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeList(local, ['.pi'], ['scripts/harness.mjs']);
+    writeLocal(local, origin);
+    writeFile(join(origin, '.pi', 'a.ts'), 'same\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'same\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('no legacy to remove');
+  });
+
+  it('古い scripts/harness.json だけがあるツリー → 1行、exit 1（新しい道を読んでいる証拠）', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeJson(join(local, 'scripts', 'harness.json'), { copy: ['.pi'], skip: [] });
+    writeLocal(local, origin);
+    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toBe('');
+    expect(errorLines(out)).toHaveLength(1);
+  });
+
+  it('一覧の legacy が配列でない → 1行、exit 1', () => {
+    const { local } = pair();
+    writeJson(join(local, 'scripts', 'harness', 'harness.json'), {
+      copy: ['.pi'],
+      skip: [],
+      legacy: 'x',
+    });
+    const out = run(['pull', '--root', local]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toBe('');
+    expect(errorLines(out)).toHaveLength(1);
+  });
+
+  it('この repo の一覧 → copy に scripts/harness があり、旧5つの道が無い', () => {
+    const raw = readFileSync(join(process.cwd(), 'scripts', 'harness', 'harness.json'), 'utf8');
+    const data = JSON.parse(raw);
+    expect(data.copy).toContain('scripts/harness');
+    for (const old of [
+      'scripts/harness.mjs',
+      'scripts/harness.json',
+      'scripts/harness.test.ts',
+      'scripts/harness-state.mjs',
+      'scripts/harness-state.test.ts',
+    ]) {
+      expect(data.copy).not.toContain(old);
+    }
   });
 });
