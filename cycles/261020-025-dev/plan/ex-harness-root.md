@@ -118,6 +118,6 @@ type ProductArgs = { readonly run: boolean; readonly only: string | undefined };
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: 3 つのテストファイル 65 tests、`pnpm test:run` 42 files / 708 tests、`pnpm typecheck` root ok / .pi ok、`pnpm lint` exit 0、`pnpm format:check` 緑。統合: `pnpm harness:pull` は `pull:` の行で exit 0、`pnpm product:ready` は切り替えの 2 行と cycles の見出しで exit 0、`pnpm harness:pull --bogus` は `unknown argument: --bogus` で exit 1。壊し確認は 3 つ: `scripts/harness/index.mjs` のルートを `cwd/x` にすると `scripts/harness/index.test.ts` が 31 件赤、`scripts/product-ready/index.mjs` のルートを `cwd/x` にすると `scripts/product-ready/index.test.ts` が 7 件赤、エラー文に `(old)` を戻すと完全一致の 1 件が赤。いずれも戻して、全体が緑に戻ることを確かめた。
+- Findings: なし。review Round 1 の 2 件は fixed し、Round 2 で確認した。壊し確認の 3 つはすべて赤になった。
+- Doubts: なし
