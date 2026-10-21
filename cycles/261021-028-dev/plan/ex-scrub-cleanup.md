@@ -76,8 +76,10 @@
 ### Slice 1: 書き込みを 1 経路にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 14c95f5 consult(ex-scrub-cleanup): single command write path
 
 ### Slice 2: 空になる差し替えを止める
 
