@@ -91,6 +91,16 @@ describe('checkPid', () => {
     const run = ps({ status: 1, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' });
     expect(checkPid(123, 'Wed Oct 21 12:41:12 2026', run)).toBe('unknown');
   });
+
+  it('startToken が空文字 → unknown（ps を叩かない）', () => {
+    let called = 0;
+    const run: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    expect(checkPid(123, '', run)).toBe('unknown');
+    expect(called).toBe(0);
+  });
 });
 
 describe('readStartToken', () => {
@@ -145,5 +155,10 @@ describe('readStartToken', () => {
     expect(readStartToken(-5, run)).toBeUndefined();
     expect(readStartToken(3.5, run)).toBeUndefined();
     expect(called).toBe(0);
+  });
+
+  it('status 0 で出力が空・空白だけ → undefined', () => {
+    expect(readStartToken(123, ps({ status: 0, stdout: '', stderr: '' }))).toBeUndefined();
+    expect(readStartToken(123, ps({ status: 0, stdout: '   \n  ', stderr: '' }))).toBeUndefined();
   });
 });

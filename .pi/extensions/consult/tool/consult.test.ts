@@ -769,6 +769,24 @@ describe('beginRun: startToken', () => {
     expect(records[0]?.startToken).toBe(fixed);
     expect(typeof records[0]?.token).toBe('string');
   });
+
+  it('onStarted で ps が読めない → startToken 無しの開始行になる', async () => {
+    const { pi } = fakePi();
+    const pid = 4242;
+    const run: ConsultRunner = async (_ctx, _options, job) => {
+      job.onStarted?.(pid);
+      return { text: 'done', details: {}, report: undefined };
+    };
+    const gone = { status: 1 as const, stdout: '', stderr: '' };
+    const psRun: PsRun = () => gone;
+    const { runtime, place } = setup(pi, run, undefined, psRun);
+    await startSubagent(runtime, { role: 'review', task: '調べる' });
+    await flush();
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[0]?.startToken).toBeUndefined();
+    expect(typeof records[0]?.token).toBe('string');
+  });
 });
 
 describe('beginRun: token', () => {

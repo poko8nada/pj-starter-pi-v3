@@ -12,7 +12,7 @@
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import type { SubagentState } from './run.ts';
 import { dayFile, windowFiles, type Place } from './place.ts';
-import { checkPid, type Liveness } from './proc.ts';
+import { checkPid, type Liveness, type PsRun } from './proc.ts';
 
 /** 読む窓の日数（今日と昨日） */
 export const RECORD_DAYS = 2;
@@ -83,9 +83,9 @@ export function pidAlive(pid: number): boolean {
 export type CheckRecord = (record: RunRecord) => Liveness;
 
 /** 既定の照合。startToken があれば `ps` の `lstart`、無ければ `pidAlive`（古い行の移行） */
-function defaultCheck(record: RunRecord): Liveness {
+export function defaultCheck(record: RunRecord, run?: PsRun): Liveness {
   if (record.startToken !== undefined) {
-    return checkPid(record.pid, record.startToken);
+    return checkPid(record.pid, record.startToken, run);
   }
   return pidAlive(record.pid) ? 'running' : 'ended';
 }

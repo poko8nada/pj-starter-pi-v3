@@ -38,7 +38,7 @@ export interface ConsultOptions {
   /** サブエージェントへの指示。argv には載せず、標準入力へ流す（run.ts） */
   readonly task: string;
   readonly policy: TypePolicy;
-  /** 子の pi に `--name` で渡す印。`ps` の argv に残り、生きているかの照合に使う */
+  /** 子の pi に `--name` で渡す印。表示名として残る（生きているかの照合は `startToken` と `ps -o lstart=` で見る） */
   readonly token: string;
   /**
    * サブエージェントのセッションのファイル。worktree ごとに 1 つ。

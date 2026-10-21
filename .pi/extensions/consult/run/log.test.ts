@@ -6,13 +6,16 @@ import { dayFile, placeFor, type Place } from './place.ts';
 import {
   appendRun,
   closeOrphans,
+  defaultCheck,
   isRunning,
   parseRun,
   pidAlive,
   readRuns,
   runningRuns,
+  type CheckRecord,
   type RunRecord,
 } from './log.ts';
+import type { PsRun } from './proc.ts';
 
 // 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
 // 実物の /tmp/pi-consult を触らない。
@@ -183,13 +186,47 @@ describe('isRunning', () => {
     expect(isRunning(record({ pid: 999_999 }))).toBe(false);
   });
 
-  it('ended のある行に check を渡す → false（短絡）', () => {
+  it('ended のある行に check を渡す → false（短絡、check を呼ばない）', () => {
+    let called = 0;
+    const check: CheckRecord = () => {
+      called += 1;
+      return 'running';
+    };
     expect(
       isRunning(
         record({ pid: 42, startToken: 'Wed Oct 21 12:41:12 2026', ended: 2000, state: 'done' }),
-        () => 'running',
+        check,
       ),
     ).toBe(false);
+    expect(called).toBe(0);
+  });
+});
+
+describe('defaultCheck', () => {
+  it('startToken 付きの行は ps の lstart を見る（run を差し替え）', () => {
+    const seen: string[][] = [];
+    const run: PsRun = (args) => {
+      seen.push([...args]);
+      return { status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' };
+    };
+    expect(defaultCheck(record({ pid: 11, startToken: 'Wed Oct 21 12:41:12 2026' }), run)).toBe(
+      'running',
+    );
+    expect(seen[0]).toContain('lstart=');
+    expect(defaultCheck(record({ pid: 11, startToken: 'Wed Oct 21 12:41:11 2026' }), run)).toBe(
+      'ended',
+    );
+  });
+
+  it('startToken 無しの行は ps を叩かず pidAlive で決まる', () => {
+    let called = 0;
+    const run: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    expect(defaultCheck(record({ pid: process.pid }), run)).toBe('running');
+    expect(defaultCheck(record({ pid: 999_999 }), run)).toBe('ended');
+    expect(called).toBe(0);
   });
 });
 

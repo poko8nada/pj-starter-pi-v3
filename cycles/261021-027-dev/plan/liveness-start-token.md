@@ -238,9 +238,21 @@ function defaultCheck(record: RunRecord): Liveness;
 ### Round 1
 
 - Stale:
+  - tool/worktree.ts:95 と sub/spec.ts:41 の注釈が argv 照合のまま
+    - fixed: startToken と `ps -o lstart=` の一致に直し、`--name` は表示名と書いた
 - Unlisted:
 - Gaps:
+  - onStarted の失敗時（`readStartToken` が undefined → 開始行に startToken 無し）の case が無い
+    - fixed: consult.test.ts の beginRun: startToken に ps 失敗時の case を足した
+  - `readStartToken` の status 0 + 空/空白出力の case が無い
+    - fixed: proc.test.ts に空と空白だけの case を足した（どちらも undefined、実装は変えず）
+  - `checkPid` の空 startToken の case が無い
+    - fixed: proc.test.ts に `''` → unknown・ps を叩かない case を足した（実装は変えず）
+  - `defaultCheck` の startToken→checkPid 経路が差し替え不能
+    - fixed: `run?: PsRun` 引数を足して export し、log.test.ts に ps 差し替えの case を足した
 - Unproven:
+  - ended 短絡の test が check の呼び出し回数を見ていない
+    - fixed: 呼び出し回数を数えて 0 を確かめる形に直した
 - Doubts:
 
 ## Acceptance
