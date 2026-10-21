@@ -391,6 +391,13 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
   - なし
 - Commit: 74ebe11 consult(thinking-scrub): pass full checks for thinking-scrub
 
+### Test cleanup
+
+- Dropped `detectRuns` の 12 回 test (`scrubThinking` の 12 回 test と同じ fixture・同じ区間の主張): 後者に `detectRuns` の形の assert を移し、plan の 1 bullet に 1 test に戻した
+- Dropped `同じ並びが複数の周期で当たる区間` の test (`'abcd'`×15 は周期 4 の test と同じ fixture・同じ 1 区間の主張): 重なりのまとめは 12 回 test が周期 5 と 10 の両当たりで覆う
+- 他の 6 ファイルに同じ振る舞いの重なり・消えた振る舞いの test・取らなくなった枝の test は無かった
+- Suite: 63 → 61 tests, `test:run` と `typecheck` と `lint` と `format:check` は緑
+
 ## Review
 
 ### Round 1

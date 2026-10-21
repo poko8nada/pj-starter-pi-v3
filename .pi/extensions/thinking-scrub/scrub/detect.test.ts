@@ -12,11 +12,6 @@ function repeated(pattern: string, times: number): string {
 }
 
 describe('detectRuns', () => {
-  it('"the *" を 12 回並べた本文 → 1 区間', () => {
-    const text = repeated(unit(), 12);
-    expect(detectRuns(text)).toEqual([{ at: 0, length: 60 }]);
-  });
-
   it('離れた 2 か所に区間 → 2 区間で昇順', () => {
     const block = repeated(unit(), 12);
     const text = `start ${block} middle ${block} end`;
@@ -25,16 +20,13 @@ describe('detectRuns', () => {
     expect(runs[0]?.at).toBeLessThan(runs[1]?.at ?? 0);
     expect(scrubThinking(text).removed).toBe(2);
   });
-
-  it('同じ並びが複数の周期で当たる区間 → 1 区間にまとまる', () => {
-    const text = repeated('abcd', 15);
-    expect(detectRuns(text)).toHaveLength(1);
-  });
 });
 
 describe('scrubThinking', () => {
-  it('"the *" を 12 回並べた本文 → removed が 1、本文から並びが消える', () => {
+  it('"the *" を 12 回並べた本文 → 1 区間で removed が 1、並びが消える', () => {
     const text = repeated(unit(), 12);
+    // 周期 5 と周期 10 のどちらも当たるが、重なりは 1 区間にまとまる。
+    expect(detectRuns(text)).toEqual([{ at: 0, length: 60 }]);
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(1);
     expect(scrubbed.text).not.toContain(unit());
