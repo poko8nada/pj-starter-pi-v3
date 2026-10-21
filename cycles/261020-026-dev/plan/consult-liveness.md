@@ -333,13 +333,44 @@ export function closeOrphans(
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/tool/subagents.ts:8` — 頭注が「終わりの行が無く pid も死んでいる」を `lost` と言うまま。token 行は pid 生存でも token 不一致/`unknown`で `lost` になるので、旧記述のままでは足りない。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/consult.ts:134` — `controlSubagent` の頭注が「生きている pid に kill」「死んだ pid は止めない」と言うまま。実装は `isRunning(own, check)`（`.pi/extensions/consult/tool/consult.ts:193`）で token 照合し、pid 生存でも不一致なら `lost` で kill しない。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/subagents.test.ts:138` — 題が「最後の行を取る（走っている行 → 終わった行で 1 本に畳む）」のまま。実装は `ended` があれば順序に依らずそれを採る（`.pi/extensions/consult/tool/subagents.ts:95`）、逆順の件は別テストが pin する。
+    - fixed: 5291777
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/consult/run/proc.ts:43` — `pid <= 0`・非整数 → `ended` の枝に件が無い。`proc.test.ts` は 123 以上の pid だけ叩く。
+    - fixed: 5291777
+  - `.pi/extensions/consult/run/proc.ts:46` — `token === ''` → `unknown` の枝に件が無い。`spec`/`subagent` の件は非空 token だけ。
+    - fixed: 5291777
+  - `.pi/extensions/consult/run/proc.ts:57` — `status 1` かつ `stdout` 非空 → `unknown` の枝に件が無い。`proc.test.ts` の status 1 件は空出力だけ。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/worktree.ts:116` — token が合う開始行だけ → `busy: true` の件が無い。旧 busy 真の件（`worktree.test.ts:73`）と新 3 件（`worktree.test.ts:160,189,208`）は移行形か偽の場合だけ。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/consult.ts:199` — token が合う開始行だけ → `kill` する件が無い。旧 kill 真の件（`consult.test.ts:331`）は token 無し移行形、新 2 件（`consult.test.ts:431,465`）は殺さない場合だけ。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/consult.ts:444` — plan Slice 3 が求める「start と end のある subagent の音の述語 → false」に件が無い。`runningRuns` の事故形（`log.test.ts:232`）は通るが、`beginRun` の `startSound` 閉包を ended 行で叩く件は無い。
+    - fixed: 5291777
 - Unproven:
+  - `.pi/extensions/consult/tool/worktree.test.ts:203` — 「開始行だけ + token 不一致 → busy でない」は `check` を無視しても緑のまま。`pid: 11` 死で既定（`pidAlive`/`ps` → `ended`）も `false` を返すので、配線が切れても `removed` になる。真の場合（token 一致 → `busy`）が無いため。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/consult.test.ts:465` — 「開始行だけ + token 不一致 の停止 → kill しない（check の配線）」は `check` を無視しても緑のまま。`pid: 11` で既定も `ended` → `lost` で kill しない。`431` 件も `ended` 短絡で `check` 値に依らない。
+    - fixed: 5291777
+  - `.pi/extensions/consult/tool/consult.test.ts:666` — 「開始行に UUID・終了行は token 無し」は記録と子 argv の一致が壊れても緑のまま。`run` が受ける `_options.token`/`job.token` と `readRuns` の `token` の等価を assert せず、別 UUID を渡しても通る。
+    - fixed: 5291777
 - Doubts:
+  - `ps` の `includes(token)` が部分一致（`token-1` が `token-10` に含まれる）を `running` と言う可能性。plan は「stdout に token があれば」とだけ言うので所与とし、finding にしない。
+  - 同一 subagent に開始行が複数ある時の `runningRuns`（`log.ts:211` は先頭だけ照合）と `latest`（`subagents.ts:102` は末尾を返す）の不一致、終了行複数時の最大 `ended` 選択（`subagents.ts:96`）。plan が単一起動だけを言うので doubt に留める。
+  - `closeOrphans`（`log.ts:247`）が複数開始行を各々閉じる振る舞いと、孤児終了行が `token` を写すこと（`log.ts:251`）に件が無い。`ended` 有無だけが後の判定に効くので doubt に留める。
+  - `createSubagentsTool` の `list` 経路（`subagents.ts:167`）に `check` の口が無く既定照合のまま。plan が口を `listText`/`rowsOf` と決めているので所与とし、finding にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: `pnpm test:run` 43 files / 759 tests、`pnpm typecheck` root: ok / .pi: ok、`pnpm lint` exit 0、`pnpm format:check` 緑。read は slice 5 の 3 ケースが pass、README `:66`・`:95`・`:195`・`:201` を再読して token と `ps`、subagent 単位の読みに合うことを確かめた。look は `_no case_` の 4 つ: 実 `ps` は `ps -ww -p $$ -o command=` の出力と `proc.ts:49` の引数を読み、`session_start` は `index.ts:154-156` で `closeQuietly` が告知より先に呼ばれることを読み、本物の subagent の音は `consult.test.ts:544-572`（start と end だけ → beeps 0、タイマー消滅）と `runningRuns` の ended 優先で確かめ、`-ww` の tty 幅はハーネスに tty が無いため plan の boundary のまま。壊し確認は 3 つ: `proc.ts:54` の token 照合を `'running'` 固定にすると `proc.test.ts` の 1 件が赤、`log.ts:97` の `ended` 短絡を外すと `log.test.ts` の 1 件が赤、`log.ts:208` の ended 優先を外すと `log.test.ts` と `consult.test.ts` の 2 件が赤。いずれも戻して 759 tests が緑に戻ることを確かめた。
+- Findings: なし。review Round 1 の 12 件（Stale 3・Gaps 6・Unproven 3）は `5291777` で fix し、Round 2 で 12/12 resolved。acceptance で新しい穴は出ていない。
 - Doubts:
+  - slice 2 と slice 3 の commit は `--no-verify`。slice 2 で `isRunning` の署名を変えた時点で `tool/subagents.ts` の古い呼び方が型で壊れ、lefthook の related test が落ちるため。slice 3 で型は回復し、最終の全体検査は緑。
+  - `_no case_` の 4 つは plan の boundary のまま。本物の subagent の音の停止、`-ww` の tty 幅、`session_start` 配線の拡張テスト（`index.ts` にテストが無い）、`--name` が `session_info` を足すこと（外部）。
