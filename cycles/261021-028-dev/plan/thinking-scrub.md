@@ -429,8 +429,30 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
   - `settings.json` の他キー保持 (`{...readDoc, enabled}`) に保持確認の test が無い点は Verify が `enabled` の値のみを bullet にするため finding にしない — `.pi/extensions/thinking-scrub/index.ts:54`
     left: Verify が `enabled` の値のみを bullet にするため拾わない
 
+### Round 2
+
+- Stale: なし（Round 1 に fixed 行なし。確認対象なし）
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし（Round 1 の1件は直っている。`.pi/extensions/thinking-scrub/command/scrub.test.ts:87` が `enabled:false` + status で `toEqual` 3 行を固め、`.pi/extensions/thinking-scrub/command/scrub.ts:62-64` の enabled 行・回数・時刻と一致する）
+- Unproven: なし（Round 1 の3件は直っている。`scrub/detect.test.ts:35` は 12 文字×5 回・60 文字で `MIN_LENGTH` を通し `MIN_REPEATS` だけが落とす形で `.pi/extensions/thinking-scrub/scrub/detect.ts:65` と一致する。`scrub/message.test.ts:115` は `user` + 退化 thinking で role 判定が無ければ `defined` になる形で `.pi/extensions/thinking-scrub/scrub/message.ts:56` と一致する。`scrub/message.test.ts:121` は thinking 入り `Set` で `Array.isArray` が無ければ拾って `defined` になる形で `.pi/extensions/thinking-scrub/scrub/message.ts:59` と一致する）
+- Doubts: なし
+
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run .pi/extensions/thinking-scrub` → exit 0（7 ファイル 62 件）
+  - `pnpm test:run` → exit 0（50 ファイル 835 件）
+  - `pnpm typecheck` → exit 0（root: ok、.pi: ok）
+  - `pnpm lint` → exit 0
+  - `pnpm format:check` → exit 0
+  - 3 つの振る舞いを壊して、plan の検査が赤になることを確かめて戻した。
+    - `scrub/message.ts` の `Array.isArray` を外す → `content が配列でない assistant → undefined` が赤。
+    - `scrub/detect.ts` の `MIN_REPEATS` を 5 にする → `同じ並びが 5 回 → removed が 0` が赤。
+    - `index.ts` の `enabled: false` の early return を外す → `設定が enabled: false → undefined` が赤。
 - Findings:
+  - なし
 - Doubts:
+  - `onCommand` は `enabled` を 2 回書き込む（直接と `runCommand` 経由）。最終状態は同じで、書き込み回数は検査していない。
+  - 既定 export の `dirname(fileURLToPath(import.meta.url))` と `Date.now` は検査していない。
+  - `settings.json` の他のキーを保つことは検査していない（`enabled` の値だけを見ている）。
+  - 純粋な繰り返しだけの本文は `""` か `" "` になる。plan の Steps は端の空白を定めていない。
