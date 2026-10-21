@@ -193,19 +193,27 @@ function defaultCheck(record: RunRecord): Liveness;
 ### Slice 1: 記録の startToken
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 2140398 consult(liveness-start-token): record startToken on launch
 
 ### Slice 2: 生存の check を lstart にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - worktree.test の unknown → busy でない を busy に直した（isRunning が unknown を走っている側にしたため、関連テストが落ちた）
+- Commit: 7d38338 consult(liveness-start-token): check liveness via lstart
 
 ### Slice 3: 読み手を startToken に通す
 
 - Findings:
+  - Verify の 3 ファイル 78 件が通った。beginRun の startSound と controlSubagent の check の配線は state.check/defaultCheck 経由で既に startToken 側だったため、配線の変更は要らなかった
 - Unplanned:
+  - subagents.ts の 2 件の注釈が argv 照合のままだったので startToken/lstart に直した
+  - consult.test.ts の describe が max-lines-per-function（240）を超えた（242）ので startToken の 2 件を別 describe に分けた
+  - oxfmt の崩れ（subagents.test.ts）を直した
 - Commit:
 
 ### Slice 4: 説明を合わせる

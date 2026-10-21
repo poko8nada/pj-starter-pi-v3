@@ -507,6 +507,71 @@ describe('controlSubagent: cancel', () => {
   });
 });
 
+describe('controlSubagent: cancel (startToken)', () => {
+  it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: 11,
+      started: 1,
+      startToken: 'Wed Oct 21 12:41:12 2026',
+    });
+    const killsRunning: number[] = [];
+    const outcomeRunning = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        killsRunning.push(pid);
+      },
+      () => 'running',
+    );
+    expect(killsRunning).toEqual([11]);
+    expect(outcomeRunning.details).toMatchObject({ cancelled: true });
+    const killsEnded: number[] = [];
+    const outcomeEnded = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        killsEnded.push(pid);
+      },
+      () => 'ended',
+    );
+    expect(killsEnded).toEqual([]);
+    expect(outcomeEnded.details).toMatchObject({ cancelled: false });
+  });
+
+  it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: 11,
+      started: 1,
+      startToken: 'Wed Oct 21 12:41:12 2026',
+    });
+    const kills: number[] = [];
+    const outcome = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+      () => 'unknown',
+    );
+    expect(kills).toEqual([11]);
+    expect(outcome.details).toMatchObject({ cancelled: true });
+  });
+});
+
 describe('音', () => {
   // 音そのもの（タイマー 1 本・述語で止まる・enabled）は `sound.test.ts` が見る。
   // ここでは runtime 側の組み立てだけを見る: サブエージェントが走り出したら音が始まる、と、述語がこの session のサブエージェントだけを見ること。

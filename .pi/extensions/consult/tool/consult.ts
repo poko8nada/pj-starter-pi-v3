@@ -130,7 +130,7 @@ function describeSubagent(subagent: RunningSubagent): string {
  * 走っているサブエージェントの一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
  *
  * 掴んでいるサブエージェント（このインスタンスが起こした物）は `abort()` で止める。掴んでいないサブエージェントは記録から
- * 引いて、まだ走っている（同じ subagent に終わりの行が無く、token の照合が通る）物にだけ `kill`（既定は SIGTERM）を送る。
+ * 引いて、まだ走っている（同じ subagent に終わりの行が無く、startToken の照合が通る）物にだけ `kill`（既定は SIGTERM）を送る.
  * 記録は書かない（終わりの行は、そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
  * 知らない id・終わったサブエージェント・照合の通らない物・別の session のサブエージェントは、理由を返して止めない。
  */
@@ -274,7 +274,7 @@ interface RuntimeState {
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
   readonly sessionNow: () => string;
-  /** 生死の照合。テストが差し替える口（既定は token があれば `ps`、無ければ `pidAlive`） */
+  /** 生死の照合。テストが差し替える口（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`） */
   readonly check?: CheckRecord;
   /** 起動時刻を読む `ps`。テストが差し替える口（既定は本物の `ps`） */
   readonly psRun?: PsRun;

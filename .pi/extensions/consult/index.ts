@@ -12,7 +12,13 @@ import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { startSound, stopSound } from './tool/sound.ts';
 import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
-import { closeOrphans, KEEP_DAYS, runningRuns, type RunRecord } from './run/log.ts';
+import {
+  closeOrphans,
+  KEEP_DAYS,
+  runningRuns,
+  type CheckRecord,
+  type RunRecord,
+} from './run/log.ts';
 import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
@@ -86,16 +92,21 @@ function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
  * いまの session の走っているサブエージェントだけを見る（別の session のサブエージェントの報告はここには来ないので、
  * 待たせない）。音も同じ述語で鳴らし、居なくなれば自分で止まる。
  */
-function announceRunningSubagents(place: Place, announced: string, ctx: ExtensionContext): void {
-  if (runningRuns(place, { session: announced }).length === 0) {
+function announceRunningSubagents(
+  place: Place,
+  announced: string,
+  ctx: ExtensionContext,
+  check?: CheckRecord,
+): void {
+  if (runningRuns(place, { session: announced }, check).length === 0) {
     return;
   }
-  const count = runningRuns(place, { session: announced }).length;
+  const count = runningRuns(place, { session: announced }, check).length;
   ctx.ui.notify(
     `consult: ${count} subagent(s) are still running from an earlier session (see consult_subagents)`,
     'info',
   );
-  startSound(() => runningRuns(place, { session: announced }).length > 0);
+  startSound(() => runningRuns(place, { session: announced }, check).length > 0);
 }
 
 /** 人が使う口。サブエージェントの一覧と停止、音の切り替え */

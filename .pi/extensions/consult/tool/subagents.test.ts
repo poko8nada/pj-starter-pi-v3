@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { appendRun, type RunRecord } from '../run/log.ts';
+import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import {
   USAGE,
@@ -41,12 +41,13 @@ function withLog(records: readonly RunRecord[] = [record()], at?: Date): Place {
 }
 
 /** 一覧に出す口。置き場と、いまの session と、止める手を持つ偽の runtime */
-function fakeHost(found: Place, session = 'session-a') {
+function fakeHost(found: Place, session = 'session-a', check?: CheckRecord) {
   const cancelled: string[] = [];
   return {
     host: {
       place: found,
       sessionNow: () => session,
+      ...(check === undefined ? {} : { check }),
       control: (
         action: { readonly action: 'list' } | { readonly action: 'cancel'; readonly id: string },
       ) => {
@@ -190,6 +191,43 @@ describe('createSubagentsTool', () => {
     const args: SubagentsArgs = ['call', {}, undefined, undefined, { cwd: tmpDir() }];
     const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain('consult-1');
+  });
+
+  it('list の check の口が効く（running と ended を返す差し替えで一覧の状態が変わる）', async () => {
+    const start = record({
+      session: 'session-a',
+      subagent: 'consult-1',
+      pid: 11,
+      startToken: 'Wed Oct 21 12:41:12 2026',
+    });
+    const runningFound = withLog([start]);
+    const runningArgs: SubagentsArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
+    expect(
+      textOf(
+        await createSubagentsTool(fakeHost(runningFound, 'session-a', runningCheck).host)(
+          ...runningArgs,
+        ),
+      ),
+    ).toContain('running');
+    const endedFound = withLog([start]);
+    const endedArgs: SubagentsArgs = [
+      'call',
+      { action: 'list' },
+      undefined,
+      undefined,
+      { cwd: tmpDir() },
+    ];
+    const endedText = textOf(
+      await createSubagentsTool(fakeHost(endedFound, 'session-a', endedCheck).host)(...endedArgs),
+    );
+    expect(endedText).toContain('lost');
+    expect(endedText).not.toContain('running');
   });
 
   it('2 つの session のサブエージェントが居る → いまの session のサブエージェントだけが出る', async () => {
