@@ -231,7 +231,7 @@ function defaultCheck(record: RunRecord): Liveness;
   - Verify の cli 4 件が通った: `test:run` exit 0（43 ファイル 777 件、consult を含む）、`typecheck` exit 0（root: ok、.pi: ok）、`lint` exit 0、`format:check` exit 0。落ちた行なし
 - Unplanned:
   - なし
-- Commit:
+- Commit: 163eae8 consult(liveness-start-token): verify integrated liveness
 
 ## Review
 

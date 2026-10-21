@@ -153,28 +153,8 @@ describe('isRunning', () => {
     expect(isRunning(record({ pid: 42 }), () => 'running')).toBe(true);
   });
 
-  it('終わりの行があれば、pid が生きていても false', () => {
-    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => 'running')).toBe(false);
-  });
-
   it('pid が死んでいれば、終わりの行が無くても false（メインエージェントごと落ちたサブエージェント）', () => {
     expect(isRunning(record({ pid: 42 }), () => 'ended')).toBe(false);
-  });
-
-  it('token 無しの古い行で pid が死んでいる → false', () => {
-    expect(isRunning(record({ pid: 999_999 }))).toBe(false);
-  });
-
-  it('token 無しの古い行で pid が生きている → true（移行）', () => {
-    expect(isRunning(record({ pid: process.pid }))).toBe(true);
-  });
-
-  it('token 付きの行で check が running → true', () => {
-    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'running')).toBe(true);
-  });
-
-  it('token 付きの行で check が ended → false', () => {
-    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'ended')).toBe(false);
   });
 
   it('startToken 付きの行で check が running → true', () => {

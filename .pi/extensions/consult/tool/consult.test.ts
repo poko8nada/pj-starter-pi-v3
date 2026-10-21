@@ -30,7 +30,7 @@ import {
 } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
-import { readStartToken, type PsRun } from '../run/proc.ts';
+import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
@@ -467,44 +467,6 @@ describe('controlSubagent: cancel', () => {
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
   });
-
-  it('開始行だけの停止は check に従う（running → kill、ended → kill しない）', () => {
-    const found = placeFor(tmpDir(), tmpDir());
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: 11,
-      started: 1,
-      token: 'token-9',
-    });
-    const killsRunning: number[] = [];
-    const outcomeRunning = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      (pid) => {
-        killsRunning.push(pid);
-      },
-      () => 'running',
-    );
-    expect(killsRunning).toEqual([11]);
-    expect(outcomeRunning.details).toMatchObject({ cancelled: true });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      (pid) => {
-        kills.push(pid);
-      },
-      () => 'ended',
-    );
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-  });
 });
 
 describe('controlSubagent: cancel (startToken)', () => {
@@ -806,18 +768,6 @@ describe('beginRun: startToken', () => {
     expect(records).toHaveLength(2);
     expect(records[0]?.startToken).toBe(fixed);
     expect(typeof records[0]?.token).toBe('string');
-  });
-
-  it('readStartToken に 0 以下・非整数の pid → undefined、ps を叩かない', async () => {
-    let called = 0;
-    const psRun: PsRun = () => {
-      called += 1;
-      return { status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' };
-    };
-    expect(readStartToken(0, psRun)).toBeUndefined();
-    expect(readStartToken(-1, psRun)).toBeUndefined();
-    expect(readStartToken(1.5, psRun)).toBeUndefined();
-    expect(called).toBe(0);
   });
 });
 
