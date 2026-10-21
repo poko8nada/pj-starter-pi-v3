@@ -34,7 +34,7 @@ function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
 }
 
 function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
-  return { type: 'review', task: '調べる', policy: policy(), ...overrides };
+  return { type: 'review', task: '調べる', policy: policy(), token: 'token-1', ...overrides };
 }
 
 describe('buildPiArgs: subagent-guard', () => {
@@ -77,7 +77,8 @@ describe('buildPiArgs: subagent-guard', () => {
 describe('buildPiArgs', () => {
   it('ヘッドレスで 1 回だけ走る形にする', () => {
     const args = buildPiArgs(options());
-    expect(args.slice(0, 4)).toEqual(['--mode', 'json', '-p', '--no-session']);
+    expect(args.slice(0, 5)).toEqual(['--mode', 'json', '-p', '--name', 'token-1']);
+    expect(args).toContain('--no-session');
   });
 
   it('既定でプロジェクトの設定・拡張を読まない', () => {
@@ -272,6 +273,30 @@ describe('buildPiArgs: sessionPath', () => {
     expect(args).toContain('--session');
     expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
     expect(args).not.toContain('--no-session');
+  });
+});
+
+describe('buildPiArgs: token', () => {
+  it('token と --session あり → argv に --name <token> と --session が両方ある', () => {
+    const args = buildPiArgs(options({ token: 'token-abc', sessionPath: '/tmp/s' }));
+    const nameIndex = args.indexOf('--name');
+    expect(nameIndex).toBeGreaterThan(-1);
+    expect(args[nameIndex + 1]).toBe('token-abc');
+    expect(args).toContain('--session');
+    expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
+  });
+
+  it('--no-session の子 → argv に --name <token> がある', () => {
+    const args = buildPiArgs(options({ token: 'token-xyz' }));
+    const nameIndex = args.indexOf('--name');
+    expect(nameIndex).toBeGreaterThan(-1);
+    expect(args[nameIndex + 1]).toBe('token-xyz');
+    expect(args).toContain('--no-session');
+  });
+
+  it('-p の後に --name と token を並べる', () => {
+    const args = buildPiArgs(options({ token: 'token-1' }));
+    expect(args.slice(0, 5)).toEqual(['--mode', 'json', '-p', '--name', 'token-1']);
   });
 });
 

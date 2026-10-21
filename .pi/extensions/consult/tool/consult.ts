@@ -8,6 +8,7 @@
  */
 
 import { dirname } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
@@ -19,6 +20,7 @@ import {
   KEEP_DAYS,
   readRuns,
   runningRuns,
+  type CheckRecord,
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
@@ -127,11 +129,11 @@ function describeSubagent(subagent: RunningSubagent): string {
  * 走っているサブエージェントの一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
  *
  * 掴んでいるサブエージェント（このインスタンスが起こした物）は `abort()` で止める。掴んでいないサブエージェントは記録から
- * 引いて、生きている pid に `kill`（既定は SIGTERM）を送る。記録は書かない（終わりの行は、
- * そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
- * 知らない id・終わったサブエージェント・死んだ pid・別の session のサブエージェントは、理由を返して止めない。
+ * 引いて、まだ走っている（同じ subagent に終わりの行が無く、token の照合が通る）物にだけ `kill`（既定は SIGTERM）を送る。
+ * 記録は書かない（終わりの行は、そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
+ * 知らない id・終わったサブエージェント・照合の通らない物・別の session のサブエージェントは、理由を返して止めない。
  */
-// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill の 5 つ）
+// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill, check の 6 つ）
 export function controlSubagent(
   action: ControlAction,
   subagents: ReadonlyMap<string, RunningSubagent>,
@@ -140,6 +142,7 @@ export function controlSubagent(
   kill: (pid: number) => void = (pid) => {
     process.kill(pid, 'SIGTERM');
   },
+  check?: CheckRecord,
 ): ControlOutcome {
   if (action.action === 'list') {
     const running = [...subagents.values()];
@@ -187,7 +190,7 @@ export function controlSubagent(
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
-  if (!isRunning(own)) {
+  if (!isRunning(own, check)) {
     return {
       text: `consult_subagents: ${action.id} is not running (lost)`,
       details: { action: 'cancel', id: action.id, cancelled: false },
@@ -270,6 +273,8 @@ interface RuntimeState {
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
   readonly sessionNow: () => string;
+  /** 生死の照合。テストが差し替える口（既定は token があれば `ps`、無ければ `pidAlive`） */
+  readonly check?: CheckRecord;
   /** 番号の床。記録の最大で種を取り、同じ runtime で続けて起こす時も重ねない */
   number: { session: string; next: number };
 }
@@ -400,7 +405,8 @@ function beginRun(
   if (policy.isolated && worktree === undefined) {
     throw new Error(`consult_run: ${policy.name} writes, so it needs a worktree. ${RUN_USAGE}`);
   }
-  const options: ConsultOptions = { type: policy.name, task: request.task, policy };
+  const token = randomUUID();
+  const options: ConsultOptions = { type: policy.name, task: request.task, policy, token };
   // 番号は記録から決める。reload でメモリーが消えても、戻らないように。
   const session = state.sessionNow();
   const subagent: RunningSubagent = {
@@ -412,6 +418,7 @@ function beginRun(
   };
   const job: SubagentJob = {
     task: request.task,
+    token,
     id: subagent.id,
     signal: subagent.controller.signal,
     ...(worktree === undefined ? {} : { worktree }),
@@ -425,6 +432,7 @@ function beginRun(
         role: policy.name,
         pid,
         started: subagent.startedAt,
+        token,
         ...(worktree === undefined ? {} : { worktree: worktree.id }),
       });
     },
@@ -432,7 +440,8 @@ function beginRun(
   state.subagents.set(subagent.id, subagent);
   if (state.subagents.size === 1) {
     // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
-    startSound(() => runningRuns(state.place, { session: state.sessionNow() }).length > 0);
+    const check = state.check;
+    startSound(() => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0);
   }
   runInBackground(state, { ctx, options, job, subagent, session });
   const running = [...state.subagents.values()].map(describeSubagent).join('\n');
@@ -464,13 +473,14 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
-// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow の 5 つ）
+// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow, check の 6 つ）
 export function createRuntime(
   pi: PiFace,
   place: Place,
   run: ConsultRunner = consult,
   delivery?: Delivery,
   sessionNow: () => string = () => '',
+  check?: CheckRecord,
 ): ConsultRuntime {
   const state: RuntimeState = {
     pi,
@@ -479,6 +489,7 @@ export function createRuntime(
     subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,
+    ...(check === undefined ? {} : { check }),
     ...(delivery === undefined ? {} : { delivery }),
   };
   return {
@@ -487,7 +498,8 @@ export function createRuntime(
       const [, params, , , ctx] = args;
       return beginRun(state, ctx, parseRunRequest(params));
     },
-    control: (action, session) => controlSubagent(action, state.subagents, state.place, session),
+    control: (action, session) =>
+      controlSubagent(action, state.subagents, state.place, session, undefined, check),
     commands: {
       status: async (_args, ctx) => {
         const outcome = controlSubagent(
@@ -495,6 +507,8 @@ export function createRuntime(
           state.subagents,
           state.place,
           state.sessionNow(),
+          undefined,
+          check,
         );
         ctx.ui.notify(outcome.text, 'info');
       },
@@ -512,6 +526,8 @@ export function createRuntime(
           state.subagents,
           state.place,
           state.sessionNow(),
+          undefined,
+          check,
         );
         ctx.ui.notify(outcome.text, outcome.details.cancelled === true ? 'info' : 'error');
       },

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { subagentEnv, prepare, sessionFile } from './subagent.ts';
+import { describe, expect, it, vi } from 'vitest';
+import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 
@@ -29,7 +29,9 @@ const WORKTREE: Worktree = {
 
 describe('prepare', () => {
   it('隔離しないロール → ベースで走る（worktree は要らない）', () => {
-    expect(prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false) })).toEqual({
+    expect(
+      prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false), token: 'token-1' }),
+    ).toEqual({
       cwd: '/tmp/base',
     });
   });
@@ -37,7 +39,7 @@ describe('prepare', () => {
   it('隔離しないロールに worktree を渡す → その worktree で走る（レビューを直接送り込む道）', () => {
     const prepared = prepare(
       CONTEXT,
-      { type: 'review', task: 'x', policy: policy(false) },
+      { type: 'review', task: 'x', policy: policy(false), token: 'token-1' },
       WORKTREE,
     );
     expect(prepared.cwd).toBe(WORKTREE.path);
@@ -45,14 +47,18 @@ describe('prepare', () => {
   });
 
   it('隔離するロール → worktree が要る', () => {
-    const prepared = prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true) }, WORKTREE);
+    const prepared = prepare(
+      CONTEXT,
+      { type: 'code', task: 'x', policy: policy(true), token: 'token-1' },
+      WORKTREE,
+    );
     expect(prepared.cwd).toBe(WORKTREE.path);
   });
 
   it('隔離するロールで worktree が無い → ベースで書かせずに投げる', () => {
-    expect(() => prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true) })).toThrow(
-      /needs a worktree/,
-    );
+    expect(() =>
+      prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true), token: 'token-1' }),
+    ).toThrow(/needs a worktree/);
   });
 });
 
@@ -69,6 +75,35 @@ describe('subagentEnv', () => {
       limits: { turns: 40, output: 8000 },
     });
     expect(env.CONSULT_TURNS).toBe('40');
+  });
+});
+
+const capturedPiArgs = vi.hoisted(() => [] as string[][]);
+
+vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    runPi: async (options: { readonly piArgs: readonly string[] }) => {
+      capturedPiArgs.push([...options.piArgs]);
+      return { stdout: '', stderr: '', code: 0, aborted: false, ended: false };
+    },
+  };
+});
+
+describe('runOneSubagent: token', () => {
+  it('job の token が buildPiArgs の argv に --name で届く（取り違えない）', async () => {
+    capturedPiArgs.length = 0;
+    await runOneSubagent(
+      CONTEXT,
+      { type: 'review', task: 'x', policy: policy(false), token: 'options-token' },
+      { task: 'x', token: 'job-token-1', signal: undefined },
+    );
+    const args = capturedPiArgs[0] ?? [];
+    const index = args.indexOf('--name');
+    expect(index).toBeGreaterThan(-1);
+    expect(args[index + 1]).toBe('job-token-1');
+    expect(args).not.toContain('options-token');
   });
 });
 

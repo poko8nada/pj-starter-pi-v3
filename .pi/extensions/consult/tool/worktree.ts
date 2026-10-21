@@ -8,7 +8,7 @@
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { pidAlive, readRuns } from '../run/log.ts';
+import { isRunning, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
 import {
   createWorktree,
@@ -91,19 +91,33 @@ function parseAction(
 /**
  * その unit でサブエージェントが走っているか。
  *
- * 記録（置き場の日ごとのファイル）で見る: 終わりの行が無く、pid が生きている行があれば走っている。
+ * 記録（置き場の日ごとのファイル）で見る: 同じ subagent に終わりの行があれば除き、無ければ
+ * `check`（既定は token があれば `ps`、無ければ `pidAlive`）に渡す。
  * メインエージェントの記憶ではなく記録を見るので、reload をまたいだサブエージェントにも効く。
  *
  * session では絞らない。作業場を守る側なので、他のセッションのサブエージェントが走っている作業場も消してはいけない。
  */
-export function runningIn(
-  place: Place,
-  id: string,
-  alive: (pid: number) => boolean = pidAlive,
-): boolean {
-  return readRuns(place).some(
-    (run) => run.worktree === id && run.ended === undefined && alive(run.pid),
-  );
+export function runningIn(place: Place, id: string, check?: CheckRecord): boolean {
+  const groups = new Map<string, RunRecord[]>();
+  const all = readRuns(place).filter((run) => run.worktree === id);
+  for (const run of all) {
+    const list = groups.get(run.subagent);
+    if (list !== undefined) {
+      list.push(run);
+    } else {
+      groups.set(run.subagent, [run]);
+    }
+  }
+  for (const records of groups.values()) {
+    if (records.some((run) => run.ended !== undefined)) {
+      continue;
+    }
+    const start = records[0];
+    if (start !== undefined && isRunning(start, check)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function rowLine(row: WorktreeRow, busy: boolean): string {
@@ -151,7 +165,7 @@ export function removeText(id: string, removed: RemoveResult): string {
 /**
  * 道具を作る。置き場は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
  */
-export function createWorktreeTool(place: Place) {
+export function createWorktreeTool(place: Place, check?: CheckRecord) {
   return async function execute(...args: ExecuteArgs) {
     const [, params, , , ctx] = args;
     const action = parseAction(params);
@@ -171,7 +185,7 @@ export function createWorktreeTool(place: Place) {
     if (action.action === 'remove') {
       const removed = removeWorktree(cwd, action.id, {
         force: action.force,
-        busy: runningIn(place, action.id),
+        busy: runningIn(place, action.id, check),
       });
       return result(removeText(action.id, removed), {
         action: 'remove',
@@ -183,7 +197,7 @@ export function createWorktreeTool(place: Place) {
     if (rows.length === 0) {
       return result('作業場は無い。', { action: 'list', rows });
     }
-    return result(rows.map((row) => rowLine(row, runningIn(place, row.id))).join('\n'), {
+    return result(rows.map((row) => rowLine(row, runningIn(place, row.id, check))).join('\n'), {
       action: 'list',
       rows,
     });

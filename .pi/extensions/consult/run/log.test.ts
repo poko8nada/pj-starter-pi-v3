@@ -1,10 +1,11 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { dayFile, placeFor, type Place } from './place.ts';
 import {
   appendRun,
+  closeOrphans,
   isRunning,
   parseRun,
   pidAlive,
@@ -149,15 +150,35 @@ describe('pidAlive', () => {
 
 describe('isRunning', () => {
   it('終わりの行が無く pid が生きている → true', () => {
-    expect(isRunning(record({ pid: 42 }), () => true)).toBe(true);
+    expect(isRunning(record({ pid: 42 }), () => 'running')).toBe(true);
   });
 
   it('終わりの行があれば、pid が生きていても false', () => {
-    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => true)).toBe(false);
+    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => 'running')).toBe(false);
   });
 
   it('pid が死んでいれば、終わりの行が無くても false（メインエージェントごと落ちたサブエージェント）', () => {
-    expect(isRunning(record({ pid: 42 }), () => false)).toBe(false);
+    expect(isRunning(record({ pid: 42 }), () => 'ended')).toBe(false);
+  });
+
+  it('token 無しの古い行で pid が死んでいる → false', () => {
+    expect(isRunning(record({ pid: 999_999 }))).toBe(false);
+  });
+
+  it('token 無しの古い行で pid が生きている → true（移行）', () => {
+    expect(isRunning(record({ pid: process.pid }))).toBe(true);
+  });
+
+  it('token 付きの行で check が running → true', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'running')).toBe(true);
+  });
+
+  it('token 付きの行で check が ended → false', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'ended')).toBe(false);
+  });
+
+  it('token 付きの行で check が unknown → false', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'unknown')).toBe(false);
   });
 });
 
@@ -183,6 +204,99 @@ describe('runningRuns', () => {
       'consult-live',
     ]);
   });
+
+  it('check を通す → running だけ残る', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    appendRun(found, record({ session: 'A', subagent: 'consult-2', pid: 22, token: 'b' }), at);
+    const seen: string[] = [];
+    const out = runningRuns(found, { at, session: 'A' }, (entry) => {
+      seen.push(entry.subagent);
+      return entry.token === 'a' ? 'running' : 'ended';
+    });
+    expect(out.map((run) => run.subagent)).toEqual(['consult-1']);
+    expect(seen).toEqual(['consult-1', 'consult-2']);
+  });
+
+  it('token 無しの行は pidAlive で決まる（移行）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-live', pid: process.pid }), at);
+    appendRun(found, record({ session: 'A', subagent: 'consult-dead', pid: 999_999 }), at);
+    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual([
+      'consult-live',
+    ]);
+  });
+
+  it('同じ subagent に開始行と終了行があり、pid が生きている → 走っていない（事故の形）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }), at);
+    appendRun(
+      found,
+      record({
+        session: 'A',
+        subagent: 'consult-1',
+        pid: process.pid,
+        ended: 2000,
+        state: 'done',
+      }),
+      at,
+    );
+    expect(runningRuns(found, { at, session: 'A' })).toEqual([]);
+  });
+
+  it('開始行だけで token が合う → 走っている', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    const out = runningRuns(found, { at, session: 'A' }, () => 'running');
+    expect(out.map((run) => run.subagent)).toEqual(['consult-1']);
+  });
+
+  it('開始行だけで token が合わない → 走っていない', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    expect(runningRuns(found, { at, session: 'A' }, () => 'ended')).toEqual([]);
+  });
+
+  it('行が無い → 空', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    expect(runningRuns(found, { at, session: 'A' }, () => 'running')).toEqual([]);
+  });
+
+  it('終了行が新しい日のファイル、開始行が古い日のファイル → 走っていない', () => {
+    const found = place();
+    appendRun(
+      found,
+      record({ session: 'A', subagent: 'consult-1', pid: process.pid, started: 1 }),
+      new Date(2026, 9, 9, 23, 59),
+    );
+    appendRun(
+      found,
+      record({
+        session: 'A',
+        subagent: 'consult-1',
+        pid: process.pid,
+        started: 1,
+        ended: 2,
+        state: 'done',
+      }),
+      new Date(2026, 9, 10, 0, 1),
+    );
+    const at = new Date(2026, 9, 10, 12, 0);
+    expect(runningRuns(found, { at, session: 'A', days: 2 }, () => 'running')).toEqual([]);
+  });
+
+  it('check が unknown → 走っていない', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    expect(runningRuns(found, { at, session: 'A' }, () => 'unknown')).toEqual([]);
+  });
 });
 
 describe('parseRun', () => {
@@ -206,5 +320,120 @@ describe('parseRun', () => {
 
   it('旧形の行（child 欄だけを持つ JSON）は捨てる', () => {
     expect(parseRun('{"session":"s","child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
+  });
+
+  it('token 付きの開始行 → token が返る（往復）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ token: 'token-1' }), at);
+    expect(readRuns(found, { at })[0]).toMatchObject({ token: 'token-1' });
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":"token-1"}'),
+    ).toMatchObject({ token: 'token-1' });
+  });
+
+  it('token 無しの行（古い形）→ token は undefined で読める', () => {
+    expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
+      { session: 's' },
+    );
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.token,
+    ).toBeUndefined();
+  });
+
+  it('token が数値の行 → token を捨て、行は読める', () => {
+    const run = parseRun(
+      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":123}',
+    );
+    expect(run).toBeDefined();
+    expect(run?.token).toBeUndefined();
+  });
+});
+
+describe('closeOrphans', () => {
+  it('終了行の無い開始行で token が合わない → state: error の終了行が 1 行増え、runningRuns が空になる', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
+    const before = readRuns(found, { session: 'A' });
+    expect(before).toHaveLength(1);
+    const closed = closeOrphans(found, 'A', () => 'ended');
+    expect(closed).toHaveLength(1);
+    expect(closed[0]).toMatchObject({ state: 'error' });
+    expect(readRuns(found, { session: 'A' })).toHaveLength(2);
+    expect(runningRuns(found, { session: 'A' }, () => 'ended')).toEqual([]);
+  });
+
+  it('終了行の無い開始行で token が合う → 行は増えない', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
+    expect(closeOrphans(found, 'A', () => 'running')).toEqual([]);
+    expect(readRuns(found, { session: 'A' })).toHaveLength(1);
+  });
+
+  it('token 無しの古い行で pid が死んでいる → 終了行を書く', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 999_999 }));
+    const closed = closeOrphans(found, 'A');
+    expect(closed).toHaveLength(1);
+    expect(closed[0]).toMatchObject({ state: 'error' });
+  });
+
+  it('行が無い → 何も書かない', () => {
+    const found = place();
+    expect(closeOrphans(found, 'A', () => 'ended')).toEqual([]);
+    expect(readRuns(found, { session: 'A' })).toEqual([]);
+  });
+
+  it('終了行が既にある → 新しい行を書かない', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }));
+    appendRun(
+      found,
+      record({
+        session: 'A',
+        subagent: 'consult-1',
+        pid: process.pid,
+        ended: 2000,
+        state: 'done',
+      }),
+    );
+    expect(closeOrphans(found, 'A', () => 'running')).toEqual([]);
+    expect(readRuns(found, { session: 'A' })).toHaveLength(2);
+  });
+
+  it('appendRun が投げる → 例外はそのまま（呼ぶ側の index.ts が握る）', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
+    const file = dayFile(found, new Date());
+    chmodSync(file, 0o444);
+    try {
+      expect(() => closeOrphans(found, 'A', () => 'ended')).toThrow();
+    } finally {
+      chmodSync(file, 0o644);
+    }
+  });
+
+  it('check が unknown → 終了行を書く', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
+    const closed = closeOrphans(found, 'A', () => 'unknown');
+    expect(closed).toHaveLength(1);
+    expect(closed[0]).toMatchObject({ state: 'error' });
+  });
+
+  it('token 無し + pidAlive が true → 閉じない', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }));
+    expect(closeOrphans(found, 'A')).toEqual([]);
+    expect(readRuns(found, { session: 'A' })).toHaveLength(1);
+  });
+
+  it('閉じた行 → ended が数値、reason が空でない文字列', () => {
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
+    const closed = closeOrphans(found, 'A', () => 'ended');
+    expect(typeof closed[0]?.ended).toBe('number');
+    expect(typeof closed[0]?.reason).toBe('string');
+    expect((closed[0]?.reason ?? '').length).toBeGreaterThan(0);
   });
 });

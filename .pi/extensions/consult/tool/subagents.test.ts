@@ -66,8 +66,8 @@ function textOf(result: { readonly content: readonly unknown[] }): string {
   return typeof first === 'object' && first !== null && 'text' in first ? String(first.text) : '';
 }
 
-const alive = () => true;
-const dead = () => false;
+const runningCheck = () => 'running' as const;
+const endedCheck = () => 'ended' as const;
 
 describe('elapsed', () => {
   it('秒で出し、60 秒を超えたら分と秒にする', () => {
@@ -107,35 +107,49 @@ describe('rowOf / rowsOf', () => {
     expect(running).not.toContain('reason:');
   });
 
-  it('走っているサブエージェント（pid が生きていて終了行が無い）は running になる', () => {
-    expect(rowsOf([record()], alive, 0)[0]).toContain('running');
+  it('走っているサブエージェント（終了行が無く check が running）は running になる', () => {
+    expect(rowsOf([record({ token: 'a' })], runningCheck, 0)[0]).toContain('running');
   });
 
-  it('終わりの行が無く pid も死んでいる → lost（done と偽らない）', () => {
-    const row = rowsOf([record()], dead, 0)[0] ?? '';
+  it('終わりの行が無く check が ended → lost（done と偽らない）', () => {
+    const row = rowsOf([record({ token: 'a' })], endedCheck, 0)[0] ?? '';
     expect(row).toContain('lost');
     expect(row).not.toContain('done');
   });
 
   it('終了の行があるサブエージェントは running にしない（state を出す）', () => {
     const ended = record({ ended: 5, state: 'done' });
-    expect(rowsOf([ended], alive, 0)[0]).not.toContain('running');
-    expect(rowsOf([ended], dead, 0)[0]).toContain('done');
+    expect(rowsOf([ended], runningCheck, 0)[0]).not.toContain('running');
+    expect(rowsOf([ended], endedCheck, 0)[0]).toContain('done');
   });
 
   it('記録が空 → []', () => {
-    expect(rowsOf([], alive, 0)).toEqual([]);
+    expect(rowsOf([], runningCheck, 0)).toEqual([]);
+  });
+
+  it('一覧の check を差し替え、running と ended を返す → 一覧の状態がそれに従う', () => {
+    const start = record({ subagent: 'consult-1', token: 'a' });
+    expect(listText([start], 0, runningCheck)).toContain('running');
+    expect(listText([start], 0, endedCheck)).not.toContain('running');
   });
 });
 
 describe('latest', () => {
-  it('サブエージェントごとに最後の行を取る（走っている行 → 終わった行で 1 本に畳む）', () => {
+  it('サブエージェントごとに 1 本に畳む（終わりの行があれば順序に依らずそれを採る）', () => {
     const running = record({ subagent: 'consult-1', pid: 5 });
     const done = record({ subagent: 'consult-1', pid: 5, ended: 2000, state: 'done' });
     const other = record({ subagent: 'consult-2', started: 3000 });
     expect(latest([running, other, done]).map((row) => [row.subagent, row.state])).toEqual([
       ['consult-1', 'done'],
       ['consult-2', undefined],
+    ]);
+  });
+
+  it('終了行が開始行より先に来る（逆順）→ 一覧は done（ended の行を採る）', () => {
+    const running = record({ subagent: 'consult-1', pid: 5 });
+    const done = record({ subagent: 'consult-1', pid: 5, ended: 2000, state: 'done' });
+    expect(latest([done, running]).map((row) => [row.subagent, row.state])).toEqual([
+      ['consult-1', 'done'],
     ]);
   });
 

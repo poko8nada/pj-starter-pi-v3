@@ -12,6 +12,7 @@
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import type { SubagentState } from './run.ts';
 import { dayFile, windowFiles, type Place } from './place.ts';
+import { checkPid, type Liveness } from './proc.ts';
 
 /** 読む窓の日数（今日と昨日） */
 export const RECORD_DAYS = 2;
@@ -29,6 +30,8 @@ export interface RunRecord {
   /** worktree の id。ベースで走ったサブエージェント（読むだけ）には無い */
   readonly worktree?: string;
   readonly pid: number;
+  /** 子の pi に `--name` で渡した印。`ps` の argv に出る。古い行には無い */
+  readonly token?: string;
   /** 始まった時刻（ms） */
   readonly started: number;
   /** 終わった時刻（ms）。走っている間は無い */
@@ -74,13 +77,24 @@ export function pidAlive(pid: number): boolean {
   }
 }
 
+/** 記録 1 行の生死。テストが差し替える口（`ps` を叩かない） */
+export type CheckRecord = (record: RunRecord) => Liveness;
+
+/** 既定の照合。token があれば `ps` の argv、無ければ `pidAlive`（古い行の移行） */
+function defaultCheck(record: RunRecord): Liveness {
+  if (record.token !== undefined) {
+    return checkPid(record.pid, record.token);
+  }
+  return pidAlive(record.pid) ? 'running' : 'ended';
+}
+
 /**
- * 走っているサブエージェントの行か。終わりの行が無く、pid が生きている。
+ * 走っているサブエージェントの行か。終わりの行があれば false。`running` だけ true。
  *
- * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`alive` はテストが差し替える口。
+ * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`check` はテストが差し替える口。
  */
-export function isRunning(record: RunRecord, alive: (pid: number) => boolean = pidAlive): boolean {
-  return record.ended === undefined && alive(record.pid);
+export function isRunning(record: RunRecord, check: CheckRecord = defaultCheck): boolean {
+  return record.ended === undefined && check(record) === 'running';
 }
 
 /**
@@ -117,6 +131,7 @@ export function parseRun(line: string): RunRecord | undefined {
     pid,
     started,
     ...(typeof fields.worktree === 'string' ? { worktree: fields.worktree } : {}),
+    ...(typeof fields.token === 'string' ? { token: fields.token } : {}),
     ...(typeof fields.ended === 'number' ? { ended: fields.ended } : {}),
     ...(isState(fields.state) ? { state: fields.state } : {}),
     ...(typeof fields.reason === 'string' ? { reason: fields.reason } : {}),
@@ -170,12 +185,78 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
 /**
  * その session の、走っているサブエージェントの行だけを返す。
  *
- * `readRuns` の窓を `scope` で切り、`isRunning`（既定 `pidAlive`）で生きている物だけにする。
- * 音の述語と、前のセッションのサブエージェントの告知が読む。
+ * `readRuns` の窓を `scope` で切り、subagent ごとにまとめる。同じ subagent に `ended` の行が
+ * 1 つでもあれば終わり（事故の形でも走っていない）。無ければ開始行を `check` に渡し、
+ * `running` だけを返す。音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
   place: Place,
   scope: ReadScope & { readonly session: string },
+  check?: CheckRecord,
 ): RunRecord[] {
-  return readRuns(place, scope).filter((record) => isRunning(record));
+  const groups = new Map<string, RunRecord[]>();
+  for (const record of readRuns(place, scope)) {
+    const list = groups.get(record.subagent);
+    if (list !== undefined) {
+      list.push(record);
+    } else {
+      groups.set(record.subagent, [record]);
+    }
+  }
+  const out: RunRecord[] = [];
+  for (const records of groups.values()) {
+    if (records.some((record) => record.ended !== undefined)) {
+      continue;
+    }
+    const start = records[0];
+    if (start !== undefined && isRunning(start, check)) {
+      out.push(start);
+    }
+  }
+  return out;
+}
+
+/**
+ * 終わりの無い開始行を終了行で閉じる。
+ *
+ * session の行を subagent ごとにまとめ、`ended` の無い subagent の開始行を `check`
+ * （既定は token があれば `ps`、無ければ `pidAlive`）に渡す。`ended` か `unknown`
+ * なら、開始行を写して `ended: Date.now()`、`state: 'error'`、理由を足した行を
+ * `appendRun` し、閉じた行を返す。`running` なら何もしない。`appendRun` が投げたら
+ * そのまま投げる（呼ぶ側の `index.ts` が握る）。
+ */
+export function closeOrphans(
+  place: Place,
+  session: string,
+  check?: CheckRecord,
+): readonly RunRecord[] {
+  const groups = new Map<string, RunRecord[]>();
+  for (const record of readRuns(place, { session })) {
+    const list = groups.get(record.subagent);
+    if (list !== undefined) {
+      list.push(record);
+    } else {
+      groups.set(record.subagent, [record]);
+    }
+  }
+  const closed: RunRecord[] = [];
+  for (const records of groups.values()) {
+    if (records.some((record) => record.ended !== undefined)) {
+      continue;
+    }
+    for (const start of records) {
+      if (isRunning(start, check)) {
+        continue;
+      }
+      const done: RunRecord = {
+        ...start,
+        ended: Date.now(),
+        state: 'error',
+        reason: 'orphan: start without end (closed on session_start)',
+      };
+      appendRun(place, done);
+      closed.push(done);
+    }
+  }
+  return closed;
 }
