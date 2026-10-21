@@ -84,6 +84,16 @@ describe('runCommand', () => {
     expect(lines.join('\n')).toContain('removed: 2');
   });
 
+  it('settings が enabled:false のときの status → off と回数と時刻の行', () => {
+    const { port, written } = fakePort({
+      settings: { kind: 'ok', settings: { enabled: false } },
+      status: { removed: 3, lastAt: 200, failures: 0 },
+    });
+    const lines = runCommand(port, parseCommand(''), 100);
+    expect(written).toEqual([]);
+    expect(lines).toEqual(['thinking-scrub: off', 'removed: 3', 'last: 200']);
+  });
+
   it('settings が broken のときの status → 壊れている旨と既定で動いている旨の行', () => {
     const { port, written } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },

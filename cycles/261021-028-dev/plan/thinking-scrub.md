@@ -403,10 +403,31 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - status が `enabled: false` のときの表示がどの check でも exercised されていない — `.pi/extensions/thinking-scrub/command/scrub.ts:62` の enabled 行は `true`(既定) と `broken`(既定 true) の status しか test が無く、plan slice 4 Verify に disabled-status の bullet が無い。`.pi/extensions/thinking-scrub/command/scrub.test.ts:15` は既定 `enabled: true`、`.pi/extensions/thinking-scrub/command/scrub.test.ts:47,74,80,87` はいずれも `true`/broken のみで `enabled: false` + status が無い
+    fixed: `enabled:false` + status の test を `command/scrub.test.ts` に足し、off/回数/時刻の 3 行を `toEqual` で固めた
 - Unproven:
+  - `同じ並びが 5 回` の test は `MIN_REPEATS` を証明しない — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:35` の text は `unit()` 5 回で 25 文字 (`MIN_LENGTH` 60 未満) のため、`MIN_REPEATS` を 5 以下に壊しても `removed` は 0 のままで緑。`.pi/extensions/thinking-scrub/scrub/detect.ts:65` の `length >= period * MIN_REPEATS` の後者が exercised されていない
+    fixed: fixture を 12 文字パターン×5 回 (60 文字) に変え、`MIN_LENGTH` を通して `MIN_REPEATS` だけが落とす形にした
+  - `role が assistant 以外` の test は role guard を証明しない — `.pi/extensions/thinking-scrub/scrub/message.test.ts:115` は `user` + `text` block (thinking が無い) のため、`.pi/extensions/thinking-scrub/scrub/message.ts:56` の role 判定を外しても `removed` が 0 で `undefined` のまま緑。role を分離するには `user` + replayable thinking が要る
+    fixed: fixture を `user` + 退化 thinking (assistant なら `defined`) に変え、role guard が無ければ落ちる形にした
+  - `content が配列でない` の test は array guard を証明しない — `.pi/extensions/thinking-scrub/scrub/message.test.ts:124` の `'oops'` は string として iterate でき各 char は thinking でないため、`.pi/extensions/thinking-scrub/scrub/message.ts:59` の `Array.isArray` を外しても `removed` が 0 で `undefined` のまま緑
+    fixed: fixture を thinking 入りの `Set` に変え、`Array.isArray` が無ければ拾って `defined` になる形にした
+
 - Doubts:
+  - `onCommand` の set で 2 回書き込む (`index.ts` の直接 + `runCommand` 経由) は最終状態が同じで plan Verify が書き込み回数を数えないため finding にしない — `.pi/extensions/thinking-scrub/index.ts:93` と `.pi/extensions/thinking-scrub/index.ts:100`
+    left: 最終状態が同じで書き込み回数は Verify の対象外のため拾わない
+  - 既定 export の `dirname(fileURLToPath(import.meta.url))` + `Date.now` に専用 check が無いのは配線の定型で Verify の bullet が無いため finding にしない — `.pi/extensions/thinking-scrub/index.ts:128`
+    left: 配線の定型で Verify の bullet が無いため拾わない
+  - 純粋 block (`"the *"` x12 単体) が `""` か `" "` かは plan Steps が端の空白を定めず Verify が `not.toContain` のみのため finding にしない — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:26`
+    left: plan が端の空白を定めず Verify が `not.toContain` のみのため拾わない
+  - `周期 4` の fixture (`'abcd'` x15) が周期 8 でも当たる高調波の点は `MIN_PERIOD` が decided value で small-guard (`1〜3` 文字除外) は周期 3 の test で覆うため finding にしない — `.pi/extensions/thinking-scrub/scrub/detect.ts:19`
+    left: `MIN_PERIOD` は decided value で small-guard は周期 3 の test が覆うため拾わない
+  - `settings.json` の他キー保持 (`{...readDoc, enabled}`) に保持確認の test が無い点は Verify が `enabled` の値のみを bullet にするため finding にしない — `.pi/extensions/thinking-scrub/index.ts:54`
+    left: Verify が `enabled` の値のみを bullet にするため拾わない
 
 ## Acceptance
 

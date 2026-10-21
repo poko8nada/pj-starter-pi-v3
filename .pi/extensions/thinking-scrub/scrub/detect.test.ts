@@ -33,7 +33,9 @@ describe('scrubThinking', () => {
   });
 
   it('同じ並びが 5 回 → removed が 0、本文が同一', () => {
-    const text = repeated(unit(), 5);
+    // 60 文字で MIN_LENGTH は通るため、0 は MIN_REPEATS のおかげ。
+    const text = repeated('abcdefghijkl', 5);
+    expect(text).toHaveLength(60);
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(0);
     expect(scrubbed.text).toBe(text);

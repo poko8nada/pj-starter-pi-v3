@@ -113,16 +113,17 @@ describe('scrubMessage', () => {
   });
 
   it('role が assistant 以外 → undefined', () => {
-    const message: AgentMessage = {
-      role: 'user',
-      content: [{ type: 'text', text: 'hello' }],
-      timestamp: 123,
-    };
+    // assistant なら差し替わる本文 (happy test と同じ): role のおかげで undefined。
+    const message = assistantMessage({ role: 'user' });
     expect(scrubMessage(message)).toBeUndefined();
   });
 
   it('content が配列でない assistant → undefined', () => {
-    const message = assistantMessage({ content: 'oops' });
+    // Set は iterable だが配列でない: guard が無ければ thinking を拾って defined になる。
+    const blocks = new Set([
+      { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+    ]);
+    const message = assistantMessage({ content: blocks });
     expect(scrubMessage(message)).toBeUndefined();
   });
 
