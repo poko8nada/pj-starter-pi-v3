@@ -285,33 +285,33 @@ export function closeOrphans(
 
 ### Slice 1: 記録の token と子の argv
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 04db2af consult(consult-liveness): record token and pass --name to child
 
 ### Slice 2: 生存の check
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 051a520 consult(consult-liveness): check liveness via ps token
 
 ### Slice 3: subagent 単位の読み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f481f3f consult(consult-liveness): read liveness per subagent
 
 ### Slice 4: 終了行の閉じ
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: oxfmt の追いつき (slice 3 分) と lint 対応 (`toSorted`、`closeQuietly` 切り出し)
+- Commit: 2d56199 consult(consult-liveness): close orphaned runs on session start
 
 ### Slice 5: 説明を合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: consult(consult-liveness): describe liveness in README
 
 ### Slice 6: 統合: consult の生存判定
 
