@@ -370,8 +370,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 4: コマンド
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bccc601 consult(thinking-scrub): add thinking-scrub command
 
 ### Slice 5: 配線と説明
 
