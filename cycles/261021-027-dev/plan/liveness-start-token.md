@@ -258,5 +258,22 @@ function defaultCheck(record: RunRecord): Liveness;
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` → exit 0（43 files、773 tests）
+  - `pnpm typecheck` → `root: ok`、`.pi: ok`、exit 0
+  - `pnpm lint` → exit 0
+  - `pnpm format:check` → exit 0
+  - no case（壊し 1: `===` を `includes` に → `proc.test.ts` 1 件赤）
+  - no case（壊し 2: `isRunning` を `=== 'running'` に → `log.test.ts` 3 件赤）
+  - no case（壊し 3: `readStartToken` の trim を外す → `proc.test.ts` 4 件赤）
 - Findings:
+  - Stale: `tool/worktree.ts:95` の既定 check の注釈 → fixed: `startToken` → `lstart` に直した
+  - Stale: `sub/spec.ts:41` の `token` の注釈 → fixed: 表示名の役割に直した
+  - Gaps: `onStarted` の `readStartToken` 失敗 → fixed: `consult.test.ts` に件を足した
+  - Gaps: `readStartToken` の空出力 → fixed: `proc.test.ts` に件を足した
+  - Gaps: `checkPid` の空 `startToken` → fixed: `proc.test.ts` に件を足した
+  - Gaps: `defaultCheck` の既定経路 → fixed: `run` の口を足し、`log.test.ts` に件を足した
+  - Unproven: `ended` の短絡 → fixed: check の呼び出し回数を数える件にした
 - Doubts:
+  - `index.ts` の `announceRunningSubagents` は `check` を渡さないため、新しい任意引数がテスト専用に見える。reload 時の告知は `defaultCheck` に依存する。
+  - 起動時の `readStartToken` 失敗は `pidAlive` に弱く後退し、そのことが記録にも表示にも残らない。
+  - `lstart` の完全一致は開始時と判定時のロケールが同じことを前提にする。
