@@ -427,6 +427,65 @@ describe('controlSubagent: cancel', () => {
     expect(outcome.details).toMatchObject({ cancelled: false });
     expect(outcome.text).toContain('another session');
   });
+
+  it('start と end のある subagent の停止 → kill しない', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: process.pid,
+      started: 1,
+      token: 'token-9',
+    });
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: process.pid,
+      started: 1,
+      ended: 2,
+      state: 'done',
+    });
+    const kills: number[] = [];
+    const outcome = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+      () => 'running',
+    );
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+  });
+
+  it('開始行だけ + token 不一致 の停止 → kill しない（check の配線）', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: 11,
+      started: 1,
+      token: 'token-9',
+    });
+    const kills: number[] = [];
+    const outcome = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        kills.push(pid);
+      },
+      () => 'ended',
+    );
+    expect(kills).toEqual([]);
+    expect(outcome.details).toMatchObject({ cancelled: false });
+  });
 });
 
 describe('音', () => {

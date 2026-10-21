@@ -14,7 +14,7 @@
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { isRunning, pidAlive, readRuns, type RunRecord } from '../run/log.ts';
+import { isRunning, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
 import type { ControlAction, ControlOutcome } from './consult.ts';
 
@@ -74,17 +74,37 @@ export function elapsed(record: RunRecord, now: number): string {
 }
 
 /**
- * サブエージェントごとに最後の行を取る。
+ * サブエージェントごとに 1 行に畳む。
  *
- * 記録は追記なので、1 体につき「走っている」行と「終わった」行が並ぶ。一覧はサブエージェントごとに 1 行なので、
- * 後ろの行（新しい方）が勝つ。並びは最初に現れた順（始まった順）のまま。
+ * 同じ subagent に `ended` の行が 1 つでもあればそれを返す（終わり）。無ければ開始行を返す。
+ * 行の並びに依らない（逆順でも終わりを採る）。
  */
 export function latest(records: readonly RunRecord[]): RunRecord[] {
-  const bySubagent = new Map<string, RunRecord>();
+  const groups = new Map<string, RunRecord[]>();
   for (const record of records) {
-    bySubagent.set(record.subagent, record);
+    const list = groups.get(record.subagent);
+    if (list !== undefined) {
+      list.push(record);
+    } else {
+      groups.set(record.subagent, [record]);
+    }
   }
-  return [...bySubagent.values()];
+  const out: RunRecord[] = [];
+  for (const list of groups.values()) {
+    const ended = list.filter((record) => record.ended !== undefined);
+    if (ended.length > 0) {
+      const pick = [...ended].sort((a, b) => (a.ended ?? 0) - (b.ended ?? 0)).at(-1);
+      if (pick !== undefined) {
+        out.push(pick);
+      }
+      continue;
+    }
+    const last = list.at(-1);
+    if (last !== undefined) {
+      out.push(last);
+    }
+  }
+  return out;
 }
 
 /**
@@ -118,22 +138,26 @@ function stateOf(record: RunRecord): string {
 /**
  * 記録をそのまま行にする。
  *
- * 走っているかは `alive`（既定 `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
+ * 走っているかは `check`（既定は token があれば `ps`、無ければ `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
-  alive: (pid: number) => boolean,
+  check: CheckRecord | undefined,
   now: number,
 ): string[] {
-  return records.map((record) => rowOf(record, isRunning(record, alive), now));
+  return records.map((record) => rowOf(record, isRunning(record, check), now));
 }
 
 /** 一覧の本文。記録が無ければそう言う */
-export function listText(records: readonly RunRecord[], now: number): string {
+export function listText(
+  records: readonly RunRecord[],
+  now: number,
+  check?: CheckRecord,
+): string {
   if (records.length === 0) {
     return 'no subagents in this project yet';
   }
-  return rowsOf(records, pidAlive, now).join('\n');
+  return rowsOf(records, check, now).join('\n');
 }
 
 export function createSubagentsTool(host: SubagentsHost) {

@@ -185,13 +185,33 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
 /**
  * その session の、走っているサブエージェントの行だけを返す。
  *
- * `readRuns` の窓を `scope` で切り、`isRunning`（既定は token があれば `checkPid`、無ければ `pidAlive`）で生きている物だけにする。
- * 音の述語と、前のセッションのサブエージェントの告知が読む。
+ * `readRuns` の窓を `scope` で切り、subagent ごとにまとめる。同じ subagent に `ended` の行が
+ * 1 つでもあれば終わり（事故の形でも走っていない）。無ければ開始行を `check` に渡し、
+ * `running` だけを返す。音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
   place: Place,
   scope: ReadScope & { readonly session: string },
   check?: CheckRecord,
 ): RunRecord[] {
-  return readRuns(place, scope).filter((record) => isRunning(record, check));
+  const groups = new Map<string, RunRecord[]>();
+  for (const record of readRuns(place, scope)) {
+    const list = groups.get(record.subagent);
+    if (list !== undefined) {
+      list.push(record);
+    } else {
+      groups.set(record.subagent, [record]);
+    }
+  }
+  const out: RunRecord[] = [];
+  for (const records of groups.values()) {
+    if (records.some((record) => record.ended !== undefined)) {
+      continue;
+    }
+    const start = records[0];
+    if (start !== undefined && isRunning(start, check)) {
+      out.push(start);
+    }
+  }
+  return out;
 }

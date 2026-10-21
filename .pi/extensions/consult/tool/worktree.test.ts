@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { runGit } from '../run/git-env.ts';
-import { appendRun } from '../run/log.ts';
+import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
 import { consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
-import { createWorktreeTool, removeText } from './worktree.ts';
+import { createWorktreeTool, removeText, runningIn } from './worktree.ts';
 
 // 置き場は本物の /tmp/pi-consult ではなく、テストごとの一時ディレクトリに逃がす。
 const ROOT_KEY = 'CONSULT_ROOT';
@@ -14,9 +14,13 @@ const ROOT_KEY = 'CONSULT_ROOT';
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
 /** 道具は位置で 5 つ受け取る。置き場は cwd から決め、ここで組み立てる */
-function call(params: Record<string, unknown>, cwd: string): Promise<Outcome> {
+function call(
+  params: Record<string, unknown>,
+  cwd: string,
+  check?: CheckRecord,
+): Promise<Outcome> {
   const place = placeFor(consultRoot(), topLevel(cwd));
-  return createWorktreeTool(place)('call-1', params, undefined, undefined, { cwd });
+  return createWorktreeTool(place, check)('call-1', params, undefined, undefined, { cwd });
 }
 
 /** base のコミットを 1 つ持つリポジトリ */
@@ -155,6 +159,71 @@ describe('consult_worktree', () => {
     });
 
     expect(text(await call({ action: 'list' }, dir))).toContain('a subagent is running');
+  });
+
+  it('start と end のある unit → busy でない', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    findWorktree(dir, '2-b');
+    const place = placeFor(consultRoot(), topLevel(dir));
+    appendRun(place, {
+      session: 'session-a',
+      subagent: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      token: 'token-9',
+      worktree: '2-b',
+    });
+    appendRun(place, {
+      session: 'session-a',
+      subagent: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      ended: 2,
+      state: 'done',
+      worktree: '2-b',
+    });
+    expect(runningIn(place, '2-b', () => 'running')).toBe(false);
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir, () => 'running');
+    expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('開始行だけ + token 不一致 の worktree → busy でない', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    findWorktree(dir, '2-b');
+    const place = placeFor(consultRoot(), topLevel(dir));
+    appendRun(place, {
+      session: 'session-a',
+      subagent: 'consult-9',
+      role: 'code',
+      pid: 11,
+      started: 1,
+      token: 'token-9',
+      worktree: '2-b',
+    });
+    expect(runningIn(place, '2-b', () => 'ended')).toBe(false);
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir, () => 'ended');
+    expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('開始行だけ + check が unknown の worktree → busy でない', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    findWorktree(dir, '2-b');
+    const place = placeFor(consultRoot(), topLevel(dir));
+    appendRun(place, {
+      session: 'session-a',
+      subagent: 'consult-9',
+      role: 'code',
+      pid: 11,
+      started: 1,
+      token: 'token-9',
+      worktree: '2-b',
+    });
+    expect(runningIn(place, '2-b', () => 'unknown')).toBe(false);
   });
 
   it('知らない action → エラー', async () => {

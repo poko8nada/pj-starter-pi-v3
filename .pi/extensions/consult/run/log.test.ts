@@ -241,6 +241,75 @@ describe('runningRuns', () => {
       'consult-live',
     ]);
   });
+
+  it('同じ subagent に開始行と終了行があり、pid が生きている → 走っていない（事故の形）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }), at);
+    appendRun(
+      found,
+      record({
+        session: 'A',
+        subagent: 'consult-1',
+        pid: process.pid,
+        ended: 2000,
+        state: 'done',
+      }),
+      at,
+    );
+    expect(runningRuns(found, { at, session: 'A' })).toEqual([]);
+  });
+
+  it('開始行だけで token が合う → 走っている', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    const out = runningRuns(found, { at, session: 'A' }, () => 'running');
+    expect(out.map((run) => run.subagent)).toEqual(['consult-1']);
+  });
+
+  it('開始行だけで token が合わない → 走っていない', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    expect(runningRuns(found, { at, session: 'A' }, () => 'ended')).toEqual([]);
+  });
+
+  it('行が無い → 空', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    expect(runningRuns(found, { at, session: 'A' }, () => 'running')).toEqual([]);
+  });
+
+  it('終了行が新しい日のファイル、開始行が古い日のファイル → 走っていない', () => {
+    const found = place();
+    appendRun(
+      found,
+      record({ session: 'A', subagent: 'consult-1', pid: process.pid, started: 1 }),
+      new Date(2026, 9, 9, 23, 59),
+    );
+    appendRun(
+      found,
+      record({
+        session: 'A',
+        subagent: 'consult-1',
+        pid: process.pid,
+        started: 1,
+        ended: 2,
+        state: 'done',
+      }),
+      new Date(2026, 9, 10, 0, 1),
+    );
+    const at = new Date(2026, 9, 10, 12, 0);
+    expect(runningRuns(found, { at, session: 'A', days: 2 }, () => 'running')).toEqual([]);
+  });
+
+  it('check が unknown → 走っていない', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    expect(runningRuns(found, { at, session: 'A' }, () => 'unknown')).toEqual([]);
+  });
 });
 
 describe('parseRun', () => {

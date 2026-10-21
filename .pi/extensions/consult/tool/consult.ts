@@ -20,6 +20,7 @@ import {
   KEEP_DAYS,
   readRuns,
   runningRuns,
+  type CheckRecord,
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
@@ -132,7 +133,7 @@ function describeSubagent(subagent: RunningSubagent): string {
  * そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
  * 知らない id・終わったサブエージェント・死んだ pid・別の session のサブエージェントは、理由を返して止めない。
  */
-// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill の 5 つ）
+// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill, check の 6 つ）
 export function controlSubagent(
   action: ControlAction,
   subagents: ReadonlyMap<string, RunningSubagent>,
@@ -141,6 +142,7 @@ export function controlSubagent(
   kill: (pid: number) => void = (pid) => {
     process.kill(pid, 'SIGTERM');
   },
+  check?: CheckRecord,
 ): ControlOutcome {
   if (action.action === 'list') {
     const running = [...subagents.values()];
@@ -188,7 +190,7 @@ export function controlSubagent(
       details: { action: 'cancel', id: action.id, cancelled: false },
     };
   }
-  if (!isRunning(own)) {
+  if (!isRunning(own, check)) {
     return {
       text: `consult_subagents: ${action.id} is not running (lost)`,
       details: { action: 'cancel', id: action.id, cancelled: false },
@@ -271,6 +273,8 @@ interface RuntimeState {
   /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
   readonly delivery?: Delivery;
   readonly sessionNow: () => string;
+  /** 生死の照合。テストが差し替える口（既定は token があれば `ps`、無ければ `pidAlive`） */
+  readonly check?: CheckRecord;
   /** 番号の床。記録の最大で種を取り、同じ runtime で続けて起こす時も重ねない */
   number: { session: string; next: number };
 }
@@ -436,7 +440,10 @@ function beginRun(
   state.subagents.set(subagent.id, subagent);
   if (state.subagents.size === 1) {
     // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
-    startSound(() => runningRuns(state.place, { session: state.sessionNow() }).length > 0);
+    const check = state.check;
+    startSound(
+      () => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0,
+    );
   }
   runInBackground(state, { ctx, options, job, subagent, session });
   const running = [...state.subagents.values()].map(describeSubagent).join('\n');
@@ -468,13 +475,14 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
-// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow の 5 つ）
+// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow, check の 6 つ）
 export function createRuntime(
   pi: PiFace,
   place: Place,
   run: ConsultRunner = consult,
   delivery?: Delivery,
   sessionNow: () => string = () => '',
+  check?: CheckRecord,
 ): ConsultRuntime {
   const state: RuntimeState = {
     pi,
@@ -483,6 +491,7 @@ export function createRuntime(
     subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,
+    ...(check === undefined ? {} : { check }),
     ...(delivery === undefined ? {} : { delivery }),
   };
   return {
@@ -491,7 +500,8 @@ export function createRuntime(
       const [, params, , , ctx] = args;
       return beginRun(state, ctx, parseRunRequest(params));
     },
-    control: (action, session) => controlSubagent(action, state.subagents, state.place, session),
+    control: (action, session) =>
+      controlSubagent(action, state.subagents, state.place, session, undefined, check),
     commands: {
       status: async (_args, ctx) => {
         const outcome = controlSubagent(
@@ -499,6 +509,8 @@ export function createRuntime(
           state.subagents,
           state.place,
           state.sessionNow(),
+          undefined,
+          check,
         );
         ctx.ui.notify(outcome.text, 'info');
       },
@@ -516,6 +528,8 @@ export function createRuntime(
           state.subagents,
           state.place,
           state.sessionNow(),
+          undefined,
+          check,
         );
         ctx.ui.notify(outcome.text, outcome.details.cancelled === true ? 'info' : 'error');
       },
