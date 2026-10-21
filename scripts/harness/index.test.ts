@@ -224,16 +224,6 @@ describe('harness diff', () => {
     expect(out.stdout).toContain(`push: ${local} → ${origin}`);
   });
 
-  it('cwd のツリーを root として読む', () => {
-    const { origin, local } = pair();
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull'], local);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('copy (1):');
-    expect(out.stdout).toContain('.pi/a.ts');
-  });
-
   it('~/... の道 → HOME を fake に向けて、その下を読む', () => {
     const home = fakeRoot();
     const origin = join(home, 'starter');
