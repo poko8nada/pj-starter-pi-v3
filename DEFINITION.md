@@ -26,6 +26,7 @@
 - sound-notify: owner が、pi からの通知、commit が通ったことに気づける
 - lefthook-gate: エージェントが、検査を通した上で commit も push もできる
 - intent-router: エージェントが、owner の発言の意図通りに動ける
+- thinking-scrub: エージェントが、ループした thinking を取り除き、次のターンに持ち越さない
 - format-check: エージェントが、コードの形を揃えられる
 - lint-check: エージェントが、リンターの指摘を受け取れる
 - type-check: エージェントが、型に対する指摘を受け取れる

@@ -346,51 +346,113 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 1: 検出と除去
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - 3 文字周期の繰り返しが 6 文字周期としても当たり下限が抜ける穴を、1〜3 文字周期でも当たる区間は数えない形で塞いだ
+- Commit: 4ebc976 consult(thinking-scrub): detect and scrub periodic runs
 
 ### Slice 2: メッセージの書き換え
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bd63093 consult(thinking-scrub): rewrite replayable thinking blocks
 
 ### Slice 3: 設定と状態
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 31bd9f5 consult(thinking-scrub): add settings and session state
 
 ### Slice 4: コマンド
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bccc601 consult(thinking-scrub): add thinking-scrub command
 
 ### Slice 5: 配線と説明
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - registerScrub の void 戻りでは removed の合計と failures を検査できない穴を、配線の中身を持つ createScrubWiring（handlers と getStatus）を足して塞いだ
+- Commit: 2844a21 consult(thinking-scrub): wire message_end and command
 
 ### Slice 6: 統合: thinking-scrub の全体
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 74ebe11 consult(thinking-scrub): pass full checks for thinking-scrub
+
+### Test cleanup
+
+- Dropped `detectRuns` の 12 回 test (`scrubThinking` の 12 回 test と同じ fixture・同じ区間の主張): 後者に `detectRuns` の形の assert を移し、plan の 1 bullet に 1 test に戻した
+- Dropped `同じ並びが複数の周期で当たる区間` の test (`'abcd'`×15 は周期 4 の test と同じ fixture・同じ 1 区間の主張): 重なりのまとめは 12 回 test が周期 5 と 10 の両当たりで覆う
+- 他の 6 ファイルに同じ振る舞いの重なり・消えた振る舞いの test・取らなくなった枝の test は無かった
+- Suite: 63 → 61 tests, `test:run` と `typecheck` と `lint` と `format:check` は緑
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - status が `enabled: false` のときの表示がどの check でも exercised されていない — `.pi/extensions/thinking-scrub/command/scrub.ts:62` の enabled 行は `true`(既定) と `broken`(既定 true) の status しか test が無く、plan slice 4 Verify に disabled-status の bullet が無い。`.pi/extensions/thinking-scrub/command/scrub.test.ts:15` は既定 `enabled: true`、`.pi/extensions/thinking-scrub/command/scrub.test.ts:47,74,80,87` はいずれも `true`/broken のみで `enabled: false` + status が無い
+    fixed: `enabled:false` + status の test を `command/scrub.test.ts` に足し、off/回数/時刻の 3 行を `toEqual` で固めた
 - Unproven:
+  - `同じ並びが 5 回` の test は `MIN_REPEATS` を証明しない — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:35` の text は `unit()` 5 回で 25 文字 (`MIN_LENGTH` 60 未満) のため、`MIN_REPEATS` を 5 以下に壊しても `removed` は 0 のままで緑。`.pi/extensions/thinking-scrub/scrub/detect.ts:65` の `length >= period * MIN_REPEATS` の後者が exercised されていない
+    fixed: fixture を 12 文字パターン×5 回 (60 文字) に変え、`MIN_LENGTH` を通して `MIN_REPEATS` だけが落とす形にした
+  - `role が assistant 以外` の test は role guard を証明しない — `.pi/extensions/thinking-scrub/scrub/message.test.ts:115` は `user` + `text` block (thinking が無い) のため、`.pi/extensions/thinking-scrub/scrub/message.ts:56` の role 判定を外しても `removed` が 0 で `undefined` のまま緑。role を分離するには `user` + replayable thinking が要る
+    fixed: fixture を `user` + 退化 thinking (assistant なら `defined`) に変え、role guard が無ければ落ちる形にした
+  - `content が配列でない` の test は array guard を証明しない — `.pi/extensions/thinking-scrub/scrub/message.test.ts:124` の `'oops'` は string として iterate でき各 char は thinking でないため、`.pi/extensions/thinking-scrub/scrub/message.ts:59` の `Array.isArray` を外しても `removed` が 0 で `undefined` のまま緑
+    fixed: fixture を thinking 入りの `Set` に変え、`Array.isArray` が無ければ拾って `defined` になる形にした
+
 - Doubts:
+  - `onCommand` の set で 2 回書き込む (`index.ts` の直接 + `runCommand` 経由) は最終状態が同じで plan Verify が書き込み回数を数えないため finding にしない — `.pi/extensions/thinking-scrub/index.ts:93` と `.pi/extensions/thinking-scrub/index.ts:100`
+    left: 最終状態が同じで書き込み回数は Verify の対象外のため拾わない
+  - 既定 export の `dirname(fileURLToPath(import.meta.url))` + `Date.now` に専用 check が無いのは配線の定型で Verify の bullet が無いため finding にしない — `.pi/extensions/thinking-scrub/index.ts:128`
+    left: 配線の定型で Verify の bullet が無いため拾わない
+  - 純粋 block (`"the *"` x12 単体) が `""` か `" "` かは plan Steps が端の空白を定めず Verify が `not.toContain` のみのため finding にしない — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:26`
+    left: plan が端の空白を定めず Verify が `not.toContain` のみのため拾わない
+  - `周期 4` の fixture (`'abcd'` x15) が周期 8 でも当たる高調波の点は `MIN_PERIOD` が decided value で small-guard (`1〜3` 文字除外) は周期 3 の test で覆うため finding にしない — `.pi/extensions/thinking-scrub/scrub/detect.ts:19`
+    left: `MIN_PERIOD` は decided value で small-guard は周期 3 の test が覆うため拾わない
+  - `settings.json` の他キー保持 (`{...readDoc, enabled}`) に保持確認の test が無い点は Verify が `enabled` の値のみを bullet にするため finding にしない — `.pi/extensions/thinking-scrub/index.ts:54`
+    left: Verify が `enabled` の値のみを bullet にするため拾わない
+
+### Round 2
+
+- Stale: なし（Round 1 に fixed 行なし。確認対象なし）
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし（Round 1 の1件は直っている。`.pi/extensions/thinking-scrub/command/scrub.test.ts:87` が `enabled:false` + status で `toEqual` 3 行を固め、`.pi/extensions/thinking-scrub/command/scrub.ts:62-64` の enabled 行・回数・時刻と一致する）
+- Unproven: なし（Round 1 の3件は直っている。`scrub/detect.test.ts:35` は 12 文字×5 回・60 文字で `MIN_LENGTH` を通し `MIN_REPEATS` だけが落とす形で `.pi/extensions/thinking-scrub/scrub/detect.ts:65` と一致する。`scrub/message.test.ts:115` は `user` + 退化 thinking で role 判定が無ければ `defined` になる形で `.pi/extensions/thinking-scrub/scrub/message.ts:56` と一致する。`scrub/message.test.ts:121` は thinking 入り `Set` で `Array.isArray` が無ければ拾って `defined` になる形で `.pi/extensions/thinking-scrub/scrub/message.ts:59` と一致する）
+- Doubts: なし
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run .pi/extensions/thinking-scrub` → exit 0（7 ファイル 62 件）
+  - `pnpm test:run` → exit 0（50 ファイル 835 件）
+  - `pnpm typecheck` → exit 0（root: ok、.pi: ok）
+  - `pnpm lint` → exit 0
+  - `pnpm format:check` → exit 0
+  - 3 つの振る舞いを壊して、plan の検査が赤になることを確かめて戻した。
+    - `scrub/message.ts` の `Array.isArray` を外す → `content が配列でない assistant → undefined` が赤。
+    - `scrub/detect.ts` の `MIN_REPEATS` を 5 にする → `同じ並びが 5 回 → removed が 0` が赤。
+    - `index.ts` の `enabled: false` の early return を外す → `設定が enabled: false → undefined` が赤。
 - Findings:
+  - なし
 - Doubts:
+  - `onCommand` は `enabled` を 2 回書き込む（直接と `runCommand` 経由）。最終状態は同じで、書き込み回数は検査していない。
+  - 既定 export の `dirname(fileURLToPath(import.meta.url))` と `Date.now` は検査していない。
+  - `settings.json` の他のキーを保つことは検査していない（`enabled` の値だけを見ている）。
+  - 純粋な繰り返しだけの本文は `""` か `" "` になる。plan の Steps は端の空白を定めていない。
