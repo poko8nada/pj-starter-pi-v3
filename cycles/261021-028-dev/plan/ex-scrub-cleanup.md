@@ -76,33 +76,61 @@
 ### Slice 1: 書き込みを 1 経路にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 14c95f5 consult(ex-scrub-cleanup): single command write path
 
 ### Slice 2: 空になる差し替えを止める
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 8dff5c7 consult(ex-scrub-cleanup): skip blank scrub results
 
 ### Slice 3: 統合: thinking-scrub が緑のまま
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 9a491a8 consult(ex-scrub-cleanup): pass full checks for thinking-scrub
+
+### Test cleanup
+
+- Dropped: なし（単一書き込み化で消えた二重書き込みの枝を数える test は元から無く、空差し替え止めで消えた空置換を期待する test も無かった。新規の全消し 3 件は fixture と主張が重ならない）
+- Suite: 65 tests, `test:run` と `typecheck` と `lint` と `format:check` は緑
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Unproven:
+  - なし
 - Doubts:
+  - なし
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run .pi/extensions/thinking-scrub` → exit 0（65 件）
+  - `pnpm test:run` → exit 0（50 ファイル 838 件）
+  - `pnpm typecheck` → exit 0（root: ok、.pi: ok）
+  - `pnpm lint` → exit 0
+  - `pnpm format:check` → exit 0
+  - 3 つの振る舞いを壊して、plan の検査が赤になることを確かめて戻した。
+    - `scrub/message.ts` の空白の guard を外す → `本文が 1 つの区間だけ → undefined` と `本文が区間と空白だけ → undefined` が赤。
+    - `index.ts` の `writeEnabled` を空にする → `コマンド off` と `コマンド on` が赤。
+    - `scrub/message.ts` の `removed += scrubbed.removed` を `+= 1` にする → 最初は緑だった（下の Findings）。直した後は `2 ブロックのうち片方が全部区間` が赤。
 - Findings:
+  - `removed += 1` に壊しても緑だった。混在 case の畳まれるブロックが区間 1 つだけで、数え間違いを区別できていなかった。
+    - fixed: その case のブロックを区間 2 つに変え、`removed` が 2 であることを固めた（`5f39cce`）。壊すと赤になることを確かめた。
 - Doubts:
+  - なし

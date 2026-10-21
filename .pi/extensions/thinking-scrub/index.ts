@@ -89,9 +89,6 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
   };
   const onCommand = (args: string, ctx: CommandCtx): void => {
     const command = parseCommand(args);
-    if (command.kind === 'set') {
-      writeEnabled(options.settingsDir, command.enabled);
-    }
     const lines = runCommand(
       {
         settings: () => readSettings(options.settingsDir),

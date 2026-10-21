@@ -188,4 +188,62 @@ describe('scrubMessage', () => {
     expect(scrubbed.message.stopReason).toBe(message.stopReason);
     expect(scrubbed.message.timestamp).toBe(message.timestamp);
   });
+
+  it('本文が 1 つの区間だけ → undefined', () => {
+    const message = assistantMessage({
+      content: [
+        {
+          type: 'thinking',
+          thinking: 'the *'.repeat(12),
+          thinkingSignature: 'reasoning_content',
+        },
+      ],
+    });
+    expect(scrubMessage(message)).toBeUndefined();
+  });
+
+  it('本文が区間と空白だけ → undefined', () => {
+    const message = assistantMessage({
+      content: [
+        {
+          type: 'thinking',
+          thinking: `  ${'the *'.repeat(12)}  `,
+          thinkingSignature: 'reasoning_content',
+        },
+      ],
+    });
+    expect(scrubMessage(message)).toBeUndefined();
+  });
+
+  it('2 ブロックのうち片方が全部区間 → 片方は元のまま、removed は畳んだ分だけ', () => {
+    const fullRun = 'the *'.repeat(12);
+    const twoRuns = `foo${'the *'.repeat(12)} hello ${'abcd'.repeat(15)}bar`;
+    const message = assistantMessage({
+      content: [
+        { type: 'thinking', thinking: fullRun, thinkingSignature: 'reasoning_content' },
+        { type: 'thinking', thinking: twoRuns, thinkingSignature: 'reasoning_content' },
+      ],
+    });
+    const scrubbed = scrubMessage(message);
+    expect(scrubbed).toBeDefined();
+    if (scrubbed === undefined) {
+      throw new Error('scrubbed must be defined');
+    }
+    expect(scrubbed.removed).toBe(2);
+    if (scrubbed.message.role !== 'assistant') {
+      throw new Error('message must be assistant');
+    }
+    const content = scrubbed.message.content;
+    expect(content).toHaveLength(2);
+    expect(content.at(0)).toEqual({
+      type: 'thinking',
+      thinking: fullRun,
+      thinkingSignature: 'reasoning_content',
+    });
+    const second = content.at(1);
+    if (typeof second !== 'object' || second === null || !('thinking' in second)) {
+      throw new Error('second block must be thinking');
+    }
+    expect(second.thinking).toBe('foo hello bar');
+  });
 });

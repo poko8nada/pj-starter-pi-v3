@@ -64,7 +64,7 @@ export function scrubMessage(message: AgentMessage): Scrubbed | undefined {
   for (const block of message.content) {
     if (isThinkingBlock(block) && isReplayable(block)) {
       const scrubbed = scrubThinking(block.thinking);
-      if (scrubbed.removed > 0) {
+      if (scrubbed.removed > 0 && scrubbed.text.trim() !== '') {
         removed += scrubbed.removed;
         next.push({ ...block, thinking: scrubbed.text });
         continue;
