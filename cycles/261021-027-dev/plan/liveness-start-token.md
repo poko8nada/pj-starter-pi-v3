@@ -214,12 +214,15 @@ function defaultCheck(record: RunRecord): Liveness;
   - subagents.ts の 2 件の注釈が argv 照合のままだったので startToken/lstart に直した
   - consult.test.ts の describe が max-lines-per-function（240）を超えた（242）ので startToken の 2 件を別 describe に分けた
   - oxfmt の崩れ（subagents.test.ts）を直した
-- Commit:
+- Commit: 76aeafb consult(liveness-start-token): route readers via startToken
 
 ### Slice 4: 説明を合わせる
 
 - Findings:
+  - README の走っているかの記述を startToken と `ps -p <pid> -o lstart=` の一致に直し、読めないときは走っている側・`--name <token>` は表示名と書いた（一覧・worktree・停止・音の節）
 - Unplanned:
+  - なし
+- Stopped: Verify の read（review サブエージェントが README を読む）は agent が走らせるため、ここで止める。Slice 5 は始めない
 - Commit:
 
 ### Slice 5: 統合: consult の生存判定
