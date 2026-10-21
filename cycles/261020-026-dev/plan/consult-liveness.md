@@ -311,13 +311,13 @@ export function closeOrphans(
 
 - Findings: なし
 - Unplanned: なし
-- Commit: consult(consult-liveness): describe liveness in README
+- Commit: 62d6c98 consult(consult-liveness): describe liveness in README
 
 ### Slice 6: 統合: consult の生存判定
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: consult(consult-liveness): verify integrated consult liveness
 
 ## Review
 
