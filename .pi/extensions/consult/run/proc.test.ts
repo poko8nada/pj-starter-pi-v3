@@ -76,4 +76,31 @@ describe('checkPid', () => {
     expect(checkPid(123, 'token-1', run)).toBe('ended');
     expect(seen[0]).toContain('-ww');
   });
+
+  it('pid が 0 以下・非整数 → ended（ps を叩かない）', () => {
+    let called = 0;
+    const run: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    expect(checkPid(0, 'token-1', run)).toBe('ended');
+    expect(checkPid(-5, 'token-1', run)).toBe('ended');
+    expect(checkPid(3.5, 'token-1', run)).toBe('ended');
+    expect(called).toBe(0);
+  });
+
+  it('token が空文字 → unknown（ps を叩かない）', () => {
+    let called = 0;
+    const run: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    expect(checkPid(123, '', run)).toBe('unknown');
+    expect(called).toBe(0);
+  });
+
+  it('status 1 で stdout あり → unknown', () => {
+    const run = ps({ status: 1, stdout: 'something', stderr: '' });
+    expect(checkPid(123, 'token-1', run)).toBe('unknown');
+  });
 });

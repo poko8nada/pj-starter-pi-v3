@@ -186,7 +186,7 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('開始行だけ + token 不一致 の worktree → busy でない', async () => {
+  it('開始行だけの unit は check に従う（running → busy、ended → busy でない）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     findWorktree(dir, '2-b');
@@ -200,6 +200,10 @@ describe('consult_worktree', () => {
       token: 'token-9',
       worktree: '2-b',
     });
+    expect(runningIn(place, '2-b', () => 'running')).toBe(true);
+    expect(text(await call({ action: 'remove', id: '2-b' }, dir, () => 'running'))).toContain(
+      'サブエージェントが走っている',
+    );
     expect(runningIn(place, '2-b', () => 'ended')).toBe(false);
     const outcome = await call({ action: 'remove', id: '2-b' }, dir, () => 'ended');
     expect(outcome.details['outcome']).toBe('removed');

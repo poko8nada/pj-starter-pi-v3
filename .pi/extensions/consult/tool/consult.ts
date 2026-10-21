@@ -129,9 +129,9 @@ function describeSubagent(subagent: RunningSubagent): string {
  * 走っているサブエージェントの一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
  *
  * 掴んでいるサブエージェント（このインスタンスが起こした物）は `abort()` で止める。掴んでいないサブエージェントは記録から
- * 引いて、生きている pid に `kill`（既定は SIGTERM）を送る。記録は書かない（終わりの行は、
- * そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
- * 知らない id・終わったサブエージェント・死んだ pid・別の session のサブエージェントは、理由を返して止めない。
+ * 引いて、まだ走っている（同じ subagent に終わりの行が無く、token の照合が通る）物にだけ `kill`（既定は SIGTERM）を送る。
+ * 記録は書かない（終わりの行は、そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
+ * 知らない id・終わったサブエージェント・照合の通らない物・別の session のサブエージェントは、理由を返して止めない。
  */
 // eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill, check の 6 つ）
 export function controlSubagent(

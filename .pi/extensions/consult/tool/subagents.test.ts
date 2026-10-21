@@ -135,7 +135,7 @@ describe('rowOf / rowsOf', () => {
 });
 
 describe('latest', () => {
-  it('サブエージェントごとに最後の行を取る（走っている行 → 終わった行で 1 本に畳む）', () => {
+  it('サブエージェントごとに 1 本に畳む（終わりの行があれば順序に依らずそれを採る）', () => {
     const running = record({ subagent: 'consult-1', pid: 5 });
     const done = record({ subagent: 'consult-1', pid: 5, ended: 2000, state: 'done' });
     const other = record({ subagent: 'consult-2', started: 3000 });
