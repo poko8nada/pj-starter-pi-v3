@@ -92,8 +92,15 @@
 ### Slice 3: 統合: thinking-scrub が緑のまま
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 9a491a8 consult(ex-scrub-cleanup): pass full checks for thinking-scrub
+
+### Test cleanup
+
+- Dropped: なし（単一書き込み化で消えた二重書き込みの枝を数える test は元から無く、空差し替え止めで消えた空置換を期待する test も無かった。新規の全消し 3 件は fixture と主張が重ならない）
+- Suite: 65 tests, `test:run` と `typecheck` と `lint` と `format:check` は緑
 
 ## Review
 
