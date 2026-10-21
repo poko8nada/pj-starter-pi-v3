@@ -90,12 +90,10 @@ function readStarter(root) {
     throw new Error(`no starter in ${file}`);
   }
   let expanded = raw;
-  if (expanded === '~' || expanded.startsWith('~/')) {
-    expanded = path.join(os.homedir(), expanded.slice(1));
-  } else if (expanded.startsWith('~')) {
+  if (expanded.startsWith('~')) {
     expanded = path.join(os.homedir(), expanded.slice(1));
   }
-  const rootAbs = path.isAbsolute(root) ? path.resolve(root) : path.resolve(root);
+  const rootAbs = path.resolve(root);
   const starter = path.isAbsolute(expanded)
     ? path.resolve(expanded)
     : path.resolve(rootAbs, expanded);
