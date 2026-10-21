@@ -348,6 +348,37 @@ describe('parseRun', () => {
     expect(run).toBeDefined();
     expect(run?.token).toBeUndefined();
   });
+
+  it('startToken 付きの開始行 → 往復して同じ文字列が返る', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ startToken: 'Wed Oct 21 12:41:12 2026' }), at);
+    expect(readRuns(found, { at })[0]).toMatchObject({
+      startToken: 'Wed Oct 21 12:41:12 2026',
+    });
+    expect(
+      parseRun(
+        '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"startToken":"Wed Oct 21 12:41:12 2026"}',
+      ),
+    ).toMatchObject({ startToken: 'Wed Oct 21 12:41:12 2026' });
+  });
+
+  it('startToken 無しの行 → undefined で読める', () => {
+    expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
+      { session: 's' },
+    );
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.startToken,
+    ).toBeUndefined();
+  });
+
+  it('startToken が数値の行 → 捨てて、行は読める', () => {
+    const run = parseRun(
+      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"startToken":123}',
+    );
+    expect(run).toBeDefined();
+    expect(run?.startToken).toBeUndefined();
+  });
 });
 
 describe('closeOrphans', () => {

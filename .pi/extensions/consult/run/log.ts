@@ -32,6 +32,8 @@ export interface RunRecord {
   readonly pid: number;
   /** 子の pi に `--name` で渡した印。`ps` の argv に出る。古い行には無い */
   readonly token?: string;
+  /** 子の起動時刻の文字列（`ps -p <pid> -o lstart=` の出力）。古い行には無い */
+  readonly startToken?: string;
   /** 始まった時刻（ms） */
   readonly started: number;
   /** 終わった時刻（ms）。走っている間は無い */
@@ -132,6 +134,7 @@ export function parseRun(line: string): RunRecord | undefined {
     started,
     ...(typeof fields.worktree === 'string' ? { worktree: fields.worktree } : {}),
     ...(typeof fields.token === 'string' ? { token: fields.token } : {}),
+    ...(typeof fields.startToken === 'string' ? { startToken: fields.startToken } : {}),
     ...(typeof fields.ended === 'number' ? { ended: fields.ended } : {}),
     ...(isState(fields.state) ? { state: fields.state } : {}),
     ...(typeof fields.reason === 'string' ? { reason: fields.reason } : {}),

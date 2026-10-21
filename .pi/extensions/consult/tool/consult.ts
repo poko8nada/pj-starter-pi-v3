@@ -33,6 +33,7 @@ import {
   type RunRequest,
 } from './run.ts';
 import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
+import { readStartToken, type PsRun } from '../run/proc.ts';
 import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, reportBlock, result, usageLine, type SubagentReport } from './render.ts';
@@ -275,6 +276,8 @@ interface RuntimeState {
   readonly sessionNow: () => string;
   /** 生死の照合。テストが差し替える口（既定は token があれば `ps`、無ければ `pidAlive`） */
   readonly check?: CheckRecord;
+  /** 起動時刻を読む `ps`。テストが差し替える口（既定は本物の `ps`） */
+  readonly psRun?: PsRun;
   /** 番号の床。記録の最大で種を取り、同じ runtime で続けて起こす時も重ねない */
   number: { session: string; next: number };
 }
@@ -426,6 +429,8 @@ function beginRun(
     // 起きたら、まず「走っている」1 行を記録に足す。reload をまたいでも一覧に出るように
     onStarted: (pid) => {
       subagent.pid = pid;
+      const startToken =
+        state.psRun === undefined ? readStartToken(pid) : readStartToken(pid, state.psRun);
       appendRun(state.place, {
         session,
         subagent: subagent.id,
@@ -433,6 +438,7 @@ function beginRun(
         pid,
         started: subagent.startedAt,
         token,
+        ...(startToken === undefined ? {} : { startToken }),
         ...(worktree === undefined ? {} : { worktree: worktree.id }),
       });
     },
@@ -473,7 +479,7 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
-// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow, check の 6 つ）
+// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow, check, psRun の 7 つ）
 export function createRuntime(
   pi: PiFace,
   place: Place,
@@ -481,6 +487,7 @@ export function createRuntime(
   delivery?: Delivery,
   sessionNow: () => string = () => '',
   check?: CheckRecord,
+  psRun?: PsRun,
 ): ConsultRuntime {
   const state: RuntimeState = {
     pi,
@@ -490,6 +497,7 @@ export function createRuntime(
     number: { session: '', next: 0 },
     sessionNow,
     ...(check === undefined ? {} : { check }),
+    ...(psRun === undefined ? {} : { psRun }),
     ...(delivery === undefined ? {} : { delivery }),
   };
   return {

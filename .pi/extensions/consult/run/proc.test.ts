@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkPid, type PsRun } from './proc.ts';
+import { checkPid, readStartToken, type PsRun } from './proc.ts';
 
 function ps(result: {
   readonly status: number | null;
@@ -102,5 +102,60 @@ describe('checkPid', () => {
   it('status 1 で stdout あり → unknown', () => {
     const run = ps({ status: 1, stdout: 'something', stderr: '' });
     expect(checkPid(123, 'token-1', run)).toBe('unknown');
+  });
+});
+
+describe('readStartToken', () => {
+  it('ps が lstart を返す → 前後の空白を落とした文字列', () => {
+    const run = ps({
+      status: 0,
+      stdout: 'Wed Oct 21 12:41:12 2026\n',
+      stderr: '',
+    });
+    expect(readStartToken(123, run)).toBe('Wed Oct 21 12:41:12 2026');
+  });
+
+  it('lstart が 28 桁に詰められている → 前後の空白を落として一致する', () => {
+    const run = ps({
+      status: 0,
+      stdout: '  Wed Oct 21 12:41:12 2026  \n',
+      stderr: '',
+    });
+    expect(readStartToken(123, run)).toBe('Wed Oct 21 12:41:12 2026');
+  });
+
+  it('ps が exit 1 で出力なし → undefined', () => {
+    const run = ps({ status: 1, stdout: '', stderr: '' });
+    expect(readStartToken(999999, run)).toBeUndefined();
+  });
+
+  it('ps が stderr を返す → undefined', () => {
+    const run = ps({ status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: 'ps: error' });
+    expect(readStartToken(123, run)).toBeUndefined();
+  });
+
+  it('ps に渡る引数 → -p、<pid>、-o、lstart= を含む', () => {
+    const seen: string[][] = [];
+    const run: PsRun = (args) => {
+      seen.push([...args]);
+      return { status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' };
+    };
+    expect(readStartToken(123, run)).toBe('Wed Oct 21 12:41:12 2026');
+    expect(seen[0]).toContain('-p');
+    expect(seen[0]).toContain('123');
+    expect(seen[0]).toContain('-o');
+    expect(seen[0]).toContain('lstart=');
+  });
+
+  it('0 以下・非整数の pid → undefined（ps を叩かない）', () => {
+    let called = 0;
+    const run: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' };
+    };
+    expect(readStartToken(0, run)).toBeUndefined();
+    expect(readStartToken(-5, run)).toBeUndefined();
+    expect(readStartToken(3.5, run)).toBeUndefined();
+    expect(called).toBe(0);
   });
 });

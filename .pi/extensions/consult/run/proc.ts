@@ -33,6 +33,26 @@ function defaultRun(args: readonly string[]): {
 }
 
 /**
+ * 子の起動時刻の文字列を読む。
+ *
+ * `ps -p <pid> -o lstart=` の出力を前後の空白を落として返す。pid が無い、stderr がある、status が 0 でないときは `undefined`。
+ */
+export function readStartToken(pid: number, run: PsRun = defaultRun): string | undefined {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return undefined;
+  }
+  const result = run(['-p', String(pid), '-o', 'lstart=']);
+  if (result.stderr !== '') {
+    return undefined;
+  }
+  if (result.status !== 0) {
+    return undefined;
+  }
+  const token = result.stdout.trim();
+  return token === '' ? undefined : token;
+}
+
+/**
  * pid が生きていて、その argv に token が残っているか。
  *
  * status 0 で token があれば `running`、無ければ `ended`（pid の使い回し）。

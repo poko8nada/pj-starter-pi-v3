@@ -30,6 +30,7 @@ import {
 } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
+import { readStartToken, type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
@@ -60,9 +61,13 @@ function setup(
   pi: PiFace,
   run: ConsultRunner,
   check?: CheckRecord,
+  psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = placeFor(tmpDir(), tmpDir());
-  return { runtime: createRuntime(pi, place, run, undefined, () => SESSION, check), place };
+  return {
+    runtime: createRuntime(pi, place, run, undefined, () => SESSION, check, psRun),
+    place,
+  };
 }
 
 type RunParams = Parameters<ConsultRuntime['run']>[1];
@@ -707,6 +712,47 @@ describe('commands: 引数と空の一覧', () => {
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
     expect(notices[0]?.message).toContain('no subagent is running');
+  });
+});
+
+describe('beginRun: startToken', () => {
+  it('onStarted の開始行 → startToken が readStartToken の値と一致する（ps の偽物で固定）', async () => {
+    const { pi } = fakePi();
+    const pid = 4242;
+    const fixed = 'Wed Oct 21 12:41:12 2026';
+    let called = 0;
+    const psRun: PsRun = (args) => {
+      called += 1;
+      expect(args).toContain('-p');
+      expect(args).toContain(String(pid));
+      expect(args).toContain('-o');
+      expect(args).toContain('lstart=');
+      return { status: 0, stdout: `${fixed}\n`, stderr: '' };
+    };
+    const run: ConsultRunner = async (_ctx, _options, job) => {
+      job.onStarted?.(pid);
+      return { text: 'done', details: {}, report: undefined };
+    };
+    const { runtime, place } = setup(pi, run, undefined, psRun);
+    await startSubagent(runtime, { role: 'review', task: '調べる' });
+    await flush();
+    expect(called).toBe(1);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[0]?.startToken).toBe(fixed);
+    expect(typeof records[0]?.token).toBe('string');
+  });
+
+  it('readStartToken に 0 以下・非整数の pid → undefined、ps を叩かない', async () => {
+    let called = 0;
+    const psRun: PsRun = () => {
+      called += 1;
+      return { status: 0, stdout: 'Wed Oct 21 12:41:12 2026\n', stderr: '' };
+    };
+    expect(readStartToken(0, psRun)).toBeUndefined();
+    expect(readStartToken(-1, psRun)).toBeUndefined();
+    expect(readStartToken(1.5, psRun)).toBeUndefined();
+    expect(called).toBe(0);
   });
 });
 
