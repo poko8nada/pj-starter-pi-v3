@@ -217,10 +217,11 @@ describe('scrubMessage', () => {
 
   it('2 ブロックのうち片方が全部区間 → 片方は元のまま、removed は畳んだ分だけ', () => {
     const fullRun = 'the *'.repeat(12);
+    const twoRuns = `foo${'the *'.repeat(12)} hello ${'abcd'.repeat(15)}bar`;
     const message = assistantMessage({
       content: [
         { type: 'thinking', thinking: fullRun, thinkingSignature: 'reasoning_content' },
-        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+        { type: 'thinking', thinking: twoRuns, thinkingSignature: 'reasoning_content' },
       ],
     });
     const scrubbed = scrubMessage(message);
@@ -228,7 +229,7 @@ describe('scrubMessage', () => {
     if (scrubbed === undefined) {
       throw new Error('scrubbed must be defined');
     }
-    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.removed).toBe(2);
     if (scrubbed.message.role !== 'assistant') {
       throw new Error('message must be assistant');
     }
@@ -243,6 +244,6 @@ describe('scrubMessage', () => {
     if (typeof second !== 'object' || second === null || !('thinking' in second)) {
       throw new Error('second block must be thinking');
     }
-    expect(second.thinking).toBe('foo bar');
+    expect(second.thinking).toBe('foo hello bar');
   });
 });
