@@ -362,8 +362,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 3: 設定と状態
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 31bd9f5 consult(thinking-scrub): add settings and session state
 
 ### Slice 4: コマンド
 
