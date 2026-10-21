@@ -2,8 +2,8 @@
  * 子の pi が生きているかの照合。
  *
  * pid だけでは使い回しに弱い（死んだ pid を別のプロセスが使うと「走っている」に見える）。
- * 開始行の `token` を子の argv に `--name` で渡してあるので、`ps` の出力にその token が
- * 残っているかで見る。`ps` 自体が失敗したときは分からないと言う（`unknown`）。
+ * 開始行の `startToken`（起動時の `ps -p <pid> -o lstart=` の出力）と、いまの `lstart` が
+ * 完全一致すれば生きている。`ps` 自体が失敗したときは分からないと言う（`unknown`）。
  */
 
 import { spawnSync } from 'node:child_process';
@@ -18,7 +18,7 @@ export type PsRun = (args: readonly string[]) => {
   readonly stderr: string;
 };
 
-/** 本番の `ps`。幅で切れないように `-ww` を付ける */
+/** 本番の `ps`。`lstart` は 28 桁に詰められ、幅で切れないので `-ww` は付けない */
 function defaultRun(args: readonly string[]): {
   readonly status: number | null;
   readonly stdout: string;
@@ -53,28 +53,28 @@ export function readStartToken(pid: number, run: PsRun = defaultRun): string | u
 }
 
 /**
- * pid が生きていて、その argv に token が残っているか。
+ * pid が生きていて、起動時刻が `startToken` と一致するか。
  *
- * status 0 で token があれば `running`、無ければ `ended`（pid の使い回し）。
+ * status 0 で `lstart` が一致すれば `running`、違えば `ended`（pid の使い回し）。
  * status 1 で出力も stderr も無ければ `ended`（pid が無い）。
  * stderr があれば、status に依らず `unknown`。status が 0・1 以外、または null なら `unknown`。
  */
-export function checkPid(pid: number, token: string, run: PsRun = defaultRun): Liveness {
+export function checkPid(pid: number, startToken: string, run: PsRun = defaultRun): Liveness {
   if (!Number.isInteger(pid) || pid <= 0) {
     return 'ended';
   }
-  if (token === '') {
+  if (startToken === '') {
     return 'unknown';
   }
-  const result = run(['-ww', '-p', String(pid), '-o', 'command=']);
+  const result = run(['-p', String(pid), '-o', 'lstart=']);
   if (result.stderr !== '') {
     return 'unknown';
   }
   if (result.status === 0) {
-    return result.stdout.includes(token) ? 'running' : 'ended';
+    return result.stdout.trim() === startToken ? 'running' : 'ended';
   }
   if (result.status === 1) {
-    return result.stdout === '' ? 'ended' : 'unknown';
+    return result.stdout.trim() === '' ? 'ended' : 'unknown';
   }
   return 'unknown';
 }

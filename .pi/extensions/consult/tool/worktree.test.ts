@@ -209,7 +209,7 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('開始行だけ + check が unknown の worktree → busy でない', async () => {
+  it('開始行だけ + check が unknown の worktree → busy（走っている側）', async () => {
     const { dir } = repo();
     await call({ action: 'new', id: '2-b' }, dir);
     findWorktree(dir, '2-b');
@@ -223,7 +223,7 @@ describe('consult_worktree', () => {
       token: 'token-9',
       worktree: '2-b',
     });
-    expect(runningIn(place, '2-b', () => 'unknown')).toBe(false);
+    expect(runningIn(place, '2-b', () => 'unknown')).toBe(true);
   });
 
   it('知らない action → エラー', async () => {
