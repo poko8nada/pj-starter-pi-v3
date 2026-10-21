@@ -165,12 +165,6 @@ describe('isRunning', () => {
     expect(isRunning(record({ pid: 999_999 }))).toBe(false);
   });
 
-  it('ended のある行 → false（check が running でも）', () => {
-    expect(
-      isRunning(record({ pid: process.pid, ended: 2000, state: 'done' }), () => 'running'),
-    ).toBe(false);
-  });
-
   it('token 無しの古い行で pid が生きている → true（移行）', () => {
     expect(isRunning(record({ pid: process.pid }))).toBe(true);
   });
@@ -185,14 +179,6 @@ describe('isRunning', () => {
 
   it('token 付きの行で check が unknown → false', () => {
     expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'unknown')).toBe(false);
-  });
-
-  it('token 無しの行で pidAlive が true → true（移行）', () => {
-    expect(isRunning(record({ pid: process.pid }))).toBe(true);
-  });
-
-  it('token 無しの行で pidAlive が false → false', () => {
-    expect(isRunning(record({ pid: 999_999 }))).toBe(false);
   });
 });
 

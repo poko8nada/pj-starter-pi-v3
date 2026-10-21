@@ -129,8 +129,6 @@ describe('rowOf / rowsOf', () => {
 
   it('一覧の check を差し替え、running と ended を返す → 一覧の状態がそれに従う', () => {
     const start = record({ subagent: 'consult-1', token: 'a' });
-    expect(rowsOf([start], runningCheck, 0)[0]).toContain('running');
-    expect(rowsOf([start], endedCheck, 0)[0]).not.toContain('running');
     expect(listText([start], 0, runningCheck)).toContain('running');
     expect(listText([start], 0, endedCheck)).not.toContain('running');
   });

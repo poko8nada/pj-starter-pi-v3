@@ -317,7 +317,16 @@ export function closeOrphans(
 
 - Findings: なし
 - Unplanned: なし
-- Commit: consult(consult-liveness): verify integrated consult liveness
+- Commit: 875f32b consult(consult-liveness): verify integrated consult liveness
+
+### Test cleanup
+
+- 重複して同じ振る舞いを見る物を落とした:
+  - `run/log.test.ts` の `isRunning` から 3 件。`ended` のある行に check `running` を渡す物（旧来の物と pid だけ違い、`ended` で短絡するので同一）、token 無しの行の dead／alive の 2 件（「古い行」の物と既定照合・同 pid で同一）。残した側で migration と短絡を pin する。
+  - `tool/subagents.test.ts` の一覧 port の件から `rowsOf` の 2 行（直上の `rowsOf` の件と同一）。`listText` の 2 行だけ残し、`listText` の口を pin する。47→44 件（`log.test.ts`）。
+- 消えた振る舞いの件: なし。旧 `alive: (pid) => boolean` の口の件は slice 2 で移行済みで、残りは無かった。
+- 止めた枝の件: なし。終了行だけの形と開始＋終了の形（`worktree` の busy、`control` の停止）は同じ枝に見えるが、前者は単純形の回帰、後者は slice 3 の事故形の pin で、どちらも生きた枝を叩くので残した。`spec.test.ts` の `--name` 3 件（`--session` 共存・`--no-session`・`-p` 直後）も向きが違い残した。
+- 緑: 上の 7 ファイル 169 件、`pnpm typecheck`（root／.pi ok）、`pnpm lint`、`pnpm format:check` が通る。
 
 ## Review
 
