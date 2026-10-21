@@ -61,6 +61,7 @@ scripts/
 
 ## Acceptance
 
-- Ran:
-- Findings:
+- Ran: `pnpm test:run` 42 files / 707 tests、`pnpm typecheck` root: ok / .pi: ok、`pnpm lint` exit 0、`pnpm format:check` 緑。`read` で `scripts/harness/index.mjs:93-96` が `if (expanded.startsWith('~'))` 1 本、本文 `path.join(os.homedir(), expanded.slice(1))`、`rootAbs = path.resolve(root)` であることを確認。壊し確認は 3 つ: `:93` を `startsWith('~/')` にすると `~ 単体` と `~foo` の 2 件が赤、`:96` を `path.resolve(root, 'x')` にすると `same` と `../starter` の 2 件が赤、`:94` を `slice(0)` にすると `~/...`、`~ 単体`、`~foo` の 3 件が赤。いずれも戻して 707 tests が緑に戻ることを確かめた。
+- Findings: なし。review Round 1 は 4 視点とも finding なし。テスト整理の 2 Doubts は `63679de` で `~ 単体` と `~foo` を戻して解消した。
 - Doubts:
+  - テスト整理で `cwd のツリーを root として読む` の 1 件だけ落とした（最初の diff テストの重複）。ADR `02` の「テストは変えない」とは 1 件だけ差がある。
