@@ -93,7 +93,7 @@ export function latest(records: readonly RunRecord[]): RunRecord[] {
   for (const list of groups.values()) {
     const ended = list.filter((record) => record.ended !== undefined);
     if (ended.length > 0) {
-      const pick = [...ended].sort((a, b) => (a.ended ?? 0) - (b.ended ?? 0)).at(-1);
+      const pick = ended.toSorted((a, b) => (a.ended ?? 0) - (b.ended ?? 0)).at(-1);
       if (pick !== undefined) {
         out.push(pick);
       }
@@ -149,11 +149,7 @@ export function rowsOf(
 }
 
 /** 一覧の本文。記録が無ければそう言う */
-export function listText(
-  records: readonly RunRecord[],
-  now: number,
-  check?: CheckRecord,
-): string {
+export function listText(records: readonly RunRecord[], now: number, check?: CheckRecord): string {
   if (records.length === 0) {
     return 'no subagents in this project yet';
   }

@@ -441,9 +441,7 @@ function beginRun(
   if (state.subagents.size === 1) {
     // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
     const check = state.check;
-    startSound(
-      () => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0,
-    );
+    startSound(() => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0);
   }
   runInBackground(state, { ctx, options, job, subagent, session });
   const running = [...state.subagents.values()].map(describeSubagent).join('\n');

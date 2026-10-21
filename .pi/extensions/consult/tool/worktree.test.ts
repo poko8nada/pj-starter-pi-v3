@@ -14,11 +14,7 @@ const ROOT_KEY = 'CONSULT_ROOT';
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
 /** 道具は位置で 5 つ受け取る。置き場は cwd から決め、ここで組み立てる */
-function call(
-  params: Record<string, unknown>,
-  cwd: string,
-  check?: CheckRecord,
-): Promise<Outcome> {
+function call(params: Record<string, unknown>, cwd: string, check?: CheckRecord): Promise<Outcome> {
   const place = placeFor(consultRoot(), topLevel(cwd));
   return createWorktreeTool(place, check)('call-1', params, undefined, undefined, { cwd });
 }

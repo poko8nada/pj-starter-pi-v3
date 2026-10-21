@@ -12,7 +12,7 @@ import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { startSound, stopSound } from './tool/sound.ts';
 import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
-import { KEEP_DAYS, runningRuns, type RunRecord } from './run/log.ts';
+import { closeOrphans, KEEP_DAYS, runningRuns, type RunRecord } from './run/log.ts';
 import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
@@ -134,6 +134,15 @@ function sweep(place: Place, cwd: string): void {
   }
 }
 
+/** 終わりの無い開始行を閉じる。失敗は握って続ける（開始を止めない） */
+function closeQuietly(place: Place, current: string): void {
+  try {
+    closeOrphans(place, current);
+  } catch {
+    // 閉じ損ねても開始は止めない。走っていない物は次の判定で止まる
+  }
+}
+
 export default function (pi: ExtensionAPI) {
   const place = placeOf(process.cwd());
   // 完了の届け先は 1 本。reload で捨てられても、古い delivery は記録へ回すだけ（新しいセッションが読む）
@@ -144,6 +153,7 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだサブエージェントがまだ走っていれば、知らせて音を戻す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
+    closeQuietly(place, session);
     announceRunningSubagents(place, session, ctx);
     sweep(place, ctx.cwd);
     // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める

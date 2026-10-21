@@ -215,3 +215,48 @@ export function runningRuns(
   }
   return out;
 }
+
+/**
+ * 終わりの無い開始行を終了行で閉じる。
+ *
+ * session の行を subagent ごとにまとめ、`ended` の無い subagent の開始行を `check`
+ * （既定は token があれば `ps`、無ければ `pidAlive`）に渡す。`ended` か `unknown`
+ * なら、開始行を写して `ended: Date.now()`、`state: 'error'`、理由を足した行を
+ * `appendRun` し、閉じた行を返す。`running` なら何もしない。`appendRun` が投げたら
+ * そのまま投げる（呼ぶ側の `index.ts` が握る）。
+ */
+export function closeOrphans(
+  place: Place,
+  session: string,
+  check?: CheckRecord,
+): readonly RunRecord[] {
+  const groups = new Map<string, RunRecord[]>();
+  for (const record of readRuns(place, { session })) {
+    const list = groups.get(record.subagent);
+    if (list !== undefined) {
+      list.push(record);
+    } else {
+      groups.set(record.subagent, [record]);
+    }
+  }
+  const closed: RunRecord[] = [];
+  for (const records of groups.values()) {
+    if (records.some((record) => record.ended !== undefined)) {
+      continue;
+    }
+    for (const start of records) {
+      if (isRunning(start, check)) {
+        continue;
+      }
+      const done: RunRecord = {
+        ...start,
+        ended: Date.now(),
+        state: 'error',
+        reason: 'orphan: start without end (closed on session_start)',
+      };
+      appendRun(place, done);
+      closed.push(done);
+    }
+  }
+  return closed;
+}
