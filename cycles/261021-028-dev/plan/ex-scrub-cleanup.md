@@ -84,8 +84,10 @@
 ### Slice 2: 空になる差し替えを止める
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 8dff5c7 consult(ex-scrub-cleanup): skip blank scrub results
 
 ### Slice 3: 統合: thinking-scrub が緑のまま
 
