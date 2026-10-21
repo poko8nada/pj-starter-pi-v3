@@ -30,6 +30,7 @@ import {
 } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
+import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
@@ -60,9 +61,13 @@ function setup(
   pi: PiFace,
   run: ConsultRunner,
   check?: CheckRecord,
+  psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = placeFor(tmpDir(), tmpDir());
-  return { runtime: createRuntime(pi, place, run, undefined, () => SESSION, check), place };
+  return {
+    runtime: createRuntime(pi, place, run, undefined, () => SESSION, check, psRun),
+    place,
+  };
 }
 
 type RunParams = Parameters<ConsultRuntime['run']>[1];
@@ -462,8 +467,10 @@ describe('controlSubagent: cancel', () => {
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
   });
+});
 
-  it('開始行だけの停止は check に従う（running → kill、ended → kill しない）', () => {
+describe('controlSubagent: cancel (startToken)', () => {
+  it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
     const found = placeFor(tmpDir(), tmpDir());
     appendRun(found, {
       session: SESSION,
@@ -471,7 +478,7 @@ describe('controlSubagent: cancel', () => {
       role: 'review',
       pid: 11,
       started: 1,
-      token: 'token-9',
+      startToken: 'Wed Oct 21 12:41:12 2026',
     });
     const killsRunning: number[] = [];
     const outcomeRunning = controlSubagent(
@@ -486,6 +493,31 @@ describe('controlSubagent: cancel', () => {
     );
     expect(killsRunning).toEqual([11]);
     expect(outcomeRunning.details).toMatchObject({ cancelled: true });
+    const killsEnded: number[] = [];
+    const outcomeEnded = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      (pid) => {
+        killsEnded.push(pid);
+      },
+      () => 'ended',
+    );
+    expect(killsEnded).toEqual([]);
+    expect(outcomeEnded.details).toMatchObject({ cancelled: false });
+  });
+
+  it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
+    const found = placeFor(tmpDir(), tmpDir());
+    appendRun(found, {
+      session: SESSION,
+      subagent: 'consult-9',
+      role: 'review',
+      pid: 11,
+      started: 1,
+      startToken: 'Wed Oct 21 12:41:12 2026',
+    });
     const kills: number[] = [];
     const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-9' },
@@ -495,10 +527,10 @@ describe('controlSubagent: cancel', () => {
       (pid) => {
         kills.push(pid);
       },
-      () => 'ended',
+      () => 'unknown',
     );
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
+    expect(kills).toEqual([11]);
+    expect(outcome.details).toMatchObject({ cancelled: true });
   });
 });
 
@@ -707,6 +739,53 @@ describe('commands: 引数と空の一覧', () => {
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
     expect(notices[0]?.message).toContain('no subagent is running');
+  });
+});
+
+describe('beginRun: startToken', () => {
+  it('onStarted の開始行 → startToken が readStartToken の値と一致する（ps の偽物で固定）', async () => {
+    const { pi } = fakePi();
+    const pid = 4242;
+    const fixed = 'Wed Oct 21 12:41:12 2026';
+    let called = 0;
+    const psRun: PsRun = (args) => {
+      called += 1;
+      expect(args).toContain('-p');
+      expect(args).toContain(String(pid));
+      expect(args).toContain('-o');
+      expect(args).toContain('lstart=');
+      return { status: 0, stdout: `${fixed}\n`, stderr: '' };
+    };
+    const run: ConsultRunner = async (_ctx, _options, job) => {
+      job.onStarted?.(pid);
+      return { text: 'done', details: {}, report: undefined };
+    };
+    const { runtime, place } = setup(pi, run, undefined, psRun);
+    await startSubagent(runtime, { role: 'review', task: '調べる' });
+    await flush();
+    expect(called).toBe(1);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[0]?.startToken).toBe(fixed);
+    expect(typeof records[0]?.token).toBe('string');
+  });
+
+  it('onStarted で ps が読めない → startToken 無しの開始行になる', async () => {
+    const { pi } = fakePi();
+    const pid = 4242;
+    const run: ConsultRunner = async (_ctx, _options, job) => {
+      job.onStarted?.(pid);
+      return { text: 'done', details: {}, report: undefined };
+    };
+    const gone = { status: 1 as const, stdout: '', stderr: '' };
+    const psRun: PsRun = () => gone;
+    const { runtime, place } = setup(pi, run, undefined, psRun);
+    await startSubagent(runtime, { role: 'review', task: '調べる' });
+    await flush();
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[0]?.startToken).toBeUndefined();
+    expect(typeof records[0]?.token).toBe('string');
   });
 });
 

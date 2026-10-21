@@ -12,7 +12,7 @@
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import type { SubagentState } from './run.ts';
 import { dayFile, windowFiles, type Place } from './place.ts';
-import { checkPid, type Liveness } from './proc.ts';
+import { checkPid, type Liveness, type PsRun } from './proc.ts';
 
 /** 読む窓の日数（今日と昨日） */
 export const RECORD_DAYS = 2;
@@ -32,6 +32,8 @@ export interface RunRecord {
   readonly pid: number;
   /** 子の pi に `--name` で渡した印。`ps` の argv に出る。古い行には無い */
   readonly token?: string;
+  /** 子の起動時刻の文字列（`ps -p <pid> -o lstart=` の出力）。古い行には無い */
+  readonly startToken?: string;
   /** 始まった時刻（ms） */
   readonly started: number;
   /** 終わった時刻（ms）。走っている間は無い */
@@ -80,21 +82,21 @@ export function pidAlive(pid: number): boolean {
 /** 記録 1 行の生死。テストが差し替える口（`ps` を叩かない） */
 export type CheckRecord = (record: RunRecord) => Liveness;
 
-/** 既定の照合。token があれば `ps` の argv、無ければ `pidAlive`（古い行の移行） */
-function defaultCheck(record: RunRecord): Liveness {
-  if (record.token !== undefined) {
-    return checkPid(record.pid, record.token);
+/** 既定の照合。startToken があれば `ps` の `lstart`、無ければ `pidAlive`（古い行の移行） */
+export function defaultCheck(record: RunRecord, run?: PsRun): Liveness {
+  if (record.startToken !== undefined) {
+    return checkPid(record.pid, record.startToken, run);
   }
   return pidAlive(record.pid) ? 'running' : 'ended';
 }
 
 /**
- * 走っているサブエージェントの行か。終わりの行があれば false。`running` だけ true。
+ * 走っているサブエージェントの行か。終わりの行があれば false。読めないときは走っている側（`ended` 以外は true）。
  *
  * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`check` はテストが差し替える口。
  */
 export function isRunning(record: RunRecord, check: CheckRecord = defaultCheck): boolean {
-  return record.ended === undefined && check(record) === 'running';
+  return record.ended === undefined && check(record) !== 'ended';
 }
 
 /**
@@ -132,6 +134,7 @@ export function parseRun(line: string): RunRecord | undefined {
     started,
     ...(typeof fields.worktree === 'string' ? { worktree: fields.worktree } : {}),
     ...(typeof fields.token === 'string' ? { token: fields.token } : {}),
+    ...(typeof fields.startToken === 'string' ? { startToken: fields.startToken } : {}),
     ...(typeof fields.ended === 'number' ? { ended: fields.ended } : {}),
     ...(isState(fields.state) ? { state: fields.state } : {}),
     ...(typeof fields.reason === 'string' ? { reason: fields.reason } : {}),
@@ -187,7 +190,7 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
  *
  * `readRuns` の窓を `scope` で切り、subagent ごとにまとめる。同じ subagent に `ended` の行が
  * 1 つでもあれば終わり（事故の形でも走っていない）。無ければ開始行を `check` に渡し、
- * `running` だけを返す。音の述語と、前のセッションのサブエージェントの告知が読む。
+ * `ended` 以外を返す。音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
   place: Place,
@@ -220,9 +223,9 @@ export function runningRuns(
  * 終わりの無い開始行を終了行で閉じる。
  *
  * session の行を subagent ごとにまとめ、`ended` の無い subagent の開始行を `check`
- * （既定は token があれば `ps`、無ければ `pidAlive`）に渡す。`ended` か `unknown`
+ * （既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）に渡す。`ended`
  * なら、開始行を写して `ended: Date.now()`、`state: 'error'`、理由を足した行を
- * `appendRun` し、閉じた行を返す。`running` なら何もしない。`appendRun` が投げたら
+ * `appendRun` し、閉じた行を返す。`running` と `unknown` なら何もしない。`appendRun` が投げたら
  * そのまま投げる（呼ぶ側の `index.ts` が握る）。
  */
 export function closeOrphans(

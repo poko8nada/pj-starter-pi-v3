@@ -193,45 +193,87 @@ function defaultCheck(record: RunRecord): Liveness;
 ### Slice 1: 記録の startToken
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 2140398 consult(liveness-start-token): record startToken on launch
 
 ### Slice 2: 生存の check を lstart にする
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - worktree.test の unknown → busy でない を busy に直した（isRunning が unknown を走っている側にしたため、関連テストが落ちた）
+- Commit: 7d38338 consult(liveness-start-token): check liveness via lstart
 
 ### Slice 3: 読み手を startToken に通す
 
 - Findings:
+  - Verify の 3 ファイル 78 件が通った。beginRun の startSound と controlSubagent の check の配線は state.check/defaultCheck 経由で既に startToken 側だったため、配線の変更は要らなかった
 - Unplanned:
-- Commit:
+  - subagents.ts の 2 件の注釈が argv 照合のままだったので startToken/lstart に直した
+  - consult.test.ts の describe が max-lines-per-function（240）を超えた（242）ので startToken の 2 件を別 describe に分けた
+  - oxfmt の崩れ（subagents.test.ts）を直した
+- Commit: 76aeafb consult(liveness-start-token): route readers via startToken
 
 ### Slice 4: 説明を合わせる
 
 - Findings:
+  - README の走っているかの記述を startToken と `ps -p <pid> -o lstart=` の一致に直し、読めないときは走っている側・`--name <token>` は表示名と書いた（一覧・worktree・停止・音の節）
 - Unplanned:
-- Commit:
+  - read の指摘で音の節に unknown の規則（読めない pid は走っている側）を足した
+- Commit: 5224bf7 consult(liveness-start-token): document the startToken check
 
 ### Slice 5: 統合: consult の生存判定
 
 - Findings:
+  - Steps は読みのみで変えず: `ps` の引数は `['-p', <pid>, '-o', 'lstart=']` で `-ww` なし、`test`/`test:run`/`test:related` は `--config vitest.starter.config.ts`
+  - Verify の cli 4 件が通った: `test:run` exit 0（43 ファイル 777 件、consult を含む）、`typecheck` exit 0（root: ok、.pi: ok）、`lint` exit 0、`format:check` exit 0。落ちた行なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 163eae8 consult(liveness-start-token): verify integrated liveness
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - tool/worktree.ts:95 と sub/spec.ts:41 の注釈が argv 照合のまま
+    - fixed: startToken と `ps -o lstart=` の一致に直し、`--name` は表示名と書いた
 - Unlisted:
 - Gaps:
+  - onStarted の失敗時（`readStartToken` が undefined → 開始行に startToken 無し）の case が無い
+    - fixed: consult.test.ts の beginRun: startToken に ps 失敗時の case を足した
+  - `readStartToken` の status 0 + 空/空白出力の case が無い
+    - fixed: proc.test.ts に空と空白だけの case を足した（どちらも undefined、実装は変えず）
+  - `checkPid` の空 startToken の case が無い
+    - fixed: proc.test.ts に `''` → unknown・ps を叩かない case を足した（実装は変えず）
+  - `defaultCheck` の startToken→checkPid 経路が差し替え不能
+    - fixed: `run?: PsRun` 引数を足して export し、log.test.ts に ps 差し替えの case を足した
 - Unproven:
+  - ended 短絡の test が check の呼び出し回数を見ていない
+    - fixed: 呼び出し回数を数えて 0 を確かめる形に直した
 - Doubts:
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` → exit 0（43 files、773 tests）
+  - `pnpm typecheck` → `root: ok`、`.pi: ok`、exit 0
+  - `pnpm lint` → exit 0
+  - `pnpm format:check` → exit 0
+  - no case（壊し 1: `===` を `includes` に → `proc.test.ts` 1 件赤）
+  - no case（壊し 2: `isRunning` を `=== 'running'` に → `log.test.ts` 3 件赤）
+  - no case（壊し 3: `readStartToken` の trim を外す → `proc.test.ts` 4 件赤）
 - Findings:
+  - Stale: `tool/worktree.ts:95` の既定 check の注釈 → fixed: `startToken` → `lstart` に直した
+  - Stale: `sub/spec.ts:41` の `token` の注釈 → fixed: 表示名の役割に直した
+  - Gaps: `onStarted` の `readStartToken` 失敗 → fixed: `consult.test.ts` に件を足した
+  - Gaps: `readStartToken` の空出力 → fixed: `proc.test.ts` に件を足した
+  - Gaps: `checkPid` の空 `startToken` → fixed: `proc.test.ts` に件を足した
+  - Gaps: `defaultCheck` の既定経路 → fixed: `run` の口を足し、`log.test.ts` に件を足した
+  - Unproven: `ended` の短絡 → fixed: check の呼び出し回数を数える件にした
 - Doubts:
+  - `index.ts` の `announceRunningSubagents` は `check` を渡さないため、新しい任意引数がテスト専用に見える。reload 時の告知は `defaultCheck` に依存する。
+  - 起動時の `readStartToken` 失敗は `pidAlive` に弱く後退し、そのことが記録にも表示にも残らない。
+  - `lstart` の完全一致は開始時と判定時のロケールが同じことを前提にする。

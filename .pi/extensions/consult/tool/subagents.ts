@@ -6,7 +6,7 @@
  *
  * 出るのは**いまのセッションのサブエージェント**だけ（session で絞る）。別のセッションのサブエージェントの報告はこのセッションには
  * 来ないので、待たせない。行方不明（終わりの行が無く、生死の照合にも通らないサブエージェント）は `lost` と出す。
- * 照合は token があれば `ps` の argv、無ければ pid の生存で見るので、pid が生きていても token が合わなければ `lost` になる。
+ * 照合は startToken があれば `ps` の `lstart`、無ければ pid の生存で見るので、pid が生きていても startToken が合わなければ `lost` になる。
  *
  * 止められるのは**いまのセッションが走らせているサブエージェント**だけ。記録には pid があるが、止めるのに要る
  * `AbortController` はこのプロセスの物しか無い。前のセッションのサブエージェントは、理由を返して止めない。
@@ -29,6 +29,7 @@ export interface SubagentsHost {
   readonly place: Place;
   readonly sessionNow: () => string;
   control(action: ControlAction, session: string): ControlOutcome;
+  readonly check?: CheckRecord;
 }
 
 export const PARAMETERS = Type.Object({
@@ -139,7 +140,7 @@ function stateOf(record: RunRecord): string {
 /**
  * 記録をそのまま行にする。
  *
- * 走っているかは `check`（既定は token があれば `ps`、無ければ `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
+ * 走っているかは `check`（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
@@ -165,7 +166,10 @@ export function createSubagentsTool(host: SubagentsHost) {
 
     if (action === 'list') {
       const records = latest(readRuns(host.place, { session }));
-      return result(listText(records, Date.now()), { action, count: records.length });
+      return result(listText(records, Date.now(), host.check), {
+        action,
+        count: records.length,
+      });
     }
 
     if (action === 'cancel') {
