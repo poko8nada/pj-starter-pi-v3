@@ -346,8 +346,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 1: 検出と除去
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - 3 文字周期の繰り返しが 6 文字周期としても当たり下限が抜ける穴を、1〜3 文字周期でも当たる区間は数えない形で塞いだ
+- Commit: 4ebc976 consult(thinking-scrub): detect and scrub periodic runs
 
 ### Slice 2: メッセージの書き換え
 
