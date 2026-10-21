@@ -386,8 +386,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 6: 統合: thinking-scrub の全体
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 74ebe11 consult(thinking-scrub): pass full checks for thinking-scrub
 
 ## Review
 
