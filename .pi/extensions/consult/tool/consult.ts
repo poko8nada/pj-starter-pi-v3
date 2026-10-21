@@ -8,6 +8,7 @@
  */
 
 import { dirname } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
@@ -400,7 +401,8 @@ function beginRun(
   if (policy.isolated && worktree === undefined) {
     throw new Error(`consult_run: ${policy.name} writes, so it needs a worktree. ${RUN_USAGE}`);
   }
-  const options: ConsultOptions = { type: policy.name, task: request.task, policy };
+  const token = randomUUID();
+  const options: ConsultOptions = { type: policy.name, task: request.task, policy, token };
   // 番号は記録から決める。reload でメモリーが消えても、戻らないように。
   const session = state.sessionNow();
   const subagent: RunningSubagent = {
@@ -412,6 +414,7 @@ function beginRun(
   };
   const job: SubagentJob = {
     task: request.task,
+    token,
     id: subagent.id,
     signal: subagent.controller.signal,
     ...(worktree === undefined ? {} : { worktree }),
@@ -425,6 +428,7 @@ function beginRun(
         role: policy.name,
         pid,
         started: subagent.startedAt,
+        token,
         ...(worktree === undefined ? {} : { worktree: worktree.id }),
       });
     },

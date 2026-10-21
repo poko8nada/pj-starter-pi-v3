@@ -207,4 +207,31 @@ describe('parseRun', () => {
   it('旧形の行（child 欄だけを持つ JSON）は捨てる', () => {
     expect(parseRun('{"session":"s","child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
   });
+
+  it('token 付きの開始行 → token が返る（往復）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ token: 'token-1' }), at);
+    expect(readRuns(found, { at })[0]).toMatchObject({ token: 'token-1' });
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":"token-1"}'),
+    ).toMatchObject({ token: 'token-1' });
+  });
+
+  it('token 無しの行（古い形）→ token は undefined で読める', () => {
+    expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
+      { session: 's' },
+    );
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.token,
+    ).toBeUndefined();
+  });
+
+  it('token が数値の行 → token を捨て、行は読める', () => {
+    const run = parseRun(
+      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":123}',
+    );
+    expect(run).toBeDefined();
+    expect(run?.token).toBeUndefined();
+  });
 });

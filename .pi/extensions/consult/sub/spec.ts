@@ -38,6 +38,8 @@ export interface ConsultOptions {
   /** サブエージェントへの指示。argv には載せず、標準入力へ流す（run.ts） */
   readonly task: string;
   readonly policy: TypePolicy;
+  /** 子の pi に `--name` で渡す印。`ps` の argv に残り、生きているかの照合に使う */
+  readonly token: string;
   /**
    * サブエージェントのセッションのファイル。worktree ごとに 1 つ。
    *
@@ -64,7 +66,7 @@ export function joinPrompt(task: string): string {
  */
 export function buildPiArgs(options: ConsultOptions): string[] {
   const { policy } = options;
-  const args = ['--mode', 'json', '-p'];
+  const args = ['--mode', 'json', '-p', '--name', options.token];
   if (options.sessionPath === undefined) {
     args.push('--no-session');
   } else {

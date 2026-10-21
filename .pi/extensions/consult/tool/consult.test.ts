@@ -29,7 +29,7 @@ import {
   stopSound,
 } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { appendRun } from '../run/log.ts';
+import { appendRun, readRuns } from '../run/log.ts';
 import { placeFor, type Place } from '../run/place.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
@@ -600,5 +600,28 @@ describe('commands: 引数と空の一覧', () => {
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.status('', ctx);
     expect(notices[0]?.message).toContain('no subagent is running');
+  });
+});
+
+describe('beginRun: token', () => {
+  it('開始行に UUID の token が入り、終了行は token を持たない', async () => {
+    const { pi } = fakePi();
+    const pid = process.pid;
+    const run: ConsultRunner = async (_ctx, _options, job) => {
+      job.onStarted?.(pid);
+      return { text: 'done', details: {}, report: undefined };
+    };
+    const { runtime, place } = setup(pi, run);
+    await startSubagent(runtime, { role: 'review', task: '調べる' });
+    await flush();
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    const start = records[0];
+    const end = records[1];
+    expect(start?.ended).toBeUndefined();
+    expect(typeof start?.token).toBe('string');
+    expect(start?.token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(end?.ended).toBeDefined();
+    expect(end?.token).toBeUndefined();
   });
 });

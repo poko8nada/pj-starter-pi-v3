@@ -25,6 +25,8 @@ import type { ConsultContext } from '../tool/consult.ts';
 export interface SubagentJob {
   /** サブエージェントへの指示 */
   readonly task: string;
+  /** 子の pi に `--name` で渡す印。`buildPiArgs` が argv に載せる */
+  readonly token: string;
   readonly signal: AbortSignal | undefined;
   /** 走らせる worktree。隔離するロールでは必須（メインエージェントが `consult_worktree` で作る） */
   readonly worktree?: Worktree;
@@ -115,6 +117,7 @@ export async function runOneSubagent(
     runPi({
       piArgs: buildPiArgs({
         ...options,
+        token: job.token,
         policy: { ...options.policy, models: model === undefined ? [] : [model] },
         ...(sessionPath === undefined ? {} : { sessionPath }),
       }),
