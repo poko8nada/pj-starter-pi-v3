@@ -221,14 +221,16 @@ function defaultCheck(record: RunRecord): Liveness;
 - Findings:
   - README の走っているかの記述を startToken と `ps -p <pid> -o lstart=` の一致に直し、読めないときは走っている側・`--name <token>` は表示名と書いた（一覧・worktree・停止・音の節）
 - Unplanned:
-  - なし
-- Stopped: Verify の read（review サブエージェントが README を読む）は agent が走らせるため、ここで止める。Slice 5 は始めない
-- Commit:
+  - read の指摘で音の節に unknown の規則（読めない pid は走っている側）を足した
+- Commit: 5224bf7 consult(liveness-start-token): document the startToken check
 
 ### Slice 5: 統合: consult の生存判定
 
 - Findings:
+  - Steps は読みのみで変えず: `ps` の引数は `['-p', <pid>, '-o', 'lstart=']` で `-ww` なし、`test`/`test:run`/`test:related` は `--config vitest.starter.config.ts`
+  - Verify の cli 4 件が通った: `test:run` exit 0（43 ファイル 777 件、consult を含む）、`typecheck` exit 0（root: ok、.pi: ok）、`lint` exit 0、`format:check` exit 0。落ちた行なし
 - Unplanned:
+  - なし
 - Commit:
 
 ## Review
