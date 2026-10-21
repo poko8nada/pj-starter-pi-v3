@@ -31,7 +31,7 @@ export type CtxPort = Pick<ExtensionContext, 'hasUI'>;
 
 const DEFAULT_CONFIG: SoundNotifyConfig = {
   enabled: true,
-  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop', compact: 'Glass' },
+  sounds: { permission: 'Blow', question: 'Ping', done: 'Glass', commit: 'Pop', compact: 'Ping' },
   notifications: true,
 };
 

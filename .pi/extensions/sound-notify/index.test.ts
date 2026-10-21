@@ -104,7 +104,7 @@ describe('sound-notify.compact', () => {
 
   it('圧縮が終わる → Glass が 1 回鳴る', () => {
     handleSessionCompact(pi, ctx, defaultConfig);
-    expect(played).toEqual(['Glass']);
+    expect(played).toEqual(['Ping']);
   });
 
   it('圧縮が終わる → cmux の exec は呼ばれない', async () => {
@@ -118,13 +118,13 @@ describe('sound-notify.compact', () => {
     handleSessionCompact(recordingPi, ctx, defaultConfig);
     await Promise.resolve();
     expect(calls).toEqual([]);
-    expect(played).toEqual(['Glass']);
+    expect(played).toEqual(['Ping']);
   });
 
   it('続けて 2 回呼ぶ → 2 回鳴る', () => {
     handleSessionCompact(pi, ctx, defaultConfig);
     handleSessionCompact(pi, ctx, defaultConfig);
-    expect(played).toEqual(['Glass', 'Glass']);
+    expect(played).toEqual(['Ping', 'Ping']);
   });
 
   it('config.json の sounds.compact を別名にする → その名前で鳴る', () => {
@@ -134,7 +134,7 @@ describe('sound-notify.compact', () => {
 
   it('config.json の sounds.compact が文字列でない → 既定 Glass に落ちる', () => {
     handleSessionCompact(pi, ctx, parseConfig({ sounds: { compact: 7 } }));
-    expect(played).toEqual(['Glass']);
+    expect(played).toEqual(['Ping']);
   });
 
   it('hasUI が false → 鳴らない', () => {
@@ -200,7 +200,7 @@ describe('sound-notify.entry', () => {
     const handler = handlers.get('session_compact');
     expect(handler).toBeDefined();
     await handler?.({}, ctx);
-    expect(played).toEqual(['Glass']);
+    expect(played).toEqual(['Ping']);
   });
 });
 
