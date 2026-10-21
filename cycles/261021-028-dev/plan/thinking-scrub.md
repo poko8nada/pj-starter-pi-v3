@@ -378,8 +378,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 5: 配線と説明
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - registerScrub の void 戻りでは removed の合計と failures を検査できない穴を、配線の中身を持つ createScrubWiring（handlers と getStatus）を足して塞いだ
+- Commit: 2844a21 consult(thinking-scrub): wire message_end and command
 
 ### Slice 6: 統合: thinking-scrub の全体
 
