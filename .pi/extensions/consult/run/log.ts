@@ -12,6 +12,7 @@
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import type { SubagentState } from './run.ts';
 import { dayFile, windowFiles, type Place } from './place.ts';
+import { checkPid, type Liveness } from './proc.ts';
 
 /** 読む窓の日数（今日と昨日） */
 export const RECORD_DAYS = 2;
@@ -76,13 +77,24 @@ export function pidAlive(pid: number): boolean {
   }
 }
 
+/** 記録 1 行の生死。テストが差し替える口（`ps` を叩かない） */
+export type CheckRecord = (record: RunRecord) => Liveness;
+
+/** 既定の照合。token があれば `ps` の argv、無ければ `pidAlive`（古い行の移行） */
+function defaultCheck(record: RunRecord): Liveness {
+  if (record.token !== undefined) {
+    return checkPid(record.pid, record.token);
+  }
+  return pidAlive(record.pid) ? 'running' : 'ended';
+}
+
 /**
- * 走っているサブエージェントの行か。終わりの行が無く、pid が生きている。
+ * 走っているサブエージェントの行か。終わりの行があれば false。`running` だけ true。
  *
- * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`alive` はテストが差し替える口。
+ * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`check` はテストが差し替える口。
  */
-export function isRunning(record: RunRecord, alive: (pid: number) => boolean = pidAlive): boolean {
-  return record.ended === undefined && alive(record.pid);
+export function isRunning(record: RunRecord, check: CheckRecord = defaultCheck): boolean {
+  return record.ended === undefined && check(record) === 'running';
 }
 
 /**
@@ -173,12 +185,13 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
 /**
  * その session の、走っているサブエージェントの行だけを返す。
  *
- * `readRuns` の窓を `scope` で切り、`isRunning`（既定 `pidAlive`）で生きている物だけにする。
+ * `readRuns` の窓を `scope` で切り、`isRunning`（既定は token があれば `checkPid`、無ければ `pidAlive`）で生きている物だけにする。
  * 音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
   place: Place,
   scope: ReadScope & { readonly session: string },
+  check?: CheckRecord,
 ): RunRecord[] {
-  return readRuns(place, scope).filter((record) => isRunning(record));
+  return readRuns(place, scope).filter((record) => isRunning(record, check));
 }

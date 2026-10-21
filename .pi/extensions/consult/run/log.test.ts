@@ -149,15 +149,49 @@ describe('pidAlive', () => {
 
 describe('isRunning', () => {
   it('終わりの行が無く pid が生きている → true', () => {
-    expect(isRunning(record({ pid: 42 }), () => true)).toBe(true);
+    expect(isRunning(record({ pid: 42 }), () => 'running')).toBe(true);
   });
 
   it('終わりの行があれば、pid が生きていても false', () => {
-    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => true)).toBe(false);
+    expect(isRunning(record({ pid: 42, ended: 2000, state: 'done' }), () => 'running')).toBe(false);
   });
 
   it('pid が死んでいれば、終わりの行が無くても false（メインエージェントごと落ちたサブエージェント）', () => {
-    expect(isRunning(record({ pid: 42 }), () => false)).toBe(false);
+    expect(isRunning(record({ pid: 42 }), () => 'ended')).toBe(false);
+  });
+
+  it('token 無しの古い行で pid が死んでいる → false', () => {
+    expect(isRunning(record({ pid: 999_999 }))).toBe(false);
+  });
+
+  it('ended のある行 → false（check が running でも）', () => {
+    expect(
+      isRunning(record({ pid: process.pid, ended: 2000, state: 'done' }), () => 'running'),
+    ).toBe(false);
+  });
+
+  it('token 無しの古い行で pid が生きている → true（移行）', () => {
+    expect(isRunning(record({ pid: process.pid }))).toBe(true);
+  });
+
+  it('token 付きの行で check が running → true', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'running')).toBe(true);
+  });
+
+  it('token 付きの行で check が ended → false', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'ended')).toBe(false);
+  });
+
+  it('token 付きの行で check が unknown → false', () => {
+    expect(isRunning(record({ pid: 42, token: 'token-1' }), () => 'unknown')).toBe(false);
+  });
+
+  it('token 無しの行で pidAlive が true → true（移行）', () => {
+    expect(isRunning(record({ pid: process.pid }))).toBe(true);
+  });
+
+  it('token 無しの行で pidAlive が false → false', () => {
+    expect(isRunning(record({ pid: 999_999 }))).toBe(false);
   });
 });
 
@@ -179,6 +213,30 @@ describe('runningRuns', () => {
     );
     appendRun(found, record({ session: 'B', subagent: 'consult-other', pid: process.pid }), at);
 
+    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual([
+      'consult-live',
+    ]);
+  });
+
+  it('check を通す → running だけ残る', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
+    appendRun(found, record({ session: 'A', subagent: 'consult-2', pid: 22, token: 'b' }), at);
+    const seen: string[] = [];
+    const out = runningRuns(found, { at, session: 'A' }, (entry) => {
+      seen.push(entry.subagent);
+      return entry.token === 'a' ? 'running' : 'ended';
+    });
+    expect(out.map((run) => run.subagent)).toEqual(['consult-1']);
+    expect(seen).toEqual(['consult-1', 'consult-2']);
+  });
+
+  it('token 無しの行は pidAlive で決まる（移行）', () => {
+    const at = new Date(2026, 9, 10, 12, 0);
+    const found = place();
+    appendRun(found, record({ session: 'A', subagent: 'consult-live', pid: process.pid }), at);
+    appendRun(found, record({ session: 'A', subagent: 'consult-dead', pid: 999_999 }), at);
     expect(runningRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual([
       'consult-live',
     ]);
