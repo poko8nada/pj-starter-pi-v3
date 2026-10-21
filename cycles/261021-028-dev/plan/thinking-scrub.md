@@ -354,8 +354,10 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void;
 ### Slice 2: メッセージの書き換え
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: bd63093 consult(thinking-scrub): rewrite replayable thinking blocks
 
 ### Slice 3: 設定と状態
 
