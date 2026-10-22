@@ -252,3 +252,9 @@ README.ja.md                         update
 - Findings: なし
 - Unplanned: なし
 - Commit: 0567466
+
+## Acceptance
+
+- Ran: 全体の型検査とテスト（836 件）。各スライスの検査（`read` 5 つ、`cli` 1 つ）。壊し検査 2 つ。`collect.mjs` の見出しに `/ Scope x` を足したら、書式と合わない見出しが出た。雛形から `(kept)` の行を消したら、検査が「無い」と返した。どちらも戻した。
+- Findings: なし
+- Doubts: なし — 統合スライスとプランの `## Review` は、オーナーの指示で飛ばした。
