@@ -60,7 +60,7 @@ One cycle is an ADR, a design, the plans, the work of carrying them out, then a 
 propose      read the state and lay the next candidates out (the three questions, the code, the research)
 brief        settle the owner's intent and lay the options out (the research, the trial, the talk)
 adr          decide what needs deciding (the options, the decision)
-design       walk what each entry touches, cut the cycle into plans, and say where each runs
+design       walk what each entry affects, cut the cycle into plans, review the cut, and say where each runs
 plan         write one plan per worktree (the files, the types, the steps, the checks)
 work         carry a plan to done (the slices, the test cleanup, the review, the acceptance, the merge with the base's dependencies set again)
 close        judge the cycle (a leftover is one of four; `ex-` plan, `proposed` or `dropped`)
@@ -69,4 +69,4 @@ yolo         walk the whole cycle without the owner's confirmations
 
 The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
 
-`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it fires from any stage. A change after the definition is agreed is a new ADR entry, and a plan writes it.
+`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it fires from any stage. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.

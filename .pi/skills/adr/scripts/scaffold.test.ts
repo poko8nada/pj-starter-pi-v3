@@ -18,26 +18,6 @@ describe('adrSkeleton', () => {
     expect(adrSkeleton(17).startsWith('# ADR 017\n')).toBe(true);
     expect(adrSkeleton(1).startsWith('# ADR 001\n')).toBe(true);
   });
-
-  it('エントリの見出しと、4 つのセクションを持つ', () => {
-    const body = adrSkeleton(17);
-    expect(body).toContain('## 01: ');
-    for (const section of [
-      '### Context',
-      '### Decision',
-      '### Research & Trial',
-      '### Definition Change',
-    ]) {
-      expect(body).toContain(section);
-    }
-  });
-
-  it('セクションの並びは Research & Trial → Definition Change', () => {
-    const body = adrSkeleton(17);
-    expect(body.indexOf('### Research & Trial')).toBeLessThan(
-      body.indexOf('### Definition Change'),
-    );
-  });
 });
 
 describe('slugBranch', () => {

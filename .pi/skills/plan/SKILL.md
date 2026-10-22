@@ -17,7 +17,7 @@ Read that file before writing. It holds sections, slice, `Types`, type rules, ch
 
 ### 1. Read what the plan carries
 
-- design's section for this plan: `No`, `Why`, `Where`, `Scope`, `Boundary`
+- design's section for this plan: `No`, `Why`, `Where`, `Summary`, `Paths`, `Boundary`
 - entries the plan's `No` names, in full
 
 ### 2. Walk the relations, and write `Files`

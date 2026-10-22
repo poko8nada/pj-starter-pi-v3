@@ -1,6 +1,6 @@
 // close.md の `## Collected` を書く。
 // 使い方: node .pi/skills/close/scripts/collect.mjs <cycle-dir>
-// 仕組み: <cycle-dir>/plan/*.md の残り物を集め、design.md から ADR と Scope を読み、
+// 仕組み: <cycle-dir>/plan/*.md の残り物を集め、plan md の `No` を読んで、
 // close.md の `## Collected` を書き直す。番号行より深い行（エージェントの文脈）と `## Triage` は残す。
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,12 +17,7 @@ const LABELS =
   /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Doubts):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
-/** design の plan セクション。`## \`<plan id>\`` の形。backtick の無い `##` は plan ではない */
-const PLAN_HEAD = /^## `(.+)`\s*$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
-/** `### Scope` のセクション。ここから下のバレットが変える物 */
-const SCOPE_HEAD = /^###\s+Scope\s*$/;
-const SCOPE_ITEM = /^\s*-\s*([^:]+):/;
 /** 読めなかった所の印。close はこれを探して埋める */
 const UNKNOWN = '未特定';
 /** 番号行。`1. <line> / …`。plan は上の `### ` の見出しから取る */
@@ -221,76 +216,25 @@ const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 
 /**
- * design.md から plan ごとの `ADR` と `Scope` を読む。
- *
- * plan セクションは backtick 付きの `##` だけ。backtick の無い見出しは plan ではない。
- * セクションや欄が読めない plan は `未特定` になる。
+ * plan md の `No` の値。無ければ null。
  *
  * @param {string} text
- * @returns {Map<string, { adr: string, scope: string }>}
+ * @returns {string | null}
  */
-export function designLinks(text) {
-  /** @type {Map<string, { adr: string, scope: string }>} */
-  const links = new Map();
-  /** @type {string | null} */
-  let id = null;
-  let adr = null;
-  /** @type {string[]} */
-  let scope = [];
-  let inScope = false;
-  const keep = () => {
-    if (!id) return;
-    links.set(id, { adr: adr ?? UNKNOWN, scope: scope.length ? scope.join(', ') : UNKNOWN });
-  };
+function noOf(text) {
   for (const line of text.split('\n')) {
-    const head = line.match(PLAN_HEAD);
-    if (head) {
-      keep();
-      id = head[1].trim();
-      adr = null;
-      scope = [];
-      inScope = false;
-      continue;
-    }
-    if (line.startsWith('## ')) {
-      keep();
-      id = null;
-      continue;
-    }
-    if (!id) continue;
-    if (line.startsWith('### ')) {
-      inScope = SCOPE_HEAD.test(line);
-      continue;
-    }
-    if (inScope) {
-      if (line.trim() === '') {
-        continue;
-      }
-      const item = line.match(SCOPE_ITEM);
-      if (item) {
-        if (!line.startsWith(' ')) {
-          scope.push(item[1].trim());
-        }
-        continue;
-      }
-      inScope = false;
-    }
-    const adrLine = line.match(ADR_FIELD);
-    if (adrLine) {
-      adr = adrLine[1].trim() || UNKNOWN;
-      continue;
-    }
+    const found = line.match(ADR_FIELD);
+    if (found) return found[1].trim() || null;
   }
-  keep();
-  return links;
+  return null;
 }
 
 /** plan ごとの見出しの後ろに付ける link。読めない所は `未特定`。
  *
- * @param {{ adr: string, scope: string } | undefined} link
+ * @param {string | null} no
  * @returns {string}
  */
-const linkText = (link) => `ADR ${link?.adr ?? UNKNOWN} / Scope ${link?.scope ?? UNKNOWN}`;
+const linkText = (no) => `ADR ${no ?? UNKNOWN}`;
 
 /**
  * 残り物を、plan ごとにまとめて 1 本のテキストにする。
@@ -378,17 +322,12 @@ function triagePart(text) {
 }
 
 /**
- * cycle の plan md を読み、`ADR` と `Scope` を付けて残り物を返す。
+ * cycle の plan md を読み、`ADR` を付けて残り物を返す。
  *
  * @param {string} planDir
- * @param {string} designPath
  * @returns {Leftover[]}
  */
-export function collectCycle(planDir, designPath) {
-  const links =
-    designPath && existsSync(designPath)
-      ? designLinks(readFileSync(designPath, 'utf8'))
-      : new Map();
+export function collectCycle(planDir) {
   const files = readdirSync(planDir)
     .filter((file) => file.endsWith('.md'))
     .toSorted((a, b) => planRank(a) - planRank(b) || a.localeCompare(b));
@@ -396,8 +335,9 @@ export function collectCycle(planDir, designPath) {
   const items = [];
   for (const file of files) {
     const id = file.replace(/\.md$/, '');
-    const link = linkText(links.get(id));
-    for (const item of collectPlan(readFileSync(join(planDir, file), 'utf8'))) {
+    const text = readFileSync(join(planDir, file), 'utf8');
+    const link = linkText(noOf(text));
+    for (const item of collectPlan(text)) {
       items.push({ plan: id, link, ...item });
     }
   }
@@ -422,7 +362,7 @@ export function writeClose(cycleDir) {
   }
   const closePath = join(cycleDir, 'close.md');
   const old = existsSync(closePath) ? readFileSync(closePath, 'utf8') : '';
-  const items = collectCycle(planDir, join(cycleDir, 'design.md'));
+  const items = collectCycle(planDir);
   const body = render(items, readContexts(old));
   const triage = triagePart(old);
   const nnn = (cycleDir.replace(/\/+$/, '').split('/').pop() ?? '').split('-')[1] ?? '';

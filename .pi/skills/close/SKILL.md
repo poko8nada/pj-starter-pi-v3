@@ -23,11 +23,11 @@ This skill collects them, triages them with the owner, and closes the cycle.
 
 ### 2. Read the cycle
 
-- the ADR: the `accepted` entries, and what each `Definition Change` decides
+- the ADR: the `accepted` entries, and what each `Definition` decides
 - the design: the cut, and the `Boundary.Plans`
 - each plan md: its `## Acceptance`, its `## Review` and its `## Notes`
 - do not read the cut from memory: the files hold it, and the plan mds hold what they left
-- a change an entry decided that no plan's `Files` or `Scope` carries is a hole: find it here, and add it in step 3
+- a change an entry decided that no plan's `Files` or `Paths` carries is a hole: find it here, and add it in step 3
 
 ### 3. Collect
 
@@ -44,7 +44,7 @@ This skill collects them, triages them with the owner, and closes the cycle.
   - `ex-plan`: it is one of those four, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design). Run its work, and resume this close when it is merged: its line carries `done <commit>`
   - `proposed`: it breaks nothing, but leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes
   - `dropped`: rare, and the fix weighs more
-- a leftover that moves a line of `DEFINITION.md` is not an `ex-` plan: it goes to `proposed`
+- a leftover that moves a part of `DEFINITION.md` is not an `ex-` plan: it goes to `proposed`
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
 
 ### 5. Write close.md

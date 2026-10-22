@@ -12,7 +12,7 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 ## Files
 
 - `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
-- `DEFINITION.md` — the product's picture. The entry names the lines of it that move; a plan writes them.
+- `DEFINITION.md` — the product's picture. The entry names the parts of it it relates to, and what happens to each; a plan writes them.
 - `definition/rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `definition/format.md` — the shape of the picture.
 
@@ -28,7 +28,7 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 
 ### 1. Fill
 
-- the scaffold leaves one entry's bones. Fill what the front left: the entry's question, its `Context`, and the `Options` it laid out
+- the scaffold leaves one entry's bones. Fill what the front left: the entry's question, its `Context`, the `Scope` the front agreed, and the `Options` it laid out
 - a cycle raises several questions: add an entry per question, from the same bones
 - what is still missing is what the front is asked for
 
@@ -51,12 +51,13 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 - what the front looked up is not carried here: the front holds it, and only the fact the decision stands on comes over
 - a fact that is still missing goes back to the front: it is looked up there, and not here
 
-### 5. Definition change
+### 5. Definition
 
-For the option on the table, look at `DEFINITION.md` as a whole, and decide every line it would move: the name, the operation, and the new line.
+For the option on the table, look at `DEFINITION.md` as a whole, and name the parts it relates to: `Unit`, `Who`, `Stack`, `What`.
 
-- a line that changes carries its new content
-- a Unit that moves with its line standing carries the name and the operation, and no value
+- each part carries one of four operations: `(added)`, `(updated)`, `(dropped)`, `(kept)`
+- `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up
+- the parts are named, not summarised: a part left unnamed is a part the entry did not weigh
 - a Unit that `definition/rules.md` does not allow is not a Unit
 - this is what the owner weighs at the decision: the option, and what it does to the picture
 

@@ -30,14 +30,26 @@ export function adrSkeleton(nnn) {
 - Options:
   - <案>（採らなかった理由）
 
+### Scope
+
+- 変更:
+  - in: <何をするか>
+  - out: <何をしないか>（理由）
+- 品質:
+  - in: <何をするか>
+  - out: <何をしないか>（理由）
+- 運用:
+  - in: <何をするか>
+  - out: <何をしないか>（理由）
+
 ### Research & Trial
 
 - <測った事実、試した事>
 
-### Definition Change
+### Definition
 
 - \`Unit.<name>\`(updated): <新しい行>
-- なし
+- \`Unit.<name>\`(kept): <その行が動かない理由>
 `;
 }
 
