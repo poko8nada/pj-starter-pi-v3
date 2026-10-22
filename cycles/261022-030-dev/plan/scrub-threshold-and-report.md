@@ -282,12 +282,12 @@ export interface ScrubWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 86c6d01
 
 ### Slice 6: 統合: しきい値を下げたスクラブと、実行の終わりの 1 行
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 
 ## Review

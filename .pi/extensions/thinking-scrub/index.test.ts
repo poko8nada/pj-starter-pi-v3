@@ -281,6 +281,71 @@ describe('onAgentEnd', () => {
   });
 });
 
+describe('integration', () => {
+  it('foo + 改行を含む細切れの退化 → message_end の thinking が foo改行改行bar、agent_end で 1 行に removed 1', () => {
+    const thinking = `foo${'\n\nThe **'.repeat(5)}bar`;
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const result = wiring.onMessageEnd(
+      messageEnd(
+        assistantMessage({
+          content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
+        }),
+      ),
+    );
+    expect(result).toBeDefined();
+    if (result?.message?.role !== 'assistant') {
+      throw new Error('message must be assistant');
+    }
+    const first = result.message.content.at(0);
+    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
+      throw new Error('first block must be thinking');
+    }
+    expect(first.thinking).toBe('foo\n\nbar');
+    const { notified, levels, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(1);
+    expect(notified.at(0)).toContain('removed 1');
+    expect(levels.at(0)).toBe('info');
+  });
+
+  it('The ** × 2 (12 文字) → message_end が undefined、agent_end でも notify が呼ばれない', () => {
+    const thinking = 'The **'.repeat(2);
+    expect(thinking).toHaveLength(12);
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    expect(
+      wiring.onMessageEnd(
+        messageEnd(
+          assistantMessage({
+            content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
+          }),
+        ),
+      ),
+    ).toBeUndefined();
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(0);
+  });
+
+  it('hide を書いた設定で細切れの退化 → message_end は差し替え、agent_end で 1 行も出ない', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
+    const thinking = `foo${'\n\nThe **'.repeat(5)}bar`;
+    const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
+    expect(
+      wiring.onMessageEnd(
+        messageEnd(
+          assistantMessage({
+            content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
+          }),
+        ),
+      ),
+    ).toBeDefined();
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(0);
+  });
+});
+
 describe('onCommand', () => {
   it('コマンド off → settings.json の enabled が偽になり、次の message_end は undefined', () => {
     const dir = tmpDir();
