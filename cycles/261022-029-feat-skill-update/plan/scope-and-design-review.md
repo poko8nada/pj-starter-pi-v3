@@ -80,15 +80,15 @@ README.ja.md                         update
    - `- \`Unit.<name>\`(kept): <行が動かない理由>` の行を出す。
    - `- なし` の行を消す。
 2. `.pi/skills/adr/scripts/scaffold.test.ts`:
-   - 雛形の期待を `### Definition` に合わせ、`(kept)` の行があることを確かめる。
-   - `なし` が無いことを確かめる。
+   - 見出しの名前、並び順、`(kept)`、`なし` の検査を消す。ゼロ埋めの検査は残す。
 
 ### Verify:
 
-- `test`: `pnpm test:run -- .pi/skills/adr/scripts/scaffold.test.ts`
-  - (happy) 期待を `Definition` にした状態で走らせる → 緑。
-  - (error) `adrSkeleton` から `(kept)` の行を消して走らせる → 赤。
-  - (error) 節名を `Definition Change` に戻して走らせる → 赤。
+- `read`: `review` サブエージェントが `scaffold.mjs` と `scaffold.test.ts` を読み、次を報告する。
+  - (happy) 雛形に `### Definition` と `(kept)` の行がある → ある。
+  - (empty) 雛形に `- なし` が無い → 無い。
+  - (happy) テストに、見出しの名前・並び順・`(kept)`・`なし` の検査が無い → 無い。
+  - (error) 雛形の節名が `Definition Change` のまま → 指摘として返る。
 
 ## 3. brief / propose / design の手順
 

@@ -34,10 +34,10 @@ export function adrSkeleton(nnn) {
 
 - <測った事実、試した事>
 
-### Definition Change
+### Definition
 
 - \`Unit.<name>\`(updated): <新しい行>
-- なし
+- \`Unit.<name>\`(kept): <その行が動かない理由>
 `;
 }
 
