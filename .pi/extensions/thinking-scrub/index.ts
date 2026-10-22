@@ -49,11 +49,19 @@ function readDoc(file: string): Record<string, unknown> {
   }
 }
 
-function writeEnabled(settingsDir: string, enabled: boolean): void {
+function writePatch(settingsDir: string, patch: Record<string, unknown>): void {
   const file = join(settingsDir, SETTINGS_FILE);
-  const next = { ...readDoc(file), enabled };
+  const next = { ...readDoc(file), ...patch };
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+}
+
+function writeEnabled(settingsDir: string, enabled: boolean): void {
+  writePatch(settingsDir, { enabled });
+}
+
+function writeShow(settingsDir: string, show: boolean): void {
+  writePatch(settingsDir, { show });
 }
 
 export interface CommandCtx {
@@ -95,6 +103,9 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
         status: () => status,
         writeEnabled: (enabled) => {
           writeEnabled(options.settingsDir, enabled);
+        },
+        writeShow: (show) => {
+          writeShow(options.settingsDir, show);
         },
       },
       command,

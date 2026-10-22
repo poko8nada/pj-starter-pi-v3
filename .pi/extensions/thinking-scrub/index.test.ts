@@ -218,6 +218,17 @@ describe('onCommand', () => {
     expect(notified.at(0)).toContain('removed:');
   });
 
+  it('コマンド hide → settings.json の show が偽になり、enabled はそのまま', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: true }));
+    const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
+    wiring.onCommand('hide', fakeCmdCtx().ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      enabled: true,
+      show: false,
+    });
+  });
+
   it('置いた settings.json を readSettings で読む → enabled と show が真', () => {
     const read = readSettings(HERE);
     expect(read.kind).toBe('ok');
