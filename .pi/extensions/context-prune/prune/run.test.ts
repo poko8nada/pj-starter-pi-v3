@@ -146,11 +146,17 @@ describe('runPass', () => {
     expect(outcome.reason).toContain('summary');
   });
 
-  it('候補 0 件 → done、dropped 0、kept 0', async () => {
-    const calls = { count: 0 };
+  it('候補 0 件 → summarize を呼ばず done、dropped 0、kept 0、summary は空', async () => {
+    const calls = { summarize: 0, classify: 0 };
     const ports: PassPorts = {
-      summarize: summarizeOk('使われない要約'),
-      classify: classifyWith({}, calls),
+      summarize: () => {
+        calls.summarize += 1;
+        return Promise.resolve({ kind: 'ok', summary: '使われない要約', usage: undefined });
+      },
+      classify: () => {
+        calls.classify += 1;
+        return Promise.resolve({ kind: 'ok', answers: {} });
+      },
     };
     const outcome = await runPass(
       { settings: defaultSettings(), tokens: 60000, candidates: [], recent: recent(), now: 1000 },
@@ -160,9 +166,11 @@ describe('runPass', () => {
     if (outcome.kind !== 'done') {
       throw new Error('must be done');
     }
+    expect(calls.summarize).toBe(0);
+    expect(calls.classify).toBe(0);
     expect(outcome.pass.dropped).toEqual([]);
     expect(outcome.pass.kept).toBe(0);
-    expect(calls.count).toBe(0);
+    expect(outcome.pass.summary).toBe('');
   });
 
   it('1 件の答えが欠けている → その候補は keep で done', async () => {

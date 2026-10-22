@@ -105,4 +105,21 @@ describe('statusLines', () => {
       'failures: 0',
     ]);
   });
+
+  it('off・ratio 0.6・failures 2・直近パスあり → 5 行を固定', () => {
+    const now = 100000;
+    const settings = { ...defaultSettings(), enabled: false, ratio: 0.6 };
+    const lines = statusLines(
+      statusOf({ lastPass: passOf(now - 5000), failures: 2 }),
+      settings,
+      now,
+    );
+    expect(lines).toEqual([
+      'prune: off',
+      'ratio: 0.6',
+      'last: 5 秒前',
+      'dropped: 2 件 (1,234 文字)',
+      'failures: 2',
+    ]);
+  });
 });

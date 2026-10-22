@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -11,6 +11,7 @@ import {
 import { tmpDir } from '../../../test/tmp.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
+import { createPorts, type ModelCell } from './prune/ports.ts';
 import type { PassPorts } from './prune/run.ts';
 
 let seq = 0;
@@ -374,6 +375,7 @@ function evolvingHarness(options: {
   readonly summary: string;
   readonly yes: number;
   readonly classifyFails?: boolean;
+  readonly probs?: Record<string, number>;
 }): {
   readonly branch: SessionEntry[];
   readonly appended: { readonly customType: string; readonly data: unknown }[];
@@ -381,19 +383,40 @@ function evolvingHarness(options: {
   readonly ctx: PruneCtx;
   readonly pi: PiPort;
   readonly ports: PassPorts;
+  readonly probs: Record<string, number>;
+  readonly calls: { readonly summarize: number; readonly classify: number };
+  readonly setUsage: (usage: ContextUsage) => void;
+  readonly setHang: (hang: boolean) => void;
+  readonly release: () => void;
 } {
   const branch: SessionEntry[] = [];
   const appended: { customType: string; data: unknown }[] = [];
   const notified: string[] = [];
+  const probs: Record<string, number> = { ...options.probs };
+  const calls = { summarize: 0, classify: 0 };
+  let current: ContextUsage = { tokens: 1500, contextWindow: 2000, percent: 75 };
+  let hang = false;
+  let release: (() => void) | undefined;
+  const hangGate = (): Promise<void> =>
+    new Promise<void>((resolve) => {
+      release = resolve;
+    });
   const ports: PassPorts = {
-    summarize: () => Promise.resolve({ kind: 'ok', summary: options.summary, usage: undefined }),
+    summarize: async () => {
+      calls.summarize += 1;
+      if (hang) {
+        await hangGate();
+      }
+      return { kind: 'ok', summary: options.summary, usage: undefined };
+    },
     classify: (request) => {
+      calls.classify += 1;
       if (options.classifyFails === true) {
         return Promise.resolve({ kind: 'failed', reason: 'classifier boom' });
       }
       const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
       for (const key of Object.keys(request.questions)) {
-        answers[key] = { type: 'choice', probabilities: { yes: options.yes } };
+        answers[key] = { type: 'choice', probabilities: { yes: probs[key] ?? options.yes } };
       }
       return Promise.resolve({ kind: 'ok', answers });
     },
@@ -419,14 +442,32 @@ function evolvingHarness(options: {
   const ctx: PruneCtx = {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 枝だけ返す偽物を作る
     sessionManager: manager as unknown as ExtensionContext['sessionManager'],
-    getContextUsage: () => ({ tokens: 1500, contextWindow: 2000, percent: 75 }),
+    getContextUsage: () => current,
     ui: {
       notify: (message: string) => {
         notified.push(message);
       },
     },
   };
-  return { branch, appended, notified, ctx, pi, ports };
+  return {
+    branch,
+    appended,
+    notified,
+    ctx,
+    pi,
+    ports,
+    probs,
+    calls,
+    setUsage: (next) => {
+      current = next;
+    },
+    setHang: (next) => {
+      hang = next;
+    },
+    release: () => {
+      release?.();
+    },
+  };
 }
 
 describe('integration', () => {
@@ -477,6 +518,37 @@ describe('integration', () => {
     expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
   });
 
+  it('走行中の turn_end → 裏開始を抑止し、drafts は返す', async () => {
+    const harness = evolvingHarness({ summary: 'テストの要約', yes: 0 });
+    const callA = assistantCall('c-a');
+    const resultA = toolResult('c-a', '落とす結果');
+    const callC = assistantCall('c-c');
+    const resultC = toolResult('c-c', '残す結果');
+    const recent = assistantText('直近の返答');
+    harness.branch.push(callA, resultA, callC, resultC, recent);
+    harness.probs[`keep_${resultC.id}`] = 0.9;
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
+    await wiring.flush();
+    expect(harness.appended).toHaveLength(1);
+    harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    harness.setHang(true);
+    const second = await wiring.onTurnEnd(harness.ctx);
+    expect(second?.entries).toHaveLength(1);
+    expect(second?.entries?.[0]).toMatchObject({ type: 'context_edit', targetId: resultA.id });
+    expect(wiring.getStatus().running).toBe(true);
+    expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
+    expect(harness.calls.classify).toBe(1);
+    harness.release();
+    await wiring.flush();
+    expect(harness.appended).toHaveLength(2);
+    expect(wiring.getStatus().running).toBe(false);
+  });
+
   it('agent_before_settle → 同じ context_edit', async () => {
     const { harness, result, wiring } = readyHarness();
     await wiring.onTurnEnd(harness.ctx);
@@ -514,5 +586,159 @@ describe('integration', () => {
       },
     });
     expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
+  });
+});
+
+interface Captured {
+  context?: unknown;
+  options?: unknown;
+  classifyArgs?: unknown;
+}
+
+function fakeClassifiers(): Promise<unknown> {
+  return Promise.resolve([
+    { provider: 'opencode', id: 'jev-1.13-free', cost: { input: 0, output: 0 } },
+  ]);
+}
+
+function fakeCell(captured: Captured): ModelCell {
+  const complete = async (
+    _model: unknown,
+    context: unknown,
+    options: unknown,
+  ): Promise<unknown> => {
+    captured.context = context;
+    captured.options = options;
+    return {
+      role: 'assistant',
+      content: [{ type: 'text', text: '本番の要約' }],
+      api: 'openai-completions',
+      provider: 'test',
+      model: 'test-model',
+      usage: usage(),
+      stopReason: 'stop',
+      timestamp: 1,
+    };
+  };
+  const classify = async (_model: unknown, args: unknown): Promise<unknown> => {
+    captured.classifyArgs = args;
+    return {
+      api: 'test',
+      provider: 'opencode',
+      model: 'jev-1.13-free',
+      answers: {
+        keep_a: { type: 'choice', choice: 'yes', probabilities: { yes: 0.8 }, confidence: 0.9 },
+      },
+      stopReason: 'stop',
+      timestamp: 1,
+    };
+  };
+  const registry = { complete, getAvailableOfType: fakeClassifiers, classify };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
+  const typedRegistry = registry as unknown as ExtensionContext['modelRegistry'];
+  const model = { provider: 'test', id: 'test-model' };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 使うモデルの偽物
+  const typedModel = model as unknown as ExtensionContext['model'];
+  return { registry: typedRegistry, model: typedModel };
+}
+
+describe('ports', () => {
+  it('summarize は要約の指示を含む促しを送り、要約と usage を返す', async () => {
+    const captured: Captured = {};
+    const ports = createPorts(fakeCell(captured), settingsDirWith({}));
+    const outcome = await ports.summarize('最近の会話');
+    expect(outcome.kind).toBe('ok');
+    if (outcome.kind !== 'ok') {
+      throw new Error('must be ok');
+    }
+    expect(outcome.summary).toBe('本番の要約');
+    expect(outcome.usage).toEqual({ input: 1, output: 1, cost: 0 });
+    expect(JSON.stringify(captured.context)).toContain('Goal');
+    expect(JSON.stringify(captured.context)).toContain('最近の会話');
+    expect(captured.options).toMatchObject({ maxTokens: 2000 });
+  });
+
+  it('classify は answers から type と probabilities を取り出す', async () => {
+    const captured: Captured = {};
+    const ports = createPorts(fakeCell(captured), settingsDirWith({}));
+    const outcome = await ports.classify({
+      state: { summary: '話題の要約', candidates: [] },
+      questions: {
+        keep_a: {
+          type: 'choice',
+          instructions: '関係あるか',
+          criteria: { yes: 'ある', no: 'ない' },
+        },
+      },
+    });
+    expect(outcome).toEqual({
+      kind: 'ok',
+      answers: { keep_a: { type: 'choice', probabilities: { yes: 0.8 } } },
+    });
+    expect(JSON.stringify(captured.classifyArgs)).toContain('keep_a');
+  });
+});
+
+describe('onCommand', () => {
+  function ready(): {
+    readonly harness: ReturnType<typeof evolvingHarness>;
+    readonly wiring: ReturnType<typeof createWiring>;
+  } {
+    const harness = evolvingHarness({ summary: 'テストの要約', yes: 0 });
+    const call = assistantCall('c-old');
+    const result = toolResult('c-old', '古い結果');
+    const recent = assistantText('直近の返答');
+    harness.branch.push(call, result, recent);
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    return { harness, wiring };
+  }
+
+  it('idle の now → 1 パス走り、appendEntry と状態通知', async () => {
+    const { harness, wiring } = ready();
+    await wiring.onCommand('now', harness.ctx);
+    expect(harness.appended).toHaveLength(1);
+    expect(harness.notified).toHaveLength(1);
+    expect(harness.notified[0]).toContain('dropped: 1 件');
+    expect(wiring.getStatus().lastPass).toBeDefined();
+  });
+
+  it('status → 状態の 5 行を通知', async () => {
+    const { harness, wiring } = ready();
+    await wiring.onCommand('', harness.ctx);
+    expect(harness.notified).toHaveLength(1);
+    expect(harness.notified[0]).toContain('prune: on');
+    expect(harness.notified[0]).toContain('ratio: 0.5');
+  });
+
+  it('on と off → 設定ファイルの enabled が切り替わる', async () => {
+    const harness = evolvingHarness({ summary: 'x', yes: 0 });
+    const dir = settingsDirWith({ enabled: false });
+    const wiring = createWiring(harness.pi, { settingsDir: dir, ports: harness.ports });
+    await wiring.onCommand('on', harness.ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
+      enabled: true,
+    });
+    expect(harness.notified).toEqual(['prune: on']);
+    await wiring.onCommand('off', harness.ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
+      enabled: false,
+    });
+  });
+
+  it('候補 0 → nothing to prune', async () => {
+    const harness = evolvingHarness({ summary: 'x', yes: 0 });
+    harness.branch.push(assistantText('直近だけ'));
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({}),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    await wiring.onCommand('now', harness.ctx);
+    expect(harness.notified).toEqual(['prune: nothing to prune']);
+    expect(harness.appended).toHaveLength(0);
   });
 });

@@ -40,6 +40,17 @@ describe('gate', () => {
     expect(gate(input({ lastTokens: undefined }))).toEqual({ kind: 'run' });
   });
 
+  it('割合未満 + lastTokens 未定義 → below-ratio（初回でも走らない）', () => {
+    expect(gate(input({ tokens: 100, lastTokens: undefined }))).toEqual({
+      kind: 'idle',
+      reason: 'below-ratio',
+    });
+  });
+
+  it('割合以上 + lastTokens 未定義 → run', () => {
+    expect(gate(input({ tokens: 1500, lastTokens: undefined }))).toEqual({ kind: 'run' });
+  });
+
   it('前回から枠の 1 割が増えていなければ cooling、増えていれば run', () => {
     expect(gate(input({ lastTokens: 1000, tokens: 1100 }))).toEqual({
       kind: 'idle',

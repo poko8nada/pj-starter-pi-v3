@@ -31,15 +31,15 @@ export function gate(input: GateInput): Gate {
   if (input.running) {
     return { kind: 'idle', reason: 'running' };
   }
+  const tokens: number = input.tokens;
+  if (tokens / input.contextWindow < input.ratio) {
+    return { kind: 'idle', reason: 'below-ratio' };
+  }
   if (input.candidates === 0) {
     return { kind: 'idle', reason: 'empty' };
   }
-  const tokens: number = input.tokens;
   if (input.lastTokens === undefined) {
     return { kind: 'run' };
-  }
-  if (tokens / input.contextWindow < input.ratio) {
-    return { kind: 'idle', reason: 'below-ratio' };
   }
   if (tokens - input.lastTokens < input.contextWindow * input.rearmRatio) {
     return { kind: 'idle', reason: 'cooling' };
