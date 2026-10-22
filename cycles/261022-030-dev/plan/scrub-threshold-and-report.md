@@ -276,12 +276,12 @@ export interface ScrubWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 6b59fd4
 
 ### Slice 5: README を新しい下限と表示に合わせる
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 
 ### Slice 6: 統合: しきい値を下げたスクラブと、実行の終わりの 1 行
