@@ -230,9 +230,9 @@ README.ja.md                         update
 
 ### Slice 3: スコープの内外
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 93c10e7
 
 ### Slice 4: 設計の対象とレビューと欄の名前
 
