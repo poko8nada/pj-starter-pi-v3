@@ -1,7 +1,6 @@
 {
   "ratio": 0.5,
   "recentTokens": 50000,
-  "maxQuestions": 40,
   "marker": "古いツール結果（{chars} 文字）を省略",
   "classifier": {
     "models": [

@@ -88,7 +88,7 @@ async function summarizeViaCell(
       auth.apiKey,
       headersOf(auth.headers),
       undefined,
-      undefined,
+      'Write the summary in English.',
       undefined,
       undefined,
       undefined,

@@ -14,6 +14,19 @@ export interface Candidate {
   readonly toolName: string;
   readonly args: string;
   readonly chars: number;
+  readonly excerpt: string;
+}
+
+/** 抜粋の間に置く注記の中核。`excerptOf` は `…（N chars omitted）…` の形で埋め込む */
+export const OMITTED_MARK = 'chars omitted';
+
+/** 先頭 head 文字と末尾 tail 文字を残し、間を省略の注記にする。短ければ全文 */
+export function excerptOf(text: string, head: number, tail: number): string {
+  if (text.length <= head + tail) {
+    return text;
+  }
+  const omitted = text.length - head - tail;
+  return `${text.slice(0, head)}…（${omitted} ${OMITTED_MARK}）…${text.slice(text.length - tail)}`;
 }
 
 export interface CollectInput {
@@ -133,6 +146,7 @@ export function collect(input: CollectInput): Collected {
       toolName: message.toolName,
       args: calls.get(message.toolCallId) ?? '',
       chars: charsOf(message),
+      excerpt: excerptOf(messageText(message), 500, 500),
     });
   }
   return { recent, candidates, tokens };

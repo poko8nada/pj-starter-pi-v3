@@ -192,6 +192,8 @@ describe('summarize errors', () => {
     expect(args[2]).toBe(10000);
     expect(args[3]).toBe('test-key');
     expect(args[4]).toEqual({ a: 'b' });
+    expect(typeof args[6]).toBe('string');
+    expect(args[6]).toMatch(/[A-Za-z]/);
     expect(args[13]).toBe('session-1');
   });
 });

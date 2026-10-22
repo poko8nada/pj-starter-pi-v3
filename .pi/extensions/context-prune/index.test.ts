@@ -653,6 +653,7 @@ describe('ports', () => {
     expect(args[0]).toEqual(recent);
     expect(args[2]).toBe(10000);
     expect(args[3]).toBe('test-key');
+    expect(typeof args[6]).toBe('string');
     expect(args[13]).toBe('session-1');
   });
 

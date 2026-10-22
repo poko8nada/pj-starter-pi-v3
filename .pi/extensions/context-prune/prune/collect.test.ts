@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { collect, messageText, type EntryMessage } from './collect.ts';
+import { collect, excerptOf, messageText, OMITTED_MARK, type EntryMessage } from './collect.ts';
 
 let seq = 0;
 
@@ -258,5 +258,31 @@ describe('messageText', () => {
       { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
     ]);
     expect(messageText(message)).toBe('');
+  });
+});
+
+describe('excerptOf', () => {
+  it('3000 文字 → 先頭 500 と末尾 500 を残し注記を挟む', () => {
+    const text = 'a'.repeat(3000);
+    const excerpt = excerptOf(text, 500, 500);
+    expect(excerpt.startsWith(text.slice(0, 500))).toBe(true);
+    expect(excerpt.endsWith(text.slice(3000 - 500))).toBe(true);
+    expect(excerpt).toContain(OMITTED_MARK);
+    expect(excerpt).toContain('2000');
+  });
+
+  it('1000 文字ちょうど → 注記なしで全文', () => {
+    const text = 'b'.repeat(1000);
+    expect(excerptOf(text, 500, 500)).toBe(text);
+  });
+
+  it('空 → 空', () => {
+    expect(excerptOf('', 500, 500)).toBe('');
+  });
+
+  it('候補の excerpt は結果の抜粋', () => {
+    const { entries, recentTokens } = oldAndRecent();
+    const collected = collect({ entries, recentTokens, done: new Set() });
+    expect(collected.candidates[0]?.excerpt).toBe('古い結果の本文');
   });
 });

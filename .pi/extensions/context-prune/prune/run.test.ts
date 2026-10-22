@@ -4,8 +4,8 @@ import type { Usage } from '../entry/data.ts';
 import type { Candidate, EntryMessage } from './collect.ts';
 import { runPass, type PassPorts } from './run.ts';
 
-function candidate(id: string, chars: number): Candidate {
-  return { id, toolName: 'read', args: `read({"path":"${id}.txt"})`, chars };
+function candidate(id: string, chars: number, excerpt = 'excerpt'): Candidate {
+  return { id, toolName: 'read', args: `read({"path":"${id}.txt"})`, chars, excerpt };
 }
 
 function recent(): readonly EntryMessage[] {
@@ -67,40 +67,40 @@ describe('runPass', () => {
     expect(outcome.pass.at).toBe(1000);
   });
 
-  it('候補 3 件・maxQuestions 2 → classify が 2 回', async () => {
+  it('長い抜粋 100 件 → 予算で 2 回以上に割れる', async () => {
     const calls = { count: 0 };
+    const long: Candidate[] = [];
+    for (let index = 0; index < 100; index += 1) {
+      long.push(candidate(`c${index}`, 1000, 'x'.repeat(1000)));
+    }
+    const probs: Record<string, number> = {};
+    for (const item of long) {
+      probs[`keep_${item.id}`] = 0.9;
+    }
     const ports: PassPorts = {
-      summarize: summarizeOk('テストの要約'),
-      classify: classifyWith({ keep_a: 0.9, keep_b: 0.9, keep_c: 0.9 }, calls),
+      summarize: summarizeOk('test summary'),
+      classify: classifyWith(probs, calls),
     };
     const outcome = await runPass(
-      {
-        settings: { ...defaultSettings(), maxQuestions: 2 },
-        tokens: 60000,
-        candidates: [candidate('a', 10), candidate('b', 20), candidate('c', 30)],
-        recent: recent(),
-        now: 1000,
-      },
+      { settings: defaultSettings(), tokens: 60000, candidates: long, recent: recent(), now: 1000 },
       ports,
     );
-    expect(calls.count).toBe(2);
     expect(outcome.kind).toBe('done');
+    expect(calls.count).toBeGreaterThanOrEqual(2);
   });
 
   it('2 束目の classify が failed → failed', async () => {
     const calls = { count: 0 };
+    const long: Candidate[] = [];
+    for (let index = 0; index < 100; index += 1) {
+      long.push(candidate(`c${index}`, 1000, 'x'.repeat(1000)));
+    }
     const ports: PassPorts = {
-      summarize: summarizeOk('テストの要約'),
+      summarize: summarizeOk('test summary'),
       classify: classifyWith({}, calls, 2),
     };
     const outcome = await runPass(
-      {
-        settings: { ...defaultSettings(), maxQuestions: 2 },
-        tokens: 60000,
-        candidates: [candidate('a', 10), candidate('b', 20), candidate('c', 30)],
-        recent: recent(),
-        now: 1000,
-      },
+      { settings: defaultSettings(), tokens: 60000, candidates: long, recent: recent(), now: 1000 },
       ports,
     );
     expect(outcome).toEqual({ kind: 'failed', reason: 'classifier boom' });
