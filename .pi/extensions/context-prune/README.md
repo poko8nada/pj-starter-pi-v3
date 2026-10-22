@@ -4,8 +4,8 @@ Keeps the context window open by pruning old tool results the summary no longer 
 
 ## How it moves
 
-- Gate (`turn_end`): when `tokens / contextWindow` passes `ratio` (default `0.5`), starts one pass in the background without stopping the turn. Runs at most once until usage grows by `contextWindow * rearmRatio`.
-- Pass: summarizes the recent messages with pi's `generateSummaryWithUsage` (in English), trims the summary to Goal / Progress / Next Steps, attaches the first and last 500 chars of each old tool result, asks one `keep_<id>` question per result in budget-sized batches, and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
+- Gate (`turn_end`): when `tokens / contextWindow` passes `ratio` (default `0.5`), starts one pass in the background without stopping the turn. Runs at most once until usage grows by `contextWindow * rearmRatio`. A failed pass also starts the cooldown from its own usage.
+- Pass: summarizes the recent messages with pi's `generateSummaryWithUsage` (in English), trims the summary to Goal / Progress / Next Steps, attaches the first and last 500 chars of each old tool result, asks one `keep_<id>` question per result in budget-sized batches (questions and criteria are English too), and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
 - Apply (next `turn_end` or `agent_before_settle`, whichever comes first): returns `context_edit` entries that replace the dropped results with a one-line marker. Nothing is appended when there is nothing to drop, and the same boundary never returns the same drafts twice.
 - Card: each finished pass is appended as a `custom` entry (`context-prune`) and drawn like the standard compaction card (`[prune]`, click to expand).
 
