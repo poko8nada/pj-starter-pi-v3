@@ -806,6 +806,28 @@ describe('onCommand', () => {
     expect(wiring.getStatus().lastPass).toBeDefined();
   });
 
+  it('now で分類が失敗 → 失敗の通知と lastFailure の記録', async () => {
+    const harness = evolvingHarness({ summary: 'テストの要約', yes: 0, classifyFails: true });
+    const call = assistantCall('c-old');
+    const result = toolResult('c-old', '古い結果');
+    const recent = assistantText('直近の返答');
+    harness.branch.push(call, result, recent);
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    await wiring.onCommand('now', harness.ctx);
+    expect(harness.appended).toHaveLength(0);
+    expect(harness.notified).toEqual(['prune: failed (classifier boom)']);
+    expect(wiring.getStatus().failures).toBe(1);
+    expect(wiring.getStatus().lastFailure).toEqual({
+      at: 1000,
+      tokens: 1500,
+      reason: 'classifier boom',
+    });
+  });
+
   it('status → 状態の 5 行を通知', async () => {
     const { harness, wiring } = ready();
     await wiring.onCommand('', harness.ctx);

@@ -110,6 +110,17 @@ describe('topicView', () => {
   it('見出し無し → 全文', () => {
     expect(topicView('plain text')).toBe('plain text');
   });
+
+  it('見出しはあるが Goal / Progress / Next Steps が無い → 全文', () => {
+    const summary = [
+      '## Constraints & Preferences',
+      '- none',
+      '',
+      '## Key Decisions',
+      '- decided',
+    ].join('\n');
+    expect(topicView(summary)).toBe(summary);
+  });
 });
 
 describe('classifierTokens', () => {

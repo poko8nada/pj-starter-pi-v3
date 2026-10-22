@@ -298,10 +298,25 @@ export function statusLines(status: Status, settings: Settings, now: number): re
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/context-prune/command/prune.ts:59` の「状態の 5 行」が陳腐化：`lastFailure` ありは 6 行になる（`.pi/extensions/context-prune/command/prune.ts:72`）のにコメントが 5 行のまま。
+    - fixed: コメントを「状態の表示」に直した
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/context-prune/index.ts:263` の `runNow`（`/prune now`）失敗時の `lastFailure` 記録を動かす検査が無い：`.pi/extensions/context-prune/index.test.ts:800` の `onCommand` は成功・空・設定破損のみで失敗系が無い。
+    - fixed: `onCommand` に now 失敗の試験を足し、通知と `lastFailure`（`at`・`tokens`・`reason`）を見た
+  - `.pi/extensions/context-prune/prune/judge.ts:56` の `wanted` 空分岐（見出しはあるが Goal / Progress / Next Steps が無い→原文返却）を動かす検査が無い：Verify の `(empty)` は見出し無しのみ。
+    - fixed: 見出しあり・対象節なしで原文返却の試験を足した
+  - `.pi/extensions/context-prune/prune/run.ts:80` の `fixed` 導出（`topicView`＋質問 1 件分）を検証する検査が無い：`.pi/extensions/context-prune/prune/run.test.ts:70` は分割回数のみで `fixed` の中身を見ない。
+    - fixed: 大きい view で束が増える試験を足し、`state.summary` が view と等しいことも見た
 - Unproven:
+  - `.pi/extensions/context-prune/prune/ports.test.ts:196` の `args[6]` 検査が `/[A-Za-z]/` のみで、`args[6]="a"` や日本語＋英字 1 字でも緑になる：Verify の「英文」（`.pi/extensions/context-prune/prune/ports.ts:91`）を担保しない。
+    - fixed: `English` を含み日本語を含まないことに変えた
 - Doubts:
+  - `.pi/extensions/context-prune/index.ts:122` の `>=`（`at` 同値で失敗優先）は plan の「`at` が新しい方」では決まらず、同 ms は稀なので所見にせず疑義に留める。
+    - left: 同 ms の同時発生は稀で、どちらを選んでも冷却は効くため直さない
+  - `.pi/extensions/context-prune/index.ts:215` の background `catch`（`runPass` が投げる経路）は `ports` が投げを `failed` 化するため到達可能性が不明で、投げ試験の欠落を所見にせず疑義に留める。
+    - left: 到達する投げ経路が無く、再現できる試験が書けないため足さない
 
 ## Acceptance
 

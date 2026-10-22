@@ -3,6 +3,7 @@ import { defaultSettings } from '../settings/schema.ts';
 import type { Usage } from '../entry/data.ts';
 import type { Candidate, EntryMessage } from './collect.ts';
 import { runPass, type PassPorts } from './run.ts';
+import { topicView } from './judge.ts';
 
 function candidate(id: string, chars: number, excerpt = 'excerpt'): Candidate {
   return { id, toolName: 'read', args: `read({"path":"${id}.txt"})`, chars, excerpt };
@@ -87,6 +88,39 @@ describe('runPass', () => {
     );
     expect(outcome.kind).toBe('done');
     expect(calls.count).toBeGreaterThanOrEqual(2);
+  });
+
+  it('要約の view が大きい → fixed が効いて束が増え、state には view が入る', async () => {
+    // fixed を無視すれば 75 件 × 411 トークン = 30825 で 1 束に収まる。
+    // view（Goal 節 ~3204 トークン）＋質問 1 件分を引くと 2 束以上に割れる。
+    const full = ['## Goal', 'x'.repeat(8000), '', '## Constraints & Preferences', '- none'].join(
+      '\n',
+    );
+    const seen: unknown[] = [];
+    const calls = { count: 0 };
+    const ports: PassPorts = {
+      summarize: summarizeOk(full),
+      classify: (request) => {
+        calls.count += 1;
+        seen.push(request.state['summary']);
+        return Promise.resolve({ kind: 'ok', answers: {} });
+      },
+    };
+    const long: Candidate[] = [];
+    for (let index = 0; index < 75; index += 1) {
+      long.push(candidate(`c${index}`, 1000, 'x'.repeat(1000)));
+    }
+    const outcome = await runPass(
+      { settings: defaultSettings(), tokens: 60000, candidates: long, recent: recent(), now: 1000 },
+      ports,
+    );
+    expect(outcome.kind).toBe('done');
+    expect(calls.count).toBeGreaterThanOrEqual(2);
+    expect(seen).toHaveLength(calls.count);
+    for (const summary of seen) {
+      expect(summary).toBe(topicView(full));
+      expect(summary).not.toContain('Constraints');
+    }
   });
 
   it('2 束目の classify が failed → failed', async () => {

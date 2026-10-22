@@ -56,7 +56,7 @@ export function usageText(): string {
   ].join('\n');
 }
 
-/** 状態の 5 行。直近のパスが無ければ last と dropped はなし。失敗があれば最後の失敗を足す */
+/** 状態の表示。直近のパスが無ければ last と dropped はなし。失敗があれば最後の失敗を足す */
 export function statusLines(status: Status, settings: Settings, now: number): readonly string[] {
   const head = settings.enabled ? 'prune: on' : 'prune: off';
   const ratio = `ratio: ${settings.ratio}`;

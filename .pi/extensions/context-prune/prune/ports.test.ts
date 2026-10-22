@@ -192,8 +192,13 @@ describe('summarize errors', () => {
     expect(args[2]).toBe(10000);
     expect(args[3]).toBe('test-key');
     expect(args[4]).toEqual({ a: 'b' });
-    expect(typeof args[6]).toBe('string');
-    expect(args[6]).toMatch(/[A-Za-z]/);
+    const customInstructions = args[6];
+    expect(typeof customInstructions).toBe('string');
+    if (typeof customInstructions !== 'string') {
+      throw new Error('customInstructions must be a string');
+    }
+    expect(customInstructions).toContain('English');
+    expect(customInstructions).not.toMatch(/[぀-ヿ一-鿿]/);
     expect(args[13]).toBe('session-1');
   });
 });
