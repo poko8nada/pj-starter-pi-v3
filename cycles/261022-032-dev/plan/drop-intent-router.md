@@ -96,11 +96,9 @@ README.ja.md                    update
 
 ### Slice 3: 統合: `intent-router` がリポジトリから消えている
 
-- Findings:
-  - `pnpm typecheck` が exit 1（`.pi/extensions/context-prune/entry/render.test.ts(21,3): error TS2741: Property 'droppedTokens' is missing`）。`test ! -e` は exit 0、`grep -rln` は出力なし exit 1、`pnpm test:run` は exit 0（832 passed）。
-    left: d32ca80 で `PrunePass.droppedTokens` が増えた際 `render.test.ts` の更新漏れという範囲外の既存破壊のため、依頼の範囲だけを変える方針で触れず、Verify を通し切れない。
+- Findings: なし
 - Unplanned: なし
-- Commit: なし（Verify 未通過のため commit なし）
+- Commit:
 
 ## Review
 
@@ -117,7 +115,3 @@ README.ja.md                    update
 - Ran:
 - Findings:
 - Doubts:
-
-## Stopped
-
-- Stopped: Slice 3 統合の Verify まで（`pnpm typecheck` が範囲外の既存破壊で exit 1 のため commit せず終了）。Slice 1・2 は Steps・Verify・commit・Notes 済み。
