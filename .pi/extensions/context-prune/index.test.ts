@@ -93,8 +93,10 @@ function assistantText(text: string): SessionEntry {
 function customPass(dropped: { readonly id: string; readonly chars: number }[]): SessionEntry {
   const ids = nextId();
   let chars = 0;
+  let tokens = 0;
   for (const drop of dropped) {
     chars += drop.chars;
+    tokens += Math.ceil(drop.chars / 4);
   }
   return {
     type: 'custom',
@@ -105,6 +107,7 @@ function customPass(dropped: { readonly id: string; readonly chars: number }[]):
     data: {
       at: 1000,
       tokensBefore: 60000,
+      droppedTokens: tokens,
       summary: 'テストの要約',
       dropped: [...dropped],
       droppedChars: chars,

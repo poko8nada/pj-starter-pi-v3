@@ -20,6 +20,8 @@ export interface Drop {
 export interface PrunePass {
   readonly at: number;
   readonly tokensBefore: number;
+  /** 落とした結果の見積もり。tokensBefore から引くと、落とした後の値になる */
+  readonly droppedTokens: number;
   readonly summary: string;
   readonly dropped: readonly Drop[];
   readonly droppedChars: number;
@@ -58,6 +60,13 @@ export function isPrunePass(value: unknown): value is PrunePass {
     return false;
   }
   if (typeof value['at'] !== 'number' || typeof value['tokensBefore'] !== 'number') {
+    return false;
+  }
+  if (
+    typeof value['droppedTokens'] !== 'number' ||
+    !Number.isFinite(value['droppedTokens']) ||
+    value['droppedTokens'] < 0
+  ) {
     return false;
   }
   if (typeof value['summary'] !== 'string') {

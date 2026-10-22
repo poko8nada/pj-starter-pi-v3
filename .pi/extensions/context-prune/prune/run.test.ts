@@ -63,6 +63,7 @@ describe('runPass', () => {
     expect(outcome.pass.summary).toBe('テストの要約');
     expect(outcome.pass.dropped).toEqual([{ id: 'b', chars: 50 }]);
     expect(outcome.pass.droppedChars).toBe(50);
+    expect(outcome.pass.droppedTokens).toBe(13);
     expect(outcome.pass.kept).toBe(1);
     expect(outcome.pass.tokensBefore).toBe(60000);
     expect(outcome.pass.at).toBe(1000);
@@ -229,5 +230,29 @@ describe('runPass', () => {
     }
     expect(outcome.pass.dropped).toEqual([]);
     expect(outcome.pass.kept).toBe(2);
+    expect(outcome.pass.droppedTokens).toBe(0);
+  });
+
+  it('201 文字を 2 件落とす → droppedTokens は 102（合計してから割った 101 ではない）', async () => {
+    const ports: PassPorts = {
+      summarize: summarizeOk('テストの要約'),
+      classify: classifyWith({ keep_a: 0.1, keep_b: 0.1 }, { count: 0 }),
+    };
+    const outcome = await runPass(
+      {
+        settings: defaultSettings(),
+        tokens: 60000,
+        candidates: [candidate('a', 201), candidate('b', 201)],
+        recent: recent(),
+        now: 1000,
+      },
+      ports,
+    );
+    expect(outcome.kind).toBe('done');
+    if (outcome.kind !== 'done') {
+      throw new Error('must be done');
+    }
+    expect(outcome.pass.droppedTokens).toBe(102);
+    expect(outcome.pass.droppedChars).toBe(402);
   });
 });

@@ -6,12 +6,15 @@ const TEMPLATE = '古いツール結果（{chars} 文字）を省略';
 
 function pass(drops: PrunePass['dropped']): PrunePass {
   let chars = 0;
+  let tokens = 0;
   for (const drop of drops) {
     chars += drop.chars;
+    tokens += Math.ceil(drop.chars / 4);
   }
   return {
     at: 1000,
     tokensBefore: 60000,
+    droppedTokens: tokens,
     summary: '要約',
     dropped: drops,
     droppedChars: chars,

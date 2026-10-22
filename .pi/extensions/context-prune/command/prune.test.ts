@@ -14,6 +14,7 @@ function passOf(at: number): PrunePass {
   return {
     at,
     tokensBefore: 60000,
+    droppedTokens: 309,
     summary: 'テストの要約',
     dropped: [
       { id: 'e1', chars: 1000 },

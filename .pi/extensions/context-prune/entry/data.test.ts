@@ -21,6 +21,7 @@ function goodPass(): Record<string, unknown> {
   return {
     at: 1000,
     tokensBefore: 60000,
+    droppedTokens: 3,
     summary: '要約',
     dropped: [{ id: 'e1', chars: 10 }],
     droppedChars: 10,
@@ -77,6 +78,26 @@ describe('passesOf', () => {
   it('chars が負 → 0 件', () => {
     expect(
       passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), dropped: [{ id: 'e1', chars: -1 }] })]),
+    ).toHaveLength(0);
+  });
+
+  it('droppedTokens を持たない → 0 件（古い記録はむしする）', () => {
+    const old = { ...goodPass() };
+    delete old['droppedTokens'];
+    expect(passesOf([customEntry(CUSTOM_TYPE, old)])).toHaveLength(0);
+  });
+
+  it('droppedTokens が負 → 0 件', () => {
+    expect(passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), droppedTokens: -1 })])).toHaveLength(
+      0,
+    );
+  });
+
+  it('droppedTokens が Infinity → 0 件', () => {
+    expect(
+      passesOf([
+        customEntry(CUSTOM_TYPE, { ...goodPass(), droppedTokens: Number.POSITIVE_INFINITY }),
+      ]),
     ).toHaveLength(0);
   });
 

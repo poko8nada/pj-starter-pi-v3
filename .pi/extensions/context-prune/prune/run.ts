@@ -60,6 +60,7 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
         tokensBefore: input.tokens,
         summary: '',
         dropped: [],
+        droppedTokens: 0,
         droppedChars: 0,
         kept: 0,
         latencyMs: 0,
@@ -95,12 +96,14 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
   const byId = new Map(input.candidates.map((candidate) => [candidate.id, candidate]));
   const drops: Drop[] = [];
   let droppedChars = 0;
+  let droppedTokens = 0;
   for (const verdict of decided) {
     if (verdict.keep) {
       continue;
     }
     const chars = byId.get(verdict.id)?.chars ?? 0;
     droppedChars += chars;
+    droppedTokens += Math.ceil(chars / 4);
     drops.push({ id: verdict.id, chars });
   }
   return {
@@ -111,6 +114,7 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
       summary: summarized.summary,
       dropped: drops,
       droppedChars,
+      droppedTokens,
       kept: decided.length - drops.length,
       latencyMs: Date.now() - startedAt,
       usage: summarized.usage,
