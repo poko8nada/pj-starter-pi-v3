@@ -85,31 +85,42 @@ export function separatorFor(removed: string): string | undefined;
 
 ### Slice 1: 繋ぎ目の判断を純関数に切り出し、2 つの枝を 1 つにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 右が空（区間が本文末尾）の枝のテストを足した。planのVerifyは左のみで、Round 1のDoubtで見つけた穴のため。
+- Commit: 3957265
 
 ### Slice 2: ヘッダを実際の配線に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 67e20aa
 
 ### Slice 3: 統合: lint の自動修正で壊れない
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: なし（`pnpm exec oxlint --fix .pi/extensions/thinking-scrub` で差分なしのため commit なし）
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし
+- Unlisted: なし
 - Gaps:
-- Unproven:
+  - `separatorFor` の直呼び happy 3 件 (`'\n\n'`→`'\n\n'`、`'a\nb'`→`'\n'`、`'ab'`→`undefined`)を運動するテストが無い。`detect.test.ts` は `detectRuns, scrubThinking` のみ import し `separatorFor` に触れない — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:2` / `cycles/261022-030-dev/plan/ex-scrub-join.md:39` / `.pi/extensions/thinking-scrub/scrub/detect.ts:128`
+    - fixed: separatorForの直呼び3件をdetect.test.tsのseparatorFor describeに足し、importにseparatorForを加えた。
+  - `separatorFor('\n\n\n')`→`'\n\n'` と `separatorFor('')`→`undefined` の boundary/empty がテストに無い — `cycles/261022-030-dev/plan/ex-scrub-join.md:40` / `cycles/261022-030-dev/plan/ex-scrub-join.md:41` / `.pi/extensions/thinking-scrub/scrub/detect.test.ts:2`
+    - fixed: separatorForのboundary/empty2件を同じdescribeに足した。
+  - 区間が本文先頭（左が空）のとき詰めるだけで改行を足さない、のテストが無い。`left.length === 0` の枝を運動しない — `.pi/extensions/thinking-scrub/scrub/detect.ts:163` / `cycles/261022-030-dev/plan/ex-scrub-join.md:42`
+    - fixed: 区間が本文先頭のケース（ブロック+bar→bar）をscrubThinkingに足し、left.length===0の枝を運動させた。
+  - 両側に空白（`foo ` + 区間 + ` bar` → `foo\n\nbar`）のテストが無い。既存は左のみ・右のみの別テストだけで両側同時は無い — `.pi/extensions/thinking-scrub/scrub/detect.test.ts:134` / `.pi/extensions/thinking-scrub/scrub/detect.test.ts:141` / `cycles/261022-030-dev/plan/ex-scrub-join.md:36`
+    - fixed: 両側空白のケース（foo +区間+ bar→foo\n\nbar）をscrubThinkingに足した。
+- Unproven: なし
 - Doubts:
+  - 右が空（区間が本文末尾）の `right.length === 0` の枝もテストが無いが、Verify は左のみを挙げる。右も要るのかは plan からは不明 — `.pi/extensions/thinking-scrub/scrub/detect.ts:163` / `cycles/261022-030-dev/plan/ex-scrub-join.md:29`
+    - fixed: 右が空のケース（foo+ブロック→foo）をscrubThinkingに足し、right.length===0の枝を運動させた。Notes Slice 1にUnplannedとして記録した。
+  - Slice 2/3 の `read`/`cli` チェックの実行証跡は diff からは読めないが、Notes の記載を疑う根拠は無いため finding にしない。`look`/`use` 系は対象外とした — `cycles/261022-030-dev/plan/ex-scrub-join.md:59` / `cycles/261022-030-dev/plan/ex-scrub-join.md:80`
 
 ## Acceptance
 

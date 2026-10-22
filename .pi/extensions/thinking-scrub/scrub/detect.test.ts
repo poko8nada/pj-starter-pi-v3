@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectRuns, scrubThinking } from './detect.ts';
+import { detectRuns, scrubThinking, separatorFor } from './detect.ts';
 
 // 検出と除去。fixture は関数の中で組み立てる。
 
@@ -19,6 +19,28 @@ describe('detectRuns', () => {
     expect(runs).toHaveLength(2);
     expect(runs[0]?.at).toBeLessThan(runs[1]?.at ?? 0);
     expect(scrubThinking(text).removed).toBe(2);
+  });
+});
+
+describe('separatorFor', () => {
+  it('改行2つを含む → 改行2つを返す', () => {
+    expect(separatorFor('\n\n')).toBe('\n\n');
+  });
+
+  it('改行1つだけを含む → 改行1つを返す', () => {
+    expect(separatorFor('a\nb')).toBe('\n');
+  });
+
+  it('改行を含まない → undefinedを返す', () => {
+    expect(separatorFor('ab')).toBeUndefined();
+  });
+
+  it('改行3つを含む → 改行2つを返す', () => {
+    expect(separatorFor('\n\n\n')).toBe('\n\n');
+  });
+
+  it('空文字 → undefinedを返す', () => {
+    expect(separatorFor('')).toBeUndefined();
   });
 });
 
@@ -143,6 +165,27 @@ describe('scrubThinking', () => {
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(1);
     expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
+  it('区間が改行2つを含み両端が空白 → 空白は残らず改行2つが入る', () => {
+    const text = `foo ${repeated('\n\nThe **', 5)} bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
+  it('区間が本文先頭にある → 詰めるだけで改行を足さない', () => {
+    const text = `${repeated('\n\nThe **', 5)}bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('bar');
+  });
+
+  it('区間が本文末尾にある → 詰めるだけで改行を足さない', () => {
+    const text = `foo${repeated('\n\nThe **', 5)}`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo');
   });
 
   it('区間が改行1つだけを含む → 繋ぎ目に改行1つが入る', () => {
