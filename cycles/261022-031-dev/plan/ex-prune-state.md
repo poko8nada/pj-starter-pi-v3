@@ -63,22 +63,32 @@ export function judgeRequest(summary: string, candidates: readonly Candidate[]):
 
 ### Slice 1: 候補を state から質問文へ移す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1657724
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし（`.pi/extensions/context-prune/README.md:8` が state 要約のみ・候補は質問文に更新済み、`prune/judge.ts:100-101` の fixed コメ・`prune/judge.ts:88,104` のコメも更新済み。`candidates` を state に持つ残存は汎用治具のみで本文・コメに残存なし）
 - Unlisted:
+  - なし（diff の 5 files が Files の 5 件と一致）
 - Gaps:
+  - なし（Verify の 7 項目：state 要約のみ・instructions 4 行・criteria 鍵・questionTokens 単調・empty・boundary 単束・100 件→2 束以上が `.pi/extensions/context-prune/prune/judge.test.ts:35,43,69,84,92,190,197` と `.pi/extensions/context-prune/prune/run.test.ts:71,94` で全て行われている）
 - Unproven:
+  - なし（上記 7 件の各試験は反転時に赤になる：state に candidates 復活・ラベル除去・鍵入替・定数化・empty に質問追加・boundary を空・100 件を 1 束にすると失敗）
 - Doubts:
+  - `.pi/extensions/context-prune/prune/ports.test.ts:39`・`.pi/extensions/context-prune/index.test.ts:765` の `state: { summary, candidates: [] }` 治具は汎用 passthrough 用で judge 仕様と無関係のため stale にしない（前回 Round 1 の yes/no 治具と同理由）。
+  - `.pi/extensions/context-prune/prune/judge.test.ts:46-49` が criteria 値を `expect.any(String)` でしか見ない点は Verify が鍵のみ要求のため finding にしない（前回と同理由）。
+  - `questionTokens` を旧 `itemTokens` 式（excerpt+args+tool）に戻しても `.pi/extensions/context-prune/prune/judge.test.ts:92,190` は単調・2 束以上で緑のままだが、Verify が単調と束数のみ要求のため finding にしない。32000・500 文字・英語化は ADR/plan の決定値のため指摘しない。
+  - `fixed` を旧 `view+質問 JSON` に戻しても `.pi/extensions/context-prune/prune/run.test.ts:71,94` は 2 束以上で緑のままだが、Verify が束数のみ要求のため finding にしない。
+  - `.pi/extensions/context-prune/prune/judge.test.ts:35` の 2 件試験が鍵しか見ず候補依存（tool 違いで文が変わる）を証明しない点は Verify が read のみ要求のため finding にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64 files / 1036 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）。
+- Ran: 壊し試験 2 つ。`judgeRequest` が候補を state に戻す → 3 件 red。`questionFor` から `tool:` の行を外す → 2 件 red。どちらも復元後に再実行して緑。
+- Findings: なし
+- Doubts: なし
