@@ -160,7 +160,7 @@ export interface ModelCell {
   - なし
 - Unplanned:
   - なし
-- Commit:
+- Commit: 76322e9 consult(ex-prune-leftovers): keep broken settings untouched
 
 ### Slice 3: 口の役目を分け、エラー経路を試す
 
