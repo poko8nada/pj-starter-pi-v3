@@ -567,15 +567,15 @@ export interface PruneWiring {
 
 ### Slice 1: 設定
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d41c0e4 consult(context-prune): add settings schema and read
 
 ### Slice 2: 候補と要約
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 空ブロックの toolResult を古い側に置くようテストの並びを直した（collect の境界は変えず）。
+- Commit: 93f3e90 consult(context-prune): add candidate collection and summary prompt
 
 ### Slice 3: 判定と発動
 
