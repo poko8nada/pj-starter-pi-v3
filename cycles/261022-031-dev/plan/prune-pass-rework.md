@@ -276,9 +276,9 @@ export function statusLines(status: Status, settings: Settings, now: number): re
 
 - Findings:
   - 分類器の指示・基準が英語であることが README に無い（`prune/judge.ts:101-105`）
-    - left: slice 5 で直す
+    - fixed: 88621c2（slice 5）
   - 失敗も冷却の起点になることが README の Gate 行に無い（`index.ts` の `lastTokensOf`）
-    - left: slice 5 で直す
+    - fixed: 88621c2（slice 5）
 - Unplanned: なし（read のみ）
 - Commit: なし（read のみ）
 
