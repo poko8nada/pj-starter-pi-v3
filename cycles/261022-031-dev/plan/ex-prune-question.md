@@ -69,8 +69,22 @@
   - `.pi/extensions/context-prune/prune/ports.test.ts:41,81`・`index.test.ts:769` の yes/no 治具は汎用 passthrough 用で judge 仕様と無関係のため stale にしない。
   - criteria 値の文言の厳密一致を `expect.any(String)`/`toContain('need')` でしか見ない点は Verify が鍵と need のみ要求のため finding にしない。
 
+### Round 2
+
+- Stale:
+  - `.pi/extensions/context-prune/README.md:34` — fixed confirmed: now `a keep below this drops the result`, matching `prune/judge.ts:102-104` criteria `keep`/`drop` and `prune/judge.ts:150` `probabilities['keep']`. No `yes` remains on this line.
+- Unlisted:
+  - No target (Round 1 `fixed:` is Stale-only; out of scope, not re-checked).
+- Gaps:
+  - No target (same reason).
+- Unproven:
+  - No target (same reason).
+- Doubts:
+  - Wording `a keep below this drops` is terse (probability vs. verdict) but accurate against `verdicts` (`probability >= threshold` keeps); not a finding.
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64 files / 1033 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）。
+- Ran: 壊し試験 2 つ。`verdicts` が `probabilities.yes` を読む → 3 件 red。`criteria` のキーを `yes` / `no` に戻す → 1 件 red。どちらも復元後に再実行して緑。
+- Findings: なし
+- Doubts: なし
