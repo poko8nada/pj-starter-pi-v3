@@ -260,7 +260,7 @@ export function gate(input: {
 2. `.pi/extensions/context-prune/prune/judge.test.ts`:
    - 偽の `Candidate` と、`probabilities` だけの答えを渡す。
 3. `.pi/extensions/context-prune/prune/plan.ts`:
-   - `gate`: 無効なら `disabled`、`tokens` が `null` なら `unknown`、走っていれば `running`、候補 0 なら `empty`、`lastTokens` が無ければ `run`、`tokens / contextWindow` が `ratio` 未満なら `below-ratio`、前回の `lastTokens` から `contextWindow * rearmRatio` 増えていなければ `cooling`、それ以外は `run`。
+   - `gate`: 無効なら `disabled`、`tokens` が `null` なら `unknown`、走っていれば `running`、`tokens / contextWindow` が `ratio` 未満なら `below-ratio`、候補 0 なら `empty`、`lastTokens` が無ければ `run`、前回の `lastTokens` から `contextWindow * rearmRatio` 増えていなければ `cooling`、それ以外は `run`。
 4. `.pi/extensions/context-prune/prune/plan.test.ts`:
    - 数値だけを渡す。
 
@@ -666,3 +666,13 @@ export interface PruneWiring {
   - `command/prune.ts:71` — `writeEnabled` は壊れ JSON を捨て `{enabled}` に上書きする。他キー保持の約束と矛盾しないが検査は無い。所感どまり。
 
 ## Acceptance
+
+- Ran: `pnpm test:run`（63 ファイル、951 件）、`pnpm typecheck`（root と `.pi`）、`pnpm lint`、plan の各 `Verify`。壊して赤を確かめたもの 3 つ: `draftsFor` を空にすると 6 件赤、`gate` の割合判定を外すと 2 件赤、`runPass` の drop 作りを外すと 6 件赤。いずれも戻して緑。
+- Findings:
+  - Slice 3 の `Steps` の `gate` の順序が実装と違う — fixed: plan を実装の順（`below-ratio` が `empty` より前）に直した。
+  - `ports` のエラー経路（設定破損・registry/model 不在・空要約・例外・`stopReason: error`）が無試験 — left: plan の `Verify` が正常系だけを求めており、本番の口は SDK の戻りを写すだけである。
+- Doubts:
+  - `markerText` は `ja-JP` 固定で、`statusLines` と `cardText` は既定ロケール。plan はロケールを決めていない。
+  - `assistantText` は `collect` で使うが、`runPass` の要約は `serializeConversation` 経由で使わない。
+  - `batches` は `maxQuestions` 0 で守らない（設定が 1 以上を保証するので到達不能）。
+  - `writeEnabled` は壊れた `settings.json` を他キーごと捨てて `{enabled}` に上書きする。
