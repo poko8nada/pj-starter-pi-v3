@@ -43,7 +43,7 @@ export interface RunRecord {
   readonly files?: readonly string[];
   readonly turns?: number;
   readonly spend?: string;
-  /** 届け先のセッションが無かったときの、完了の知らせ。次に起動したセッションが読む */
+  /** 完了の知らせ（本文）。完了は必ずこの 1 行になり、tick が 5 秒ごとに読んで渡し、渡すたびに印の行を足す */
   readonly notice?: string;
   /** 報告を渡した時刻。印の行にだけ入る */
   readonly delivered?: number;

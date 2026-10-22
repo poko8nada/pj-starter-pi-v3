@@ -352,10 +352,34 @@ export function rowsOf(
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/log.ts:46` — `notice` の欄注が「届け先のセッションが無かったとき」「次に起動したセッションが読む」のまま。いまは完了が必ず `notice` 行になり tick が 5 秒ごとに読むため、条件も読み時も古い。
+    - fixed: 欄注を「完了は必ずこの 1 行になり、tick が 5 秒ごとに読んで渡し、渡すたびに印の行を足す」に書き直した。
+  - `.pi/extensions/consult/README.md:66` — 一覧の説明が「終わりの行があれば仕上がりで読む（pid が生きていても finished）」のまま。印の無い完了は `running`（pid 無し）で出るため、終わり行＝仕上がり表示の断定が崩れている。
+    - fixed: 渡し済みの終わりは仕上がり表示、印の無い完了は渡すまで `running`（pid 無し）と書き分けた。
+  - `.pi/extensions/consult/README.md:201` — Sound 節が「走っている間だけ」「タイマーは走行者が居なくなると自分で止まる」「終わりには鳴らない」のまま。いまは渡し待ち（`pending`／配達 tick の `delivered`）でも鳴り、タイマーは `session_shutdown` の `stopTick` まで生きるため。
+    - fixed: Sound 節を tick 主語に書き直した（渡し待ちでも鳴る・タイマーは `session_shutdown` まで・自分で止まらない）。
+  - `.pi/extensions/consult/README.md:237` — Tests 表の `run/delivery.test.ts` 説明が「send when attached, write to the record when not」のまま。`createDelivery`／`unreadNotices` は消え、いまは `pendingReports`／`appendDelivered` の試験のため。
+    - fixed: `pendingReports`／`appendDelivered`（印の行・旧 cursor の水位）の説明に直した。
+  - `.pi/extensions/consult/README.md:240` — Tests 表の `tool/consult.test.ts` 説明に「the sound」が残る。`consult.test.ts` から音の試験（と `stopSound`／`isSoundRunning` の import）は消え、音は `sound.test.ts` と `index.test.ts` が見るため。
+    - fixed: 「the sound」を削り、完了の行（`sendMessage` なし）の説明に直した。
+  - `.pi/extensions/consult/README.md:241` — Tests 表の `tool/sound.test.ts` 説明が「one timer, one sound every 5 seconds」のまま。タイマーは `index.ts`（`startTick`／`stopTick`）に移り、`sound.ts` は `playSound` だけのため。
+    - fixed: `playSound`・player 差し替え・タイマーは `index.ts` の旨に直した。
 - Unlisted:
+  - なし（製品の変更は README・index・run/log・run/delivery・tool/consult・tool/subagents・tool/sound とその試験のみで、いずれも ## Files に名指しされている。`worktree.*` は無変更のまま）。
 - Gaps:
+  - なし（各 slice の Verify の弾は対応する試験がある。印行の厳密な数え方の穴は Unproven 側に挙げる）。
 - Unproven:
+  - `.pi/extensions/consult/index.test.ts:82` — 題が「印の行が 1 本増える」を名指すが、断定は戻り値 1 と `sent` 1 件のみ。`flushPending` が印を 0 本／2 本書いてもこの試験は通り、2 本重複は全試験が通る。
+    - fixed: 行数 2・`deliveredKeys` 1・`pendingReports` 空の断定を足し、0 本／2 本では落ちるようにした。
+  - `.pi/extensions/consult/index.test.ts:104` — 題が「送り 1 回、印 1 本、音 1 回」を名指すが、断定は `sent` 1 件と音 1 回のみ。tick が印を書かなくても・重ね書きしても初回 tick の断定は通り、重複は全試験が通る。
+    - fixed: 行数 2・`deliveredKeys` 1・`pendingReports` 空の断定を足し、書かない／重ね書きでは落ちるようにした。
 - Doubts:
+  - `isWaiting` の `record.delivered !== undefined → false`（`.pi/extensions/consult/run/log.ts:291`）に名指しの試験が無い。現行の書き手は両持ち行（`ended`＋`notice`＋`delivered`）を書かないため、到達不能な防御か死枝かの切り分けが付かなかった。finding にはしない。
+    - left: 書き手が両持ち行を書かないため、到達不能か死枝か切り分けず残す。
+  - 印だけの行のみの入力に対する `listText`（`.pi/extensions/consult/tool/subagents.ts:179`）の専用試験が無い。`rows.length === 0 → message` への切替え自体は `[]` の試験で見るが、印のみ 1 件→文言の分岐は Verify の空弾（記録 0 本）の名指し外のため、finding にはしない。
+    - left: Verify の空弾の名指し外で、実入力では印のみ単独は起きないため足さない。
+  - 私的な `deliverUnread`（`.pi/extensions/consult/index.ts:67`）の `session_start` 配線を叩く試験が無い。論理は `flushPending` と同形で Verify の名指しも tick 側のため、finding にはしない。
+    - left: `flushPending` と同形で Verify の名指しも tick 側のため、私的配線の試験は足さない。
 
 ## Acceptance
 

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
-import { appendRun, readRuns, type RunRecord } from './run/log.ts';
+import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
+import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
 import { flushPending, startTick, stopTick, type TickPort } from './index.ts';
 import { rowsOf } from './tool/subagents.ts';
@@ -89,6 +90,10 @@ describe('flushPending', () => {
 
     expect(sent).toHaveLength(1);
     expect(sent[0]?.content).toBe('できた');
+    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
+    expect(runs).toHaveLength(2);
+    expect(deliveredKeys(runs).size).toBe(1);
+    expect(pendingReports(found, { session: 'session-a', days: KEEP_DAYS })).toEqual([]);
   });
 
   it('0 件 → 0 を返す。送らない', () => {
@@ -112,6 +117,10 @@ describe('startTick / stopTick', () => {
 
     expect(sent).toHaveLength(1);
     expect(played).toHaveLength(1);
+    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
+    expect(runs).toHaveLength(2);
+    expect(deliveredKeys(runs).size).toBe(1);
+    expect(pendingReports(found, { session: 'session-a', days: KEEP_DAYS })).toEqual([]);
   });
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
