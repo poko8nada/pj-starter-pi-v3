@@ -51,6 +51,7 @@
   - 候補に結果の先頭 500 文字と末尾 500 文字の抜粋を足す。中央は省略の注記に置き換える。
   - バッチの件数は固定せず、32,000 から固定分を引いた残りで決める。
   - 落とす対象は古いツール結果のみとし、会話メッセージは判定の対象にしない。
+  - 質問は「後に要るか」を聞く（`keep` / `drop`）。`verdicts` は `probabilities.keep` を読む。
 - Options:
   - 要約を丸ごと渡す（判定に使わない節が入り、入力を 31% 減らす加工を捨てることになる）
   - prune 用の自前の書式にする（用途には合うが、pi の要約関数から降りる）
@@ -75,6 +76,7 @@
 - `fast-compact` は人と assistant の書いた文を不変とし、候補は古くて長いツール出力のみ。`jev-compactor` も落とす単位は tool_call と結果の組だけ（https://github.com/edwardyen724-g/jev-compactor ）。
 - 第三者計測では、shipped questions の AUC が 0.544、256 件中 0 件しか 0.5 以上にならなかった回がある（https://stackness.dev/blog/can-a-decision-model-prune-your-coding-agent-s-context-what-fast-jev-compaction-keeps-costs-and-drop ）。
 - 会話メッセージは、今は要約に潰れて渡っており、個別には渡っていない（`prune/judge.ts:31-48`）。
+- 実測（実セッションの実物 7 件、`~typesafe/jev-latest`）: 「要約の話題に関係あるか」は yes 0.92〜0.94 で全件 keep。「後に要るか」は keep 0.06〜0.38。前者は判定として働かない。
 
 ### Definition Change
 
