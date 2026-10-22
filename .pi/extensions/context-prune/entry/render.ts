@@ -18,8 +18,19 @@ import {
 import type { PrunePass } from './data.ts';
 import { formatCount } from '../format/count.ts';
 
+/** 落とす前と後のトークン。後は前から落とした分を引いて出す */
 function tokensLine(pass: PrunePass): string {
-  return formatCount(pass.tokensBefore);
+  const after = pass.tokensBefore - pass.droppedTokens;
+  return `${formatCount(pass.tokensBefore)} → ${formatCount(after)}`;
+}
+
+/** 落とした件数と、トークンと文字数 */
+function droppedLine(pass: PrunePass): string {
+  return `省略: ${pass.dropped.length} 件 / ${formatCount(pass.droppedTokens)} トークン / ${formatCount(pass.droppedChars)} 文字`;
+}
+
+function latencyLine(pass: PrunePass): string {
+  return `要約と判定: ${(pass.latencyMs / 1000).toFixed(1)} 秒`;
 }
 
 /** 折りたたみと展開の文。展開は Markdown を通す前提 */
@@ -33,11 +44,10 @@ export function cardText(pass: PrunePass, expanded: boolean, expandKey: string):
     '',
     `**Compacted from ${tokens} tokens**`,
     '',
+    droppedLine(pass),
+    latencyLine(pass),
+    '',
     pass.summary,
-    '',
-    `省略: ${pass.dropped.length} 件 / ${formatCount(pass.droppedChars)} 文字`,
-    '',
-    `要約と判定: ${(pass.latencyMs / 1000).toFixed(1)} 秒`,
   ];
 }
 
@@ -64,32 +74,17 @@ function paintExpanded(
   markdownTheme: MarkdownTheme,
 ): void {
   const label = theme.fg('customMessageLabel', '[prune]');
-  const tokens = tokensLine(pass);
+  const color = (text: string): string => theme.fg('customMessageText', text);
   content.addChild(new Text(label, 0, 0));
   content.addChild(new Spacer(1));
   content.addChild(
-    new Markdown(`**Compacted from ${tokens} tokens**\n\n${pass.summary}`, 0, 0, markdownTheme, {
-      color: (text) => theme.fg('customMessageText', text),
-    }),
+    new Markdown(`**Compacted from ${tokensLine(pass)} tokens**`, 0, 0, markdownTheme, { color }),
   );
   content.addChild(new Spacer(1));
-  content.addChild(
-    new Text(
-      theme.fg(
-        'customMessageText',
-        `省略: ${pass.dropped.length} 件 / ${formatCount(pass.droppedChars)} 文字`,
-      ),
-      0,
-      0,
-    ),
-  );
-  content.addChild(
-    new Text(
-      theme.fg('customMessageText', `要約と判定: ${(pass.latencyMs / 1000).toFixed(1)} 秒`),
-      0,
-      0,
-    ),
-  );
+  content.addChild(new Text(color(droppedLine(pass)), 0, 0));
+  content.addChild(new Text(color(latencyLine(pass)), 0, 0));
+  content.addChild(new Spacer(1));
+  content.addChild(new Markdown(pass.summary, 0, 0, markdownTheme, { color }));
 }
 
 /** パスのカードを作る。クリックで折りたたみと展開が切り替わる */

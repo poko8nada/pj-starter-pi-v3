@@ -87,16 +87,15 @@ export function createCard(pass: PrunePass, theme: Theme, outputPad?: number): C
    - `formatCount` を数字の整形に使う。
 2. `.pi/extensions/context-prune/entry/render.test.ts`:
    - 折りたたみと展開の文面の試験を、新しい並びに差し替える。展開キーは既定値と違う文字列（`ctrl+e`）を渡す。
-   - クリックで展開に切り替わり、`省略:` の行が出る試験を足す。
 
 ### Verify:
 
 - test: `pnpm test:run .pi/extensions/context-prune`
-  - (happy) `cardText(pass, false, 'ctrl+e')` → `Compacted from 427,463 → 362,399 tokens (ctrl+e to expand)`
-  - (happy) `cardText(pass, true, 'ctrl+e')` → 見出し、`省略: 160 件 / 65,065 トークン / 260,257 文字`、`要約と判定: 34.2 秒`、空行、要約の順
-  - (boundary values) `droppedTokens` が 0 → `427,463 → 427,463`
+  - (happy) `cardText(pass, false, 'ctrl+e')` → `Compacted from 12,345 → 11,036 tokens (ctrl+e to expand)`
+  - (happy) `cardText(pass, true, 'ctrl+e')` → 見出し、`省略: 3 件 / 1,309 トークン / 1,234 文字`、`要約と判定: 1.2 秒`、空行、要約の順
+  - (boundary values) `droppedTokens` が 0 → `12,345 → 12,345`
   - (empty) 落とした候補が 0 件 → `省略: 0 件 / 0 トークン / 0 文字`
-  - (happy) `createCard` をクリックすると、展開の `省略:` の行が現れる
+  - _no case_: 展開したカードの描画 — Markdown がグローバルなテーマを要求し、試験環境では初期化できない。文面は `cardText` で確かめている
 
 ## 3.統合: README とカードが一致し、owner がカードを開いて確かめる
 
@@ -124,14 +123,16 @@ export function createCard(pass: PrunePass, theme: Theme, outputPad?: number): C
 
 ### Slice 1: 記録に、落とした結果のトークンを足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d32ca80
 
 ### Slice 2: カードの文面を、前後のトークンと件数にする
 
 - Findings:
-- Unplanned:
+  - `entry/render.ts` の展開の描画（`paintExpanded`）を試験で通せない。Markdown がグローバルなテーマを要求し、試験環境では初期化できない。
+    - left: 文面は `cardText` で確かめており、描画は同じ helper を並べるだけ。
+- Unplanned: なし
 - Commit:
 
 ### Slice 3: 統合: README とカードが一致し、owner がカードを開いて確かめる
