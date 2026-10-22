@@ -470,6 +470,60 @@ function evolvingHarness(options: {
   };
 }
 
+function readyFlaky(failFirst: boolean): {
+  readonly harness: ReturnType<typeof evolvingHarness>;
+  readonly wiring: ReturnType<typeof createWiring>;
+  readonly calls: { summarize: number };
+  readonly setFail: (next: boolean) => void;
+  readonly setNow: (next: number) => void;
+} {
+  const harness = evolvingHarness({ summary: 'テストの要約', yes: 0 });
+  const callA = assistantCall('c-a');
+  const resultA = toolResult('c-a', '落とす結果');
+  const callB = assistantCall('c-b');
+  const resultB = toolResult('c-b', '残す結果');
+  const recent = assistantText('直近の返答');
+  harness.branch.push(callA, resultA, callB, resultB, recent);
+  const calls = { summarize: 0 };
+  let failClassify = failFirst;
+  let now = 1000;
+  const ports: PassPorts = {
+    summarize: () => {
+      calls.summarize += 1;
+      return Promise.resolve({ kind: 'ok', summary: 'テストの要約', usage: undefined });
+    },
+    classify: (request) => {
+      if (failClassify) {
+        return Promise.resolve({ kind: 'failed', reason: 'classifier boom' });
+      }
+      const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
+      for (const key of Object.keys(request.questions)) {
+        answers[key] = {
+          type: 'choice',
+          probabilities: { yes: key === `keep_${resultB.id}` ? 0.9 : 0 },
+        };
+      }
+      return Promise.resolve({ kind: 'ok', answers });
+    },
+  };
+  const wiring = createWiring(harness.pi, {
+    settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+    ports,
+    now: () => now,
+  });
+  return {
+    harness,
+    wiring,
+    calls,
+    setFail: (next: boolean) => {
+      failClassify = next;
+    },
+    setNow: (next: number) => {
+      now = next;
+    },
+  };
+}
+
 describe('integration', () => {
   const RESULT_TEXT = '落とす結果の本文';
 
@@ -567,6 +621,83 @@ describe('integration', () => {
     await wiring.flush();
     expect(harness.appended).toHaveLength(0);
     expect(wiring.getStatus().failures).toBe(1);
+  });
+
+  it('失敗 → lastFailure に at と tokens と reason が入る', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(wiring.getStatus().lastFailure).toEqual({
+      at: 1000,
+      tokens: 1500,
+      reason: 'classifier boom',
+    });
+  });
+
+  it('失敗の直後、tokens が変わらない → 要約を呼ばない（冷却）', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(1);
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(1);
+  });
+
+  it('失敗のあと contextWindow × rearmRatio 以上増えた → 要約を呼ぶ', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(2);
+  });
+
+  it('成功のあと失敗 → 失敗の tokens から冷える', async () => {
+    const rig = readyFlaky(false);
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastPass?.tokensBefore).toBe(1500);
+    rig.setFail(true);
+    rig.setNow(2000);
+    rig.harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastFailure).toEqual({
+      at: 2000,
+      tokens: 1700,
+      reason: 'classifier boom',
+    });
+    rig.harness.setUsage({ tokens: 1750, contextWindow: 2000, percent: 87 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(2);
+    rig.harness.setUsage({ tokens: 1900, contextWindow: 2000, percent: 95 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(3);
+  });
+
+  it('失敗のあと成功 → 成功の tokensBefore から冷える', async () => {
+    const rig = readyFlaky(true);
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastFailure?.tokens).toBe(1500);
+    rig.setFail(false);
+    rig.setNow(2000);
+    rig.harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastPass?.tokensBefore).toBe(1700);
+    rig.harness.setUsage({ tokens: 1750, contextWindow: 2000, percent: 87 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(2);
+    rig.harness.setUsage({ tokens: 1900, contextWindow: 2000, percent: 95 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(3);
   });
 
   it('文脈に効いたあとの境界 → entries が空', async () => {

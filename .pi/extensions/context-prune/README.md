@@ -14,7 +14,7 @@ Keeps the context window open by pruning old tool results the summary no longer 
 `/prune` shows the status and switches the pruner. Only `on` / `off` rewrite `settings.json`; `now` runs one pass right away without waiting for the ratio.
 
 ```
-/prune                      show status (enabled, ratio, last pass, dropped, failures)
+/prune                      show status (enabled, ratio, last pass, dropped, failures, last failure)
 /prune now                  run once now (skips the ratio and the cooldown)
 /prune on                   enable
 /prune off                  disable

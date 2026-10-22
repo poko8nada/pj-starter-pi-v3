@@ -111,6 +111,19 @@ function patchStatus(state: WiringState, patch: Partial<Status>): void {
   state.status = { ...state.status, ...patch };
 }
 
+/** 冷却の起点。成功と失敗のうち at が新しい方の tokensBefore / tokens を見る */
+function lastTokensOf(status: Status): number | undefined {
+  if (status.lastPass === undefined) {
+    return status.lastFailure?.tokens;
+  }
+  if (status.lastFailure === undefined) {
+    return status.lastPass.tokensBefore;
+  }
+  return status.lastFailure.at >= status.lastPass.at
+    ? status.lastFailure.tokens
+    : status.lastPass.tokensBefore;
+}
+
 /** 設定を読む。壊れていれば 1 度だけ知らせて undefined */
 function readOrNotify(deps: WiringDeps, ctx: PruneCtx): Settings | undefined {
   const read = readSettings(deps.settingsDir);
@@ -170,7 +183,7 @@ function startInBackground(
     contextWindow: usage?.contextWindow ?? 0,
     ratio: settings.ratio,
     rearmRatio: settings.rearmRatio,
-    lastTokens: deps.state.status.lastPass?.tokensBefore,
+    lastTokens: lastTokensOf(deps.state.status),
     running: false,
     candidates: collected.candidates.length,
   });
@@ -192,12 +205,21 @@ function startInBackground(
         deps.pi.appendEntry(CUSTOM_TYPE, outcome.pass);
         patchStatus(deps.state, { running: false, lastPass: outcome.pass });
       } else {
-        patchStatus(deps.state, { running: false, failures: deps.state.status.failures + 1 });
+        patchStatus(deps.state, {
+          running: false,
+          failures: deps.state.status.failures + 1,
+          lastFailure: { at: deps.clock(), tokens, reason: outcome.reason },
+        });
       }
     })
-    .catch(() => {
+    .catch((error: unknown) => {
       deps.state.inFlight = undefined;
-      patchStatus(deps.state, { running: false, failures: deps.state.status.failures + 1 });
+      const reason = error instanceof Error ? error.message : String(error);
+      patchStatus(deps.state, {
+        running: false,
+        failures: deps.state.status.failures + 1,
+        lastFailure: { at: deps.clock(), tokens, reason },
+      });
     });
 }
 
@@ -235,11 +257,23 @@ async function runNow(
       patchStatus(deps.state, { running: false, lastPass: outcome.pass });
       ctx.ui.notify(statusLines(deps.state.status, settings, deps.clock()).join('\n'));
     } else {
-      patchStatus(deps.state, { running: false, failures: deps.state.status.failures + 1 });
+      patchStatus(deps.state, {
+        running: false,
+        failures: deps.state.status.failures + 1,
+        lastFailure: { at: deps.clock(), tokens: usage?.tokens ?? 0, reason: outcome.reason },
+      });
       ctx.ui.notify(`prune: failed (${outcome.reason})`);
     }
-  } catch {
-    patchStatus(deps.state, { running: false, failures: deps.state.status.failures + 1 });
+  } catch (error: unknown) {
+    patchStatus(deps.state, {
+      running: false,
+      failures: deps.state.status.failures + 1,
+      lastFailure: {
+        at: deps.clock(),
+        tokens: ctx.getContextUsage()?.tokens ?? 0,
+        reason: error instanceof Error ? error.message : String(error),
+      },
+    });
     ctx.ui.notify('prune: failed');
   }
 }
@@ -292,7 +326,7 @@ export function createWiring(pi: PiPort, options: WiringOptions): PruneWiring {
     clock: options.now ?? Date.now,
     settingsDir: options.settingsDir,
     state: {
-      status: { running: false, failures: 0, lastPass: undefined },
+      status: { running: false, failures: 0, lastPass: undefined, lastFailure: undefined },
       inFlight: undefined,
       notifiedBroken: false,
       lastDraftKey: { turnEnd: undefined, beforeSettle: undefined },

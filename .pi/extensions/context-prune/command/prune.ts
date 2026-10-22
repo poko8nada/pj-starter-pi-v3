@@ -8,10 +8,17 @@ import { SETTINGS_FILE, type Settings } from '../settings/schema.ts';
 import type { PrunePass } from '../entry/data.ts';
 import { formatCount } from '../format/count.ts';
 
+export interface Failure {
+  readonly at: number;
+  readonly tokens: number;
+  readonly reason: string;
+}
+
 export interface Status {
   readonly running: boolean;
   readonly failures: number;
   readonly lastPass: PrunePass | undefined;
+  readonly lastFailure: Failure | undefined;
 }
 
 export type Command =
@@ -49,7 +56,7 @@ export function usageText(): string {
   ].join('\n');
 }
 
-/** 状態の 5 行。直近のパスが無ければ last と dropped はなし */
+/** 状態の 5 行。直近のパスが無ければ last と dropped はなし。失敗があれば最後の失敗を足す */
 export function statusLines(status: Status, settings: Settings, now: number): readonly string[] {
   const head = settings.enabled ? 'prune: on' : 'prune: off';
   const ratio = `ratio: ${settings.ratio}`;
@@ -61,7 +68,13 @@ export function statusLines(status: Status, settings: Settings, now: number): re
     status.lastPass === undefined
       ? 'dropped: なし'
       : `dropped: ${status.lastPass.dropped.length} 件 (${formatCount(status.lastPass.droppedChars)} 文字)`;
-  return [head, ratio, last, dropped, `failures: ${status.failures}`];
+  const lines = [head, ratio, last, dropped, `failures: ${status.failures}`];
+  if (status.lastFailure !== undefined) {
+    lines.push(
+      `最後の失敗: ${Math.floor((now - status.lastFailure.at) / 1000)} 秒前 (${status.lastFailure.reason})`,
+    );
+  }
+  return lines;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
