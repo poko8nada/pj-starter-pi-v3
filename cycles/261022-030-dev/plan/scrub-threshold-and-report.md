@@ -256,26 +256,26 @@ export interface ScrubWiring {
 
 ### Slice 1: 検出の下限を下げ、繋ぎ目に改行を戻す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b7f5c35
 
 ### Slice 2: 設定に show を持たせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6e6163c
 
 ### Slice 3: show と hide をコマンドに足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 210bc02
 
 ### Slice 4: 消した量を持ち、実行の終わりに 1 行で出す
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 
 ### Slice 5: README を新しい下限と表示に合わせる

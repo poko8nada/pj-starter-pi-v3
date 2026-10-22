@@ -45,15 +45,15 @@ function assistantMessage(overrides: Record<string, unknown> = {}): AgentMessage
 
 function fakePi(): {
   readonly events: string[];
-  readonly handlers: Map<string, (event: MessageEndEvent) => unknown>;
+  readonly handlers: Map<string, (event: unknown, ctx?: unknown) => unknown>;
   readonly commands: Map<string, (args: string, ctx: unknown) => unknown>;
   readonly pi: PiPort;
 } {
   const events: string[] = [];
-  const handlers = new Map<string, (event: MessageEndEvent) => unknown>();
+  const handlers = new Map<string, (event: unknown, ctx?: unknown) => unknown>();
   const commands = new Map<string, (args: string, ctx: unknown) => unknown>();
   const pi = {
-    on: (event: string, handler: (event: MessageEndEvent) => unknown) => {
+    on: (event: string, handler: (event: unknown, ctx?: unknown) => unknown) => {
       events.push(event);
       handlers.set(event, handler);
       return () => undefined;
@@ -71,15 +71,23 @@ function fakePi(): {
 
 function fakeCmdCtx(): {
   readonly notified: string[];
-  readonly ctx: { readonly ui: { readonly notify: (message: string) => void } };
+  readonly levels: (string | undefined)[];
+  readonly ctx: {
+    readonly ui: {
+      readonly notify: (message: string, level?: 'info' | 'warning' | 'error') => void;
+    };
+  };
 } {
   const notified: string[] = [];
+  const levels: (string | undefined)[] = [];
   return {
     notified,
+    levels,
     ctx: {
       ui: {
-        notify: (message: string) => {
+        notify: (message: string, level?: 'info' | 'warning' | 'error') => {
           notified.push(message);
+          levels.push(level);
         },
       },
     },
@@ -90,11 +98,23 @@ function messageEnd(message: AgentMessage): MessageEndEvent {
   return { type: 'message_end', message };
 }
 
+function tallyThinking(): string {
+  return `header-12345${'abcd'.repeat(7).slice(0, 27)}suffix-67890`;
+}
+
+function tallyMessage(): AgentMessage {
+  return assistantMessage({
+    content: [
+      { type: 'thinking', thinking: tallyThinking(), thinkingSignature: 'reasoning_content' },
+    ],
+  });
+}
+
 describe('registerScrub', () => {
-  it("on('message_end') が 1 回、registerCommand('thinking-scrub') が 1 回", () => {
+  it("on('message_end') と on('agent_end') が 1 回ずつ、registerCommand('thinking-scrub') が 1 回", () => {
     const fake = fakePi();
     registerScrub(fake.pi, { settingsDir: tmpDir(), now: () => 1 });
-    expect(fake.events).toEqual(['message_end']);
+    expect(fake.events).toEqual(['message_end', 'agent_end']);
     expect([...fake.commands.keys()]).toEqual(['thinking-scrub']);
   });
 });
@@ -186,6 +206,78 @@ describe('onMessageEnd', () => {
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.getStatus().removed).toBe(2);
     expect(wiring.getStatus().lastAt).toBe(7);
+  });
+});
+
+describe('onAgentEnd', () => {
+  it('51 文字→25 文字の message_end が 2 回、そのあと agent_end → notify が 1 回、文が一致する', () => {
+    expect(tallyThinking()).toHaveLength(51);
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
+    expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
+    const { notified, levels, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(1);
+    expect(notified.at(0)).toBe('thinking-scrub: removed 2 (52 chars)');
+    expect(levels.at(0)).toBe('info');
+  });
+
+  it('何も消していない状態で agent_end → notify が呼ばれない', () => {
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(0);
+  });
+
+  it('show が偽のとき message_end のあと agent_end → notify が呼ばれない', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
+    const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
+    expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(0);
+  });
+
+  it('notify のあと再度 agent_end → 2 回目は呼ばれない', () => {
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    wiring.onMessageEnd(messageEnd(tallyMessage()));
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(1);
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(1);
+  });
+
+  it('notify のあとに message_end → agent_end → もう一度 1 回呼ばれ、その実行の分だけになる', () => {
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    wiring.onMessageEnd(messageEnd(tallyMessage()));
+    wiring.onMessageEnd(messageEnd(tallyMessage()));
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(1);
+    expect(notified.at(0)).toBe('thinking-scrub: removed 2 (52 chars)');
+    wiring.onMessageEnd(messageEnd(tallyMessage()));
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(2);
+    expect(notified.at(1)).toBe('thinking-scrub: removed 1 (26 chars)');
+  });
+
+  it('message_end で例外 → failures が 1 増え、そのあとの agent_end は notify を呼ばない', () => {
+    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const evil: Record<string, unknown> = {};
+    Object.defineProperty(evil, 'role', {
+      get() {
+        throw new Error('boom');
+      },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 投げる偽物を作る
+    const message = evil as unknown as AgentMessage;
+    expect(wiring.onMessageEnd(messageEnd(message))).toBeUndefined();
+    expect(wiring.getStatus().failures).toBe(1);
+    const { notified, ctx } = fakeCmdCtx();
+    wiring.onAgentEnd(ctx);
+    expect(notified).toHaveLength(0);
   });
 });
 

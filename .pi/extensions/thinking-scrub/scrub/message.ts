@@ -22,6 +22,7 @@ export interface ThinkingBlock {
 export interface Scrubbed {
   readonly message: AgentMessage;
   readonly removed: number;
+  readonly chars: number;
 }
 
 /** 本文が次のリクエストに届くブロックか */
@@ -60,12 +61,14 @@ export function scrubMessage(message: AgentMessage): Scrubbed | undefined {
     return undefined;
   }
   let removed = 0;
+  let chars = 0;
   const next: typeof message.content = [];
   for (const block of message.content) {
     if (isThinkingBlock(block) && isReplayable(block)) {
       const scrubbed = scrubThinking(block.thinking);
       if (scrubbed.removed > 0 && scrubbed.text.trim() !== '') {
         removed += scrubbed.removed;
+        chars += block.thinking.length - scrubbed.text.length;
         next.push({ ...block, thinking: scrubbed.text });
         continue;
       }
@@ -75,5 +78,5 @@ export function scrubMessage(message: AgentMessage): Scrubbed | undefined {
   if (removed === 0) {
     return undefined;
   }
-  return { message: { ...message, content: next }, removed };
+  return { message: { ...message, content: next }, removed, chars };
 }
