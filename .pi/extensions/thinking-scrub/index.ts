@@ -1,5 +1,5 @@
 /**
- * thinking-scrub の配線。`message_end` で畳み、`/thinking-scrub` で切り替える。
+ * thinking-scrub の配線。`message_end` で畳み、実行の終わり（`agent_end`）に合計を 1 行で報告し、`/thinking-scrub` で scrub と表示を切り替える。
  *
  * 設定は毎回読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
  * 数えて `undefined` を返す。状態はセッションの間だけ持つ。
