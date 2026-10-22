@@ -288,7 +288,18 @@ export interface ScrubWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: c0abfcf
+
+### Test cleanup
+
+- Dropped (5):
+  - `settings/schema.test.ts` の `{"enabled":false}` 重複ケース（入力と期待が同一の 2 件のうち 1 件。残りが Verify の `{"enabled":false}` を担う）
+  - `index.test.ts` の `onMessageEnd` 例外ケース（`failures` +1 と `undefined` の断定が `onAgentEnd` の例外ケースに包含されるため）
+  - `command/scrub.test.ts` の `on / off → writeShow は呼ばれない`（`on`/`off` の各ケースが既に `shown` 空を断定しているため）
+  - `scrub/detect.test.ts` の `周期 4 文字の連続（abcd×15、60 文字）`（周期 4 の検出は `周期 4 文字を 5 回（20 文字）` の境界ケースが担い、長尺は他が担うため）
+  - `scrub/detect.test.ts` の `同じ並びが 6 回で区間 60 文字`（旧下限の 6 回・60 文字の境界で、3 回・20 文字への変更後は内側になるため）
+- Counts: before 95 → after 90（detect 21→19、schema 10→9、command 16→15、index 22→21、message 16、cell 7、read 3 は不変）
+- Suite: `pnpm vitest run --config vitest.starter.config.ts .pi/extensions/thinking-scrub` 90 passed、`pnpm typecheck` ok
 
 ## Review
 

@@ -104,14 +104,6 @@ describe('runCommand', () => {
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
   });
 
-  it('on / off → set で、writeShow は呼ばれない', () => {
-    for (const raw of ['on', 'off']) {
-      const { port, shown } = fakePort();
-      runCommand(port, parseCommand(raw), 100);
-      expect(shown).toEqual([]);
-    }
-  });
-
   it('lastAt が null の状態 → 「まだ無い」の行', () => {
     const { port } = fakePort({ status: { removed: 0, lastAt: null, failures: 0 } });
     const lines = runCommand(port, parseCommand(''), 100);

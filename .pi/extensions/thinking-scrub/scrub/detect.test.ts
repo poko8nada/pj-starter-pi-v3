@@ -74,26 +74,12 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('同じ並びが 6 回で区間 60 文字 → removed が 1', () => {
-    const base = 'abcdefghi';
-    const text = repeated(base, 6) + base.slice(0, 6);
-    expect(text).toHaveLength(60);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-  });
-
   it('周期 3 文字の連続 → removed が 0', () => {
     const text = repeated('abc', 20);
     expect(text).toHaveLength(60);
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(0);
     expect(scrubbed.text).toBe(text);
-  });
-
-  it('周期 4 文字の連続 → removed が 1', () => {
-    const text = repeated('abcd', 15);
-    expect(text).toHaveLength(60);
-    expect(scrubThinking(text).removed).toBe(1);
   });
 
   it('周期 120 文字の連続 → removed が 1', () => {

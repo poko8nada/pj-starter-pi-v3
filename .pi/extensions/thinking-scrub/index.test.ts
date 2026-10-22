@@ -186,20 +186,6 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().removed).toBe(1);
   });
 
-  it('handler の中で例外が起きる → undefined が返り、failures が 1 増える', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
-    const evil: Record<string, unknown> = {};
-    Object.defineProperty(evil, 'role', {
-      get() {
-        throw new Error('boom');
-      },
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 投げる偽物を作る
-    const message = evil as unknown as AgentMessage;
-    expect(wiring.onMessageEnd(messageEnd(message))).toBeUndefined();
-    expect(wiring.getStatus().failures).toBe(1);
-  });
-
   it('2 回畳む → 状態の removed が 2 回分の合計', () => {
     const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();

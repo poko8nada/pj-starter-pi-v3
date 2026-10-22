@@ -2,13 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { defaultSettings, parseSettings } from './schema.ts';
 
 describe('parseSettings', () => {
-  it('{"enabled":false} → ok で enabled が偽、show が真', () => {
-    expect(parseSettings('{"enabled":false}')).toEqual({
-      kind: 'ok',
-      settings: { enabled: false, show: true },
-    });
-  });
-
   it('{"enabled":true} → ok で enabled が真、show が真', () => {
     expect(parseSettings('{"enabled":true}')).toEqual({
       kind: 'ok',
