@@ -611,7 +611,7 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: 冪等の重複除けを turn_end と agent_before_settle で分けた（両方で同じ下書きを返すため）。
-- Commit: TBD
+- Commit: 5ead268 consult(context-prune): cover one pass end to end
 
 ## Review
 
