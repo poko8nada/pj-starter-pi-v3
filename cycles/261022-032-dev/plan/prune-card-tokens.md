@@ -162,6 +162,7 @@ export function createCard(pass: PrunePass, theme: Theme, outputPad?: number): C
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run .pi/extensions/context-prune`（14 files / 167 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）。
+- Ran: 壊し試験 3 つ。`droppedTokens` の足し算を 0 に → 2 件 red。`tokensLine` の引き算を外す → 3 件 red。`isPrunePass` の `droppedTokens` 検査を消す → 3 件 red。どれも復元後に再実行して緑。
+- Findings: なし
+- Doubts: なし
