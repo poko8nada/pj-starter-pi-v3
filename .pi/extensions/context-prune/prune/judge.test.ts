@@ -17,7 +17,7 @@ function answersOf(probabilities: Readonly<Record<string, number>>): JudgeAnswer
   const answers: Record<string, { type: string; probabilities: Readonly<Record<string, number>> }> =
     {};
   for (const [key, probability] of Object.entries(probabilities)) {
-    answers[key] = { type: 'choice', probabilities: { yes: probability } };
+    answers[key] = { type: 'choice', probabilities: { keep: probability } };
   }
   return answers;
 }
@@ -38,13 +38,14 @@ describe('judgeRequest', () => {
     expect(request.state['candidates']).toHaveLength(2);
   });
 
-  it('keep_a の criteria が yes と no を持ち、instructions が空でない', () => {
+  it('keep_a の criteria が keep と drop を持ち、instructions に need が入る', () => {
     const request = judgeRequest('話題の要約', [candidate('a')]);
     const question = request.questions['keep_a'];
     expect(question?.criteria).toEqual({
-      yes: expect.any(String),
-      no: expect.any(String),
+      keep: expect.any(String),
+      drop: expect.any(String),
     });
+    expect(question?.instructions).toContain('need');
     expect(question?.instructions.length).toBeGreaterThan(0);
   });
 
@@ -134,19 +135,27 @@ describe('classifierTokens', () => {
 });
 
 describe('verdicts', () => {
-  it('yes が 0.7 と 0.2、threshold 0.5 → keep が真と偽', () => {
+  it('probabilities の keep を読む（keep: 0.8 → keep 真）', () => {
+    const answers: JudgeAnswers = {
+      keep_a: { type: 'choice', probabilities: { keep: 0.8 } },
+    };
+    const result = verdicts([candidate('a')], answers, 0.5);
+    expect(result).toEqual([{ id: 'a', keep: true, keepProbability: 0.8 }]);
+  });
+
+  it('keep が 0.8 と 0.2、threshold 0.5 → keep が真と偽', () => {
     const result = verdicts(
       [candidate('a'), candidate('b')],
-      answersOf({ keep_a: 0.7, keep_b: 0.2 }),
+      answersOf({ keep_a: 0.8, keep_b: 0.2 }),
       0.5,
     );
     expect(result).toEqual([
-      { id: 'a', keep: true, keepProbability: 0.7 },
+      { id: 'a', keep: true, keepProbability: 0.8 },
       { id: 'b', keep: false, keepProbability: 0.2 },
     ]);
   });
 
-  it('yes がちょうど 0.5 → keep 真（未満だけ落とす）、0.49 → keep 偽', () => {
+  it('keep がちょうど 0.5 → keep 真（未満だけ落とす）、0.49 → keep 偽', () => {
     const even = verdicts([candidate('a')], answersOf({ keep_a: 0.5 }), 0.5);
     expect(even[0]?.keep).toBe(true);
     const below = verdicts([candidate('a')], answersOf({ keep_a: 0.49 }), 0.5);
