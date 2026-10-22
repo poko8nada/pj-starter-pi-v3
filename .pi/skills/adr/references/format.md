@@ -27,10 +27,10 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 - <測った事実、試した事>
 
-### Definition Change
+### Definition
 
 - `Unit.<name>`(updated): <新しい行>
-- なし
+- `Unit.<name>`(kept): <その行が動かない理由>
 ```
 
 ## Entries
@@ -43,19 +43,19 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
   - `Adopted` — the shape that was taken. It stays empty for a rejected entry.
   - `Options` — every option weighed, each with the reason it was not taken. A rejected entry lists the options the same way, because none of them was taken.
 - `Research & Trial` — the facts the decision rests on. The record is the ADR's, not the definition's.
-- `Definition Change` — the lines of `DEFINITION.md` that move, and the last thing the entry leaves.
+- `Definition` — the parts of `DEFINITION.md` the entry relates to, and what happens to each. It is the last thing the entry leaves.
 
-## Definition Change
+## Definition
 
-- A line is `<name>(<operation>): <the new line>`.
+- A line is `<name>(<operation>): <value>`.
 - The name is how `DEFINITION.md` calls it.
   - `Unit.<name>` — a line under `Users can do`
   - `Who.<name>` — a role
   - `Stack.<group>` / `Stack.<group>.<role>`
   - `Product` / `What`
-- The operation is `(added)`, `(updated)` or `(dropped)`.
-- The value is the new line of `DEFINITION.md`. When the line does not change, the value is not written: the name moved, and the line stands.
-- `なし` when no line moves.
+- The operation is `(added)`, `(updated)`, `(dropped)` or `(kept)`.
+- The value is the new line for `(added)` and `(updated)`, the reason the line stands for `(kept)`, and nothing for `(dropped)`.
+- Every entry names the parts it relates to.
 
 ## Writing
 
