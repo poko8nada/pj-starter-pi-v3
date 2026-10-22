@@ -621,7 +621,7 @@ function fakeCell(captured: Captured): ModelCell {
   const registry = { getApiKeyAndHeaders, getAvailableOfType: fakeClassifiers, classify };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
   const typedRegistry = registry as unknown as ExtensionContext['modelRegistry'];
-  const model = { provider: 'test', id: 'test-model' };
+  const model = { provider: 'test', id: 'test-model', maxTokens: 8000, contextWindow: 200000 };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 使うモデルの偽物
   const typedModel = model as unknown as ExtensionContext['model'];
   return { registry: typedRegistry, model: typedModel, sessionId: 'session-1' };
@@ -651,7 +651,7 @@ describe('ports', () => {
     expect(outcome.usage).toEqual({ input: 1, output: 1, cost: 0 });
     const args = captured.summarizeArgs ?? [];
     expect(args[0]).toEqual(recent);
-    expect(args[2]).toBe(2500);
+    expect(args[2]).toBe(10000);
     expect(args[3]).toBe('test-key');
     expect(args[13]).toBe('session-1');
   });

@@ -51,8 +51,17 @@ describe('parseSettings', () => {
     expect(parseSettings('{"recentTokens":1.5}').kind).toBe('broken');
   });
 
-  it('範囲外 summaryTokens 0 → broken', () => {
-    expect(parseSettings('{"summaryTokens":0}').kind).toBe('broken');
+  it('`{ "summaryTokens": 2000 }` → broken（未知キー）', () => {
+    const read = parseSettings('{"summaryTokens":2000}');
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('unknown');
+  });
+
+  it('既定に summaryTokens が無い', () => {
+    expect(defaultSettings()).not.toHaveProperty('summaryTokens');
   });
 
   it('範囲外 maxQuestions -1 → broken', () => {

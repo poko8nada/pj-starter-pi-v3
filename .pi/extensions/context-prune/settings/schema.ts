@@ -13,7 +13,6 @@ export interface Settings {
   readonly enabled: boolean;
   readonly ratio: number;
   readonly recentTokens: number;
-  readonly summaryTokens: number;
   readonly threshold: number;
   readonly maxQuestions: number;
   readonly rearmRatio: number;
@@ -36,7 +35,6 @@ export function defaultSettings(): Settings {
     enabled: true,
     ratio: 0.5,
     recentTokens: 50000,
-    summaryTokens: 2000,
     threshold: 0.5,
     maxQuestions: 40,
     rearmRatio: 0.1,
@@ -161,7 +159,6 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
       key !== 'enabled' &&
       key !== 'ratio' &&
       key !== 'recentTokens' &&
-      key !== 'summaryTokens' &&
       key !== 'threshold' &&
       key !== 'maxQuestions' &&
       key !== 'rearmRatio' &&
@@ -190,12 +187,6 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
       return 'recentTokens must be an integer of 1 or more';
     }
     settings = { ...settings, recentTokens: document['recentTokens'] };
-  }
-  if (document['summaryTokens'] !== undefined) {
-    if (!isPositiveInt(document['summaryTokens'])) {
-      return 'summaryTokens must be an integer of 1 or more';
-    }
-    settings = { ...settings, summaryTokens: document['summaryTokens'] };
   }
   if (document['threshold'] !== undefined) {
     const threshold = parseThreshold(document['threshold']);

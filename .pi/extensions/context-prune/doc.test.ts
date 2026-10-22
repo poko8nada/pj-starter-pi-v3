@@ -62,9 +62,8 @@ describe('doc', () => {
     expect(tableRow(readme, 'ratio')).toContain(String(defaultSettings().ratio));
   });
 
-  it('Settings の表の recentTokens と summaryTokens の既定が defaultSettings() と同じ', () => {
+  it('Settings の表の recentTokens の既定が defaultSettings() と同じ', () => {
     const readme = readFileSync(join(HERE, 'README.md'), 'utf8');
     expect(tableRow(readme, 'recentTokens')).toContain(String(defaultSettings().recentTokens));
-    expect(tableRow(readme, 'summaryTokens')).toContain(String(defaultSettings().summaryTokens));
   });
 });
