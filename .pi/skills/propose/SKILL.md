@@ -39,13 +39,23 @@ Where each answer comes from:
 
 ### 3. Lay the candidates out
 
-- each candidate says why now, which Unit moves, and the ground it stands on
+- each candidate says why now, the parts of the definition it relates to, and the ground it stands on
 - two to four of them, and one of them is recommended
 - a candidate is a piece of work, not a decision
 - the candidates are laid out, not decided: the ADR decides
 - which candidate opens a cycle is the owner's call
 
-### 4. Stop
+### 4. Settle the scope of each candidate
+
+- once the candidates are out, write the scope of each as your reading: every kind, one by one, in or out
+- the change: behaviour, refactor, dependency, naming, format, prose
+- the quality: speed, security, compatibility, errors
+- the operation: deploy, migration, logs and monitoring
+- an `out` kind carries its reason; a revisit condition goes on the kind that needs one
+- the depth of an `out` kind — out of this cycle, out for now, out — is chosen here
+- the owner corrects the list, and the ADR writes it as the entry's `Scope`
+
+### 5. Stop
 
 - the work stops here: the candidates are on the table
 
@@ -56,6 +66,7 @@ The work ends when four things hold. None of them is the number of the candidate
 - the candidates worth keeping are on the table, each with the Unit it would move
 - `Context` can be written
 - `Options` can be written
+- the scope of each candidate can be written
 - the fact the decision rests on is in hand, and can be written into `Research & Trial`
 
 The candidates are laid out, not decided: the ADR decides.

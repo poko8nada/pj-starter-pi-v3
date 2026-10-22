@@ -28,7 +28,7 @@ The ADR decides what the picture becomes, and a plan writes it. The design, the 
 
 ### 1. Fill
 
-- the scaffold leaves one entry's bones. Fill what the front left: the entry's question, its `Context`, and the `Options` it laid out
+- the scaffold leaves one entry's bones. Fill what the front left: the entry's question, its `Context`, the `Scope` the front agreed, and the `Options` it laid out
 - a cycle raises several questions: add an entry per question, from the same bones
 - what is still missing is what the front is asked for
 
