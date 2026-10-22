@@ -45,6 +45,8 @@ export interface RunRecord {
   readonly spend?: string;
   /** 届け先のセッションが無かったときの、完了の知らせ。次に起動したセッションが読む */
   readonly notice?: string;
+  /** 報告を渡した時刻。印の行にだけ入る */
+  readonly delivered?: number;
 }
 
 /** 読む幅。`days` を省けば `RECORD_DAYS`、`at` を省けば今日 */
@@ -142,6 +144,7 @@ export function parseRun(line: string): RunRecord | undefined {
     ...(typeof fields.turns === 'number' ? { turns: fields.turns } : {}),
     ...(typeof fields.spend === 'string' ? { spend: fields.spend } : {}),
     ...(typeof fields.notice === 'string' ? { notice: fields.notice } : {}),
+    ...(typeof fields.delivered === 'number' ? { delivered: fields.delivered } : {}),
   };
 }
 
@@ -262,4 +265,31 @@ export function closeOrphans(
     }
   }
   return closed;
+}
+
+/** 走行を指す値。session と subagent と started の 3 つで 1 つに決まる */
+export function runKey(record: RunRecord): string {
+  return JSON.stringify([record.session, record.subagent, record.started]);
+}
+
+/** 印を持つ行から、渡し済みの走行の集合を作る */
+export function deliveredKeys(records: readonly RunRecord[]): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const record of records) {
+    if (record.delivered !== undefined) {
+      keys.add(runKey(record));
+    }
+  }
+  return keys;
+}
+
+/** 報告がまだ渡されていない完了の行か */
+export function isWaiting(record: RunRecord, delivered: ReadonlySet<string>): boolean {
+  if (record.ended === undefined || record.notice === undefined) {
+    return false;
+  }
+  if (record.delivered !== undefined) {
+    return false;
+  }
+  return !delivered.has(runKey(record));
 }
