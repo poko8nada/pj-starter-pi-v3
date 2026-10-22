@@ -146,10 +146,19 @@ export function createCard(pass: PrunePass, theme: Theme, outputPad?: number): C
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - `memo-extention.md` の `thinking scrub` 節の削除は Files に名がなく、slice 1 の commit に混ざっている — `memo-extention.md:7`
+    - fixed: 8250101 で 8df790e の内容に戻した。メモは owner のものなので、今の作業ツリーの版を残し、commit には入れない
 - Gaps:
+  - slice 1 Verify の `(empty) 候補が 0 件 → droppedTokens が 0` を確かめる試験がない。0 件の試験は dropped/kept/summary しか見ず、早期 return の `droppedTokens: 0` が壊れても落ちない — `.pi/extensions/context-prune/prune/run.test.ts:185`（行為は `.pi/extensions/context-prune/prune/run.ts:63`）
+    - fixed: 空の候補の試験に `droppedTokens` が 0 の検査を足した
 - Unproven:
+  - 試験名は `展開・落としたトークンが 0` だが `cardText(pass, false, ...)` で折りたたみを見ており、展開の 0 表示が壊れても緑のまま — `.pi/extensions/context-prune/entry/render.test.ts:64`
+    - fixed: 折りたたみを見る試験なので、名を「折りたたみ・落としたトークンが 0」に直した
 - Doubts:
+  - ADR 01 の展開順（見出し→省略→秒数→空行→要約、adr.md:16）と実装の新順（見出し→要約→空行→省略→秒数）がずれているが、Notes slice 3 に Unplanned として記録済みのため所見にしない — `cycles/261022-032-dev/adr.md:16`
+  - render.test の `droppedTokens: 1309` は chars 1234 からの `ceil/4`（309）と一致しないが、表示試験の任意値でよく整合性検査は plan が要求しないため所見にしない — `.pi/extensions/context-prune/entry/render.test.ts:24`
 
 ## Acceptance
 

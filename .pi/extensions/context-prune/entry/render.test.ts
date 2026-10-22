@@ -61,7 +61,7 @@ describe('cardText', () => {
     ]);
   });
 
-  it('展開・落としたトークンが 0 → 前と後が同じ', () => {
+  it('折りたたみ・落としたトークンが 0 → 前と後が同じ', () => {
     const pass: PrunePass = { ...passOf(), droppedTokens: 0 };
     expect(cardText(pass, false, 'ctrl+e')[2]).toBe(
       'Compacted from 12,345 → 12,345 tokens (ctrl+e to expand)',

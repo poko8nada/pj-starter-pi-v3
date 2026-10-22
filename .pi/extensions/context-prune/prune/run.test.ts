@@ -205,6 +205,7 @@ describe('runPass', () => {
     expect(calls.summarize).toBe(0);
     expect(calls.classify).toBe(0);
     expect(outcome.pass.dropped).toEqual([]);
+    expect(outcome.pass.droppedTokens).toBe(0);
     expect(outcome.pass.kept).toBe(0);
     expect(outcome.pass.summary).toBe('');
   });
