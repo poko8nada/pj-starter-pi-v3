@@ -26,6 +26,7 @@
         plan.test.ts                    add
         run.ts                          add
         run.test.ts                     add
+        ports.ts                        add
       entry/
         data.ts                         add
         data.test.ts                    add
@@ -259,7 +260,7 @@ export function gate(input: {
 2. `.pi/extensions/context-prune/prune/judge.test.ts`:
    - 偽の `Candidate` と、`probabilities` だけの答えを渡す。
 3. `.pi/extensions/context-prune/prune/plan.ts`:
-   - `gate`: 無効なら `disabled`、`tokens` が `null` なら `unknown`、走っていれば `running`、候補 0 なら `empty`、`lastTokens` が無ければ `run`、`tokens / contextWindow` が `ratio` 未満なら `below-ratio`、前回の `lastTokens` から `contextWindow * rearmRatio` 増えていなければ `cooling`、それ以外は `run`。
+   - `gate`: 無効なら `disabled`、`tokens` が `null` なら `unknown`、走っていれば `running`、`tokens / contextWindow` が `ratio` 未満なら `below-ratio`、候補 0 なら `empty`、`lastTokens` が無ければ `run`、前回の `lastTokens` から `contextWindow * rearmRatio` 増えていなければ `cooling`、それ以外は `run`。
 4. `.pi/extensions/context-prune/prune/plan.test.ts`:
    - 数値だけを渡す。
 
@@ -472,6 +473,7 @@ export interface PruneWiring {
    - `PiPort` は `on`・`registerCommand`・`registerEntryRenderer`・`appendEntry` だけ。
    - `createWiring`: `tokens = ctx.getContextUsage()?.tokens ?? null`。設定を毎回読み、壊れていれば 1 度だけ通知して `undefined`。境界では、まず `draftsFor(passesOf(branch), edited, marker)` を返す（`edited` は `branch` の `context_edit` の `targetId`）。`turn_end` では、さらに `gate` が `run` なら裏で `runPass` を始め、終わったら `appendEntry(CUSTOM_TYPE, pass)` する。走っている間の `now` は断る。`flush` は走っている裏の仕事を待つ。
    - `registerPrune`: `turn_end`、`agent_before_settle`、`registerCommand('prune')`、`registerEntryRenderer(CUSTOM_TYPE, ...)` を配線する。
+   - 本番の要約と判定の口は `prune/ports.ts` の `createPorts` に置く（`index.ts` の行数超過の回避）。
 6. `.pi/extensions/context-prune/index.test.ts`:
    - 偽の `PiPort`、偽の `PruneCtx`、偽の `PassPorts` を渡す。
 
@@ -567,52 +569,110 @@ export interface PruneWiring {
 
 ### Slice 1: 設定
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d41c0e4 consult(context-prune): add settings schema and read
 
 ### Slice 2: 候補と要約
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 空ブロックの toolResult を古い側に置くようテストの並びを直した（collect の境界は変えず）。
+- Commit: 353244d consult(context-prune): add candidate collection and summary prompt
 
 ### Slice 3: 判定と発動
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7964f2e consult(context-prune): add judge questions and gate
 
 ### Slice 4: 記録と差し込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e28c775 consult(context-prune): add pass records and context-edit drafts
 
 ### Slice 5: カード
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 9b1c5a6 consult(context-prune): add prune card and pi-tui dependency
 
 ### Slice 6: コマンドと配線
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 本番の要約・判定の口を `prune/ports.ts`（`createPorts`）に分けた。plan の Files には無いが、`index.ts` の `max-lines` を割るために要る。
+- Commit: d3917ed consult(context-prune): wire turn_end and the /prune command
 
 ### Slice 7: 文書と定義
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d829921 consult(context-prune): describe the extension and its settings
 
 ### Slice 8: 統合: 1 パスを通して、次の境界で文脈から外れる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 冪等の重複除けを turn_end と agent_before_settle で分けた（両方で同じ下書きを返すため）。
+- Commit: 5ead268 consult(context-prune): cover one pass end to end
+
+### Test cleanup
+
+- `index.test.ts` の「1 パス後に appendEntry が 1 回」は Slice 6 の裏パス試験と同一振る舞いのため落とした（appendEntry 1 回と customType はそちらで見る）。
+- `prune/collect.test.ts` の done 有無 2 件を 1 件に束ねた（同じ done 選別の両面）。
+- `apply/drafts.test.ts` の印 3 件を 1 件に束ねた（同じ置き換えと桁区切りの確認）。
+- `command/prune.test.ts` の off/on 2 件を 1 件に束ねた（同じ enabled 切り替えの往復）。
+- 消えた振る舞い・作らなくなった枝の試験は無かった。
 
 ## Review
 
+### Round 1
+
+結論: この diff では plan を閉じられない。Files に無い新規が 1 件あり、本番経路・配線・初回割合の検査が足りない（Unlisted 1、Gaps 4、Unproven 3）。
+
+#### Stale
+
+- なし。`DEFINITION.md:46`・`README.md:13`・`README.ja.md:13` は計画通り更新され文言も一致し、`scripts/checks/scopes.json:1` は `[".pi"]` で新規を包含する。既存の文書・コメント・試験を古くする変更は無かった。
+
+#### Unlisted
+
+- `.pi/extensions/context-prune/prune/ports.ts:176` — plan の Files に無い新規ファイル。`createPorts`（本番の要約・判定の口）を `index.ts` の `max-lines` 回避で分けたもの。Notes にはあるが Files と Verify には無く、どの `test:` も叩かない。README の `The code` には載るが plan が追いついていない。
+  fixed: Files に `prune/ports.ts add` を足し、Slice 6 の Steps に 1 行足した（コード不変）。
+
+#### Gaps
+
+- `.pi/extensions/context-prune/prune/ports.ts:37`、`.pi/extensions/context-prune/prune/ports.ts:112` — 本番の `summarizeViaCell`（設定再読・registry/model 不在・`complete` の促しと `maxTokens`・text 連結・空要約・`usage` 整形・例外）と `classifyViaCell`（`getAvailableOfType`・設定順の突合・`allowPaid`・`stopReason: error/aborted`・答えの形検証・次候補への継続）を叩く検査が無い。全試験が偽の `PassPorts` で、ADR 03 の本番経路が未検証。
+  fixed: `index.test.ts` の `describe('ports')` で偽の registry/model を差し、促しの指示と answers の取り出しを試した。
+- `.pi/extensions/context-prune/index.ts:248` — 配線の `onCommand` 成功系の検査が無い。idle 時の `now`（`runPass`→`appendEntry`→状態通知）、`status`、`on`/`off` の配線経由を試さない。`index.test.ts` の `onCommand` 呼び出しは走行中 `now` の 1 件だけで、`parseCommand`・`writeEnabled` の unit は設定再読・`enabled` 判定・通知文・`failures` 加算の結合を証明しない。ADR 06 の口が配線で未検証。
+  fixed: `index.test.ts` の `describe('onCommand')` で idle の `now`・`status`・`on`/`off` を試した。
+- `.pi/extensions/context-prune/index.ts:216` — `runNow` の候補 0 件分岐（`prune: nothing to prune` の通知・`pass` 無し）の検査が無い。Verify にも無い。
+  fixed: 「候補 0 → nothing to prune」を `onCommand` の試験に足した。
+- `.pi/extensions/context-prune/index.ts:159` — 走行中の `turn_end`（裏開始の抑止＋`drafts` は返す）の検査が無い。試験は `flush` 後の次回か command 経由の `running` だけで、`turn_end`→`turn_end` の並行を試さない。二重課金の抑止が未検証。
+  fixed: 走行中の `turn_end`（裏開始の抑止＋`drafts` 返却）を integration に足した。
+
+#### Unproven
+
+- `.pi/extensions/context-prune/prune/plan.test.ts:39` — `lastTokens: undefined → run` が割合上の入力（`tokens` 1000・枠 2000・`ratio` 0.5）のみ。初回無条件 `run`（`.pi/extensions/context-prune/prune/plan.ts:38` が `ratio` より先）でも初回割合判定でも緑になり、初回が割合を見るかを見分けられない。
+  fixed: `gate` を「無効→不明→走行中→割合未満→候補 0→初回→クールダウン」に直し、割合未満+初回→`below-ratio` と割合以上+初回→`run` を足した。
+- `.pi/extensions/context-prune/command/prune.test.ts:83` — `statusLines` の 2 件とも `enabled` 真・既定 `ratio` のみ。`prune: on` 固定・`ratio: 0.5` 固定でも緑で、`off` の行・別 `ratio` を証明しない。
+  fixed: `off`・`ratio` 0.6・`failures` 2・直近パスありの 5 行 `toEqual` を足した。
+- `.pi/extensions/context-prune/prune/run.test.ts:149` — 候補 0 件が `dropped`・`kept`・`classify` 回数だけで、`summarize` 呼び出しの有無・`summary`（早期 return は `''`）を見ない。早期 return が無く要約を呼んでも緑。
+  fixed: 候補 0 の試験で `summarize` 未呼び出しと `summary` `''` を見るようにした。
+
+- Doubts:
+  - `command/prune.ts:62`・`entry/render.ts:21` — `markerText` は `ja-JP` 固定だが `statusLines`・`cardText` は既定ロケール。試験環境では `,` になるが、plan は status/card のロケールを決めていないので所感どまり。
+  - `prune/summarize.ts:25` — `assistantText` は unit があるが `runPass` は `serializeConversation(convertToLlm(recent))` 経由で使わない。plan は置くことだけ求め配線を決めていないので所感どまり。
+    fixed: `collect` の `charsOf` を `assistantText` 経由にした（plan の型・手順は不変）。
+  - `prune/judge.ts:51` — `batches` は `maxQuestions` 0 で進まない。設定が 1 以上を保証するので到達不能だが、公開関数の守りは無い。所感どまり。
+  - `command/prune.ts:71` — `writeEnabled` は壊れ JSON を捨て `{enabled}` に上書きする。他キー保持の約束と矛盾しないが検査は無い。所感どまり。
+
 ## Acceptance
+
+- Ran: `pnpm test:run`（63 ファイル、951 件）、`pnpm typecheck`（root と `.pi`）、`pnpm lint`、plan の各 `Verify`。壊して赤を確かめたもの 3 つ: `draftsFor` を空にすると 6 件赤、`gate` の割合判定を外すと 2 件赤、`runPass` の drop 作りを外すと 6 件赤。いずれも戻して緑。
+- Findings:
+  - Slice 3 の `Steps` の `gate` の順序が実装と違う — fixed: plan を実装の順（`below-ratio` が `empty` より前）に直した。
+  - `ports` のエラー経路（設定破損・registry/model 不在・空要約・例外・`stopReason: error`）が無試験 — left: plan の `Verify` が正常系だけを求めており、本番の口は SDK の戻りを写すだけである。
+- Doubts:
+  - `markerText` は `ja-JP` 固定で、`statusLines` と `cardText` は既定ロケール。plan はロケールを決めていない。
+  - `assistantText` は `collect` で使うが、`runPass` の要約は `serializeConversation` 経由で使わない。
+  - `batches` は `maxQuestions` 0 で守らない（設定が 1 以上を保証するので到達不能）。
+  - `writeEnabled` は壊れた `settings.json` を他キーごと捨てて `{enabled}` に上書きする。
