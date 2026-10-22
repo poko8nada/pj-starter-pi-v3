@@ -56,26 +56,43 @@ describe('parseCommand', () => {
 });
 
 describe('writeEnabled', () => {
-  it('off と on → enabled が切り替わる', () => {
+  it('ファイルが無い + on → { enabled: true } ができ、ok', () => {
     const dir = tmpDir();
-    writeEnabled(dir, false);
-    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
-      enabled: false,
-    });
-    writeEnabled(dir, true);
-    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
-      enabled: true,
-    });
+    expect(writeEnabled(dir, true)).toEqual({ kind: 'ok' });
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({ enabled: true });
   });
 
-  it('ratio を書いておく → 書き換え後も ratio が残る', () => {
+  it('{ ratio: 0.6 } + off → ratio が残り enabled が偽、ok', () => {
     const dir = tmpDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ ratio: 0.6 }));
-    writeEnabled(dir, false);
+    expect(writeEnabled(dir, false)).toEqual({ kind: 'ok' });
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
       enabled: false,
       ratio: 0.6,
     });
+  });
+
+  it("'{' + on → failed、ファイルの文字列が '{' のまま", () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), '{');
+    const outcome = writeEnabled(dir, true);
+    expect(outcome.kind).toBe('failed');
+    expect(readFileSync(join(dir, 'settings.json'), 'utf8')).toBe('{');
+  });
+
+  it("'[]' + on → failed、ファイルの文字列が '[]' のまま", () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), '[]');
+    const outcome = writeEnabled(dir, true);
+    expect(outcome.kind).toBe('failed');
+    expect(readFileSync(join(dir, 'settings.json'), 'utf8')).toBe('[]');
+  });
+
+  it('既に enabled: true で on → ok で同じ内容', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true }));
+    expect(writeEnabled(dir, true)).toEqual({ kind: 'ok' });
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({ enabled: true });
   });
 });
 

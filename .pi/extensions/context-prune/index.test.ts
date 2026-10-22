@@ -729,6 +729,17 @@ describe('onCommand', () => {
     });
   });
 
+  it('壊れた設定で on → 通知に理由が出て、ファイルが変わらない', async () => {
+    const harness = evolvingHarness({ summary: 'x', yes: 0 });
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), '{');
+    const wiring = createWiring(harness.pi, { settingsDir: dir, ports: harness.ports });
+    await wiring.onCommand('on', harness.ctx);
+    expect(harness.notified).toHaveLength(1);
+    expect(harness.notified[0]).toContain('not JSON');
+    expect(readFileSync(join(dir, 'settings.json'), 'utf8')).toBe('{');
+  });
+
   it('候補 0 → nothing to prune', async () => {
     const harness = evolvingHarness({ summary: 'x', yes: 0 });
     harness.branch.push(assistantText('直近だけ'));

@@ -157,7 +157,9 @@ export interface ModelCell {
 ### Slice 2: 壊れた `settings.json` を上書きしない
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
 
 ### Slice 3: 口の役目を分け、エラー経路を試す
