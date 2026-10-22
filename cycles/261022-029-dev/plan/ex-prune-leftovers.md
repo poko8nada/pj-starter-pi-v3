@@ -168,7 +168,7 @@ export interface ModelCell {
   - なし
 - Unplanned:
   - なし
-- Commit:
+- Commit: 1da8926 consult(ex-prune-leftovers): give each port one job
 
 ## Review
 
