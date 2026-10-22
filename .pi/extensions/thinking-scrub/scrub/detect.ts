@@ -124,6 +124,17 @@ export function detectRuns(text: string): readonly Run[] {
   return mergeRuns(found);
 }
 
+/** 消した区間が含んでいた改行のうち、いちばん強いもの。含まなければ undefined */
+export function separatorFor(removed: string): string | undefined {
+  if (removed.includes('\n\n')) {
+    return '\n\n';
+  }
+  if (removed.includes('\n')) {
+    return '\n';
+  }
+  return undefined;
+}
+
 /** 区間を取り除いた本文を返す。区間が無ければ同じ文字列を返す */
 export function scrubThinking(text: string): Scrub {
   const runs = detectRuns(text);
@@ -145,23 +156,14 @@ export function scrubThinking(text: string): Scrub {
       runs[index - 1]?.at ?? 0,
       (runs[index - 1]?.at ?? 0) + (runs[index - 1]?.length ?? 0),
     );
-    if (removedText.indexOf('\n\n') >= 0) {
+    const separator = separatorFor(removedText);
+    if (separator !== undefined) {
       const left = out.trimEnd();
       const right = current.trimStart();
       if (left.length === 0 || right.length === 0) {
         out = left + right;
       } else {
-        out = `${left}\n\n${right}`;
-      }
-      continue;
-    }
-    if (removedText.indexOf('\n') >= 0) {
-      const left = out.trimEnd();
-      const right = current.trimStart();
-      if (left.length === 0 || right.length === 0) {
-        out = left + right;
-      } else {
-        out = `${left}\n${right}`;
+        out = `${left}${separator}${right}`;
       }
       continue;
     }
