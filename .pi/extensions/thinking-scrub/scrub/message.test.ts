@@ -230,6 +230,7 @@ describe('scrubMessage', () => {
       throw new Error('scrubbed must be defined');
     }
     expect(scrubbed.removed).toBe(2);
+    expect(scrubbed.chars).toBe(120);
     if (scrubbed.message.role !== 'assistant') {
       throw new Error('message must be assistant');
     }
@@ -245,5 +246,68 @@ describe('scrubMessage', () => {
       throw new Error('second block must be thinking');
     }
     expect(second.thinking).toBe('foo hello bar');
+  });
+});
+
+describe('scrubMessage chars', () => {
+  it('2 ブロックとも畳まれる → chars は両方の合計', () => {
+    const message = assistantMessage({
+      content: [
+        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+      ],
+    });
+    const scrubbed = scrubMessage(message);
+    expect(scrubbed).toBeDefined();
+    if (scrubbed === undefined) {
+      throw new Error('scrubbed must be defined');
+    }
+    expect(scrubbed.removed).toBe(2);
+    expect(scrubbed.chars).toBe(118);
+  });
+
+  it('chars は元の長さから畳んだ長さを引いた値', () => {
+    const thinking = degenerate();
+    const message = assistantMessage();
+    const scrubbed = scrubMessage(message);
+    expect(scrubbed).toBeDefined();
+    if (scrubbed === undefined) {
+      throw new Error('scrubbed must be defined');
+    }
+    if (scrubbed.message.role !== 'assistant') {
+      throw new Error('message must be assistant');
+    }
+    const first = scrubbed.message.content.at(0);
+    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
+      throw new Error('first block must be thinking');
+    }
+    if (typeof first.thinking !== 'string') {
+      throw new Error('thinking must be a string');
+    }
+    expect(scrubbed.chars).toBe(thinking.length - first.thinking.length);
+    expect(scrubbed.chars).toBe(59);
+  });
+
+  it('51 文字が 25 文字に畳まれる → chars は 26', () => {
+    const thinking = `header-12345${'abcd'.repeat(7).slice(0, 27)}suffix-67890`;
+    expect(thinking).toHaveLength(51);
+    const message = assistantMessage({
+      content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
+    });
+    const scrubbed = scrubMessage(message);
+    expect(scrubbed).toBeDefined();
+    if (scrubbed === undefined) {
+      throw new Error('scrubbed must be defined');
+    }
+    if (scrubbed.message.role !== 'assistant') {
+      throw new Error('message must be assistant');
+    }
+    const first = scrubbed.message.content.at(0);
+    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
+      throw new Error('first block must be thinking');
+    }
+    expect(first.thinking).toHaveLength(25);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.chars).toBe(26);
   });
 });

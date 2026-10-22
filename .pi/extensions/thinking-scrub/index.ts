@@ -17,7 +17,15 @@ import { parseCommand, runCommand } from './command/scrub.ts';
 import { scrubMessage } from './scrub/message.ts';
 import { defaultSettings, SETTINGS_FILE } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
-import { addFailure, addScrub, emptyStatus, type Status } from './state/cell.ts';
+import {
+  addFailure,
+  addScrub,
+  addTally,
+  emptyStatus,
+  emptyTally,
+  type Status,
+  type Tally,
+} from './state/cell.ts';
 
 /** この拡張が pi に求める口だけ。テストは on と registerCommand を記録する偽物を渡す */
 export interface PiPort {
@@ -49,19 +57,30 @@ function readDoc(file: string): Record<string, unknown> {
   }
 }
 
-function writeEnabled(settingsDir: string, enabled: boolean): void {
+function writePatch(settingsDir: string, patch: Record<string, unknown>): void {
   const file = join(settingsDir, SETTINGS_FILE);
-  const next = { ...readDoc(file), enabled };
+  const next = { ...readDoc(file), ...patch };
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
 }
 
+function writeEnabled(settingsDir: string, enabled: boolean): void {
+  writePatch(settingsDir, { enabled });
+}
+
+function writeShow(settingsDir: string, show: boolean): void {
+  writePatch(settingsDir, { show });
+}
+
 export interface CommandCtx {
-  readonly ui: { readonly notify: (message: string) => void };
+  readonly ui: {
+    readonly notify: (message: string, level?: 'info' | 'warning' | 'error') => void;
+  };
 }
 
 export interface ScrubWiring {
   readonly onMessageEnd: (event: MessageEndEvent) => MessageEndEventResult | undefined;
+  readonly onAgentEnd: (ctx: CommandCtx) => void;
   readonly onCommand: (args: string, ctx: CommandCtx) => void;
   readonly getStatus: () => Status;
 }
@@ -69,6 +88,7 @@ export interface ScrubWiring {
 /** 配線の中身。`registerScrub` はこれを pi につなぐだけにする */
 export function createScrubWiring(options: WiringOptions): ScrubWiring {
   let status: Status = emptyStatus();
+  let tally: Tally = emptyTally();
   const onMessageEnd = (event: MessageEndEvent): MessageEndEventResult | undefined => {
     try {
       const read = readSettings(options.settingsDir);
@@ -81,11 +101,25 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
         return undefined;
       }
       status = addScrub(status, scrubbed.removed, options.now());
+      tally = addTally(tally, scrubbed.removed, scrubbed.chars);
       return { message: scrubbed.message };
     } catch {
       status = addFailure(status);
       return undefined;
     }
+  };
+  const onAgentEnd = (ctx: CommandCtx): void => {
+    const read = readSettings(options.settingsDir);
+    const show = read.kind === 'ok' ? read.settings.show : defaultSettings().show;
+    const current = tally;
+    tally = emptyTally();
+    if (!show) {
+      return;
+    }
+    if (current.runs === 0) {
+      return;
+    }
+    ctx.ui.notify(`thinking-scrub: removed ${current.runs} (${current.chars} chars)`, 'info');
   };
   const onCommand = (args: string, ctx: CommandCtx): void => {
     const command = parseCommand(args);
@@ -96,6 +130,9 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
         writeEnabled: (enabled) => {
           writeEnabled(options.settingsDir, enabled);
         },
+        writeShow: (show) => {
+          writeShow(options.settingsDir, show);
+        },
       },
       command,
       options.now(),
@@ -104,6 +141,7 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
   };
   return {
     onMessageEnd,
+    onAgentEnd,
     onCommand,
     getStatus: () => status,
   };
@@ -113,8 +151,11 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
 export function registerScrub(pi: PiPort, options: WiringOptions): void {
   const wiring = createScrubWiring(options);
   pi.on('message_end', (event, _ctx) => wiring.onMessageEnd(event));
+  pi.on('agent_end', (_event, ctx) => {
+    wiring.onAgentEnd(ctx);
+  });
   pi.registerCommand('thinking-scrub', {
-    description: 'Scrub looped thinking (on/off/status)',
+    description: 'Scrub looped thinking (on/off/show/hide/status)',
     handler: (args, ctx) => {
       wiring.onCommand(args, ctx);
       return Promise.resolve();

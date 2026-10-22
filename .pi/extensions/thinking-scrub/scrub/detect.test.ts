@@ -32,30 +32,46 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).not.toContain(unit());
   });
 
-  it('同じ並びが 5 回 → removed が 0、本文が同一', () => {
-    // 60 文字で MIN_LENGTH は通るため、0 は MIN_REPEATS のおかげ。
+  it('foo + "the *" × 5 + bar（25 文字）→ 区間 1、foo bar', () => {
+    const text = `foo${repeated(unit(), 5)}bar`;
+    expect(repeated(unit(), 5)).toHaveLength(25);
+    const runs = detectRuns(text);
+    expect(runs).toHaveLength(1);
+    expect(scrubThinking(text)).toEqual({ text: 'foo bar', removed: 1 });
+  });
+
+  it('同じ 12 文字を 5 回（60 文字）→ 区間 1、消える', () => {
     const text = repeated('abcdefghijkl', 5);
     expect(text).toHaveLength(60);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
+    const runs = detectRuns(text);
+    expect(runs).toHaveLength(1);
+    expect(scrubThinking(text).removed).toBe(1);
   });
 
-  it('同じ並びが 6 回で区間 59 文字 → removed が 0', () => {
-    const base = 'abcdefghi';
-    const text = repeated(base, 6) + base.slice(0, 5);
-    expect(text).toHaveLength(59);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
-  });
-
-  it('同じ並びが 6 回で区間 60 文字 → removed が 1', () => {
-    const base = 'abcdefghi';
-    const text = repeated(base, 6) + base.slice(0, 6);
+  it('同じ 30 文字を 2 回（60 文字）→ 区間 0、本文そのまま', () => {
+    const block = `${'a'.repeat(29)}b`;
+    expect(block).toHaveLength(30);
+    const text = repeated(block, 2);
     expect(text).toHaveLength(60);
     const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.removed).toBe(0);
+    expect(scrubbed.text).toBe(text);
+  });
+
+  it('周期 4 文字を 5 回（20 文字）→ 区間 1、消える', () => {
+    const text = repeated('abcd', 5);
+    expect(text).toHaveLength(20);
+    const runs = detectRuns(text);
+    expect(runs).toHaveLength(1);
+    expect(scrubThinking(text).removed).toBe(1);
+  });
+
+  it('周期 4 文字を 4 回（16 文字）→ 区間 0、本文そのまま', () => {
+    const text = repeated('abcd', 4);
+    expect(text).toHaveLength(16);
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(0);
+    expect(scrubbed.text).toBe(text);
   });
 
   it('周期 3 文字の連続 → removed が 0', () => {
@@ -64,12 +80,6 @@ describe('scrubThinking', () => {
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(0);
     expect(scrubbed.text).toBe(text);
-  });
-
-  it('周期 4 文字の連続 → removed が 1', () => {
-    const text = repeated('abcd', 15);
-    expect(text).toHaveLength(60);
-    expect(scrubThinking(text).removed).toBe(1);
   });
 
   it('周期 120 文字の連続 → removed が 1', () => {
@@ -114,6 +124,34 @@ describe('scrubThinking', () => {
     expect(scrubThinking(`foo${block} bar`).text).toBe('foo bar');
   });
 
+  it('区間が改行2つを含む → 繋ぎ目に改行2つが入る', () => {
+    const text = `foo${repeated('\n\nThe **', 5)}bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
+  it('区間が改行2つを含み左端が空白 → 空白は残らず改行2つが入る', () => {
+    const text = `foo ${repeated('\n\nThe **', 5)}bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
+  it('区間が改行2つを含み右端が空白 → 空白は残らず改行2つが入る', () => {
+    const text = `foo${repeated('\n\nThe **', 5)} bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
+  it('区間が改行1つだけを含む → 繋ぎ目に改行1つが入る', () => {
+    const text = `foo${repeated('\nabcd', 12)}bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\nbar');
+  });
+
   it('結果にもう一度かける → removed が 0、本文が同一', () => {
     const text = `foo${repeated(unit(), 12)}bar`;
     const first = scrubThinking(text);
@@ -121,5 +159,12 @@ describe('scrubThinking', () => {
     const second = scrubThinking(first.text);
     expect(second.removed).toBe(0);
     expect(second.text).toBe(first.text);
+  });
+
+  it('畳んだ foo改行改行bar にもう一度かける → removed が 0、本文が同一', () => {
+    const text = 'foo\n\nbar';
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(0);
+    expect(scrubbed.text).toBe(text);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addFailure, addScrub, emptyStatus } from './cell.ts';
+import { addFailure, addScrub, addTally, emptyStatus, emptyTally } from './cell.ts';
 
 describe('cell', () => {
   it('既に使われた状態に addScrub(status, 3, 100) → removed が +3、lastAt が 100', () => {
@@ -29,5 +29,18 @@ describe('cell', () => {
     addFailure(status);
     emptyStatus();
     expect(status).toEqual({ removed: 1, lastAt: 10, failures: 2 });
+  });
+
+  it('emptyTally() → runs が 0、chars が 0', () => {
+    expect(emptyTally()).toEqual({ runs: 0, chars: 0 });
+  });
+
+  it('addTally を 2 回 → 合計になり、渡した値は変わらない', () => {
+    const first = emptyTally();
+    const second = addTally(first, 1, 26);
+    expect(first).toEqual({ runs: 0, chars: 0 });
+    const third = addTally(second, 1, 26);
+    expect(second).toEqual({ runs: 1, chars: 26 });
+    expect(third).toEqual({ runs: 2, chars: 52 });
   });
 });

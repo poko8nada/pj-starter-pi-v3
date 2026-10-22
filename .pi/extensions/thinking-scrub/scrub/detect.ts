@@ -18,8 +18,8 @@ export interface Scrub {
 
 export const MIN_PERIOD = 4;
 export const MAX_PERIOD = 120;
-export const MIN_REPEATS = 6;
-export const MIN_LENGTH = 60;
+export const MIN_REPEATS = 3;
+export const MIN_LENGTH = 20;
 
 function isWhitespace(char: string): boolean {
   return (
@@ -141,6 +141,30 @@ export function scrubThinking(text: string): Scrub {
   for (let index = 1; index < kept.length; index += 1) {
     const before = kept.at(index - 1) ?? '';
     const current = kept.at(index) ?? '';
+    const removedText = text.slice(
+      runs[index - 1]?.at ?? 0,
+      (runs[index - 1]?.at ?? 0) + (runs[index - 1]?.length ?? 0),
+    );
+    if (removedText.indexOf('\n\n') >= 0) {
+      const left = out.trimEnd();
+      const right = current.trimStart();
+      if (left.length === 0 || right.length === 0) {
+        out = left + right;
+      } else {
+        out = `${left}\n\n${right}`;
+      }
+      continue;
+    }
+    if (removedText.indexOf('\n') >= 0) {
+      const left = out.trimEnd();
+      const right = current.trimStart();
+      if (left.length === 0 || right.length === 0) {
+        out = left + right;
+      } else {
+        out = `${left}\n${right}`;
+      }
+      continue;
+    }
     const bothKept = before.length > 0 && current.length > 0;
     const lastChar = before.at(-1) ?? '';
     const firstChar = current.at(0) ?? '';
