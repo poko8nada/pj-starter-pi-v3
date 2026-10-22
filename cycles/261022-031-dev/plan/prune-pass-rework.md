@@ -256,21 +256,21 @@ export function statusLines(status: Status, settings: Settings, now: number): re
 
 ### Slice 1: 要約の枠を外す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: fbca2b9
 
 ### Slice 2: state を用途に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5731d94
 
 ### Slice 3: 失敗を冷やす
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 3c2fc49
 
 ### Slice 4: ドキュメントを揃える
 
