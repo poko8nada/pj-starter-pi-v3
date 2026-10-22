@@ -587,13 +587,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit: TBD
+- Commit: e28c775 consult(context-prune): add pass records and context-edit drafts
 
 ### Slice 5: カード
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: TBD
 
 ### Slice 6: コマンドと配線
 
