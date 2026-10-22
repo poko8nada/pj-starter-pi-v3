@@ -334,8 +334,38 @@ export interface ScrubWiring {
   - Slice1 positives use 5 repeats only with no 3-repeat success case; value 3 itself is plan-decided, so left as note, not a finding.
     - left: 値 3 は plan 決定事項で finding ではないため、手を付けない。
 
+### Round 2
+
+- Stale:
+  - `.pi/extensions/thinking-scrub/command/scrub.ts:4` header -- fixed confirmed: header now reads `on` / `off` と `show` / `hide` を受ける (lines 2-5).
+  - `.pi/extensions/thinking-scrub/command/scrub.ts:38` usageLine -- fixed confirmed: `usageLine()` returns `[on|off|show|hide]` (line 38).
+  - `.pi/extensions/thinking-scrub/index.ts:158` registerCommand description -- fixed confirmed: description is `(on/off/show/hide/status)` (line 158).
+- Unlisted:
+  - なし（fixed: 指定のため範囲外、未探索）。
+- Gaps:
+  - `scrub/detect.ts:150` right-space joint -- fixed confirmed: `detect.test.ts:141-146` asserts `foo` + run + ` bar` to `foo\n\nbar`; impl trims both sides (`detect.ts:149-156`).
+  - `scrub/message.ts:71` chars sum -- fixed confirmed: `message.test.ts:233` asserts `chars` 120, and `message.test.ts:252-266` adds two-block sum 118 (59+59) test.
+  - `index.ts:67` write preserve -- fixed confirmed: `index.test.ts:375-395` adds `off`/`on` preserve `show: false` tests; impl merges via `writePatch` (`index.ts:60-65`).
+- Unproven:
+  - `command/scrub.test.ts:85` usage test -- fixed confirmed: test now asserts `show`/`hide` contained (`scrub.test.ts:91-93`), fails against old `[on|off]` line.
+  - `index.test.ts:336` overwrite guard -- fixed confirmed: new `show: false` preservation tests start from existing file, overwrite-and-drop would fail.
+  - `scrub/message.test.ts:218` single-block sum guard -- fixed confirmed: 118 sum test would be 59 on single-block sum, plus 120 assertion on existing 2-block test.
+- Doubts:
+  - `message.test.ts:218` の `chars` 120 は全区間ブロックが trim-empty で除外されるため実質片ブロック分だが、118 テストが真の両ブロック合計を担うため finding としない。
+  - `bafa80e` の commit 差分は未照合（作業ツリー現物のみ確認）。作業ツリーが fix 後の状態であることは上記の通り。
+
 ## Acceptance
 
 - Ran:
+  - worktree で `pnpm typecheck` → root: ok / .pi: ok
+  - worktree で `pnpm vitest run --config vitest.starter.config.ts` → 64 files / 1000 tests passed（うち thinking-scrub は 90 件）
+  - 統合スライスの Verify（拡張の全テスト + typecheck）も同じコマンドで通した
+  - 振る舞いを壊して赤を確かめた 3 点（すべて元に戻し、`git status` は plan md だけ）
+    1. `MIN_REPEATS` を 3 から 6 に戻す → `detect.test.ts` が 6 件赤
+    2. 繋ぎ目の `\n\n` の判定を `\n ` に変える → `detect.test.ts` が 3 件赤
+    3. `onAgentEnd` の「合計が 0 なら出さない」を潰す → `index.test.ts` が 4 件赤
 - Findings:
+  - なし
 - Doubts:
+  - `scrub/message.test.ts` の `chars` 120 は、1 つ目のブロックが畳むと空になるため置き換えの対象から外れ、実質は 2 つ目のブロックの分だけ。両ブロックの合計は 118 のケースが担う。
+  - Review Round 2 の「`bafa80e` の差分は未照合」は、`git diff b9bea37..HEAD` で私が確認した。
