@@ -67,45 +67,48 @@ export function classifierTokens(text: string): number {
   return Math.ceil(text.length / 2.5);
 }
 
-export interface BatchBudget {
-  /** Jev の per-question 上限 */
-  readonly total: number;
-  /** 要約の view と質問 1 つの分 */
-  readonly fixed: number;
+/** 質問の前置き。候補に依らない */
+export const NEED_INSTRUCTIONS = 'Will you need this tool result later (to read, quote, or use)?';
+
+/** criteria の keep / drop */
+export const NEED_CRITERIA: Readonly<Record<string, string>> = {
+  keep: 'Will need later (to read, quote, or use)',
+  drop: 'Will not need later',
+};
+
+/** 候補 1 件を質問文に埋め込んだ 1 問 */
+export function questionFor(candidate: Candidate): ClassifierQuestion {
+  return {
+    type: 'choice',
+    instructions: `${NEED_INSTRUCTIONS}\n\ntool: ${candidate.toolName}\nargs: ${candidate.args}\nchars: ${candidate.chars}\nresult:\n${candidate.excerpt}`,
+    criteria: { ...NEED_CRITERIA },
+  };
 }
 
-/** 候補 1 件の見積もり。抜粋と呼び出しの文で数える */
-function itemTokens(candidate: Candidate): number {
+/** 質問 1 件ぶんのトークン見積もり。前置きと候補を合わせて数える */
+export function questionTokens(candidate: Candidate): number {
+  const question = questionFor(candidate);
   return Math.max(
     1,
-    classifierTokens(candidate.excerpt) +
-      classifierTokens(candidate.args) +
-      classifierTokens(candidate.toolName),
+    classifierTokens(question.instructions) + classifierTokens(JSON.stringify(NEED_CRITERIA)),
   );
 }
 
-/** 要約と候補の表を state に、候補ごとの問いを questions に積む */
+export interface BatchBudget {
+  /** Jev の per-question 上限 */
+  readonly total: number;
+  /** 要約の view の分 */
+  readonly fixed: number;
+}
+
+/** state は要約の view だけ。候補は questions の instructions に埋め込む */
 export function judgeRequest(summary: string, candidates: readonly Candidate[]): JudgeRequest {
   const view = topicView(summary);
-  const listed = candidates.map((candidate) => ({
-    key: `keep_${candidate.id}`,
-    toolName: candidate.toolName,
-    args: candidate.args,
-    chars: candidate.chars,
-    excerpt: candidate.excerpt,
-  }));
   const questions: Record<string, ClassifierQuestion> = {};
   for (const candidate of candidates) {
-    questions[`keep_${candidate.id}`] = {
-      type: 'choice',
-      instructions: 'Will you need this tool result later (to read, quote, or use)?',
-      criteria: {
-        keep: 'Will need later (to read, quote, or use)',
-        drop: 'Will not need later',
-      },
-    };
+    questions[`keep_${candidate.id}`] = questionFor(candidate);
   }
-  return { state: { summary: view, candidates: listed }, questions };
+  return { state: { summary: view }, questions };
 }
 
 /** 候補を予算で束に割る。1 束は fixed と件数の分の合計が total を超えない所まで。足りなくても 1 件は入れる */
@@ -121,7 +124,7 @@ export function batches(
   let current: Candidate[] = [];
   let used = 0;
   for (const candidate of candidates) {
-    const need = itemTokens(candidate);
+    const need = questionTokens(candidate);
     if (current.length > 0 && used + need > available) {
       out.push(current);
       current = [];
