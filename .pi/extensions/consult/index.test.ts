@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tmpDir } from '../../../test/tmp.ts';
-import { appendRun, type RunRecord } from './run/log.ts';
+import { appendRun, readRuns, type RunRecord } from './run/log.ts';
 import { placeFor, type Place } from './run/place.ts';
 import { flushPending, startTick, stopTick, type TickPort } from './index.ts';
+import { rowsOf } from './tool/subagents.ts';
 import type { ConsultMessage, PiFace } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
@@ -216,5 +217,47 @@ describe('startTick / stopTick', () => {
 
     expect(sent).toHaveLength(0);
     expect(played).toHaveLength(0);
+  });
+});
+
+describe('reload', () => {
+  it('古いインスタンスの完了 → 新しい tick が 1 回渡し、印を書く。次は渡さない', () => {
+    const found = place();
+    // old instance wrote the completion row and is gone
+    appendRun(found, record({ subagent: 'consult-9' }), new Date());
+    const { pi, sent } = fakePi();
+    startTick(portFor(found, pi, 'session-a'));
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+    expect(sent).toHaveLength(1);
+    expect(flushPending(portFor(found, pi))).toBe(0);
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+    expect(sent).toHaveLength(1);
+  });
+
+  it('同じ印で一覧は running から done へ、音は鳴るから鳴らないへ', () => {
+    const found = place();
+    appendRun(found, record({ subagent: 'consult-9' }), new Date());
+
+    const before = rowsOf(readRuns(found, { session: 'session-a' }), undefined, 0);
+    expect(before).toHaveLength(1);
+    expect(before[0]).toContain('running');
+
+    const { pi, sent } = fakePi();
+    startTick(portFor(found, pi, 'session-a'));
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+    expect(sent).toHaveLength(1);
+    expect(played).toHaveLength(1);
+
+    const after = rowsOf(readRuns(found, { session: 'session-a' }), undefined, 0);
+    expect(after).toHaveLength(1);
+    expect(after[0]).toContain('done');
+    expect(after[0]).not.toContain('running');
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+    expect(sent).toHaveLength(1);
+    expect(played).toHaveLength(1);
   });
 });
