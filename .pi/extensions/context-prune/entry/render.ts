@@ -44,10 +44,10 @@ export function cardText(pass: PrunePass, expanded: boolean, expandKey: string):
     '',
     `**Compacted from ${tokens} tokens**`,
     '',
+    pass.summary,
+    '',
     droppedLine(pass),
     latencyLine(pass),
-    '',
-    pass.summary,
   ];
 }
 
@@ -81,10 +81,10 @@ function paintExpanded(
     new Markdown(`**Compacted from ${tokensLine(pass)} tokens**`, 0, 0, markdownTheme, { color }),
   );
   content.addChild(new Spacer(1));
+  content.addChild(new Markdown(pass.summary, 0, 0, markdownTheme, { color }));
+  content.addChild(new Spacer(1));
   content.addChild(new Text(color(droppedLine(pass)), 0, 0));
   content.addChild(new Text(color(latencyLine(pass)), 0, 0));
-  content.addChild(new Spacer(1));
-  content.addChild(new Markdown(pass.summary, 0, 0, markdownTheme, { color }));
 }
 
 /** パスのカードを作る。クリックで折りたたみと展開が切り替わる */

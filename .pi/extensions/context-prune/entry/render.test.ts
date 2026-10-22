@@ -47,17 +47,17 @@ describe('cardText', () => {
     expect(lines[2]).toContain('(ctrl+9 to expand)');
   });
 
-  it('展開 → 見出し、省略、秒数、空行、要約の順', () => {
+  it('展開 → 見出し、要約、空行、省略、秒数の順', () => {
     const lines = cardText(passOf(), true, 'ctrl+e');
     expect(lines).toEqual([
       '[prune]',
       '',
       '**Compacted from 12,345 → 11,036 tokens**',
       '',
+      '話題の要約',
+      '',
       '省略: 3 件 / 1,309 トークン / 1,234 文字',
       '要約と判定: 1.2 秒',
-      '',
-      '話題の要約',
     ]);
   });
 
@@ -70,7 +70,7 @@ describe('cardText', () => {
 
   it('展開・dropped 0 件 → 省略 0 件 / 0 トークン / 0 文字', () => {
     const pass: PrunePass = { ...passOf(), dropped: [], droppedTokens: 0, droppedChars: 0 };
-    expect(cardText(pass, true, 'ctrl+e')[4]).toBe('省略: 0 件 / 0 トークン / 0 文字');
+    expect(cardText(pass, true, 'ctrl+e').join('\n')).toContain('省略: 0 件 / 0 トークン / 0 文字');
   });
 });
 
