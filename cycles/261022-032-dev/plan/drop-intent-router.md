@@ -84,34 +84,37 @@ README.ja.md                    update
 
 ### Slice 1: 拡張を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2fa7424 consult(drop-intent-router): remove intent-router extension
 
 ### Slice 2: 参照を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b76e701 consult(drop-intent-router): drop intent-router references from docs
 
 ### Slice 3: 統合: `intent-router` がリポジトリから消えている
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1b9ab00（記録の commit。差分の本体は 86b6791・0968510）
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
 - Doubts:
+  - `cycles/` 内の `intent-router` 残存は記録であり stale としない — `cycles/261022-032-dev/adr.md:66` が複製不要を決定し、Slice 3 の grep が `--exclude-dir=cycles` を明示 (`cycles/261022-032-dev/plan/drop-intent-router.md:77`)
+  - `logs/*.jsonl` の削除が diff に出ないのは tracked file が無いためで、ディレクトリごと削除に含まれる — ADR は設定と記録ごと削除を決定 (`cycles/261022-032-dev/adr.md:63`)、手順はディレクトリごと削除 (`cycles/261022-032-dev/plan/drop-intent-router.md:26`)
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（52 files / 834 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）、`test ! -e .pi/extensions/intent-router`（exit 0）、`grep -rln intent-router`（出力なし、exit 1）。
+- Ran: 壊し試験 2 つ。`settings.json` だけ戻す → `test ! -e` が exit 1。`README.md` に 1 行戻す → `grep` が 1 件返す。どちらも復元後に再実行して緑。
+- Findings: なし
+- Doubts: なし
