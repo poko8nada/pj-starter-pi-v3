@@ -230,6 +230,7 @@ describe('scrubMessage', () => {
       throw new Error('scrubbed must be defined');
     }
     expect(scrubbed.removed).toBe(2);
+    expect(scrubbed.chars).toBe(120);
     if (scrubbed.message.role !== 'assistant') {
       throw new Error('message must be assistant');
     }
@@ -245,6 +246,24 @@ describe('scrubMessage', () => {
       throw new Error('second block must be thinking');
     }
     expect(second.thinking).toBe('foo hello bar');
+  });
+});
+
+describe('scrubMessage chars', () => {
+  it('2 ブロックとも畳まれる → chars は両方の合計', () => {
+    const message = assistantMessage({
+      content: [
+        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+      ],
+    });
+    const scrubbed = scrubMessage(message);
+    expect(scrubbed).toBeDefined();
+    if (scrubbed === undefined) {
+      throw new Error('scrubbed must be defined');
+    }
+    expect(scrubbed.removed).toBe(2);
+    expect(scrubbed.chars).toBe(118);
   });
 
   it('chars は元の長さから畳んだ長さを引いた値', () => {

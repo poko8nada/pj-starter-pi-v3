@@ -306,10 +306,33 @@ export interface ScrubWiring {
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/thinking-scrub/command/scrub.ts:4` -- header comment still says only `on`/`off`, false after `show`/`hide` added in parseCommand (.pi/extensions/thinking-scrub/command/scrub.ts:28-33).
+    - fixed: header を `on`/`off` と `show`/`hide` を受ける旨に直した。
+  - `.pi/extensions/thinking-scrub/command/scrub.ts:38` -- `usageLine()` still `[on|off]`, omits `show`/`hide`; change made usage text stale.
+    - fixed: `usageLine()` を `[on|off|show|hide]` に直し、`foo` → usage テストを `show`/`hide` を含むことまで断定するよう強めた。
+  - `.pi/extensions/thinking-scrub/index.ts:158` -- `registerCommand` description still `(on/off/status)`, omits `show`/`hide` after display commands added.
+    - fixed: description を `(on/off/show/hide/status)` に直した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/thinking-scrub/scrub/detect.ts:150` -- Steps says trim both sides of joint when removed run contains newlines, but Verify/tests only cover left trailing space; right leading space case (e.g. run + ` bar` -> `foo\n\nbar`) is not asserted.
+    - fixed: 右端空白のケース（`foo` + run + ` bar` → `foo\n\nbar`）を detect.test.ts に足した。
+  - `.pi/extensions/thinking-scrub/scrub/message.ts:71` -- Steps says `chars` is sum over blocks, Verify only names single-block; `.pi/extensions/thinking-scrub/scrub/message.test.ts:218` 2-block test asserts `removed` only, never `chars` sum.
+    - fixed: 2-block テストに `chars` 120 の断定を足し、両ブロック寄与の合計テスト（118）を message.test.ts に足した。
+  - `.pi/extensions/thinking-scrub/index.ts:67` -- Steps says `writeEnabled`/`writeShow` share read-modify-write (preserve the other key); Verify only shows `hide` preserves `enabled`, no test that `on`/`off` preserves existing `show: false`.
+    - fixed: `off`/`on` が既存 `show: false` を保つテスト2件を index.test.ts に足した。
 - Unproven:
+  - `.pi/extensions/thinking-scrub/command/scrub.test.ts:85` -- `foo -> usage` test only checks length 1 + contains `usage`, so it stays green with the current stale `[on|off]` line that omits `show`/`hide`.
+    - fixed: usage 修正とテスト強化（`show`/`hide` を含むことを断定）で担保。
+  - `.pi/extensions/thinking-scrub/index.test.ts:336` -- `off -> settings.json` test starts from empty dir, so it stays green even if `writeEnabled` overwrote the file and dropped `show`.
+    - fixed: `show: false` 保持テストの追加で担保（上書きすれば落ちる）。
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:218` -- 2-block test asserts `removed: 2` only, so it stays green even if `chars` summed only one block.
+    - fixed: 両ブロック寄与の合計テスト（118）の追加で担保。
 - Doubts:
+  - `.pi/extensions/thinking-scrub/index.ts:2` header comment omits `agent_end` report but states no falsehood, so left as note, not a finding.
+    - left: 虚偽はなく finding ではないため、手を付けない。
+  - Slice1 positives use 5 repeats only with no 3-repeat success case; value 3 itself is plan-decided, so left as note, not a finding.
+    - left: 値 3 は plan 決定事項で finding ではないため、手を付けない。
 
 ## Acceptance
 

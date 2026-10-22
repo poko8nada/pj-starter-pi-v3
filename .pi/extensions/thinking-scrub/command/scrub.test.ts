@@ -89,6 +89,8 @@ describe('runCommand', () => {
     expect(shown).toEqual([]);
     expect(lines).toHaveLength(1);
     expect(lines.at(0)).toContain('usage');
+    expect(lines.at(0)).toContain('show');
+    expect(lines.at(0)).toContain('hide');
   });
 
   it('" off " → set で偽', () => {

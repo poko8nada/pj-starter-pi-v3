@@ -1,7 +1,7 @@
 /**
  * `/thinking-scrub` の引数と実行。純関数だけを置く。
  *
- * 引数無しは status。前後の空白を落として小文字に直し、`on` / `off` だけを受ける。
+ * 引数無しは status。前後の空白を落として小文字に直し、`on` / `off` と `show` / `hide` を受ける。
  */
 
 import type { SettingsRead } from '../settings/schema.ts';
@@ -35,7 +35,7 @@ export function parseCommand(raw: string): ScrubCommand {
 }
 
 function usageLine(): string {
-  return 'thinking-scrub usage: /thinking-scrub [on|off]';
+  return 'thinking-scrub usage: /thinking-scrub [on|off|show|hide]';
 }
 
 /** コマンドが読む口 */

@@ -155,7 +155,7 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void {
     wiring.onAgentEnd(ctx);
   });
   pi.registerCommand('thinking-scrub', {
-    description: 'Scrub looped thinking (on/off/status)',
+    description: 'Scrub looped thinking (on/off/show/hide/status)',
     handler: (args, ctx) => {
       wiring.onCommand(args, ctx);
       return Promise.resolve();

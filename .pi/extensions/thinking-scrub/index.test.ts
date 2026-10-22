@@ -372,6 +372,28 @@ describe('onCommand', () => {
     });
   });
 
+  it('コマンド off → 既存の show:false が保たれる', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
+    const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
+    wiring.onCommand('off', fakeCmdCtx().ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      enabled: false,
+      show: false,
+    });
+  });
+
+  it('コマンド on → 既存の show:false が保たれる', () => {
+    const dir = tmpDir();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false, show: false }));
+    const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
+    wiring.onCommand('on', fakeCmdCtx().ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      enabled: true,
+      show: false,
+    });
+  });
+
   it('置いた settings.json を readSettings で読む → enabled と show が真', () => {
     const read = readSettings(HERE);
     expect(read.kind).toBe('ok');

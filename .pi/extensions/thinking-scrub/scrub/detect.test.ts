@@ -138,6 +138,13 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe('foo\n\nbar');
   });
 
+  it('区間が改行2つを含み右端が空白 → 空白は残らず改行2つが入る', () => {
+    const text = `foo${repeated('\n\nThe **', 5)} bar`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe('foo\n\nbar');
+  });
+
   it('区間が改行1つだけを含む → 繋ぎ目に改行1つが入る', () => {
     const text = `foo${repeated('\nabcd', 12)}bar`;
     const scrubbed = scrubThinking(text);
