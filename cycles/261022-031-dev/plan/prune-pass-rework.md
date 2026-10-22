@@ -320,6 +320,7 @@ export function statusLines(status: Status, settings: Settings, now: number): re
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64 files / 1032 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）。
+- Ran: 壊し試験 3 つ。`summarizationReserve` を 2500 固定 → 5 件 red。`lastTokensOf` を `lastPass?.tokensBefore` だけに → 2 件 red。`excerptOf` を素通しに → 1 件 red。どれも復元後に再実行して緑。
+- Findings: なし
+- Doubts: なし
