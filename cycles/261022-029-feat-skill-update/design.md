@@ -47,6 +47,29 @@
 - `package.json` — 検査の入口（検査）
 - `scripts/checks/typecheck-staged.mjs` — staged の `mjs` の型検査（検査）
 
+## External
+
+### 01: スコープの内外を、どこで確定し、どこに残すか
+
+- なし
+
+### 02: `Boundary` に何を書くか
+
+- なし
+
+### 03: 設計のレビューをどう組むか
+
+- なし
+
+### 04: 設計のリサーチに何を挙げさせるか
+
+- なし
+
+### 05: 作業の軸を、定義の行から何に変えるか
+
+- `git` — ブランチ名から cycle の slug を作る
+- `端末の日付` — 実行した日を cycle の日付にする
+
 ## `scope-and-design-review`
 
 ### ADR & Where

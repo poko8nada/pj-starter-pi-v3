@@ -135,18 +135,18 @@ README.ja.md                         update
 
 1. `.pi/skills/design/SKILL.md`:
    - 手順 1 で、ADR の `Scope` と `Definition` を読む。
-   - 手順 2 のリサーチを 4 分類にし、依頼に主体を渡す。
-   - 手順 5 を `Summary`（ダイジェスト）と `Paths`（変えるファイル）にし、`Boundary` をリサーチが返した外の接点にする。
-   - `design.md` を書き終えた後に、7 観点 1 往復のレビューを走らせる手順を足す。
-   - 節の名前を `## Affected` に変える。
+   - 手順 2 を、パスを歩くリサーチと、外のものを探すリサーチの 2 つにする。書き先は `## Affected` と `## External`。
+   - 手順 5 を `Summary`（ダイジェスト）と `Paths`（変えるファイル）にし、`Boundary.External` を `## External` から取る。
+   - `design.md` を書き終えた後に、6 観点 1 往復のレビューを走らせる手順を足す。
+   - 節の名前を `## Affected` に変え、`## External` を足す。
 2. `.pi/skills/design/references/format.md`:
    - `### Scope` を `### Summary` にし、`Paths` の節を足す。
-   - `Boundary.External` の説明を外の接点に変え、子から `Version` を落とす。
+   - `Boundary.External` の説明を、`## External` から取る形に変え、子から `Version` を落とす。
    - `## Cut` に、外の接点を共有するエントリーは 1 つのプランに入れる、を戻す。
-   - `## Affected` の説明を、追随と検査に変える。
+   - `## Affected` はパス、`## External` は外のもの、と分ける。
 3. `.pi/skills/design/references/tasks.md`:
-   - リサーチの依頼を 4 分類にし、主体を渡す。
-   - レビューの依頼を 7 観点で足す。
+   - リサーチの依頼を、パスと外のものの 2 つに分ける。
+   - レビューの依頼を 6 観点にする。
 4. `.pi/skills/yolo/SKILL.md`:
    - design の段に、レビューを走らせる行を足す。
    - design の段が飛ばす対象の名前を `## Affected` に変える。
@@ -154,9 +154,9 @@ README.ja.md                         update
 ### Verify:
 
 - `read`: `review` サブエージェントがこの 4 ファイルを読み、次を報告する。
-  - (happy) `design/SKILL.md` に、7 観点 1 往復のレビュー、`Summary` と `Paths`、4 分類のリサーチと主体、`## Affected` がある → ある。
-  - (happy) `design/references/format.md` に `Summary`、`Paths`、外の接点の `Boundary`、`Cut` の外の接点、`## Affected` がある → ある。
-  - (happy) `design/references/tasks.md` のリサーチの依頼に 4 分類と主体、レビューの依頼に 7 観点がある → ある。
+  - (happy) `design/SKILL.md` に、6 観点 1 往復のレビュー、`Summary` と `Paths`、パスと外のものの 2 つのリサーチ、`## Affected` と `## External` がある → ある。
+  - (happy) `design/references/format.md` に `Summary`、`Paths`、`## Affected`、`## External`、`Boundary.External` が `## External` から取る形、`Cut` の外の接点がある → ある。
+  - (happy) `design/references/tasks.md` のリサーチの依頼がパスと外のものの 2 つに分かれ、レビューの依頼が 6 観点か → そうなっている。
   - (happy) `yolo/SKILL.md` の design の段にレビューの行があり、飛ばす対象が `## Affected` か → そうなっている。
   - (empty) `Possibly related files` が 4 ファイルに無い → 無い。
   - (error) 上のどれかが欠ける → 指摘として返る。
@@ -236,9 +236,9 @@ README.ja.md                         update
 
 ### Slice 4: 設計の対象とレビューと欄の名前
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `definition/rules.md` の検査の列挙（lint, types, tests, the hooks）を「whatever runs to prove it」に直した。スライス 1 で入れた行だが、検査は製品ごとに違う。
+- Commit: 967ce07
 
 ### Slice 5: 追随する側
 
