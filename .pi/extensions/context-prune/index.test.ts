@@ -11,7 +11,7 @@ import {
 import { tmpDir } from '../../../test/tmp.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
-import { createPorts, type ModelCell, type SummarizeWithUsage } from './prune/ports.ts';
+import { createPorts, type ModelCell } from './prune/ports.ts';
 import type { PassPorts } from './prune/run.ts';
 
 let seq = 0;
@@ -721,7 +721,6 @@ describe('integration', () => {
 });
 
 interface Captured {
-  summarizeArgs?: readonly unknown[];
   classifyArgs?: unknown;
 }
 
@@ -759,35 +758,6 @@ function fakeCell(captured: Captured): ModelCell {
 }
 
 describe('ports', () => {
-  it('summarize は pi の要約関数にメッセージと session id を渡し、要約と usage を返す', async () => {
-    const captured: Captured = {};
-    const summarize: SummarizeWithUsage = async (...args) => {
-      captured.summarizeArgs = args;
-      return { text: '本番の要約', usage: usage() };
-    };
-    const ports = createPorts(fakeCell(captured), settingsDirWith({}), summarize);
-    const recent = [
-      {
-        role: 'user' as const,
-        content: [{ type: 'text' as const, text: '最近の会話' }],
-        timestamp: 1,
-      },
-    ];
-    const outcome = await ports.summarize(recent);
-    expect(outcome.kind).toBe('ok');
-    if (outcome.kind !== 'ok') {
-      throw new Error('must be ok');
-    }
-    expect(outcome.summary).toBe('本番の要約');
-    expect(outcome.usage).toEqual({ input: 1, output: 1, cost: 0 });
-    const args = captured.summarizeArgs ?? [];
-    expect(args[0]).toEqual(recent);
-    expect(args[2]).toBe(10000);
-    expect(args[3]).toBe('test-key');
-    expect(typeof args[6]).toBe('string');
-    expect(args[13]).toBe('session-1');
-  });
-
   it('classify は answers から type と probabilities を取り出す', async () => {
     const captured: Captured = {};
     const ports = createPorts(fakeCell(captured), settingsDirWith({}));

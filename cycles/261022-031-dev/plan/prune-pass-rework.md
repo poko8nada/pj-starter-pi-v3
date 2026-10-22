@@ -275,14 +275,23 @@ export function statusLines(status: Status, settings: Settings, now: number): re
 ### Slice 4: ドキュメントを揃える
 
 - Findings:
-- Unplanned:
-- Commit:
+  - 分類器の指示・基準が英語であることが README に無い（`prune/judge.ts:101-105`）
+    - left: slice 5 で直す
+  - 失敗も冷却の起点になることが README の Gate 行に無い（`index.ts` の `lastTokensOf`）
+    - left: slice 5 で直す
+- Unplanned: なし（read のみ）
+- Commit: なし（read のみ）
 
 ### Slice 5: 統合: prune のパスが、枠なし・英語・抜粋つきで回り、失敗は冷える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 88621c2
+
+### 掃除: 重複試験の削除（slice 外）
+
+- Dropped: `index.test.ts` の `ports` にあった summarize の試験（`args[2]`・`args[6]` などの配線検査）。`prune/ports.test.ts` の ok 経路と `summarizationReserve` の試験が同じ主張を覆うため。
+- Suite: `pnpm test:run .pi/extensions/context-prune` が 14 files / 154 passed、`pnpm typecheck`・`pnpm lint`・`pnpm format:check` も通過。
 
 ## Review
 
