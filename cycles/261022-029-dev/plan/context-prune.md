@@ -605,13 +605,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit: TBD
+- Commit: d829921 consult(context-prune): describe the extension and its settings
 
 ### Slice 8: 統合: 1 パスを通して、次の境界で文脈から外れる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 冪等の重複除けを turn_end と agent_before_settle で分けた（両方で同じ下書きを返すため）。
+- Commit: TBD
 
 ## Review
 

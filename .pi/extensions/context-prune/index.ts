@@ -79,11 +79,13 @@ export interface PruneWiring {
   readonly flush: () => Promise<void>;
 }
 
+type DraftSlot = 'turnEnd' | 'beforeSettle';
+
 interface WiringState {
   status: Status;
   inFlight: Promise<void> | undefined;
   notifiedBroken: boolean;
-  lastDraftKey: string | undefined;
+  lastDraftKey: Record<DraftSlot, string | undefined>;
 }
 
 interface WiringDeps {
@@ -126,6 +128,7 @@ function readOrNotify(deps: WiringDeps, ctx: PruneCtx): Settings | undefined {
 /** まだ文脈に効いていない落とし物を下書きにする。同じ境界の 2 回目は出さない */
 function offerDrafts(
   deps: WiringDeps,
+  slot: DraftSlot,
   branch: readonly SessionEntry[],
   settings: Settings,
 ): BoundaryResult | undefined {
@@ -137,12 +140,12 @@ function offerDrafts(
   }
   const drafts = draftsFor(passesOf(branch), edited, settings.marker);
   if (drafts.length === 0) {
-    deps.state.lastDraftKey = undefined;
+    deps.state.lastDraftKey[slot] = undefined;
     return undefined;
   }
   const key = drafts.map((draft) => draft.targetId).join(',');
-  if (key === deps.state.lastDraftKey) return undefined;
-  deps.state.lastDraftKey = key;
+  if (key === deps.state.lastDraftKey[slot]) return undefined;
+  deps.state.lastDraftKey[slot] = key;
   return { entries: [...drafts] };
 }
 
@@ -287,7 +290,7 @@ export function createWiring(pi: PiPort, options: WiringOptions): PruneWiring {
       status: { running: false, failures: 0, lastPass: undefined },
       inFlight: undefined,
       notifiedBroken: false,
-      lastDraftKey: undefined,
+      lastDraftKey: { turnEnd: undefined, beforeSettle: undefined },
     },
   };
   return {
@@ -295,14 +298,14 @@ export function createWiring(pi: PiPort, options: WiringOptions): PruneWiring {
       const settings = readOrNotify(deps, ctx);
       if (settings === undefined) return undefined;
       const branch = ctx.sessionManager.getBranch();
-      const outcome = offerDrafts(deps, branch, settings);
+      const outcome = offerDrafts(deps, 'turnEnd', branch, settings);
       startInBackground(deps, ctx, settings, branch);
       return outcome;
     },
     onBeforeSettle: async (ctx) => {
       const settings = readOrNotify(deps, ctx);
       if (settings === undefined) return undefined;
-      return offerDrafts(deps, ctx.sessionManager.getBranch(), settings);
+      return offerDrafts(deps, 'beforeSettle', ctx.sessionManager.getBranch(), settings);
     },
     onCommand: (args, ctx) => onCommand(deps, args, ctx),
     getStatus: () => deps.state.status,

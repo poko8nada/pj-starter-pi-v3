@@ -369,3 +369,159 @@ describe('onBeforeSettle', () => {
     expect(second).toBeUndefined();
   });
 });
+
+function evolvingHarness(options: {
+  readonly summary: string;
+  readonly yes: number;
+  readonly classifyFails?: boolean;
+}): {
+  readonly branch: SessionEntry[];
+  readonly appended: { readonly customType: string; readonly data: unknown }[];
+  readonly notified: string[];
+  readonly ctx: PruneCtx;
+  readonly pi: PiPort;
+  readonly ports: PassPorts;
+} {
+  const branch: SessionEntry[] = [];
+  const appended: { customType: string; data: unknown }[] = [];
+  const notified: string[] = [];
+  const ports: PassPorts = {
+    summarize: () => Promise.resolve({ kind: 'ok', summary: options.summary, usage: undefined }),
+    classify: (request) => {
+      if (options.classifyFails === true) {
+        return Promise.resolve({ kind: 'failed', reason: 'classifier boom' });
+      }
+      const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
+      for (const key of Object.keys(request.questions)) {
+        answers[key] = { type: 'choice', probabilities: { yes: options.yes } };
+      }
+      return Promise.resolve({ kind: 'ok', answers });
+    },
+  };
+  const pi: PiPort = {
+    on: () => undefined,
+    registerCommand: () => undefined,
+    registerEntryRenderer: () => undefined,
+    appendEntry: (customType, data) => {
+      appended.push({ customType, data });
+      const ids = nextId();
+      branch.push({
+        type: 'custom',
+        id: ids.id,
+        parentId: ids.parentId,
+        timestamp: new Date(seq).toISOString(),
+        customType,
+        data,
+      });
+    },
+  };
+  const manager = { getBranch: () => [...branch] };
+  const ctx: PruneCtx = {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 枝だけ返す偽物を作る
+    sessionManager: manager as unknown as ExtensionContext['sessionManager'],
+    getContextUsage: () => ({ tokens: 1500, contextWindow: 2000, percent: 75 }),
+    ui: {
+      notify: (message: string) => {
+        notified.push(message);
+      },
+    },
+  };
+  return { branch, appended, notified, ctx, pi, ports };
+}
+
+describe('integration', () => {
+  const RESULT_TEXT = '落とす結果の本文';
+
+  function readyHarness(overrides?: { readonly classifyFails?: boolean }): {
+    readonly harness: ReturnType<typeof evolvingHarness>;
+    readonly result: SessionEntry;
+    readonly wiring: ReturnType<typeof createWiring>;
+  } {
+    const harness = evolvingHarness({
+      summary: 'テストの要約',
+      yes: 0,
+      classifyFails: overrides?.classifyFails,
+    });
+    const call = assistantCall('c-old');
+    const result = toolResult('c-old', RESULT_TEXT);
+    const recent = assistantText('直近の返答');
+    harness.branch.push(call, result, recent);
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    return { harness, result, wiring };
+  }
+
+  it('1 パス後に appendEntry が 1 回、customType が context-prune', async () => {
+    const { harness, wiring } = readyHarness();
+    const first = await wiring.onTurnEnd(harness.ctx);
+    expect(first).toBeUndefined();
+    await wiring.flush();
+    expect(harness.appended).toHaveLength(1);
+    expect(harness.appended[0]?.customType).toBe(CUSTOM_TYPE);
+  });
+
+  it('次の境界で context_edit が 1 件、targetId が落とした結果の id', async () => {
+    const { harness, result, wiring } = readyHarness();
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    const second = await wiring.onTurnEnd(harness.ctx);
+    expect(second?.entries).toHaveLength(1);
+    expect(second?.entries?.[0]).toMatchObject({
+      type: 'context_edit',
+      targetId: result.id,
+      replacement: {
+        content: [{ type: 'text', text: `古いツール結果（${RESULT_TEXT.length} 文字）を省略` }],
+      },
+    });
+  });
+
+  it('同じ境界の 2 回目 → entries が空', async () => {
+    const { harness, wiring } = readyHarness();
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    await wiring.onTurnEnd(harness.ctx);
+    expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
+  });
+
+  it('agent_before_settle → 同じ context_edit', async () => {
+    const { harness, result, wiring } = readyHarness();
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    const settled = await wiring.onBeforeSettle(harness.ctx);
+    expect(settled?.entries).toHaveLength(1);
+    expect(settled?.entries?.[0]).toMatchObject({
+      type: 'context_edit',
+      targetId: result.id,
+    });
+  });
+
+  it('classify が失敗する → appendEntry されず、failures が 1', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.appended).toHaveLength(0);
+    expect(wiring.getStatus().failures).toBe(1);
+  });
+
+  it('文脈に効いたあとの境界 → entries が空', async () => {
+    const { harness, result, wiring } = readyHarness();
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    await wiring.onTurnEnd(harness.ctx);
+    const ids = nextId();
+    harness.branch.push({
+      type: 'context_edit',
+      id: ids.id,
+      parentId: ids.parentId,
+      timestamp: new Date(seq).toISOString(),
+      targetId: result.id,
+      replacement: {
+        content: [{ type: 'text', text: `古いツール結果（${RESULT_TEXT.length} 文字）を省略` }],
+      },
+    });
+    expect(await wiring.onTurnEnd(harness.ctx)).toBeUndefined();
+  });
+});
