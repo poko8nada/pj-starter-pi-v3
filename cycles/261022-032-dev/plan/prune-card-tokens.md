@@ -139,7 +139,7 @@ export function createCard(pass: PrunePass, theme: Theme, outputPad?: number): C
 
 - Findings: なし
 - Unplanned: owner の `look` で、展開の並びが読みにくいと出た（件数が先で、要約が最後）。`cardText`、`paintExpanded`、`render.test.ts`、`README.md` を「見出し、要約、空行、省略、秒数」に直した
-- Commit:
+- Commit: f383bd4（並びを直した commit。owner の `look` は修正後に通った）
 
 ## Review
 
