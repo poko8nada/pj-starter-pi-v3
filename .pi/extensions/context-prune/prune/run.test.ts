@@ -68,7 +68,8 @@ describe('runPass', () => {
     expect(outcome.pass.at).toBe(1000);
   });
 
-  it('長い抜粋 100 件 → 予算で 2 回以上に割れる', async () => {
+  it('view 1000 文字・抜粋 1000 文字の候補 100 件 → 予算で 2 回以上に割れる', async () => {
+    // view 1000 文字ぶんの fixed 400 に対し、質問 1 件 ~482 で 100 件は ~48200 になる。
     const calls = { count: 0 };
     const long: Candidate[] = [];
     for (let index = 0; index < 100; index += 1) {
@@ -79,7 +80,7 @@ describe('runPass', () => {
       probs[`keep_${item.id}`] = 0.9;
     }
     const ports: PassPorts = {
-      summarize: summarizeOk('test summary'),
+      summarize: summarizeOk('x'.repeat(1000)),
       classify: classifyWith(probs, calls),
     };
     const outcome = await runPass(
@@ -91,9 +92,9 @@ describe('runPass', () => {
   });
 
   it('要約の view が大きい → fixed が効いて束が増え、state には view が入る', async () => {
-    // fixed を無視すれば 75 件 × 411 トークン = 30825 で 1 束に収まる。
-    // view（Goal 節 ~3204 トークン）＋質問 1 件分を引くと 2 束以上に割れる。
-    const full = ['## Goal', 'x'.repeat(8000), '', '## Constraints & Preferences', '- none'].join(
+    // 66 件 × ~482 トークン = ~31812 で fixed 無しなら 1 束に収まる。
+    // view（Goal 節 ~1008 文字ぶん ~404 トークン）を引くと 2 束以上に割れる。
+    const full = ['## Goal', 'x'.repeat(1000), '', '## Constraints & Preferences', '- none'].join(
       '\n',
     );
     const seen: unknown[] = [];
@@ -107,7 +108,7 @@ describe('runPass', () => {
       },
     };
     const long: Candidate[] = [];
-    for (let index = 0; index < 75; index += 1) {
+    for (let index = 0; index < 66; index += 1) {
       long.push(candidate(`c${index}`, 1000, 'x'.repeat(1000)));
     }
     const outcome = await runPass(

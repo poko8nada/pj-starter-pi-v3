@@ -4,6 +4,7 @@ import {
   batches,
   classifierTokens,
   judgeRequest,
+  questionTokens,
   topicView,
   verdicts,
   type JudgeAnswers,
@@ -31,14 +32,15 @@ function many(count: number, excerpt = 'x'.repeat(1000)): Candidate[] {
 }
 
 describe('judgeRequest', () => {
-  it('候補 2 件 → questions の鍵が keep_a と keep_b、state に要約と 2 件', () => {
+  it('候補 2 件 → questions の鍵が keep_a と keep_b、state は summary だけ', () => {
     const request = judgeRequest('話題の要約', [candidate('a'), candidate('b')]);
     expect(Object.keys(request.questions).toSorted()).toEqual(['keep_a', 'keep_b']);
     expect(request.state['summary']).toBe('話題の要約');
-    expect(request.state['candidates']).toHaveLength(2);
+    expect(request.state).not.toHaveProperty('candidates');
+    expect(Object.keys(request.state).toSorted()).toEqual(['summary']);
   });
 
-  it('keep_a の criteria が keep と drop を持ち、instructions に need が入る', () => {
+  it('keep_a の criteria が keep と drop を持ち、instructions に need と候補の行が入る', () => {
     const request = judgeRequest('話題の要約', [candidate('a')]);
     const question = request.questions['keep_a'];
     expect(question?.criteria).toEqual({
@@ -46,6 +48,10 @@ describe('judgeRequest', () => {
       drop: expect.any(String),
     });
     expect(question?.instructions).toContain('need');
+    expect(question?.instructions).toContain('tool: read');
+    expect(question?.instructions).toContain('args:');
+    expect(question?.instructions).toContain('chars:');
+    expect(question?.instructions).toContain('result:');
     expect(question?.instructions.length).toBeGreaterThan(0);
   });
 
@@ -60,21 +66,33 @@ describe('judgeRequest', () => {
     }
   });
 
-  it('要約の view を state に入れ、候補に抜粋を付ける', () => {
+  it('要約の view を state に入れ、候補の抜粋は質問文に付ける', () => {
     const summary = ['## Goal', 'do thing', '', '## Constraints & Preferences', '- none'].join(
       '\n',
     );
     const request = judgeRequest(summary, [candidate('a', 'abc')]);
     expect(request.state['summary']).toBe('## Goal\ndo thing');
-    expect(request.state['candidates']).toEqual([
-      {
-        key: 'keep_a',
-        toolName: 'read',
-        args: 'read({"path":"a.txt"})',
-        chars: 10,
-        excerpt: 'abc',
-      },
-    ]);
+    expect(request.state).not.toHaveProperty('candidates');
+    const question = request.questions['keep_a'];
+    expect(question?.instructions).toContain('tool: read');
+    expect(question?.instructions).toContain('args: read({"path":"a.txt"})');
+    expect(question?.instructions).toContain('chars: 10');
+    expect(question?.instructions).toContain('result:');
+    expect(question?.instructions).toContain('abc');
+  });
+
+  it('候補 0 件 → questions が空で、state は summary だけ', () => {
+    const request = judgeRequest('話題の要約', []);
+    expect(request.questions).toEqual({});
+    expect(request.state).toEqual({ summary: '話題の要約' });
+  });
+});
+
+describe('questionTokens', () => {
+  it('抜粋 1000 文字は 500 文字より大きい', () => {
+    const small = questionTokens(candidate('a', 'x'.repeat(500)));
+    const large = questionTokens(candidate('a', 'x'.repeat(1000)));
+    expect(large).toBeGreaterThan(small);
   });
 });
 
@@ -169,10 +187,17 @@ describe('verdicts', () => {
 });
 
 describe('batches', () => {
-  it('1000 文字の抜粋 100 件 → 32000 の予算で 2 束以上', () => {
-    const result = batches(many(100), { total: 32000, fixed: 2000 });
+  it('view 1000 文字・抜粋 1000 文字の候補 100 件 → 32000 の予算で 2 束以上', () => {
+    // view 1000 文字ぶんの fixed 400 に対し、質問 1 件 ~473 で 100 件は ~47300 になる。
+    const result = batches(many(100), { total: 32000, fixed: 400 });
     expect(result.length).toBeGreaterThanOrEqual(2);
     expect(result.flat()).toHaveLength(100);
+  });
+
+  it('候補 1 件が予算を超える → その 1 件だけの束になる', () => {
+    const result = batches(many(1), { total: 10, fixed: 9 });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveLength(1);
   });
 
   it('予算が 1 件分より小さい → 1 件だけの束になる', () => {

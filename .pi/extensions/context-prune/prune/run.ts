@@ -76,8 +76,7 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
     return { kind: 'failed', reason: 'summary is empty' };
   }
   const view = topicView(summarized.summary);
-  const sample = judgeRequest(view, input.candidates.slice(0, 1)).questions;
-  const fixed = classifierTokens(view) + classifierTokens(JSON.stringify(sample));
+  const fixed = classifierTokens(view);
   const answers: Record<
     string,
     { readonly type: string; readonly probabilities: Readonly<Record<string, number>> }
