@@ -381,8 +381,30 @@ export function rowsOf(
   - 私的な `deliverUnread`（`.pi/extensions/consult/index.ts:67`）の `session_start` 配線を叩く試験が無い。論理は `flushPending` と同形で Verify の名指しも tick 側のため、finding にはしない。
     - left: `flushPending` と同形で Verify の名指しも tick 側のため、私的配線の試験は足さない。
 
+### Round 2
+
+- Stale:
+  - `.pi/extensions/consult/run/log.ts:46` — fixed confirmed: `notice` 欄注は「完了は必ずこの 1 行になり、tick が 5 秒ごとに読んで渡し、渡すたびに印の行を足す」になっており、旧文言（届け先不在・次回起動時読取）は同ファイルに残っていない。
+  - `.pi/extensions/consult/README.md:66` — fixed confirmed: 渡し済みの終わりは仕上がり表示（`done`等）、印の無い完了は渡すまで `running`（pid 無し）と書き分けられている。終わり行＝仕上がりの一律断定は無い。
+  - `.pi/extensions/consult/README.md:201` — fixed confirmed: Sound 節は tick 主語で「5 秒ごとに読み直し・渡し待ちでも鳴る・タイマーは `session_start` 〜 `session_shutdown`（`stopTick`）まで・自分で止まらない」旨になっている。旧文言（走っている間だけ・走行者が居なくなると止まる・終わりには鳴らない）は同節に残っていない。
+  - `.pi/extensions/consult/README.md:237` — fixed confirmed: `run/delivery.test.ts` 説明は `pendingReports`／`appendDelivered`（印の行・旧 cursor の水位）になっている。
+  - `.pi/extensions/consult/README.md:240` — fixed confirmed: `tool/consult.test.ts` 説明に「the sound」は無く、完了の行（`sendMessage` なし）の説明になっている。
+  - `.pi/extensions/consult/README.md:241` — fixed confirmed: `tool/sound.test.ts` 説明は `playSound`・player 差し替え・タイマーは `index.ts` の旨になっている。
+- Unlisted:
+  - No target (Round 1 に所見なし。確認対象なし)。
+- Gaps:
+  - No target (Round 1 に所見なし。確認対象なし)。
+- Unproven:
+  - `.pi/extensions/consult/index.test.ts:83` (flushPending、Round 1 指摘の`:82`) — fixed confirmed: 行数 2・`deliveredKeys` 1・`pendingReports` 空の断定がある（lines 93-96）。印 0 本なら行数 1・keys 0・pending 非空で落ち、印 2 本なら行数 3 で落ちる。
+  - `.pi/extensions/consult/index.test.ts:109` (startTick、Round 1 指摘の`:104`) — fixed confirmed: 同じ 3 点の断定がある（lines 120-123）。書かない／重ね書きでは落ちる。
+- Doubts:
+  - `tool/consult.ts:101` に「走っている間だけ」の文言が残るが、pid 欄の注で Sound 節とは別物。plan の変更対象外のため finding にしない。
+  - `deliveredKeys` は集合なので印の重ね書きでも大きさは 1 のままだが、行数 2 の断定が重複を落とすため finding にしない。
+  - 作業ツリー現物の確認のみ（commit 差分の照合はしていない）。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run .pi/extensions/consult`（18 files / 375 tests）、`pnpm typecheck`（root / .pi とも ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（差分なし）。
+- Ran: 壊し試験 3 つ。`isWaiting` を常に false に → `subagents.test.ts` 1 件 red。`appendDelivered` を何もしない → `index.test.ts` 4 件 red。`pendingReports` の古い目録の比較を `<=` から `<` に → `delivery.test.ts` 1 件 red。どれも戻して再実行し、375 件 green。
+- Findings: なし
+- Doubts: なし
