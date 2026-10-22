@@ -599,13 +599,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: 本番の要約・判定の口を `prune/ports.ts`（`createPorts`）に分けた。plan の Files には無いが、`index.ts` の `max-lines` を割るために要る。
-- Commit: TBD
+- Commit: d3917ed consult(context-prune): wire turn_end and the /prune command
 
 ### Slice 7: 文書と定義
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: TBD
 
 ### Slice 8: 統合: 1 パスを通して、次の境界で文脈から外れる
 
