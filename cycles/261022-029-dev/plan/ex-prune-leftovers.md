@@ -152,7 +152,7 @@ export interface ModelCell {
   - なし
 - Unplanned:
   - なし
-- Commit:
+- Commit: fe57eb4 consult(ex-prune-leftovers): format counts in one place
 
 ### Slice 2: 壊れた `settings.json` を上書きしない
 
