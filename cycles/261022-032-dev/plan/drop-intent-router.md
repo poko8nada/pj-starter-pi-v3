@@ -84,9 +84,9 @@ README.ja.md                    update
 
 ### Slice 1: 拡張を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2fa7424 consult(drop-intent-router): remove intent-router extension
 
 ### Slice 2: 参照を消す
 

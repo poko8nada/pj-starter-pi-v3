@@ -43,7 +43,7 @@ The kinds below are how the Units of this product happen to appear. They are exa
 - The name says what the Unit is. The feature layer is gone, so the name is the only place that says it.
 - The name is two or more words joined with hyphens. Two shapes:
   - a thing and its kind: `lefthook-gate`, `adr-skill`, `agent-rules`
-  - an object and its work: `sound-notify`, `intent-router`
+  - an object and its work: `sound-notify`
 - A bare word is not written: `lint`, `test`, `consult`, `readme`.
 - The tool's name belongs to the `Stack`: `oxlint` is written there, and the Unit is named for what the `Who` uses.
 - The lists below are the spelling. They are not a gate: a name that is not in them is decided in the ADR entry, and written in `DEFINITION.md`. The list gains the name later, outside a cycle.
