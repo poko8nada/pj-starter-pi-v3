@@ -575,13 +575,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: 空ブロックの toolResult を古い側に置くようテストの並びを直した（collect の境界は変えず）。
-- Commit: 93f3e90 consult(context-prune): add candidate collection and summary prompt
+- Commit: 353244d consult(context-prune): add candidate collection and summary prompt
 
 ### Slice 3: 判定と発動
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: TBD
 
 ### Slice 4: 記録と差し込み
 
