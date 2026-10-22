@@ -80,4 +80,17 @@ describe('batches', () => {
   it('maxQuestions 1 → 90 の束', () => {
     expect(batches(many(90), 1)).toHaveLength(90);
   });
+
+  it('maxQuestions 0 と -3 → 1 束に丸める', () => {
+    expect(batches(many(3), 0)).toHaveLength(3);
+    expect(batches(many(3), -3)).toHaveLength(3);
+  });
+
+  it('maxQuestions 2.7 → 2 件ずつの束', () => {
+    const result = batches(many(5), 2.7);
+    expect(result).toHaveLength(3);
+    expect(result[0]).toHaveLength(2);
+    expect(result[1]).toHaveLength(2);
+    expect(result[2]).toHaveLength(1);
+  });
 });

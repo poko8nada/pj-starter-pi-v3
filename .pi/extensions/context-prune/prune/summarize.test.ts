@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EntryMessage } from './collect.ts';
-import { assistantText, summaryPrompt } from './summarize.ts';
+import { messageText, summaryPrompt } from './summarize.ts';
 
 type AssistantContent = Extract<EntryMessage, { readonly role: 'assistant' }>['content'];
 
@@ -36,20 +36,20 @@ describe('summaryPrompt', () => {
   });
 });
 
-describe('assistantText', () => {
+describe('messageText', () => {
   it('text 2 つと toolCall が混ざる → text だけを連結した文字列', () => {
     const message = assistantMessage([
       { type: 'text', text: 'hello ' },
       { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
       { type: 'text', text: 'world' },
     ]);
-    expect(assistantText(message)).toBe('hello world');
+    expect(messageText(message)).toBe('hello world');
   });
 
   it('text ブロックが無い → 空文字', () => {
     const message = assistantMessage([
       { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
     ]);
-    expect(assistantText(message)).toBe('');
+    expect(messageText(message)).toBe('');
   });
 });

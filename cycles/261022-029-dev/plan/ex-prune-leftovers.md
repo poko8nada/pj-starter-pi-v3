@@ -165,7 +165,9 @@ export interface ModelCell {
 ### Slice 3: 口の役目を分け、エラー経路を試す
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
 
 ## Review
