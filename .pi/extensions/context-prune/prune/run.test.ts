@@ -33,7 +33,7 @@ function classifyWith(
       if (probability === undefined) {
         continue;
       }
-      answers[key] = { type: 'choice', probabilities: { yes: probability } };
+      answers[key] = { type: 'choice', probabilities: { keep: probability } };
     }
     return Promise.resolve({ kind: 'ok', answers });
   };

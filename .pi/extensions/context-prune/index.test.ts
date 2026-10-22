@@ -193,7 +193,7 @@ function fakePorts(
   ): Record<string, { type: string; probabilities: Record<string, number> }> => {
     const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
     for (const key of Object.keys(request.questions)) {
-      answers[key] = { type: 'choice', probabilities: { yes } };
+      answers[key] = { type: 'choice', probabilities: { keep: yes } };
     }
     return answers;
   };
@@ -295,7 +295,7 @@ describe('onTurnEnd', () => {
       classify: (request) => {
         const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
         for (const key of Object.keys(request.questions)) {
-          answers[key] = { type: 'choice', probabilities: { yes: 0 } };
+          answers[key] = { type: 'choice', probabilities: { keep: 0 } };
         }
         return Promise.resolve({ kind: 'ok', answers });
       },
@@ -416,7 +416,7 @@ function evolvingHarness(options: {
       }
       const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
       for (const key of Object.keys(request.questions)) {
-        answers[key] = { type: 'choice', probabilities: { yes: probs[key] ?? options.yes } };
+        answers[key] = { type: 'choice', probabilities: { keep: probs[key] ?? options.yes } };
       }
       return Promise.resolve({ kind: 'ok', answers });
     },
@@ -500,7 +500,7 @@ function readyFlaky(failFirst: boolean): {
       for (const key of Object.keys(request.questions)) {
         answers[key] = {
           type: 'choice',
-          probabilities: { yes: key === `keep_${resultB.id}` ? 0.9 : 0 },
+          probabilities: { keep: key === `keep_${resultB.id}` ? 0.9 : 0 },
         };
       }
       return Promise.resolve({ kind: 'ok', answers });
@@ -742,7 +742,7 @@ function fakeCell(captured: Captured): ModelCell {
       provider: 'opencode',
       model: 'jev-1.13-free',
       answers: {
-        keep_a: { type: 'choice', choice: 'yes', probabilities: { yes: 0.8 }, confidence: 0.9 },
+        keep_a: { type: 'choice', choice: 'keep', probabilities: { keep: 0.8 }, confidence: 0.9 },
       },
       stopReason: 'stop',
       timestamp: 1,
@@ -773,7 +773,7 @@ describe('ports', () => {
     });
     expect(outcome).toEqual({
       kind: 'ok',
-      answers: { keep_a: { type: 'choice', probabilities: { yes: 0.8 } } },
+      answers: { keep_a: { type: 'choice', probabilities: { keep: 0.8 } } },
     });
     expect(JSON.stringify(captured.classifyArgs)).toContain('keep_a');
   });

@@ -98,10 +98,10 @@ export function judgeRequest(summary: string, candidates: readonly Candidate[]):
   for (const candidate of candidates) {
     questions[`keep_${candidate.id}`] = {
       type: 'choice',
-      instructions: 'Is this tool result still relevant to the summary topic?',
+      instructions: 'Will you need this tool result later (to read, quote, or use)?',
       criteria: {
-        yes: 'Relevant to the summary topic',
-        no: 'Not relevant to the summary topic',
+        keep: 'Will need later (to read, quote, or use)',
+        drop: 'Will not need later',
       },
     };
   }
@@ -136,7 +136,7 @@ export function batches(
   return out;
 }
 
-/** 答えの yes の確率を読み、threshold 未満だけ落とす。答えが無ければ残す */
+/** 答えの keep の確率を読み、threshold 未満だけ落とす。答えが無ければ残す */
 export function verdicts(
   candidates: readonly Candidate[],
   answers: JudgeAnswers,
@@ -147,7 +147,7 @@ export function verdicts(
     if (answer === undefined) {
       return { id: candidate.id, keep: true, keepProbability: 0 };
     }
-    const probability = answer.probabilities['yes'] ?? 0;
+    const probability = answer.probabilities['keep'] ?? 0;
     return { id: candidate.id, keep: probability >= threshold, keepProbability: probability };
   });
 }
