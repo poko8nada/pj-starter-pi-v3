@@ -19,13 +19,11 @@ import {
   isRunning,
   KEEP_DAYS,
   readRuns,
-  runningRuns,
   type CheckRecord,
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
 import { latest } from './subagents.ts';
-import type { Delivery } from '../run/delivery.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
   USAGE as RUN_USAGE,
@@ -37,7 +35,7 @@ import { readStartToken, type PsRun } from '../run/proc.ts';
 import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, reportBlock, result, usageLine, type SubagentReport } from './render.ts';
-import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';
+import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -271,8 +269,6 @@ interface RuntimeState {
   readonly place: Place;
   readonly run: ConsultRunner;
   readonly subagents: Map<string, RunningSubagent>;
-  /** 完了の届け先。reload で差し替わるので、直に pi を握らない */
-  readonly delivery?: Delivery;
   readonly sessionNow: () => string;
   /** 生死の照合。テストが差し替える口（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`） */
   readonly check?: CheckRecord;
@@ -297,34 +293,13 @@ function failureOutcome(error: unknown): ConsultOutcome {
   return { text: `(the consult could not run) ${detail}`, details: { error: detail } };
 }
 
-/** 完了をメインエージェントのメッセージにする */
-function deliver(
-  state: RuntimeState,
-  subagent: RunningSubagent,
-  outcome: ConsultOutcome,
-  record: RunRecord,
-): void {
-  const built = completionMessage(subagent, outcome);
-  if (state.delivery === undefined) {
-    // delivery を組んでいない（テストの runtime など）。今まで通り直接渡す
-    state.pi.sendMessage(built.message, built.options);
-    return;
-  }
-  state.delivery.send(built.message, built.options, record);
-}
-
 /**
- * 走っているサブエージェントの記録を閉じる 1 行。
+ * 走行の完了の 1 行を作る。開始行の `token` を写す。記録への追記はしない。
  *
- * 落ちたサブエージェントも閉じる（開いたままにすると、いつまでも「走っている」と見える）。届け先が無かったときの
- * 控え（`notice`）にもこの記録を使う。
+ * 落ちたサブエージェントも閉じる（開いたままにすると、いつまでも「走っている」と見える）。
  */
-function closeRecord(
-  job: BackgroundJob,
-  place: Place,
-  report: SubagentReport | undefined,
-): RunRecord {
-  const record: RunRecord = {
+function completionRecord(job: BackgroundJob, report: SubagentReport | undefined): RunRecord {
+  return {
     session: job.session,
     subagent: job.subagent.id,
     role: job.options.type,
@@ -335,24 +310,30 @@ function closeRecord(
     files: report === undefined ? [] : [...report.files],
     turns: report?.turns ?? 0,
     spend: report?.spend ?? '',
+    token: job.job.token,
     ...(report?.reason === undefined ? {} : { reason: report.reason }),
     ...(job.job.worktree === undefined ? {} : { worktree: job.job.worktree.id }),
   };
-  appendRun(place, record);
-  return record;
 }
 
-/** サブエージェントを起こし、完了でメッセージを送る。呼び出し側は待たない */
+/** サブエージェントを起こし、完了を記録の 1 行にする。渡すのは tick の仕事。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
-      const record = closeRecord(job, state.place, outcome.report);
-      deliver(state, job.subagent, outcome, record);
+      const built = completionMessage(job.subagent, outcome);
+      appendRun(state.place, {
+        ...completionRecord(job, outcome.report),
+        notice: built.message.content,
+      });
     })
     .catch((error: unknown) => {
-      const record = closeRecord(job, state.place, undefined);
-      deliver(state, job.subagent, failureOutcome(error), record);
+      const outcome = failureOutcome(error);
+      const built = completionMessage(job.subagent, outcome);
+      appendRun(state.place, {
+        ...completionRecord(job, undefined),
+        notice: built.message.content,
+      });
     })
     .finally(() => {
       state.subagents.delete(job.subagent.id);
@@ -444,11 +425,6 @@ function beginRun(
     },
   };
   state.subagents.set(subagent.id, subagent);
-  if (state.subagents.size === 1) {
-    // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
-    const check = state.check;
-    startSound(() => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0);
-  }
   runInBackground(state, { ctx, options, job, subagent, session });
   const running = [...state.subagents.values()].map(describeSubagent).join('\n');
   return result(`started: ${subagent.id}\n\nrunning now:\n${running}`, {
@@ -479,12 +455,11 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
-// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, delivery, sessionNow, check, psRun の 7 つ）
+// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, sessionNow, check, psRun の 6 つ）
 export function createRuntime(
   pi: PiFace,
   place: Place,
   run: ConsultRunner = consult,
-  delivery?: Delivery,
   sessionNow: () => string = () => '',
   check?: CheckRecord,
   psRun?: PsRun,
@@ -498,7 +473,6 @@ export function createRuntime(
     sessionNow,
     ...(check === undefined ? {} : { check }),
     ...(psRun === undefined ? {} : { psRun }),
-    ...(delivery === undefined ? {} : { delivery }),
   };
   return {
     subagents: state.subagents,

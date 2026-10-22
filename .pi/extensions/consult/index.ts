@@ -7,11 +7,11 @@
 
 import { rmSync } from 'node:fs';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createRuntime, type ConsultRuntime } from './tool/consult.ts';
+import { createRuntime, type ConsultRuntime, type PiFace } from './tool/consult.ts';
 import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/subagents.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
-import { startSound, stopSound } from './tool/sound.ts';
-import { createDelivery, pruneCursors, unreadNotices, writeCursor } from './run/delivery.ts';
+import { SOUND_INTERVAL_MS, playSound } from './tool/sound.ts';
+import { appendDelivered, pendingReports, pruneCursors } from './run/delivery.ts';
 import {
   closeOrphans,
   KEEP_DAYS,
@@ -61,15 +61,14 @@ function noticeDetails(record: RunRecord): Record<string, unknown> {
 /**
  * まだ渡していない完了の報告を、owner へ 1 つずつ渡す。
  *
- * 起動のたびに記録を読み直すので、reload の前のサブエージェントの報告もここで届く。全部渡し終えてから目録を
- * 1 回だけ進める（途中で落ちても、同じ物をもう一度渡すだけになる）。
+ * 起動のたびに記録を読み直すので、reload の前のサブエージェントの報告もここで届く。渡すたびに印の行を
+ * 足す（途中で落ちても、同じ物をもう一度渡すだけになる）。
  */
 function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
   if (current === '') {
     return;
   }
-  let last: number | undefined;
-  for (const record of unreadNotices(place, { session: current, days: KEEP_DAYS })) {
+  for (const record of pendingReports(place, { session: current, days: KEEP_DAYS })) {
     pi.sendMessage(
       {
         customType: 'consult',
@@ -79,18 +78,93 @@ function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
       },
       { triggerTurn: true, deliverAs: 'followUp' },
     );
-    last = record.ended;
-  }
-  if (last !== undefined) {
-    writeCursor(place, current, { ended: last });
+    appendDelivered(place, record);
   }
 }
 
+/** tick に渡す口。置き場と、いまのセッションと、送る pi だけ */
+export interface TickPort {
+  readonly pi: PiFace;
+  readonly place: Place;
+  readonly sessionNow: () => string;
+  readonly check?: CheckRecord;
+}
+
 /**
- * 前のセッション（reload の前）のサブエージェントがまだ走っていれば、そのことを知らせて音を戻す。
+ * 印の無い完了を渡す。渡した数を返す。
+ *
+ * 渡すたびに印の行を足す。送る途中で投げたら、その行から印は進めない（次の tick が送り直す）。
+ */
+export function flushPending(port: TickPort): number {
+  const current = port.sessionNow();
+  if (current === '') {
+    return 0;
+  }
+  let count = 0;
+  for (const record of pendingReports(port.place, { session: current, days: KEEP_DAYS })) {
+    port.pi.sendMessage(
+      {
+        customType: 'consult',
+        content: record.notice ?? '',
+        display: true,
+        details: noticeDetails(record),
+      },
+      { triggerTurn: true, deliverAs: 'followUp' },
+    );
+    appendDelivered(port.place, record);
+    count += 1;
+  }
+  return count;
+}
+
+let tickTimer: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * 5 秒ごとに、印の無い完了を渡し、まだあれば音を鳴らす。すでに動いていれば何もしない。
+ *
+ * `flushPending` の失敗は捕まえ、次の tick に任せる。音の判定の失敗も tick を止めない。
+ */
+export function startTick(port: TickPort): void {
+  if (tickTimer !== undefined) {
+    return;
+  }
+  tickTimer = setInterval(() => {
+    let delivered = 0;
+    try {
+      delivered = flushPending(port);
+    } catch {
+      // 次の tick に任せる。印は進めていないので、同じ物を送り直す
+    }
+    try {
+      const current = port.sessionNow();
+      if (current === '') {
+        return;
+      }
+      const running = runningRuns(port.place, { session: current }, port.check).length > 0;
+      const pending = pendingReports(port.place, { session: current, days: KEEP_DAYS }).length > 0;
+      if (running || delivered > 0 || pending) {
+        playSound();
+      }
+    } catch {
+      // 音の判定で落ちても tick は止めない
+    }
+  }, SOUND_INTERVAL_MS);
+}
+
+/** tick のタイマーを止める。無ければ何もしない */
+export function stopTick(): void {
+  if (tickTimer === undefined) {
+    return;
+  }
+  clearInterval(tickTimer);
+  tickTimer = undefined;
+}
+
+/**
+ * 前のセッション（reload の前）のサブエージェントがまだ走っていれば、そのことを知らせる。
  *
  * いまの session の走っているサブエージェントだけを見る（別の session のサブエージェントの報告はここには来ないので、
- * 待たせない）。音も同じ述語で鳴らし、居なくなれば自分で止まる。
+ * 待たせない）。
  */
 function announceRunningSubagents(
   place: Place,
@@ -106,7 +180,6 @@ function announceRunningSubagents(
     `consult: ${count} subagent(s) are still running from an earlier session (see consult_subagents)`,
     'info',
   );
-  startSound(() => runningRuns(place, { session: announced }, check).length > 0);
 }
 
 /** 人が使う口。サブエージェントの一覧と停止、音の切り替え */
@@ -156,20 +229,18 @@ function closeQuietly(place: Place, current: string): void {
 
 export default function (pi: ExtensionAPI) {
   const place = placeOf(process.cwd());
-  // 完了の届け先は 1 本。reload で捨てられても、古い delivery は記録へ回すだけ（新しいセッションが読む）
-  const delivery = createDelivery(place);
-  delivery.attach(pi);
-  const consult = createRuntime(pi, place, undefined, delivery, () => session);
+  const consult = createRuntime(pi, place, undefined, () => session);
 
-  // reload をまたいだサブエージェントがまだ走っていれば、知らせて音を戻す
+  // reload をまたいだサブエージェントがまだ走っていれば知らせ、tick で記録を読み直す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
     closeQuietly(place, session);
     announceRunningSubagents(place, session, ctx);
     sweep(place, ctx.cwd);
-    // まだ渡していない完了の報告を渡し、渡し終えてから目録を 1 回進める
+    // まだ渡していない完了の報告を渡し、渡すたびに印を足す
     deliverUnread(place, session, pi);
     pruneCursors(place, new Date(), KEEP_DAYS);
+    startTick({ pi, place, sessionNow: () => session });
   });
 
   pi.registerTool({
@@ -225,9 +296,7 @@ export default function (pi: ExtensionAPI) {
 
   // reload / セッションの差し替えで古いインスタンスが残っても、始めたタイマーが鳴り続けないように閉じる
   pi.on('session_shutdown', () => {
-    // サブエージェントは detach されているので殺さない。届け先を手放すだけ（以後の完了は記録に回る）
-    delivery.detach();
-    stopSound();
+    stopTick();
   });
 
   pi.registerTool({

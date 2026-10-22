@@ -83,7 +83,11 @@ describe('elapsed', () => {
 
 describe('rowOf / rowsOf', () => {
   it('id / role / 場所 / 状態 / 経過 / ターン / 費用 を 1 行に並べる', () => {
-    const row = rowOf(record({ worktree: '2-a', turns: 12, spend: '0.01 usd' }), false, 0);
+    const row = rowOf(
+      record({ worktree: '2-a', turns: 12, spend: '0.01 usd' }),
+      { alive: false, waiting: false },
+      0,
+    );
     expect(row).toContain('consult-1');
     expect(row).toContain('review');
     expect(row).toContain('worktree 2-a');
@@ -92,24 +96,20 @@ describe('rowOf / rowsOf', () => {
   });
 
   it('worktree が無いサブエージェントはベースと出す', () => {
-    expect(rowOf(record(), false, 0)).toContain('base');
+    expect(rowOf(record(), { alive: false, waiting: false }, 0)).toContain('base');
   });
 
   it('終わったサブエージェントは state と reason を出す。走っているサブエージェントは出さない', () => {
     const done = rowOf(
       record({ ended: 2, state: 'turn-limit', reason: 'turn limit reached (40)' }),
-      false,
+      { alive: false, waiting: false },
       0,
     );
     expect(done).toContain('turn-limit');
     expect(done).toContain('reason: turn limit reached (40)');
-    const running = rowOf(record(), true, 0);
+    const running = rowOf(record(), { alive: true, waiting: false }, 0);
     expect(running).toContain('running');
     expect(running).not.toContain('reason:');
-  });
-
-  it('走っているサブエージェント（終了行が無く check が running）は running になる', () => {
-    expect(rowsOf([record({ token: 'a' })], runningCheck, 0)[0]).toContain('running');
   });
 
   it('終わりの行が無く check が ended → lost（done と偽らない）', () => {
@@ -124,14 +124,29 @@ describe('rowOf / rowsOf', () => {
     expect(rowsOf([ended], endedCheck, 0)[0]).toContain('done');
   });
 
-  it('記録が空 → []', () => {
-    expect(rowsOf([], runningCheck, 0)).toEqual([]);
+  it('走っている開始行 → running (pid N)', () => {
+    const rows = rowsOf([record({ subagent: 'consult-9', pid: 4242 })], runningCheck, 0);
+    expect(rows[0]).toContain('running (pid 4242)');
   });
 
-  it('一覧の check を差し替え、running と ended を返す → 一覧の状態がそれに従う', () => {
-    const start = record({ subagent: 'consult-1', token: 'a' });
-    expect(listText([start], 0, runningCheck)).toContain('running');
-    expect(listText([start], 0, endedCheck)).not.toContain('running');
+  it('印の無い完了の行 → running（pid を出さない）', () => {
+    const done = record({ subagent: 'consult-9', ended: 2000, state: 'done', notice: 'できた' });
+    const rows = rowsOf([done], runningCheck, 0);
+    expect(rows[0]).toContain('running');
+    expect(rows[0]).not.toContain('pid');
+  });
+
+  it('印のある完了の行 → done', () => {
+    const done = record({ subagent: 'consult-9', ended: 2000, state: 'done', notice: 'できた' });
+    const mark = record({ subagent: 'consult-9', delivered: 3000 });
+    const rows = rowsOf([done, mark], runningCheck, 0);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toContain('done');
+    expect(rows[0]).not.toContain('running');
+  });
+
+  it('記録が空 → []', () => {
+    expect(rowsOf([], runningCheck, 0)).toEqual([]);
   });
 });
 

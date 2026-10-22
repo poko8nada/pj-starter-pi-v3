@@ -1,93 +1,39 @@
 /**
- * 音そのものを、差し替えた player と偽のタイマーで確かめる。
+ * 音そのものを、差し替えた player で確かめる。
  *
  * afplay は起動しない。`setPlayer` に記録するだけの関数を渡し、実際に鳴る所をテストから外す。
- * `sound.ts` はモジュールに 1 つの状態（enabled、timer、player）を持つ。各テストの前に enabled と timer を既定へ戻し、player はテストごとに差し替える。
- * tick ごとに述語を読み直し、居なければ自分を止める（記録を読む述語なので、reload をまたいでも止まる）。
+ * `sound.ts` はモジュールに 1 つの状態（enabled、player）を持つ。テストごとに enabled と player を戻す。
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  SOUND_INTERVAL_MS,
-  isSoundEnabled,
-  isSoundRunning,
-  playSound,
-  setPlayer,
-  setSoundEnabled,
-  startSound,
-  stopSound,
-} from './sound.ts';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { isSoundEnabled, playSound, setPlayer, setSoundEnabled } from './sound.ts';
 
 describe('sound', () => {
   const played: string[] = [];
 
   beforeEach(() => {
     played.length = 0;
-    vi.useFakeTimers();
     setSoundEnabled(true);
-    stopSound();
     setPlayer(() => {
       played.push('tink');
     });
   });
 
   afterEach(() => {
-    stopSound();
     setSoundEnabled(true);
-    vi.useRealTimers();
   });
 
-  it('述語が true のまま 3 tick → 3 回鳴る', () => {
-    startSound(() => true);
-    expect(isSoundRunning()).toBe(true);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS * 3);
-    expect(played).toHaveLength(3);
-    expect(isSoundRunning()).toBe(true);
+  it('playSound → 差し替えた player が 1 回呼ばれる', () => {
+    playSound();
+    expect(played).toEqual(['tink']);
   });
 
-  it('述語が false になった次の tick → 鳴らず、タイマーが消える', () => {
-    let running = true;
-    startSound(() => running);
-    expect(isSoundRunning()).toBe(true);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(played).toHaveLength(1);
-
-    running = false;
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(played).toHaveLength(1);
-    expect(isSoundRunning()).toBe(false);
-  });
-
-  it('enabled が off でも、述語が true の間はタイマーが残る（鳴らないだけ）', () => {
+  it('enabled が off → 鳴らさない', () => {
     setSoundEnabled(false);
     expect(isSoundEnabled()).toBe(false);
 
-    startSound(() => true);
-    expect(isSoundRunning()).toBe(true);
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS * 3);
-    expect(played).toHaveLength(0);
-    expect(isSoundRunning()).toBe(true);
-  });
+    playSound();
 
-  it('startSound を重ねてもタイマーは 1 本 → 5 秒ごとに 1 音', () => {
-    startSound(() => true);
-    startSound(() => true);
-    startSound(() => true);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(played).toHaveLength(1);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(played).toHaveLength(2);
-  });
-
-  it('サブエージェントが 0 体のまま（startSound しない）→ 5 秒経っても鳴らない', () => {
-    // 走っているサブエージェントがいなければ、timer は 1 本も無い。
-    expect(isSoundRunning()).toBe(false);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS * 3);
     expect(played).toHaveLength(0);
   });
 

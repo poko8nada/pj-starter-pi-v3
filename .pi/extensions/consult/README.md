@@ -63,7 +63,7 @@ The task reaches the subagent on stdin, not as an argument, so a task that begin
 | `action`  | no           | `list` (the default), or `cancel`                  |
 | `id`      | for `cancel` | The subagent to stop, as returned by `consult_run` |
 
-A row carries the id, the role, the place (a worktree id, or `base`), how long it has been going, its turns, and its spend. A subagent that is still running shows `running (pid <n>)`: the same subagent has no end row and the start time recorded at launch (`startToken`) still matches what `ps -p <pid> -o lstart=` reports for that pid (`--name` carries the token only as the subagent's display name); a row without a `startToken` falls back to whether the pid is alive. A finished one shows how it ended (`done`, `turn-limit`, `error`, `aborted`) and, when it did not end well, the reason — a subagent with an end row reads as finished even when its pid is alive again. A start with no end row whose `startToken` no longer matches its pid's `lstart` (or whose pid is dead, for a row without a `startToken`) shows `lost` (it is not passed off as `done`). When the check cannot read a pid at all, the subagent counts as running.
+A row carries the id, the role, the place (a worktree id, or `base`), how long it has been going, its turns, and its spend. A subagent that is still running shows `running (pid <n>)`: the same subagent has no end row and the start time recorded at launch (`startToken`) still matches what `ps -p <pid> -o lstart=` reports for that pid (`--name` carries the token only as the subagent's display name); a row without a `startToken` falls back to whether the pid is alive. A finished subagent whose report has been handed over shows how it ended (`done`, `turn-limit`, `error`, `aborted`) and, when it did not end well, the reason — an end row on its own reads as finished even when its pid is alive again, but a completion whose report is still waiting (`notice` without a mark) shows `running` without a pid until the session hands it over. A start with no end row whose `startToken` no longer matches its pid's `lstart` (or whose pid is dead, for a row without a `startToken`) shows `lost` (it is not passed off as `done`). When the check cannot read a pid at all, the subagent counts as running.
 
 The list is read from a record on disk (`<root>/records/<project>/<YYYY-MM-DD>.jsonl` — today and yesterday, 2 files), filtered to this session: **only subagents this session started appear, even across a reload** — a subagent is not tied to the pi process that started it, but a subagent from another session is not shown. `cancel` stops a subagent this session started — one this instance holds through its `AbortSignal`, one from before a reload by sending SIGTERM to the pid in the record; a subagent from another session is named in the reply and left alone.
 
@@ -181,7 +181,7 @@ Whatever has to reach the subagent reaches it as `task`. There is no way to hand
 
 ## Background and stopping
 
-A subagent is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. What a reload replaces is the delivery — the pipe that a finished subagent's message comes back through. A session's delivery is dropped at `session_shutdown`; a subagent that finishes with nowhere to deliver is written to the record instead as a notice, and the next boot of the same session hands those notices over one by one, advancing the cursor only after they are all handed over (a notice may arrive twice, but none is lost).
+A subagent is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. When a subagent finishes, the completion is one row in the record (the report body with the values that point at the run). The session re-reads the record every 5 seconds and hands rows without a mark over one by one, adding one mark row for each handover (a notice may arrive twice, but none is lost). The old cursor (`delivered.json`) is only read as the water level for notice rows written before this change; nothing new is written to it.
 
 **Esc does not stop a subagent.** The tool call has already returned, so there is no call left to cancel. Use `consult_subagents{action: "cancel", id}` (or `/consult-cancel <id>`).
 
@@ -198,7 +198,7 @@ A subagent that wrote its report but does not exit is stopped after 30 seconds o
 
 ## Sound
 
-While at least one subagent is running, consult plays `Tink` **once every 5 seconds** — one timer and one sound, however many subagents are running. Every tick re-reads the record per subagent (no end row plus a matching `startToken`; an unreadable pid counts as running), and the timer stops itself when no running subagent of this session remains — a subagent with an end row stops the sound even when its pid is alive; there is no sound at the start or at the end. The timer keeps running while the sound is off (it just makes no sound). It is a signal for the person at the keyboard, and it plays in this process, so the subagent cannot see or control it.
+Every 5 seconds the session's tick re-reads the record and hands the rows without a mark over one by one, adding one mark row for each handover. When a subagent of this session is still running (no end row and the `startToken` still matches, or an unreadable pid) or a finished report is still waiting for handover, consult plays `Tink` once — one timer and at most one sound per tick, however many subagents are running or waiting. The timer starts at `session_start` and runs until `session_shutdown` (`stopTick`); it does not stop itself when running subagents disappear. The timer keeps running while the sound is off (it just makes no sound). It is a signal for the person at the keyboard, and it plays in this process, so the subagent cannot see or control it.
 
 The sound is **on by default, and the setting lasts for this session only** (it is not written to `types.json`). `/consult-sound on` and `/consult-sound off` turn it on and off, and `/consult-sound` with no argument reports the current state. Nothing fails if `afplay` is missing.
 
@@ -224,24 +224,24 @@ tool/      the tool faces and the running subagents: parameters, background and 
 pnpm test:run .pi/extensions/consult
 ```
 
-| Test                     | Covers                                                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                  |
-| `sub/budget.test.ts`     | when the subagent is nudged to report                                                  |
-| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                |
-| `policy/types.test.ts`   | the role policy                                                                        |
-| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file  |
-| `run/worktree.test.ts`   | the place, the branch and the removal (real repository)                                |
-| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                        |
-| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                  |
-| `run/delivery.test.ts`   | delivery: send when attached, write to the record when not                             |
-| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                 |
-| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window |
-| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion message, the sound         |
-| `tool/sound.test.ts`     | the sound: one timer, one sound every 5 seconds, nothing while off                     |
-| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block            |
-| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                              |
-| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                      |
+| Test                     | Covers                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                                        |
+| `sub/budget.test.ts`     | when the subagent is nudged to report                                                                        |
+| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                      |
+| `policy/types.test.ts`   | the role policy                                                                                              |
+| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file                        |
+| `run/worktree.test.ts`   | the place, the branch and the removal (real repository)                                                      |
+| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                              |
+| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                        |
+| `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level) |
+| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                                       |
+| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window                       |
+| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion row (no `sendMessage`)                           |
+| `tool/sound.test.ts`     | the sound: `playSound`, the player swap, nothing while off (the timer lives in `index.ts`)                   |
+| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block                                  |
+| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                    |
+| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                            |
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 

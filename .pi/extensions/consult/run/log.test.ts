@@ -7,10 +7,13 @@ import {
   appendRun,
   closeOrphans,
   defaultCheck,
+  deliveredKeys,
   isRunning,
+  isWaiting,
   parseRun,
   pidAlive,
   readRuns,
+  runKey,
   runningRuns,
   type CheckRecord,
   type RunRecord,
@@ -533,5 +536,78 @@ describe('closeOrphans', () => {
     expect(typeof closed[0]?.ended).toBe('number');
     expect(typeof closed[0]?.reason).toBe('string');
     expect((closed[0]?.reason ?? '').length).toBeGreaterThan(0);
+  });
+});
+
+describe('runKey / deliveredKeys / isWaiting', () => {
+  it('ended と notice を持つ行と、同じ走行の delivered の行 → 集合に含み、isWaiting が偽', () => {
+    const done = record({
+      session: 'A',
+      subagent: 'consult-1',
+      started: 1000,
+      ended: 2000,
+      notice: 'できた',
+    });
+    const marked = record({ session: 'A', subagent: 'consult-1', started: 1000, delivered: 3000 });
+    const delivered = deliveredKeys([done, marked]);
+    expect(delivered.has(runKey(done))).toBe(true);
+    expect(isWaiting(done, delivered)).toBe(false);
+  });
+
+  it('印の無い完了の行 → isWaiting が真', () => {
+    const done = record({ ended: 2000, notice: 'できた' });
+    expect(isWaiting(done, deliveredKeys([]))).toBe(true);
+  });
+
+  it('行が 0 本 → deliveredKeys が空', () => {
+    expect(deliveredKeys([]).size).toBe(0);
+  });
+
+  it('started が同じで session が違う 2 走行 → キーが別', () => {
+    const left = record({ session: 'A', subagent: 'consult-1', started: 1000 });
+    const right = record({ session: 'B', subagent: 'consult-1', started: 1000 });
+    expect(runKey(left)).not.toBe(runKey(right));
+  });
+
+  it('started と session が同じで subagent が違う 2 走行 → キーが別', () => {
+    const left = record({ session: 'A', subagent: 'consult-1', started: 1000 });
+    const right = record({ session: 'A', subagent: 'consult-2', started: 1000 });
+    expect(runKey(left)).not.toBe(runKey(right));
+  });
+
+  it('session と subagent が同じで started が違う 2 走行 → キーが別で、印は片方にだけ効く', () => {
+    const first = record({
+      session: 'A',
+      subagent: 'consult-1',
+      started: 1000,
+      ended: 1100,
+      notice: 'a',
+    });
+    const second = record({
+      session: 'A',
+      subagent: 'consult-1',
+      started: 2000,
+      ended: 2100,
+      notice: 'b',
+    });
+    expect(runKey(first)).not.toBe(runKey(second));
+    const delivered = deliveredKeys([
+      record({ session: 'A', subagent: 'consult-1', started: 1000, delivered: 3000 }),
+    ]);
+    expect(isWaiting(first, delivered)).toBe(false);
+    expect(isWaiting(second, delivered)).toBe(true);
+  });
+
+  it('delivered: "x" の行 → parseRun が delivered を落とし、印として数えない', () => {
+    const parsed = parseRun(
+      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"delivered":"x"}',
+    );
+    expect(parsed).toBeDefined();
+    expect(parsed?.delivered).toBeUndefined();
+    expect(deliveredKeys(parsed === undefined ? [] : [parsed]).size).toBe(0);
+  });
+
+  it('notice の無い終わりの行 → isWaiting が偽', () => {
+    expect(isWaiting(record({ ended: 2000 }), deliveredKeys([]))).toBe(false);
   });
 });

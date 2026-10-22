@@ -7,7 +7,7 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   controlSubagent,
   createRuntime,
@@ -20,14 +20,7 @@ import {
   type ConsultSendOptions,
   type PiFace,
 } from './consult.ts';
-import {
-  SOUND_INTERVAL_MS,
-  isSoundEnabled,
-  isSoundRunning,
-  setPlayer,
-  setSoundEnabled,
-  stopSound,
-} from './sound.ts';
+import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 import { tmpDir } from '../../../../test/tmp.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
@@ -40,19 +33,11 @@ const SESSION = 'test-session';
 // 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
 
-// テストでは afplay を起動しない。鳴らす所を記録する物に差し替え、鳴った回数だけを見る。
-const beeps: string[] = [];
-setPlayer(() => {
-  beeps.push('tink');
-});
-
 beforeEach(() => {
-  beeps.length = 0;
   setSoundEnabled(true);
 });
 
 afterEach(() => {
-  stopSound();
   setSoundEnabled(true);
 });
 
@@ -65,7 +50,7 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = placeFor(tmpDir(), tmpDir());
   return {
-    runtime: createRuntime(pi, place, run, undefined, () => SESSION, check, psRun),
+    runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
     place,
   };
 }
@@ -259,27 +244,52 @@ describe('run', () => {
 });
 
 describe('完了の通知', () => {
-  it('サブエージェントの完了 → サブエージェントのテキスト・ref:・[consult] 行がメッセージに入る', async () => {
+  it('サブエージェントの完了 → pi.sendMessage は呼ばれず、記録に本文と token の 1 行が増える', async () => {
     const { pi, calls } = fakePi();
-    const { run, resolvers } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    let resolveOutcome!: (outcome: ConsultOutcome) => void;
+    const run: ConsultRunner = (_ctx, _options, job) => {
+      job.onStarted?.(process.pid);
+      return new Promise<ConsultOutcome>((resolve) => {
+        resolveOutcome = resolve;
+      });
+    };
+    const { runtime, place } = setup(pi, run);
     await startSubagent(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
       text: 'the subagent text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
       details: { type: 'review' },
     };
-    resolvers[0]?.(outcome);
+    resolveOutcome(outcome);
     await flush();
 
-    expect(calls).toHaveLength(1);
-    const message = calls[0]?.message;
-    expect(message?.customType).toBe('consult');
-    expect(message?.content).toContain('the subagent text');
-    expect(message?.content).toContain('ref: consult/code-1');
-    expect(message?.content).toContain('[consult]');
-    expect(calls[0]?.options).toEqual({ triggerTurn: true, deliverAs: 'followUp' });
+    expect(calls).toHaveLength(0);
     expect(runtime.subagents.size).toBe(0);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    const done = records[1];
+    expect(done?.notice).toContain('the subagent text');
+    expect(done?.notice).toContain('ref: consult/code-1');
+    expect(done?.notice).toContain('[consult]');
+    expect(typeof done?.token).toBe('string');
+    expect(done?.token).toBe(records[0]?.token);
+  });
+
+  it('runner が投げる → 記録に 1 行、notice に失敗の本文。pi.sendMessage は呼ばれない', async () => {
+    const { pi, calls } = fakePi();
+    // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに runner を変える
+    const run: ConsultRunner = (_ctx, _options, job) => {
+      job.onStarted?.(process.pid);
+      return Promise.reject(new Error('boom'));
+    };
+    const { runtime, place } = setup(pi, run);
+    await startSubagent(runtime, { role: 'review', task: '直す' });
+    await flush();
+
+    expect(calls).toHaveLength(0);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[1]?.notice).toContain('boom');
   });
 });
 
@@ -535,78 +545,6 @@ describe('controlSubagent: cancel (startToken)', () => {
 });
 
 describe('音', () => {
-  // 音そのもの（タイマー 1 本・述語で止まる・enabled）は `sound.test.ts` が見る。
-  // ここでは runtime 側の組み立てだけを見る: サブエージェントが走り出したら音が始まる、と、述語がこの session のサブエージェントだけを見ること。
-
-  it('サブエージェントを 1 体起こす → 音が始まる（述語はこの session の走行中だけを真にする）', async () => {
-    vi.useFakeTimers();
-    try {
-      const { pi } = fakePi();
-      const { run } = deferredRunner();
-      const { runtime, place } = setup(pi, run);
-      seedRunning(place);
-      await startSubagent(runtime, { role: 'research', task: 'a' });
-
-      expect(isSoundRunning()).toBe(true);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(1);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('別の session のサブエージェントだけが走っている → 鳴らず、タイマーが消える', async () => {
-    vi.useFakeTimers();
-    try {
-      const { pi } = fakePi();
-      const { run } = deferredRunner();
-      const { runtime, place } = setup(pi, run);
-      seedRunning(place, { session: 'other-session' });
-      await startSubagent(runtime, { role: 'review', task: 'a' });
-
-      expect(isSoundRunning()).toBe(true);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(0);
-      expect(isSoundRunning()).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('start と end のある subagent だけ → 音の述語は false（鳴らず、タイマーが消える）', async () => {
-    vi.useFakeTimers();
-    try {
-      const { pi } = fakePi();
-      const { run } = deferredRunner();
-      const { runtime, place } = setup(pi, run, () => 'running');
-      appendRun(place, {
-        session: SESSION,
-        subagent: 'consult-9',
-        role: 'review',
-        pid: 11,
-        started: 1,
-        token: 'token-9',
-      });
-      appendRun(place, {
-        session: SESSION,
-        subagent: 'consult-9',
-        role: 'review',
-        pid: 11,
-        started: 1,
-        ended: 2,
-        state: 'done',
-      });
-      await startSubagent(runtime, { role: 'review', task: 'a' });
-
-      expect(isSoundRunning()).toBe(true);
-      await vi.advanceTimersByTimeAsync(SOUND_INTERVAL_MS);
-      expect(beeps).toHaveLength(0);
-      expect(isSoundRunning()).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
   it('/consult-sound → 状態を出し、on / off を切り替える', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
@@ -622,9 +560,6 @@ describe('音', () => {
 
     await runtime.commands.sound('on', ctx);
     expect(isSoundEnabled()).toBe(true);
-
-    await runtime.commands.sound('nope', ctx);
-    expect(notices.at(-1)?.type).toBe('error');
   });
 });
 
@@ -637,16 +572,6 @@ describe('controlSubagent: list', () => {
       SESSION,
     );
     expect(outcome.text).toContain('no subagent is running');
-  });
-
-  it('知らせの文は consult_subagents: で始まる', () => {
-    const outcome = controlSubagent(
-      { action: 'list' },
-      new Map(),
-      placeFor(tmpDir(), tmpDir()),
-      SESSION,
-    );
-    expect(outcome.text.startsWith('consult_subagents:')).toBe(true);
   });
 
   it('知らせの文はどの分岐でも consult_subagents: で始まる', () => {
@@ -790,7 +715,7 @@ describe('beginRun: startToken', () => {
 });
 
 describe('beginRun: token', () => {
-  it('開始行に UUID の token が入り、終了行は token を持たない', async () => {
+  it('完了の行は token を持つ（開始行と同じ UUID）', async () => {
     const { pi } = fakePi();
     const pid = process.pid;
     const seen: { optionsToken?: string; jobToken?: string } = {};
@@ -813,6 +738,6 @@ describe('beginRun: token', () => {
     expect(seen.optionsToken).toBe(start?.token);
     expect(seen.jobToken).toBe(start?.token);
     expect(end?.ended).toBeDefined();
-    expect(end?.token).toBeUndefined();
+    expect(end?.token).toBe(start?.token);
   });
 });
