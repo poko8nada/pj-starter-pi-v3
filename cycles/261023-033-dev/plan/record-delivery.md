@@ -285,38 +285,67 @@ export function rowsOf(
 ### Slice 1: 記録に、走行を指す値と印を足す
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 0e22efb
 
 ### Slice 2: 完了を記録の 1 行にし、渡したら印を書く
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 4d16160
 
 ### Slice 3: セッションの tick が記録を読み、音も同じ印で決める
 
 - Findings:
+  - tick は flush 後に pending を見ると配達 tick で鳴らないため delivered 数も条件に入れた
+  - 走行中判定は既定 2 日窓のため試験の開始行は当日で書く
+  - index.test.ts の tmp import は 1 段浅い
+  - session 変数の影を避け current にした
 - Unplanned:
-- Commit:
+  - なし
+- Commit: d033f9a
 
 ### Slice 4: 一覧が印を見る
 
 - Findings:
+  - 印の無い完了は `running`（pid 無し）、印ありは `done`、生きた開始行は `running (pid N)`
 - Unplanned:
-- Commit:
+  - `rowsOf`/`listText` に全行を渡し中で `latest` する補正（`latest` 済みでは印行が落ちるため）。Types は変えない
+- Commit: 93b69d0
 
 ### Slice 5: README を新しい振る舞いに合わせる
 
 - Findings:
+  - Background 節が採った形（1 行・5 秒・印）と合い、旧文は無い
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 30a70eb
 
 ### Slice 6: 統合: リロードをまたいだ報告が、リロードなしで届く
 
 - Findings:
+  - 旧完了は新 tick が 1 回だけ渡し、一覧は running→done、音は鳴る→鳴らない
+  - 全体 379 件 pass
 - Unplanned:
-- Commit:
+  - なし
+- Commit: a74c659
+
+### Cleanup: 試験の重複と消えた振る舞いの棚卸し（slice 外）
+
+- Checked: Files の試験 (`log`、`delivery`、`consult`、`subagents`、`sound`、`index`) を走査
+- Dropped (重複):
+  - `consult.test.ts` `controlSubagent: list`「知らせの文は consult_subagents: で始まる」→ 7 分岐版が含むため
+  - `consult.test.ts` `音` の末尾の `nope` 断定 2 行 → 専用の不正引数試験（`usage` まで見る）が強いため。`音` は on/off 切替のみ残す
+  - `subagents.test.ts`「走っているサブエージェント（終了行が無く check が running）は running」→ 新規「走っている開始行 → running (pid N)」が pid 形式まで見るため
+  - `subagents.test.ts`「一覧の check を差し替え」（`listText` 単位）→ 道具単位「list の check の口が効く」が配線まで見るため
+  - `index.test.ts`「さらに 5 秒進める → 送らず、印も増やさない」→ `reload` 2 件（送り 1 回・印・音・一覧の前後）が含むため
+- Dropped (消えた振る舞い・止めた分岐): なし。`startSound`/`stopSound`/`isSoundRunning`、`createDelivery`/`unreadNotices`/`writeCursor`、`closeRecord` への参照は残っておらず、2 行書きの断定も無い。slice 済みで除去済み
+- Kept: 層をまたぐ空入力（`pendingReports` 空／`flushPending` 0 件／tick 無音）は各層の契約として残す。連番の 5 件は分岐が別（最大値・混在・他 session・内存・終了済み）のため残す
+- Verify: `pnpm test:run .pi/extensions/consult` 18 files / 375 tests pass（379 - 4）
 
 ## Review
 

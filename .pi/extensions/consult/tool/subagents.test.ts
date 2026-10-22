@@ -112,10 +112,6 @@ describe('rowOf / rowsOf', () => {
     expect(running).not.toContain('reason:');
   });
 
-  it('走っているサブエージェント（終了行が無く check が running）は running になる', () => {
-    expect(rowsOf([record({ token: 'a' })], runningCheck, 0)[0]).toContain('running');
-  });
-
   it('終わりの行が無く check が ended → lost（done と偽らない）', () => {
     const row = rowsOf([record({ token: 'a' })], endedCheck, 0)[0] ?? '';
     expect(row).toContain('lost');
@@ -151,12 +147,6 @@ describe('rowOf / rowsOf', () => {
 
   it('記録が空 → []', () => {
     expect(rowsOf([], runningCheck, 0)).toEqual([]);
-  });
-
-  it('一覧の check を差し替え、running と ended を返す → 一覧の状態がそれに従う', () => {
-    const start = record({ subagent: 'consult-1', token: 'a' });
-    expect(listText([start], 0, runningCheck)).toContain('running');
-    expect(listText([start], 0, endedCheck)).not.toContain('running');
   });
 });
 

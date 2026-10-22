@@ -114,20 +114,6 @@ describe('startTick / stopTick', () => {
     expect(played).toHaveLength(1);
   });
 
-  it('さらに 5 秒進める → 送らず、印も増やさない', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
-    const { pi, sent } = fakePi();
-    startTick(portFor(found, pi, 'session-a'));
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(sent).toHaveLength(1);
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(sent).toHaveLength(1);
-    expect(played).toHaveLength(1);
-  });
-
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
     const found = place();
     appendRun(
