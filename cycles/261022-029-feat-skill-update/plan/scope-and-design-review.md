@@ -249,6 +249,6 @@ README.ja.md                         update
 
 ### Slice 6: 締めのスクリプト
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0567466
