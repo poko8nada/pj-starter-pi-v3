@@ -593,13 +593,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit: TBD
+- Commit: 9b1c5a6 consult(context-prune): add prune card and pi-tui dependency
 
 ### Slice 6: コマンドと配線
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 本番の要約・判定の口を `prune/ports.ts`（`createPorts`）に分けた。plan の Files には無いが、`index.ts` の `max-lines` を割るために要る。
+- Commit: TBD
 
 ### Slice 7: 文書と定義
 
