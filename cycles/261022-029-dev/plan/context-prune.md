@@ -613,6 +613,14 @@ export interface PruneWiring {
 - Unplanned: 冪等の重複除けを turn_end と agent_before_settle で分けた（両方で同じ下書きを返すため）。
 - Commit: 5ead268 consult(context-prune): cover one pass end to end
 
+### Test cleanup
+
+- `index.test.ts` の「1 パス後に appendEntry が 1 回」は Slice 6 の裏パス試験と同一振る舞いのため落とした（appendEntry 1 回と customType はそちらで見る）。
+- `prune/collect.test.ts` の done 有無 2 件を 1 件に束ねた（同じ done 選別の両面）。
+- `apply/drafts.test.ts` の印 3 件を 1 件に束ねた（同じ置き換えと桁区切りの確認）。
+- `command/prune.test.ts` の off/on 2 件を 1 件に束ねた（同じ enabled 切り替えの往復）。
+- 消えた振る舞い・作らなくなった枝の試験は無かった。
+
 ## Review
 
 ## Acceptance

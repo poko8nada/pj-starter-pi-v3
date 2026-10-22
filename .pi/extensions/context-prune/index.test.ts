@@ -454,15 +454,6 @@ describe('integration', () => {
     return { harness, result, wiring };
   }
 
-  it('1 パス後に appendEntry が 1 回、customType が context-prune', async () => {
-    const { harness, wiring } = readyHarness();
-    const first = await wiring.onTurnEnd(harness.ctx);
-    expect(first).toBeUndefined();
-    await wiring.flush();
-    expect(harness.appended).toHaveLength(1);
-    expect(harness.appended[0]?.customType).toBe(CUSTOM_TYPE);
-  });
-
   it('次の境界で context_edit が 1 件、targetId が落とした結果の id', async () => {
     const { harness, result, wiring } = readyHarness();
     await wiring.onTurnEnd(harness.ctx);

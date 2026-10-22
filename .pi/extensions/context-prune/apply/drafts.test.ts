@@ -53,16 +53,10 @@ describe('draftsFor', () => {
     ]);
   });
 
-  it('印が {chars} を 1,234 に置き換える', () => {
+  it('印の置き換え（1,234・2 つ・無し・0・1,234,567）', () => {
     expect(markerText(1234, TEMPLATE)).toBe('古いツール結果（1,234 文字）を省略');
-  });
-
-  it('{chars} が 2 つなら両方、無ければそのまま', () => {
     expect(markerText(1234, '{chars} と {chars}')).toBe('1,234 と 1,234');
     expect(markerText(1234, '印だけ')).toBe('印だけ');
-  });
-
-  it('0 → 0、1234567 → 1,234,567', () => {
     expect(markerText(0, TEMPLATE)).toBe('古いツール結果（0 文字）を省略');
     expect(markerText(1234567, TEMPLATE)).toBe('古いツール結果（1,234,567 文字）を省略');
   });

@@ -171,16 +171,12 @@ describe('collect', () => {
     expect(collected.candidates).toHaveLength(0);
   });
 
-  it('done に候補の id が入っている → 候補から落ちる', () => {
+  it('done にある id は落ち、未知の id は他を変えない', () => {
     const { entries, oldId, recentTokens } = oldAndRecent();
-    const collected = collect({ entries, recentTokens, done: new Set([oldId]) });
-    expect(collected.candidates).toHaveLength(0);
-  });
-
-  it('done に未知の id が入っていても他は変わらない', () => {
-    const { entries, recentTokens } = oldAndRecent();
-    const collected = collect({ entries, recentTokens, done: new Set(['unknown-id']) });
-    expect(collected.candidates).toHaveLength(1);
+    expect(collect({ entries, recentTokens, done: new Set([oldId]) }).candidates).toHaveLength(0);
+    expect(
+      collect({ entries, recentTokens, done: new Set(['unknown-id']) }).candidates,
+    ).toHaveLength(1);
   });
 
   it('結果に対応する toolCall が無い → args は空文字で候補には残る', () => {

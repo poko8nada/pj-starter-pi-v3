@@ -56,17 +56,12 @@ describe('parseCommand', () => {
 });
 
 describe('writeEnabled', () => {
-  it('off → settings.json の enabled が偽', () => {
+  it('off と on → enabled が切り替わる', () => {
     const dir = tmpDir();
     writeEnabled(dir, false);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
       enabled: false,
     });
-  });
-
-  it('on → settings.json の enabled が真', () => {
-    const dir = tmpDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
     writeEnabled(dir, true);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
       enabled: true,
