@@ -581,13 +581,13 @@ export interface PruneWiring {
 
 - Findings: なし
 - Unplanned: なし
-- Commit: TBD
+- Commit: 7964f2e consult(context-prune): add judge questions and gate
 
 ### Slice 4: 記録と差し込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: TBD
 
 ### Slice 5: カード
 
