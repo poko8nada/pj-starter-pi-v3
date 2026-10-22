@@ -1,37 +1,28 @@
 /**
- * consult の delivery — サブエージェントの完了を、いま生きているセッションへ届ける 1 本の通り道。
+ * consult の delivery — 完了の報告を記録から読み、渡したら印を書く。
  *
- * pi のプロセスは reload で差し替わる（拡張のインスタンスも作り直される）。サブエージェントは detach されて
- * 生き続けるので、完了の知らせを「もう居ない pi」へ渡すと落ちる。ここで 1 本にまとめ、古い配線は
- * no-op にして記録へ回す。新しいセッションはその記録（`notice` の欄）を起動の時に読む。
+ * 完了は必ず記録の 1 行（`notice` に本文）になる。セッションは記録を読み直し、
+ * 印の無い完了を `pi.sendMessage` で渡して、その走行に印の行を足す。
+ * 目録（`delivered.json`）は、直す前に書かれた `notice` 行のための水位としてだけ読む。
+ * 新しい印は記録の行にする。
  *
- * `attach` はセッションごとに 1 回。`detach` の後に新しいインスタンスが `attach` しても、**古い
- * インスタンスの `send` は古いまま**（no-op + 記録）になる。掴んでいる pi はインスタンスごとに違うため。
- *
- * まだ渡していない通知の印（目録）は、追記のみの記録の外にある 1 ファイル `delivered.json` に持つ。
- * 形は `{ <session>: { ended: <配達済みの終わりの時刻（ms）> } }`。目録は配達の後に進めるので、
- * 途中で落ちても失われない（同じ物を 2 回渡すことはある）。
+ * 目録の形は `{ <session>: { ended: <配達済みの終わりの時刻（ms）> } }`。無い・壊れている
+ * ときは空として扱い、未読を全部返す側に倒れる（失うより 2 回渡す方を選ぶ）。
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ConsultMessage, ConsultSendOptions, PiFace } from '../tool/consult.ts';
-import { appendRun, readRuns, type ReadScope, type RunRecord } from './log.ts';
+import {
+  appendRun,
+  deliveredKeys,
+  isWaiting,
+  readRuns,
+  type ReadScope,
+  type RunRecord,
+} from './log.ts';
 import type { Place } from './place.ts';
 
-/** 完了の知らせ 1 つ。pi に渡す形と、記録に回すときの元 */
-export interface Delivery {
-  /** いまのセッションの pi を掴む。新しいインスタンスがこれを呼ぶ */
-  attach(pi: PiFace): void;
-  /** 手放す。以後の `send` は記録だけになる（セッションの終わりに呼ぶ） */
-  detach(): void;
-  /** サブエージェントの完了を届ける。掴んでいる pi が無ければ、記録に 1 行足す */
-  send(message: ConsultMessage, options: ConsultSendOptions, record: RunRecord): void;
-  /** いま届けられるか（テストと、状態を出す所のため） */
-  attached(): boolean;
-}
-
-/** 配達済みの印。session ごとに、最後に渡した通知の終わりの時刻を持つ */
+/** 配達済みの印。session ごとに、最後に渡した通知の終わりの時刻を持つ（古い行のため） */
 export interface Cursor {
   readonly ended: number;
 }
@@ -86,13 +77,6 @@ export function readCursor(place: Place, session: string): Cursor | undefined {
   return readIndex(place)[session];
 }
 
-/** その session の欄を進める。他の session の欄は触らない */
-export function writeCursor(place: Place, session: string, cursor: Cursor): void {
-  const index = readIndex(place);
-  index[session] = cursor;
-  writeIndex(place, index);
-}
-
 /**
  * 古い欄を消す。`ended` が `at` から `keepDays` 日より前の session の欄を落とす。
  *
@@ -115,51 +99,47 @@ export function pruneCursors(place: Place, at: Date, keepDays: number): void {
 }
 
 /**
- * まだ owner に渡していない完了の知らせを、古い順に返す。
+ * まだ渡していない完了の行を、古い順に返す。
  *
- * 記録のうち `notice` を持つ行（届け先が無かったときの報告）だけ。目録の `ended` と同じか古い物は
- * 渡し済みなので返さない。目録が無ければ全部返す（失うより 2 回渡す方を選ぶ）。
+ * 印の無い `notice` 付きの終わりの行だけ。古い目録の `ended` 以下は渡し済みとみなす
+ * （直す前に書かれた `notice` 行のため）。新しい印は記録の行（`delivered`）で見る。
  */
-export function unreadNotices(
+export function pendingReports(
   place: Place,
   scope: ReadScope & { readonly session: string },
 ): RunRecord[] {
   const cursor = readCursor(place, scope.session);
-  return readRuns(place, scope).filter((record) => {
-    if (record.notice === undefined || record.ended === undefined) {
+  const records = readRuns(place, scope);
+  const delivered = deliveredKeys(records);
+  return records.filter((record) => {
+    if (!isWaiting(record, delivered)) {
       return false;
     }
-    return cursor === undefined || record.ended > cursor.ended;
+    if (cursor !== undefined && (record.ended ?? Number.POSITIVE_INFINITY) <= cursor.ended) {
+      return false;
+    }
+    return true;
   });
 }
 
 /**
- * delivery を作る。
+ * 渡した印を、記録に 1 行足す。
  *
- * 置き場は runtime の入力として渡す（起動しただけで作らない。`placeFor` は決めるだけ）。
- * 記録へ回すのは、届け先が消えたとき（reload のあと）だけ。目録は `send` では進めない
- * （進めるのは、通知を渡すループが終わった所で 1 回だけ）。
+ * 同じ走行（`session` と `subagent` と `started`）の印として読めるよう、走行を指す 3 つを
+ * 写し、`delivered` に時刻を入れる。`at` を渡せばその日の file に書き、その時刻を印にする。
  */
-export function createDelivery(place: Place): Delivery {
-  let pi: PiFace | undefined;
-
-  return {
-    attach(next) {
-      pi = next;
+export function appendDelivered(place: Place, record: RunRecord, at?: Date): void {
+  const now = at ?? new Date();
+  appendRun(
+    place,
+    {
+      session: record.session,
+      subagent: record.subagent,
+      role: record.role,
+      pid: record.pid,
+      started: record.started,
+      delivered: now.getTime(),
     },
-    detach() {
-      pi = undefined;
-    },
-    attached() {
-      return pi !== undefined;
-    },
-    send(message, options, record) {
-      if (pi === undefined) {
-        // 届け先が無い。落とさず、記録に回す（新しいセッションが読む）
-        appendRun(place, { ...record, notice: message.content });
-        return;
-      }
-      pi.sendMessage(message, options);
-    },
-  };
+    now,
+  );
 }

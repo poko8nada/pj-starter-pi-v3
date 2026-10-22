@@ -65,7 +65,7 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = placeFor(tmpDir(), tmpDir());
   return {
-    runtime: createRuntime(pi, place, run, undefined, () => SESSION, check, psRun),
+    runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
     place,
   };
 }
@@ -259,27 +259,52 @@ describe('run', () => {
 });
 
 describe('完了の通知', () => {
-  it('サブエージェントの完了 → サブエージェントのテキスト・ref:・[consult] 行がメッセージに入る', async () => {
+  it('サブエージェントの完了 → pi.sendMessage は呼ばれず、記録に本文と token の 1 行が増える', async () => {
     const { pi, calls } = fakePi();
-    const { run, resolvers } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    let resolveOutcome!: (outcome: ConsultOutcome) => void;
+    const run: ConsultRunner = (_ctx, _options, job) => {
+      job.onStarted?.(process.pid);
+      return new Promise<ConsultOutcome>((resolve) => {
+        resolveOutcome = resolve;
+      });
+    };
+    const { runtime, place } = setup(pi, run);
     await startSubagent(runtime, { role: 'review', task: '直す' });
 
     const outcome: ConsultOutcome = {
       text: 'the subagent text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
       details: { type: 'review' },
     };
-    resolvers[0]?.(outcome);
+    resolveOutcome(outcome);
     await flush();
 
-    expect(calls).toHaveLength(1);
-    const message = calls[0]?.message;
-    expect(message?.customType).toBe('consult');
-    expect(message?.content).toContain('the subagent text');
-    expect(message?.content).toContain('ref: consult/code-1');
-    expect(message?.content).toContain('[consult]');
-    expect(calls[0]?.options).toEqual({ triggerTurn: true, deliverAs: 'followUp' });
+    expect(calls).toHaveLength(0);
     expect(runtime.subagents.size).toBe(0);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    const done = records[1];
+    expect(done?.notice).toContain('the subagent text');
+    expect(done?.notice).toContain('ref: consult/code-1');
+    expect(done?.notice).toContain('[consult]');
+    expect(typeof done?.token).toBe('string');
+    expect(done?.token).toBe(records[0]?.token);
+  });
+
+  it('runner が投げる → 記録に 1 行、notice に失敗の本文。pi.sendMessage は呼ばれない', async () => {
+    const { pi, calls } = fakePi();
+    // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに runner を変える
+    const run: ConsultRunner = (_ctx, _options, job) => {
+      job.onStarted?.(process.pid);
+      return Promise.reject(new Error('boom'));
+    };
+    const { runtime, place } = setup(pi, run);
+    await startSubagent(runtime, { role: 'review', task: '直す' });
+    await flush();
+
+    expect(calls).toHaveLength(0);
+    const records = readRuns(place, { session: SESSION });
+    expect(records).toHaveLength(2);
+    expect(records[1]?.notice).toContain('boom');
   });
 });
 
@@ -790,7 +815,7 @@ describe('beginRun: startToken', () => {
 });
 
 describe('beginRun: token', () => {
-  it('開始行に UUID の token が入り、終了行は token を持たない', async () => {
+  it('完了の行は token を持つ（開始行と同じ UUID）', async () => {
     const { pi } = fakePi();
     const pid = process.pid;
     const seen: { optionsToken?: string; jobToken?: string } = {};
@@ -813,6 +838,6 @@ describe('beginRun: token', () => {
     expect(seen.optionsToken).toBe(start?.token);
     expect(seen.jobToken).toBe(start?.token);
     expect(end?.ended).toBeDefined();
-    expect(end?.token).toBeUndefined();
+    expect(end?.token).toBe(start?.token);
   });
 });

@@ -1,20 +1,18 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tmpDir } from '../../../../test/tmp.ts';
-import type { ConsultMessage, ConsultSendOptions, PiFace } from '../tool/consult.ts';
 import {
+  appendDelivered,
   CURSOR_FILE,
-  createDelivery,
+  pendingReports,
   pruneCursors,
   readCursor,
-  unreadNotices,
-  writeCursor,
 } from './delivery.ts';
 import { appendRun, KEEP_DAYS, type RunRecord } from './log.ts';
 import { placeFor, type Place } from './place.ts';
 
-// サブエージェントは起こさない。pi の偽物と、使い捨ての置き場だけで試す。
+// サブエージェントは起こさない。使い捨ての置き場だけで試す。
 
 function place(): Place {
   return placeFor(tmpDir(), tmpDir());
@@ -33,24 +31,14 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
   };
 }
 
-const message: ConsultMessage = {
-  customType: 'consult',
-  content: 'できた',
-  display: true,
-  details: {},
-};
-
-const options: ConsultSendOptions = { triggerTurn: true, deliverAs: 'followUp' };
-
-/** sendMessage を記録するだけの偽 pi */
-function fakePi(): { readonly pi: PiFace; readonly sent: ConsultMessage[] } {
-  const sent: ConsultMessage[] = [];
-  const pi: PiFace = {
-    sendMessage: (next) => {
-      sent.push(next);
-    },
-  };
-  return { pi, sent };
+/** 目録の欄を直接書く。`writeCursor` は無いので、file を書く */
+function writeCursorFile(found: Place, entries: Record<string, number>): void {
+  const index: Record<string, { ended: number }> = {};
+  for (const [session, ended] of Object.entries(entries)) {
+    index[session] = { ended };
+  }
+  mkdirSync(found.dir, { recursive: true });
+  writeFileSync(join(found.dir, CURSOR_FILE), JSON.stringify(index));
 }
 
 /** その日に通知つきの行を書く。`ended` は呼び側が決める */
@@ -60,91 +48,7 @@ function notice(found: Place, at: Date, extra: Partial<RunRecord> = {}): RunReco
   return run;
 }
 
-describe('createDelivery', () => {
-  it('attach した pi へ送る', () => {
-    const delivery = createDelivery(place());
-    const { pi, sent } = fakePi();
-    delivery.attach(pi);
-
-    delivery.send(message, options, record());
-
-    expect(sent).toHaveLength(1);
-    expect(sent[0]?.content).toBe('できた');
-  });
-
-  it('detach のあとは送らず、記録に 1 行足す', () => {
-    const found = place();
-    const delivery = createDelivery(found);
-    const { pi, sent } = fakePi();
-    delivery.attach(pi);
-    delivery.detach();
-
-    delivery.send(message, options, record());
-
-    expect(sent).toHaveLength(0);
-    const rows = unreadNotices(found, { session: 'session-a' });
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.notice).toBe('できた');
-  });
-
-  it('detach のあとに新しいインスタンスが attach しても、古い send で落ちない', () => {
-    const found = place();
-    const old = createDelivery(found);
-    const first = fakePi();
-    old.attach(first.pi);
-    // reload 相当: 古いセッションが終わり、新しいインスタンスが同じ置き場で生まれる
-    old.detach();
-    const fresh = createDelivery(found);
-    const second = fakePi();
-    fresh.attach(second.pi);
-
-    old.send(message, options, record());
-    fresh.send(message, options, record());
-
-    // 古い方の送り先はもう居ない。新しい pi には渡らず、記録に回る
-    expect(first.sent).toHaveLength(0);
-    expect(second.sent).toHaveLength(1);
-    expect(unreadNotices(found, { session: 'session-a' })).toHaveLength(1);
-  });
-
-  it('attached で状態が分かる', () => {
-    const delivery = createDelivery(place());
-    expect(delivery.attached()).toBe(false);
-    delivery.attach(fakePi().pi);
-    expect(delivery.attached()).toBe(true);
-    delivery.detach();
-    expect(delivery.attached()).toBe(false);
-  });
-
-  it('届け先が無い時の send は notice を 1 行足し、目録を進めない', () => {
-    const found = place();
-    const delivery = createDelivery(found);
-    delivery.detach();
-
-    delivery.send(message, options, record());
-
-    // 目録はまだ無い（進めるのは、通知を渡すループが終わった所で 1 回だけ）
-    expect(readCursor(found, 'session-a')).toBeUndefined();
-    expect(unreadNotices(found, { session: 'session-a' })).toHaveLength(1);
-  });
-});
-
-describe('createDelivery: 置き場の遅延', () => {
-  it('作っただけでは置き場を作らない（届け先が無くなって初めて書く）', () => {
-    const found = place();
-    createDelivery(found);
-    expect(existsSync(found.dir)).toBe(false);
-    expect(() => readFileSync(join(found.dir, CURSOR_FILE), 'utf8')).toThrow();
-  });
-});
-
-describe('writeCursor / readCursor', () => {
-  it('書いて読む → 同じ値が返る', () => {
-    const found = place();
-    writeCursor(found, 'session-a', { ended: 1234 });
-    expect(readCursor(found, 'session-a')).toEqual({ ended: 1234 });
-  });
-
+describe('readCursor', () => {
   it('欄が無ければ undefined', () => {
     expect(readCursor(place(), 'session-a')).toBeUndefined();
   });
@@ -153,55 +57,77 @@ describe('writeCursor / readCursor', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     notice(found, at, { ended: 2000, subagent: 'consult-1' });
-    writeCursor(found, 'session-a', { ended: 9999 });
+    writeCursorFile(found, { 'session-a': 9999 });
     writeFileSync(join(found.dir, CURSOR_FILE), 'これは JSON ではない');
     expect(readCursor(found, 'session-a')).toBeUndefined();
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
+    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-1',
     ]);
   });
 });
 
-describe('unreadNotices', () => {
-  it('目録が無い → 窓の中の通知を全部返す', () => {
+describe('pendingReports', () => {
+  it('印の無い完了の行 → その行を返す', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     notice(found, at, { ended: 2000, subagent: 'consult-1' });
-    notice(found, at, { ended: 3000, subagent: 'consult-2' });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
+    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
+      'consult-1',
+    ]);
+  });
+
+  it('appendDelivered の後 → 返さない', () => {
+    const found = place();
+    const at = new Date(2026, 9, 10, 12, 0);
+    const done = notice(found, at, { ended: 2000, subagent: 'consult-1' });
+    expect(pendingReports(found, { at, session: 'session-a' })).toHaveLength(1);
+    appendDelivered(found, done, at);
+    expect(pendingReports(found, { at, session: 'session-a' })).toEqual([]);
+  });
+
+  it('古い目録 { ended: 2000 }、ended: 2000 の完了 → 返さない。ended: 2001 → 返す', () => {
+    const found = place();
+    const at = new Date(2026, 9, 10, 12, 0);
+    notice(found, at, { ended: 2000, subagent: 'consult-1' });
+    notice(found, at, { ended: 2001, subagent: 'consult-2' });
+    writeCursorFile(found, { 'session-a': 2000 });
+    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
+      'consult-2',
+    ]);
+  });
+
+  it('行が 0 本 → 空', () => {
+    expect(pendingReports(place(), { session: 'session-a' })).toEqual([]);
+  });
+
+  it('印の無い完了が 2 行（started: 1000、2000）→ 古い順に 2 行返す', () => {
+    const found = place();
+    const at = new Date(2026, 9, 10, 12, 0);
+    notice(found, at, { started: 2000, ended: 2100, subagent: 'consult-2' });
+    notice(found, at, { started: 1000, ended: 1100, subagent: 'consult-1' });
+    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-1',
       'consult-2',
     ]);
   });
 
-  it('目録の ended と同じか古い通知は返らない', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    notice(found, at, { ended: 2000, subagent: 'consult-1' });
-    notice(found, at, { ended: 3000, subagent: 'consult-2' });
-    writeCursor(found, 'session-a', { ended: 2000 });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
-      'consult-2',
-    ]);
-  });
-
-  it('通知を持たない行は返らない', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    appendRun(found, record({ subagent: 'consult-plain', ended: 1500 }), at);
-    expect(unreadNotices(found, { at, session: 'session-a' })).toEqual([]);
-  });
-
-  it('別の session の通知は返らない。別の session の目録の欄は影響しない', () => {
+  it('印の無い完了が別の session に 1 行 → scope.session の行だけ返す', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     notice(found, at, { session: 'session-b', ended: 2000, subagent: 'consult-b' });
     notice(found, at, { session: 'session-a', ended: 3000, subagent: 'consult-a' });
-    // session-b の目録を進めても、session-a の未読は消えない
-    writeCursor(found, 'session-b', { ended: 9999 });
-    expect(unreadNotices(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
+    writeCursorFile(found, { 'session-b': 9999 });
+    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
       'consult-a',
     ]);
+  });
+
+  it('開始行（ended 無し）と、notice の無い終わりの行 → どちらも返さない', () => {
+    const found = place();
+    const at = new Date(2026, 9, 10, 12, 0);
+    appendRun(found, record({ subagent: 'consult-start', ended: undefined }), at);
+    appendRun(found, record({ subagent: 'consult-plain', ended: 1500 }), at);
+    expect(pendingReports(found, { at, session: 'session-a' })).toEqual([]);
   });
 });
 
@@ -210,8 +136,7 @@ describe('pruneCursors', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     const old = new Date(2026, 8, 1, 12, 0);
-    writeCursor(found, 'session-old', { ended: old.getTime() });
-    writeCursor(found, 'session-new', { ended: at.getTime() });
+    writeCursorFile(found, { 'session-old': old.getTime(), 'session-new': at.getTime() });
 
     pruneCursors(found, at, KEEP_DAYS);
 
