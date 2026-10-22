@@ -172,4 +172,26 @@ export interface ModelCell {
 
 ## Review
 
+### Round 1
+
+- Stale:
+  - なし。Files（`cycles/261022-029-dev/plan/ex-prune-leftovers.md:6-37`）は `.pi/extensions/context-prune/` 配下の更新・追加のみで、文書・定義の更新を含まず、古くする対象が計画上に無い。
+- Unlisted:
+  - なし。Notes の 3 Commits（`cycles/261022-029-dev/plan/ex-prune-leftovers.md:155`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:163`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:171`）は Slice 1〜3 に対応し、Files 外の新規ファイルの言及は計画上に無い。
+- Gaps:
+  - なし。Slice 1〜3 の各 Steps（`cycles/261022-029-dev/plan/ex-prune-leftovers.md:51-62`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:86-91`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:123-134`）に対応する Verify（`cycles/261022-029-dev/plan/ex-prune-leftovers.md:64-71`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:93-101`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:137-145`）が計画上に揃っており、計画だけでは欠けを特定できない。
+- Unproven:
+  - なし。Verify は具体値（`cycles/261022-029-dev/plan/ex-prune-leftovers.md:67-70`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:96-100`、`cycles/261022-029-dev/plan/ex-prune-leftovers.md:139-145`）で固める旨があり、計画だけでは弱い表明を特定できない。
+- Doubts:
+  - `cycles/261022-029-dev/plan/ex-prune-leftovers.md:52` — `formatCount` を `ja-JP` 固定にする妥当性は計画だけでは判断できず、所感どまり。
+  - `cycles/261022-029-dev/plan/ex-prune-leftovers.md:128` — `batches` の `NaN` / `Infinity` 時の振る舞いは Verify に無く、設定が 1 以上を保証する前提なら到達不能のため所感どまり。
+  - `cycles/261022-029-dev/plan/ex-prune-leftovers.md:133` — `ModelCell` 公開は型整理のみで Verify が無く、要否は計画だけでは判断できず所感どまり。
+
 ## Acceptance
+
+- Ran: plan の各 `Verify`（`format`・`apply`・`command`・`entry` 30 件、`command`・`index` 34 件、`prune` 51 件）。全体の `pnpm test:run`（65 ファイル、971 件）、`pnpm typecheck`（root と `.pi`）、`pnpm lint`。壊して赤を確かめたもの 3 つ: `formatCount` を `String(value)` にすると 8 件赤、`writeEnabled` が壊れた JSON を書くと 2 件赤、`allowPaid` の判定を外すと 1 件赤。いずれも戻して緑。
+- Findings: なし
+- Doubts:
+  - `formatCount` を `ja-JP` 固定にした。英語圏でも `1,234` になるが、区切りを変える端末では他と違う見え方になる。
+  - `batches` は `NaN` と `Infinity` を丸めない。設定が 1 以上の整数を保証するので到達不能。
+  - `ModelCell` の公開はテストのために型を開いただけで、`Verify` を持たない。
