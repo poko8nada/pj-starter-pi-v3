@@ -6,11 +6,10 @@ describe('parseSettings', () => {
     expect(parseSettings('{}')).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('既定が enabled 真・しきい値・件数・印・分類器の 2 件を持つ', () => {
+  it('既定が enabled 真・しきい値・印・分類器の 2 件を持つ', () => {
     const settings = defaultSettings();
     expect(settings.enabled).toBe(true);
     expect(settings.threshold).toBe(0.5);
-    expect(settings.maxQuestions).toBe(40);
     expect(settings.rearmRatio).toBe(0.1);
     expect(settings.marker).toBe('古いツール結果（{chars} 文字）を省略');
     expect(settings.classifier.models).toHaveLength(2);
@@ -32,9 +31,8 @@ describe('parseSettings', () => {
     expect(parseSettings('{"rearmRatio":0.999}').kind).toBe('ok');
   });
 
-  it('境界値 recentTokens 1 / maxQuestions 1 → ok', () => {
+  it('境界値 recentTokens 1 → ok', () => {
     expect(parseSettings('{"recentTokens":1}').kind).toBe('ok');
-    expect(parseSettings('{"maxQuestions":1}').kind).toBe('ok');
   });
 
   it('範囲外 ratio 0.19 / 0.81 → broken', () => {
@@ -51,12 +49,30 @@ describe('parseSettings', () => {
     expect(parseSettings('{"recentTokens":1.5}').kind).toBe('broken');
   });
 
-  it('範囲外 summaryTokens 0 → broken', () => {
-    expect(parseSettings('{"summaryTokens":0}').kind).toBe('broken');
+  it('`{ "summaryTokens": 2000 }` → broken（未知キー）', () => {
+    const read = parseSettings('{"summaryTokens":2000}');
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('unknown');
   });
 
-  it('範囲外 maxQuestions -1 → broken', () => {
-    expect(parseSettings('{"maxQuestions":-1}').kind).toBe('broken');
+  it('既定に summaryTokens が無い', () => {
+    expect(defaultSettings()).not.toHaveProperty('summaryTokens');
+  });
+
+  it('`{ "maxQuestions": 40 }` → broken（未知キー）', () => {
+    const read = parseSettings('{"maxQuestions":40}');
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('unknown');
+  });
+
+  it('既定に maxQuestions が無い', () => {
+    expect(defaultSettings()).not.toHaveProperty('maxQuestions');
   });
 
   it('範囲外 rearmRatio 0 / 1 / -0.1 → broken', () => {

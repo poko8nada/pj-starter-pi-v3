@@ -6,7 +6,14 @@
 
 import type { Settings } from '../settings/schema.ts';
 import type { Drop, PrunePass, Usage } from '../entry/data.ts';
-import { batches, judgeRequest, verdicts, type JudgeRequest } from './judge.ts';
+import {
+  batches,
+  classifierTokens,
+  judgeRequest,
+  topicView,
+  verdicts,
+  type JudgeRequest,
+} from './judge.ts';
 import type { Candidate, EntryMessage } from './collect.ts';
 
 export type PassOutcome =
@@ -68,13 +75,16 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
   if (summarized.summary.trim() === '') {
     return { kind: 'failed', reason: 'summary is empty' };
   }
+  const view = topicView(summarized.summary);
+  const sample = judgeRequest(view, input.candidates.slice(0, 1)).questions;
+  const fixed = classifierTokens(view) + classifierTokens(JSON.stringify(sample));
   const answers: Record<
     string,
     { readonly type: string; readonly probabilities: Readonly<Record<string, number>> }
   > = {};
-  for (const batch of batches(input.candidates, input.settings.maxQuestions)) {
+  for (const batch of batches(input.candidates, { total: 32000, fixed })) {
     // eslint-disable-next-line no-await-in-loop -- 束は順に聞き、失敗したら止める
-    const classified = await ports.classify(judgeRequest(summarized.summary, batch));
+    const classified = await ports.classify(judgeRequest(view, batch));
     if (classified.kind === 'failed') {
       return { kind: 'failed', reason: classified.reason };
     }

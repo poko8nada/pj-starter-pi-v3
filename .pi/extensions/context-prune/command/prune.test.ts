@@ -7,7 +7,7 @@ import { defaultSettings } from '../settings/schema.ts';
 import { parseCommand, statusLines, usageText, writeEnabled, type Status } from './prune.ts';
 
 function statusOf(overrides: Partial<Status>): Status {
-  return { running: false, failures: 0, lastPass: undefined, ...overrides };
+  return { running: false, failures: 0, lastPass: undefined, lastFailure: undefined, ...overrides };
 }
 
 function passOf(at: number): PrunePass {
@@ -138,5 +138,28 @@ describe('statusLines', () => {
       'dropped: 2 件 (1,234 文字)',
       'failures: 2',
     ]);
+  });
+
+  it('lastFailure あり → 最後の失敗の行に経過秒と理由が出る', () => {
+    const now = 100000;
+    const lines = statusLines(
+      statusOf({ lastFailure: { at: now - 9000, tokens: 60000, reason: 'classifier boom' } }),
+      defaultSettings(),
+      now,
+    );
+    expect(lines).toEqual([
+      'prune: on',
+      'ratio: 0.5',
+      'last: なし',
+      'dropped: なし',
+      'failures: 0',
+      '最後の失敗: 9 秒前 (classifier boom)',
+    ]);
+  });
+
+  it('lastFailure なし → 失敗の行が出ない', () => {
+    const lines = statusLines(statusOf({}), defaultSettings(), 100000);
+    expect(lines).toHaveLength(5);
+    expect(lines.some((line) => line.includes('最後の失敗'))).toBe(false);
   });
 });

@@ -4,8 +4,8 @@ Keeps the context window open by pruning old tool results the summary no longer 
 
 ## How it moves
 
-- Gate (`turn_end`): when `tokens / contextWindow` passes `ratio` (default `0.5`), starts one pass in the background without stopping the turn. Runs at most once until usage grows by `contextWindow * rearmRatio`.
-- Pass: summarizes the recent messages (up to `summaryTokens`) with pi's `generateSummaryWithUsage`, asks one `keep_<id>` question per old tool result in batches of `maxQuestions`, and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
+- Gate (`turn_end`): when `tokens / contextWindow` passes `ratio` (default `0.5`), starts one pass in the background without stopping the turn. Runs at most once until usage grows by `contextWindow * rearmRatio`. A failed pass also starts the cooldown from its own usage.
+- Pass: summarizes the recent messages with pi's `generateSummaryWithUsage` (in English), trims the summary to Goal / Progress / Next Steps, attaches the first and last 500 chars of each old tool result, asks one `keep_<id>` question per result in budget-sized batches (questions and criteria are English too), and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
 - Apply (next `turn_end` or `agent_before_settle`, whichever comes first): returns `context_edit` entries that replace the dropped results with a one-line marker. Nothing is appended when there is nothing to drop, and the same boundary never returns the same drafts twice.
 - Card: each finished pass is appended as a `custom` entry (`context-prune`) and drawn like the standard compaction card (`[prune]`, click to expand).
 
@@ -14,7 +14,7 @@ Keeps the context window open by pruning old tool results the summary no longer 
 `/prune` shows the status and switches the pruner. Only `on` / `off` rewrite `settings.json`; `now` runs one pass right away without waiting for the ratio.
 
 ```
-/prune                      show status (enabled, ratio, last pass, dropped, failures)
+/prune                      show status (enabled, ratio, last pass, dropped, failures, last failure)
 /prune now                  run once now (skips the ratio and the cooldown)
 /prune on                   enable
 /prune off                  disable
@@ -31,9 +31,7 @@ Any other argument prints the usage instead of throwing.
 | `enabled`              | `true`                                                                            |
 | `ratio`                | `0.5` (fires when `tokens / contextWindow` passes it, between 0.2–0.8)            |
 | `recentTokens`         | `50000` (recent messages the summary covers)                                      |
-| `summaryTokens`        | `2000` (the summary budget)                                                       |
 | `threshold`            | `0.5` (a `yes` below this drops the result)                                       |
-| `maxQuestions`         | `40` (questions per classify request)                                             |
 | `rearmRatio`           | `0.1` (usage must grow this much of the window before the next run)               |
 | `marker`               | `古いツール結果（{chars} 文字）を省略` (`{chars}` becomes the count)              |
 | `classifier.models`    | `opencode/jev-1.13-free`, `openrouter/~typesafe/jev-latest` (tried in this order) |

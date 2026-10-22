@@ -11,7 +11,7 @@ import {
 import { tmpDir } from '../../../test/tmp.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
-import { createPorts, type ModelCell, type SummarizeWithUsage } from './prune/ports.ts';
+import { createPorts, type ModelCell } from './prune/ports.ts';
 import type { PassPorts } from './prune/run.ts';
 
 let seq = 0;
@@ -470,6 +470,60 @@ function evolvingHarness(options: {
   };
 }
 
+function readyFlaky(failFirst: boolean): {
+  readonly harness: ReturnType<typeof evolvingHarness>;
+  readonly wiring: ReturnType<typeof createWiring>;
+  readonly calls: { summarize: number };
+  readonly setFail: (next: boolean) => void;
+  readonly setNow: (next: number) => void;
+} {
+  const harness = evolvingHarness({ summary: 'テストの要約', yes: 0 });
+  const callA = assistantCall('c-a');
+  const resultA = toolResult('c-a', '落とす結果');
+  const callB = assistantCall('c-b');
+  const resultB = toolResult('c-b', '残す結果');
+  const recent = assistantText('直近の返答');
+  harness.branch.push(callA, resultA, callB, resultB, recent);
+  const calls = { summarize: 0 };
+  let failClassify = failFirst;
+  let now = 1000;
+  const ports: PassPorts = {
+    summarize: () => {
+      calls.summarize += 1;
+      return Promise.resolve({ kind: 'ok', summary: 'テストの要約', usage: undefined });
+    },
+    classify: (request) => {
+      if (failClassify) {
+        return Promise.resolve({ kind: 'failed', reason: 'classifier boom' });
+      }
+      const answers: Record<string, { type: string; probabilities: Record<string, number> }> = {};
+      for (const key of Object.keys(request.questions)) {
+        answers[key] = {
+          type: 'choice',
+          probabilities: { yes: key === `keep_${resultB.id}` ? 0.9 : 0 },
+        };
+      }
+      return Promise.resolve({ kind: 'ok', answers });
+    },
+  };
+  const wiring = createWiring(harness.pi, {
+    settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+    ports,
+    now: () => now,
+  });
+  return {
+    harness,
+    wiring,
+    calls,
+    setFail: (next: boolean) => {
+      failClassify = next;
+    },
+    setNow: (next: number) => {
+      now = next;
+    },
+  };
+}
+
 describe('integration', () => {
   const RESULT_TEXT = '落とす結果の本文';
 
@@ -569,6 +623,83 @@ describe('integration', () => {
     expect(wiring.getStatus().failures).toBe(1);
   });
 
+  it('失敗 → lastFailure に at と tokens と reason が入る', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(wiring.getStatus().lastFailure).toEqual({
+      at: 1000,
+      tokens: 1500,
+      reason: 'classifier boom',
+    });
+  });
+
+  it('失敗の直後、tokens が変わらない → 要約を呼ばない（冷却）', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(1);
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(1);
+  });
+
+  it('失敗のあと contextWindow × rearmRatio 以上増えた → 要約を呼ぶ', async () => {
+    const { harness, wiring } = readyHarness({ classifyFails: true });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await wiring.onTurnEnd(harness.ctx);
+    await wiring.flush();
+    expect(harness.calls.summarize).toBe(2);
+  });
+
+  it('成功のあと失敗 → 失敗の tokens から冷える', async () => {
+    const rig = readyFlaky(false);
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastPass?.tokensBefore).toBe(1500);
+    rig.setFail(true);
+    rig.setNow(2000);
+    rig.harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastFailure).toEqual({
+      at: 2000,
+      tokens: 1700,
+      reason: 'classifier boom',
+    });
+    rig.harness.setUsage({ tokens: 1750, contextWindow: 2000, percent: 87 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(2);
+    rig.harness.setUsage({ tokens: 1900, contextWindow: 2000, percent: 95 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(3);
+  });
+
+  it('失敗のあと成功 → 成功の tokensBefore から冷える', async () => {
+    const rig = readyFlaky(true);
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastFailure?.tokens).toBe(1500);
+    rig.setFail(false);
+    rig.setNow(2000);
+    rig.harness.setUsage({ tokens: 1700, contextWindow: 2000, percent: 85 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.wiring.getStatus().lastPass?.tokensBefore).toBe(1700);
+    rig.harness.setUsage({ tokens: 1750, contextWindow: 2000, percent: 87 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(2);
+    rig.harness.setUsage({ tokens: 1900, contextWindow: 2000, percent: 95 });
+    await rig.wiring.onTurnEnd(rig.harness.ctx);
+    await rig.wiring.flush();
+    expect(rig.calls.summarize).toBe(3);
+  });
+
   it('文脈に効いたあとの境界 → entries が空', async () => {
     const { harness, result, wiring } = readyHarness();
     await wiring.onTurnEnd(harness.ctx);
@@ -590,7 +721,6 @@ describe('integration', () => {
 });
 
 interface Captured {
-  summarizeArgs?: readonly unknown[];
   classifyArgs?: unknown;
 }
 
@@ -621,41 +751,13 @@ function fakeCell(captured: Captured): ModelCell {
   const registry = { getApiKeyAndHeaders, getAvailableOfType: fakeClassifiers, classify };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
   const typedRegistry = registry as unknown as ExtensionContext['modelRegistry'];
-  const model = { provider: 'test', id: 'test-model' };
+  const model = { provider: 'test', id: 'test-model', maxTokens: 8000, contextWindow: 200000 };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 使うモデルの偽物
   const typedModel = model as unknown as ExtensionContext['model'];
   return { registry: typedRegistry, model: typedModel, sessionId: 'session-1' };
 }
 
 describe('ports', () => {
-  it('summarize は pi の要約関数にメッセージと session id を渡し、要約と usage を返す', async () => {
-    const captured: Captured = {};
-    const summarize: SummarizeWithUsage = async (...args) => {
-      captured.summarizeArgs = args;
-      return { text: '本番の要約', usage: usage() };
-    };
-    const ports = createPorts(fakeCell(captured), settingsDirWith({}), summarize);
-    const recent = [
-      {
-        role: 'user' as const,
-        content: [{ type: 'text' as const, text: '最近の会話' }],
-        timestamp: 1,
-      },
-    ];
-    const outcome = await ports.summarize(recent);
-    expect(outcome.kind).toBe('ok');
-    if (outcome.kind !== 'ok') {
-      throw new Error('must be ok');
-    }
-    expect(outcome.summary).toBe('本番の要約');
-    expect(outcome.usage).toEqual({ input: 1, output: 1, cost: 0 });
-    const args = captured.summarizeArgs ?? [];
-    expect(args[0]).toEqual(recent);
-    expect(args[2]).toBe(2500);
-    expect(args[3]).toBe('test-key');
-    expect(args[13]).toBe('session-1');
-  });
-
   it('classify は answers から type と probabilities を取り出す', async () => {
     const captured: Captured = {};
     const ports = createPorts(fakeCell(captured), settingsDirWith({}));
@@ -702,6 +804,28 @@ describe('onCommand', () => {
     expect(harness.notified).toHaveLength(1);
     expect(harness.notified[0]).toContain('dropped: 1 件');
     expect(wiring.getStatus().lastPass).toBeDefined();
+  });
+
+  it('now で分類が失敗 → 失敗の通知と lastFailure の記録', async () => {
+    const harness = evolvingHarness({ summary: 'テストの要約', yes: 0, classifyFails: true });
+    const call = assistantCall('c-old');
+    const result = toolResult('c-old', '古い結果');
+    const recent = assistantText('直近の返答');
+    harness.branch.push(call, result, recent);
+    const wiring = createWiring(harness.pi, {
+      settingsDir: settingsDirWith({ recentTokens: tokensOf(recent) }),
+      ports: harness.ports,
+      now: () => 1000,
+    });
+    await wiring.onCommand('now', harness.ctx);
+    expect(harness.appended).toHaveLength(0);
+    expect(harness.notified).toEqual(['prune: failed (classifier boom)']);
+    expect(wiring.getStatus().failures).toBe(1);
+    expect(wiring.getStatus().lastFailure).toEqual({
+      at: 1000,
+      tokens: 1500,
+      reason: 'classifier boom',
+    });
   });
 
   it('status → 状態の 5 行を通知', async () => {

@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { Candidate } from './collect.ts';
-import { batches, judgeRequest, verdicts, type JudgeAnswers } from './judge.ts';
+import {
+  batches,
+  classifierTokens,
+  judgeRequest,
+  topicView,
+  verdicts,
+  type JudgeAnswers,
+} from './judge.ts';
 
-function candidate(id: string): Candidate {
-  return { id, toolName: 'read', args: `read({"path":"${id}.txt"})`, chars: 10 };
+function candidate(id: string, excerpt = 'excerpt'): Candidate {
+  return { id, toolName: 'read', args: `read({"path":"${id}.txt"})`, chars: 10, excerpt };
 }
 
 function answersOf(probabilities: Readonly<Record<string, number>>): JudgeAnswers {
@@ -15,10 +22,10 @@ function answersOf(probabilities: Readonly<Record<string, number>>): JudgeAnswer
   return answers;
 }
 
-function many(count: number): Candidate[] {
+function many(count: number, excerpt = 'x'.repeat(1000)): Candidate[] {
   const out: Candidate[] = [];
   for (let index = 0; index < count; index += 1) {
-    out.push({ id: `c${index}`, toolName: 'read', args: '', chars: 1 });
+    out.push({ id: `c${index}`, toolName: 'read', args: '', chars: 1000, excerpt });
   }
   return out;
 }
@@ -39,6 +46,90 @@ describe('judgeRequest', () => {
       no: expect.any(String),
     });
     expect(question?.instructions.length).toBeGreaterThan(0);
+  });
+
+  it('質問の instructions と criteria に日本語が含まれない', () => {
+    const request = judgeRequest('summary', [candidate('a')]);
+    const japanese = /[぀-ヿ一-鿿]/;
+    for (const question of Object.values(request.questions)) {
+      expect(question.instructions).not.toMatch(japanese);
+      for (const value of Object.values(question.criteria)) {
+        expect(value).not.toMatch(japanese);
+      }
+    }
+  });
+
+  it('要約の view を state に入れ、候補に抜粋を付ける', () => {
+    const summary = ['## Goal', 'do thing', '', '## Constraints & Preferences', '- none'].join(
+      '\n',
+    );
+    const request = judgeRequest(summary, [candidate('a', 'abc')]);
+    expect(request.state['summary']).toBe('## Goal\ndo thing');
+    expect(request.state['candidates']).toEqual([
+      {
+        key: 'keep_a',
+        toolName: 'read',
+        args: 'read({"path":"a.txt"})',
+        chars: 10,
+        excerpt: 'abc',
+      },
+    ]);
+  });
+});
+
+describe('topicView', () => {
+  it('6 節 → Goal と Progress と Next Steps だけ残す', () => {
+    const summary = [
+      '## Goal',
+      'goal body',
+      '',
+      '## Constraints & Preferences',
+      '- none',
+      '',
+      '## Progress',
+      'progress body',
+      '',
+      '## Key Decisions',
+      '- decided',
+      '',
+      '## Next Steps',
+      '1. next',
+      '',
+      '## Critical Context',
+      '- ctx',
+    ].join('\n');
+    const view = topicView(summary);
+    expect(view).toContain('goal body');
+    expect(view).toContain('progress body');
+    expect(view).toContain('1. next');
+    expect(view).not.toContain('decided');
+    expect(view).not.toContain('- ctx');
+    expect(view).not.toContain('Constraints');
+  });
+
+  it('見出し無し → 全文', () => {
+    expect(topicView('plain text')).toBe('plain text');
+  });
+
+  it('見出しはあるが Goal / Progress / Next Steps が無い → 全文', () => {
+    const summary = [
+      '## Constraints & Preferences',
+      '- none',
+      '',
+      '## Key Decisions',
+      '- decided',
+    ].join('\n');
+    expect(topicView(summary)).toBe(summary);
+  });
+});
+
+describe('classifierTokens', () => {
+  it("'a' 25 文字 → 10", () => {
+    expect(classifierTokens('a'.repeat(25))).toBe(10);
+  });
+
+  it('空 → 0', () => {
+    expect(classifierTokens('')).toBe(0);
   });
 });
 
@@ -69,28 +160,19 @@ describe('verdicts', () => {
 });
 
 describe('batches', () => {
-  it('候補 90 件・maxQuestions 40 → 3 つの束（40、40、10）', () => {
-    const result = batches(many(90), 40);
-    expect(result).toHaveLength(3);
-    expect(result[0]).toHaveLength(40);
-    expect(result[1]).toHaveLength(40);
-    expect(result[2]).toHaveLength(10);
+  it('1000 文字の抜粋 100 件 → 32000 の予算で 2 束以上', () => {
+    const result = batches(many(100), { total: 32000, fixed: 2000 });
+    expect(result.length).toBeGreaterThanOrEqual(2);
+    expect(result.flat()).toHaveLength(100);
   });
 
-  it('maxQuestions 1 → 90 の束', () => {
-    expect(batches(many(90), 1)).toHaveLength(90);
+  it('予算が 1 件分より小さい → 1 件だけの束になる', () => {
+    const result = batches(many(2), { total: 10, fixed: 9 });
+    expect(result[0]).toHaveLength(1);
+    expect(result.flat()).toHaveLength(2);
   });
 
-  it('maxQuestions 0 と -3 → 1 束に丸める', () => {
-    expect(batches(many(3), 0)).toHaveLength(3);
-    expect(batches(many(3), -3)).toHaveLength(3);
-  });
-
-  it('maxQuestions 2.7 → 2 件ずつの束', () => {
-    const result = batches(many(5), 2.7);
-    expect(result).toHaveLength(3);
-    expect(result[0]).toHaveLength(2);
-    expect(result[1]).toHaveLength(2);
-    expect(result[2]).toHaveLength(1);
+  it('空 → 空', () => {
+    expect(batches([], { total: 32000, fixed: 100 })).toEqual([]);
   });
 });

@@ -3,7 +3,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { createPorts, type ModelCell, type SummarizeWithUsage } from './ports.ts';
+import {
+  createPorts,
+  summarizationReserve,
+  type ModelCell,
+  type SummarizeWithUsage,
+} from './ports.ts';
 import type { JudgeRequest } from './judge.ts';
 
 function settingsDirWith(document: Record<string, unknown>): string {
@@ -88,7 +93,7 @@ function fakeCell(options: {
   if (options.withModel === false) {
     return { registry: typedRegistry, sessionId: 'session-1' };
   }
-  const model = { provider: 'test', id: 'test-model' };
+  const model = { provider: 'test', id: 'test-model', maxTokens: 8000, contextWindow: 200000 };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 使うモデルの偽物
   const typedModel = model as unknown as ExtensionContext['model'];
   return { registry: typedRegistry, model: typedModel, sessionId: 'session-1' };
@@ -184,10 +189,35 @@ describe('summarize errors', () => {
     expect(outcome.usage).toEqual({ input: 3, output: 5, cost: 8 });
     const args = captured.args ?? [];
     expect(args[0]).toEqual(recent);
-    expect(args[2]).toBe(2500);
+    expect(args[2]).toBe(10000);
     expect(args[3]).toBe('test-key');
     expect(args[4]).toEqual({ a: 'b' });
+    const customInstructions = args[6];
+    expect(typeof customInstructions).toBe('string');
+    if (typeof customInstructions !== 'string') {
+      throw new Error('customInstructions must be a string');
+    }
+    expect(customInstructions).toContain('English');
+    expect(customInstructions).not.toMatch(/[぀-ヿ一-鿿]/);
     expect(args[13]).toBe('session-1');
+  });
+});
+
+describe('summarizationReserve', () => {
+  it('101 と 1000 → 127', () => {
+    expect(summarizationReserve(101, 1000)).toBe(127);
+  });
+
+  it('0 と 1001 → 1252', () => {
+    expect(summarizationReserve(0, 1001)).toBe(1252);
+  });
+
+  it('-1 と 1001 → 1252', () => {
+    expect(summarizationReserve(-1, 1001)).toBe(1252);
+  });
+
+  it('8000 と 200000 → 10000', () => {
+    expect(summarizationReserve(8000, 200000)).toBe(10000);
   });
 });
 

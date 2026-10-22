@@ -13,9 +13,7 @@ export interface Settings {
   readonly enabled: boolean;
   readonly ratio: number;
   readonly recentTokens: number;
-  readonly summaryTokens: number;
   readonly threshold: number;
-  readonly maxQuestions: number;
   readonly rearmRatio: number;
   readonly marker: string;
   readonly classifier: {
@@ -36,9 +34,7 @@ export function defaultSettings(): Settings {
     enabled: true,
     ratio: 0.5,
     recentTokens: 50000,
-    summaryTokens: 2000,
     threshold: 0.5,
-    maxQuestions: 40,
     rearmRatio: 0.1,
     marker: '古いツール結果（{chars} 文字）を省略',
     classifier: {
@@ -161,9 +157,7 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
       key !== 'enabled' &&
       key !== 'ratio' &&
       key !== 'recentTokens' &&
-      key !== 'summaryTokens' &&
       key !== 'threshold' &&
-      key !== 'maxQuestions' &&
       key !== 'rearmRatio' &&
       key !== 'marker' &&
       key !== 'classifier'
@@ -191,24 +185,12 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
     }
     settings = { ...settings, recentTokens: document['recentTokens'] };
   }
-  if (document['summaryTokens'] !== undefined) {
-    if (!isPositiveInt(document['summaryTokens'])) {
-      return 'summaryTokens must be an integer of 1 or more';
-    }
-    settings = { ...settings, summaryTokens: document['summaryTokens'] };
-  }
   if (document['threshold'] !== undefined) {
     const threshold = parseThreshold(document['threshold']);
     if (typeof threshold === 'string') {
       return threshold;
     }
     settings = { ...settings, threshold };
-  }
-  if (document['maxQuestions'] !== undefined) {
-    if (!isPositiveInt(document['maxQuestions'])) {
-      return 'maxQuestions must be an integer of 1 or more';
-    }
-    settings = { ...settings, maxQuestions: document['maxQuestions'] };
   }
   if (document['rearmRatio'] !== undefined) {
     const rearmRatio = parseRearmRatio(document['rearmRatio']);

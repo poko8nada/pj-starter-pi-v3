@@ -54,6 +54,12 @@ function headersOf(
   return out;
 }
 
+/** モデルの出力上限から reserveTokens を逆算する。上限が 0 または負なら文脈長で頭打ちにする */
+export function summarizationReserve(maxTokens: number, contextWindow: number): number {
+  const base = maxTokens > 0 ? maxTokens : contextWindow;
+  return Math.ceil(base / 0.8);
+}
+
 /** 要約の口。pi の要約関数に、直近のメッセージと認証をそのまま渡す */
 async function summarizeViaCell(
   cell: ModelCell,
@@ -74,7 +80,7 @@ async function summarizeViaCell(
   }
   try {
     // generateSummaryWithUsage は maxTokens = 0.8 × reserveTokens で要約する
-    const reserveTokens = Math.ceil(read.settings.summaryTokens / 0.8);
+    const reserveTokens = summarizationReserve(cell.model.maxTokens, cell.model.contextWindow);
     const result = await summarize(
       [...recent],
       cell.model,
@@ -82,7 +88,7 @@ async function summarizeViaCell(
       auth.apiKey,
       headersOf(auth.headers),
       undefined,
-      undefined,
+      'Write the summary in English.',
       undefined,
       undefined,
       undefined,
