@@ -172,26 +172,24 @@ README.ja.md                         update
 1. `.pi/skills/plan/SKILL.md`:
    - 手順 1 で読む design の欄を `No` / `Why` / `Where` / `Summary` / `Paths` / `Boundary` にする。
 2. `.pi/skills/plan/references/format.md`:
-   - `Outside:` の参照先を、design の `Boundary` の項目から、このプランが design の `Boundary` に書いた項目に変える。
+   - `Outside:` の参照先を、design の `Boundary` の項目から、このプランの `Boundary.External` の項目に変える。
 3. `.pi/skills/close/SKILL.md`:
    - 穴の定義から `Scope` を外し、`Files` と `Paths` にする。
    - 「`DEFINITION.md` の行を動かす残り物」を、定義の部分で書き直す。
-4. `.pi/skills/close/references/format.md`:
-   - 見出しを `ADR <プランの No の値>` にし、design の欄を読まない形にする。
-5. `README.md`:
+4. `README.md`:
    - 8 技能の列挙と説明を、`Definition` と `Scope` に合わせる。
    - `DEFINITION.md` の ADR の文を、定義の変更のときだけ要る、と読めない形にする。
-6. `README.ja.md`:
+5. `README.ja.md`:
    - 同じ 2 点を直す。
 
 ### Verify:
 
-- `read`: `review` サブエージェントがこの 6 ファイルを読み、次を報告する。
+- `read`: `review` サブエージェントがこの 5 ファイルを読み、次を報告する。
   - (happy) `plan/SKILL.md` の欄の並びが `Summary` と `Paths` を含む → 含む。
-  - (happy) `plan/references/format.md` の `Outside:` が、design の `Boundary` を名指す → 名指す。
+  - (happy) `plan/references/format.md` の `Outside:` が、このプランの `Boundary.External` の項目を名指す → 名指す。
   - (happy) `close/SKILL.md` の穴の定義が `Files` と `Paths` → そうなっている。
   - (happy) `README.md` と `README.ja.md` の 8 技能の列挙と ADR の文が直っている → 直っている。
-  - (empty) `### Scope` と `ADR <NN> / Scope` が 6 ファイルに無い → 無い。
+  - (empty) `### Scope` と `ADR <NN> / Scope` が 5 ファイルに無い → 無い。
   - (error) 上のどれかが欠ける → 指摘として返る。
 
 ## 6. 締めのスクリプト
@@ -202,7 +200,9 @@ README.ja.md                         update
 
 ### Steps
 
-1. `.pi/skills/close/scripts/collect.mjs`:
+1. `.pi/skills/close/references/format.md`:
+   - 見出しを `ADR <プランの No の値>` にし、design の欄を読まない形にする。
+2. `.pi/skills/close/scripts/collect.mjs`:
    - `SCOPE_HEAD` と `scope` の読み取りを消し、design から何も読まないようにする。
    - `linkText` を、プランの `No` の値をそのまま出す形（`ADR 01, 02, 03, 04, 05`）に変える。
    - `designLinks` と `design.md` を読む道を消す。
@@ -211,6 +211,7 @@ README.ja.md                         update
 
 - `cli`: 一時ディレクトリに cycle dir を作り、`### ADR & Where` に `- No: 01, 02, 03, 04, 05` を持つ plan md を 1 つ置く（`## Notes` に `- Findings: 穴` を 1 行）。そのうえで `node .pi/skills/close/scripts/collect.mjs <その dir>` を走らせ、できる `close.md` の見出しを読む。
   - (happy) 上の fixture を置いて走らせる → 見出しが `ADR 01, 02, 03, 04, 05`。
+  - (happy) `close/references/format.md` の見出しの形が、`ADR <プランの No の値>` で、走らせた結果と合っている → 合っている。
   - (error) plan md から `### ADR & Where` を消して走らせる → 見出しが `ADR 未特定`。
   - (empty) `design.md` に `### Scope` と名前を置いて走らせる → 見出しにその名前が出ない。
 
@@ -242,9 +243,9 @@ README.ja.md                         update
 
 ### Slice 5: 追随する側
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 685f507
 
 ### Slice 6: 締めのスクリプト
 
