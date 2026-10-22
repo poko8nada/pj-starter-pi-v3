@@ -181,7 +181,7 @@ Whatever has to reach the subagent reaches it as `task`. There is no way to hand
 
 ## Background and stopping
 
-A subagent is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. What a reload replaces is the delivery — the pipe that a finished subagent's message comes back through. A session's delivery is dropped at `session_shutdown`; a subagent that finishes with nowhere to deliver is written to the record instead as a notice, and the next boot of the same session hands those notices over one by one, advancing the cursor only after they are all handed over (a notice may arrive twice, but none is lost).
+A subagent is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. When a subagent finishes, the completion is one row in the record (the report body with the values that point at the run). The session re-reads the record every 5 seconds and hands rows without a mark over one by one, adding one mark row for each handover (a notice may arrive twice, but none is lost). The old cursor (`delivered.json`) is only read as the water level for notice rows written before this change; nothing new is written to it.
 
 **Esc does not stop a subagent.** The tool call has already returned, so there is no call left to cancel. Use `consult_subagents{action: "cancel", id}` (or `/consult-cancel <id>`).
 
