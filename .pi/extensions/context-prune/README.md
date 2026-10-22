@@ -31,7 +31,7 @@ Any other argument prints the usage instead of throwing.
 | `enabled`              | `true`                                                                            |
 | `ratio`                | `0.5` (fires when `tokens / contextWindow` passes it, between 0.2–0.8)            |
 | `recentTokens`         | `50000` (recent messages the summary covers)                                      |
-| `threshold`            | `0.5` (a `yes` below this drops the result)                                       |
+| `threshold`            | `0.5` (a `keep` below this drops the result)                                      |
 | `rearmRatio`           | `0.1` (usage must grow this much of the window before the next run)               |
 | `marker`               | `古いツール結果（{chars} 文字）を省略` (`{chars}` becomes the count)              |
 | `classifier.models`    | `opencode/jev-1.13-free`, `openrouter/~typesafe/jev-latest` (tried in this order) |
