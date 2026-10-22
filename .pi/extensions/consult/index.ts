@@ -58,30 +58,6 @@ function noticeDetails(record: RunRecord): Record<string, unknown> {
   };
 }
 
-/**
- * まだ渡していない完了の報告を、owner へ 1 つずつ渡す。
- *
- * 起動のたびに記録を読み直すので、reload の前のサブエージェントの報告もここで届く。渡すたびに印の行を
- * 足す（途中で落ちても、同じ物をもう一度渡すだけになる）。
- */
-function deliverUnread(place: Place, current: string, pi: ExtensionAPI): void {
-  if (current === '') {
-    return;
-  }
-  for (const record of pendingReports(place, { session: current, days: KEEP_DAYS })) {
-    pi.sendMessage(
-      {
-        customType: 'consult',
-        content: record.notice ?? '',
-        display: true,
-        details: noticeDetails(record),
-      },
-      { triggerTurn: true, deliverAs: 'followUp' },
-    );
-    appendDelivered(place, record);
-  }
-}
-
 /** tick に渡す口。置き場と、いまのセッションと、送る pi だけ */
 export interface TickPort {
   readonly pi: PiFace;
@@ -237,8 +213,7 @@ export default function (pi: ExtensionAPI) {
     closeQuietly(place, session);
     announceRunningSubagents(place, session, ctx);
     sweep(place, ctx.cwd);
-    // まだ渡していない完了の報告を渡し、渡すたびに印を足す
-    deliverUnread(place, session, pi);
+    flushPending({ pi, place, sessionNow: () => session });
     pruneCursors(place, new Date(), KEEP_DAYS);
     startTick({ pi, place, sessionNow: () => session });
   });
