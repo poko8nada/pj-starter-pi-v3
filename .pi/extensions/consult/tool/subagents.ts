@@ -15,7 +15,14 @@
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
-import { isRunning, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
+import {
+  deliveredKeys,
+  isRunning,
+  isWaiting,
+  readRuns,
+  type CheckRecord,
+  type RunRecord,
+} from '../run/log.ts';
 import type { Place } from '../run/place.ts';
 import type { ControlAction, ControlOutcome } from './consult.ts';
 
@@ -109,24 +116,35 @@ export function latest(records: readonly RunRecord[]): RunRecord[] {
   return out;
 }
 
+/** 一覧の 1 行の状態。生死と、報告が渡し済みかの両方で決める */
+export interface RowState {
+  readonly alive: boolean;
+  readonly waiting: boolean;
+}
+
 /**
- * 1 体を 1 行にする。走っているかどうかは、ここで 1 回だけ決める。
+ * 1 体を 1 行にする。生きているか・渡し待ちかは、ここでは決めない。
  *
- * 走っておらず終わりの行も無いサブエージェントは `lost`（メインエージェントごと落ちた、または記録を書く側が消えたサブエージェント）。
- * `done` と偽らない。
+ * 生きていれば `running (pid N)`、渡し待ちなら `running`（pid を出さない）。どちらでもなければ
+ * `stateOf`。走っているように見える間は `reason` を出さない。終わりの行が無く生きてもいなければ
+ * `lost`（`done` と偽らない）。
  */
-export function rowOf(record: RunRecord, running: boolean, now: number): string {
-  const state = running ? `running (pid ${record.pid})` : stateOf(record);
+export function rowOf(record: RunRecord, state: RowState, now: number): string {
+  const stateText = state.alive
+    ? `running (pid ${record.pid})`
+    : state.waiting
+      ? 'running'
+      : stateOf(record);
   const parts = [
     record.subagent,
     record.role,
     record.worktree === undefined ? 'base' : `worktree ${record.worktree}`,
-    state,
+    stateText,
     elapsed(record, now),
     record.turns === undefined ? '(turns unknown)' : `${record.turns} turns`,
     record.spend ?? '(spend unknown)',
   ];
-  if (!running && record.reason !== undefined) {
+  if (!state.alive && !state.waiting && record.reason !== undefined) {
     parts.push(`reason: ${record.reason}`);
   }
   return parts.join('  ');
@@ -138,24 +156,32 @@ function stateOf(record: RunRecord): string {
 }
 
 /**
- * 記録をそのまま行にする。
+ * 全行から行にする。印の集合は全行から作り、印だけの行は除いて `latest` で 1 体 1 行に畳む。
  *
- * 走っているかは `check`（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
+ * 生きているかは `check`（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）で決め、
+ * 渡し待ちかは `deliveredKeys` と `isWaiting` で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
   check: CheckRecord | undefined,
   now: number,
 ): string[] {
-  return records.map((record) => rowOf(record, isRunning(record, check), now));
+  const delivered = deliveredKeys(records);
+  const shown = latest(
+    records.filter((record) => record.delivered === undefined || record.ended !== undefined),
+  );
+  return shown.map((record) =>
+    rowOf(record, { alive: isRunning(record, check), waiting: isWaiting(record, delivered) }, now),
+  );
 }
 
-/** 一覧の本文。記録が無ければそう言う */
+/** 一覧の本文。見せる行が無ければそう言う */
 export function listText(records: readonly RunRecord[], now: number, check?: CheckRecord): string {
-  if (records.length === 0) {
+  const rows = rowsOf(records, check, now);
+  if (rows.length === 0) {
     return 'no subagents in this project yet';
   }
-  return rowsOf(records, check, now).join('\n');
+  return rows.join('\n');
 }
 
 export function createSubagentsTool(host: SubagentsHost) {
@@ -165,10 +191,13 @@ export function createSubagentsTool(host: SubagentsHost) {
     const session = host.sessionNow();
 
     if (action === 'list') {
-      const records = latest(readRuns(host.place, { session }));
-      return result(listText(records, Date.now(), host.check), {
+      const all = readRuns(host.place, { session });
+      const now = Date.now();
+      const text = listText(all, now, host.check);
+      const count = rowsOf(all, host.check, now).length;
+      return result(text, {
         action,
-        count: records.length,
+        count,
       });
     }
 
