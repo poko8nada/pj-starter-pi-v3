@@ -6,7 +6,7 @@
 
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { assistantText } from './summarize.ts';
+import { messageText } from './summarize.ts';
 
 export type EntryMessage = Extract<SessionEntry, { readonly type: 'message' }>['message'];
 
@@ -41,9 +41,9 @@ function tokensOf(entry: SessionEntry): number {
   return estimateTokens(entry.message);
 }
 
-/** 結果の本文（text ブロックの合計）の文字数。抜き出しは assistantText に任せる */
+/** 結果の本文（text ブロックの合計）の文字数。抜き出しは messageText に任せる */
 function charsOf(message: EntryMessage): number {
-  return assistantText(message).length;
+  return messageText(message).length;
 }
 
 /** toolCallId から `name(引数)` の文を作る表。引数は JSON にして 200 文字で切る */

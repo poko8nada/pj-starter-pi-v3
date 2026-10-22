@@ -253,7 +253,12 @@ async function onCommand(deps: WiringDeps, args: string, ctx: PruneCtx): Promise
   }
   if (command.kind === 'on' || command.kind === 'off') {
     const enabled = command.kind === 'on';
-    writeEnabled(deps.settingsDir, enabled);
+    const outcome = writeEnabled(deps.settingsDir, enabled);
+    // 壊れた設定は書かずに理由だけ知らせる
+    if (outcome.kind === 'failed') {
+      ctx.ui.notify(outcome.reason);
+      return;
+    }
     ctx.ui.notify(enabled ? 'prune: on' : 'prune: off');
     return;
   }

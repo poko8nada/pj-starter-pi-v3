@@ -4,10 +4,11 @@
 
 import type { ContextEditEntryDraft } from '@earendil-works/pi-coding-agent';
 import type { PrunePass } from '../entry/data.ts';
+import { formatCount } from '../format/count.ts';
 
-/** `{chars}` を ja-JP の数字に置き換える。無ければそのまま */
+/** `{chars}` を桁区切りの数字に置き換える。無ければそのまま */
 export function markerText(chars: number, template: string): string {
-  return template.split('{chars}').join(chars.toLocaleString('ja-JP'));
+  return template.split('{chars}').join(formatCount(chars));
 }
 
 /** パスの落とし物を context_edit の下書きにする */

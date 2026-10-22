@@ -16,9 +16,10 @@ import {
   type MarkdownTheme,
 } from '@earendil-works/pi-tui';
 import type { PrunePass } from './data.ts';
+import { formatCount } from '../format/count.ts';
 
 function tokensLine(pass: PrunePass): string {
-  return pass.tokensBefore.toLocaleString();
+  return formatCount(pass.tokensBefore);
 }
 
 /** 折りたたみと展開の文。展開は Markdown を通す前提 */
@@ -34,7 +35,7 @@ export function cardText(pass: PrunePass, expanded: boolean, expandKey: string):
     '',
     pass.summary,
     '',
-    `省略: ${pass.dropped.length} 件 / ${pass.droppedChars.toLocaleString()} 文字`,
+    `省略: ${pass.dropped.length} 件 / ${formatCount(pass.droppedChars)} 文字`,
     '',
     `要約と判定: ${(pass.latencyMs / 1000).toFixed(1)} 秒`,
   ];
@@ -76,7 +77,7 @@ function paintExpanded(
     new Text(
       theme.fg(
         'customMessageText',
-        `省略: ${pass.dropped.length} 件 / ${pass.droppedChars.toLocaleString()} 文字`,
+        `省略: ${pass.dropped.length} 件 / ${formatCount(pass.droppedChars)} 文字`,
       ),
       0,
       0,

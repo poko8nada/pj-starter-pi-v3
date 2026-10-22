@@ -47,14 +47,16 @@ export function judgeRequest(summary: string, candidates: readonly Candidate[]):
   return { state: { summary, candidates: listed }, questions };
 }
 
-/** 候補を maxQuestions ずつに切る */
+/** 候補を maxQuestions ずつに切る。0 以下や小数は 1 以上に丸める */
 export function batches(
   candidates: readonly Candidate[],
   maxQuestions: number,
 ): readonly (readonly Candidate[])[] {
+  const size = Math.max(1, Math.floor(maxQuestions));
   const out: Candidate[][] = [];
-  for (let index = 0; index < candidates.length; index += maxQuestions) {
-    out.push(candidates.slice(index, index + maxQuestions));
+  // 0 以下や小数は 1 以上の束に丸める（設定は 1 以上を保証するが公開関数の守り）
+  for (let index = 0; index < candidates.length; index += size) {
+    out.push(candidates.slice(index, index + size));
   }
   return out;
 }

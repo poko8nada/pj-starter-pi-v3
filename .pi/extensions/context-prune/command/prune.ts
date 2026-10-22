@@ -6,6 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { SETTINGS_FILE, type Settings } from '../settings/schema.ts';
 import type { PrunePass } from '../entry/data.ts';
+import { formatCount } from '../format/count.ts';
 
 export interface Status {
   readonly running: boolean;
@@ -59,7 +60,7 @@ export function statusLines(status: Status, settings: Settings, now: number): re
   const dropped =
     status.lastPass === undefined
       ? 'dropped: なし'
-      : `dropped: ${status.lastPass.dropped.length} 件 (${status.lastPass.droppedChars.toLocaleString()} 文字)`;
+      : `dropped: ${status.lastPass.dropped.length} 件 (${formatCount(status.lastPass.droppedChars)} 文字)`;
   return [head, ratio, last, dropped, `failures: ${status.failures}`];
 }
 
@@ -67,18 +68,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** settings.json を読み、enabled だけを書き換えて書き戻す（他のキーは残す） */
-export function writeEnabled(dir: string, enabled: boolean): void {
+export type EnableOutcome =
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'failed'; readonly reason: string };
+
+/** settings.json の enabled だけを書き換える。壊れていれば書かずに failed */
+export function writeEnabled(dir: string, enabled: boolean): EnableOutcome {
   const file = join(dir, SETTINGS_FILE);
-  let document: Record<string, unknown> = {};
+  let text: string;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
-    if (isRecord(parsed)) {
-      document = { ...parsed };
+    text = readFileSync(file, 'utf8');
+  } catch (error) {
+    // 無ければ enabled だけの文書を作る
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, `${JSON.stringify({ enabled }, null, 2)}\n`, 'utf8');
+      return { kind: 'ok' };
     }
-  } catch {
-    document = {};
+    const detail = error instanceof Error ? error.message : String(error);
+    return { kind: 'failed', reason: `context-prune settings: could not read ${file} (${detail})` };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return { kind: 'failed', reason: `context-prune settings: not JSON (${detail})` };
+  }
+  if (!isRecord(parsed)) {
+    return { kind: 'failed', reason: 'context-prune settings: must be an object' };
   }
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify({ ...document, enabled }, null, 2)}\n`, 'utf8');
+  writeFileSync(file, `${JSON.stringify({ ...parsed, enabled }, null, 2)}\n`, 'utf8');
+  return { kind: 'ok' };
 }

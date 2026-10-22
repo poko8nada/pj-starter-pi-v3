@@ -21,8 +21,8 @@ export function summaryPrompt(maxTokens: number): string {
   ].join('\n');
 }
 
-/** text ブロックだけを連結する。text が無ければ空文字 */
-export function assistantText(message: EntryMessage): string {
+/** 1 つのメッセージの text を読む。窓全体の直列化は runPass が serializeConversation で行う */
+export function messageText(message: EntryMessage): string {
   if (!('content' in message)) {
     return '';
   }
