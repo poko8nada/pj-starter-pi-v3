@@ -23,7 +23,8 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 - read the definition and the ADR, and walk what each accepted entry touches
 - write the paths at the top of design.md, cut them into plans, name each plan, and write its section
-- skips: the owner's look at the cut, and at `## Possibly related files`
+- skips: the owner's look at the cut, and at `## Affected`
+- runs the design's review, on its seven viewpoints: the review is a subagent's, not the owner's look
 - go on to the plan
 
 ### plan

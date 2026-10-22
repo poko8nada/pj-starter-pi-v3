@@ -23,7 +23,7 @@ The kinds below are how the Units of this product happen to appear. They are exa
 
 - A Unit's line — written from the `Who`'s side: `<Who> が、xxx する`. The name is the thing's name; the description is not.
 - A Unit's line is its main function. The route to that function — the implementation, the steps, the command, the settings, the file layout — does not go in it.
-- The checks that hold the function up — lint, types, tests, the hooks — do not go in it either.
+- The checks that hold the function up — whatever runs to prove it — do not go in it either.
 - So the line moves only when the main function itself changes. A change to the route or to a check leaves the line as it is.
 - `Who` — a role that acts in the product.
 - `Stack` — what the product stands on, by group and role.
