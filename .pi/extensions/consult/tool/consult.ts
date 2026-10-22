@@ -19,7 +19,6 @@ import {
   isRunning,
   KEEP_DAYS,
   readRuns,
-  runningRuns,
   type CheckRecord,
   type RunRecord,
 } from '../run/log.ts';
@@ -36,7 +35,7 @@ import { readStartToken, type PsRun } from '../run/proc.ts';
 import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import { compose, reportBlock, result, usageLine, type SubagentReport } from './render.ts';
-import { isSoundEnabled, setSoundEnabled, startSound } from './sound.ts';
+import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -426,11 +425,6 @@ function beginRun(
     },
   };
   state.subagents.set(subagent.id, subagent);
-  if (state.subagents.size === 1) {
-    // 記録を読み直す述語で鳴らす。reload をまたいでも、走っているサブエージェントが居なくなれば止まる
-    const check = state.check;
-    startSound(() => runningRuns(state.place, { session: state.sessionNow() }, check).length > 0);
-  }
   runInBackground(state, { ctx, options, job, subagent, session });
   const running = [...state.subagents.values()].map(describeSubagent).join('\n');
   return result(`started: ${subagent.id}\n\nrunning now:\n${running}`, {
