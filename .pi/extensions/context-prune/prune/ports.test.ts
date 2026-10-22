@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { tmpDir } from '../../../../test/tmp.ts';
-import { createPorts, type ModelCell } from './ports.ts';
+import { createPorts, type ModelCell, type SummarizeWithUsage } from './ports.ts';
 import type { JudgeRequest } from './judge.ts';
 
 function settingsDirWith(document: Record<string, unknown>): string {
@@ -39,32 +39,22 @@ function judgeRequestOf(): JudgeRequest {
 }
 
 // 偽の registry を作る。使う口だけ持つ
-type CompleteFn = (model: unknown, context: unknown, opts: unknown) => Promise<unknown>;
+type AuthFn = () => Promise<unknown>;
 type AvailableFn = () => Promise<unknown>;
 type ClassifyFn = (model: unknown, args: unknown) => Promise<unknown>;
 
 function fakeCell(options: {
-  readonly complete?: CompleteFn;
+  readonly auth?: AuthFn;
   readonly available?: AvailableFn;
   readonly classify?: ClassifyFn;
   readonly withModel?: boolean;
 }): ModelCell {
-  const completeImpl = options.complete;
+  const authImpl = options.auth;
   const availableImpl = options.available;
   const classifyImpl = options.classify;
   const registry = {
-    complete:
-      completeImpl ??
-      (async () => ({
-        role: 'assistant',
-        content: [{ type: 'text', text: '本番の要約' }],
-        api: 'openai-completions',
-        provider: 'test',
-        model: 'test-model',
-        usage: testUsage(),
-        stopReason: 'stop',
-        timestamp: 1,
-      })),
+    getApiKeyAndHeaders:
+      authImpl ?? (async () => ({ ok: true, apiKey: 'test-key', headers: { a: 'b', drop: null } })),
     getAvailableOfType:
       availableImpl ??
       (async () => [
@@ -96,75 +86,108 @@ function fakeCell(options: {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
   const typedRegistry = registry as unknown as ExtensionContext['modelRegistry'];
   if (options.withModel === false) {
-    return { registry: typedRegistry };
+    return { registry: typedRegistry, sessionId: 'session-1' };
   }
   const model = { provider: 'test', id: 'test-model' };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 使うモデルの偽物
   const typedModel = model as unknown as ExtensionContext['model'];
-  return { registry: typedRegistry, model: typedModel };
+  return { registry: typedRegistry, model: typedModel, sessionId: 'session-1' };
+}
+
+/** 偽の要約関数。引数を録り、出来た要約か例外を返す */
+function summaryFake(
+  captured: { args?: readonly unknown[] },
+  outcome: { readonly text: string; readonly usage: ReturnType<typeof testUsage> } | Error,
+): SummarizeWithUsage {
+  return async (...args: Parameters<SummarizeWithUsage>) => {
+    captured.args = args;
+    if (outcome instanceof Error) {
+      throw outcome;
+    }
+    return outcome;
+  };
 }
 
 describe('summarize errors', () => {
-  it('設定破損で failed', async () => {
-    const ports = createPorts(fakeCell({}), brokenDir());
-    const outcome = await ports.summarize('最近の会話');
-    expect(outcome.kind).toBe('failed');
+  it('設定破損で failed、要約は呼ばない', async () => {
+    const captured: { args?: readonly unknown[] } = {};
+    const ports = createPorts(
+      fakeCell({}),
+      brokenDir(),
+      summaryFake(captured, { text: 'x', usage: testUsage() }),
+    );
+    expect((await ports.summarize([])).kind).toBe('failed');
+    expect(captured.args).toBeUndefined();
   });
 
   it('registry かモデルが無くて failed', async () => {
-    const empty: ModelCell = {};
-    const ports = createPorts(empty, settingsDirWith({}));
-    expect((await ports.summarize('最近の会話')).kind).toBe('failed');
+    const ports = createPorts({}, settingsDirWith({}));
+    expect((await ports.summarize([])).kind).toBe('failed');
     const noModel = fakeCell({ withModel: false });
     const ports2 = createPorts(noModel, settingsDirWith({}));
-    expect((await ports2.summarize('最近の会話')).kind).toBe('failed');
+    expect((await ports2.summarize([])).kind).toBe('failed');
   });
 
-  it('complete が投げて failed', async () => {
-    const cell = fakeCell({
-      complete: async () => {
-        throw new Error('complete boom');
-      },
-    });
+  it('認証が取れなくて failed、理由は auth の error', async () => {
+    const cell = fakeCell({ auth: async () => ({ ok: false, error: 'no key' }) });
     const ports = createPorts(cell, settingsDirWith({}));
-    const outcome = await ports.summarize('最近の会話');
+    const outcome = await ports.summarize([]);
+    expect(outcome).toEqual({ kind: 'failed', reason: 'no key' });
+  });
+
+  it('要約の関数が投げて failed', async () => {
+    const ports = createPorts(
+      fakeCell({}),
+      settingsDirWith({}),
+      summaryFake({}, new Error('summary boom')),
+    );
+    const outcome = await ports.summarize([]);
     expect(outcome.kind).toBe('failed');
     if (outcome.kind === 'failed') {
-      expect(outcome.reason).toContain('complete boom');
+      expect(outcome.reason).toContain('summary boom');
     }
   });
 
   it('要約が空で failed', async () => {
-    const cell = fakeCell({
-      complete: async () => ({
-        role: 'assistant',
-        content: [{ type: 'text', text: '   ' }],
-        api: 'openai-completions',
-        provider: 'test',
-        model: 'test-model',
-        usage: testUsage(),
-        stopReason: 'stop',
-        timestamp: 1,
-      }),
-    });
-    const ports = createPorts(cell, settingsDirWith({}));
-    const outcome = await ports.summarize('最近の会話');
+    const ports = createPorts(
+      fakeCell({}),
+      settingsDirWith({}),
+      summaryFake({}, { text: '   ', usage: testUsage() }),
+    );
+    const outcome = await ports.summarize([]);
     expect(outcome.kind).toBe('failed');
     if (outcome.kind === 'failed') {
       expect(outcome.reason).toContain('summary');
     }
   });
 
-  it('ok のとき usage が写る', async () => {
-    const cell = fakeCell({});
-    const ports = createPorts(cell, settingsDirWith({}));
-    const outcome = await ports.summarize('最近の会話');
+  it('ok のとき要約と usage を返し、pi の要約関数にメッセージと session id を渡す', async () => {
+    const captured: { args?: readonly unknown[] } = {};
+    const ports = createPorts(
+      fakeCell({}),
+      settingsDirWith({}),
+      summaryFake(captured, { text: '本番の要約', usage: testUsage() }),
+    );
+    const recent = [
+      {
+        role: 'user' as const,
+        content: [{ type: 'text' as const, text: '最近の会話' }],
+        timestamp: 1,
+      },
+    ];
+    const outcome = await ports.summarize(recent);
     expect(outcome.kind).toBe('ok');
     if (outcome.kind !== 'ok') {
       throw new Error('must be ok');
     }
     expect(outcome.summary).toBe('本番の要約');
     expect(outcome.usage).toEqual({ input: 3, output: 5, cost: 8 });
+    const args = captured.args ?? [];
+    expect(args[0]).toEqual(recent);
+    expect(args[2]).toBe(2500);
+    expect(args[3]).toBe('test-key');
+    expect(args[4]).toEqual({ a: 'b' });
+    expect(args[13]).toBe('session-1');
   });
 });
 

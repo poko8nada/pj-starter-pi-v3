@@ -1,20 +1,25 @@
 /**
- * 本番の口。裏の要約は今のモデルで、判定は設定の順に分類器で聞く。
+ * 本番の口。要約は pi の `generateSummaryWithUsage`（本体のコンパクションと同じ関数）に任せる。
+ * 判定は設定の順に分類器で聞く。
  *
- * registry を掴めるまでは失敗する（fail-open で何も積まない）。
+ * 要約の関数が直列化・促し・キャッシュ・session id を中で決めるので、こちらでは組み立てない。
  */
 
-import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
+import { generateSummaryWithUsage, type ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { readSettings } from '../settings/read.ts';
 import type { Settings } from '../settings/schema.ts';
+import type { EntryMessage } from './collect.ts';
 import type { ClassifierQuestion, JudgeRequest } from './judge.ts';
 import type { PassPorts } from './run.ts';
-import { summaryPrompt } from './summarize.ts';
 
 export interface ModelCell {
   registry?: ExtensionContext['modelRegistry'];
   model?: ExtensionContext['model'];
+  sessionId?: string;
 }
+
+/** 要約の関数。テストは差し替える */
+export type SummarizeWithUsage = typeof generateSummaryWithUsage;
 
 type SummarizeOutcome = Awaited<ReturnType<PassPorts['summarize']>>;
 type ClassifyOutcome = Awaited<ReturnType<PassPorts['classify']>>;
@@ -33,11 +38,28 @@ type SdkQuestions = Record<
   { type: 'choice'; instructions: string; criteria: Record<string, string> }
 >;
 
-/** 要約の口。本物の registry が掴めるまで失敗する */
+/** null のヘッダを落として、要約の関数が受ける形にする */
+function headersOf(
+  headers: Readonly<Record<string, string | null>> | undefined,
+): Record<string, string> | undefined {
+  if (headers === undefined) {
+    return undefined;
+  }
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (value !== null) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+/** 要約の口。pi の要約関数に、直近のメッセージと認証をそのまま渡す */
 async function summarizeViaCell(
   cell: ModelCell,
   settingsDir: string,
-  text: string,
+  recent: readonly EntryMessage[],
+  summarize: SummarizeWithUsage,
 ): Promise<SummarizeOutcome> {
   const read = readSettings(settingsDir);
   if (read.kind === 'broken') {
@@ -46,46 +68,41 @@ async function summarizeViaCell(
   if (cell.registry === undefined || cell.model === undefined) {
     return { kind: 'failed', reason: 'no model available' };
   }
+  const auth = await cell.registry.getApiKeyAndHeaders(cell.model);
+  if (!auth.ok) {
+    return { kind: 'failed', reason: auth.error };
+  }
   try {
-    const response = await cell.registry.complete(
+    // generateSummaryWithUsage は maxTokens = 0.8 × reserveTokens で要約する
+    const reserveTokens = Math.ceil(read.settings.summaryTokens / 0.8);
+    const result = await summarize(
+      [...recent],
       cell.model,
-      {
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `${summaryPrompt(read.settings.summaryTokens)}\n\n<conversation>\n${text}\n</conversation>`,
-              },
-            ],
-            timestamp: Date.now(),
-          },
-        ],
-      },
-      { maxTokens: read.settings.summaryTokens },
+      reserveTokens,
+      auth.apiKey,
+      headersOf(auth.headers),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      auth.env,
+      undefined,
+      undefined,
+      cell.sessionId,
     );
-    const parts: string[] = [];
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        parts.push(block.text);
-      }
-    }
-    const summary = parts.join('');
+    const summary = result.text;
     if (summary.trim() === '') {
       return { kind: 'failed', reason: 'summary is empty' };
     }
     return {
       kind: 'ok',
       summary,
-      usage:
-        response.usage === undefined
-          ? undefined
-          : {
-              input: response.usage.input,
-              output: response.usage.output,
-              cost: response.usage.cost.total,
-            },
+      usage: {
+        input: result.usage.input,
+        output: result.usage.output,
+        cost: result.usage.cost.total,
+      },
     };
   } catch (error) {
     return { kind: 'failed', reason: error instanceof Error ? error.message : String(error) };
@@ -173,9 +190,13 @@ async function classifyViaCell(
 }
 
 /** 本番の口を作る。registry とモデルは後から掴む */
-export function createPorts(cell: ModelCell, settingsDir: string): PassPorts {
+export function createPorts(
+  cell: ModelCell,
+  settingsDir: string,
+  summarize: SummarizeWithUsage = generateSummaryWithUsage,
+): PassPorts {
   return {
-    summarize: (text) => summarizeViaCell(cell, settingsDir, text),
+    summarize: (recent) => summarizeViaCell(cell, settingsDir, recent, summarize),
     classify: (request) => classifyViaCell(cell, settingsDir, request),
   };
 }

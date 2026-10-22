@@ -6,7 +6,6 @@
 
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { messageText } from './summarize.ts';
 
 export type EntryMessage = Extract<SessionEntry, { readonly type: 'message' }>['message'];
 
@@ -41,7 +40,28 @@ function tokensOf(entry: SessionEntry): number {
   return estimateTokens(entry.message);
 }
 
-/** 結果の本文（text ブロックの合計）の文字数。抜き出しは messageText に任せる */
+/** 1 つのメッセージの text を読む。要約は pi の関数が窓全体を直列化するので、こちらは数えるだけ */
+export function messageText(message: EntryMessage): string {
+  if (!('content' in message)) {
+    return '';
+  }
+  const content: unknown = message.content;
+  if (typeof content === 'string') {
+    return content;
+  }
+  if (!Array.isArray(content)) {
+    return '';
+  }
+  const parts: string[] = [];
+  for (const block of content) {
+    if (isRecord(block) && block['type'] === 'text' && typeof block['text'] === 'string') {
+      parts.push(block['text']);
+    }
+  }
+  return parts.join('');
+}
+
+/** 結果の本文（text ブロックの合計）の文字数 */
 function charsOf(message: EntryMessage): number {
   return messageText(message).length;
 }

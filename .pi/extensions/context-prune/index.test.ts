@@ -11,7 +11,7 @@ import {
 import { tmpDir } from '../../../test/tmp.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
-import { createPorts, type ModelCell } from './prune/ports.ts';
+import { createPorts, type ModelCell, type SummarizeWithUsage } from './prune/ports.ts';
 import type { PassPorts } from './prune/run.ts';
 
 let seq = 0;
@@ -590,8 +590,7 @@ describe('integration', () => {
 });
 
 interface Captured {
-  context?: unknown;
-  options?: unknown;
+  summarizeArgs?: readonly unknown[];
   classifyArgs?: unknown;
 }
 
@@ -601,25 +600,11 @@ function fakeClassifiers(): Promise<unknown> {
   ]);
 }
 
+async function getApiKeyAndHeaders(): Promise<unknown> {
+  return { ok: true, apiKey: 'test-key', headers: { a: 'b' } };
+}
+
 function fakeCell(captured: Captured): ModelCell {
-  const complete = async (
-    _model: unknown,
-    context: unknown,
-    options: unknown,
-  ): Promise<unknown> => {
-    captured.context = context;
-    captured.options = options;
-    return {
-      role: 'assistant',
-      content: [{ type: 'text', text: '本番の要約' }],
-      api: 'openai-completions',
-      provider: 'test',
-      model: 'test-model',
-      usage: usage(),
-      stopReason: 'stop',
-      timestamp: 1,
-    };
-  };
   const classify = async (_model: unknown, args: unknown): Promise<unknown> => {
     captured.classifyArgs = args;
     return {
@@ -633,29 +618,42 @@ function fakeCell(captured: Captured): ModelCell {
       timestamp: 1,
     };
   };
-  const registry = { complete, getAvailableOfType: fakeClassifiers, classify };
+  const registry = { getApiKeyAndHeaders, getAvailableOfType: fakeClassifiers, classify };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
   const typedRegistry = registry as unknown as ExtensionContext['modelRegistry'];
   const model = { provider: 'test', id: 'test-model' };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 使うモデルの偽物
   const typedModel = model as unknown as ExtensionContext['model'];
-  return { registry: typedRegistry, model: typedModel };
+  return { registry: typedRegistry, model: typedModel, sessionId: 'session-1' };
 }
 
 describe('ports', () => {
-  it('summarize は要約の指示を含む促しを送り、要約と usage を返す', async () => {
+  it('summarize は pi の要約関数にメッセージと session id を渡し、要約と usage を返す', async () => {
     const captured: Captured = {};
-    const ports = createPorts(fakeCell(captured), settingsDirWith({}));
-    const outcome = await ports.summarize('最近の会話');
+    const summarize: SummarizeWithUsage = async (...args) => {
+      captured.summarizeArgs = args;
+      return { text: '本番の要約', usage: usage() };
+    };
+    const ports = createPorts(fakeCell(captured), settingsDirWith({}), summarize);
+    const recent = [
+      {
+        role: 'user' as const,
+        content: [{ type: 'text' as const, text: '最近の会話' }],
+        timestamp: 1,
+      },
+    ];
+    const outcome = await ports.summarize(recent);
     expect(outcome.kind).toBe('ok');
     if (outcome.kind !== 'ok') {
       throw new Error('must be ok');
     }
     expect(outcome.summary).toBe('本番の要約');
     expect(outcome.usage).toEqual({ input: 1, output: 1, cost: 0 });
-    expect(JSON.stringify(captured.context)).toContain('Goal');
-    expect(JSON.stringify(captured.context)).toContain('最近の会話');
-    expect(captured.options).toMatchObject({ maxTokens: 2000 });
+    const args = captured.summarizeArgs ?? [];
+    expect(args[0]).toEqual(recent);
+    expect(args[2]).toBe(2500);
+    expect(args[3]).toBe('test-key');
+    expect(args[13]).toBe('session-1');
   });
 
   it('classify は answers から type と probabilities を取り出す', async () => {

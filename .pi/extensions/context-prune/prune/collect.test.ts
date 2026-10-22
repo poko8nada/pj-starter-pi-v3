@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { collect } from './collect.ts';
+import { collect, messageText, type EntryMessage } from './collect.ts';
 
 let seq = 0;
 
@@ -225,5 +225,38 @@ describe('collect', () => {
     expect(collected.candidates).toHaveLength(1);
     expect(collected.candidates[0]?.id).toBe(empty.id);
     expect(collected.candidates[0]?.chars).toBe(0);
+  });
+});
+
+type AssistantContent = Extract<EntryMessage, { readonly role: 'assistant' }>['content'];
+
+function assistantMessage(content: AssistantContent): EntryMessage {
+  return {
+    role: 'assistant',
+    content,
+    api: 'openai-completions',
+    provider: 'test',
+    model: 'test-model',
+    usage: usage(),
+    stopReason: 'stop',
+    timestamp: 1,
+  };
+}
+
+describe('messageText', () => {
+  it('text 2 つと toolCall が混ざる → text だけを連結した文字列', () => {
+    const message = assistantMessage([
+      { type: 'text', text: 'hello ' },
+      { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
+      { type: 'text', text: 'world' },
+    ]);
+    expect(messageText(message)).toBe('hello world');
+  });
+
+  it('text ブロックが無い → 空文字', () => {
+    const message = assistantMessage([
+      { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
+    ]);
+    expect(messageText(message)).toBe('');
   });
 });

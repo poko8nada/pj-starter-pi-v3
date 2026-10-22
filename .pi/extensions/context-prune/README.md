@@ -5,7 +5,7 @@ Keeps the context window open by pruning old tool results the summary no longer 
 ## How it moves
 
 - Gate (`turn_end`): when `tokens / contextWindow` passes `ratio` (default `0.5`), starts one pass in the background without stopping the turn. Runs at most once until usage grows by `contextWindow * rearmRatio`.
-- Pass: summarizes the recent messages (up to `summaryTokens`), asks one `keep_<id>` question per old tool result in batches of `maxQuestions`, and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
+- Pass: summarizes the recent messages (up to `summaryTokens`) with pi's `generateSummaryWithUsage`, asks one `keep_<id>` question per old tool result in batches of `maxQuestions`, and drops the results the classifier rates below `threshold`. A missing answer keeps the result (fail-open).
 - Apply (next `turn_end` or `agent_before_settle`, whichever comes first): returns `context_edit` entries that replace the dropped results with a one-line marker. Nothing is appended when there is nothing to drop, and the same boundary never returns the same drafts twice.
 - Card: each finished pass is appended as a `custom` entry (`context-prune`) and drawn like the standard compaction card (`[prune]`, click to expand).
 
@@ -44,11 +44,10 @@ Any other argument prints the usage instead of throwing.
 ```
 index.ts            the entry: reads the settings, runs passes in the background, wires turn_end → agent_before_settle → command → card
 prune/collect.ts    splits the recent messages from the old tool results
-prune/summarize.ts  the summary prompt and the text extraction
 prune/judge.ts      the keep_<id> questions, the batches, and the verdicts
 prune/plan.ts       the gate (disabled/unknown/running/empty/ratio/cooling)
 prune/run.ts        one pass: summarize, classify in batches, drop
-prune/ports.ts      the production summarize/classify via the model registry
+prune/ports.ts      the production summarize (pi's generateSummaryWithUsage) and classify via the model registry
 entry/data.ts       the prune pass record (custom entry, not sent to the model)
 entry/render.ts     the [prune] card, drawn like the compaction card
 apply/drafts.ts     the context_edit drafts and the marker text

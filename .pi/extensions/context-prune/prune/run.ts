@@ -4,7 +4,6 @@
  * 失敗したら積まない（fail-open）。既定のコンパクションが保険になる。
  */
 
-import { convertToLlm, serializeConversation } from '@earendil-works/pi-coding-agent';
 import type { Settings } from '../settings/schema.ts';
 import type { Drop, PrunePass, Usage } from '../entry/data.ts';
 import { batches, judgeRequest, verdicts, type JudgeRequest } from './judge.ts';
@@ -17,7 +16,7 @@ export type PassOutcome =
 
 export interface PassPorts {
   readonly summarize: (
-    text: string,
+    recent: readonly EntryMessage[],
   ) => Promise<
     | { readonly kind: 'ok'; readonly summary: string; readonly usage: Usage | undefined }
     | { readonly kind: 'failed'; readonly reason: string }
@@ -62,8 +61,7 @@ export async function runPass(input: RunPassInput, ports: PassPorts): Promise<Pa
     };
   }
   const startedAt = Date.now();
-  const text = serializeConversation(convertToLlm([...input.recent]));
-  const summarized = await ports.summarize(text);
+  const summarized = await ports.summarize(input.recent);
   if (summarized.kind === 'failed') {
     return { kind: 'failed', reason: summarized.reason };
   }

@@ -339,6 +339,7 @@ export default function (pi: ExtensionAPI): void {
   const hold = (ctx: ExtensionContext): void => {
     cell.registry = ctx.modelRegistry;
     cell.model = ctx.model;
+    cell.sessionId = ctx.sessionManager.getSessionId();
   };
   registerPrune(
     {
