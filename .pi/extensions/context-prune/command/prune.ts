@@ -6,6 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { SETTINGS_FILE, type Settings } from '../settings/schema.ts';
 import type { PrunePass } from '../entry/data.ts';
+import { formatCount } from '../format/count.ts';
 
 export interface Status {
   readonly running: boolean;
@@ -59,7 +60,7 @@ export function statusLines(status: Status, settings: Settings, now: number): re
   const dropped =
     status.lastPass === undefined
       ? 'dropped: なし'
-      : `dropped: ${status.lastPass.dropped.length} 件 (${status.lastPass.droppedChars.toLocaleString()} 文字)`;
+      : `dropped: ${status.lastPass.dropped.length} 件 (${formatCount(status.lastPass.droppedChars)} 文字)`;
   return [head, ratio, last, dropped, `failures: ${status.failures}`];
 }
 
