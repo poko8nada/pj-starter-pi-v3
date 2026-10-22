@@ -218,12 +218,12 @@ describe('onCommand', () => {
     expect(notified.at(0)).toContain('removed:');
   });
 
-  it('置いた settings.json を readSettings で読む → enabled が真', () => {
+  it('置いた settings.json を readSettings で読む → enabled と show が真', () => {
     const read = readSettings(HERE);
     expect(read.kind).toBe('ok');
     if (read.kind !== 'ok') {
       throw new Error('settings.json must be readable');
     }
-    expect(read.settings.enabled).toBe(true);
+    expect(read.settings).toEqual({ enabled: true, show: true });
   });
 });

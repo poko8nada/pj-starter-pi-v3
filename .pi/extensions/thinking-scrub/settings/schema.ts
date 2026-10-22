@@ -6,6 +6,7 @@
 
 export interface Settings {
   readonly enabled: boolean;
+  readonly show: boolean;
 }
 
 export type SettingsRead =
@@ -16,7 +17,7 @@ export const SETTINGS_FILE = 'settings.json';
 
 /** 既定の設定 */
 export function defaultSettings(): Settings {
-  return { enabled: true };
+  return { enabled: true, show: true };
 }
 
 /** 読んだ文字列を設定にする。型が違えば broken */
@@ -31,12 +32,21 @@ export function parseSettings(text: string): SettingsRead {
   if (typeof document !== 'object' || document === null || Array.isArray(document)) {
     return { kind: 'broken', reason: 'thinking-scrub settings: must be an object' };
   }
-  if (!('enabled' in document)) {
-    return { kind: 'ok', settings: { enabled: true } };
+  let enabled = true;
+  let show = true;
+  if ('enabled' in document) {
+    const value: unknown = document.enabled;
+    if (typeof value !== 'boolean') {
+      return { kind: 'broken', reason: 'thinking-scrub settings: enabled must be a boolean' };
+    }
+    enabled = value;
   }
-  const enabled: unknown = document.enabled;
-  if (typeof enabled !== 'boolean') {
-    return { kind: 'broken', reason: 'thinking-scrub settings: enabled must be a boolean' };
+  if ('show' in document) {
+    const value: unknown = document.show;
+    if (typeof value !== 'boolean') {
+      return { kind: 'broken', reason: 'thinking-scrub settings: show must be a boolean' };
+    }
+    show = value;
   }
-  return { kind: 'ok', settings: { enabled } };
+  return { kind: 'ok', settings: { enabled, show } };
 }
