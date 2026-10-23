@@ -1,0 +1,326 @@
+# PLAN `single-git-spawn`
+
+## Files
+
+```text
+lib/
+  git-env.mjs                          update
+.pi/
+  extensions/
+    consult/
+      README.md                        update
+      index.test.ts                    update
+      policy/
+        types.test.ts                  update
+      run/
+        git-env.ts                     drop
+        run.ts                         update
+        worktree.ts                    update
+        worktree.test.ts               update
+        delivery.test.ts               update
+        log.test.ts                    update
+        place.test.ts                  update
+      sub/
+        guard.test.ts                  update
+      tool/
+        consult.test.ts                update
+        subagents.test.ts              update
+        worktree.test.ts               update
+    context-prune/
+      index.test.ts                    update
+      command/
+        prune.test.ts                  update
+      prune/
+        ports.test.ts                  update
+      settings/
+        read.test.ts                   update
+    quality-gate/
+      checks.test.ts                   update
+      targets.test.ts                  update
+    thinking-scrub/
+      index.test.ts                    update
+      settings/
+        read.test.ts                   update
+  skills/
+    adr/
+      scripts/
+        scaffold.mjs                   update
+        scaffold.test.ts               update
+scripts/
+  checks/
+    typecheck.test.ts                  update
+    typecheck-staged.test.ts           update
+  harness/
+    config.test.ts                     update
+    harness.json                       update
+    index.test.ts                      update
+    list.test.ts                       update
+  product-ready/
+    index.test.ts                      update
+    targets.test.ts                    update
+test/
+  README.md                            drop
+  env.test.ts                          drop
+  setup.ts                             drop
+  temp-dir.ts                          add
+  tmp.ts                               drop
+vitest.config.ts                       update
+```
+
+## 1.起動口を 1 つにする
+
+### Types
+
+```ts
+// lib/git-env.mjs（JSDoc。tsconfig は checkJs を持たないので、値は下の check が持つ）
+export function git(
+  cwd: string,
+  args: readonly string[],
+): {
+  readonly status: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly error?: string;
+};
+```
+
+### Steps
+
+1. `lib/git-env.mjs`:
+   - `git(cwd, args)` を足す。`spawnSync('git', [...args], { cwd, encoding: 'utf8', env: gitEnv() })` を打ち、`status` は `?? 1`、`stdout` と `stderr` は `?? ''`、`error` は message にする。
+     - Outside: `git` コマンド。`GIT_*` を落とした環境で起動する。
+2. `.pi/extensions/consult/run/worktree.ts`:
+   - 内部の `git()` を消し、`lib/git-env.mjs` の `git` を呼ぶ。
+3. `.pi/extensions/consult/run/run.ts`:
+   - `worktreeGit(path)` を、`lib` の `git` を呼んで `{ status, stdout, stderr }` を返す形にする（`error` は落とす）。
+4. `.pi/skills/adr/scripts/scaffold.mjs`:
+   - `spawnSync('git', ['branch', '--show-current'], ...)` を、`lib` の `git(root, ['branch', '--show-current'])` に置き換える。
+
+### Verify:
+
+- cli: `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" lib .pi/extensions/consult/run/worktree.ts .pi/extensions/consult/run/run.ts .pi/skills/adr/scripts/scaffold.mjs`
+  - (happy) 実行 → `lib/git-env.mjs` の 1 行だけ。3 ファイルは 0 行
+- cli: `GIT_DIR=/nonexistent node --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(r.status, r.stdout.trim());"`
+  - (happy) 実行 → `0 .git`（環境の `GIT_DIR` を継承していない。継承すると `128` になる）
+- cli: `NODE=$(command -v node); PATH=/nonexistent "$NODE" --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(JSON.stringify({status:r.status, stdout:r.stdout, error:r.error}));"`
+  - (error) 実行 → `{"status":1,"stdout":"","error":"spawnSync git ENOENT"}`（`status` の fallback と `error`）
+  - _no case_: `error?` の型 — `checkJs` が無いので型は JSDoc。値は上のエラー case が持つ
+  - _no case_: 3 か所が `git()` を通ること — 1 つ目の grep が 0 行であることで読む
+
+## 2.実 git のテストを偽物へ
+
+### Types
+
+なし
+
+### Steps
+
+1. `.pi/extensions/consult/run/worktree.test.ts`:
+   - `lib/git-env.mjs` を `vi.mock` で差し替え、`git` が返す `{ status, stdout, stderr }` をテストごとに決める。`repo()` と `runGit` の使用を消す。偽物は `vi.hoisted` で作る。
+   - import は `test/tmp.ts` のまま（スライス 3 で変える）。
+   - 残す判断: porcelain から consult の物だけを拾う、実体の無い登録を落とす、`rootFor` が同じルートを返す、`createWorktree` の branch と path と base と失敗時の後始末、`removeWorktree` の busy / missing / dirty / force / 未マージの枝 / ゴーストの prune、`cleanWorktrees` の 2 回目。
+2. `.pi/extensions/consult/tool/worktree.test.ts`:
+   - 同じ差し替えを使い、`repo()` を消す。id 無しのエラー、一覧の文、`removeText`、`runningIn` を残す。
+   - import は `test/tmp.ts` のまま（スライス 3 で変える）。
+3. `.pi/extensions/consult/run/git-env.ts`:
+   - 消す。
+
+### Verify:
+
+- test: `pnpm test:run .pi/extensions/consult/run/worktree.test.ts .pi/extensions/consult/tool/worktree.test.ts`
+  - (happy) porcelain に consult 以外の枝と `prunable` 行の囮を混ぜる → consult の実体ある物だけが出る
+  - (happy) 登録に実体のある path と無い path → 前者だけが一覧に出る
+  - (happy) 変更の残る worktree で `force` 無し → `dirty`
+  - (happy) 変更の無い worktree → `dirty` が false
+  - (empty) 登録が 0 → 一覧は空
+  - (boundary) `busy` → `busy`、掃除をしない
+  - (happy) `createWorktree` → branch は `consult/<id>`、path は `<root>/<id>/wt`、base は引数
+  - (happy) `rootFor` → 同じ runRoot
+  - (happy) `cleanWorktrees` の 2 回目 → 何も消さない
+  - (happy) tool: id 無し → エラー、一覧の文、`removeText`、`runningIn`
+  - (error) `worktree add` が status 1 → 例外、置き場の unit ディレクトリが残らない
+  - (error) `worktree list` が status 128 → 一覧は空
+  - (happy) 未マージの枝 → `removeWorktree` の後も枝が残る
+  - (happy) 登録に無い id → `missing`
+  - (happy) `force` → 変更が残っていても消える
+  - (happy) 実体の無い登録 → `prune` で消え、`pruned` に path が入る
+  - _no case_: `branchFor` — `consult/` の組み立てで、`createWorktree` の case が値を持つ
+  - _no case_: `worktreeGit` が `error` を落とすこと — 読む側は status/stdout/stderr だけを使う
+  - _no case_: git が引数を受け付けるか — 偽物では分からない。ADR の決定で利用時に受け取る
+
+## 3.足場を外す
+
+### Types
+
+```ts
+// test/temp-dir.ts
+export function tempDir(prefix?: string): string;
+```
+
+### Steps
+
+1. `test/temp-dir.ts`:
+   - `test/tmp.ts` を写し、`tmpDir()` を `tempDir(prefix = 'test-')` にする。接頭辞は `mkdtempSync(join(tmpdir(), prefix))` に渡す。
+2. `test/tmp.ts`:
+   - 消す。
+3. `test/setup.ts`:
+   - 消す。
+4. `test/env.test.ts`:
+   - 消す。
+5. `test/README.md`:
+   - 消す。
+6. `.pi/skills/adr/scripts/scaffold.test.ts`:
+   - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+7. `.pi/extensions/consult/policy/types.test.ts`:
+   - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+8. `.pi/extensions/consult/sub/guard.test.ts`:
+   - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+9. `.pi/extensions/consult/run/delivery.test.ts`:
+   - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+10. `.pi/extensions/consult/run/log.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+11. `.pi/extensions/consult/run/place.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+12. `.pi/extensions/consult/index.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+13. `.pi/extensions/consult/tool/consult.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+14. `.pi/extensions/consult/tool/subagents.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+15. `.pi/extensions/context-prune/command/prune.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+16. `.pi/extensions/context-prune/index.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+17. `.pi/extensions/context-prune/prune/ports.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+18. `.pi/extensions/context-prune/settings/read.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+19. `.pi/extensions/quality-gate/checks.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+20. `.pi/extensions/quality-gate/targets.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+21. `.pi/extensions/thinking-scrub/index.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+22. `.pi/extensions/thinking-scrub/settings/read.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+23. `scripts/checks/typecheck.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+24. `scripts/checks/typecheck-staged.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+25. `scripts/harness/index.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+26. `scripts/harness/list.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+27. `scripts/product-ready/index.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+28. `scripts/product-ready/targets.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+29. `.pi/extensions/consult/run/worktree.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+30. `.pi/extensions/consult/tool/worktree.test.ts`:
+    - import を `test/temp-dir.ts` に変え、`tmpDir()` を `tempDir()` にする。
+31. `vitest.config.ts`:
+    - `TestConf` の型から `setupFiles` を消し、`base` から `setupFiles` とそのコメントを消す。
+32. `scripts/harness/config.test.ts`:
+    - `setupFiles` の検証を消す。`passWithNoTests` と `reporters` の検証は残す。
+33. `scripts/harness/harness.json`:
+    - `copy` を `test/temp-dir.ts` の 1 行にする。`test/setup.ts`、`test/tmp.ts`、`test/env.test.ts` の 3 行を消す。
+
+### Verify:
+
+- cli: `pnpm test:run` と `pnpm typecheck`
+  - (happy) 実行 → `pnpm test:run` が全ファイル緑、`pnpm typecheck` が exit 0
+  - _no case_: `setupFiles` の参照 — 参照が残れば vitest が setup ファイルを見つけられず赤くなる
+  - _no case_: `tempDir(prefix)` の接頭辞 — 25 の呼び出しは無引数で、無視しても緑のまま。壊れても気づかない
+  - _no case_: リポジトリの外に作ること — 統合の `git status` 前後比較が持つ
+
+## 4.文書を合わせる
+
+### Types
+
+なし
+
+### Steps
+
+1. `.pi/extensions/consult/README.md`:
+   - `:219` の `run/git-env.ts` の説明を消す。
+   - `:234` の Tests 表から `(real repository)` を消す。
+   - `:248` を、git を起動する口は `lib/git-env.mjs` の `git()` の 1 つで、テストは git を起動しない、という記述に書き換える。
+
+### Verify:
+
+- read: 作業するサブエージェントが `.pi/extensions/consult/README.md` を読み、4 点を報告する
+  - (happy) (1) `run/git-env.ts` を指す案内が無い (2) `lib/git-env.mjs` の `git()` を唯一の起動口として名指ししている (3) テストは git を起動しないと書いている (4) Tests 表に `(real repository)` が無い → 4 点とも満たす
+  - (error) 4 点のどれかが欠ける → 閉じない
+
+## 5.統合: git の起動口が 1 つだけになる
+
+### Types
+
+なし
+
+### Steps
+
+1. `test/temp-dir.ts`:
+   - 変更なし。`afterEach` が作った物をすべて消すことを読み、統合の前提にする。
+
+### Verify:
+
+- cli: `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" --include=*.test.ts .` と `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" lib .pi scripts` と `pnpm test:run` と `pnpm typecheck` と `git status --porcelain` の前後比較 と `node -e "console.log(require('./scripts/harness/harness.json').copy.filter((x) => x.startsWith('test/')))"`
+  - (happy) 1 つ目 → 0 行（テストは git を起動しない）
+  - (happy) 2 つ目 → `lib/git-env.mjs` の 1 行だけ
+  - (happy) `GIT_DIR=/nonexistent node --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(r.status, r.stdout.trim());"` → `0 .git`
+  - (happy) 3 つ目 → 全ファイルが緑
+  - (happy) 4 つ目 → exit 0
+  - (happy) 5 つ目 → `pnpm test:run` の前後で同じ行（テストがリポジトリに書いていない）
+  - (happy) 6 つ目 → `[ 'test/temp-dir.ts' ]`
+  - (happy) 7 つ目 `ls "$(node -p 'require("os").tmpdir()')" | grep -c '^test-'` を `pnpm test:run` の前後で比べる → 同じ（`afterEach` が消している）
+  - _no case_: 実行時間 — ADR の決定で目的ではない
+
+## Notes
+
+### Slice 1: 起動口を 1 つにする
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 2: 実 git のテストを偽物へ
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 3: 足場を外す
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 4: 文書を合わせる
+
+- Findings:
+- Unplanned:
+- Commit:
+
+### Slice 5: 統合: git の起動口が 1 つだけになる
+
+- Findings:
+- Unplanned:
+- Commit:
+
+## Review
+
+### Round 1
+
+- Stale:
+- Unlisted:
+- Gaps:
+- Unproven:
+- Doubts:
+
+## Acceptance
+
+- Ran:
+- Findings:
+- Doubts:
