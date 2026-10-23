@@ -116,18 +116,6 @@ describe('typecheck', () => {
     expect(out.stdout).not.toContain('.pi');
   });
 
-  it('一覧が [] → root だけ', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
-    writeScopes(root, []);
-    const out = run(root);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('root: ok');
-    expect(out.stdout).not.toContain('.pi');
-  });
-
   it('一覧が JSON として読めない → exit 1（the list is not valid JSON の行）', () => {
     const root = fakeRoot();
     stubTsc(root);

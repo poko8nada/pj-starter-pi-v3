@@ -321,6 +321,20 @@ export function tempDir(prefix?: string): string;
   - 統合の `GIT_DIR` case の期待を `status 0` かつ stdout 非空に修正した。worktree 下では `--git-dir` が絶対パスを返すため。
 - Commit: 57d3dd9
 
+### Clean: tests
+
+- 同じ振る舞い（残した側が挙動を持つ）を落とした:
+  - `run/worktree.test.ts`「変な id は git が断る」—「worktree add が status 1」と同じ失敗後始末。空白判定は偽物内部の話で、Verify が指す status-1 側を残した。
+  - `run/worktree.test.ts`「変更の無い worktree → dirty が false」—「変更が残っている worktree → dirty」の前半と同じ。
+  - `run/worktree.test.ts`「掃除する物が無い → pruned と branches は空」(remove)—「作って消す」2 回目の missing 側と同じ。
+  - `run/worktree.test.ts`「options を渡さない」— dirty 既定は「force 無しでは断る」(無引数呼び)、force は force テスト、busy 既定は全面で暗黙に通る。
+  - `run/worktree.test.ts`「ブランチは、取り込み済みなら一緒に消える」—「作って消す」前半の真部分集合。
+  - `run/worktree.test.ts`「掃除する物が無い → 何も消さない」(clean)—「掃除してから 2 回目」の 2 回目と同一。
+  - `typecheck.test.ts`「一覧が [] → root だけ」— `typecheck.mjs` は欠落と `[]` を同じ枝 (ENOENT→`[]`) で畳む。「一覧が無い」が ENOENT 枝を押さえるので残し、`[]` 側を落とした。
+- 無くなった振る舞いのテスト: なし (`gitEnvFor`/`runGit`/`setupFiles`/`tmpDir`/`pi-test-` への参照はテストに残っていない。`worktreeGit` の error 退避を確かめるテストも無い)。
+- 作らなくなった枝のテスト: なし。
+- Verify: `pnpm test:run` 全 52 ファイル 837 tests 緑 (844 から落とした 7 を引いた数と一致)。
+
 ## Review
 
 ### Round 1

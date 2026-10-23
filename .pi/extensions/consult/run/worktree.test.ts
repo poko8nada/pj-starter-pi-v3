@@ -284,13 +284,6 @@ describe('createWorktree', () => {
     expect(lastAdd?.base).toBe('HEAD');
   });
 
-  it('変な id は git が断る → 置き場を残さない', () => {
-    const dir = tempDir();
-    expect(() => createWorktree(dir, 'a b')).toThrow(/could not create the worktree/);
-    expect(listWorktrees(dir)).toHaveLength(0);
-    expect(existsSync(join(ensureRoot(dir), 'a b'))).toBe(false);
-  });
-
   it('worktree add が status 1 → 例外、unit ディレクトリが残らない', () => {
     const dir = tempDir();
     addStatus = 1;
@@ -355,12 +348,6 @@ describe('listWorktrees / findWorktree', () => {
     expect(findWorktree(dir, '1-a')?.dirty).toBe(true);
   });
 
-  it('変更の無い worktree → dirty が false', () => {
-    const dir = tempDir();
-    createWorktree(dir, '1-a');
-    expect(findWorktree(dir, '1-a')?.dirty).toBe(false);
-  });
-
   it('台帳ファイルを持たない → 一覧は git から作る', () => {
     const dir = tempDir();
     createWorktree(dir, '1-a');
@@ -390,20 +377,6 @@ describe('removeWorktree', () => {
   it('作業場の無い id → missing', () => {
     const dir = tempDir();
     expect(removeWorktree(dir, '9-z').outcome).toBe('missing');
-  });
-
-  it('掃除する物が無い → pruned と branches は空', () => {
-    const dir = tempDir();
-    expect(removeWorktree(dir, '9-z').cleanup).toEqual({ pruned: [], branches: [] });
-  });
-
-  it('options を渡さない → force と busy は既定（false）', () => {
-    const dir = tempDir();
-    const made = createWorktree(dir, '1-a');
-    writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    makeDirty(made.path);
-    expect(removeWorktree(dir, '1-a').outcome).toBe('dirty');
-    expect(removeWorktree(dir, '1-a', { force: true }).outcome).toBe('removed');
   });
 
   it('サブエージェントが動いている → busy で断り、掃除もしない', () => {
@@ -454,14 +427,6 @@ describe('removeWorktree', () => {
     const result = removeWorktree(dir, '1-a', { force: true });
     expect(result.outcome).toBe('removed');
     expect(listWorktrees(dir)).toEqual([]);
-  });
-
-  it('ブランチは、取り込み済みなら一緒に消える', () => {
-    const dir = tempDir();
-    createWorktree(dir, '1-a');
-    const result = removeWorktree(dir, '1-a');
-    expect(result.outcome).toBe('removed');
-    expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
   });
 
   it('未マージのブランチは残す（仕事を消さない）', () => {
@@ -592,11 +557,6 @@ describe('cleanWorktrees', () => {
     expect(first.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
     expect(listWorktrees(dir)).toEqual([]);
 
-    expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
-  });
-
-  it('掃除する物が無い → 何も消さない', () => {
-    const dir = tempDir();
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
   });
 
