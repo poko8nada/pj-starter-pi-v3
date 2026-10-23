@@ -353,8 +353,28 @@ export function tempDir(prefix?: string): string;
     - fixed: add 失敗の偽物が置き場を作ってから失敗するように直し、`rmSync` を外すと同テストが赤くなることを確認して戻した。
 - Doubts: なし
 
+### Round 2
+
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし — fixedの3件が穴を塞ぐことを確認した。remove/for-each-ref失敗は`run/worktree.test.ts:507-509`と`run/worktree.test.ts:584-586`及び`tool/worktree.test.ts:209-213`と`tool/worktree.test.ts:215-222`が`removeStatus`/`forEachRefStatus`を振って投げを断定し、`toplevelOverride`/`forEachRefOverride`はgrepで残存なし（`listOverride`のみ残る）のため枝消しと一致する。`[]`は`typecheck.test.ts:119-129`が`writeScopes(root, [])`でrootだけを断定し`typecheck.mjs:17`の空配列正常系を通る形で、欠落の`typecheck.test.ts:108`と対をなす。toolのdirtyは`tool/worktree.test.ts:64`が明示集合に揃い`readdir`判定がなく、`tool/worktree.test.ts:137-139`の`makeDirty`と`tool/worktree.test.ts:194-204`がlistのchanged表示とremoveのdirty拒否を断定し`run/worktree.test.ts:82`と一致する。
+- Unproven: なし — fixedの1件が穴を塞ぐことを確認した。add失敗の偽物は`run/worktree.test.ts:90`で置き場を作ってからstatus 1を返し、`run/worktree.ts:196`の`rmSync`がなければ`run/worktree.test.ts:282-287`の残らない断定が赤になる形で、戻し済みの`rmSync`と一致する。
+- Doubts: なし
+
 ## Acceptance
 
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run` → 52 files / 843 tests 緑
+  - `pnpm typecheck` → root: ok, .pi: ok
+  - `grep -rn "spawnSync('git'\|spawn('git'\|execFile('git'\|execSync('git'" lib .pi scripts` → `lib/git-env.mjs:28` の 1 行
+  - 同じ grep を `--include=*.test.ts .` → 0 行
+  - `GIT_DIR=/nonexistent` で `git(process.cwd(), ['rev-parse','--git-dir'])` → `0 /.../.git/worktrees/wt`
+  - `git status --porcelain` の `pnpm test:run` 前後 → 同じ 1 行（plan md のみ）
+  - `scripts/harness/harness.json` の `copy` の `test/` → `[ 'test/temp-dir.ts' ]`
+  - `ls "$tmpdir" | grep -c '^test-'` の前後 → 0 / 0
+  - Slice 4 の read（README の 4 点） → 満たす
+  - 壊し試験: `git()` の `env: gitEnv()` を外す → `GIT_DIR=/nonexistent` が `128`。戻すと `0`
+  - 壊し試験: `test/temp-dir.ts` の `afterEach` を外す → `test-*` が 3 個残る。戻すと 0
+  - 壊し試験: `parseWorktrees` の prunable 濾過を外す → `worktree.test.ts` が 3 本赤。戻すと 36 本緑
+- Findings: なし
+- Doubts: なし
