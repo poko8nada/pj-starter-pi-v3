@@ -319,7 +319,7 @@ export function tempDir(prefix?: string): string;
 - Unplanned:
   - 統合の git-spawn grep 2 本を git 限定（`spawn('git'` 等）に修正した。テストは `spawnSync('node', ...)` を使い、`proc.ts` の `ps` や pi 起動・`installDependencies` が残るため。
   - 統合の `GIT_DIR` case の期待を `status 0` かつ stdout 非空に修正した。worktree 下では `--git-dir` が絶対パスを返すため。
-- Commit: TBD
+- Commit: 57d3dd9
 
 ## Review
 
