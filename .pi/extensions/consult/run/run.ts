@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { accountEvent, parseEvents, ranFrom, type Spent } from '../sub/spec.ts';
 import type { Limits } from '../policy/types.ts';
-import { gitEnv } from '../../../../lib/git-env.mjs';
+import { git } from '../../../../lib/git-env.mjs';
 
 const KILL_GRACE_MS = 5000;
 
@@ -141,8 +141,8 @@ export type GitRun = (args: readonly string[]) => GitOutput;
  *
  * メインエージェントに渡す塊に入れるのはパスだけ。diff は運ばない。
  */
-export function changedFiles(git: GitRun): string[] {
-  return git(['status', '--porcelain'])
+export function changedFiles(gitRun: GitRun): string[] {
+  return gitRun(['status', '--porcelain'])
     .stdout.split('\n')
     .map((line) => line.slice(3).trim())
     .filter((path) => path !== '');
@@ -151,15 +151,11 @@ export function changedFiles(git: GitRun): string[] {
 /** 本番の git。worktree の中で走らせる */
 export function worktreeGit(path: string): GitRun {
   return (args) => {
-    const result = spawnSync('git', [...args], {
-      cwd: path,
-      encoding: 'utf8',
-      env: gitEnv(),
-    });
+    const result = git(path, args);
     return {
-      status: result.status ?? 1,
-      stdout: result.stdout ?? '',
-      stderr: result.stderr ?? result.error?.message ?? '',
+      status: result.status,
+      stdout: result.stdout,
+      stderr: result.stderr,
     };
   };
 }

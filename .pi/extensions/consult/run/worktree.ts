@@ -10,10 +10,9 @@
  * 台帳ファイルは持たない。一覧は `git worktree list` と `consult/*` ブランチから作る。
  */
 
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { gitEnv } from '../../../../lib/git-env.mjs';
+import { git } from '../../../../lib/git-env.mjs';
 
 /** consult の作業場をまとめる場所 */
 export const CONSULT_ROOT = '/tmp/pi-consult';
@@ -57,19 +56,6 @@ export type CleanupReport = {
   readonly pruned: readonly string[];
   readonly branches: readonly OrphanBranch[];
 };
-
-function git(
-  cwd: string,
-  args: readonly string[],
-): { status: number; stdout: string; stderr: string; error?: string } {
-  const spawned = spawnSync('git', [...args], { cwd, encoding: 'utf8', env: gitEnv() });
-  return {
-    status: spawned.status ?? 1,
-    stdout: spawned.stdout ?? '',
-    stderr: spawned.stderr ?? '',
-    ...(spawned.error === undefined ? {} : { error: spawned.error.message }),
-  };
-}
 
 /** worktree のブランチ名。unit の id がそのまま入る */
 export function branchFor(id: string): ConsultBranch {

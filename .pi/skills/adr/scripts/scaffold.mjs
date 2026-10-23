@@ -3,11 +3,10 @@
  *
  *   node scaffold.mjs [--root <dir>] [<nnn>]
  */
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { gitEnv } from '../../../../lib/git-env.mjs';
+import { git } from '../../../../lib/git-env.mjs';
 
 /**
  * `adr.md` の骨。`references/format.md` の形と合わせること。
@@ -194,12 +193,8 @@ if (isMain) {
   const archiveDir = join(cyclesDir, 'archive');
   let branch = '';
   try {
-    const spawned = spawnSync('git', ['branch', '--show-current'], {
-      cwd: root,
-      encoding: 'utf8',
-      env: gitEnv(),
-    });
-    if (spawned.status === 0) branch = (spawned.stdout ?? '').trim();
+    const result = git(root, ['branch', '--show-current']);
+    if (result.status === 0) branch = (result.stdout ?? '').trim();
   } catch {
     branch = '';
   }
