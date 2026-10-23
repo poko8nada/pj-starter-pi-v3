@@ -2,11 +2,11 @@
  * テストが使う一時ディレクトリ。
  *
  * 何をする物か
- * - `mkdtempSync(join(tmpdir(), 'pi-test-'))` で、OS の一時領域に 1 つ作って絶対パスを返す。
+ * - `mkdtempSync(join(tmpdir(), prefix))` で、OS の一時領域に 1 つ作って絶対パスを返す。
  * - リポジトリの中には作らない。テストの副産物が子のコミット（`git add -A`）に巻き込まれないようにする。
  *
  * どう呼ぶか
- * - テストファイルの上でこの helper を読み、テストの中か `beforeEach` で `const dir = tmpDir();` と書く。
+ * - テストファイルの上でこの helper を読み、テストの中か `beforeEach` で `const dir = tempDir();` と書く。
  * - 1 つのテストの中で何度呼んでもよい。呼んだ数だけディレクトリができる。
  *
  * 後始末
@@ -33,8 +33,8 @@ afterEach(() => {
 });
 
 /** 一時ディレクトリを 1 つ作り、その絶対パスを返す。後始末はこのファイルの `afterEach` がする */
-export function tmpDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'pi-test-'));
+export function tempDir(prefix = 'test-'): string {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
   dirs.push(dir);
   return dir;
 }

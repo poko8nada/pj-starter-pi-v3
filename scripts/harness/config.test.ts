@@ -17,12 +17,11 @@ describe('testConfig', () => {
     expect(config.test?.exclude).toBeUndefined();
   });
 
-  it('false と true → setupFiles、passWithNoTests、既定の reporters を持つ', () => {
+  it('false と true → passWithNoTests と既定の reporters を持つ', () => {
     const expected =
       process.env.TEST_VERBOSE === '1' ? ['verbose'] : [['default', { summary: false }]];
     for (const harness of [false, true]) {
       const config = testConfig(harness);
-      expect(config.test?.setupFiles).toEqual(['./test/setup.ts']);
       expect(config.test?.passWithNoTests).toBe(true);
       expect(config.test?.reporters).toEqual(expected);
     }

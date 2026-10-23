@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import {
@@ -13,11 +13,11 @@ import {
   type SubagentsArgs,
 } from './subagents.ts';
 
-// 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
+// 置き場を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
 // サブエージェントは起こさない（記録と、runtime の偽物だけで試す）。
 
 function place(): Place {
-  return placeFor(tmpDir(), tmpDir());
+  return placeFor(tempDir(), tempDir());
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
@@ -191,7 +191,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const out = await createSubagentsTool(host)(...args);
     const text = textOf(out);
@@ -203,7 +203,7 @@ describe('createSubagentsTool', () => {
   it('action を省くと list（既定）', async () => {
     const found = withLog([record({ ended: 2000, state: 'done' })]);
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = ['call', {}, undefined, undefined, { cwd: tmpDir() }];
+    const args: SubagentsArgs = ['call', {}, undefined, undefined, { cwd: tempDir() }];
     const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain('consult-1');
   });
@@ -221,7 +221,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     expect(
       textOf(
@@ -236,7 +236,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const endedText = textOf(
       await createSubagentsTool(fakeHost(endedFound, 'session-a', endedCheck).host)(...endedArgs),
@@ -256,7 +256,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain('consult-1');
@@ -274,7 +274,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).not.toContain('consult-old');
@@ -295,7 +295,7 @@ describe('createSubagentsTool', () => {
       { action: 'list' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain('consult-long');
@@ -310,7 +310,7 @@ describe('createSubagentsTool', () => {
       { action: 'cancel', id: 'consult-1' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain('stopped: consult-1');
@@ -325,7 +325,7 @@ describe('createSubagentsTool', () => {
       { action: 'cancel' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
       /consult_subagents: cancel needs id/,
@@ -341,7 +341,7 @@ describe('createSubagentsTool', () => {
       { action: 'stop' },
       undefined,
       undefined,
-      { cwd: tmpDir() },
+      { cwd: tempDir() },
     ];
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
       /consult_subagents: action is list or cancel/,

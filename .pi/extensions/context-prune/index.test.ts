@@ -8,7 +8,7 @@ import {
   type ExtensionContext,
   type SessionEntry,
 } from '@earendil-works/pi-coding-agent';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tempDir } from '../../../test/temp-dir.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
 import { createPorts, type ModelCell } from './prune/ports.ts';
@@ -126,7 +126,7 @@ function tokensOf(entry: SessionEntry): number {
 }
 
 function settingsDirWith(document: Record<string, unknown>): string {
-  const dir = tmpDir();
+  const dir = tempDir();
   writeFileSync(join(dir, 'settings.json'), JSON.stringify(document));
   return dir;
 }
@@ -321,7 +321,7 @@ describe('onTurnEnd', () => {
 
   it('設定が壊れている → 2 回の turn_end で通知が 1 回だけ', async () => {
     const fake = fakePi();
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const wiring = createWiring(fake.pi, {
       settingsDir: dir,
@@ -856,7 +856,7 @@ describe('onCommand', () => {
 
   it('壊れた設定で on → 通知に理由が出て、ファイルが変わらない', async () => {
     const harness = evolvingHarness({ summary: 'x', yes: 0 });
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const wiring = createWiring(harness.pi, { settingsDir: dir, ports: harness.ports });
     await wiring.onCommand('on', harness.ctx);

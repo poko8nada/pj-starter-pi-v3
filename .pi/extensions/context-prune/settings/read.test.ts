@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { readSettings } from './read.ts';
 import { defaultSettings } from './schema.ts';
 
@@ -10,17 +10,17 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 describe('readSettings', () => {
   it('ファイルが無い → ok で既定', () => {
-    expect(readSettings(tmpDir())).toEqual({ kind: 'ok', settings: defaultSettings() });
+    expect(readSettings(tempDir())).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
   it("'{' を書いたファイル → broken", () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     expect(readSettings(dir).kind).toBe('broken');
   });
 
   it('enabled false を書いて読む → ok で偽。true に書き換えて読み直す → 真', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{"enabled":false}');
     const first = readSettings(dir);
     expect(first.kind).toBe('ok');

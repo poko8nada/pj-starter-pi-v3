@@ -1,7 +1,7 @@
 /**
  * `scripts/harness/index.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
- * fake の 2 つのツリー（元と先）を `tmpDir()` で作り、
+ * fake の 2 つのツリー（元と先）を `tempDir()` で作り、
  * `node scripts/harness/index.mjs` を子プロセスで呼ぶ（`product-ready/index.test.ts` と同じ道）。
  * 向き、表示の行、exit を見る。
  */
@@ -17,7 +17,7 @@ import {
 } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'harness', 'index.mjs');
 
@@ -38,7 +38,7 @@ function run(args: readonly string[], cwd?: string, env?: Record<string, string>
 
 /** symlink の据え（`typecheck.test.ts` と同じ理由） */
 function fakeRoot(): string {
-  return realpathSync(tmpDir());
+  return realpathSync(tempDir());
 }
 
 function writeFile(abs: string, content = 'x\n'): void {

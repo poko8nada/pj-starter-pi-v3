@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import {
   adrSkeleton,
   createLeafDir,
@@ -74,7 +74,7 @@ describe('cycleDirName', () => {
 
 describe('createLeafDir', () => {
   it('空 tmp に作る → path が返り dir ができる', () => {
-    const root = tmpDir();
+    const root = tempDir();
     const parent = join(root, 'cycles');
     mkdirSync(parent, { recursive: true });
     const leaf = createLeafDir(parent, '261010-016-main');
@@ -84,7 +84,7 @@ describe('createLeafDir', () => {
   });
 
   it('既存 dir → EEXIST で投げる', () => {
-    const root = tmpDir();
+    const root = tempDir();
     const parent = join(root, 'cycles');
     mkdirSync(join(parent, '261010-016-main'), { recursive: true });
     try {
@@ -98,7 +98,7 @@ describe('createLeafDir', () => {
 
 describe('dirNames', () => {
   it('両ルートの dir 名を集める（`archive` も入る）', () => {
-    const root = tmpDir();
+    const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const archiveDir = join(cyclesDir, 'archive');
     mkdirSync(join(cyclesDir, '261010-015-main'), { recursive: true });
@@ -111,7 +111,7 @@ describe('dirNames', () => {
   });
 
   it('無いルートは空として扱う', () => {
-    const root = tmpDir();
+    const root = tempDir();
     expect(dirNames(join(root, 'cycles'), join(root, 'cycles', 'archive'))).toEqual([]);
   });
 });

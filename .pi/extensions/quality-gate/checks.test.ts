@@ -2,13 +2,13 @@
  * 品質ゲートの実行の分岐を、偽の `exec` で確かめる。
  *
  * pnpm と git は起動しない。`exec` に打たれたcommandとargsを記録し、戻り値はテストが決める。
- * ファイルは `tmpDir()` に本物を作る（`prepareTargets` は `existsSync` を見るので、存在の制御が要る）。
+ * ファイルは `tempDir()` に本物を作る（`prepareTargets` は `existsSync` を見るので、存在の制御が要る）。
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tempDir } from '../../../test/temp-dir.ts';
 import { runChecks, toRelative } from './checks.ts';
 import type { ExecPort } from './checks.ts';
 
@@ -82,7 +82,7 @@ describe('toRelative', () => {
 
 describe('prepareTargets（runChecks 越しに見る）', () => {
   it('削除済みのファイルは check に含めず skipped に入れる', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const live = tsFile(dir, 'live.ts');
     const dead = join(dir, 'deleted.ts');
     const fake = fakePi();
@@ -101,7 +101,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   });
 
   it('全部削除済み → git を打たず、skipped に全部', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = join(dir, 'a.ts');
     const b = join(dir, 'b.ts');
     const fake = fakePi();
@@ -113,7 +113,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   });
 
   it('.gitignore 対象は check に含めず skipped に入れる', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const src = tsFile(dir, 'src.ts');
     const dist = tsFile(dir, 'dist.ts');
     const fake = fakePi();
@@ -131,7 +131,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   });
 
   it('git check-ignore が 1（無視されたファイルなし）→ 除外なし', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
     fake.setCheckIgnoreCode(1);
@@ -145,7 +145,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   });
 
   it('git check-ignore が 128（git 管理外）→ 除外なし', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
     fake.setCheckIgnoreCode(128);
@@ -161,7 +161,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
 
 describe('runCheck（runChecks 越しに見る）', () => {
   it('typecheck は拡張子で絞らない（ts 系だけを通さない）', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
     const md = join(dir, 'b.md');
     writeFileSync(md, 'x\n');
@@ -176,7 +176,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
   });
 
   it('format は md と json を通し、lint は ts 系だけ通す', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
     const md = join(dir, 'b.md');
     writeFileSync(md, 'x\n');
@@ -192,7 +192,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
   });
 
   it('対象拡張子が無い → そのチェックは打たれない（lint:fix / format / lint）', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const png = join(dir, 'a.png');
     writeFileSync(png, 'x\n');
     const fake = fakePi();
@@ -208,7 +208,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
   });
 
   it('pnpm が失敗 → failed で、stdout と stderr を改行でつなぐ', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
     fake.setPnpmCode(2);
@@ -225,7 +225,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
 
 describe('runChecks（2フェーズ）', () => {
   it('fix 相（lint:fix / format）は outcomes に入れない', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
 
@@ -236,7 +236,7 @@ describe('runChecks（2フェーズ）', () => {
   });
 
   it('fix 相が失敗しても、verify 相の結果だけを返す', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
     // 全部失敗させる（fix 相も）
@@ -249,7 +249,7 @@ describe('runChecks（2フェーズ）', () => {
   });
 
   it('CHECK_SPECS の順に打つ（lint:fix → format → lint → typecheck）', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
 
@@ -262,7 +262,7 @@ describe('runChecks（2フェーズ）', () => {
   });
 
   it('全部の pnpm 呼び出しに --no-error-on-unmatched-pattern が付く（typecheck は除く）', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const a = tsFile(dir, 'a.ts');
     const fake = fakePi();
 
@@ -279,7 +279,7 @@ describe('runChecks（2フェーズ）', () => {
   });
 
   it('ディレクトリの中も対象にできる', async () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const nested = join(dir, 'sub', 'deep');
     mkdirSync(nested, { recursive: true });
     const file = join(nested, 'a.ts');

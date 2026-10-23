@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import type { PrunePass } from '../entry/data.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { parseCommand, statusLines, usageText, writeEnabled, type Status } from './prune.ts';
@@ -58,13 +58,13 @@ describe('parseCommand', () => {
 
 describe('writeEnabled', () => {
   it('ファイルが無い + on → { enabled: true } ができ、ok', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(writeEnabled(dir, true)).toEqual({ kind: 'ok' });
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({ enabled: true });
   });
 
   it('{ ratio: 0.6 } + off → ratio が残り enabled が偽、ok', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ ratio: 0.6 }));
     expect(writeEnabled(dir, false)).toEqual({ kind: 'ok' });
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toMatchObject({
@@ -74,7 +74,7 @@ describe('writeEnabled', () => {
   });
 
   it("'{' + on → failed、ファイルの文字列が '{' のまま", () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const outcome = writeEnabled(dir, true);
     expect(outcome.kind).toBe('failed');
@@ -82,7 +82,7 @@ describe('writeEnabled', () => {
   });
 
   it("'[]' + on → failed、ファイルの文字列が '[]' のまま", () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '[]');
     const outcome = writeEnabled(dir, true);
     expect(outcome.kind).toBe('failed');
@@ -90,7 +90,7 @@ describe('writeEnabled', () => {
   });
 
   it('既に enabled: true で on → ok で同じ内容', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true }));
     expect(writeEnabled(dir, true)).toEqual({ kind: 'ok' });
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({ enabled: true });

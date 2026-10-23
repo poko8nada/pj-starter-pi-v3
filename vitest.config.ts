@@ -12,7 +12,6 @@ type Reporters = ['verbose'] | [['default', { summary: boolean }]];
 
 type TestConf = {
   test: {
-    setupFiles: string[];
     reporters: Reporters;
     passWithNoTests: boolean;
     exclude?: string[];
@@ -24,8 +23,6 @@ type TestConf = {
  */
 export function testConfig(harness: boolean): TestConf {
   const base = {
-    // テストの足場（`test/setup.ts`）。理由はファイルを確認。
-    setupFiles: ['./test/setup.ts'],
     reporters: (verbose ? ['verbose'] : [['default', { summary: false }]]) as Reporters,
     // 開始時はテストが0本でも緑。product は除外の結果0本になる。
     passWithNoTests: true,

@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import {
   createPorts,
   summarizationReserve,
@@ -12,13 +12,13 @@ import {
 import type { JudgeRequest } from './judge.ts';
 
 function settingsDirWith(document: Record<string, unknown>): string {
-  const dir = tmpDir();
+  const dir = tempDir();
   writeFileSync(join(dir, 'settings.json'), JSON.stringify(document));
   return dir;
 }
 
 function brokenDir(): string {
-  const dir = tmpDir();
+  const dir = tempDir();
   writeFileSync(join(dir, 'settings.json'), '{');
   return dir;
 }

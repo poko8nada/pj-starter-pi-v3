@@ -2,14 +2,14 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { loadTypes, parseTypes, resolveType } from './types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-// 設定の読み込みは毎回ファイルを触る。置き場は `test/tmp.ts` の helper（後始末も helper がする）。
+// 設定の読み込みは毎回ファイルを触る。置き場は `test/temp-dir.ts` の helper（後始末も helper がする）。
 function writeConfig(text: string): string {
-  const dir = tmpDir();
+  const dir = tempDir();
   writeFileSync(join(dir, 'types.json'), text);
   return dir;
 }
@@ -105,7 +105,7 @@ describe('loadTypes', () => {
   });
 
   it('types.json が無い → 読めなかったファイルの名前と復元の案内を含む（error）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const attempt = () => loadTypes(dir);
     expect(attempt).toThrow(/types\.json/);
     expect(attempt).toThrow(/restore it/);
@@ -114,7 +114,7 @@ describe('loadTypes', () => {
   it.skipIf(process.getuid?.() === 0)(
     '権限で読めない → 「コミットしてある」と言わない（error）',
     () => {
-      const dir = tmpDir();
+      const dir = tempDir();
       const file = join(dir, 'types.json');
       writeFileSync(file, config(aType()));
       chmodSync(file, 0o000);
@@ -125,7 +125,7 @@ describe('loadTypes', () => {
   );
 
   it('文面は例を写せと言わない（例のファイルはコミットしていない）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(() => loadTypes(dir)).not.toThrow(/example/);
   });
 });

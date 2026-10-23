@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tempDir } from '../../../test/temp-dir.ts';
 import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
 import { readSettings } from './settings/read.ts';
 
@@ -113,7 +113,7 @@ function tallyMessage(): AgentMessage {
 describe('registerScrub', () => {
   it("on('message_end') と on('agent_end') が 1 回ずつ、registerCommand('thinking-scrub') が 1 回", () => {
     const fake = fakePi();
-    registerScrub(fake.pi, { settingsDir: tmpDir(), now: () => 1 });
+    registerScrub(fake.pi, { settingsDir: tempDir(), now: () => 1 });
     expect(fake.events).toEqual(['message_end', 'agent_end']);
     expect([...fake.commands.keys()]).toEqual(['thinking-scrub']);
   });
@@ -121,7 +121,7 @@ describe('registerScrub', () => {
 
 describe('onMessageEnd', () => {
   it('退化した thinking を持つ assistant を handler に渡す → { message } が返り、thinking から区間が消えている', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
     expect(result).toBeDefined();
     if (result === undefined) {
@@ -141,7 +141,7 @@ describe('onMessageEnd', () => {
   });
 
   it('退化の無い assistant → undefined', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const message = assistantMessage({
       content: [
         {
@@ -155,7 +155,7 @@ describe('onMessageEnd', () => {
   });
 
   it('role が assistant 以外、対象でない署名の assistant → どちらも undefined', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const user: AgentMessage = {
       role: 'user',
       content: [{ type: 'text', text: degenerate() }],
@@ -169,7 +169,7 @@ describe('onMessageEnd', () => {
   });
 
   it('設定が enabled: false → undefined', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
@@ -177,7 +177,7 @@ describe('onMessageEnd', () => {
   });
 
   it('設定が壊れている → 既定で差し替えが返り、状態の failures は増えない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
@@ -187,7 +187,7 @@ describe('onMessageEnd', () => {
   });
 
   it('2 回畳む → 状態の removed が 2 回分の合計', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.getStatus().removed).toBe(2);
@@ -198,7 +198,7 @@ describe('onMessageEnd', () => {
 describe('onAgentEnd', () => {
   it('51 文字→25 文字の message_end が 2 回、そのあと agent_end → notify が 1 回、文が一致する', () => {
     expect(tallyThinking()).toHaveLength(51);
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
     expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
     const { notified, levels, ctx } = fakeCmdCtx();
@@ -209,14 +209,14 @@ describe('onAgentEnd', () => {
   });
 
   it('何も消していない状態で agent_end → notify が呼ばれない', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
     expect(notified).toHaveLength(0);
   });
 
   it('show が偽のとき message_end のあと agent_end → notify が呼ばれない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(tallyMessage()))).toBeDefined();
@@ -226,7 +226,7 @@ describe('onAgentEnd', () => {
   });
 
   it('notify のあと再度 agent_end → 2 回目は呼ばれない', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     wiring.onMessageEnd(messageEnd(tallyMessage()));
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
@@ -236,7 +236,7 @@ describe('onAgentEnd', () => {
   });
 
   it('notify のあとに message_end → agent_end → もう一度 1 回呼ばれ、その実行の分だけになる', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     wiring.onMessageEnd(messageEnd(tallyMessage()));
     wiring.onMessageEnd(messageEnd(tallyMessage()));
     const { notified, ctx } = fakeCmdCtx();
@@ -250,7 +250,7 @@ describe('onAgentEnd', () => {
   });
 
   it('message_end で例外 → failures が 1 増え、そのあとの agent_end は notify を呼ばない', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const evil: Record<string, unknown> = {};
     Object.defineProperty(evil, 'role', {
       get() {
@@ -270,7 +270,7 @@ describe('onAgentEnd', () => {
 describe('integration', () => {
   it('foo + 改行を含む細切れの退化 → message_end の thinking が foo改行改行bar、agent_end で 1 行に removed 1', () => {
     const thinking = `foo${'\n\nThe **'.repeat(5)}bar`;
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const result = wiring.onMessageEnd(
       messageEnd(
         assistantMessage({
@@ -297,7 +297,7 @@ describe('integration', () => {
   it('The ** × 2 (12 文字) → message_end が undefined、agent_end でも notify が呼ばれない', () => {
     const thinking = 'The **'.repeat(2);
     expect(thinking).toHaveLength(12);
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     expect(
       wiring.onMessageEnd(
         messageEnd(
@@ -313,7 +313,7 @@ describe('integration', () => {
   });
 
   it('hide を書いた設定で細切れの退化 → message_end は差し替え、agent_end で 1 行も出ない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
     const thinking = `foo${'\n\nThe **'.repeat(5)}bar`;
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
@@ -334,7 +334,7 @@ describe('integration', () => {
 
 describe('onCommand', () => {
   it('コマンド off → settings.json の enabled が偽になり、次の message_end は undefined', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     wiring.onCommand('off', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
@@ -344,7 +344,7 @@ describe('onCommand', () => {
   });
 
   it('コマンド on → その後の message_end が差し替えを返す', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
@@ -353,7 +353,7 @@ describe('onCommand', () => {
   });
 
   it('コマンドが引数無し → 通知が 1 回呼ばれ、runCommand の行が渡る', () => {
-    const wiring = createScrubWiring({ settingsDir: tmpDir(), now: () => 7 });
+    const wiring = createScrubWiring({ settingsDir: tempDir(), now: () => 7 });
     const { notified, ctx } = fakeCmdCtx();
     wiring.onCommand('', ctx);
     expect(notified).toHaveLength(1);
@@ -362,7 +362,7 @@ describe('onCommand', () => {
   });
 
   it('コマンド hide → settings.json の show が偽になり、enabled はそのまま', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: true }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     wiring.onCommand('hide', fakeCmdCtx().ctx);
@@ -373,7 +373,7 @@ describe('onCommand', () => {
   });
 
   it('コマンド off → 既存の show:false が保たれる', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     wiring.onCommand('off', fakeCmdCtx().ctx);
@@ -384,7 +384,7 @@ describe('onCommand', () => {
   });
 
   it('コマンド on → 既存の show:false が保たれる', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false, show: false }));
     const wiring = createScrubWiring({ settingsDir: dir, now: () => 7 });
     wiring.onCommand('on', fakeCmdCtx().ctx);
