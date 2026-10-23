@@ -216,8 +216,6 @@ run/       running a subagent: the worktree, the install, the spawn, the record,
 tool/      the tool faces and the running subagents: parameters, background and control, formatting, and the sound
 ```
 
-`run/git-env.ts` is a helper for the checks, not for the tools: it fixes the repository, config and `HOME` that a check's git writes to, so an inherited `GIT_*` cannot steer it.
-
 ## Tests
 
 ```
@@ -231,7 +229,7 @@ pnpm test:run .pi/extensions/consult
 | `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                      |
 | `policy/types.test.ts`   | the role policy                                                                                              |
 | `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file                        |
-| `run/worktree.test.ts`   | the place, the branch and the removal (real repository)                                                      |
+| `run/worktree.test.ts`   | the place, the branch and the removal                                                                        |
 | `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                              |
 | `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                        |
 | `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level) |
@@ -245,4 +243,4 @@ pnpm test:run .pi/extensions/consult
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 
-A check that spawns git fixes where it writes through `run/git-env.ts` — its own repository, config and `HOME` — instead of inheriting the ones it runs under, and one test proves that an inherited `GIT_*` cannot point it at the repository running the check. That helper cannot drive a _worktree_ (`GIT_DIR` / `GIT_WORK_TREE` are fixed to the repository), so the checks that commit inside one spawn git with `gitEnv()` and the worktree as the cwd. A hook (this repository runs its checks from one, and `consult` commits a subagent's work from inside a worktree) must not be able to steer a check's writes.
+Git is started through one entry point only: `git()` in `lib/git-env.mjs`, which drops an inherited `GIT_*` before launching. The checks never start git themselves — they take the git they use as an argument — and the tests replace it with a fake, so the test suite starts no git process.

@@ -305,13 +305,13 @@ export function tempDir(prefix?: string): string;
 - Findings: なし
 - Unplanned:
   - 改名は word-boundary 一括置換で行い、コメント内の `tmpDir()`/`test/tmp.ts` 言及も `tempDir()`/`test/temp-dir.ts` に揃えた。ファイルを消したまま古い名前の記述を残すと嘘になるため。
-- Commit: TBD
+- Commit: f43a8a8
 
 ### Slice 4: 文書を合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: TBD
 
 ### Slice 5: 統合: git の起動口が 1 つだけになる
 
