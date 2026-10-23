@@ -98,10 +98,10 @@ export function git(
 
 ### Verify:
 
-- cli: `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" lib .pi/extensions/consult/run/worktree.ts .pi/extensions/consult/run/run.ts .pi/skills/adr/scripts/scaffold.mjs`
+- cli: `grep -rn "spawnSync('git'\|spawn('git'\|execFile('git'\|execSync('git'" lib .pi/extensions/consult/run/worktree.ts .pi/extensions/consult/run/run.ts .pi/skills/adr/scripts/scaffold.mjs`
   - (happy) 実行 → `lib/git-env.mjs` の 1 行だけ。3 ファイルは 0 行
 - cli: `GIT_DIR=/nonexistent node --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(r.status, r.stdout.trim());"`
-  - (happy) 実行 → `0 .git`（環境の `GIT_DIR` を継承していない。継承すると `128` になる）
+  - (happy) 実行 → `status` が `0` で stdout が非空（環境の `GIT_DIR` を継承していない。継承すると `128` になる。worktree 下では `--git-dir` が絶対パスを返すので `.git` にはならない）
 - cli: `NODE=$(command -v node); PATH=/nonexistent "$NODE" --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(JSON.stringify({status:r.status, stdout:r.stdout, error:r.error}));"`
   - (error) 実行 → `{"status":1,"stdout":"","error":"spawnSync git ENOENT"}`（`status` の fallback と `error`）
   - _no case_: `error?` の型 — `checkJs` が無いので型は JSDoc。値は上のエラー case が持つ
@@ -266,10 +266,10 @@ export function tempDir(prefix?: string): string;
 
 ### Verify:
 
-- cli: `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" --include=*.test.ts .` と `grep -rn "spawnSync('git'\|spawn(\|execFile(\|execSync(" lib .pi scripts` と `pnpm test:run` と `pnpm typecheck` と `git status --porcelain` の前後比較 と `node -e "console.log(require('./scripts/harness/harness.json').copy.filter((x) => x.startsWith('test/')))"`
+- cli: `grep -rn "spawnSync('git'\|spawn('git'\|execFile('git'\|execSync('git'" --include=*.test.ts .` と `grep -rn "spawnSync('git'\|spawn('git'\|execFile('git'\|execSync('git'" lib .pi scripts` と `pnpm test:run` と `pnpm typecheck` と `git status --porcelain` の前後比較 と `node -e "console.log(require('./scripts/harness/harness.json').copy.filter((x) => x.startsWith('test/')))"`
   - (happy) 1 つ目 → 0 行（テストは git を起動しない）
   - (happy) 2 つ目 → `lib/git-env.mjs` の 1 行だけ
-  - (happy) `GIT_DIR=/nonexistent node --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(r.status, r.stdout.trim());"` → `0 .git`
+  - (happy) `GIT_DIR=/nonexistent node --input-type=module -e "import {git} from './lib/git-env.mjs'; const r=git(process.cwd(), ['rev-parse','--git-dir']); console.log(r.status, r.stdout.trim());"` → `status 0` で stdout 非空（worktree 下では `--git-dir` が絶対パスを返す。`GIT_DIR` を継承すると `128`）
   - (happy) 3 つ目 → 全ファイルが緑
   - (happy) 4 つ目 → exit 0
   - (happy) 5 つ目 → `pnpm test:run` の前後で同じ行（テストがリポジトリに書いていない）
@@ -282,14 +282,23 @@ export function tempDir(prefix?: string): string;
 ### Slice 1: 起動口を 1 つにする
 
 - Findings:
+  - plan の grep `spawn(` は `run.ts` の `spawn('pi', ...)`（サブエージェント起動）にも当たるため、字面どおりの「3 ファイル 0 行」にはならない。git 起動に限った grep では lib の 1 行だけ・3 ファイル 0 行を確認した。
+    - left: `run.ts` は pi 起動に `spawn` が要る。plan の字面どおりには閉じられないので、git 限定で読んだ。
 - Unplanned:
-- Commit:
+  - `changedFiles(git: GitRun)` の引数が import した `git` と衝突し lint `no-shadow` で落ちたので `gitRun` に改名した。呼び方は位置引数だけで変わらない。
+  - `Verify` の git-spawn grep を git 限定（`spawn('git'` 等）に修正した。`spawn(` は `spawn('pi', ...)`（サブエージェント起動）にも当たっていたため。
+  - `Verify` の `GIT_DIR` case の期待を `status 0` かつ stdout 非空に修正した。worktree 下では `rev-parse --git-dir` が絶対パスを返すため（`0 .git` にはならない）。`GIT_DIR` 継承で `128` になる点はそのまま。
+- Commit: 70eacd4
 
 ### Slice 2: 実 git のテストを偽物へ
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `tool/worktree.test.ts` の未使用 import（`writeFileSync`/`join`）を消し、`removed!` の非 null 表明を undefined 判定に直し、mock の `as` 表明を型付き `vi.fn` と `?? ''` の既定値に直した（lint が赤だったため）。
+  - 偽物の `status` は明示の dirty 集合で返すようにした。readdir の有無で判定すると commit 済みの未マージまで `dirty` になっていたため。
+  - 偽物の `prune` が消えた登録の孤児枝を登録するようにした。掃除が何も報告せずゴースト系の case が落ちていたため。
+  - hoisted の既定実装の引数を `_cwd`/`_args` にし、`gitEnv` mock の `...(env ?? {})` を `...env` にした（lint が赤だったため）。
+- Commit: TBD
 
 ### Slice 3: 足場を外す
 
@@ -307,6 +316,8 @@ export function tempDir(prefix?: string): string;
 
 - Findings:
 - Unplanned:
+  - 統合の git-spawn grep 2 本を git 限定（`spawn('git'` 等）に修正した。テストは `spawnSync('node', ...)` を使い、`proc.ts` の `ps` や pi 起動・`installDependencies` が残るため。
+  - 統合の `GIT_DIR` case の期待を `status 0` かつ stdout 非空に修正した。worktree 下では `--git-dir` が絶対パスを返すため。
 - Commit:
 
 ## Review
