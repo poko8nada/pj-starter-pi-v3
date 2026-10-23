@@ -339,11 +339,19 @@ export function tempDir(prefix?: string): string;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし
+- Unlisted: なし
 - Gaps:
+  - `removeStatus` と `forEachRefStatus` と `forEachRefOverride` と `toplevelOverride` が既定値のまま一度も振られず、`worktree remove` 失敗と `for-each-ref` 失敗と出力差し替えの枝が運動しない — `.pi/extensions/consult/run/worktree.test.ts:34` / `.pi/extensions/consult/run/worktree.test.ts:36` / `.pi/extensions/consult/run/worktree.test.ts:37` / `.pi/extensions/consult/run/worktree.test.ts:38` / `.pi/extensions/consult/run/worktree.ts:356` / `.pi/extensions/consult/run/worktree.ts:277`（同様に `.pi/extensions/consult/tool/worktree.test.ts:25` / `.pi/extensions/consult/tool/worktree.test.ts:27` も一度も振られない）。
+    - fixed: `worktree remove` 失敗と `for-each-ref` 失敗のテストを run に追加し（`removeStatus`/`forEachRefStatus` を振る）、使われない `toplevelOverride`/`forEachRefOverride` を消した。tool にも remove 失敗と for-each-ref 失敗のテストを追加した。
+  - `scopes.json` が `[]` の入力がテストされず、`[] → root だけ` は欠落（`ENOENT → []`）の case だけが押さえ、空配列の正常系を通らない — `scripts/checks/typecheck.mjs:17` / `scripts/checks/typecheck.test.ts:108` / `cycles/261023-034-dev/plan/single-git-spawn.md:333`。
+    - fixed: 「一覧が [] → root だけ」を復活させた（欠落 ENOENT 枝は「一覧が無い」が押さえ、`[]` は空配列の正常系として通る）。
+  - `tool` の偽物だけが `readdir` の有無で dirty を決め、`run` が明示集合に直した修正と食い違い、`tool` 経由の dirty が運動しない — `.pi/extensions/consult/tool/worktree.test.ts:63` / `.pi/extensions/consult/run/worktree.test.ts:82` / `cycles/261023-034-dev/plan/single-git-spawn.md:298`。
+    - fixed: tool の偽物を run と同じ明示 dirty 集合に揃え（`readdir` 判定をやめ、`makeDirty` を足した）、tool 経由の dirty（list の changed 表示と remove の dirty 拒否）のテストを追加した。
 - Unproven:
-- Doubts:
+  - `worktree add` 失敗の偽物が `mkdir` 前に返すため `unit` ディレクトリが作られず、`createWorktree` の `rmSync` を消しても同テストが緑のままになる — `.pi/extensions/consult/run/worktree.test.ts:287` / `.pi/extensions/consult/run/worktree.ts:196` / `.pi/extensions/consult/run/worktree.test.ts:92`。
+    - fixed: add 失敗の偽物が置き場を作ってから失敗するように直し、`rmSync` を外すと同テストが赤くなることを確認して戻した。
+- Doubts: なし
 
 ## Acceptance
 

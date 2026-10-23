@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
@@ -20,6 +20,7 @@ type Entry = { readonly path: string; readonly ref: string };
 let entries: Entry[] = [];
 const orphans = new Map<string, boolean>();
 const unmerged = new Set<string>();
+const dirtyPaths = new Set<string>();
 let listStatus = 0;
 let addStatus = 0;
 let removeStatus = 0;
@@ -30,6 +31,7 @@ function resetFake(): void {
   entries = [];
   orphans.clear();
   unmerged.clear();
+  dirtyPaths.clear();
   listStatus = 0;
   addStatus = 0;
   removeStatus = 0;
@@ -59,15 +61,10 @@ function installFake(): void {
       };
     }
     if (args[0] === 'status') {
-      try {
-        const names = readdirSync(cwd);
-        if (names.length === 0) {
-          return { status: 0, stdout: '', stderr: '' };
-        }
+      if (dirtyPaths.has(cwd)) {
         return { status: 0, stdout: '?? dirty\n', stderr: '' };
-      } catch {
-        return { status: 0, stdout: '', stderr: '' };
       }
+      return { status: 0, stdout: '', stderr: '' };
     }
     if (args[0] === 'worktree' && args[1] === 'add') {
       const branch = args[3] ?? '';
@@ -137,6 +134,10 @@ function installFake(): void {
   });
 }
 
+function makeDirty(path: string): void {
+  dirtyPaths.add(path);
+}
+
 const ROOT_KEY = 'CONSULT_ROOT';
 
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
@@ -188,6 +189,36 @@ describe('consult_worktree', () => {
 
     await call({ action: 'new', id: '2-b' }, dir);
     expect(text(await call({}, dir))).toContain('consult/2-b');
+  });
+
+  it('変更の残る worktree → list に changed、remove は dirty で断る', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    const row = findWorktree(dir, '2-b');
+    makeDirty(row?.path ?? '');
+
+    expect(text(await call({ action: 'list' }, dir))).toContain('(changed)');
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(text(outcome)).toContain('変更が残っている');
+    expect(outcome.details['outcome']).toBe('dirty');
+  });
+
+  it('worktree remove が失敗 → 投げる', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    removeStatus = 1;
+    await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
+      /could not remove the worktree/,
+    );
+  });
+
+  it('for-each-ref が失敗 → remove は投げる', async () => {
+    const { dir } = repo();
+    await call({ action: 'new', id: '2-b' }, dir);
+    forEachRefStatus = 1;
+    await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
+      /could not list the orphan branches/,
+    );
   });
 
   it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {

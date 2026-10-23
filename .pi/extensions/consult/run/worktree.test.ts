@@ -34,8 +34,6 @@ let addStatus = 0;
 let removeStatus = 0;
 let pruneStatus = 0;
 let forEachRefStatus = 0;
-let forEachRefOverride: string | null = null;
-let toplevelOverride: string | null = null;
 let lastAdd: { branch: string; path: string; base: string } | null = null;
 
 function resetFake(): void {
@@ -49,15 +47,13 @@ function resetFake(): void {
   removeStatus = 0;
   pruneStatus = 0;
   forEachRefStatus = 0;
-  forEachRefOverride = null;
-  toplevelOverride = null;
   lastAdd = null;
 }
 
 function installFake(): void {
   mockGit.mockImplementation((cwd: string, args: readonly string[]) => {
     if (args[0] === 'rev-parse') {
-      return { status: 0, stdout: `${toplevelOverride ?? cwd}\n`, stderr: '' };
+      return { status: 0, stdout: `${cwd}\n`, stderr: '' };
     }
     if (args[0] === 'worktree' && args[1] === 'list') {
       if (listStatus !== 0) {
@@ -90,6 +86,8 @@ function installFake(): void {
       const base = args[5] ?? '';
       lastAdd = { branch, path, base };
       if (branch.includes(' ') || branch.includes('\n') || addStatus !== 0) {
+        // git が置き場を作ってから失敗した形にする。作らなければ `createWorktree` の後始末が何も消さず、テストが空振りになる。
+        mkdirSync(path, { recursive: true });
         return { status: 1, stdout: '', stderr: 'fatal: bad branch' };
       }
       mkdirSync(path, { recursive: true });
@@ -130,9 +128,6 @@ function installFake(): void {
     if (args[0] === 'for-each-ref') {
       if (forEachRefStatus !== 0) {
         return { status: forEachRefStatus, stdout: '', stderr: 'for-each-ref failed' };
-      }
-      if (forEachRefOverride !== null) {
-        return { status: 0, stdout: forEachRefOverride, stderr: '' };
       }
       const checkedOut = new Set(entries.map((entry) => entry.ref.replace(/^refs\/heads\//, '')));
       const lines = [...orphans.keys()]
@@ -505,6 +500,14 @@ describe('removeWorktree', () => {
     expect(removeWorktree(dir, 'consult/').outcome).toBe('missing');
     expect(removeWorktree(dir, '').outcome).toBe('missing');
   });
+
+  it('worktree remove が status 1 → 例外（登録は残る）', () => {
+    const dir = tempDir();
+    createWorktree(dir, '1-a');
+    removeStatus = 1;
+    expect(() => removeWorktree(dir, '1-a')).toThrow(/could not remove the worktree/);
+    expect(findWorktree(dir, '1-a')).toBeDefined();
+  });
 });
 
 describe('removeWorktree の統合', () => {
@@ -573,6 +576,13 @@ describe('cleanWorktrees', () => {
     const dir = tempDir();
     pruneStatus = 1;
     expect(() => cleanWorktrees(dir)).toThrow();
+  });
+
+  it('for-each-ref が status 1 → 掃除が例外', () => {
+    const dir = tempDir();
+    createWorktree(dir, '1-a');
+    forEachRefStatus = 1;
+    expect(() => cleanWorktrees(dir)).toThrow(/could not list the orphan branches/);
   });
 });
 
