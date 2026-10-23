@@ -298,13 +298,14 @@ export function tempDir(prefix?: string): string;
   - 偽物の `status` は明示の dirty 集合で返すようにした。readdir の有無で判定すると commit 済みの未マージまで `dirty` になっていたため。
   - 偽物の `prune` が消えた登録の孤児枝を登録するようにした。掃除が何も報告せずゴースト系の case が落ちていたため。
   - hoisted の既定実装の引数を `_cwd`/`_args` にし、`gitEnv` mock の `...(env ?? {})` を `...env` にした（lint が赤だったため）。
-- Commit: TBD
+- Commit: 9d101cb
 
 ### Slice 3: 足場を外す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 改名は word-boundary 一括置換で行い、コメント内の `tmpDir()`/`test/tmp.ts` 言及も `tempDir()`/`test/temp-dir.ts` に揃えた。ファイルを消したまま古い名前の記述を残すと嘘になるため。
+- Commit: TBD
 
 ### Slice 4: 文書を合わせる
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tmpDir } from '../../../test/tmp.ts';
+import { tempDir } from '../../../test/temp-dir.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
@@ -9,7 +9,7 @@ import type { ConsultMessage, PiFace } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
 function place(): Place {
-  return placeFor(tmpDir(), tmpDir());
+  return placeFor(tempDir(), tempDir());
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {

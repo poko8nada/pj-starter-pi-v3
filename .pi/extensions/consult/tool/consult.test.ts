@@ -2,7 +2,7 @@
  * consult 道具のバックグラウンドの面を、偽の API で確かめる。
  *
  * サブエージェントは起こさない。`createRuntime` に差し替えた `run` を渡し、完了のタイミングと届くメッセージを自分で決める。pi の `sendMessage` と slash command の `ctx.ui.notify` も記録する。
- * 記録の置き場は `placeFor(tmpDir(), tmpDir())` で作り、session は `'test-session'` を渡す
+ * 記録の置き場は `placeFor(tempDir(), tempDir())` で作り、session は `'test-session'` を渡す
  * （`parseRun` が空の session を弾くため、既定の `''` は使わない）。
  */
 
@@ -21,7 +21,7 @@ import {
   type PiFace,
 } from './consult.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
@@ -48,7 +48,7 @@ function setup(
   check?: CheckRecord,
   psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
-  const place = placeFor(tmpDir(), tmpDir());
+  const place = placeFor(tempDir(), tempDir());
   return {
     runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
     place,
@@ -332,7 +332,7 @@ describe('controlSubagent: cancel', () => {
     const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-1' },
       subagents,
-      placeFor(tmpDir(), tmpDir()),
+      placeFor(tempDir(), tempDir()),
       SESSION,
       (pid) => {
         kills.push(pid);
@@ -345,7 +345,7 @@ describe('controlSubagent: cancel', () => {
   });
 
   it('掴んでいないサブエージェント（記録だけ、pid 生存）→ kill がその pid で 1 回呼ばれ、cancelled: true', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     seedRunning(found, { pid: process.pid });
     const kills: number[] = [];
     const outcome = controlSubagent(
@@ -364,7 +364,7 @@ describe('controlSubagent: cancel', () => {
   });
 
   it('pid が死んでいるサブエージェント → kill を呼ばず、止められない理由を返す', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     seedRunning(found, { pid: 999_999 });
     const kills: number[] = [];
     const outcome = controlSubagent(
@@ -383,7 +383,7 @@ describe('controlSubagent: cancel', () => {
   });
 
   it('終わったサブエージェント → kill を呼ばず、理由を返す', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     appendRun(found, {
       session: SESSION,
       subagent: 'consult-9',
@@ -413,7 +413,7 @@ describe('controlSubagent: cancel', () => {
     const outcome = controlSubagent(
       { action: 'cancel', id: 'consult-999' },
       new Map(),
-      placeFor(tmpDir(), tmpDir()),
+      placeFor(tempDir(), tempDir()),
       SESSION,
       (pid) => {
         kills.push(pid);
@@ -426,7 +426,7 @@ describe('controlSubagent: cancel', () => {
   });
 
   it('別の session のサブエージェント → 止めず、理由を返す', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     seedRunning(found, { session: 'other-session', pid: process.pid });
     const kills: number[] = [];
     const outcome = controlSubagent(
@@ -445,7 +445,7 @@ describe('controlSubagent: cancel', () => {
   });
 
   it('start と end のある subagent の停止 → kill しない', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     appendRun(found, {
       session: SESSION,
       subagent: 'consult-9',
@@ -481,7 +481,7 @@ describe('controlSubagent: cancel', () => {
 
 describe('controlSubagent: cancel (startToken)', () => {
   it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     appendRun(found, {
       session: SESSION,
       subagent: 'consult-9',
@@ -519,7 +519,7 @@ describe('controlSubagent: cancel (startToken)', () => {
   });
 
   it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
-    const found = placeFor(tmpDir(), tmpDir());
+    const found = placeFor(tempDir(), tempDir());
     appendRun(found, {
       session: SESSION,
       subagent: 'consult-9',
@@ -568,7 +568,7 @@ describe('controlSubagent: list', () => {
     const outcome = controlSubagent(
       { action: 'list' },
       new Map(),
-      placeFor(tmpDir(), tmpDir()),
+      placeFor(tempDir(), tempDir()),
       SESSION,
     );
     expect(outcome.text).toContain('no subagent is running');
@@ -581,13 +581,13 @@ describe('controlSubagent: list', () => {
     ]);
     const texts: string[] = [];
     texts.push(
-      controlSubagent({ action: 'list' }, new Map(), placeFor(tmpDir(), tmpDir()), SESSION).text,
+      controlSubagent({ action: 'list' }, new Map(), placeFor(tempDir(), tempDir()), SESSION).text,
     );
     texts.push(
       controlSubagent(
         { action: 'cancel', id: 'consult-1' },
         held,
-        placeFor(tmpDir(), tmpDir()),
+        placeFor(tempDir(), tempDir()),
         SESSION,
       ).text,
     );
@@ -595,16 +595,16 @@ describe('controlSubagent: list', () => {
       controlSubagent(
         { action: 'cancel', id: 'consult-999' },
         new Map(),
-        placeFor(tmpDir(), tmpDir()),
+        placeFor(tempDir(), tempDir()),
         SESSION,
       ).text,
     );
-    const other = placeFor(tmpDir(), tmpDir());
+    const other = placeFor(tempDir(), tempDir());
     seedRunning(other, { session: 'other-session', pid: process.pid });
     texts.push(
       controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION).text,
     );
-    const done = placeFor(tmpDir(), tmpDir());
+    const done = placeFor(tempDir(), tempDir());
     appendRun(done, {
       session: SESSION,
       subagent: 'consult-9',
@@ -617,12 +617,12 @@ describe('controlSubagent: list', () => {
     texts.push(
       controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), done, SESSION).text,
     );
-    const lost = placeFor(tmpDir(), tmpDir());
+    const lost = placeFor(tempDir(), tempDir());
     seedRunning(lost, { pid: 999_999 });
     texts.push(
       controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), lost, SESSION).text,
     );
-    const live = placeFor(tmpDir(), tmpDir());
+    const live = placeFor(tempDir(), tempDir());
     seedRunning(live, { pid: process.pid });
     texts.push(
       controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), live, SESSION, () => {})

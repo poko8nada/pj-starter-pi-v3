@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck.mjs');
 
@@ -33,7 +33,7 @@ function run(root: string, env: Record<string, string> = {}): RunOut {
 function fakeRoot(): string {
   // macOS では /var が /private/var への symlink。process.cwd() は実体に解けるので、
   // 据えないと path.relative ではなく -p の道の比較が狂う
-  return realpathSync(tmpDir());
+  return realpathSync(tempDir());
 }
 
 /** `node_modules/.bin/tsc` にスタブを置く（`-p` を出して、決めた所だけ exit 1） */

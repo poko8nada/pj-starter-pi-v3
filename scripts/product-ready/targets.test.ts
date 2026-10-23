@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tempDir } from '../../test/temp-dir.ts';
 import { labels, plan, remove } from './targets.mjs';
 
 function writeFile(path: string): void {
@@ -11,7 +11,7 @@ function writeFile(path: string): void {
 
 describe('plan', () => {
   it('cycles/001-a と 002-b と README.md → cycles はフォルダの2つだけ', () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     mkdirSync(join(root, 'cycles', '002-b'), { recursive: true });
     writeFile(join(root, 'cycles', 'README.md'));
@@ -30,7 +30,7 @@ describe('plan', () => {
   });
 
   it("plan(root, 'cycles') → cycles の行だけ", () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const found = plan(root, 'cycles');
     expect(found).toEqual([
@@ -39,22 +39,22 @@ describe('plan', () => {
   });
 
   it("plan(root, 'harness')（知らない label）→ []", () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     expect(plan(root, 'harness')).toEqual([]);
   });
 
   it('何も無い root → []', () => {
-    const root = tmpDir();
+    const root = tempDir();
     expect(plan(root)).toEqual([]);
   });
 
   it('無い root → 投げる', () => {
-    expect(() => plan(join(tmpDir(), 'no-such-root'))).toThrow();
+    expect(() => plan(join(tempDir(), 'no-such-root'))).toThrow();
   });
 
   it('at の昇順（作った順が逆でも）', () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', 'b'), { recursive: true });
     mkdirSync(join(root, 'cycles', 'a'), { recursive: true });
     const found = plan(root);
@@ -66,7 +66,7 @@ describe('plan', () => {
   });
 
   it('旧 label の物（.pi のテスト・scopes.json）は入らない', () => {
-    const root = tmpDir();
+    const root = tempDir();
     writeFile(join(root, '.pi', 'a.test.ts'));
     writeFile(join(root, 'scripts', 'checks', 'scopes.json'));
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
@@ -89,7 +89,7 @@ describe('labels', () => {
 
 describe('remove', () => {
   it('remove を2回呼ぶ → 2回目は []', () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const targets = plan(root);
     expect(targets).toHaveLength(1);
@@ -99,7 +99,7 @@ describe('remove', () => {
   });
 
   it('消した at を返す', () => {
-    const root = tmpDir();
+    const root = tempDir();
     mkdirSync(join(root, 'cycles', '001-a'), { recursive: true });
     const targets = plan(root);
     const removed = remove(targets);

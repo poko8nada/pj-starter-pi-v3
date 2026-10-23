@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tempDir } from '../../test/temp-dir.ts';
 
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
 
@@ -41,7 +41,7 @@ function makeTree(): {
   readonly root: string;
   readonly cycleA: string;
 } {
-  const root = tmpDir();
+  const root = tempDir();
   const cycleA = join(root, 'cycles', '001-a');
   writeFile(join(cycleA, 'note.txt'));
   writeFile(join(root, 'cycles', '002-b', 'note.txt'));
@@ -145,7 +145,7 @@ describe('product-ready index', () => {
   });
 
   it('package.json が無い → 1行、exit 1、cycles は残る', () => {
-    const root = tmpDir();
+    const root = tempDir();
     const cycleA = join(root, 'cycles', '001-a');
     writeFile(join(cycleA, 'note.txt'));
     writeStarterConfig(root);

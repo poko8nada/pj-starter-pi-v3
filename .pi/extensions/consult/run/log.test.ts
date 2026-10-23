@@ -1,7 +1,7 @@
 import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { dayFile, placeFor, type Place } from './place.ts';
 import {
   appendRun,
@@ -20,11 +20,11 @@ import {
 } from './log.ts';
 import type { PsRun } from './proc.ts';
 
-// 置き場を偽物にするテストは、`tmpDir()` と `placeFor` で作る（記録を読む側）。
+// 置き場を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
 // 実物の /tmp/pi-consult を触らない。
 
 function place(): Place {
-  return placeFor(tmpDir(), tmpDir());
+  return placeFor(tempDir(), tempDir());
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {

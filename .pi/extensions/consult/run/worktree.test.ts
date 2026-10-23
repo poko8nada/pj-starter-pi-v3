@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import {
   branchFor,
   cleanWorktrees,
@@ -185,7 +185,7 @@ const ROOT_KEY = 'CONSULT_ROOT';
 beforeEach(() => {
   resetFake();
   installFake();
-  vi.stubEnv(ROOT_KEY, tmpDir());
+  vi.stubEnv(ROOT_KEY, tempDir());
 });
 
 afterEach(() => {
@@ -195,7 +195,7 @@ afterEach(() => {
 
 describe('rootFor', () => {
   it('worktree を作った後でも、同じ root を返す', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     const made = rootFor(dir);
     const root = process.env[ROOT_KEY] ?? '';
@@ -211,7 +211,7 @@ describe('rootFor', () => {
   });
 
   it('worktree が無ければ undefined → 作らない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const root = process.env[ROOT_KEY] ?? '';
     const before = readdirSync(root);
     expect(rootFor(dir)).toBeUndefined();
@@ -219,7 +219,7 @@ describe('rootFor', () => {
   });
 
   it('worktree があればそれを使う', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     expect(rootFor(dir)).toBe(dirname(made.unitDir));
   });
@@ -227,7 +227,7 @@ describe('rootFor', () => {
 
 describe('ensureRoot', () => {
   it('2 回呼ぶと、同じルートを返し、作るのは 1 回だけ', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const root = process.env[ROOT_KEY] ?? '';
     createWorktree(dir, '1-a');
     const first = ensureRoot(dir);
@@ -243,7 +243,7 @@ describe('ensureRoot', () => {
   });
 
   it('worktree が無ければ新しく 1 つ作る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(0);
     expect(ensureRoot(dir).endsWith('/')).toBe(false);
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(1);
@@ -252,7 +252,7 @@ describe('ensureRoot', () => {
 
 describe('createWorktree', () => {
   it('unit の worktree を作る → ブランチと置き場が決まる', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
     expect(made.id).toBe('1-a');
@@ -264,7 +264,7 @@ describe('createWorktree', () => {
   });
 
   it('2 回呼んでも増えない → 同じ物が返る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const first = createWorktree(dir, '1-a');
     const second = createWorktree(dir, '1-a');
 
@@ -273,26 +273,26 @@ describe('createWorktree', () => {
   });
 
   it('base を指定できる → そのまま git に渡る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '2-b', 'abc123');
     expect(lastAdd).toEqual(expect.objectContaining({ branch: 'consult/2-b', base: 'abc123' }));
   });
 
   it('base の既定は HEAD', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     expect(lastAdd?.base).toBe('HEAD');
   });
 
   it('変な id は git が断る → 置き場を残さない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(() => createWorktree(dir, 'a b')).toThrow(/could not create the worktree/);
     expect(listWorktrees(dir)).toHaveLength(0);
     expect(existsSync(join(ensureRoot(dir), 'a b'))).toBe(false);
   });
 
   it('worktree add が status 1 → 例外、unit ディレクトリが残らない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     addStatus = 1;
     expect(() => createWorktree(dir, '1-a')).toThrow(/could not create the worktree/);
     expect(listWorktrees(dir)).toHaveLength(0);
@@ -302,7 +302,7 @@ describe('createWorktree', () => {
 
 describe('listWorktrees のゴースト', () => {
   it('実体がある登録 → 一覧に出る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
 
     expect(listWorktrees(dir).map((row) => row.id)).toEqual(['1-a']);
@@ -310,7 +310,7 @@ describe('listWorktrees のゴースト', () => {
   });
 
   it('実体の無い path の登録 → 一覧に出ない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     rmSync(made.path, { recursive: true, force: true });
 
@@ -319,8 +319,8 @@ describe('listWorktrees のゴースト', () => {
   });
 
   it('porcelain に consult 以外と prunable の囮 → consult の実体ある物だけ', () => {
-    const dir = tmpDir();
-    const realPath = join(tmpDir(), 'wt');
+    const dir = tempDir();
+    const realPath = join(tempDir(), 'wt');
     mkdirSync(realPath, { recursive: true });
     listOverride = [
       `worktree ${realPath}\nbranch refs/heads/consult/1-a`,
@@ -334,19 +334,19 @@ describe('listWorktrees のゴースト', () => {
 
   it('git が断る（status 128）→ 空の一覧', () => {
     listStatus = 128;
-    expect(listWorktrees(tmpDir())).toEqual([]);
+    expect(listWorktrees(tempDir())).toEqual([]);
   });
 });
 
 describe('listWorktrees / findWorktree', () => {
   it('作業場が 1 つも無い → 空', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(listWorktrees(dir)).toEqual([]);
     expect(findWorktree(dir, '1-a')).toBeUndefined();
   });
 
   it('変更が残っている worktree → dirty', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     expect(findWorktree(dir, '1-a')?.dirty).toBe(false);
 
@@ -356,13 +356,13 @@ describe('listWorktrees / findWorktree', () => {
   });
 
   it('変更の無い worktree → dirty が false', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     expect(findWorktree(dir, '1-a')?.dirty).toBe(false);
   });
 
   it('台帳ファイルを持たない → 一覧は git から作る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     const root = ensureRoot(dir);
     expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
@@ -371,7 +371,7 @@ describe('listWorktrees / findWorktree', () => {
 
 describe('removeWorktree', () => {
   it('作って消す → 登録と実体が消え、removed。2 回目は missing', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
     const first = removeWorktree(dir, '1-a');
@@ -388,17 +388,17 @@ describe('removeWorktree', () => {
   });
 
   it('作業場の無い id → missing', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(removeWorktree(dir, '9-z').outcome).toBe('missing');
   });
 
   it('掃除する物が無い → pruned と branches は空', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(removeWorktree(dir, '9-z').cleanup).toEqual({ pruned: [], branches: [] });
   });
 
   it('options を渡さない → force と busy は既定（false）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     makeDirty(made.path);
@@ -407,7 +407,7 @@ describe('removeWorktree', () => {
   });
 
   it('サブエージェントが動いている → busy で断り、掃除もしない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     const ghost = createWorktree(dir, '1-b');
     rmSync(ghost.path, { recursive: true, force: true });
@@ -422,7 +422,7 @@ describe('removeWorktree', () => {
   });
 
   it('変更が残っている → force 無しでは断る', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     makeDirty(made.path);
@@ -432,7 +432,7 @@ describe('removeWorktree', () => {
   });
 
   it('変更が残っていても、孤児の枝は掃除される（作業場は残す）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     makeDirty(made.path);
@@ -446,7 +446,7 @@ describe('removeWorktree', () => {
   });
 
   it('変更が残っていても force なら消える', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     makeDirty(made.path);
@@ -457,7 +457,7 @@ describe('removeWorktree', () => {
   });
 
   it('ブランチは、取り込み済みなら一緒に消える', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     createWorktree(dir, '1-a');
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('removed');
@@ -465,7 +465,7 @@ describe('removeWorktree', () => {
   });
 
   it('未マージのブランチは残す（仕事を消さない）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     markUnmerged('consult/1-a');
@@ -478,7 +478,7 @@ describe('removeWorktree', () => {
   });
 
   it('実体の無い登録（ゴースト）→ prune で消え、missing と pruned にそのパス', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     rmSync(made.path, { recursive: true, force: true });
 
@@ -490,7 +490,7 @@ describe('removeWorktree', () => {
   });
 
   it('実体の無い登録でも、force なら未マージの枝を捨てる', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     markUnmerged('consult/1-a');
@@ -509,7 +509,7 @@ describe('removeWorktree', () => {
   });
 
   it('remove が消すのは unit のディレクトリだけ（同じ実行の別 unit は残る）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const first = createWorktree(dir, '1-a');
     const second = createWorktree(dir, '1-b');
     expect(dirname(second.unitDir)).toBe(dirname(first.unitDir));
@@ -525,7 +525,7 @@ describe('removeWorktree', () => {
   });
 
   it('未マージでも force ならブランチも消える（捨てる）', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     markUnmerged('consult/1-a');
@@ -536,7 +536,7 @@ describe('removeWorktree', () => {
   });
 
   it('consult/ のような空の id → 作業場が無いので missing', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(removeWorktree(dir, 'consult/').outcome).toBe('missing');
     expect(removeWorktree(dir, '').outcome).toBe('missing');
   });
@@ -544,7 +544,7 @@ describe('removeWorktree', () => {
 
 describe('removeWorktree の統合', () => {
   it('ゴーストと取り込み済み・未マージの枝がある状態から remove が片付ける', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const target = createWorktree(dir, '1-t');
     addOrphan('consult/9-merged', true);
     const unmergedWorktree = createWorktree(dir, '1-u');
@@ -583,7 +583,7 @@ describe('removeWorktree の統合', () => {
 
 describe('cleanWorktrees', () => {
   it('掃除してから 2 回目を呼ぶ → 何も消さない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     rmSync(made.path, { recursive: true, force: true });
 
@@ -596,12 +596,12 @@ describe('cleanWorktrees', () => {
   });
 
   it('掃除する物が無い → 何も消さない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
   });
 
   it('走っているサブエージェントの作業場 → 消さず、その枝も消さない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
@@ -610,7 +610,7 @@ describe('cleanWorktrees', () => {
   });
 
   it('git が断る → 例外', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     pruneStatus = 1;
     expect(() => cleanWorktrees(dir)).toThrow();
   });
@@ -618,7 +618,7 @@ describe('cleanWorktrees', () => {
 
 describe('unit の置き場', () => {
   it('worktree の外を指す → 記録を置いてもリポジトリは汚れない', () => {
-    const dir = tmpDir();
+    const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
     expect(made.unitDir).not.toBe(made.path);

@@ -1,13 +1,13 @@
 /**
  * `scripts/harness/list.mjs` の振る舞いを fake root で試す。
  *
- * fake root を `tmpDir()` で作り、道を作ってから読む。
+ * fake root を `tempDir()` で作り、道を作ってから読む。
  * `harnessExcludes` は純粋に一覧から glob を作る。
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../test/tmp.ts';
+import { tempDir } from '../../test/temp-dir.ts';
 import { harnessExcludes, readList } from './list.mjs';
 
 function writeFile(abs: string, content: string): void {
@@ -21,7 +21,7 @@ function writeJson(abs: string, data: unknown): void {
 
 describe('readList', () => {
   it('{ "copy": [...], "skip": [...] } を置いたツリー → 同じ物を返す', () => {
-    const root = tmpDir();
+    const root = tempDir();
     writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
       copy: ['.pi', 'scripts/harness.mjs'],
       skip: ['logs'],
@@ -34,12 +34,12 @@ describe('readList', () => {
   });
 
   it('一覧の道が無い → 投げる。エラーに scripts/harness/harness.json が入る', () => {
-    const root = tmpDir();
+    const root = tempDir();
     expect(() => readList(root)).toThrow('scripts/harness/harness.json');
   });
 
   it('一覧が {"copy":"x"} → 投げる', () => {
-    const root = tmpDir();
+    const root = tempDir();
     writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
     expect(() => readList(root)).toThrow();
   });

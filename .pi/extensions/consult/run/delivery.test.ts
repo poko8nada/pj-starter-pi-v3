@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import {
   appendDelivered,
   CURSOR_FILE,
@@ -15,7 +15,7 @@ import { placeFor, type Place } from './place.ts';
 // サブエージェントは起こさない。使い捨ての置き場だけで試す。
 
 function place(): Place {
-  return placeFor(tmpDir(), tmpDir());
+  return placeFor(tempDir(), tempDir());
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {

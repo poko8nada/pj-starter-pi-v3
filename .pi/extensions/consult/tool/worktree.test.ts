@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tmpDir } from '../../../../test/tmp.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
 import { consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
@@ -148,7 +148,7 @@ function call(params: Record<string, unknown>, cwd: string, check?: CheckRecord)
 }
 
 function repo(): { readonly dir: string } {
-  return { dir: tmpDir() };
+  return { dir: tempDir() };
 }
 
 function text(outcome: { content: readonly { type: string; text?: string }[] }): string {
@@ -158,7 +158,7 @@ function text(outcome: { content: readonly { type: string; text?: string }[] }):
 beforeEach(() => {
   resetFake();
   installFake();
-  vi.stubEnv(ROOT_KEY, tmpDir());
+  vi.stubEnv(ROOT_KEY, tempDir());
 });
 
 afterEach(() => {
