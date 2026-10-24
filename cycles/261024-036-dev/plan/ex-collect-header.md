@@ -29,7 +29,7 @@
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "Triage" .pi/skills/close/scripts/collect.mjs` has the header note
+  - `grep -n "ex-.*No.*は close.md の.*## Triage.*から読んで" .pi/skills/close/scripts/collect.mjs` has the header note
 - Added:
   - other — the agent reads the header note; the `ex-` source is the `Triage`.
 
@@ -37,23 +37,30 @@
 
 ### Slice 1: header-note
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: cb77254
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
+- Stale: なし — 追記と整合しない文書・コメント・テストは確認できませんでした。
+- Unlisted: なし — コード差分は Files が挙げる collect.mjs の1行のみで、plan md の差分は Notes の記録です。
+- Gaps: なし — コメント追記のみで実行時の振る舞いの変更はなく、確認は Verify に含まれています。
 - Unproven:
-- Noise:
-- Doubts:
+  - `grep -n "Triage"` はヘッダ注記を削除しても他の Triage 言及により成功するため、ヘッダ注記の存在を証明できません（cycles/261024-036-dev/plan/ex-collect-header.md:32、.pi/skills/close/scripts/collect.mjs:4）。
+    - fixed: Verify の grep をヘッダ注記固有の文言（`ex-.*No.*は close.md の.*## Triage.*から読んで`）に絞り、collect.mjs:4 の1行のみに一致することを確認しました。ヘッダ削除では失敗します。
+- Noise: なし — 新規テストはなく、既存テストは分岐を確認するもので型や制約の再現ではありません。
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:related` (4 tests), `pnpm test:run` (53 files / 847 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the `Verify` grep (`collect.mjs:4` only). A comment-only change: the agent read the diff.
+- Findings: なし
+- Doubts: なし
