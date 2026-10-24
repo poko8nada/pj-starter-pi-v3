@@ -1,6 +1,6 @@
 ---
 name: close
-description: Use when every plan of a cycle is done (merged or landed in the base, or dropped by the owner). It collects what the plans left, triages it with the owner, and then asks the owner, Unit by Unit, whether they will verify the function.
+description: Use when every plan of a cycle is done (done, or dropped by the owner). It collects what the plans left, triages it with the owner, and then asks the owner, Unit by Unit, whether they will verify the function.
 ---
 
 # close
@@ -19,11 +19,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 1. Check the trigger
 
-- every plan is done: its `Commit:` is filled and its work is in the base — merged for a worktree plan, landed for a `base` plan — or the owner dropped it (the record sits in the agent's plan md)
-  - merged: every hash in the plan's `## Notes` `Commit:` is an ancestor of `HEAD` (`git merge-base --is-ancestor <commit> HEAD`); a `Commit:` of `なし` or `なし（理由）` is skipped
-  - a worktree plan: the design's `Where` says `worktree`; the log holds the merge itself (`git log --merges --grep "consult/<plan id>"`)
-  - a `base` plan: the design's `Where` says `base`; there is no merge, and no merge log is asked for
-  - a dropped plan: its `## Notes` carries `Stopped` and no merge; its `Commit:` hashes are not checked for ancestry, because the worktree was not merged. The close reads it as dropped, not as open
+- every plan is done: its `Commit:` is filled and the work is done (`work` step 8 green), or the owner dropped it (`Stopped`, no merge)
 - a plan that is still open is the work skill's business, not this close's
 
 ### 2. Read the cycle
@@ -39,7 +35,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
 - read the plan md and the diff for each line, and write its `Doing` / `Left` / `Cost`
-- fill every `未特定` for a design plan from the design. An `ex-` plan's `No` is filled from the `<NN>` of the `ADR <NN>` in its `Triage` line, or from the ADR entry whose Unit failed, when the plan is written
+- fill every `未特定` for a design plan from the design. An `ex-` plan's `No` is read from the Triage; the plan md has no `No`
 - show the completed `## Collected` to the owner
 - add the holes you found in step 2 as lines by hand, in the same shape: the script does not know them
 
@@ -48,7 +44,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - first, a leftover that moves a part of `DEFINITION.md` goes to `proposed`, even when it is a contradiction, a hole, something broken, or something left stale
 - a leftover that does not move `DEFINITION.md`, and is a contradiction, a hole, something broken, or something left stale, is looked at as `ex-`
 - one destination per leftover, and the owner confirms. The shape is in `references/format.md`
-  - `ex-plan`: it is one of those four, it does not move `DEFINITION.md`, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design), with the `No` — the `<NN>` of the `ADR <NN>` in its `Triage` line — at the top. Run its work, and resume this close when it is merged: its line carries `done <commit>`. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
+  - `ex-plan`: it is one of those four, it does not move `DEFINITION.md`, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design, no `No` at the top); its `No` is read from the Triage. Run its work, and resume this close when it is merged: its line carries `done <commit>`. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
   - `proposed`: it breaks nothing, or it moves a part of `DEFINITION.md`; either way, leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes
   - `dropped`: rare, and the fix weighs more
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
@@ -60,7 +56,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - ask the owner, per Unit, whether they will run the function or look at it
 - the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
 - their OK in the chat closes it; a Unit they will not check carries `しない` and the reason on the same line
-- a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design, with the `No` of the ADR entry the Unit is named by at the top, its work run, and this step runs again for that Unit when it is merged. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
+- a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design and no `No` at the top; its `No` is read from the Triage, its work run, and this step runs again for that Unit when it is merged. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
 - what they answered goes in `## Verified`, which sits after `## Triage`
 
 ### 6. Owner

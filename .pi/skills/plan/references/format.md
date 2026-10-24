@@ -91,8 +91,8 @@ Section and field names are English; the content is Japanese.
 
 ## No
 
-- `No` is the design's plan section's `No`, copied as it is.
-- An `ex-` plan has no design: its `No` is the `<NN>` of the `ADR <NN>` in the `Triage` line it fixes, or of the ADR entry whose Unit failed.
+- `No` is the design's plan section's `No`, copied as it is. A normal plan keeps `- No: <NN>` at the top.
+- An `ex-` plan does not write `No`; the close reads the `ADR <NN>` of the Triage line. The Triage line is the only source.
 
 ## Files
 
