@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   MAX_PERIOD_UNITS,
@@ -224,5 +227,11 @@ describe('sampleOf', () => {
     expect(units).toHaveLength(MIN_CYCLES);
     const run: UnitRun = { at: 0, length: MIN_CYCLES, period: 1 };
     expect(sampleOf(units, run)).toBe(one);
+  });
+
+  it('units.ts のソースに生の NUL が無い → indexOf(0) が -1', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const source = readFileSync(join(here, 'units.ts'));
+    expect(source.indexOf(0)).toBe(-1);
   });
 });
