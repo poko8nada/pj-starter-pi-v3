@@ -131,8 +131,18 @@
 - Noise: なし
 - Doubts: なし
 
+### Round 2
+
+- Stale:
+  - `.pi/skills/design/references/format.md:95` — fixed confirmed: `## Where` に yolo 例外の一文が `references/format.md:96` にあり、`design/SKILL.md:59` の同文と一致することを確認しました。`Files` には `design/references/format.md update` が含まれており、Stale は解消されています。
+- Unlisted: なし（Round 1 に fixed 行なし。確認対象なし）
+- Gaps: なし（Round 1 に fixed 行なし。確認対象なし）
+- Unproven: なし（Round 1 に fixed 行なし。確認対象なし）
+- Noise: なし（Round 1 に fixed 行なし。確認対象なし）
+- Doubts: なし
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (52 files / 843 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the `Verify` greps; the owner read each slice; the agent read the changed `yolo` / `work` / `design` text.
+- Findings: なし
+- Doubts: なし
