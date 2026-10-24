@@ -31,15 +31,20 @@ Section and field names are English; the content is Japanese.
 
 ### Steps
 
-1. `<file>`:
+1. `<コードのファイル>`:
    - <何をどうするか。1 文>
      - Outside: `<この plan の Boundary.External の項目>`。<そこでどうするか>
+2. `<テストのファイル>`:
+   - (happy) <given> → <result>
+   - (error) <given> → <result>
+3. `<文書>`:
+   - <何をどうするか。1 文>
 
 ### Verify:
 
-- <型>: <コマンド / 相手 / 場所>
-  - (<印>) <given> → <result>
-  - _no case_: <walk の行> — <理由>
+- Always:
+  - <緑にしたもの。既定の 5 つで足りるなら `既定の 5 つ`>
+- Added: <DB / front / auth / base / other 無ければ なし>
 
 ## 2.<スライス名>
 
@@ -59,6 +64,7 @@ Section and field names are English; the content is Japanese.
 - Unlisted:
 - Gaps:
 - Unproven:
+- Noise:
 - Doubts:
 
 ## Acceptance
@@ -79,19 +85,30 @@ Section and field names are English; the content is Japanese.
 - Walk the relations before writing it: what imports the thing that changes, calls it, renders it, migrates with it, seeds with it, documents it, checks it. A follower that is not written is a follower that gets missed.
 - A new double or fixture is a file: it goes in the tree, and `test/` is where the doubles live. Say how it behaves when it is run outside its test: refuse, do not hang.
 
+### Structure
+
+- A file lives in the dir of the concern the feature needs.
+- A test file sits beside the file it tests.
+- The way in is one: a feature keeps its `index` at its root, and the rest of the project comes in there.
+- A feature whose files are very few may stay flat at its root.
+- When an added or an updated feature grows the flat set, propose the dirs these rules give, before the file count is past reading.
+
 ## Slices
 
 - One slice is one closing: work that ends when its check passes. A subagent may carry several in one run; the size is a hint, not a handoff.
 - The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
-- A `base` plan is cut where the owner can look and decide: its check carries the look (`look`, `browser`, `use`), and their answer closes the slice.
-- One step is one file: what to do in it. A step that meets the outside carries an `Outside:` line: the plan's `Boundary.External` item, named, and what to do there.
-- The last slice is the integration slice: its check covers what the plan delivers as a whole, not one file. Its name is `統合: <what the plan delivers>`.
+- A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
+- One step is one file: what to do in it. The shape follows the file:
+  - a code file — what to do, in one sentence; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
+  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`
+  - a document — what to do, in one sentence
+- The cases of a test file follow `## Test cases`.
 - The steps are numbered; the order is the order of the work.
 
 ## Types
 
 - `Types` sits in the slice that moves it. It holds the declarations that move, as code: a type, a schema, a signature, a state.
-- It is the source of the slice's cases: what a declaration leaves open, `Verify` proves. `なし` when nothing moves.
+- What a declaration leaves open, the `Steps` and the `Verify` settle. `なし` when nothing moves.
 - The behaviour is written in the step that does it, not here.
 
 ### Type rules
@@ -104,54 +121,31 @@ Section and field names are English; the content is Japanese.
 
 ## Verify
 
-- `Verify` proves what `Types` and the `Steps` decide, and only what the types cannot: a value that arrives from outside, the side effects, the errors, the integration.
-- One `Verify` per slice. It names one type from the list below, and its content. Pick the type that decides the work; do not invent a check.
+- `Verify` is what closes the slice: what has to pass, not what to test.
+- It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
+- `Always:` — these five, and nothing else.
+  - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm format:check`
+  - the comments and the documents hold no stale wording: a `grep` for the names and the descriptions this slice changed
+- `Added:` — what the change decides. Write what applies; `なし` when nothing does.
+  - DB — rows are written into the store and read back; a migration runs forward and back.
+  - front (a component, and what it shows) — the agent starts the server, opens the screen in cmux-browser, and reports in the chat that the owner may look; their OK in the chat closes it.
+  - auth — the library's sandbox or test environment shows the behaviour that was intended.
+  - a `base` plan's look — the owner reads the slice's change; their OK closes it.
+  - other — a check the ADR's scope names that the four above do not cover, by a throwaway script or a shell command.
+- A `Verify` that cannot be run is a hole: fix it, or say why it does not apply.
 
-### Kinds
+## Test cases
 
-- `test` — a machine runs the tests: the file, the command, and the cases
-  - the cases are written on top of that test file: read it first, and follow the way it already works (its fixtures, its doubles, the seam it uses)
-- `api` — a request is sent to the interface, and the response is read
-- `browser` — a person walks the screens, and reports what was seen
-- `visual` — a screenshot of the screens is compared against the agreed look
-- `compat` — the same walk on another browser or width
-- `a11y` — the screens are walked with a screen reader, or the tree, the contrast and the labels are checked
-- `cli` — a command is run, and its output is read
-- `perf` — a machine reads the time or the load of the product while it runs
-- `data` — rows are written into the store and read back, and a migration runs forward and back
-- `security` — a request that should be refused is sent, and the refusal is read
-- `form` — a machine checks a length, a count, or compares two files
-- `read` — a subagent reads a document and reports: which subagent, which document, and what it reports. The subagent reads it itself; a check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution
-- `use` — a subagent uses the document, and reports what it does with it
-- `look` — a person reads a value: a screen, a log, a DB, a file
-
-### Cases
-
-- Every `Verify` carries cases: the lines the walk below writes, and at least one `(happy)`.
-- A case is `<given> → <expected result>`, marked with the walk's line: `(happy)`, `(error)`, `(empty)`, `(boundary values)`. The result is a value, an error type or a state.
-- What is given is the input that tells the behavior from its absence. A case whose input would give the same result with the behavior removed is not a case: a value the plan or the ADR decided is not a case.
-- A line the compiler or the schema already settles takes no case: write the reason it does not apply. A line whose breakage nobody would notice takes no case either.
-- A line that takes no case stands in the same list, as `- _no case_: <the walk's line> — <why>`, so a reader can tell a decision from a hole.
-- A slice with `Types: なし` (a script, a document, a data file) takes its cases from its `Steps`: one case per rule the step writes, or the reason it does not apply.
-- A case reads by the kind: `cli` — the command and its premises → the lines and the exit code; `browser` / `visual` — the screen → what must be seen; `read` — the document → what the subagent reports; `look` — the value → the shape it must have; `form` — the input → the count, the length or the match.
-
-#### Walk
-
-Walk the slice's `Types` — or its `Steps`, when `Types` is `なし` — and write a case for each line, or a `_no case_` line with the reason:
-
-- the happy path — the nominal input, and the result the step promises
-- every branch of a union
-- every optional, present and absent
-- the states, and the legal and illegal transitions between them
-- empty and missing
-- the boundary values
-- invalid input
-- the expected error path
-- permission
-- a second call
-- concurrency
-
-**A boundary with no answer is a hole in the plan.** When the shape cannot say what happens, the shape is not decided: stop, decide it, and write the plan after.
+- The rules are used twice: a step that writes a test file decides its cases by them, and the reviewer of the plan and of the work reads those cases by them.
+- A premise the types, the spec, the schema or a DB constraint already guarantees is not reproduced in a test.
+- An assertion carries neither a magic number nor a hardcoded string.
+- A boundary value is not a test of its own: the test says the spec it belongs to is met.
+- A behaviour that is unlikely to happen, and whose breakage nobody would notice, is not tested.
+- A mock is made only where the outside gives the types of its input and its output; a mock whose shape is guessed is not made, and not tested.
+- Dummy data comes from a factory function, not from a literal written at each test.
 
 ## Notes
 
@@ -167,7 +161,12 @@ Walk the slice's `Types` — or its `Steps`, when `Types` is `なし` — and wr
 ## Review
 
 - The reviewer writes here, and the fixing subagent answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
-- A finding sits under the viewpoint it came from: `Stale` (what this change made stale — a doc, a comment, a test), `Unlisted` (a change the plan's `Files` does not name), `Gaps` (a hole the slices passed over — a behavior the checks do not exercise; a decided value is not a gap), `Unproven` (a test that would stay green if the behavior it names were removed).
+- A finding sits under the viewpoint it came from:
+  - `Stale` — what this change made stale: a doc, a comment, a test
+  - `Unlisted` — a change the plan's `Files` does not name
+  - `Gaps` — a hole the slices passed over, a behavior the checks do not exercise; a decided value is not a gap
+  - `Unproven` — a test that would stay green if the behavior it names were removed
+  - `Noise` — a test step a type, a schema or a DB constraint already settles, or one nobody would notice
 - `Doubts` — a note that is not a finding, and still worth keeping: one bullet each. Nothing fixes it, and the close reads it as a leftover. `なし` when there is none.
 - A finding is one bullet. What the fixing subagent did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.

@@ -5,12 +5,12 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ## Review of a plan (a `review` subagent)
 
 ```
-Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` — and the code, the test files and the documents those checks name. The walk and the markers are in `.pi/skills/plan/references/format.md`.
-Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify` close its slice?
-- `Unrunnable` — it does not run as written, the way the file it names already works
+Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` and its `### Steps` — and the code, the test files and the documents those checks name. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
+Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify`, and these `Steps`, close the slice?
+- `Unrunnable` — the `Verify` does not run as written, the way the file it names already works
 - `Unproven` — it stays green with the behavior it names removed
-- `Gaps` — a line of the walk has no case; a value the plan or the ADR decided is not a gap
-- `Noise` — a case the compiler or the schema already settles, or nobody would notice
+- `Noise` — a test step whose case a type, a schema or a DB constraint already settles, or one nobody would notice; a case written with a magic number or a hardcoded string
+- `Gaps` — a rule of the change that no step and no check carries; a value the plan or the ADR decided is not a gap
 
 Answer in this shape, one section per slice:
 
@@ -18,8 +18,8 @@ Answer in this shape, one section per slice:
 
 - Unrunnable: なし, or `<file>:<line>` — what is wrong
 - Unproven: ...
-- Gaps: ...
 - Noise: ...
+- Gaps: ...
 
 One finding is one bullet. Write なし for a name that found nothing.
 This is the only round: the findings come back once.
