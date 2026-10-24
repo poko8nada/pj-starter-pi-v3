@@ -441,6 +441,19 @@ describe('onAgentSettled', () => {
     wiring.onAgentSettled(agentSettled(false));
     expect(sent).toHaveLength(0);
   });
+
+  it('aborted: true でも pending が無い → 何も送らない', () => {
+    const sent: string[] = [];
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: (content) => {
+        sent.push(content);
+      },
+    });
+    wiring.onAgentSettled(agentSettled(true));
+    expect(sent).toHaveLength(0);
+  });
 });
 
 describe('onBeforeAgentStart', () => {

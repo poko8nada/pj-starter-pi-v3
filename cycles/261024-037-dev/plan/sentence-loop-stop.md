@@ -13,7 +13,7 @@
     detect.ts            update
     detect.test.ts       update
     message.ts
-    message.test.ts
+    message.test.ts      update
     units.ts             add
     units.test.ts        add
   index.ts               update
@@ -358,11 +358,29 @@ export interface ScrubWiring {
 ### Round 1
 
 - Stale:
+  - なし — `.pi/extensions/thinking-scrub/README.md:1` の二段階の説明と `.pi/extensions/thinking-scrub/scrub/detect.ts:4` の文周期の注記を確認し、古い文言の残存は見当たりませんでした。
+    - left: 古い文言の残存がなく、直す対象がないため手を付けない。
 - Unlisted:
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:69` の前後で 3 件の削除が行われていますが、Files では `scrub/message.test.ts` に `update` の記載がなく、変更が名指しされていません。
+    - fixed: Files の `scrub/message.test.ts` に `update` を追記した。
 - Gaps:
+  - `.pi/extensions/thinking-scrub/index.ts:201` の `aborted: true` かつ `pending` が無い場合に何も送らない分岐を確かめる検査がありません。
+    - fixed: `index.test.ts` の `onAgentSettled` に `aborted: true でも pending が無い → 何も送らない` を足した。
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:210` の `MAX_PERIOD_UNITS` を超える周期を無視する振る舞いを確かめる検査がありません。
+    - fixed: `units.test.ts` の `detectUnitRuns` に周期 `MAX_PERIOD_UNITS + 1` の繰り返しは run 無しの試験を足した。
 - Unproven:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:178` の周期 3 の見本試験は、最頻 3 文窓でも同じ結果になるため、`run.period <= 3` の分岐を外しても緑のままです。
+    - fixed: `units.test.ts` の `sampleOf` に周期 1 は 1 文だけの試験を足し、3 文窓との違いで分岐を運動させた。
+  - `.pi/extensions/thinking-scrub/index.test.ts:318` の `MIN_THINKING` 未満の試験は abort しないことのみを見ており、設定読みより先に戻る順序を壊しても緑のままです。
+    - left: 順序は性能のための早期 return で振る舞いに差が出ず、順序を観測する試験は実装に結合して脆くなるため足さない。
 - Noise:
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:86` の `SCAN_EVERY - 1000` における `1000` は根拠の示されない魔数です。
+    - fixed: `SCAN_EVERY - 1` で 1 文字足りない境界に直し、差が `SCAN_EVERY - 1` であることを断定させた。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:171` の `thinkingWithRun(500).slice(0, 60)` における `500` と `60` は根拠の示されない魔数です。
+    - fixed: 短い見本を `loopSentence(0)` の 1 文に直し、魔数を消した。
 - Doubts:
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:248` の窓照合キーに NUL 文字が含まれ、git が binary 扱いになる点が気になりましたが、振る舞いには影響しないため所見としません。
+    - left: NUL 区切りは衝突避けの意図で、振る舞いに影響がなく git の扱いも実害がないため直さない。
 
 ## Acceptance
 

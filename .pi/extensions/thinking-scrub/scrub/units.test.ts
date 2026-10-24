@@ -172,6 +172,15 @@ describe('detectUnitRuns', () => {
     expect(units).toHaveLength(sentences.length);
     expect(detectUnitRuns(units)).toHaveLength(0);
   });
+
+  it(`周期 ${MAX_PERIOD_UNITS + 1} の繰り返し → 上限を超えるため run が無い`, () => {
+    const pattern = Array.from({ length: MAX_PERIOD_UNITS + 1 }, (_, index) => english(index));
+    const text = cycleText(pattern, MIN_CYCLES);
+    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const units = unitsFromText(text);
+    expect(units).toHaveLength(pattern.length * MIN_CYCLES);
+    expect(detectUnitRuns(units)).toHaveLength(0);
+  });
 });
 
 describe('sampleOf', () => {
@@ -205,5 +214,15 @@ describe('sampleOf', () => {
     const units = unitsFromText(text);
     const run: UnitRun = { at: 0, length: 2 * MIN_CYCLES, period: 2 };
     expect(sampleOf(units, run)).toBe([first, second].join(' '));
+  });
+
+  it('1 単位の周期 → その 1 文だけ', () => {
+    const one = longEnglish(0);
+    const text = cycleText([one], MIN_CYCLES);
+    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const units = unitsFromText(text);
+    expect(units).toHaveLength(MIN_CYCLES);
+    const run: UnitRun = { at: 0, length: MIN_CYCLES, period: 1 };
+    expect(sampleOf(units, run)).toBe(one);
   });
 });

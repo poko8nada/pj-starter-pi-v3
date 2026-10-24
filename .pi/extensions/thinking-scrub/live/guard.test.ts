@@ -83,8 +83,8 @@ describe('observe', () => {
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
-    const extended = `${base} ${'x'.repeat(SCAN_EVERY - 1000)}`;
-    expect(extended.length - first.guard.scanned).toBeLessThan(SCAN_EVERY);
+    const extended = `${base}${'x'.repeat(SCAN_EVERY - 1)}`;
+    expect(extended.length - first.guard.scanned).toBe(SCAN_EVERY - 1);
     const second = observe(first.guard, extended);
     expect(second.kind).toBe('idle');
   });
@@ -168,7 +168,7 @@ describe('takeFollowUp', () => {
 
 describe('followUpText', () => {
   it('指示と見本を含み、長い見本は切れる', () => {
-    const sample = thinkingWithRun(500).slice(0, 60);
+    const sample = loopSentence(0);
     const text = followUpText(sample);
     expect(text).toContain('repeating');
     expect(text).toContain('Do not repeat');
