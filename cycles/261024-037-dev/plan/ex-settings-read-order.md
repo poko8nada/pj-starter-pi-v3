@@ -74,14 +74,30 @@ export interface WiringOptions {
 ### Round 1
 
 - Stale:
+  - なし — `.pi/extensions/thinking-scrub/index.ts:5` の「毎回読み直す」と `settings/read.ts:4` の読み直しの注記が port 経由でも成り立つこと、`index.test.ts:566` と `index.test.ts:698` の表題の 51 や 12 が前提の断定ではなく事実の説明として残ることを確認しました。
 - Unlisted:
+  - なし — 差分は `.pi/extensions/thinking-scrub/index.ts` と `.pi/extensions/thinking-scrub/index.test.ts` の 2 件であり、`## Files` の 2 件と一致すること、残る差分は本計画書自体の `Notes` 追記であることを確認しました。
 - Gaps:
+  - なし — `.pi/extensions/thinking-scrub/index.ts:151,178,215,236,327` の 4 経路と既定 export の置き換えに対し、`.pi/extensions/thinking-scrub/index.test.ts:320,337,358,378` の呼び出し回数と無効枝の 4 件と実ファイル経由の既存試験が対応し、`## Verify` の `Added: なし` を超える振る舞いが残らないことを確認しました。
 - Unproven:
+  - なし — 新規 4 件はいずれも振る舞いを外すと赤になること（早戻りを外すと `.pi/extensions/thinking-scrub/index.test.ts:354` が 0 回でなくなり、判定を外すと `.pi/extensions/thinking-scrub/index.test.ts:394` が abort し、呼び出しを外すと `.pi/extensions/thinking-scrub/index.test.ts:332,374` が変わること）を読み合わせで確認しました。
 - Noise:
+  - なし — 新規の断定は `MIN_THINKING` 定数と `.pi/extensions/thinking-scrub/index.test.ts:16` の `okSettings()` 工場および呼び出し回数の 0/1 のみであり、魔数や固定文字列の複写はなく、残る固定文字列は計画が残すと決めた既存の振る舞いの断定であることを確認しました。
 - Doubts:
+  - なし
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related .pi/extensions/thinking-scrub/index.ts .pi/extensions/thinking-scrub/index.test.ts` — 1 件・32 件が通過しました。
+  - `pnpm typecheck` — root と `.pi` がともに ok でした。
+  - `pnpm lint` — 通過しました。
+  - `pnpm format:check` — 238 件が通過しました。
+  - `grep -n "readSettings" .pi/extensions/thinking-scrub/index.ts` — port の 7 箇所（import・型・4 経路・既定 export）を確認しました。
+  - `pnpm test:run` — 55 件・882 件が通過しました。
+  - 破壊・復元試験 — `handleMessageUpdate` の `options.readSettings()` 呼び出しを `MIN_THINKING` の早戻りの前に移動し、`pnpm test:related` を実行しました。その後、順序を元に戻して再実行しました。
 - Findings:
+  - 破壊時は `onMessageUpdate` の `MIN_THINKING 未満 → 偽の readSettings の呼び出しが 0 回` の 1 件が赤くなり、`expected 1 to be +0` で早戻り前の読み出しを検出できることを確認しました。残り 31 件は緑でした。
+  - 復元後は `pnpm test:related` の 32 件が再び緑になり、`git status --short` と `git diff --stat` で `.pi/extensions/thinking-scrub/index.ts` の差分が残らないことを確認しました。計画書以外の作業ツリーの変更はありません。
 - Doubts:
+  - なし
