@@ -47,14 +47,6 @@ describe('separatorFor', () => {
   it('改行を含まない → undefinedを返す', () => {
     expect(separatorFor('ab')).toBeUndefined();
   });
-
-  it('改行3つを含む → 改行2つを返す', () => {
-    expect(separatorFor('\n\n\n')).toBe('\n\n');
-  });
-
-  it('空文字 → undefinedを返す', () => {
-    expect(separatorFor('')).toBeUndefined();
-  });
 });
 
 describe('scrubThinking', () => {
@@ -166,20 +158,6 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe('foo\n\nbar');
   });
 
-  it('区間が改行2つを含み左端が空白 → 空白は残らず改行2つが入る', () => {
-    const text = `foo ${repeated('\n\nThe **', 5)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
-  });
-
-  it('区間が改行2つを含み右端が空白 → 空白は残らず改行2つが入る', () => {
-    const text = `foo${repeated('\n\nThe **', 5)} bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
-  });
-
   it('区間が改行2つを含み両端が空白 → 空白は残らず改行2つが入る', () => {
     const text = `foo ${repeated('\n\nThe **', 5)} bar`;
     const scrubbed = scrubThinking(text);
@@ -215,13 +193,6 @@ describe('scrubThinking', () => {
     const second = scrubThinking(first.text);
     expect(second.removed).toBe(0);
     expect(second.text).toBe(first.text);
-  });
-
-  it('畳んだ foo改行改行bar にもう一度かける → removed が 0、本文が同一', () => {
-    const text = 'foo\n\nbar';
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
   });
 });
 

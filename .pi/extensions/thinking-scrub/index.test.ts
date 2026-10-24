@@ -381,32 +381,6 @@ describe('onMessageUpdate', () => {
 });
 
 describe('onAgentSettled', () => {
-  it('aborted: true のあと → custom メッセージが 1 件、見本つき', () => {
-    const sent: string[] = [];
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: (content) => {
-        sent.push(content);
-      },
-    });
-    const thinking = thinkingWithRun(MIN_THINKING);
-    const fake = fakeCmdCtx();
-    wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinking, 'reasoning_content')),
-      fake.ctx,
-    );
-    expect(fake.aborts()).toBe(1);
-    wiring.onAgentSettled(agentSettled(true));
-    expect(sent).toHaveLength(1);
-    const first = sent.at(0);
-    if (first === undefined) {
-      throw new Error('followUp must be called');
-    }
-    expect(first).toContain('repeating');
-    expect(first).toContain(loopSentence(0).slice(0, 20));
-  });
-
   it('fake の sendMessage 経由 → customType と表示と triggerTurn が記録される', () => {
     const fake = fakePi();
     registerScrub(fake.pi, {

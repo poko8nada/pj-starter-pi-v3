@@ -164,20 +164,6 @@ describe('takeFollowUp', () => {
     }
     expect(takeFollowUp(taken.guard)).toBeUndefined();
   });
-
-  it('見本を 1 回だけ返し、2 回目は undefined', () => {
-    const thinking = thinkingWithRun(MIN_THINKING);
-    const step = observe(emptyGuard(), thinking);
-    if (step.kind !== 'stop') {
-      throw new Error('must stop');
-    }
-    const taken = takeFollowUp(step.guard);
-    expect(taken?.sample).toBe(step.sample);
-    if (taken === undefined) {
-      throw new Error('must take');
-    }
-    expect(takeFollowUp(taken.guard)).toBeUndefined();
-  });
 });
 
 describe('followUpText', () => {

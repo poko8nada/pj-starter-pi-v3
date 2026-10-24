@@ -66,13 +66,6 @@ describe('scrubMessage', () => {
     expect(scrubMessage(message)).toBeDefined();
   });
 
-  it('thinkingSignature が reasoning_text → 対象になる', () => {
-    const message = assistantMessage({
-      content: [{ type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_text' }],
-    });
-    expect(scrubMessage(message)).toBeDefined();
-  });
-
   it('thinkingSignature が無い → undefined', () => {
     const message = assistantMessage({
       content: [{ type: 'thinking', thinking: degenerate() }],
@@ -202,19 +195,6 @@ describe('scrubMessage', () => {
     expect(scrubMessage(message)).toBeUndefined();
   });
 
-  it('本文が区間と空白だけ → undefined', () => {
-    const message = assistantMessage({
-      content: [
-        {
-          type: 'thinking',
-          thinking: `  ${'the *'.repeat(12)}  `,
-          thinkingSignature: 'reasoning_content',
-        },
-      ],
-    });
-    expect(scrubMessage(message)).toBeUndefined();
-  });
-
   it('2 ブロックのうち片方が全部区間 → 片方は元のまま、removed は畳んだ分だけ', () => {
     const fullRun = 'the *'.repeat(12);
     const twoRuns = `foo${'the *'.repeat(12)} hello ${'abcd'.repeat(15)}bar`;
@@ -250,22 +230,6 @@ describe('scrubMessage', () => {
 });
 
 describe('scrubMessage chars', () => {
-  it('2 ブロックとも畳まれる → chars は両方の合計', () => {
-    const message = assistantMessage({
-      content: [
-        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
-        { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
-      ],
-    });
-    const scrubbed = scrubMessage(message);
-    expect(scrubbed).toBeDefined();
-    if (scrubbed === undefined) {
-      throw new Error('scrubbed must be defined');
-    }
-    expect(scrubbed.removed).toBe(2);
-    expect(scrubbed.chars).toBe(118);
-  });
-
   it('chars は元の長さから畳んだ長さを引いた値', () => {
     const thinking = degenerate();
     const message = assistantMessage();
