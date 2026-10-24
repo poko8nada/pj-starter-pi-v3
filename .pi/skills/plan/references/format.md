@@ -15,6 +15,8 @@ Section and field names are English; the content is Japanese.
 <dir>/
   <dir>/
     <file>                update
+    <file>                add
+    <file>                drop
     <file>
 <file>
 ```
@@ -44,7 +46,7 @@ Section and field names are English; the content is Japanese.
 
 - Always:
   - <緑にしたもの。既定の 5 つで足りるなら `既定の 5 つ`>
-- Added: <DB / front / auth / base / other 無ければ なし>
+- Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、無ければ なし>
 
 ## 2.<スライス名>
 
@@ -103,6 +105,7 @@ Section and field names are English; the content is Japanese.
   - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`
   - a document — what to do, in one sentence
 - The cases of a test file follow `## Test cases`.
+- A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
 - The steps are numbered; the order is the order of the work.
 
 ## Types
@@ -129,7 +132,7 @@ Section and field names are English; the content is Japanese.
   - `pnpm lint`
   - `pnpm format:check`
   - the comments and the documents hold no stale wording: a `grep` for the names and the descriptions this slice changed
-- `Added:` — what the change decides. Write what applies; `なし` when nothing does.
+- `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.

@@ -150,7 +150,7 @@ README.ja.md                      update
 
 ### Verify:
 
-- use: サブエージェントが `plan/SKILL.md` と `references/format.md` を読み、使い捨ての plan md を `/tmp` に書いて、詰まった所を報告する。あわせて `grep -rn "Kinds\|Cases\|Walk" .pi/skills` の行数を報告する
+- use: サブエージェントが `plan/SKILL.md` と `references/format.md` を読み、使い捨ての plan md を `/tmp` に書いて、詰まった所を報告する。あわせて `grep -rn "^#\+ \(Kinds\|Cases\|Walk\)$" .pi/skills` と `grep -rn "slice's cases" .pi/skills` の行数を報告する
   - (happy) 常に確認するものと実装内容で足すものを埋めた plan md が、`Kinds`、`Cases`、`Walk` を使わずに書け、詰まった所が 0 で、grep が 0 行 → 閉じる
   - (error) 形が決まらず書けない所が 1 つ以上ある → 閉じない。直してから再実行する
   - (error) grep が 1 行以上 → 閉じない。名前を消してから再実行する
@@ -187,15 +187,19 @@ README.ja.md                      update
 
 ### Slice 4: 読み直しで見つけた不備
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - オーナーの指示で、8（`adr` の決め直しの道）と 12（フラットなときの `index`）は書かないと決めた。plan md の `Files` と `Steps` から外した。
+  - `close/references/format.md` の `Plans`、`Fixed`、`## Closing` は、スライス 3 の commit に入った。
+- Commit: d405681
 
 ### Slice 5: 統合: 新しい形の plan md が閉じられる
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 統合の `use` で、形が決めていない所が 4 つ出た。`Files` の `add` と `drop` の例、外と会わないコードステップの `Outside:` 行、使わない形のステップ、`Added` に複数当たるときの書き方。どれも `format.md` で決めて、再実行したら 0 になった。
+  - 統合の `grep` は `Kinds\|Cases\|Walk` だったが、`Walk the relations` のような普通の動詞に当たった。節の名前（`^#\+ ...$`）と `slice's cases` に絞り直した。
+- Commit: 4e5b0f2
 
 ## Review
 
