@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 
 /** セクションや観点の見出し（穴ではない行） */
 const LABELS =
-  /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Doubts):\s*(.*)$/;
+  /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Noise|Doubts):\s*(.*)$/;
 /** 穴に対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
