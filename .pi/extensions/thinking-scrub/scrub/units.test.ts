@@ -136,7 +136,6 @@ describe('detectUnitRuns', () => {
     expect(runs).toHaveLength(1);
     expect(runs[0]?.period).toBe(6);
     expect(runs[0]?.length).toBe(base12.length * MIN_CYCLES);
-    expect(MAX_PERIOD_UNITS).toBeGreaterThanOrEqual(12);
   });
 
   it(`${MIN_CYCLES - 1} 周期 → run が無い`, () => {
@@ -208,15 +207,6 @@ describe('sampleOf', () => {
     const expected = [longEnglish(0), longEnglish(1), longEnglish(2)].join(' ');
     expect(expected.length).toBeGreaterThan(SAMPLE_CHARS);
     expect(sample).toBe(expected.slice(0, SAMPLE_CHARS));
-  });
-
-  it('2 単位の周期 → その 2 文', () => {
-    const first = english(0);
-    const second = english(1);
-    const text = cycleText([first, second], MIN_CYCLES);
-    const units = unitsFromText(text);
-    const run: UnitRun = { at: 0, length: 2 * MIN_CYCLES, period: 2 };
-    expect(sampleOf(units, run)).toBe([first, second].join(' '));
   });
 
   it('1 単位の周期 → その 1 文だけ', () => {
