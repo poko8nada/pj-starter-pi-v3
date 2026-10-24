@@ -4,7 +4,10 @@
  * 同じ周期が続いた区間を取り除き、次のリクエストに壊れた reasoning を渡さない。
  * 周期の下限より短い繰り返し（1〜3 文字）は数えない。短い周期の繰り返しは
  * 大きい周期としても当たるため、残すと下限の意味が無くなる。
+ * 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む。
  */
+
+import { detectUnitRuns, splitUnits } from './units.ts';
 
 export interface Run {
   readonly at: number;
@@ -135,15 +138,32 @@ export function separatorFor(removed: string): string | undefined {
   return undefined;
 }
 
-/** 区間を取り除いた本文を返す。区間が無ければ同じ文字列を返す */
-export function scrubThinking(text: string): Scrub {
-  const runs = detectRuns(text);
-  if (runs.length === 0) {
+/** 文字の区間を取り除いた本文を返す。区間が無ければ同じ文字列を返す */
+function removeSpans(text: string, spans: readonly Run[]): Scrub {
+  if (spans.length === 0) {
     return { text, removed: 0 };
+  }
+  const sorted = spans.toSorted((a, b) => a.at - b.at || a.length - b.length);
+  const merged: Run[] = [];
+  for (const span of sorted) {
+    const last = merged.at(-1);
+    if (last === undefined) {
+      merged.push(span);
+      continue;
+    }
+    const lastEnd = last.at + last.length;
+    const end = span.at + span.length;
+    if (span.at <= lastEnd) {
+      if (end > lastEnd) {
+        merged[merged.length - 1] = { at: last.at, length: end - last.at };
+      }
+      continue;
+    }
+    merged.push(span);
   }
   const kept: string[] = [];
   let prev = 0;
-  for (const run of runs) {
+  for (const run of merged) {
     kept.push(text.slice(prev, run.at));
     prev = run.at + run.length;
   }
@@ -153,8 +173,8 @@ export function scrubThinking(text: string): Scrub {
     const before = kept.at(index - 1) ?? '';
     const current = kept.at(index) ?? '';
     const removedText = text.slice(
-      runs[index - 1]?.at ?? 0,
-      (runs[index - 1]?.at ?? 0) + (runs[index - 1]?.length ?? 0),
+      merged[index - 1]?.at ?? 0,
+      (merged[index - 1]?.at ?? 0) + (merged[index - 1]?.length ?? 0),
     );
     const separator = separatorFor(removedText);
     if (separator !== undefined) {
@@ -173,5 +193,28 @@ export function scrubThinking(text: string): Scrub {
     const needsSpace = bothKept && !isWhitespace(lastChar) && !isWhitespace(firstChar);
     out += (needsSpace ? ' ' : '') + current;
   }
-  return { text: out, removed: runs.length };
+  return { text: out, removed: merged.length };
+}
+
+/** 文の run を文字の区間に直す。最初の 1 周期を残し、2 周期目から消す */
+function sentenceSpans(text: string): Run[] {
+  const units = splitUnits(text);
+  const runs = detectUnitRuns(units);
+  const spans: Run[] = [];
+  for (const run of runs) {
+    const firstKeptEnd = units[run.at + run.period - 1]?.end;
+    const lastEnd = units[run.at + run.length - 1]?.end;
+    if (firstKeptEnd !== undefined && lastEnd !== undefined && lastEnd > firstKeptEnd) {
+      spans.push({ at: firstKeptEnd, length: lastEnd - firstKeptEnd });
+    }
+  }
+  return spans;
+}
+
+/** 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む */
+export function scrubThinking(text: string): Scrub {
+  const afterSentence = removeSpans(text, sentenceSpans(text));
+  const charRuns = detectRuns(afterSentence.text);
+  const afterChar = removeSpans(afterSentence.text, charRuns);
+  return { text: afterChar.text, removed: afterSentence.removed + afterChar.removed };
 }
