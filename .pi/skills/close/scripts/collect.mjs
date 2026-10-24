@@ -1,6 +1,7 @@
 // close.md の `## Collected` を書く。
 // 使い方: node .pi/skills/close/scripts/collect.mjs <cycle-dir>
 // 仕組み: <cycle-dir>/plan/*.md の残り物を集め、plan md の `No` を読んで、
+// （`ex-` plan の `No` は close.md の `## Triage` から読んで、）
 // close.md の `## Collected` を書き直す。番号行より深い行（エージェントの文脈）と `## Triage` は残す。
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
