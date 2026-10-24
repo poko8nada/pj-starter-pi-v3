@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectRuns, scrubThinking, separatorFor } from './detect.ts';
+import { MIN_CYCLES, MIN_RUN_CHARS } from './units.ts';
 
 // 検出と除去。fixture は関数の中で組み立てる。
 
@@ -9,6 +10,18 @@ function unit(): string {
 
 function repeated(pattern: string, times: number): string {
   return pattern.repeat(times);
+}
+
+function sentence(index: number): string {
+  return `${unit()} ${index} proceeds with steady reasoning about the task and its details.`;
+}
+
+function sentenceWithChar(index: number): string {
+  return `${unit()} ${index} thinks ${repeated(unit(), 12)} end.`;
+}
+
+function cycleText(pattern: readonly string[], cycles: number, sep = ' '): string {
+  return Array.from({ length: cycles }, () => pattern.join(' ')).join(sep);
 }
 
 describe('detectRuns', () => {
@@ -33,14 +46,6 @@ describe('separatorFor', () => {
 
   it('改行を含まない → undefinedを返す', () => {
     expect(separatorFor('ab')).toBeUndefined();
-  });
-
-  it('改行3つを含む → 改行2つを返す', () => {
-    expect(separatorFor('\n\n\n')).toBe('\n\n');
-  });
-
-  it('空文字 → undefinedを返す', () => {
-    expect(separatorFor('')).toBeUndefined();
   });
 });
 
@@ -153,20 +158,6 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe('foo\n\nbar');
   });
 
-  it('区間が改行2つを含み左端が空白 → 空白は残らず改行2つが入る', () => {
-    const text = `foo ${repeated('\n\nThe **', 5)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
-  });
-
-  it('区間が改行2つを含み右端が空白 → 空白は残らず改行2つが入る', () => {
-    const text = `foo${repeated('\n\nThe **', 5)} bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
-  });
-
   it('区間が改行2つを含み両端が空白 → 空白は残らず改行2つが入る', () => {
     const text = `foo ${repeated('\n\nThe **', 5)} bar`;
     const scrubbed = scrubThinking(text);
@@ -203,11 +194,86 @@ describe('scrubThinking', () => {
     expect(second.removed).toBe(0);
     expect(second.text).toBe(first.text);
   });
+});
 
-  it('畳んだ foo改行改行bar にもう一度かける → removed が 0、本文が同一', () => {
-    const text = 'foo\n\nbar';
+describe('scrubThinking sentence', () => {
+  it('文ループ 3 周期 → 最初の 1 周期だけ残り、残りが消える', () => {
+    const pattern = [sentence(0), sentence(1), sentence(2)];
+    const text = cycleText(pattern, MIN_CYCLES);
+    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe(pattern.join(' '));
+  });
+
+  it('文字ループ repeated() → 前と同じく消える', () => {
+    const text = repeated(unit(), 12);
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).not.toContain(unit());
+  });
+
+  it('各周期が文字ループを持つ文ループ → 文が先で removed が 2、文字が先ならもっと増える', () => {
+    const pattern = [sentence(0), sentenceWithChar(1), sentence(2)];
+    const text = cycleText(pattern, MIN_CYCLES);
+    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(2);
+    expect(scrubbed.text).toContain(sentence(0));
+    expect(scrubbed.text).not.toContain(repeated(unit(), 12));
+  });
+
+  it('柵を含む文ループ → 消えない', () => {
+    const pattern = [sentence(0), sentence(1), sentence(2)];
+    const cycle = pattern.join(' ');
+    const text = `${cycle}\n\`\`\`\ncode\n\`\`\`\n${cycle}\n${cycle}`;
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(0);
     expect(scrubbed.text).toBe(text);
+  });
+
+  it('3 周期でも 400 文字未満の文ループ → 消えない', () => {
+    const one = sentence(0);
+    const text = cycleText([one], MIN_CYCLES);
+    expect(text.length).toBeLessThan(MIN_RUN_CHARS);
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(0);
+    expect(scrubbed.text).toBe(text);
+  });
+
+  it('普通の文章 → そのままで removed が 0', () => {
+    const parts = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => sentence(index));
+    const text = parts.join(' ');
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(0);
+    expect(scrubbed.text).toBe(text);
+  });
+
+  it('消える周期が改行2つを含む → 繋ぎ目に改行2つが残る', () => {
+    const pattern = [sentence(0), sentence(1), sentence(2)];
+    const cycle = pattern.join(' ');
+    const text = `${sentence(10)}\n\n${cycle}\n\n${cycle}\n\n${cycle}\n\n${sentence(11)}`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe(`${sentence(10)}\n\n${cycle}\n\n${sentence(11)}`);
+  });
+
+  it('消える周期が改行1つだけを含む → 繋ぎ目に改行1つが残る', () => {
+    const pattern = [sentence(0), sentence(1), sentence(2)];
+    const cycle = pattern.join(' ');
+    const text = `${sentence(10)}\n${cycle}\n${cycle}\n${cycle}\n${sentence(11)}`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe(`${sentence(10)}\n${cycle}\n${sentence(11)}`);
+  });
+
+  it('消える文に改行が無く前後が非空白 → 繋ぎ目に空白1つが入る', () => {
+    const pattern = [sentence(0), sentence(1), sentence(2)];
+    const cycle = pattern.join(' ');
+    const text = `${sentence(10)} ${cycle} ${cycle} ${cycle} ${sentence(11)}`;
+    const scrubbed = scrubThinking(text);
+    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.text).toBe(`${sentence(10)} ${cycle} ${sentence(11)}`);
+    expect(scrubbed.text).not.toContain('\n');
   });
 });

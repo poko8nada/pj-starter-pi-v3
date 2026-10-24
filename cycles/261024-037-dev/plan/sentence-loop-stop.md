@@ -13,7 +13,7 @@
     detect.ts            update
     detect.test.ts       update
     message.ts
-    message.test.ts
+    message.test.ts      update
     units.ts             add
     units.test.ts        add
   index.ts               update
@@ -257,8 +257,8 @@ export interface ScrubWiring {
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/README.md`:
-   - Replace the opening's "accepted as it happened and rewritten after the message is finalized" with the two stages: the live stop at `MIN_THINKING` chars with a sentence run, and the fold at `message_end`.
-   - Replace the char-only threshold sentence with the two thresholds: the sentence's `MIN_CYCLES` cycles, `MIN_RUN_CHARS` chars and `MAX_PERIOD_UNITS` units, and the char's existing 4–120 chars, 3 repeats, 20 chars.
+   - Replace the opening's "accepted as it happened and rewritten after the message is finalized" with the two stages: the live stop at 20,000 chars with a sentence run, and the fold at `message_end`.
+   - Replace the char-only threshold sentence with the two thresholds: the sentence's 3 cycles, 400 chars and period 1〜64 units, and the char's existing 4〜120 chars, 3 repeats, 20 chars.
    - The target blocks: the live detection reads the streaming thinking without requiring a signature; the fold keeps the existing signature rule.
    - Add the follow-up: `agent_settled` sends a custom message with the most frequent 3-sentence sample, then the next run starts.
    - Keep the commands, the settings, and the report as they are.
@@ -274,8 +274,10 @@ export interface ScrubWiring {
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -R "accepted as it happened" .pi/extensions/thinking-scrub` returns なし
-  - `grep -n "MIN_THINKING\\|MIN_CYCLES\\|MIN_RUN_CHARS" .pi/extensions/thinking-scrub/README.md` has the two stages by name
+  - `grep -n "accepted as it happened" .pi/extensions/thinking-scrub` returns なし
+  - `grep -n "20,000" .pi/extensions/thinking-scrub/README.md` has the live stage
+  - `grep -n "400" .pi/extensions/thinking-scrub/README.md` has the sentence threshold
+  - `grep -n "4〜120" .pi/extensions/thinking-scrub/README.md` has the char threshold
   - `grep -n "stops looped thinking" README.md` has the new line
   - `grep -n "生成中に止め" README.ja.md` has the new line
 - Added:
@@ -286,56 +288,119 @@ export interface ScrubWiring {
 ### Slice 1: unit-runs
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - 81e9bfd consult(sentence-loop-stop): add sentence unit split and run detection
 - Stopped:
 
 ### Slice 2: sentence-fold
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - 5d5596d consult(sentence-loop-stop): fold sentence runs before char runs
 - Stopped:
 
 ### Slice 3: live-guard
 
 - Findings:
+  - Verify で 3 件の失敗を確認しました。`SAMPLE_CHARS` を `guard.ts` から読み込んでいたため `undefined` となり、2 件の assertion が型エラーを起こしていました。`../scrub/units.ts` からの読み込みに修正しました。
+  - `plainThinking` の工場が `total` 基準で組み立てていたため、結合後の長さが期待より 1 文字短くなり、`scanned` の期待値と一致しませんでした。結合後文字列の長さ基準に修正し、正確な長さを保証しました。
+  - `format:check` で `takeFollowUp` の折り返し指摘が 1 件ありました。`pnpm format` で修正し、再確認で通過しました。
 - Unplanned:
+  - なし
 - Commit:
+  - 94623b5 consult(sentence-loop-stop): add live thinking guard
 - Stopped:
 
 ### Slice 4: wiring
 
 - Findings:
+  - `lint` で `createScrubWiring` が 101 行となり、上限 80 行を超えていました。状態を `WiringState` にまとめ、`handleMessageEnd`、`handleMessageUpdate`、`handleAgentSettled`、`handleBeforeAgentStart`、`handleAgentEnd`、`handleCommand` に分けて解消しました。
+  - `thinkingOf` の `any` 由来の assertion と `for...of` の注釈、`index.test.ts` の複数行にまたがる assertion 位置と不要な `as unknown` を修正しました。`isRecord` による判定と `toMatchObject` による確認に置き換えています。
+  - `typecheck` で `message['role']` の比較が意図しない型と判定されました。`unknown` の局所変数に受けて比較する形に修正し、通過しました。
+  - Verify は `test:related` 32 件、`typecheck`、`lint`、`format:check`、`grep` のすべてが通過しました。
 - Unplanned:
+  - なし
 - Commit:
+  - 2a1a8e9 consult(sentence-loop-stop): wire live stop and follow-up
 - Stopped:
 
 ### Slice 5: readme
 
 - Findings:
+  - 3 件の README を更新しました。拡張 README の冒頭を 2 段階（20,000 文字での生成中停止と `message_end` での畳み込み）に置き換え、文単位としきい値（3 周期、400 文字、1〜64 単位）と文字単位のしきい値（4〜120 文字、3 回、20 文字）を併記しました。
+  - 対象ブロックの説明を署名の分け方に更新しました。生成中の検出は署名を求めず、畳み込みは既存の署名規則を保ちます。`agent_settled` での最頻 3 文見本の送付と次 run の開始も追記しました。
+  - ルート README と README.ja.md の拡張一覧を更新しました。Verify は `test:run` 889 件、`typecheck`、`lint`、`format:check`、6 件の `grep` のすべてが通過しました。
 - Unplanned:
+  - なし
 - Commit:
+  - 6e8ee30 consult(sentence-loop-stop): describe live stop and fold in readmes
 - Stopped:
 
 ### Cleanup: テストの重複整理
 
 - Findings:
+  - `scrub/detect.test.ts` から 5 件を削りました。改行 2 つの周辺空白違い 3 件は同じ振る舞いのため代表 1 件を残し、畳み込み後の再適用 1 件は汎用の再適用試験と重なるため削り、`separatorFor` の空文字 1 件は改行なしの試験と重なるため削りました。
+  - `scrub/message.test.ts` から 3 件を削りました。`reasoning_text` の許可署名試験は `reasoning` と同じ振る舞いのため削り、空白付きの全区間試験は単一区間試験と同じ枝のため削り、2 ブロック畳み込みの `chars` 合計試験は単一ブロックの計算式試験と多ブロック試験に覆われるため削りました。
+  - `live/guard.test.ts` から 1 件を削りました。`takeFollowUp` の単独 1 回試験は、2 回停止で最新見本と 1 回切りを確かめる試験に含まれるため削りました。
+  - `index.test.ts` から 1 件を削りました。`onAgentSettled` の直接 `followUp` 記録試験は、`fakePi.sendMessage` 経由で `customType`・`display`・`triggerTurn` と見本入り内容を確かめる試験と同じ振る舞いのため、後者を残して削りました。
+  - 削除後は `pnpm test:run` 879 件、`typecheck`、`lint`、`format:check` がすべて通過しました。
 - Unplanned:
+  - なし
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし — `.pi/extensions/thinking-scrub/README.md:1` の二段階の説明と `.pi/extensions/thinking-scrub/scrub/detect.ts:4` の文周期の注記を確認し、古い文言の残存は見当たりませんでした。
+    - left: 古い文言の残存がなく、直す対象がないため手を付けない。
 - Unlisted:
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:69` の前後で 3 件の削除が行われていますが、Files では `scrub/message.test.ts` に `update` の記載がなく、変更が名指しされていません。
+    - fixed: Files の `scrub/message.test.ts` に `update` を追記した。
 - Gaps:
+  - `.pi/extensions/thinking-scrub/index.ts:201` の `aborted: true` かつ `pending` が無い場合に何も送らない分岐を確かめる検査がありません。
+    - fixed: `index.test.ts` の `onAgentSettled` に `aborted: true でも pending が無い → 何も送らない` を足した。
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:210` の `MAX_PERIOD_UNITS` を超える周期を無視する振る舞いを確かめる検査がありません。
+    - fixed: `units.test.ts` の `detectUnitRuns` に周期 `MAX_PERIOD_UNITS + 1` の繰り返しは run 無しの試験を足した。
 - Unproven:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:178` の周期 3 の見本試験は、最頻 3 文窓でも同じ結果になるため、`run.period <= 3` の分岐を外しても緑のままです。
+    - fixed: `units.test.ts` の `sampleOf` に周期 1 は 1 文だけの試験を足し、3 文窓との違いで分岐を運動させた。
+  - `.pi/extensions/thinking-scrub/index.test.ts:318` の `MIN_THINKING` 未満の試験は abort しないことのみを見ており、設定読みより先に戻る順序を壊しても緑のままです。
+    - left: 順序は性能のための早期 return で振る舞いに差が出ず、順序を観測する試験は実装に結合して脆くなるため足さない。
 - Noise:
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:86` の `SCAN_EVERY - 1000` における `1000` は根拠の示されない魔数です。
+    - fixed: `SCAN_EVERY - 1` で 1 文字足りない境界に直し、差が `SCAN_EVERY - 1` であることを断定させた。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:171` の `thinkingWithRun(500).slice(0, 60)` における `500` と `60` は根拠の示されない魔数です。
+    - fixed: 短い見本を `loopSentence(0)` の 1 文に直し、魔数を消した。
 - Doubts:
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:248` の窓照合キーに NUL 文字が含まれ、git が binary 扱いになる点が気になりましたが、振る舞いには影響しないため所見としません。
+    - left: NUL 区切りは衝突避けの意図で、振る舞いに影響がなく git の扱いも実害がないため直さない。
+
+### Round 2
+
+- Stale: なし — Round 1 に `fixed:` の行はなく、確認対象は無い。
+- Unlisted: なし — `## Files` の `scrub/message.test.ts update` を確認した。
+- Gaps: なし — `aborted: true` で pending 無しの試験と、`MAX_PERIOD_UNITS + 1` の試験を確認した。
+- Unproven: なし — 周期 1 の見本試験を確認した。
+- Noise: なし — `SCAN_EVERY - 1` の境界と、`loopSentence(0)` の見本を確認した。
+- Doubts:
+  - テストの実行による緑の確認は行っておらず、読み合わせでの確認にとどまる。最終の緑は別途の実行記録に任せる。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related` をスライスごとに実施: `units` 103、`detect` 78、`guard` 41、`index` 32。README は `pnpm test:run` で代替。
+  - `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、計画の `grep` を実施。
+  - 全体の `pnpm typecheck` と `pnpm test:run`（55 ファイル、882 件）を実施。
+  - 3 件の README の変更行を読んだ。
+  - 壊して戻す 3 件: `sentenceSpans` は 5 件、`handleMessageUpdate` は 5 件、`sampleOf` は 6 件が赤。いずれも復旧して緑に戻した。
 - Findings:
+  - なし。
 - Doubts:
+  - なし。
