@@ -31,14 +31,16 @@ Write it in the plan md's ## Notes, as a section that is not a slice.
 ## Review (a `review` subagent)
 
 ```
-Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md (## Files, the slices' `### Verify`, ## Notes).
+Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md (## Files, the slices' `### Verify` and `### Steps`, ## Notes).
 Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git status`, `git log` are allowed for this role).
-Answer one question: can this diff close the plan? By four viewpoints:
+Answer one question: can this diff close the plan? By five viewpoints:
 - Stale: a document, a comment or a test this change makes stale
 - Unlisted: a change the plan's Files does not name
 - Gaps: a behavior the checks do not exercise
 - Unproven: a test that stays green when the behavior it names is broken
-A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers with a `look` / `use` check.
+- Noise: a test the types, the schema or a DB constraint already settle, or one nobody would notice; a case written with a magic number or a hardcoded string
+Read the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.
+A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers in `Added`.
 Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
 This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`.
 Do not change the code.

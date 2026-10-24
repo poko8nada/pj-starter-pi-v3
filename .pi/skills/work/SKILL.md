@@ -56,7 +56,8 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 6. Review
 
 - when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself
-- it writes `## Review`, `### Round 1`, under the four viewpoints and `Doubts`
+- it writes `## Review`, `### Round 1`, under the five viewpoints and `Doubts`
+- it reads the test steps' cases by the plan's `## Test cases`, and each `Verify` by what closes its slice
 - fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review
 - Round 2 is the last look: the review ends there, and what is still open is fixed once more. No third round
@@ -64,7 +65,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 7. Acceptance
 
-- the agent runs the plan's checks (integration slice included) and the whole typecheck and test, in the worktree (or the base)
+- the agent runs the plan's checks, and the whole typecheck and test, in the worktree (or the base)
 - and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
 - write `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing). Merge's commit is not written there: the acceptance is committed before the merge
 - a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
