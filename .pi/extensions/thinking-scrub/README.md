@@ -1,6 +1,6 @@
 # thinking-scrub
 
-Looped thinking is accepted as it happened and rewritten after the message is finalized, so the broken reasoning is not carried into the next request. Only periodic runs (period 4–120 chars, 3+ repeats, 20+ chars) are removed; the rest of the text is left untouched.
+Looped thinking is stopped while it is generated at 20,000 chars with a sentence run, and folded at `message_end`, so the broken reasoning is not carried into the next request. Sentence runs need 3 cycles, 400 chars or more, and period 1〜64 units; char runs need period 4〜120 chars, 3 repeats, and 20 chars or more. The rest of the text is left untouched.
 
 ## Commands
 
@@ -22,7 +22,11 @@ Any other argument prints the usage instead of throwing.
 
 ## Target blocks
 
-Only thinking blocks whose `thinkingSignature` is `reasoning_content`, `reasoning`, or `reasoning_text` are rewritten. Blocks without a signature, with a JSON signature, and `redacted` blocks are left alone. When a run is removed, the joint keeps newlines when the removed run contained them (`\n\n` wins over `\n`); otherwise one space is inserted only when both neighbors are non-space.
+The live detection reads the streaming thinking without requiring a signature. The fold at `message_end` keeps the existing signature rule: only thinking blocks whose `thinkingSignature` is `reasoning_content`, `reasoning`, or `reasoning_text` are rewritten. Blocks without a signature, with a JSON signature, and `redacted` blocks are left alone. When a run is removed, the joint keeps newlines when the removed run contained them (`\n\n` wins over `\n`); otherwise one space is inserted only when both neighbors are non-space.
+
+## Follow-up
+
+At `agent_settled`, a custom message is sent with the most frequent 3-sentence sample, then the next run starts.
 
 ## End-of-run report
 
