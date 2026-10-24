@@ -54,7 +54,7 @@ pnpm install
 
 ## サイクル
 
-1 サイクル = ADR → 設計 → プラン → その実行 → 閉じる。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段に「次はこれ」とは書かない。
+1 サイクル = ADR → 設計 → プラン → その実行 → 閉じる。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段が次の段を呼ぶことはない。次の段は `description` で見つかる。
 
 ```
 propose      状態を読み、次の候補を並べる（3 つの問い / コード / リサーチ）
@@ -67,6 +67,6 @@ close        サイクルを裁き、最後にオーナーへ Unit の確認を�
 yolo         オーナーの確認を挟まずに 1 サイクルを歩く
 ```
 
-記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つので、チェックマークも状態欄も無い。
+記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つ。ADR の `Status` は決定の状態で、plan の `Commit` / `Stopped` は作業の記録であり、サイクルの状態欄ではない。
 
-製品を持つのは `DEFINITION.md`。その裏の議論を持つのは ADR で、ADR はどの段からでも書ける。変更はどのサイクルでも ADR の entry を開き、その entry が `DEFINITION.md` のどの部分に関わるかと、それぞれが変わるかそのままかを書く。
+製品を持つのは `DEFINITION.md`。その裏の議論を持つのは ADR で、ADR はどの段からでも開ける。サイクルは `brief` か `propose` から始まり、owner が点を上げたときはどの段からでも ADR の entry を追加できる。変更はどのサイクルでも ADR の entry を開き、その entry が `DEFINITION.md` のどの部分に関わるかと、それぞれが変わるかそのままかを書く。

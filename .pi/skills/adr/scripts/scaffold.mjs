@@ -22,28 +22,28 @@ export function adrSkeleton(nnn) {
 
 - <何が起きていて、何をしたいか>
 
+### Scope
+
+- 変更:
+  - <kind>: in — <何をするか>
+  - <kind>: out — <何をしないか>（理由）
+- 品質:
+  - <kind>: in — <何をするか>
+  - <kind>: out — <何をしないか>（理由）
+- 運用:
+  - <kind>: in — <何をするか>
+  - <kind>: out — <何をしないか>（理由）
+
+### Research & Trial
+
+- <測った事実、試した事>
+
 ### Decision
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
 - Options:
   - <案>（採らなかった理由）
-
-### Scope
-
-- 変更:
-  - in: <何をするか>
-  - out: <何をしないか>（理由）
-- 品質:
-  - in: <何をするか>
-  - out: <何をしないか>（理由）
-- 運用:
-  - in: <何をするか>
-  - out: <何をしないか>（理由）
-
-### Research & Trial
-
-- <測った事実、試した事>
 
 ### Definition
 

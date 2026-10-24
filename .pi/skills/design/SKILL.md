@@ -1,6 +1,6 @@
 ---
 name: design
-description: Use when the cycle's entries are decided and the work has to be cut. It walks what each entry touches, decides how many worktrees the cycle runs, in what order, and where each plan stops, and writes `cycles/<YYMMDD>-<NNN>-<slug>/design.md`.
+description: Use when the cycle's entries are decided and the work has to be cut. It walks what each entry touches, decides the cut and the order, and proposes where each plan runs; the owner answers. It writes `cycles/<YYMMDD>-<NNN>-<slug>/design.md`.
 ---
 
 # design
@@ -21,6 +21,8 @@ Read that file before writing. It holds the section for the related files, a sec
 
 - `DEFINITION.md`: the product's picture
 - this cycle's `adr.md`: every `accepted` entry names its `Scope` (what is in and out) and its `Definition` (the parts of the picture it relates to, each changed or kept)
+- the code the entries' `Definition` and `Scope` point to: the files the entry rewrites — the subject
+- read the code before the research: the subject is what the research is handed
 
 ### 2. Walk what the change affects, and find what it talks to
 
@@ -60,14 +62,14 @@ Propose one place per plan, with the reason. The owner answers, and the answer c
 
 - as proposed
 - left to you: they take no side, and the proposal stands
-- the other one: a plan that meets the worktree conditions, and the owner wants to be in it → the base
+- the other one: the other place, when the plan meets that place's condition and the owner wants it
 
 ### 7. Review the design
 
 A `review` subagent reads design.md and what it names, and answers on six viewpoints. The task is in `references/tasks.md`.
 
 - the viewpoints: a decided line, the cut's reason, the outside, the followers, the readers, the checks
-- coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## Affected` is in some plan's `External`
+- coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## External` is in some plan's `External`
 - one subagent, one round: the design is fixed from the findings, and the report to the owner says what was done with each
 - the review is not the owner's look: it runs before step 8, and it does not wait
 

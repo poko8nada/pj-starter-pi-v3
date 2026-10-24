@@ -56,7 +56,7 @@ Section and field names are English; the content is Japanese.
 
 ## External
 
-- The top of the file, under `## Affected`. One `### <NN>: <entry の問い>` per `accepted` entry, in the entries' order.
+- The top of the file, after `## Affected`. One `### <NN>: <entry の問い>` per `accepted` entry, in the entries' order.
 - Under it, what the entry talks to outside the repository, as the research reported it: the thing, and what the entry does with it.
 - The plan's `Boundary.External` is taken from here; the condition the plan needs is written there.
 - A thing that does not exist yet is not written here.

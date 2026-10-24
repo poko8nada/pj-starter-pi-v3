@@ -54,7 +54,7 @@ The agent harness travels with `scripts/harness/`:
 
 ## Cycle
 
-One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage names the one after it.
+One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage calls the next stage; the next stage is found by its `description`.
 
 ```
 propose      read the state and lay the next candidates out (the three questions, the code, the research)
@@ -67,6 +67,6 @@ close        judge the cycle, then ask the owner to verify the Units (a leftover
 yolo         walk the whole cycle without the owner's confirmations
 ```
 
-The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the state, so there is no check box and no status field anywhere.
+The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the cycle's state. The ADR's `Status` is the decision, and the plan's `Commit`/`Stopped` are the work record; none of them is a cycle status field.
 
-`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it fires from any stage. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.
+`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it can be opened at any stage. A cycle starts with `brief` or `propose`; an ADR entry can be added at any stage for a point the owner raises. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.

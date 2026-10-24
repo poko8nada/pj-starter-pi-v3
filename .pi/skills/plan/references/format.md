@@ -9,6 +9,8 @@ Section and field names are English; the content is Japanese.
 ````md
 # PLAN `<plan id>`
 
+- No: <NN>
+
 ## Files
 
 ```text
@@ -42,7 +44,7 @@ Section and field names are English; the content is Japanese.
 3. `<文書>`:
    - <何をどうするか。1 文>
 
-### Verify:
+### Verify
 
 - Always:
   - <緑にしたもの。既定の 5 つで足りるなら `既定の 5 つ`>
@@ -57,6 +59,12 @@ Section and field names are English; the content is Japanese.
 - Findings:
 - Unplanned:
 - Commit:
+- Stopped:
+
+### Cleanup: <what it cleaned>
+
+- Findings:
+- Unplanned:
 
 ## Review
 
@@ -80,6 +88,11 @@ Section and field names are English; the content is Japanese.
 
 - The plan is one worktree, one branch and one merge — unless the design says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the name the design gave it.
 - A subagent reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
+
+## No
+
+- `No` is the design's plan section's `No`, copied as it is.
+- An `ex-` plan has no design: its `No` is the `<NN>` of the `ADR <NN>` in the `Triage` line it fixes, or of the ADR entry whose Unit failed.
 
 ## Files
 
@@ -152,12 +165,13 @@ Section and field names are English; the content is Japanese.
 
 ## Notes
 
-- `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from `## Slices` as it is.
+- `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from the slice's heading (`## 1.<name>`) as it is.
+- A section that is not a slice — the test cleanup — is `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`; it has no `Commit` and no `Stopped`.
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it. Under it, `left: <why>` says why it could not be closed here. `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
-- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the subagent's last text, how many times it ran, the time, and the id of the worktree it left.
-- **The subagent writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the subagent runs the check and sees it fail. The agent writes the plan md only at the acceptance, from the worktree.
+- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the subagent's last text, how many times it ran, the time, and the id of the worktree it left. For a `base` plan, the worktree id is `なし`, because there is no worktree.
+- **The subagent writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the subagent runs the check and sees it fail. For a `base` plan, the agent writes the slice's record in the base's plan md — `Stopped` too, since the agent runs the check and sees it fail. The agent does not author a worktree plan's plan md before the acceptance; it writes it at the acceptance, from the worktree. When a worktree plan is dropped, the agent copies the subagent's plan md to the base as it is.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - `Commit` is the slice's own commit, and it is not rewritten.
 
@@ -173,7 +187,7 @@ Section and field names are English; the content is Japanese.
 - `Doubts` — a note that is not a finding, and still worth keeping: one bullet each. Nothing fixes it, and the close reads it as a leftover. `なし` when there is none.
 - A finding is one bullet. What the fixing subagent did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.
-- Round 1 is a new conversation; Round 2 continues the reviewer's own, and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review; a Round 2 that still finds the same thing goes to the owner.
+- Round 1 is a new conversation; Round 2 continues the reviewer's own, and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review; a Round 2 that still finds the same thing is written as `left:` and the close reads it.
 
 ## Acceptance
 

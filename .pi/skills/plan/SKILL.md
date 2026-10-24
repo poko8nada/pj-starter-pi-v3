@@ -19,6 +19,7 @@ Read that file before writing. It holds the shape, the files and their structure
 
 - design's section for this plan: `No`, `Why`, `Where`, `Summary`, `Paths`, `Boundary`
 - entries the plan's `No` names, in full
+- `No` is the design's plan section's `No`; write it at the top of the plan md as it is
 
 ### 2. Walk the relations, and write `Files`
 
@@ -53,13 +54,13 @@ A `Verify` that cannot be run is a hole: fix it, or say why it does not apply. A
 
 ### 7. Write the record
 
-`## Notes`, one `### Slice N` per slice, with the fields empty; a subagent fills its own slice's record as the work goes. `## Review` and `## Acceptance` are written by the reviewer and by the agent.
+`## Notes`, one `### Slice N` per slice, with the fields empty; a subagent fills its own slice's record as the work goes, and for a `base` plan the agent fills it. `## Review` and `## Acceptance` keep their names and stay empty: the reviewer writes `## Review`, and the agent writes `## Acceptance`, in the work stage.
 
 ### 8. Cycle's plans, together
 
 When every plan of the cycle is written, read them together — the `Types` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
 
-A pair found is a change to cut. The owner decides, and the plans are written again: one makes the shared piece, and the others use it, naming it in their `Boundary.Plans`.
+A pair found is a change to cut. The owner decides, the design's `Boundary.Plans` is updated to name the shared piece, and the plans are written again: one makes the shared piece, and the others use it, naming it where it bites in their `Files` and `Steps`.
 
 ### 9. Review of each plan
 
@@ -71,7 +72,7 @@ Every plan of cycle: files, slices, types, steps, verify. They read them, and an
 
 ### Changes after this
 
-Plan is edited to match, and git holds the diff.
+Plan is edited to match, and git holds the diff. The design's `Boundary.Plans` is edited when a pair is cut again, and git holds that diff too.
 
 ## What is not here
 

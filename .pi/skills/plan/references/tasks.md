@@ -27,4 +27,4 @@ Do not change the code or the plan.
 ```
 
 - One subagent per plan; the plans do not wait for each other.
-- One round: the agent fixes the plan from the findings, and says in its report to the owner what it did with each: `fixed: <what was done>`, or `left: <why>` for one it did not adopt. The plan md is not written here: its `## Review` belongs to the work.
+- One round: the agent fixes the plan from the findings, and says in its report to the owner what it did with each: `fixed: <what was done>`, or `left: <why>` for one it did not adopt. The plan stage reserves the section; its content belongs to the work.
