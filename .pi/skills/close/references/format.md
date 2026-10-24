@@ -21,6 +21,15 @@
 - <N>: ex-plan <plan id> (<定義の部分>): <why>
 - <N>: proposed (<定義の部分>): <why>
 - <N>: dropped (<定義の部分>): <why>
+
+## Verified
+
+### <Unit>
+
+- Plans:
+  - `<plan id>`
+- Result: <OK / 見つかった物 / しない — 理由>
+- Fixed: `ex-<what it fixes>` (<commit>)
 ```
 
 ## Collected
@@ -44,10 +53,21 @@
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
 - `なし` when there is none.
 
+## Verified
+
+- The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
+- `### <Unit>` — one section per Unit the ADR's `Definition` names. The name is copied as it is.
+- `Plans` — one bullet per plan that cuts an entry the Unit is named by, taken from the design's `No`.
+- `Result` — `OK` when the owner checked the Unit's function and it worked; what they found when it did not; `しない` with the reason on the same line when they will not check.
+- `Fixed` — written only when the function did not work: the `ex-` plan, and the commit it merged as, on one line. It takes the place of the `done <commit>` a `Triage` line carries, and the close resumes at its verification step for that Unit.
+- The check is of the Unit's function, not of the change: the change is what the work looked at.
+- `## Verified` sits after `## Triage`: the script rewrites `## Collected`, and keeps what is below `## Triage`.
+
 ## Closing
 
+- Every Unit has a section in `## Verified`: what was checked, or the reason it was not, and the `ex-` that fixed a broken one.
 - Every leftover has a line in the `Triage`: nothing is left without a destination.
-- Every `ex-` plan is merged, and its line carries `done <commit>`.
+- Every `ex-` plan is merged, and its line carries `done <commit>`: the `Triage`'s line, or the Unit's `Fixed`.
 - Then the cycle is closed: `close.md` and the `ex-` plans go in one commit, and nothing about the cycle is edited afterwards.
 
 ## Writing

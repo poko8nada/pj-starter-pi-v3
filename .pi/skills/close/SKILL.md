@@ -1,13 +1,13 @@
 ---
 name: close
-description: Use when every plan of a cycle is done (merged in the base, or dropped by the owner). It collects what the plans left, triages it with the owner, and closes the cycle.
+description: Use when every plan of a cycle is done (merged in the base, or dropped by the owner). It collects what the plans left, triages it with the owner, and then asks the owner, Unit by Unit, whether they will verify the function.
 ---
 
 # close
 
 Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at.
 What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
-This skill collects them, triages them with the owner, and closes the cycle.
+This skill collects the holes, triages them with the owner, and closes the cycle: after the triage and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
 
 ## File
 
@@ -46,16 +46,21 @@ This skill collects them, triages them with the owner, and closes the cycle.
   - `dropped`: rare, and the fix weighs more
 - a leftover that moves a part of `DEFINITION.md` is not an `ex-` plan: it goes to `proposed`
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
+- write the lines in `## Triage` as they are decided. The triage is done when every leftover has a destination and every `ex-` plan has merged
 
-### 5. Write close.md
+### 5. Ask and verify, by Unit
 
-- `## Collected` and `## Triage`, in that order
-- after an `ex-` plan merged, run the script again: it keeps the lines that are there, and write `done <commit>` on the line it closed. The by-hand lines are added again after the run
+- the Units are the ones the ADR's `Definition` names, and the plans on each come from the design's `No`
+- ask the owner, per Unit, whether they will run the function or look at it
+- the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
+- their OK in the chat closes it; a Unit they will not check carries `しない` and the reason on the same line
+- a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design, its work run, and this step runs again for that Unit when it is merged
+- what they answered goes in `## Verified`, which sits after `## Triage`
 
 ### 6. Owner
 
-- they confirm the triage. A missing line comes back
-- a rejection sends you back to step 4
+- they read the whole `close.md` — the triage and the verification — and answer. A missing line comes back
+- a rejection sends you back to the step it came from: 3 for a collected line, 4 for a destination, 5 for a Unit
 
 ### 7. Commit
 
@@ -68,7 +73,8 @@ This skill collects them, triages them with the owner, and closes the cycle.
 
 ## How not to do this
 
-- Do not write a test: the plan's acceptance and the merge gate already ran. The close judges, it does not check again
+- Do not run the plan's checks again: the acceptance ran them, and the merge gate held. The owner's verification is of the Unit's function, and it goes in `## Verified`
+- Do not decide the verification for the owner: ask, and write the answer as it is
 - Do not fix a hole silently, and do not write the fix into `DEFINITION.md`, the design or a plan
 - Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination
 - Do not copy by hand what the script collects: a line left out is a hole nobody finds again
