@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
   AgentSettledEvent,
@@ -13,8 +12,6 @@ import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
 import { MAX_ABORTS, MIN_THINKING, SCAN_EVERY } from './live/guard.ts';
 import { readSettings } from './settings/read.ts';
 import type { SettingsRead } from './settings/schema.ts';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 function okSettings(): SettingsRead {
   return { kind: 'ok', settings: { enabled: true, show: true } };
@@ -337,58 +334,6 @@ describe('onMessageEnd', () => {
 });
 
 describe('onMessageUpdate', () => {
-  it(`${MIN_THINKING} 文字の run → abort が 1 回`, () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
-    const thinking = thinkingWithRun(MIN_THINKING);
-    expect(thinking).toHaveLength(MIN_THINKING);
-    const fake = fakeCmdCtx();
-    wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinking, 'reasoning_content')),
-      fake.ctx,
-    );
-    expect(fake.aborts()).toBe(1);
-  });
-
-  it(`${MIN_THINKING - 1} 文字の run → abort なし`, () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
-    const thinking = thinkingWithRun(MIN_THINKING).slice(0, MIN_THINKING - 1);
-    expect(thinking).toHaveLength(MIN_THINKING - 1);
-    const fake = fakeCmdCtx();
-    wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinking, 'reasoning_content')),
-      fake.ctx,
-    );
-    expect(fake.aborts()).toBe(0);
-    expect(wiring.getStatus().failures).toBe(0);
-  });
-
-  it('enabled: false → run でも abort なし', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
-    const fake = fakeCmdCtx();
-    wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
-      fake.ctx,
-    );
-    expect(fake.aborts()).toBe(0);
-  });
-
   it('MIN_THINKING 未満 → 偽の readSettings の呼び出しが 0 回', () => {
     let calls = 0;
     const wiring = createScrubWiring({
@@ -619,7 +564,6 @@ describe('onBeforeAgentStart', () => {
 
 describe('onAgentEnd', () => {
   it('51 文字→25 文字の message_end が 2 回、そのあと agent_end → notify が 1 回、文が一致する', () => {
-    expect(tallyThinking()).toHaveLength(51);
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -753,7 +697,6 @@ describe('integration', () => {
 
   it('The ** × 2 (12 文字) → message_end が undefined、agent_end でも notify が呼ばれない', () => {
     const thinking = 'The **'.repeat(2);
-    expect(thinking).toHaveLength(12);
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -889,14 +832,5 @@ describe('onCommand', () => {
       enabled: true,
       show: false,
     });
-  });
-
-  it('置いた settings.json を readSettings で読む → enabled と show が真', () => {
-    const read = readSettings(HERE);
-    expect(read.kind).toBe('ok');
-    if (read.kind !== 'ok') {
-      throw new Error('settings.json must be readable');
-    }
-    expect(read.settings).toEqual({ enabled: true, show: true });
   });
 });

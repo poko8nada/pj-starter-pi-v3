@@ -53,10 +53,21 @@ export interface WiringOptions {
 
 ### Slice 1: read-port
 
+- Findings: なし
+- Unplanned: なし
+- Commit: a59fd8f consult(ex-settings-read-order): add readSettings port to scrub wiring
+- Stopped: なし
+
+### Cleanup: 重複と前提の整理
+
 - Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+  - `.pi/extensions/thinking-scrub/index.test.ts` の `onMessageUpdate` から 3 件を削りました。`MIN_THINKING` の `abort が 1 回` は `MIN_THINKING 以上 → 偽の readSettings の呼び出しが 1 回` と同じ振る舞いのため後者を残し、`MIN_THINKING - 1` の `abort なし` は `MIN_THINKING 未満 → 呼び出しが 0 回` と同じ早戻りのため後者を残し、`enabled: false → run でも abort なし` の実ファイル版は `enabled が偽の偽設定 → abort なし` の偽物版と同じ無効枝のため後者を残しました。呼び出し回数と無効枝の確認は計画の手順が求める偽物版に集約されます。
+  - `.pi/extensions/thinking-scrub/index.test.ts` の `onCommand` から `置いた settings.json を readSettings で読む` の 1 件を削りました。置かれた fixture の中身が真である前提の再現であり、`schema` が正しい JSON を `ok` にすることと `settings/read.test.ts` が読み込みを担うことは既に決まっています。配線の振る舞いは偽物と実ファイル経由の残りの試験に残ります。
+  - 残した 2 件の試験から前提の断定を削りました。`onAgentEnd` の `tallyThinking()` の長さ 51 と `integration` の `The **` 反復の長さ 12 は補助の作りを確認するだけで、振る舞いの確認は `removed 2 (52 chars)` と `undefined` および通知なしの断定に残ります。
+  - 消えた振る舞いの試験は見当たりませんでした。旧い引数なしの呼び出しは計画の slice ですべて移行済みで、残りは port 経由の現在の振る舞いだけを確かめています。
+  - 止めた分岐の試験は見当たりませんでした。今回の変更は読み元を `settingsDir` から port に差し替えるだけで、配線の分岐（有効・表示・`broken` 時の既定）は port の結果で残ります。壊れたファイルの解釈は `settings/read` 側にあり、配線は作っていません。
+  - 削除後は `pnpm test:related` 32 件、`pnpm test:run` 882 件、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`grep -n "readSettings"` のすべてが通過しました。
+- Unplanned: なし
 
 ## Review
 
