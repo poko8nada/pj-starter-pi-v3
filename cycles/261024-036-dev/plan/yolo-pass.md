@@ -12,6 +12,8 @@
     SKILL.md              update
   design/
     SKILL.md              update
+    references/
+      format.md           update
 ```
 
 ## Slices
@@ -86,7 +88,7 @@
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "a yolo plan is worktree; the base condition does not apply" .pi/skills/design/SKILL.md` has the line
+  - `grep -in "a yolo plan is worktree; the base condition does not apply" .pi/skills/design/SKILL.md` has the line
 - Added:
   - base — the owner reads the slice's change.
   - other — the agent reads `design`; the line is in the text.
@@ -95,32 +97,39 @@
 
 ### Slice 1: yolo
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: `3847f23103f2f452ff4f2047f9aa8aa838b3afb8`
 
 ### Slice 2: work
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: `fc826787df013cd0b953fd1d6bb9091816253b23`
 
 ### Slice 3: design
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: `17c648104252de704ea4ae3040b1c184dbd32ccc`
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/design/references/format.md:95` — design/SKILL.md の Where に yolo 例外が入ったため、base 条件のみを述べる同文が古くなりました。
+    - fixed: added "A yolo plan is worktree; the base condition does not apply." to `## Where`; `design/references/format.md` is in `Files`.
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
