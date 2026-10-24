@@ -37,9 +37,14 @@
 
 ### Slice 1: header-note
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: cb77254
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Review
 
