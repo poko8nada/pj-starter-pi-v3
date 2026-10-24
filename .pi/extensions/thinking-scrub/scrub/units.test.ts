@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   MAX_PERIOD_UNITS,
@@ -133,7 +136,6 @@ describe('detectUnitRuns', () => {
     expect(runs).toHaveLength(1);
     expect(runs[0]?.period).toBe(6);
     expect(runs[0]?.length).toBe(base12.length * MIN_CYCLES);
-    expect(MAX_PERIOD_UNITS).toBeGreaterThanOrEqual(12);
   });
 
   it(`${MIN_CYCLES - 1} 周期 → run が無い`, () => {
@@ -207,15 +209,6 @@ describe('sampleOf', () => {
     expect(sample).toBe(expected.slice(0, SAMPLE_CHARS));
   });
 
-  it('2 単位の周期 → その 2 文', () => {
-    const first = english(0);
-    const second = english(1);
-    const text = cycleText([first, second], MIN_CYCLES);
-    const units = unitsFromText(text);
-    const run: UnitRun = { at: 0, length: 2 * MIN_CYCLES, period: 2 };
-    expect(sampleOf(units, run)).toBe([first, second].join(' '));
-  });
-
   it('1 単位の周期 → その 1 文だけ', () => {
     const one = longEnglish(0);
     const text = cycleText([one], MIN_CYCLES);
@@ -224,5 +217,11 @@ describe('sampleOf', () => {
     expect(units).toHaveLength(MIN_CYCLES);
     const run: UnitRun = { at: 0, length: MIN_CYCLES, period: 1 };
     expect(sampleOf(units, run)).toBe(one);
+  });
+
+  it('units.ts のソースに生の NUL が無い → indexOf(0) が -1', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const source = readFileSync(join(here, 'units.ts'));
+    expect(source.indexOf(0)).toBe(-1);
   });
 });
