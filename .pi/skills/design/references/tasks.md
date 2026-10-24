@@ -47,7 +47,7 @@ Answer on six viewpoints, one section each. A viewpoint with no finding is な�
 3. the outside: every outside thing in External appears in some plan's Boundary.External, and no Boundary.External line is missing from External
 4. the followers: every follower in Affected that changes is in some plan's Paths
 5. the readers: whatever reads what the change rewrites is named in Affected
-6. the checks: each entry's change can be told by a check; name the one that cannot
+6. the checks: each entry's change can be told by a check — a test, a command, a read by the agent, or the owner's look. Name the entry whose change no check tells
 
 Do not change the design or the files.
 ```

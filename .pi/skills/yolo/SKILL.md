@@ -29,7 +29,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 ### plan
 
-- write every plan md: its files, its slices, the types, the cases, the checks and the record
+- write every plan md: its files, its slices, the types, the steps, the verify and the record
 - read the plans together, and review each plan's checks
 - skips: the owner's look at the plan mds
 - go on to the work
@@ -45,7 +45,8 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 - check the trigger, read the cycle, and collect the leftovers
 - give every leftover a destination: one of four — a contradiction, a hole, something broken, something left stale — is looked at as an `ex-` plan; what breaks nothing goes to `proposed`; `dropped` when the fix weighs more
-- skips: the owner's judgement on the triage
+- skips: the verification of what the cycle delivered, and the owner's judgement on the triage
+- `## Verified` is left out: the Unit's verification is the owner's, and it waits for their judgement
 - it ends here: the triage stands as a proposal, and the owner judges it
 
 What comes after that judgement — the confirmed triage, the `ex-` plans, the commit that closes the cycle — is not this skill's work.

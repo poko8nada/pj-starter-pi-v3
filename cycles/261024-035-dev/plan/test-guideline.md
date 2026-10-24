@@ -177,9 +177,13 @@ README.ja.md                      update
 
 ### Slice 3: クローズ
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `## Verified` の位置を、先頭から最後（`## Triage` の後ろ）に変えた。確認が最後の手順になったため。`collect.mjs` は `## Triage` 以降を残すので、変更は要らなかった。
+  - 手順を 8 つに組み直した（トリアージ → `ex-` → Unit の確認 → オーナー）。
+  - `## Verified` に `Fixed` を足した（動かなかったときの `ex-`）。
+  - `close/references/format.md` の `Plans`、`Fixed`、`## Closing` は、スライス 4 の分も同じファイルにある。commit はスライス 3 に寄せた。
+- Commit: 0b37aaf
 
 ### Slice 4: 読み直しで見つけた不備
 

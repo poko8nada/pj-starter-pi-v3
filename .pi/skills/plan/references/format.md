@@ -131,7 +131,7 @@ Section and field names are English; the content is Japanese.
   - the comments and the documents hold no stale wording: a `grep` for the names and the descriptions this slice changed
 - `Added:` — what the change decides. Write what applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
-  - front (a component, and what it shows) — the agent starts the server, opens the screen in cmux-browser, and reports in the chat that the owner may look; their OK in the chat closes it.
+  - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.
   - a `base` plan's look — the owner reads the slice's change; their OK closes it.
   - other — a check the ADR's scope names that the four above do not cover, by a throwaway script or a shell command.
@@ -139,7 +139,7 @@ Section and field names are English; the content is Japanese.
 
 ## Test cases
 
-- The rules are used twice: a step that writes a test file decides its cases by them, and the reviewer of the plan and of the work reads those cases by them.
+- The rules are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one.
 - A premise the types, the spec, the schema or a DB constraint already guarantees is not reproduced in a test.
 - An assertion carries neither a magic number nor a hardcoded string.
 - A boundary value is not a test of its own: the test says the spec it belongs to is met.

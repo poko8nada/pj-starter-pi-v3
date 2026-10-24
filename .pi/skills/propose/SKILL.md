@@ -61,7 +61,7 @@ Where each answer comes from:
 
 ## The end
 
-The work ends when four things hold. None of them is the number of the candidates.
+The work ends when five things hold. None of them is the number of the candidates.
 
 - the candidates worth keeping are on the table, each with the Unit it would move
 - `Context` can be written

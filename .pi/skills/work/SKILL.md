@@ -49,6 +49,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - the `code` subagent that ran the slices continues (a `base` plan's agent does it): it reads the plan md, and the test files the plan's `Files` updates
 - in each of those files, what this change left: two or more tests that check the same behavior, a test for a behavior that is gone, a test for a branch this plan's change stops making
+- and the tests the plan's `## Test cases` would not write: a premise a type, a schema or a DB constraint already settles, and one nobody would notice
 - it drops them, and keeps the suite green
 - it is not a slice: what went stale is known only after the change, and a slice carries a `Verify` of its own
 - it writes it in the plan md's `## Notes`, as a section that is not a slice
@@ -67,6 +68,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - the agent runs the plan's checks, and the whole typecheck and test, in the worktree (or the base)
 - and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's check, and confirm it goes red. Restore it. A check that stays green is a finding
+- a plan that adds no behavior (a document, a setting): the agent reads what it changed, and that is the check
 - write `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing). Merge's commit is not written there: the acceptance is committed before the merge
 - a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
 - commit it in the worktree: `consult(<plan id>): acceptance`
