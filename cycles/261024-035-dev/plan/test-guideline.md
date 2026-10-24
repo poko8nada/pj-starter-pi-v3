@@ -5,6 +5,11 @@
 ```text
 .pi/
   skills/
+    design/
+      references/
+        tasks.md                  update
+    propose/
+      SKILL.md                    update
     plan/
       SKILL.md                    update
       references/
@@ -20,6 +25,8 @@
         format.md                 update
     yolo/
       SKILL.md                    update
+README.md                         update
+README.ja.md                      update
 ```
 
 ## 1.プランの形と手順
@@ -73,7 +80,7 @@
   - (happy) オーナーが 2 枚を読み、受入の文がスライス 1 の形と合っていて、OK を返す → スライスを閉じる
   - (error) オーナーが穴を返す → 直してから commit する
 
-## 3.クローズと yolo
+## 3.クローズ
 
 ### Types
 
@@ -82,22 +89,55 @@
 ### Steps
 
 1. `.pi/skills/close/SKILL.md`:
-   - 先頭に手順「オーナーに確認するかを聞く」を足し、以降の番号を 1 つずつずらす。
+   - 手順「オーナーに確認するかを聞く」を、トリアージの後ろに足し、以降の番号を 1 つずつずらす。
    - 「How not to do this」の「Do not write a test」を、確認の手順と矛盾しない文に直す。
 2. `.pi/skills/close/references/format.md`:
-   - `## Shape` に `## Verified` を `## Triage` の後ろとして足し、`Asked` と `Result` の規則を書く。
-3. `.pi/skills/yolo/SKILL.md`:
-   - plan の段から `the cases` を外す。
-   - close の段の `skips` に、機能の確認も飛ばすと足す。
+   - `## Shape` の最後に `## Verified` を置き、Unit ごとの `Plans`、`Result`、`Fixed` を書く。
+   - `## Verified` の規則に、`## Triage` の後ろに置く理由を書く。
 
 ### Verify:
 
-- look: オーナーが 3 枚を読み、確認の聞き方と記録の置き場が意図通りかを答える
-  - (happy) オーナーが 3 枚を読み、OK を返す → スライスを閉じる
+- look: オーナーが 2 枚を読み、確認の聞き方と記録の置き場が意図通りかを答える
+  - (happy) オーナーが 2 枚を読み、OK を返す → スライスを閉じる
   - (error) オーナーが穴を返す → 直してから commit する
-  - _no case_: `collect.mjs` が `## Verified` を消さないこと — スクリプトを読めば分かる（`## Triage` 以降を残す）
+  - _no case_: `## Triage` 以降を残すこと — もとの振る舞いで、今回は触らない
 
-## 4.統合: 新しい形の plan md が閉じられる
+## 4.読み直しで見つけた不備
+
+### Types
+
+なし
+
+### Steps
+
+1. `.pi/skills/propose/SKILL.md`:
+   - `the four things` を 5 に直す。
+2. `.pi/skills/design/references/tasks.md`:
+   - 観点 6 に、検査の例（テスト、コマンド、エージェントの `read`、オーナーの目）を足す。
+3. `.pi/skills/work/SKILL.md`:
+   - 受入に、振る舞いを足さない plan ではエージェントが読む、と足す。
+   - テストの片付けに、`## Test cases` が禁じるテストを足す。
+4. `.pi/skills/work/references/tasks.md`:
+   - 片付けのタスクに、`## Test cases` が禁じるテストを足す。
+5. `.pi/skills/plan/references/format.md`:
+   - フロントの行を、オーナーがサーバーを立てて見る形にする。
+   - `## Test cases` の「2 回」を、いつ使うかに書き換える。
+6. `.pi/skills/yolo/SKILL.md`:
+   - plan の段から `the cases` を外し、`the steps` と `the verify` にする。
+   - close の段の `skips` に Unit の確認を足し、`## Verified` を書かないと足す。
+7. `.pi/skills/close/references/format.md`:
+   - `Plans` から `なし` を消す。
+   - `Fixed` と `## Closing` で、commit の置き場が分かるようにする。
+8. `README.md`、`README.ja.md`:
+   - close の行に、Unit の確認を足す。
+
+### Verify:
+
+- look: オーナーが 8 つのステップの変更を読む
+  - (happy) オーナーが読み、OK を返す → スライスを閉じる
+  - (error) オーナーが穴を返す → 直してから commit する
+
+## 5.統合: 新しい形の plan md が閉じられる
 
 ### Types
 
@@ -130,17 +170,24 @@
 
 ### Slice 2: ワークの受入とレビュー
 
+- Findings: なし
+- Unplanned:
+  - レビューのタスクの「`look` / `use` のチェック」を `Added` に直した。種類の名前が消えたため。
+- Commit: 8809a0c
+
+### Slice 3: クローズ
+
 - Findings:
 - Unplanned:
 - Commit:
 
-### Slice 3: クローズと yolo
+### Slice 4: 読み直しで見つけた不備
 
 - Findings:
 - Unplanned:
 - Commit:
 
-### Slice 4: 統合: 新しい形の plan md が閉じられる
+### Slice 5: 統合: 新しい形の plan md が閉じられる
 
 - Findings:
 - Unplanned:
