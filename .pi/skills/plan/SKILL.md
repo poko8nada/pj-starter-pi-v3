@@ -19,7 +19,8 @@ Read that file before writing. It holds the shape, the files and their structure
 
 - design's section for this plan: `No`, `Why`, `Where`, `Summary`, `Paths`, `Boundary`
 - entries the plan's `No` names, in full
-- `No` is the design's plan section's `No`; write it at the top of the plan md as it is
+- `No` is the design's plan section's `No`; a normal plan writes it at the top of the plan md as it is
+- An `ex-` plan does not write `No`; the Triage line is the only source
 
 ### 2. Walk the relations, and write `Files`
 
