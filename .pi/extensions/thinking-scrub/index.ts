@@ -28,7 +28,7 @@ import {
   type Guard,
 } from './live/guard.ts';
 import { scrubMessage } from './scrub/message.ts';
-import { defaultSettings, SETTINGS_FILE } from './settings/schema.ts';
+import { defaultSettings, SETTINGS_FILE, type SettingsRead } from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import {
   addFailure,
@@ -55,6 +55,7 @@ export interface WiringOptions {
   readonly settingsDir: string;
   readonly now: () => number;
   readonly followUp: (content: string) => void;
+  readonly readSettings: () => SettingsRead;
 }
 
 interface WiringState {
@@ -101,13 +102,11 @@ function writeShow(settingsDir: string, show: boolean): void {
   writePatch(settingsDir, { show });
 }
 
-function readEnabled(settingsDir: string): boolean {
-  const read = readSettings(settingsDir);
+function readEnabled(read: SettingsRead): boolean {
   return read.kind === 'ok' ? read.settings.enabled : defaultSettings().enabled;
 }
 
-function readShow(settingsDir: string): boolean {
-  const read = readSettings(settingsDir);
+function readShow(read: SettingsRead): boolean {
   return read.kind === 'ok' ? read.settings.show : defaultSettings().show;
 }
 
@@ -149,7 +148,7 @@ function handleMessageEnd(
   event: MessageEndEvent,
 ): MessageEndEventResult | undefined {
   try {
-    if (!readEnabled(options.settingsDir)) {
+    if (!readEnabled(options.readSettings())) {
       return undefined;
     }
     const scrubbed = scrubMessage(event.message);
@@ -176,7 +175,7 @@ function handleMessageUpdate(
     if (thinking.length < MIN_THINKING) {
       return;
     }
-    if (!readEnabled(options.settingsDir)) {
+    if (!readEnabled(options.readSettings())) {
       return;
     }
     const step = observe(state.guard, thinking);
@@ -213,7 +212,7 @@ function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent
 }
 
 function handleAgentEnd(state: WiringState, options: WiringOptions, ctx: CommandCtx): void {
-  const show = readShow(options.settingsDir);
+  const show = readShow(options.readSettings());
   const current = state.tally;
   state.tally = emptyTally();
   if (!show) {
@@ -234,7 +233,7 @@ function handleCommand(
   const command = parseCommand(args);
   const lines = runCommand(
     {
-      settings: () => readSettings(options.settingsDir),
+      settings: () => options.readSettings(),
       status: () => state.status,
       writeEnabled: (enabled) => {
         writeEnabled(options.settingsDir, enabled);
@@ -315,8 +314,9 @@ export function registerScrub(pi: PiPort, options: WiringOptions): void {
 }
 
 export default function (pi: ExtensionAPI): void {
+  const settingsDir = dirname(fileURLToPath(import.meta.url));
   registerScrub(pi, {
-    settingsDir: dirname(fileURLToPath(import.meta.url)),
+    settingsDir,
     now: Date.now,
     followUp: (content) => {
       pi.sendMessage(
@@ -324,5 +324,6 @@ export default function (pi: ExtensionAPI): void {
         { triggerTurn: true },
       );
     },
+    readSettings: () => readSettings(settingsDir),
   });
 }
