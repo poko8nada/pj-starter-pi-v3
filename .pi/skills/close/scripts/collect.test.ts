@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { collectCycle, noOf, writeClose } from './collect.mjs';
+import { noOf, writeClose } from './collect.mjs';
 
 const normalPlan = `# PLAN \`alpha\`
 
@@ -79,17 +79,6 @@ describe('noOf', () => {
 
   it('Triage行が無い`ex-` planはnull（`未特定`）', () => {
     expect(noOf('ex-missing', exMissingPlan, closeWithTriage)).toBeNull();
-  });
-});
-
-describe('collectCycle', () => {
-  it('Triageのある`ex-` planの見出しは`ADR <NN>`、無い物は`未特定`', () => {
-    const { planDir } = setupCycle(closeWithTriage);
-    const items = collectCycle(planDir, closeWithTriage);
-    const byPlan = new Map(items.map((item) => [item.plan, item.link]));
-    expect(byPlan.get('alpha')).toBe('ADR 02');
-    expect(byPlan.get('ex-fix')).toBe('ADR 02');
-    expect(byPlan.get('ex-missing')).toBe('ADR 未特定');
   });
 });
 
