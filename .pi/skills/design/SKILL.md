@@ -56,7 +56,7 @@ The plan id is the name of the change (`worktree-cleanup`), not the Unit's name.
 
 ### 6. Propose where each plan runs, and ask the owner
 
-The default is a worktree: a branch, a subagent, a merge. A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base instead: the agent does it in its own tree, and the changes land as they are made.
+The default is a worktree: a branch, a subagent, a merge. A plan whose work needs the owner's eyes — a browser, a screen, a look — runs in the base instead: the agent does it in its own tree, and the changes land as they are made. A yolo plan is worktree; the base condition does not apply.
 
 Propose one place per plan, with the reason. The owner answers, and the answer can be any of three:
 
