@@ -61,6 +61,6 @@
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:related` (4 tests), `pnpm test:run` (53 files / 847 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the `Verify` grep (`collect.mjs:4` only). A comment-only change: the agent read the diff.
+- Findings: なし
+- Doubts: なし
