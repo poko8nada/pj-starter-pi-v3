@@ -382,8 +382,25 @@ export interface ScrubWiring {
   - `.pi/extensions/thinking-scrub/scrub/units.ts:248` の窓照合キーに NUL 文字が含まれ、git が binary 扱いになる点が気になりましたが、振る舞いには影響しないため所見としません。
     - left: NUL 区切りは衝突避けの意図で、振る舞いに影響がなく git の扱いも実害がないため直さない。
 
+### Round 2
+
+- Stale: なし — Round 1 に `fixed:` の行はなく、確認対象は無い。
+- Unlisted: なし — `## Files` の `scrub/message.test.ts update` を確認した。
+- Gaps: なし — `aborted: true` で pending 無しの試験と、`MAX_PERIOD_UNITS + 1` の試験を確認した。
+- Unproven: なし — 周期 1 の見本試験を確認した。
+- Noise: なし — `SCAN_EVERY - 1` の境界と、`loopSentence(0)` の見本を確認した。
+- Doubts:
+  - テストの実行による緑の確認は行っておらず、読み合わせでの確認にとどまる。最終の緑は別途の実行記録に任せる。
+
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related` をスライスごとに実施: `units` 103、`detect` 78、`guard` 41、`index` 32。README は `pnpm test:run` で代替。
+  - `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、計画の `grep` を実施。
+  - 全体の `pnpm typecheck` と `pnpm test:run`（55 ファイル、882 件）を実施。
+  - 3 件の README の変更行を読んだ。
+  - 壊して戻す 3 件: `sentenceSpans` は 5 件、`handleMessageUpdate` は 5 件、`sampleOf` は 6 件が赤。いずれも復旧して緑に戻した。
 - Findings:
+  - なし。
 - Doubts:
+  - なし。
