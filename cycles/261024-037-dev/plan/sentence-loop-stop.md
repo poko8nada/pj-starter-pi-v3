@@ -56,35 +56,35 @@ export function sampleOf(units: readonly Unit[], run: UnitRun): string;
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/scrub/units.ts`:
-   - Add `splitUnits`: lines, then sentences. English ends at `.` `!` `?` followed by whitespace or the line end; Japanese ends at `。` `！` `？`.
-   - Add the guards: a fence line and what is inside a fence, a table row, and a diff line are opaque units.
-   - Add `detectUnitRuns`: the maximal period scan over the unit texts, period 1..`MAX_PERIOD_UNITS`, run length `MIN_CYCLES`×period or more, run chars `MIN_RUN_CHARS` or more, no opaque unit, and overlapping runs deduped by the smallest period.
-   - Add `sampleOf`: the most frequent 3-unit window in the run; when the period is 3 or less, the cycle itself; truncated to `SAMPLE_CHARS`.
+   - `splitUnits` を足す。行に分けてから文に分ける。英語は `.` `!` `?` の後に空白か行末が来たら切り、日本語は `。` `！` `？` で切る。
+   - ガードを足す。フェンスの行とフェンスの中、表の行、diff の行を不透明な単位にする。
+   - `detectUnitRuns` を足す。単位の本文の極大周期走査で、周期 1..`MAX_PERIOD_UNITS`、長さ `MIN_CYCLES`×周期以上、区間 `MIN_RUN_CHARS` 文字以上、不透明な単位を含まず、重なりは最小の周期でまとめる。
+   - `sampleOf` を足す。run の中で最も多い 3 単位の窓。周期が 3 以下なら周期そのもの。`SAMPLE_CHARS` で切る。
 2. `.pi/extensions/thinking-scrub/scrub/units.test.ts`:
-   - Build the texts from a factory (`sentenceUnit()`), not from literals at each case.
-   - (happy) `splitUnits` on a two-line English text from the factory → four units with the original offsets.
-   - (happy) a Japanese line with `。` and `！` from the factory → the units split at those marks, with the offsets kept.
-   - (happy) a fenced block → the fence line and its contents are opaque.
-   - (happy) a table row and a `diff --git` line → opaque.
-   - (boundary) a line whose abbreviation ends with `.` → the abbreviation is its own unit, and the neighbours keep their offsets.
-   - (happy) `detectUnitRuns` on `MIN_CYCLES` cycles of three sentences → one run with period 3.
-   - (happy) overlapping periods 6 and 12 from the factory → one run with period 6.
-   - (boundary) `MIN_CYCLES - 1` cycles → no run.
-   - (boundary) a `MIN_CYCLES`-cycle run under `MIN_RUN_CHARS` → no run.
-   - (boundary) a run that contains a fence unit → no run.
-   - (empty) normal prose → no run.
-   - (happy) `sampleOf` on a 12-unit run → the most frequent 3-unit window, `SAMPLE_CHARS` or less.
-   - (happy) a 3-unit window over `SAMPLE_CHARS` → the sample is cut to `SAMPLE_CHARS`.
-   - (boundary) `sampleOf` on a 2-unit cycle → the two units.
+   - 本文は工場（`sentenceUnit()`）で組み立て、各ケースで直書きしない。
+   - (happy) 工場の 2 行の英語 → 4 単位で元の offset を保つ。
+   - (happy) 工場の `。` と `！` の日本語 1 行 → その印で分かれ、offset を保つ。
+   - (happy) フェンス囲み → 柵の行と中身が不透明。
+   - (happy) 表の行と `diff --git` の行 → 不透明。
+   - (boundary) 略語で終わる行 → 略語が 1 単位になり、前後がずれない。
+   - (happy) `MIN_CYCLES` 周期ぶんの 3 文 → 周期 3 の run が 1 つ。
+   - (happy) 工場の周期 6 と 12 が重なる並び → 周期 6 の run が 1 つ。
+   - (boundary) `MIN_CYCLES - 1` 周期 → run が無い。
+   - (boundary) `MIN_CYCLES` 周期でも `MIN_RUN_CHARS` 文字未満 → run が無い。
+   - (boundary) 柵を含む繰り返し → run が無い。
+   - (empty) 普通の文章 → run が無い。
+   - (happy) 12 単位の run の `sampleOf` → 最頻の 3 単位の窓で、`SAMPLE_CHARS` 以下。
+   - (happy) 3 単位の窓が `SAMPLE_CHARS` を超える → `SAMPLE_CHARS` で切れる。
+   - (boundary) 2 単位の周期の `sampleOf` → その 2 単位。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/thinking-scrub/scrub/units.ts .pi/extensions/thinking-scrub/scrub/units.test.ts`; `pnpm test:run` if nothing is related
+  - `pnpm test:related .pi/extensions/thinking-scrub/scrub/units.ts .pi/extensions/thinking-scrub/scrub/units.test.ts`; 関連が無いときは `pnpm test:run`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "splitUnits\\|detectUnitRuns\\|sampleOf" .pi/extensions/thinking-scrub/scrub/units.ts` has the new exports
+  - `grep -n "splitUnits\\|detectUnitRuns\\|sampleOf" .pi/extensions/thinking-scrub/scrub/units.ts` で新しいエクスポートがある
 - Added: なし
 
 ## 2.sentence-fold
@@ -96,31 +96,31 @@ export function sampleOf(units: readonly Unit[], run: UnitRun): string;
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/scrub/detect.ts`:
-   - Keep `detectRuns` and `separatorFor` as they are.
-   - `scrubThinking` first calls `splitUnits` and `detectUnitRuns`, and removes each sentence run from its second cycle onward, so the first cycle stays.
-   - Then it runs the existing char `detectRuns` on the result and removes those runs entirely.
-   - `removed` is the sentence runs plus the char runs.
-   - Add one removal helper that takes spans and applies `separatorFor` to each joint.
+   - `detectRuns` と `separatorFor` はそのまま残す。
+   - `scrubThinking` は、まず `splitUnits` と `detectUnitRuns` を呼び、文の run を 2 周期目から消して 1 周期目を残す。
+   - そのあと、結果に既存の文字の `detectRuns` を当て、その run を全部消す。
+   - `removed` は文の run と文字の run の合計。
+   - 区間をまとめて `separatorFor` を各継ぎ目に当てる除去の helper を 1 つ足す。
 2. `.pi/extensions/thinking-scrub/scrub/detect.test.ts`:
-   - Build the texts from the existing `unit()` and `repeated()` factories.
-   - (happy) a sentence loop of `MIN_CYCLES` cycles → the first cycle is kept, and the rest is removed.
-   - (happy) a char loop from `repeated()` → removed as before.
-   - (happy) a sentence loop whose every cycle carries a char loop → the sentence pass runs first; `removed` is 2, while a char-first order would remove more.
-   - (boundary) a sentence run that contains a fence → not removed.
-   - (boundary) a `MIN_CYCLES`-cycle sentence run under `MIN_RUN_CHARS` → not removed.
-   - (empty) normal prose → unchanged, `removed` 0.
-   - (boundary) a sentence run whose removed cycles contain `\n\n` → the joint keeps `\n\n`.
-   - (boundary) a sentence run whose removed cycles contain `\n` but not `\n\n` → the joint keeps `\n`.
-   - (boundary) a sentence run whose removed text has no newline and non-space neighbours → the joint is one space.
+   - 本文は既存の `unit()` と `repeated()` の工場で組み立てる。
+   - (happy) `MIN_CYCLES` 周期の文ループ → 最初の 1 周期が残り、残りが消える。
+   - (happy) `repeated()` の文字ループ → 従来通り消える。
+   - (happy) すべての周期が文字ループを運ぶ文ループ → 文のパスが先に走り、`removed` は 2。文字が先ならもっと消える。
+   - (boundary) 柵を含む文の run → 消えない。
+   - (boundary) `MIN_CYCLES` 周期でも `MIN_RUN_CHARS` 文字未満の文の run → 消えない。
+   - (empty) 普通の文章 → 変わらず、`removed` は 0。
+   - (boundary) 消した周期に `\n\n` を含む文の run → 継ぎ目は `\n\n`。
+   - (boundary) 消した周期に `\n` を含み `\n\n` を含まない文の run → 継ぎ目は `\n`。
+   - (boundary) 消した本文に改行がなく、両側が空白でない文の run → 継ぎ目は空白 1 つ。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/thinking-scrub/scrub/detect.ts .pi/extensions/thinking-scrub/scrub/detect.test.ts`; `pnpm test:run` if nothing is related
+  - `pnpm test:related .pi/extensions/thinking-scrub/scrub/detect.ts .pi/extensions/thinking-scrub/scrub/detect.test.ts`; 関連が無いときは `pnpm test:run`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "splitUnits\\|detectUnitRuns" .pi/extensions/thinking-scrub/scrub/detect.ts` has the sentence pass
+  - `grep -n "splitUnits\\|detectUnitRuns" .pi/extensions/thinking-scrub/scrub/detect.ts` で文のパスがある
 - Added: なし
 
 ## 3.live-guard
@@ -155,32 +155,32 @@ export function followUpText(sample: string): string;
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/live/guard.ts`:
-   - Add `emptyGuard`, `resetOnUser`, and `takeFollowUp`; `resetOnUser` returns `emptyGuard()`, so a new user prompt starts a new logical run.
-   - `observe` returns `idle` below `MIN_THINKING` chars, or when the thinking grew by less than `SCAN_EVERY` chars since `scanned`, or when `aborts` is `MAX_ABORTS` or more.
-   - A thinking shorter than `scanned` is a new assistant message: reset `scanned` to 0 before the throttle check, and keep `aborts`.
-   - Otherwise it runs `splitUnits` and `detectUnitRuns` on the last `TAIL` chars; a run returns `stop`, with the sample and `aborts + 1`.
-   - `followUpText` puts the sample after one instruction: the thinking is repeating, do not repeat it, continue the task; the sample is cut to `SAMPLE_CHARS`, imported from `../scrub/units.ts`.
+   - `emptyGuard`、`resetOnUser`、`takeFollowUp` を足す。`resetOnUser` は `emptyGuard()` を返し、新しい user の合図で論理 run をやり直す。
+   - `observe` は `MIN_THINKING` 文字未満、`scanned` からの増分が `SCAN_EVERY` 文字未満、`aborts` が `MAX_ABORTS` 以上のとき `idle` を返す。
+   - `scanned` より短い thinking は新しい assistant メッセージ。throttle の前に `scanned` を 0 に戻し、`aborts` は保つ。
+   - それ以外は末尾 `TAIL` 文字に `splitUnits` と `detectUnitRuns` を当てる。run があれば `stop` を返し、見本と `aborts + 1` を返す。
+   - `followUpText` は、見本の前に 1 つの指示を置く。thinking が繰り返している、繰り返すな、作業を続けろ。見本は `../scrub/units.ts` の `SAMPLE_CHARS` で切る。
 2. `.pi/extensions/thinking-scrub/live/guard.test.ts`:
-   - Build the texts from a factory, and use `MIN_THINKING`, `SCAN_EVERY`, `TAIL`, `MAX_ABORTS` and `SAMPLE_CHARS` by name.
-   - (happy) `MIN_THINKING` chars with a `MIN_CYCLES`-cycle run → `stop` with a sample.
-   - (boundary) `MIN_THINKING - 1` chars with a run → `idle`.
-   - (happy) the same thinking again with less than `SCAN_EVERY` new chars → `idle`.
-   - (happy) a run outside the last `TAIL` chars of a 2×`TAIL` thinking → `idle`.
-   - (happy) a thinking shorter than `scanned` after a 2×`MIN_THINKING` thinking → `scanned` resets and a `MIN_THINKING` run stops.
-   - (boundary) after `MAX_ABORTS` aborts → `idle` at 2×`MIN_THINKING`.
-   - (happy) `resetOnUser` returns `emptyGuard`, and `observe` can stop again at `MIN_THINKING`.
-   - (happy) a second `stop` before `takeFollowUp` → the pending sample is the latest, and `takeFollowUp` returns it once.
-   - (happy) `takeFollowUp` returns the sample once, then `undefined`.
-   - (happy) `followUpText` contains the instruction and the sample; a sample over `SAMPLE_CHARS` is cut.
+   - 本文は工場で組み立て、`MIN_THINKING`、`SCAN_EVERY`、`TAIL`、`MAX_ABORTS`、`SAMPLE_CHARS` を名前で使う。
+   - (happy) `MIN_THINKING` 文字に `MIN_CYCLES` 周期の run → `stop` と見本。
+   - (boundary) `MIN_THINKING - 1` 文字に run → `idle`。
+   - (happy) 同じ thinking をもう一度、`SCAN_EVERY` 文字未満の増分 → `idle`。
+   - (happy) 2×`TAIL` の thinking の最後の `TAIL` 文字の外にある run → `idle`。
+   - (happy) 2×`MIN_THINKING` のあとの短い thinking → `scanned` が戻り、`MIN_THINKING` の run で止まる。
+   - (boundary) `MAX_ABORTS` 回のあと → 2×`MIN_THINKING` でも `idle`。
+   - (happy) `resetOnUser` は `emptyGuard` を返し、`MIN_THINKING` でまた止まれる。
+   - (happy) `takeFollowUp` の前に 2 回止まる → 最新の見本が残り、`takeFollowUp` は 1 回だけ返す。
+   - (happy) `takeFollowUp` は見本を 1 回返し、次は `undefined`。
+   - (happy) `followUpText` は指示と見本を含み、`SAMPLE_CHARS` を超える見本は切れる。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/thinking-scrub/live/guard.ts .pi/extensions/thinking-scrub/live/guard.test.ts`; `pnpm test:run` if nothing is related
+  - `pnpm test:related .pi/extensions/thinking-scrub/live/guard.ts .pi/extensions/thinking-scrub/live/guard.test.ts`; 関連が無いときは `pnpm test:run`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "MIN_THINKING\\|SCAN_EVERY\\|MAX_ABORTS" .pi/extensions/thinking-scrub/live/guard.ts` has the limits
+  - `grep -n "MIN_THINKING\\|SCAN_EVERY\\|MAX_ABORTS" .pi/extensions/thinking-scrub/live/guard.ts` で上限がある
 - Added: なし
 
 ## 4.wiring
@@ -218,34 +218,34 @@ export interface ScrubWiring {
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/index.ts`:
-   - Add `PiPort.sendMessage` and `WiringOptions.followUp`.
-   - Add `onMessageUpdate`: wrap it in `try`/`catch`; a throw increments `status.failures` and returns without aborting.
-   - Return below `MIN_THINKING` chars before reading the settings; read the settings, return when disabled; add a local `thinkingOf(message)` that joins the thinking blocks without requiring `thinkingSignature`; call `observe`; on `stop` set the guard and call `ctx.abort()`.
-   - Add `onAgentSettled`: when `event.aborted`, take the pending sample and call `options.followUp(followUpText(sample))`.
-   - Add `onBeforeAgentStart`: reset the guard when `event.messageType` is `user`; a custom follow-up does not reset it.
-   - Register `message_update`, `message_end`, `agent_settled`, `agent_end`, `before_agent_start` in that order, and pass `followUp` as `pi.sendMessage({ customType: 'thinking-scrub', content, display: true }, { triggerTurn: true })`.
-   - Keep the command and the report as they are.
+   - `PiPort.sendMessage` と `WiringOptions.followUp` を足す。
+   - `onMessageUpdate` を足す。`try`/`catch` で囲み、投げたら `status.failures` を増やして abort せずに返す。
+   - `MIN_THINKING` 文字未満は設定を読む前に返す。設定を読み、無効なら返す。`thinkingSignature` を求めずに thinking ブロックをつなげる `thinkingOf(message)` を足す。`observe` を呼び、`stop` なら guard を入れて `ctx.abort()` を呼ぶ。
+   - `onAgentSettled` を足す。`event.aborted` のとき、たまった見本を `takeFollowUp` で取り、`options.followUp(followUpText(sample))` を呼ぶ。
+   - `onBeforeAgentStart` を足す。`event.messageType` が `user` のとき guard を戻す。custom のフォローアップでは戻さない。
+   - `message_update`、`message_end`、`agent_settled`、`agent_end`、`before_agent_start` の順に登録し、`followUp` に `pi.sendMessage({ customType: 'thinking-scrub', content, display: true }, { triggerTurn: true })` を渡す。
+   - コマンドと報告はそのまま残す。
 2. `.pi/extensions/thinking-scrub/index.test.ts`:
-   - Extend `fakePi` with `sendMessage` (it records the message and the options), add the four handlers to its map, and update the `registerScrub` event list.
-   - Extend `fakeCmdCtx` with an `abort` recorder; add `followUp: () => undefined` to every existing `createScrubWiring` and `registerScrub` call.
-   - (happy) `onMessageUpdate` at `MIN_THINKING` with a run → `abort` called once.
-   - (happy) `onAgentSettled` with `aborted: true` after that → one custom message with the sample; the fake records `customType: 'thinking-scrub'`, `display: true` and `{ triggerTurn: true }`.
-   - (happy) `onAgentSettled` with `aborted: false` → no message.
-   - (happy) `onBeforeAgentStart` with a user message → the abort count resets; with a custom message → it does not.
-   - (boundary) `onMessageUpdate` below `MIN_THINKING` → no abort.
-   - (happy) `enabled: false` → `onMessageUpdate` at `MIN_THINKING` with a run → no abort.
-   - (happy) a thinking block without `thinkingSignature` at `MIN_THINKING` with a run → abort.
-   - (error) a message whose thinking getter throws → `onMessageUpdate` does not throw, and `failures` increments.
-   - (happy) the existing `message_end` tests still pass.
+   - `fakePi` に `sendMessage` を足す（メッセージとオプションを記録する）。4 つのハンドラを map に足し、`registerScrub` のイベント一覧を更新する。
+   - `fakeCmdCtx` に `abort` の記録を足す。既存の `createScrubWiring` と `registerScrub` の呼び出しすべてに `followUp: () => undefined` を足す。
+   - (happy) `MIN_THINKING` 文字の run で `onMessageUpdate` → `abort` が 1 回。
+   - (happy) そのあと `aborted: true` の `onAgentSettled` → 見本入りの custom message が 1 つ。fake は `customType: 'thinking-scrub'`、`display: true`、`{ triggerTurn: true }` を記録する。
+   - (happy) `aborted: false` の `onAgentSettled` → メッセージ無し。
+   - (happy) user の `onBeforeAgentStart` → abort の回数が戻る。custom では戻らない。
+   - (boundary) `MIN_THINKING` 未満の `onMessageUpdate` → abort 無し。
+   - (happy) `enabled: false` → `MIN_THINKING` の run で `onMessageUpdate` → abort 無し。
+   - (happy) `thinkingSignature` の無い thinking ブロックで `MIN_THINKING` の run → abort。
+   - (error) thinking の getter が投げるメッセージ → `onMessageUpdate` は投げず、`failures` が増える。
+   - (happy) 既存の `message_end` の試験はそのまま通る。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/thinking-scrub/index.ts .pi/extensions/thinking-scrub/index.test.ts`; `pnpm test:run` if nothing is related
+  - `pnpm test:related .pi/extensions/thinking-scrub/index.ts .pi/extensions/thinking-scrub/index.test.ts`; 関連が無いときは `pnpm test:run`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "onMessageUpdate\\|onAgentSettled\\|onBeforeAgentStart" .pi/extensions/thinking-scrub/index.ts` has the handlers
+  - `grep -n "onMessageUpdate\\|onAgentSettled\\|onBeforeAgentStart" .pi/extensions/thinking-scrub/index.ts` でハンドラがある
 - Added: なし
 
 ## 5.readme
@@ -257,31 +257,31 @@ export interface ScrubWiring {
 ### Steps
 
 1. `.pi/extensions/thinking-scrub/README.md`:
-   - Replace the opening's "accepted as it happened and rewritten after the message is finalized" with the two stages: the live stop at 20,000 chars with a sentence run, and the fold at `message_end`.
-   - Replace the char-only threshold sentence with the two thresholds: the sentence's 3 cycles, 400 chars and period 1〜64 units, and the char's existing 4〜120 chars, 3 repeats, 20 chars.
-   - The target blocks: the live detection reads the streaming thinking without requiring a signature; the fold keeps the existing signature rule.
-   - Add the follow-up: `agent_settled` sends a custom message with the most frequent 3-sentence sample, then the next run starts.
-   - Keep the commands, the settings, and the report as they are.
+   - 冒頭の「accepted as it happened and rewritten after the message is finalized」を、2 段階（20,000 文字での生成中停止と `message_end` での畳み込み）に置き換える。
+   - 文字だけのしきい値の文を、2 つのしきい値に置き換える。文は 3 周期、400 文字、周期 1〜64 単位。文字は既存の 4〜120 文字、3 回、20 文字。
+   - 対象ブロック: 生成中の検出は署名を求めず、畳み込みは既存の署名規則を保つ。
+   - フォローアップを足す。`agent_settled` で最頻の 3 文の見本入りの custom message を送り、次の run が始まる。
+   - コマンド、設定、報告はそのまま残す。
 2. `README.md`:
-   - The extension list's thinking-scrub line says it stops looped thinking while it is generated and removes it, so it is not carried into the next turn.
+   - 拡張一覧の thinking-scrub の行を、生成中に止めて取り除き、次のターンに持ち越さない、とする。
 3. `README.ja.md`:
-   - The extension list's thinking-scrub line says the same in Japanese.
+   - 同じ内容を日本語で書く。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/thinking-scrub/README.md`; `pnpm test:run` if nothing is related
+  - `pnpm test:related .pi/extensions/thinking-scrub/README.md`; 関連が無いときは `pnpm test:run`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -n "accepted as it happened" .pi/extensions/thinking-scrub` returns なし
-  - `grep -n "20,000" .pi/extensions/thinking-scrub/README.md` has the live stage
-  - `grep -n "400" .pi/extensions/thinking-scrub/README.md` has the sentence threshold
-  - `grep -n "4〜120" .pi/extensions/thinking-scrub/README.md` has the char threshold
-  - `grep -n "stops looped thinking" README.md` has the new line
-  - `grep -n "生成中に止め" README.ja.md` has the new line
+  - `grep -n "accepted as it happened" .pi/extensions/thinking-scrub` が なし
+  - `grep -n "20,000" .pi/extensions/thinking-scrub/README.md` で生成中の段階がある
+  - `grep -n "400" .pi/extensions/thinking-scrub/README.md` で文のしきい値がある
+  - `grep -n "4〜120" .pi/extensions/thinking-scrub/README.md` で文字のしきい値がある
+  - `grep -n "stops looped thinking" README.md` で新しい行がある
+  - `grep -n "生成中に止め" README.ja.md` で新しい行がある
 - Added:
-  - other — the agent reads the three READMEs' changed lines: the two stages, the two thresholds, and the signature split are present.
+  - other — agent が 3 件の README の変更行を読む。2 段階、2 つのしきい値、署名の分け方が揃っている。
 
 ## Notes
 
