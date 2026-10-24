@@ -199,20 +199,41 @@ README.ja.md                      update
 - Unplanned:
   - 統合の `use` で、形が決めていない所が 4 つ出た。`Files` の `add` と `drop` の例、外と会わないコードステップの `Outside:` 行、使わない形のステップ、`Added` に複数当たるときの書き方。どれも `format.md` で決めて、再実行したら 0 になった。
   - 統合の `grep` は `Kinds\|Cases\|Walk` だったが、`Walk the relations` のような普通の動詞に当たった。節の名前（`^#\+ ...$`）と `slice's cases` に絞り直した。
-- Commit: 4e5b0f2
+- Commit: 8e89733
 
 ## Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
+  - `cycles/261024-035-dev/adr.md:78` — 記録を「close.md の先頭に」と書いていますが、実装（`.pi/skills/close/references/format.md:64`）は「`## Triage` の後ろ」です。このままでは `collect.mjs` が書き直す範囲と食い違いますので、整合が必要です。
+    - fixed: 「close.md の先頭に」を「`## Triage` の後ろに」に直した。
+  - `cycles/261024-035-dev/adr.md:91` — naming で「close.md の先頭に置く」と書いていますが、実装は最後（`## Triage` の後ろ）です。上記と合わせて修正が必要です。
+    - fixed: 「close.md の先頭に」を「`## Triage` の後ろに」に直した。
+  - `cycles/261024-035-dev/adr.md:110` — Definition が「確認を聞く手順が最初に増える」と書いていますが、手順はトリアージの後（最後）に移動済みであり、表題・決定文の「最後に」と合っていません。
+    - fixed: 「最初に」を「最後に」に直した。`adr.md:106` の「スクリプトを直す」も、直さないに直した。
+  - `cycles/261024-035-dev/plan/test-guideline.md:206` — `## Review` の `Round 1` に `Noise` の観点がありませんでした。`format.md` の `## Shape` は 5 観点＋`Doubts` ですので、この変更で古くなっていました（本レビューの記載で補っています）。
+    - fixed: この `Round 1` に `- Noise: なし` が入った。以後の plan md は `format.md` の形で書く。
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
 - Doubts:
+  - `memo-task.md:1` — 所有者の元メモが worktree に残っています。`git diff` の対象外のため今回の判定には含めていません。サイクルの close 時に削除される想定です。
+  - `cycles/261024-035-dev/adr.md:11` — Context が「エージェントがローカルホストを立てる」と書いていますが、実装は外部スキルの制約によりオーナーが立てる形です。経緯の記録として残すか現行仕様に合わせるかは所有者のご判断に委ねます。
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 52 files / 843 tests 緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 221 files 緑
+  - `grep -rn "^#\+ \(Kinds\|Cases\|Walk\)$" .pi/skills` → 0 行
+  - `grep -rn "slice's cases" .pi/skills` → 0 行
+  - スライス 5 の `use`（consult-8）→ 詰まった所 0、grep 2 本とも 0 行
+  - 文書の plan なので、エージェントが 11 枚を読んだ → ADR の `Adopted` と合う
+  - レビュー Round 1 の 4 件 → 4 件とも fixed、Round 2 は なし
+- Findings: なし
 - Doubts:
+  - `memo-task.md` は未追跡のまま。オーナーのメモなので、この plan では消さない。
