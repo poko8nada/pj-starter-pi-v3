@@ -1,6 +1,6 @@
 ---
 name: yolo
-description: Use when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted. It walks the cycle's stages from where it stands, and stops at the close's triage, or earlier when a check needs the owner.
+description: Use when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted. It walks the cycle's stages from where it stands, and stops at the close's triage, and passes the `Added` owner check.
 disable-model-invocation: true
 ---
 
@@ -38,7 +38,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 - commit the cycle's files, and run the plans in the order the cut gives
 - a plan: its slices, the test cleanup, the review, the acceptance, and the merge with the base's dependencies set again
-- a `base` plan is not run: its look is the owner's, and the stop condition below holds
+- a `base` plan is not used: every plan is a worktree, and the `Added` owner look (front cmux-browser, base slice) is passed
 - skips: the report to the owner
 - go on to the close
 
@@ -60,7 +60,6 @@ Stopping is the main agent's task: when you judge that one of these holds, stop,
 - a plan's premise turns out false, and what closes it sits outside the plan
 - a merge leaves the base red, and the plan's fix does not bring it back green
 - dropping a leftover: the fix weighs more than leaving it
-- a plan's `Added` check needs the owner's look
 - a pair of plans would make the same thing, and the owner has to decide the cut
 
 A hole the run finds and fixes in the plan's own files is not one of these: the slice's `Unplanned` holds it, and the run goes on.
