@@ -66,7 +66,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 7. Acceptance
 
-- the agent runs the plan's checks that the agent can run: `Always`, and the executable `Added` (DB, auth, other). The `Added` checks that close by the owner's OK are shown and waited for: the front in cmux-browser, and a `base` plan's look after each slice
+- the agent runs the plan's checks that the agent can run: `Always`, and the executable `Added` (DB, auth, other). The `Added` checks that close by the owner's OK are shown and waited for: the front in cmux-browser, and a `base` plan's look after each slice — except a `yolo` plan: `yolo` passes the `Added` owner look, and the agent's check stays in `Acceptance`
 - the whole typecheck and test, in the worktree (or the base)
 - and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's executable check, and confirm it goes red. Restore it. A check that stays green is a finding. An owner's look is not broken and restored; their OK is the check
 - a plan that adds no behavior (a document, a setting): the agent reads what it changed, and that is the check
