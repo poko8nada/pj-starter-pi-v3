@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
@@ -111,7 +111,6 @@ describe('createLeafDir', () => {
     const leaf = createLeafDir(parent, leafName);
     expect(leaf).toBe(join(parent, leafName));
     expect(existsSync(leaf)).toBe(true);
-    expect(statSync(leaf).isDirectory()).toBe(true);
   });
 
   it('既存 dir には作らず投げる', () => {

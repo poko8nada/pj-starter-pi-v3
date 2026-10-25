@@ -73,10 +73,20 @@ test/
 
 ### Slice 1: 書式と雛形
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c0061d1
 - Stopped:
+
+### Cleanup: createLeafDir の重複断定の整理
+
+- Findings:
+  - `.pi/skills/adr/scripts/scaffold.test.ts` の `createLeafDir` の成功確認から `statSync(leaf).isDirectory()` の断定を削り、`existsSync` と道の一致に寄せました（同じ作りの確認の重複であり、dir であることは Node の `mkdirSync` が決める前提のためです）。
+  - 消えた振る舞いを確かめる試験は残っておらず、削る対象はありませんでした（`80文字`・`///`・`=` 形・`EEXIST` の errno は slice で除去済みです）。
+  - 本計画が止めた分岐を踏む試験はなく、削る対象はありませんでした（製品の分岐は変えず、試験だけを整えたためです）。
+  - 残りは型や schema が決める前提の再現ではなく、誰も気づかない振る舞いでもないため、保ちました。
+  - 削除後は `pnpm test:related`・`pnpm typecheck`・`pnpm lint`・`pnpm format:check` が緑です。
+- Unplanned: なし
 
 ## Review
 
