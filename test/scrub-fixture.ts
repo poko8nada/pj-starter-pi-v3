@@ -50,6 +50,7 @@ export const SCRUB_ON_LINE = 'thinking-scrub: on';
 export const SCRUB_SHOW_LINE = 'thinking-scrub: show';
 export const SCRUB_HIDE_LINE = 'thinking-scrub: hide';
 export const SCRUB_USAGE_MARK = 'usage';
+export const SCRUB_USAGE_LINE = 'thinking-scrub usage: /thinking-scrub [on|off|show|hide]';
 export const SCRUB_SHOW_ON = 'show: on';
 export const SCRUB_SHOW_OFF = 'show: off';
 export const SCRUB_REMOVED_LABEL = 'removed:';

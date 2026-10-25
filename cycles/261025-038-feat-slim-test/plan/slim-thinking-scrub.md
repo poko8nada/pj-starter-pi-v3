@@ -198,9 +198,9 @@ test/
 
 ### Slice 1: 検出と畳み込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c086709
 - Stopped:
 
 ### Slice 2: 設定と記録
