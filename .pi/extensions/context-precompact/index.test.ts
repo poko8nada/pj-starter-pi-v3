@@ -438,21 +438,6 @@ describe('precompact wiring', () => {
     expect(setup.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
   });
 
-  it('signal が undefined → pass が始まり status が preparing', async () => {
-    const branch = threeTurns();
-    const { ctx } = fakeCtx({
-      branch,
-      usage: contextUsageOf(LEAD_TOKENS),
-      signal: undefined,
-    });
-    const wiring = wiringWith();
-    await wiring.onTurnEnd(ctx);
-    expect(wiring.getState().running).toBe(true);
-    expect(wiring.getState().status).toEqual({ kind: 'preparing' });
-    await wiring.flush();
-    expect(wiring.getState().status.kind).toBe('ready');
-  });
-
   it('拡張か Pi の enabled が false → 開始しない', async () => {
     const branch = threeTurns();
     const offDir = settingsDirWith({ enabled: false, keepRecentTokens: 1500, thresholdRatio: 0.8 });

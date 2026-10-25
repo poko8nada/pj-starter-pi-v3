@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEAD_RATIO, MIN_OLD_RATIO, REARM_RATIO } from '../settings/constants.ts';
+import { LEAD_RATIO, REARM_RATIO } from '../settings/constants.ts';
 import { gate, type GateInput } from './gate.ts';
 
 const CONTEXT_WINDOW = 200_000;
@@ -62,8 +62,6 @@ describe('gate', () => {
   it('古い領域が MIN_OLD_RATIO 未満 → wait old-region-too-small', () => {
     const contextWindow = 20_000;
     const tokens = Math.floor(THRESHOLD_RATIO * contextWindow);
-    const oldRegion = THRESHOLD_RATIO * contextWindow - KEEP_RECENT_TOKENS;
-    expect(oldRegion < MIN_OLD_RATIO * contextWindow).toBe(true);
     expect(
       gate(makeInput({ contextWindow, tokens, keepRecentTokens: KEEP_RECENT_TOKENS })),
     ).toEqual({ kind: 'wait', reason: 'old-region-too-small' });
@@ -81,7 +79,6 @@ describe('gate', () => {
   it('lastAppliedTokens から REARM 以上 → start', () => {
     const tokens = Math.floor(THRESHOLD_RATIO * CONTEXT_WINDOW);
     const lastAppliedTokens = tokens - Math.floor(REARM_RATIO * CONTEXT_WINDOW);
-    expect(tokens >= lastAppliedTokens + REARM_RATIO * CONTEXT_WINDOW).toBe(true);
     expect(gate(makeInput({ tokens, lastAppliedTokens }))).toEqual({ kind: 'start' });
   });
 });

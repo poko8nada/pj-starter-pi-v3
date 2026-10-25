@@ -637,10 +637,21 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 5: switch-and-docs
 
+- Findings: なし
+- Unplanned: なし
+- Commit: 3801e6f consult(async-precompact): switch docs to precompact
+- Stopped: なし
+
+### Cleanup: 重複と前提の整理
+
 - Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+  - `.pi/extensions/context-precompact/index.test.ts` の `signal が undefined → pass が始まり status が preparing` の 1 件を削りました。すべての偽 ctx が既定で `signal: undefined` のため、`AbortSignal.timeout` 枝は残る pass 試験のすべてで通り、開始と ready の断定は `turn_end で比率が閾値の手前` と `flush が実行中の pass を待つ` に残ります。
+  - `.pi/extensions/context-precompact/run/summarize.test.ts` の `done` の試験を 2 回呼びから 1 回呼びにしました。2 回とも同じ `done` の振る舞いで、結果と経過の断定は 1 回に残ります。
+  - `.pi/extensions/context-precompact/gate/gate.test.ts` の 2 件から前提の断定を削りました。`oldRegion < MIN_OLD_RATIO` と `tokens >= lastApplied + REARM` は試験の組み立ての確認で、振る舞いの確認は `old-region-too-small` と `start` の断定に残ります。使わなくなった `MIN_OLD_RATIO` の import も外しました。
+  - 消えた振る舞いの試験は見当たりませんでした。prune 削除後の全件実行で残る試験は現在の振る舞いだけを確かめています。
+  - 止めた分岐の試験は見当たりませんでした。今回の変更で到達不能になった分岐を確かめる試験はなく、残る分岐（有効・準備・適用・stale・失敗）は試験に残ります。
+  - 削除後は `pnpm test:run` 56 件・802 件、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` のすべてが通過しました。
+- Unplanned: なし
 
 ## Review
 

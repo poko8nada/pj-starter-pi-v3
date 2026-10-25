@@ -34,20 +34,17 @@ describe('summarize', () => {
       compact: async () => expected,
     };
     let clock = 1000;
-    const outcome = await summarize(ports, preparedOf(), AbortSignal.timeout(1000), () => clock);
-    // 2 回目の now で 50 進める
-    const timed = await summarize(ports, preparedOf(), AbortSignal.timeout(1000), () => {
+    const outcome = await summarize(ports, preparedOf(), AbortSignal.timeout(1000), () => {
       const current = clock;
       clock += 50;
       return current;
     });
     expect(outcome.kind).toBe('done');
-    expect(timed.kind).toBe('done');
-    if (timed.kind !== 'done') {
+    if (outcome.kind !== 'done') {
       throw new Error('must be done');
     }
-    expect(timed.result).toEqual(expected);
-    expect(timed.latencyMs).toBe(50);
+    expect(outcome.result).toEqual(expected);
+    expect(outcome.latencyMs).toBe(50);
   });
 
   it('fake port が throw → failed', async () => {
