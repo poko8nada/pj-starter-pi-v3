@@ -16,7 +16,7 @@ function input(overrides: Partial<GateInput>): GateInput {
 }
 
 describe('gate', () => {
-  it('有効・tokens 1000・枠 2000・ratio 0.5・候補 1 → run', () => {
+  it('有効・割合以上・候補あり → run', () => {
     expect(gate(input({}))).toEqual({ kind: 'run' });
   });
 
@@ -28,35 +28,41 @@ describe('gate', () => {
     expect(gate(input({ candidates: 0 }))).toEqual({ kind: 'idle', reason: 'empty' });
   });
 
-  it('tokens / 枠 がちょうど ratio → run、ratio 未満 → below-ratio', () => {
-    expect(gate(input({ tokens: 1000, lastTokens: 0 }))).toEqual({ kind: 'run' });
-    expect(gate(input({ tokens: 999, lastTokens: 0 }))).toEqual({
+  it('tokens / 枠がちょうど ratio → run、未満 → below-ratio', () => {
+    const atRatio = 1000;
+    const belowRatio = 999;
+    const contextWindow = 2000;
+    const ratio = 0.5;
+    expect(gate(input({ tokens: atRatio, contextWindow, ratio, lastTokens: 0 }))).toEqual({
+      kind: 'run',
+    });
+    expect(gate(input({ tokens: belowRatio, contextWindow, ratio, lastTokens: 0 }))).toEqual({
       kind: 'idle',
       reason: 'below-ratio',
     });
   });
 
-  it('lastTokens が undefined → run（初回）', () => {
+  it('lastTokens が無い → 初回として run', () => {
     expect(gate(input({ lastTokens: undefined }))).toEqual({ kind: 'run' });
   });
 
-  it('割合未満 + lastTokens 未定義 → below-ratio（初回でも走らない）', () => {
-    expect(gate(input({ tokens: 100, lastTokens: undefined }))).toEqual({
+  it('割合未満で lastTokens も無い → below-ratio', () => {
+    const tokens = 100;
+    expect(gate(input({ tokens, lastTokens: undefined }))).toEqual({
       kind: 'idle',
       reason: 'below-ratio',
     });
   });
 
-  it('割合以上 + lastTokens 未定義 → run', () => {
-    expect(gate(input({ tokens: 1500, lastTokens: undefined }))).toEqual({ kind: 'run' });
-  });
-
   it('前回から枠の 1 割が増えていなければ cooling、増えていれば run', () => {
-    expect(gate(input({ lastTokens: 1000, tokens: 1100 }))).toEqual({
+    const lastTokens = 1000;
+    const coolingTokens = 1100;
+    const runTokens = 1200;
+    expect(gate(input({ lastTokens, tokens: coolingTokens }))).toEqual({
       kind: 'idle',
       reason: 'cooling',
     });
-    expect(gate(input({ lastTokens: 1000, tokens: 1200 }))).toEqual({ kind: 'run' });
+    expect(gate(input({ lastTokens, tokens: runTokens }))).toEqual({ kind: 'run' });
   });
 
   it('tokens が null → unknown', () => {

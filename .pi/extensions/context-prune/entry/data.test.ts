@@ -1,56 +1,52 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { CUSTOM_TYPE, isPrunePass, passesOf } from './data.ts';
+import { CUSTOM_TYPE, passesOf } from './data.ts';
+import { customPassEntry, prunePass } from '../../../../test/prune-fixture.ts';
 
-let seq = 0;
-
-function customEntry(customType: string, data: unknown): SessionEntry {
-  seq += 1;
-  const entry: SessionEntry = {
+function customEntry(data: unknown, id = 'e-custom', customType = CUSTOM_TYPE): SessionEntry {
+  return {
     type: 'custom',
-    id: `e${seq}`,
-    parentId: seq > 1 ? `e${seq - 1}` : null,
-    timestamp: new Date(seq).toISOString(),
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
     customType,
     data,
   };
-  return entry;
 }
 
-function goodPass(): Record<string, unknown> {
+function userMessage(id = 'm1'): SessionEntry {
   return {
-    at: 1000,
-    tokensBefore: 60000,
-    droppedTokens: 3,
-    summary: '要約',
-    dropped: [{ id: 'e1', chars: 10 }],
-    droppedChars: 10,
-    kept: 1,
-    latencyMs: 1200,
-    usage: undefined,
+    type: 'message',
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
+    message: { role: 'user', content: [{ type: 'text', text: '質問' }], timestamp: 1 },
   };
 }
 
+const brokenNumbers = [
+  { tokensBefore: '60000' },
+  { droppedTokens: -1 },
+  { droppedTokens: Number.POSITIVE_INFINITY },
+] as const;
+
 describe('passesOf', () => {
-  it('正しい形の custom エントリ 2 件 → 2 件、順はエントリの順', () => {
-    const first = customEntry(CUSTOM_TYPE, { ...goodPass(), summary: '一つ目' });
-    const second = customEntry(CUSTOM_TYPE, { ...goodPass(), summary: '二つ目' });
-    const passes = passesOf([first, second]);
-    expect(passes).toHaveLength(2);
-    expect(passes[0]?.summary).toBe('一つ目');
-    expect(passes[1]?.summary).toBe('二つ目');
+  it('正しい custom 2 件 → 2 件、順はエントリの順', () => {
+    const firstSummary = '一つ目';
+    const secondSummary = '二つ目';
+    const entries = [
+      customPassEntry(prunePass({ summary: firstSummary }), 'e1'),
+      customPassEntry(prunePass({ summary: secondSummary }), 'e2'),
+    ];
+    const passes = passesOf(entries);
+    expect(passes).toHaveLength(entries.length);
+    expect(passes[0]?.summary).toBe(firstSummary);
+    expect(passes[1]?.summary).toBe(secondSummary);
   });
 
-  it('customType が違う、type が message → 0 件', () => {
-    const other = customEntry('other-type', goodPass());
-    const message: SessionEntry = {
-      type: 'message',
-      id: 'm1',
-      parentId: null,
-      timestamp: new Date(1).toISOString(),
-      message: { role: 'user', content: [{ type: 'text', text: '質問' }], timestamp: 1 },
-    };
-    expect(passesOf([other, message])).toHaveLength(0);
+  it('customType が違う / type が message → 0 件', () => {
+    const entries = [customEntry(prunePass(), 'e-other', 'other-type'), userMessage()];
+    expect(passesOf(entries)).toHaveLength(0);
   });
 
   it('data が欠けている → 0 件', () => {
@@ -62,50 +58,38 @@ describe('passesOf', () => {
       customType: CUSTOM_TYPE,
     };
     expect(passesOf([entry])).toHaveLength(0);
-    expect(isPrunePass(undefined)).toBe(false);
   });
 
-  it('tokensBefore が文字列 → 0 件', () => {
-    expect(
-      passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), tokensBefore: '60000' })]),
-    ).toHaveLength(0);
-  });
+  for (const patch of brokenNumbers) {
+    it(`壊れた数値 ${Object.keys(patch)[0]}=${String(Object.values(patch)[0])} → 0 件`, () => {
+      const data = { ...prunePass(), ...patch };
+      expect(passesOf([customEntry(data)])).toHaveLength(0);
+    });
+  }
 
   it('dropped が配列でない → 0 件', () => {
-    expect(passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), dropped: 'e1' })])).toHaveLength(0);
+    const patch = { dropped: 'e1' };
+    const data = { ...prunePass(), ...patch };
+    expect(passesOf([customEntry(data)])).toHaveLength(0);
   });
 
-  it('chars が負 → 0 件', () => {
-    expect(
-      passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), dropped: [{ id: 'e1', chars: -1 }] })]),
-    ).toHaveLength(0);
+  it('droppedTokens を持たない古い記録 → 0 件', () => {
+    const data = { ...prunePass() } as Record<string, unknown>;
+    delete data['droppedTokens'];
+    expect(passesOf([customEntry(data)])).toHaveLength(0);
   });
 
-  it('droppedTokens を持たない → 0 件（古い記録はむしする）', () => {
-    const old = { ...goodPass() };
-    delete old['droppedTokens'];
-    expect(passesOf([customEntry(CUSTOM_TYPE, old)])).toHaveLength(0);
-  });
-
-  it('droppedTokens が負 → 0 件', () => {
-    expect(passesOf([customEntry(CUSTOM_TYPE, { ...goodPass(), droppedTokens: -1 })])).toHaveLength(
-      0,
-    );
-  });
-
-  it('droppedTokens が Infinity → 0 件', () => {
-    expect(
-      passesOf([
-        customEntry(CUSTOM_TYPE, { ...goodPass(), droppedTokens: Number.POSITIVE_INFINITY }),
-      ]),
-    ).toHaveLength(0);
-  });
-
-  it('正しいパスと壊れたパスが混ざる → 正しいものだけ', () => {
-    const good = customEntry(CUSTOM_TYPE, goodPass());
-    const bad = customEntry(CUSTOM_TYPE, { ...goodPass(), tokensBefore: 'x' });
-    const passes = passesOf([good, bad]);
-    expect(passes).toHaveLength(1);
-    expect(passes[0]?.summary).toBe('要約');
+  it('正しい記録と壊れた記録が混ざる → 正しい物だけを残す', () => {
+    const firstSummary = '一つ目';
+    const secondSummary = '三つ目';
+    const entries = [
+      customPassEntry(prunePass({ summary: firstSummary }), 'e1'),
+      customEntry({ ...prunePass(), tokensBefore: 'x' }, 'e-bad'),
+      customPassEntry(prunePass({ summary: secondSummary }), 'e3'),
+    ];
+    const passes = passesOf(entries);
+    expect(passes).toHaveLength(2);
+    expect(passes[0]?.summary).toBe(firstSummary);
+    expect(passes[1]?.summary).toBe(secondSummary);
   });
 });

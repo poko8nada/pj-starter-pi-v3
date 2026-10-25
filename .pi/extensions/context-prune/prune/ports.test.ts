@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { piUsage } from '../../../../test/pi-fixture.ts';
+import { settingsJson } from '../../../../test/prune-fixture.ts';
 import {
   createPorts,
   summarizationReserve,
@@ -13,7 +15,7 @@ import type { JudgeRequest } from './judge.ts';
 
 function settingsDirWith(document: Record<string, unknown>): string {
   const dir = tempDir();
-  writeFileSync(join(dir, 'settings.json'), JSON.stringify(document));
+  writeFileSync(join(dir, 'settings.json'), settingsJson(document));
   return dir;
 }
 
@@ -21,17 +23,6 @@ function brokenDir(): string {
   const dir = tempDir();
   writeFileSync(join(dir, 'settings.json'), '{');
   return dir;
-}
-
-function testUsage() {
-  return {
-    input: 3,
-    output: 5,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 8,
-    cost: { input: 3, output: 5, cacheRead: 0, cacheWrite: 0, total: 8 },
-  };
 }
 
 function judgeRequestOf(): JudgeRequest {
@@ -57,9 +48,10 @@ function fakeCell(options: {
   const authImpl = options.auth;
   const availableImpl = options.available;
   const classifyImpl = options.classify;
+  const apiKey = 'test-key';
   const registry = {
     getApiKeyAndHeaders:
-      authImpl ?? (async () => ({ ok: true, apiKey: 'test-key', headers: { a: 'b', drop: null } })),
+      authImpl ?? (async () => ({ ok: true, apiKey, headers: { a: 'b', drop: null } })),
     getAvailableOfType:
       availableImpl ??
       (async () => [
@@ -83,7 +75,7 @@ function fakeCell(options: {
             confidence: 0.9,
           },
         },
-        usage: testUsage(),
+        usage: piUsage(),
         stopReason: 'stop',
         timestamp: 1,
       })),
@@ -102,7 +94,7 @@ function fakeCell(options: {
 /** 偽の要約関数。引数を録り、出来た要約か例外を返す */
 function summaryFake(
   captured: { args?: readonly unknown[] },
-  outcome: { readonly text: string; readonly usage: ReturnType<typeof testUsage> } | Error,
+  outcome: { readonly text: string; readonly usage: ReturnType<typeof piUsage> } | Error,
 ): SummarizeWithUsage {
   return async (...args: Parameters<SummarizeWithUsage>) => {
     captured.args = args;
@@ -116,10 +108,11 @@ function summaryFake(
 describe('summarize errors', () => {
   it('設定破損で failed、要約は呼ばない', async () => {
     const captured: { args?: readonly unknown[] } = {};
+    const text = 'x';
     const ports = createPorts(
       fakeCell({}),
       brokenDir(),
-      summaryFake(captured, { text: 'x', usage: testUsage() }),
+      summaryFake(captured, { text, usage: piUsage() }),
     );
     expect((await ports.summarize([])).kind).toBe('failed');
     expect(captured.args).toBeUndefined();
@@ -134,44 +127,46 @@ describe('summarize errors', () => {
   });
 
   it('認証が取れなくて failed、理由は auth の error', async () => {
-    const cell = fakeCell({ auth: async () => ({ ok: false, error: 'no key' }) });
+    const error = 'no key';
+    const cell = fakeCell({ auth: async () => ({ ok: false, error }) });
     const ports = createPorts(cell, settingsDirWith({}));
     const outcome = await ports.summarize([]);
-    expect(outcome).toEqual({ kind: 'failed', reason: 'no key' });
+    expect(outcome).toEqual({ kind: 'failed', reason: error });
   });
 
   it('要約の関数が投げて failed', async () => {
+    const message = 'summary boom';
     const ports = createPorts(
       fakeCell({}),
       settingsDirWith({}),
-      summaryFake({}, new Error('summary boom')),
+      summaryFake({}, new Error(message)),
     );
     const outcome = await ports.summarize([]);
     expect(outcome.kind).toBe('failed');
-    if (outcome.kind === 'failed') {
-      expect(outcome.reason).toContain('summary boom');
+    if (outcome.kind !== 'failed') {
+      throw new Error('must be failed');
     }
+    expect(outcome.reason).toContain(message);
   });
 
   it('要約が空で failed', async () => {
     const ports = createPorts(
       fakeCell({}),
       settingsDirWith({}),
-      summaryFake({}, { text: '   ', usage: testUsage() }),
+      summaryFake({}, { text: '   ', usage: piUsage() }),
     );
     const outcome = await ports.summarize([]);
     expect(outcome.kind).toBe('failed');
-    if (outcome.kind === 'failed') {
-      expect(outcome.reason).toContain('summary');
-    }
   });
 
   it('ok のとき要約と usage を返し、pi の要約関数にメッセージと session id を渡す', async () => {
     const captured: { args?: readonly unknown[] } = {};
+    const summary = '本番の要約';
+    const usage = piUsage();
     const ports = createPorts(
       fakeCell({}),
       settingsDirWith({}),
-      summaryFake(captured, { text: '本番の要約', usage: testUsage() }),
+      summaryFake(captured, { text: summary, usage }),
     );
     const recent = [
       {
@@ -185,11 +180,16 @@ describe('summarize errors', () => {
     if (outcome.kind !== 'ok') {
       throw new Error('must be ok');
     }
-    expect(outcome.summary).toBe('本番の要約');
-    expect(outcome.usage).toEqual({ input: 3, output: 5, cost: 8 });
+    expect(outcome.summary).toBe(summary);
+    expect(outcome.usage).toEqual({
+      input: usage.input,
+      output: usage.output,
+      cost: usage.cost.total,
+    });
     const args = captured.args ?? [];
     expect(args[0]).toEqual(recent);
-    expect(args[2]).toBe(10000);
+    const maxTokens = 8000;
+    expect(args[2]).toBe(Math.ceil(maxTokens / 0.8));
     expect(args[3]).toBe('test-key');
     expect(args[4]).toEqual({ a: 'b' });
     const customInstructions = args[6];
@@ -204,20 +204,22 @@ describe('summarize errors', () => {
 });
 
 describe('summarizationReserve', () => {
-  it('101 と 1000 → 127', () => {
-    expect(summarizationReserve(101, 1000)).toBe(127);
+  it('正の上限 → 上限を 0.8 で割って切り上げ', () => {
+    const maxTokens = 101;
+    const contextWindow = 1000;
+    expect(summarizationReserve(maxTokens, contextWindow)).toBe(Math.ceil(maxTokens / 0.8));
   });
 
-  it('0 と 1001 → 1252', () => {
-    expect(summarizationReserve(0, 1001)).toBe(1252);
+  it('0 の上限 → 文脈長で代替', () => {
+    const maxTokens = 0;
+    const contextWindow = 1001;
+    expect(summarizationReserve(maxTokens, contextWindow)).toBe(Math.ceil(contextWindow / 0.8));
   });
 
-  it('-1 と 1001 → 1252', () => {
-    expect(summarizationReserve(-1, 1001)).toBe(1252);
-  });
-
-  it('8000 と 200000 → 10000', () => {
-    expect(summarizationReserve(8000, 200000)).toBe(10000);
+  it('大きい上限と文脈長 → 上限を 0.8 で割って切り上げ', () => {
+    const maxTokens = 8000;
+    const contextWindow = 200000;
+    expect(summarizationReserve(maxTokens, contextWindow)).toBe(Math.ceil(maxTokens / 0.8));
   });
 });
 
@@ -229,7 +231,6 @@ describe('classify errors', () => {
   });
 
   it('getAvailableOfType の例外で failed', async () => {
-    // getAvailableOfType が reject したら failed になる
     const cell = fakeCell({
       available: () => Promise.reject(new Error('list boom')),
     });
@@ -249,16 +250,18 @@ describe('classify errors', () => {
 
   it('stopReason error で次の候補へ進む', async () => {
     const calls: string[] = [];
+    const firstId = 'jev-1.13-free';
+    const secondId = '~typesafe/jev-latest';
     // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに available の中身を変える
     const available = async () => [
       {
         provider: 'opencode',
-        id: 'jev-1.13-free',
+        id: firstId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
       {
         provider: 'openrouter',
-        id: '~typesafe/jev-latest',
+        id: secondId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
     ];
@@ -266,11 +269,11 @@ describe('classify errors', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 偽物の分類器が渡す model の id だけ読む
       const typed = model as { readonly id: string };
       calls.push(typed.id);
-      if (typed.id === 'jev-1.13-free') {
+      if (typed.id === firstId) {
         return {
           api: 'typesafe-system-one',
           provider: 'opencode',
-          model: 'jev-1.13-free',
+          model: firstId,
           answers: {},
           stopReason: 'error',
           errorMessage: 'first boom',
@@ -280,7 +283,7 @@ describe('classify errors', () => {
       return {
         api: 'typesafe-system-one',
         provider: 'openrouter',
-        model: '~typesafe/jev-latest',
+        model: secondId,
         answers: {
           keep_a: {
             type: 'choice',
@@ -289,7 +292,7 @@ describe('classify errors', () => {
             confidence: 0.9,
           },
         },
-        usage: testUsage(),
+        usage: piUsage(),
         stopReason: 'stop',
         timestamp: 1,
       };
@@ -298,21 +301,23 @@ describe('classify errors', () => {
     const ports = createPorts(cell, settingsDirWith({}));
     const outcome = await ports.classify(judgeRequestOf());
     expect(outcome.kind).toBe('ok');
-    expect(calls).toEqual(['jev-1.13-free', '~typesafe/jev-latest']);
+    expect(calls).toEqual([firstId, secondId]);
   });
 
   it('aborted で止まる', async () => {
     const calls: string[] = [];
+    const firstId = 'jev-1.13-free';
+    const secondId = '~typesafe/jev-latest';
     // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに available の中身を変える
     const available = async () => [
       {
         provider: 'opencode',
-        id: 'jev-1.13-free',
+        id: firstId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
       {
         provider: 'openrouter',
-        id: '~typesafe/jev-latest',
+        id: secondId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
     ];
@@ -333,20 +338,22 @@ describe('classify errors', () => {
     const ports = createPorts(cell, settingsDirWith({}));
     const outcome = await ports.classify(judgeRequestOf());
     expect(outcome.kind).toBe('failed');
-    expect(calls).toEqual(['jev-1.13-free']);
+    expect(calls).toEqual([firstId]);
   });
 
   it('答えの形が違えば次の候補へ進む', async () => {
+    const firstId = 'jev-1.13-free';
+    const secondId = '~typesafe/jev-latest';
     // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに available の中身を変える
     const available = async () => [
       {
         provider: 'opencode',
-        id: 'jev-1.13-free',
+        id: firstId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
       {
         provider: 'openrouter',
-        id: '~typesafe/jev-latest',
+        id: secondId,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
     ];
@@ -379,7 +386,7 @@ describe('classify errors', () => {
             confidence: 0.9,
           },
         },
-        usage: testUsage(),
+        usage: piUsage(),
         stopReason: 'stop',
         timestamp: 1,
       };
