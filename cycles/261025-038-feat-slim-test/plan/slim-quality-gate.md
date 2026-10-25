@@ -86,10 +86,14 @@
 
 ### Slice 1: 検査と報告の仕様
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4aad691d43869298fc6e2074544235571e519718
 - Stopped:
+
+### Cleanup: 重複・不要テストの点検
+
+- 落とすものなし。3 ファイルの各テストは plan の Steps と 1 対 1に対応し、重複・消えた振る舞い・止まった分岐・型が保証する前提のいずれにも当たらない。
 
 ## Review
 
