@@ -43,13 +43,20 @@
 10. 75 / Review Round 1 / `.pi/extensions/context-precompact/index.test.ts:342` の stale 検証は通知の有無までであり、`discardWithFallback`（`.pi/extensions/context-precompact/index.ts:159`）が置く `status: discarded` や通知種別 `warning`、`warn` 呼び出しまでは確かめていません。既存の stale 系テストと同一の方針のため Gap とはしませんが、今回の修正動機であった status の clear は `status.test.ts:31` の単体検証に間接的に依存しています。
 11. 76 / Review Round 1 / `.pi/extensions/context-precompact/index.test.ts:350` の `branch.slice(0, 5)` は `threeTurns()`（6 件）の末尾欠けを表す魔数であり、`slice(0, -1)` であれば工場の件数から切り離せます。既存の stale 系テストと同一の書き方のため finding とはしません。
 
+### ex-precompact-now-command (ADR 01)
+
+12. 84 / Review Round 1 / `.pi/extensions/context-precompact/index.ts:175` の `console.info` による applied ログは残っていますが、plan が対象にしていないため所見にしていません。
+
 ### async-precompact (Unit check) (ADR 01)
 
-12. Unit check / `/precompact now` / command が要約を待ち、info の chat 行を残す
-
-- Doing: `/precompact now` が `runPass` を await し、完了後に `notify(..., 'info')` で chat 行を出していた。
-- Left: `now` の command handler が要約の完了まで待ち、`info` の chat 行が消せず、入力が止まった。
-- Cost: `now` を使うたびに TUI が止まり、Pi を落とす必要がある。
+13. Unit check / `/precompact now` / command が要約を待ち、info の chat 行を残す
+    - Doing: `/precompact now` が `runPass` を await し、完了後に `notify(..., 'info')` で chat 行を出していた。
+    - Left: ex-plan で裏に流して即 return に直し、e7ade06 で直した。
+    - Cost: なし。
+14. Unit check / `reason` 捨て / 直接修正で理由まで捨てた
+    - Doing: 直接修正 3b73054 で console を消す際に `reason` まで捨て、設計に反した。
+    - Left: ex-plan で通知に回し、8278b24 で直した。
+    - Cost: なし。
 
 ## Triage
 
@@ -64,8 +71,9 @@
 - 9: dropped (ADR 01, Unit.context-precompact): Unplanned で開示済みで、コードの穴ではない。
 - 10: dropped (ADR 01, Unit.context-precompact): `turn_end` の stale 試験と `status.test.ts` が同じ枝を確かめている。
 - 11: dropped (ADR 01, Unit.context-precompact): テストの書き方の疑義で、振る舞いの穴ではない。既存の書き方に合わせている。
-- 12: done e7ade06, 3b73054 (ex-precompact-now-command, console 除去, ADR 01, Unit.context-precompact): `now` を裏に流して即 return、`applied` を footer のみにし、console を消して merge した。
-- 13: ex-plan ex-precompact-reason-notify (ADR 01, Unit.context-precompact): `reason` を捨てず通知に回し、console 禁止を lint にする。
+- 12: dropped (ADR 01, Unit.context-precompact): console の log は 3b73054 で消えたため、疑義は解消した。
+- 13: done e7ade06 (Unit check, ADR 01, Unit.context-precompact): `now` の固まりを直して merge した。
+- 14: done 8278b24 (ex-precompact-reason-notify, ADR 01, Unit.context-precompact): `reason` を通知に回して merge した。
 
 ## Verified
 

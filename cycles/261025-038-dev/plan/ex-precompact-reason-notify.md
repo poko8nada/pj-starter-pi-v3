@@ -58,19 +58,19 @@ cycles/261025-038-dev/
   - 偽 ctx の `model` 既定値が明示の undefined を潰したため、`'model' in options` に直した。
   - `compactOnceOk` の引数を `Parameters` の spread に直した。12引数の `compactFn` に合わせるため。
   - 行数制限のため2件の失敗試験を `describe('precompact failure reason')` に分けた。
-- Commit:
+- Commit: 8278b24 fix: notify failure reason in context-precompact
 - Stopped:
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
