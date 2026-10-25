@@ -64,7 +64,8 @@
 - 9: dropped (ADR 01, Unit.context-precompact): Unplanned で開示済みで、コードの穴ではない。
 - 10: dropped (ADR 01, Unit.context-precompact): `turn_end` の stale 試験と `status.test.ts` が同じ枝を確かめている。
 - 11: dropped (ADR 01, Unit.context-precompact): テストの書き方の疑義で、振る舞いの穴ではない。既存の書き方に合わせている。
-- 12: ex-plan ex-precompact-now-command (ADR 01, Unit.context-precompact): `/precompact now` が command を待たせ、info の chat 行を残す。
+- 12: done e7ade06, 3b73054 (ex-precompact-now-command, console 除去, ADR 01, Unit.context-precompact): `now` を裏に流して即 return、`applied` を footer のみにし、console を消して merge した。
+- 13: ex-plan ex-precompact-reason-notify (ADR 01, Unit.context-precompact): `reason` を捨てず通知に回し、console 禁止を lint にする。
 
 ## Verified
 
