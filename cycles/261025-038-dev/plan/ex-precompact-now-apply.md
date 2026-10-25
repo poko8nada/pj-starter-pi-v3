@@ -354,63 +354,63 @@ interface MutableState {
 
 - Findings: `now` は閾値を見ず、次の `turn_end` か `agent_before_settle` で適用される。`running` 中の `now` は旗を立てるだけで、走っているパスを止めない。
 - Unplanned: 分割ファイルを消したので、試験を `index.test.ts` に戻した。重複した 4 つを消して行数を収めた。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 2: tokens-after
 
 - Findings: `tokensAfter` は切れ目から後ろの推定と要約の推定の和になり、0 にならない。
 - Unplanned: `previousSummary` を任意にした（spread で受けるため）。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 3: settle-guard
 
 - Findings: `agent_before_settle` と `session_before_compact` は、拡張と Pi の両方が有効なときだけ適用する。
 - Unplanned: なし。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 4: session-reset
 
 - Findings: 旧パスの書き込みは `generation` で止める。旧パスは新しいパスの `running` を降ろさない。`forceApply` は引き継がない。
 - Unplanned: 重複した 3 つ（`turn_end` の手前、`enabled` が false、`session_start / shutdown`）を消した。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 5: apply-tokens
 
 - Findings: `applied` の前の数字は適用時の使用量。`usage` が `undefined` のときは準備時の `before` に退避する。
 - Unplanned: なし。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 6: command-edges
 
 - Findings: `status` が usage に落ちていたのを直した。コメントも `status` に触れる形にした。
 - Unplanned: `on` / `off` の `warning` は 1 つのループで確かめる。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 7: error-path
 
 - Findings: `notify` の throw で `running` が残るので、戻してから rethrow する。
 - Unplanned: throw の 3 通りを 1 つのループで確かめる。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 8: compare-tests
 
 - Findings: `mismatch` に `turnPrefixMessages` と `fileOps` が入る。既存の試験がそのまま通った。
 - Unplanned: なし。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。
 - Stopped: なし。
 
 ### Slice 9: dead-code
 
 - Findings: `MAX_IN_FLIGHT`、到達しない `return undefined`、`brokenNotified`、重複した `previousSummary` を消した。`brokenNotified` はどこからも読まれていなかった。
 - Unplanned: なし。
-- Commit: なし（オーナーの許可待ち）。
+- Commit: `fdf9add`。9 つは 1 度に実装したので、1 つのコミットにまとめた。
 - Stopped: なし。
 
 ### Cleanup: 重複した試験を 4 つ消した
