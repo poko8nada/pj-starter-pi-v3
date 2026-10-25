@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prunePass, pruneTemplate } from '../../../../test/prune-fixture.ts';
+import { prunePass, pruneTemplate } from '../prune.fixture.ts';
 import { draftsFor, markerText } from './drafts.ts';
 
 const shownCases = [{ chars: 1234, shown: '1,234' }] as const;

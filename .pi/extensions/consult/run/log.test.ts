@@ -2,7 +2,7 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../../../../test/consult-fixture.ts';
+import { aRunRecord } from '../consult.fixture.ts';
 import { dayFile, placeFor, type Place } from './place.ts';
 import {
   appendRun,

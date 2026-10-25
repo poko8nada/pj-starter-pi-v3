@@ -4,14 +4,14 @@
  * fake root にツリーを作り、`node_modules/.bin/tsc` にスタブを置く。
  * スタブは渡された `-p` を出して、`STUB_FAIL` に含まれる所だけ exit 1 で落とす。
  * これで、回した所の名前・渡された `-p` の道・exit を stdout で見る。
- * 表示の行は `test/scripts-fixture.ts` から組み立てる。
+ * 表示の行は `test/scripts.fixture.ts` から組み立てる。
  */
 
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FAILED, INVALID_LIST_LINE, OK, statusLine } from '../../test/scripts-fixture.ts';
+import { FAILED, INVALID_LIST_LINE, OK, statusLine } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck.mjs');

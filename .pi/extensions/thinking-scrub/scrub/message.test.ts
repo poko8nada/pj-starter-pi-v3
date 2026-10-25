@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
-import { assistantMessage, piUsage, type PiAssistantMessage } from '../../../../test/pi-fixture.ts';
+import { piUsage, type PiAssistantMessage } from '../../../../test/pi.fixture.ts';
 import {
   DEGENERATE_PREFIX,
   DEGENERATE_REPEATS,
   DEGENERATE_SUFFIX,
   DEGENERATE_UNIT,
+  assistantMessage,
   degenerate,
   degenerateExpected,
-} from '../../../../test/scrub-fixture.ts';
+} from '../scrub.fixture.ts';
 import { detectRuns } from './detect.ts';
 import { scrubMessage } from './message.ts';
 

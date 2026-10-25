@@ -22,7 +22,7 @@ import {
 } from './consult.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../../../../test/consult-fixture.ts';
+import { aRunRecord } from '../consult.fixture.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';

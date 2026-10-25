@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { closeDoc, planDoc } from '../../../../test/close-fixture.ts';
+import { closeDoc, planDoc } from './collect.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { noOf, writeClose } from './collect.mjs';
 

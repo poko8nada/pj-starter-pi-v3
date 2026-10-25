@@ -9,8 +9,8 @@ import {
   type SessionEntry,
 } from '@earendil-works/pi-coding-agent';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { piUsage } from '../../../test/pi-fixture.ts';
-import { settingsJson } from '../../../test/prune-fixture.ts';
+import { piUsage } from '../../../test/pi.fixture.ts';
+import { settingsJson } from './prune.fixture.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
 import { defaultSettings } from './settings/schema.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';

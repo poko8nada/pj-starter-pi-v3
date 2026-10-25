@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { settingsJson } from '../../../../test/prune-fixture.ts';
+import { settingsJson } from '../prune.fixture.ts';
 import { defaultSettings, parseSettings } from './schema.ts';
 
 const okCases = [

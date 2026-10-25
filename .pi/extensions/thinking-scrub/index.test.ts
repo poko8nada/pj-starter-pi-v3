@@ -7,17 +7,17 @@ import type {
   MessageEndEvent,
   MessageUpdateEvent,
 } from '@earendil-works/pi-coding-agent';
-import { assistantMessage } from '../../../test/pi-fixture.ts';
 import {
   DEGENERATE_UNIT,
   FOLLOWUP_REPEATING,
   SCRUB_PREFIX,
   SCRUB_REMOVED_LABEL,
   SCRUB_REMOVED_MARK,
+  assistantMessage,
   degenerate,
   degenerateExpected,
   thinkingWithRun,
-} from '../../../test/scrub-fixture.ts';
+} from './scrub.fixture.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
 import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
 import { MAX_ABORTS, MIN_THINKING, SCAN_EVERY } from './live/guard.ts';

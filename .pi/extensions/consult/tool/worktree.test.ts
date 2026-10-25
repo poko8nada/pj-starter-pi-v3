@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../../../../test/consult-fixture.ts';
+import { aRunRecord } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
 import { branchFor, consultRoot, findWorktree, topLevel } from '../run/worktree.ts';

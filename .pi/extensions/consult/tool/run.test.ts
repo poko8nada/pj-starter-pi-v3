@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseRunRequest } from './run.ts';
-import { aTypePolicy } from '../../../../test/consult-fixture.ts';
+import { aTypePolicy } from '../consult.fixture.ts';
 
 // 面（引数の検証）だけを試す。サブエージェントの起動と worktree は consult.test.ts が runtime ごと見る。
 

@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { piUsage } from '../../../../test/pi-fixture.ts';
-import { settingsJson } from '../../../../test/prune-fixture.ts';
+import { piUsage } from '../../../../test/pi.fixture.ts';
+import { settingsJson } from '../prune.fixture.ts';
 import {
   createPorts,
   summarizationReserve,

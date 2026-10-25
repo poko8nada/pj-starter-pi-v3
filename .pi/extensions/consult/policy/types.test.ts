@@ -2,7 +2,7 @@ import { chmodSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aTypePolicy, aTypesText } from '../../../../test/consult-fixture.ts';
+import { aTypePolicy, aTypesText } from '../consult.fixture.ts';
 import { CONFIG_FILE, loadTypes, parseTypes, resolveType } from './types.ts';
 
 // 設定の読み込みは毎回ファイルを触る。置き場は `test/temp-dir.ts` の helper（後始末も helper がする）。

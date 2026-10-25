@@ -13,7 +13,7 @@ import {
   type Spent,
 } from './spec.ts';
 import type { TypePolicy } from '../policy/types.ts';
-import { aConsultOptions, aTypePolicy } from '../../../../test/consult-fixture.ts';
+import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
 
 // 純粋な部分だけを試す。サブエージェントの起動と worktree は実際の pi とリポジトリが要るので扱わない。
 

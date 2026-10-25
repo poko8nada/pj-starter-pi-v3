@@ -1,25 +1,29 @@
+import { readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { configDefaults } from 'vitest/config';
 import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../vitest.config.ts';
+import { readList } from './list.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/** `test/` 直下の `*.ts` を `test/<名>` の形で集める。件数は直書きしない */
+function testFiles(): string[] {
+  const entries = readdirSync(join(root, 'test'), { withFileTypes: true });
+  const rels: string[] = [];
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name.endsWith('.ts')) {
+      rels.push(`test/${entry.name}`);
+    }
+  }
+  rels.sort();
+  return rels;
+}
 
 describe('testConfig', () => {
   it('false の一覧 → copy の各道から除外の glob を作る', () => {
-    const copy = [
-      '.pi',
-      'definition',
-      'lib',
-      '.github/workflows',
-      'test/temp-dir.ts',
-      'AGENTS.md',
-      'lefthook.yaml',
-      'tsconfig.json',
-      'vitest.config.ts',
-      '.oxlintrc.json',
-      '.oxfmtrc.json',
-      'scripts/checks',
-      'scripts/product-ready',
-      'scripts/harness',
-    ];
+    const { copy } = readList(root);
     const exclude = testConfig(false).test?.exclude ?? [];
     const expectedTail: string[] = [];
     for (const entry of copy) {
@@ -43,6 +47,13 @@ describe('testConfig', () => {
       const config = testConfig(harness);
       expect(config.test?.passWithNoTests).toBe(true);
       expect(config.test?.reporters).toEqual(expected);
+    }
+  });
+
+  it('test/ 直下の *.ts → すべて copy の項目にある', () => {
+    const { copy } = readList(root);
+    for (const rel of testFiles()) {
+      expect(copy).toContain(rel);
     }
   });
 });

@@ -6,14 +6,14 @@
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
  * だから `-p` の道に `.pi` が入るかで、`.pi` の group か root の group かが分かる。
  * tsc そのものが成功するかは pre-commit の時系列で担保されているので、ここでは見ない。
- * 理由行は `test/scripts-fixture.ts` から取る。`stub -p` は下のスタブが出す目印で、断言はそこから取る。
+ * 理由行は `test/scripts.fixture.ts` から取る。`stub -p` は下のスタブが出す目印で、断言はそこから取る。
  */
 
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { INVALID_LIST_LINE } from '../../test/scripts-fixture.ts';
+import { INVALID_LIST_LINE } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck-staged.mjs');

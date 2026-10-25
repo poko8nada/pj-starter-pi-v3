@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { pruneSettings, settingsJson } from '../../../../test/prune-fixture.ts';
+import { pruneSettings, settingsJson } from '../prune.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { readSettings } from './read.ts';
 import { defaultSettings } from './schema.ts';

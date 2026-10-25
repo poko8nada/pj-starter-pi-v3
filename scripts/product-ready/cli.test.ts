@@ -7,7 +7,7 @@ import {
   indented,
   onlyEquals,
   scriptsLine,
-} from '../../test/scripts-fixture.ts';
+} from '../../test/scripts.fixture.ts';
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 
 function makeScriptNames(): readonly string[] {
