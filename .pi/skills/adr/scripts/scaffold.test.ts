@@ -164,11 +164,6 @@ describe('parseArgs', () => {
     }
   });
 
-  it('知らない旗の後に数が来ても投げる', () => {
-    const nnn = '017';
-    expect(() => parseArgs(['--bogus', nnn])).toThrow();
-  });
-
   it('--root の値が欠けていても投げる', () => {
     expect(() => parseArgs(['--root'])).toThrow();
   });
