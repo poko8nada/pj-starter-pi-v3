@@ -250,13 +250,13 @@ test/
 ## Acceptance
 
 - Ran:
-  - `pnpm test:run` → 55 ファイル / 858 ケース緑
+  - `pnpm test:run` → 55 ファイル / 858 ケース緑（acceptance の修正の後、やり直した）
   - `pnpm typecheck` → root: ok、`.pi`: ok
   - `pnpm lint` → 緑
   - `pnpm format:check` → 緑
   - 「振る舞いを壊す」を 4 件試した。
     - `MIN_REPEATS` を 3 から 2 に → 3 件が赤。戻して緑を確認。
-    - `MIN_RUN_CHARS` を 400 から 300 に → 113 件とも緑のまま。赤にならなかった。
+    - `MIN_RUN_CHARS` を 400 から 300 に → 修正の前は 113 件とも緑のままだった。修正の後にもう一度同じ壊し方をして、「`MIN_CYCLES` 周期でも `MIN_RUN_CHARS` 文字未満 → run が無い」が赤になることを確かめた。戻して緑を確認。
     - `REPLAY_FIELDS` から `reasoning_text` を外す → 「thinkingSignature が reasoning / reasoning_text → 対象になる」が赤。戻して緑を確認。
     - `MAX_ABORTS` を 2 から 1 に → 3 件が赤。戻して緑を確認。
 - Findings:
