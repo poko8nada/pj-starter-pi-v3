@@ -27,7 +27,7 @@ import type { Prepared, PrepareStamp } from './prepare/types.ts';
 import { createSummaryPorts, type SummaryCtx } from './run/ports.ts';
 import { summarize } from './run/summarize.ts';
 import { readyFrom, type ReadyCompaction } from './apply/draft.ts';
-import { notifyText, notifyType, statusText, type StatusState } from './ui/status.ts';
+import { notifyText, statusText, type StatusState } from './ui/status.ts';
 import { parseCommand, statusLines, usageText } from './command/precompact.ts';
 
 export type { StatusState };
@@ -103,7 +103,7 @@ function readSettingsOrNotify(deps: Deps, ctx: PrecompactCtx): Settings | undefi
   if (read.kind === 'broken') {
     if (!deps.state.brokenNotified) {
       deps.state.brokenNotified = true;
-      ctx.ui.notify(`context-precompact: settings broken (${read.reason})`);
+      ctx.ui.notify(`context-precompact: settings broken (${read.reason})`, 'warning');
     }
     return undefined;
   }
@@ -138,15 +138,6 @@ function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefin
   return undefined;
 }
 
-/** 適用の通知を出す。footer は applied では clear される */
-function notifyApplied(deps: Deps, ctx: PrecompactCtx, before: number, after: number): void {
-  const state: StatusState = { kind: 'applied', before, after };
-  const text = notifyText(state);
-  if (text !== undefined) {
-    ctx.ui.notify(text, notifyType(state));
-  }
-}
-
 /** フォールバックの通知を出す */
 function notifyFallback(ctx: PrecompactCtx): void {
   const text = notifyText({ kind: 'failed' });
@@ -179,14 +170,13 @@ function guardOf(
   });
 }
 
-/** 適用する。`lastAppliedTokens` を進め、通知して footer を clear する */
+/** 適用する。`lastAppliedTokens` を進め、footer に applied を出す */
 function applyReady(deps: Deps, ctx: PrecompactCtx, ready: ReadyCompaction): BoundaryResult {
   console.info(`context-precompact: applied (${ready.tokensBefore} → ${ready.tokensAfter})`);
   deps.state.prepared = undefined;
   deps.state.lastAppliedTokens = ready.tokensAfter;
   deps.state.status = { kind: 'applied', before: ready.tokensBefore, after: ready.tokensAfter };
   refreshStatus(deps, ctx);
-  notifyApplied(deps, ctx, ready.tokensBefore, ready.tokensAfter);
   return { entries: [{ ...ready.draft }] };
 }
 
@@ -274,21 +264,6 @@ function beginPass(deps: Deps, ctx: PrecompactCtx): void {
       deps.state.inFlight = undefined;
     }
   });
-}
-
-/** 表で 1 パス走らせる。実行中なら `running` を返す */
-async function runPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
-  if (deps.state.running) {
-    return 'running';
-  }
-  deps.state.running = true;
-  setStatusState(deps, ctx, { kind: 'preparing' });
-  try {
-    return await doPass(deps, ctx);
-  } finally {
-    deps.state.running = false;
-    deps.state.inFlight = undefined;
-  }
 }
 
 /** `turn_end` の受け口。適用か開始か見送りを決める */
@@ -453,16 +428,10 @@ async function onCommand(deps: Deps, args: string, ctx: PrecompactCtx): Promise<
     return;
   }
   if (deps.state.running) {
-    ctx.ui.notify('precompact: running');
     return;
   }
-  const outcome = await runPass(deps, ctx);
-  if (outcome === 'ready' && deps.state.prepared !== undefined) {
-    const ready = deps.state.prepared;
-    ctx.ui.notify(`precompact: ready (${ready.tokensBefore} → ${ready.tokensAfter})`, 'info');
-  } else if (outcome === 'idle') {
-    ctx.ui.notify('precompact: nothing to prepare');
-  }
+  beginPass(deps, ctx);
+  return;
 }
 
 /** 配線の中身。`registerPrecompact` はこれを pi につなぐだけにする */

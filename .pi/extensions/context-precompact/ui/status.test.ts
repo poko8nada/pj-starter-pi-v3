@@ -21,11 +21,12 @@ describe('statusText', () => {
     expect(notifyText({ kind: 'failed' })).toBe('precompact: failed; default compaction will run');
   });
 
-  it('applied → status は undefined、通知は applied 1,000 → 500', () => {
-    expect(statusText({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
-    expect(notifyText({ kind: 'applied', before: BEFORE, after: AFTER })).toBe(
+  it('applied → footer に applied 1,000 → 500、通知はなし', () => {
+    expect(statusText({ kind: 'applied', before: BEFORE, after: AFTER })).toBe(
       'precompact: applied (1,000 → 500)',
     );
+    expect(notifyText({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
+    expect(notifyType({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
   });
 
   it('discarded → status は undefined、通知はフォールバック warning', () => {
@@ -46,7 +47,7 @@ describe('statusText', () => {
     expect(statusText({ kind: 'ready', before: MILLION, after: 0 })).toBe(
       'precompact: ready (1,000,000 → 0)',
     );
-    expect(notifyType({ kind: 'applied', before: BEFORE, after: AFTER })).toBe('info');
+    expect(notifyType({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
     expect(notifyType({ kind: 'failed' })).toBe('warning');
   });
 });

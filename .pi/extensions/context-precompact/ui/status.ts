@@ -21,6 +21,7 @@ export function statusText(state: StatusState): string | undefined {
     case 'failed':
       return 'precompact: failed';
     case 'applied':
+      return `precompact: applied (${formatCount(state.before)} → ${formatCount(state.after)})`;
     case 'discarded':
     case 'idle':
       return undefined;
@@ -31,14 +32,13 @@ export function statusText(state: StatusState): string | undefined {
 /** 通知に出す文言。無ければ `undefined` で出さない */
 export function notifyText(state: StatusState): string | undefined {
   switch (state.kind) {
-    case 'applied':
-      return `precompact: applied (${formatCount(state.before)} → ${formatCount(state.after)})`;
     case 'failed':
     case 'discarded':
       return 'precompact: failed; default compaction will run';
     case 'idle':
     case 'preparing':
     case 'ready':
+    case 'applied':
       return undefined;
   }
   return undefined;
@@ -47,14 +47,13 @@ export function notifyText(state: StatusState): string | undefined {
 /** 通知の種類。無ければ `undefined` */
 export function notifyType(state: StatusState): 'info' | 'warning' | 'error' | undefined {
   switch (state.kind) {
-    case 'applied':
-      return 'info';
     case 'failed':
     case 'discarded':
       return 'warning';
     case 'idle':
     case 'preparing':
     case 'ready':
+    case 'applied':
       return undefined;
   }
   return undefined;
