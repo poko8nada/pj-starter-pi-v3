@@ -339,6 +339,22 @@ describe('precompact wiring', () => {
     expect(wiring.onBeforeSettle(cold.ctx)).toBeUndefined();
   });
 
+  it('agent_before_settle で prepared が stale → draft 無し・フォールバック通知', async () => {
+    const branch = threeTurns();
+    const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    const wiring = wiringWith();
+    await wiring.onTurnEnd(lead.ctx);
+    await wiring.flush();
+    expect(wiring.getState().prepared).toBeDefined();
+    const stale = fakeCtx({
+      branch: branch.slice(0, 5),
+      usage: contextUsageOf(THRESHOLD_TOKENS),
+    });
+    expect(wiring.onBeforeSettle(stale.ctx)).toBeUndefined();
+    expect(wiring.getState().prepared).toBeUndefined();
+    expect(stale.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
+  });
+
   it('turn_end の apply で stale → draft 無し・フォールバック通知', async () => {
     const branch = threeTurns();
     const last = branch[branch.length - 1];

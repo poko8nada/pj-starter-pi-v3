@@ -32,6 +32,12 @@ describe('parseSettings', () => {
     );
   });
 
+  it('thresholdRatio が上限超過 → broken', () => {
+    expect(
+      parseSettings(JSON.stringify({ thresholdRatio: MAX_THRESHOLD_RATIO + Number.EPSILON })).kind,
+    ).toBe('broken');
+  });
+
   it('keepRecentTokens が下限未満 → broken', () => {
     expect(
       parseSettings(JSON.stringify({ keepRecentTokens: MIN_KEEP_RECENT_TOKENS - 1 })).kind,

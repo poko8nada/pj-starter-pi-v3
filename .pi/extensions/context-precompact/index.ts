@@ -355,8 +355,10 @@ function onBeforeSettle(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefi
   const branch = ctx.sessionManager.getBranch();
   const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
   if (guarded.kind === 'stale') {
-    deps.state.prepared = undefined;
-    console.warn(
+    discardWithFallback(
+      deps,
+      ctx,
+      'precompact: failed; default compaction will run',
       `context-precompact: discarded stale preparation (${guarded.reason}); default compaction will run`,
     );
     return undefined;
