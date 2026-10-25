@@ -492,6 +492,7 @@ describe('precompact wiring', () => {
     const second = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onTurnEnd(second.ctx);
     expect(first.notified.filter((n) => n.message.includes('broken'))).toHaveLength(1);
+    expect(first.notified.find((n) => n.message.includes('broken'))?.type).toBe('warning');
     expect(second.notified.filter((n) => n.message.includes('broken'))).toHaveLength(0);
     expect(wiring.getState().running).toBe(false);
   });
@@ -526,7 +527,7 @@ describe('precompact commands', () => {
     expect(usageSetup.notified[0]?.message).toContain('usage');
   });
 
-  it('/precompact on / off / now → 通知と settings の書き換え', async () => {
+  it('/precompact on / off / now → settings の書き換えと裏での準備開始', async () => {
     const dir = defaultSettingsDir();
     const branch = threeTurns();
     const { pi } = fakePi();
@@ -570,9 +571,15 @@ describe('precompact commands', () => {
     await wiringNow.onCommand('now', deferredSetup.ctx);
     expect(wiringNow.getState().running).toBe(true);
     expect(wiringNow.getState().status).toEqual({ kind: 'preparing' });
+    expect(deferredSetup.notified).toHaveLength(0);
+    const busySetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiringNow.onCommand('now', busySetup.ctx);
+    expect(busySetup.notified).toHaveLength(0);
+    expect(wiringNow.getState().status).toEqual({ kind: 'preparing' });
     resolveGate();
     await wiringNow.flush();
     expect(wiringNow.getState().status.kind).toBe('ready');
+    expect(deferredSetup.notified).toHaveLength(0);
   });
 
   it('prepare が 4 つの getter の値を使う', async () => {

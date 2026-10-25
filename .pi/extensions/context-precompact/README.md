@@ -16,14 +16,14 @@ Before applying, the extension checks the session id, that the preparation-time 
 
 - `/precompact` shows on/off, whether a draft is prepared, whether a pass is running, and the last applied tokens.
 - `/precompact on` and `/precompact off` rewrite only `enabled` in `settings.json`.
-- `/precompact now` runs one preparation pass in the foreground and reports the result.
+- `/precompact now` starts one preparation pass in the background and returns immediately without notifying; watch the footer for `preparing` → `ready`. If a pass is already running, it returns silently.
 
 ## Status line
 
 - `precompact: preparing…` while a pass runs.
 - `precompact: ready (X → Y)` when a draft is ready (an estimate).
 - `precompact: failed` when the pass failed; the next line tells you the default compaction will run.
-- `applied` clears the line and notifies `precompact: applied (X → Y)`.
+- `precompact: applied (X → Y)` when a draft was applied (an estimate).
 
 ## Settings
 
