@@ -1,13 +1,26 @@
 import { configDefaults } from 'vitest/config';
 import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../vitest.config.ts';
-import { harnessExcludes } from './list.mjs';
 
 describe('testConfig', () => {
   it('false の一覧 → copy の各道から除外の glob を作る', () => {
-    const copy = ['.pi', 'scripts/harness'];
-    const exclude = [...configDefaults.exclude, ...harnessExcludes({ copy, skip: [], legacy: [] })];
-    expect(exclude.slice(0, configDefaults.exclude.length)).toEqual([...configDefaults.exclude]);
+    const copy = [
+      '.pi',
+      'definition',
+      'lib',
+      '.github/workflows',
+      'test/temp-dir.ts',
+      'AGENTS.md',
+      'lefthook.yaml',
+      'tsconfig.json',
+      'vitest.config.ts',
+      '.oxlintrc.json',
+      '.oxfmtrc.json',
+      'scripts/checks',
+      'scripts/product-ready',
+      'scripts/harness',
+    ];
+    const exclude = testConfig(false).test?.exclude ?? [];
     const expectedTail: string[] = [];
     for (const entry of copy) {
       const rel = entry.replace(/\/+$/, '');
@@ -17,8 +30,6 @@ describe('testConfig', () => {
       expectedTail.push(rel, `${rel}/**`);
     }
     expect(exclude.slice(configDefaults.exclude.length)).toEqual(expectedTail);
-    expect(exclude).toContain(copy[0]);
-    expect(exclude).toContain(`${copy[0]}/**`);
   });
 
   it('true の一覧 → 除外が無い', () => {
