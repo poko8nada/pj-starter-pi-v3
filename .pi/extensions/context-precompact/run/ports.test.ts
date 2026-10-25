@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CompactionResult, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createSummaryPorts, type SummaryCtx } from './ports.ts';
+import { createSummaryPorts, NO_MODEL_REASON, type SummaryCtx } from './ports.ts';
 import type { PreparedCompaction } from '../prepare/types.ts';
 import { RESERVE_TOKENS } from '../settings/constants.ts';
 
@@ -122,6 +122,6 @@ describe('createSummaryPorts', () => {
   });
 
   it('model が undefined → throw', () => {
-    expect(() => createSummaryPorts(ctxOf({ model: undefined }))).toThrow();
+    expect(() => createSummaryPorts(ctxOf({ model: undefined }))).toThrow(NO_MODEL_REASON);
   });
 });

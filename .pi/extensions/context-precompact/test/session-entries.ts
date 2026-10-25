@@ -7,7 +7,7 @@ import { sessionEntryToContextMessages, type SessionEntry } from '@earendil-work
 import type { ProjectedEntry } from '../prepare/types.ts';
 
 /** 1 メッセージの本文。約 1000 トークンになる長さ */
-export const TURN_TEXT = 'x'.repeat(4_000);
+const TURN_TEXT = 'x'.repeat(4_000);
 
 export interface CompactionOptions {
   readonly fromHook?: boolean;
@@ -22,7 +22,6 @@ export interface SessionFixture {
   readonly compaction: (summary: string, options?: CompactionOptions) => SessionEntry;
   readonly project: (entries: readonly SessionEntry[]) => ProjectedEntry[];
   readonly turns: (count: number) => SessionEntry[];
-  readonly lastId: () => string;
 }
 
 interface Ids {
@@ -153,6 +152,5 @@ export function createSessionFixture(): SessionFixture {
       }
       return entries;
     },
-    lastId: () => latest,
   };
 }

@@ -106,7 +106,6 @@ function compactOnceOk(): SummaryCtx['compactFn'] {
 
 interface CtxSetup {
   readonly ctx: PrecompactCtx;
-  readonly calls: string[];
   readonly notified: { readonly message: string; readonly type: string | undefined }[];
   readonly statuses: (string | undefined)[];
 }
@@ -118,14 +117,12 @@ function fakeCtx(options: {
   readonly signal?: AbortSignal | undefined;
   readonly model?: ExtensionContext['model'];
 }): CtxSetup {
-  const calls: string[] = [];
   const notified: { message: string; type: string | undefined }[] = [];
   const statuses: (string | undefined)[] = [];
   const sessionId = options.sessionId ?? SESSION_ID;
   const branch = options.branch;
   const manager = {
     buildSessionProjection: () => {
-      calls.push('buildSessionProjection');
       return {
         entries: projectEntries(branch),
         messages: [],
@@ -134,11 +131,9 @@ function fakeCtx(options: {
       };
     },
     getBranch: () => {
-      calls.push('getBranch');
       return [...branch];
     },
     getSessionId: () => {
-      calls.push('getSessionId');
       return sessionId;
     },
   };
@@ -149,7 +144,6 @@ function fakeCtx(options: {
     modelRegistry: registryFake(),
     thinkingLevel: 'medium',
     getContextUsage: () => {
-      calls.push('getContextUsage');
       return options.usage;
     },
     signal: options.signal,
@@ -162,7 +156,7 @@ function fakeCtx(options: {
       },
     },
   };
-  return { ctx, calls, notified, statuses };
+  return { ctx, notified, statuses };
 }
 
 interface PiSetup {
@@ -698,21 +692,25 @@ describe('precompact commands', () => {
     ]);
   });
 
-  it('prepare が 4 つの getter の値を使う', async () => {
+  it('/precompact が失敗の理由を status 行に出す', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
-    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-    const wiring = wiringWith();
-    await wiring.onTurnEnd(setup.ctx);
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: defaultSettingsDir(),
+      now: () => 0,
+      compactFn: async () => {
+        throw new Error(BOOM);
+      },
+    });
+    const failed = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', failed.ctx);
     await wiring.flush();
-    for (const key of [
-      'buildSessionProjection',
-      'getBranch',
-      'getContextUsage',
-      'getSessionId',
-    ] as const) {
-      expect(setup.calls).toContain(key);
-    }
+    const after = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('', after.ctx);
+    expect(after.notified[0]?.message).toContain(
+      `status: ${statusLine({ kind: 'failed', reason: BOOM })}`,
+    );
   });
 });
 
