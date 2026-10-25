@@ -3,15 +3,15 @@
  *
  * 設定の JSON、`custom` のエントリ、prune の記録を作る。
  * 期待値は `defaultSettings()` と工場に渡した値から取る。
- * pi の `usage` とメッセージは `test/pi-fixture.ts` から読む。同じ物を作らない。
+ * pi の `usage` とメッセージは `test/pi.fixture.ts` から読む。同じ物を作らない。
  * 印の雛形はここに集める。
  *
  * 値と文字列を組み立てるだけで、プロセスも FS も開かない。
  * テストの外から読まれても、何も起きずに止まらない。
  */
-import { CUSTOM_TYPE, type PrunePass } from '../.pi/extensions/context-prune/entry/data.ts';
-import type { Failure, Status } from '../.pi/extensions/context-prune/command/prune.ts';
-import { defaultSettings, type Settings } from '../.pi/extensions/context-prune/settings/schema.ts';
+import { CUSTOM_TYPE, type PrunePass } from './entry/data.ts';
+import type { Failure, Status } from './command/prune.ts';
+import { defaultSettings, type Settings } from './settings/schema.ts';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
 
 /** 設定の文書を JSON にする */

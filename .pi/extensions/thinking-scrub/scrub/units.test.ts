@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cycleText } from '../../../../test/scrub-fixture.ts';
+import { cycleText } from '../scrub.fixture.ts';
 import {
   MAX_PERIOD_UNITS,
   MIN_CYCLES,

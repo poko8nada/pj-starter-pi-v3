@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { piUsage } from '../../../../test/pi-fixture.ts';
+import { piUsage } from '../../../../test/pi.fixture.ts';
 import { collect, excerptOf, messageText, type EntryMessage } from './collect.ts';
 
 function userEntry(id: string, text: string): SessionEntry {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
-import { aConsultOptions, aTypePolicy } from '../../../../test/consult-fixture.ts';
+import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
 import { branchFor } from './worktree.ts';
 import type { Worktree } from './worktree.ts';
 

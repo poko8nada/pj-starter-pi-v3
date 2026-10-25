@@ -7,7 +7,7 @@ import {
   pruneSettings,
   pruneStatus,
   settingsJson,
-} from '../../../../test/prune-fixture.ts';
+} from '../prune.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { formatCount } from '../format/count.ts';
 import { parseCommand, statusLines, usageText, writeEnabled } from './prune.ts';

@@ -10,9 +10,9 @@
  * - 期待値は工場に渡した値から取る。断言に数や文を直書きしない。
  */
 
-import type { TypePolicy } from '../.pi/extensions/consult/policy/types.ts';
-import type { ConsultOptions } from '../.pi/extensions/consult/sub/spec.ts';
-import type { RunRecord } from '../.pi/extensions/consult/run/log.ts';
+import type { TypePolicy } from './policy/types.ts';
+import type { ConsultOptions } from './sub/spec.ts';
+import type { RunRecord } from './run/log.ts';
 
 /** 最小の正しい type。1 箇所だけ壊すのに使う */
 export function aTypePolicy(overrides: Partial<TypePolicy> = {}): TypePolicy {

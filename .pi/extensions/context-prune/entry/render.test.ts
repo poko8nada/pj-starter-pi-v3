@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Theme } from '@earendil-works/pi-coding-agent';
 import { cardText, createCard } from './render.ts';
-import { prunePass } from '../../../../test/prune-fixture.ts';
+import { prunePass } from '../prune.fixture.ts';
 
 function fakeTheme(): Theme {
   const theme = {

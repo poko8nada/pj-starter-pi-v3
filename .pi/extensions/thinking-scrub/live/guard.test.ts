@@ -5,7 +5,7 @@ import {
   FOLLOWUP_REPEATING,
   loopSentence,
   thinkingWithRun,
-} from '../../../../test/scrub-fixture.ts';
+} from '../scrub.fixture.ts';
 import {
   emptyGuard,
   followUpText,

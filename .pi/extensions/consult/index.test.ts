@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { aRunRecord } from '../../../test/consult-fixture.ts';
+import { aRunRecord } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';

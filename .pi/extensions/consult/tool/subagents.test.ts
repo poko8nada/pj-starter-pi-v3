@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../../../../test/consult-fixture.ts';
+import { aRunRecord } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import {

@@ -4,7 +4,7 @@
  * fake の 2 つのツリー（元と先）を `tempDir()` で作り、
  * `node scripts/harness/index.mjs` を子プロセスで呼ぶ（`product-ready/index.test.ts` と同じ道）。
  * 向き、表示の行、exit を見る。
- * 塊の行は `test/scripts-fixture.ts` から組み立てる。
+ * 塊の行は `test/scripts.fixture.ts` から組み立てる。
  */
 
 import { spawnSync } from 'node:child_process';
@@ -28,7 +28,7 @@ import {
   pullLine,
   pushLine,
   sameLine,
-} from '../../test/scripts-fixture.ts';
+} from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'harness', 'index.mjs');

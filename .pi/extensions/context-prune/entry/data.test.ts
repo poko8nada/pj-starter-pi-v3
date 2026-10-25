@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
 import { CUSTOM_TYPE, passesOf } from './data.ts';
-import { customPassEntry, prunePass } from '../../../../test/prune-fixture.ts';
+import { customPassEntry, prunePass } from '../prune.fixture.ts';
 
 function customEntry(data: unknown, id = 'e-custom', customType = CUSTOM_TYPE): SessionEntry {
   return {

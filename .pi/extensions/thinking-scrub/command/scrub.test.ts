@@ -12,7 +12,7 @@ import {
   SCRUB_SHOW_OFF,
   SCRUB_SHOW_ON,
   SCRUB_USAGE_LINE,
-} from '../../../../test/scrub-fixture.ts';
+} from '../scrub.fixture.ts';
 import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
 import type { SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';

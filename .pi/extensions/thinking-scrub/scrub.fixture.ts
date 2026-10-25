@@ -1,9 +1,14 @@
 /**
- * thinking の本文と印の工場。
+ * thinking-scrub のテストが使う工場。
+ *
+ * thinking の本文と印、assistant メッセージを作る。
+ * 退化した thinking が既定の本文（形はホスト、中身は機能）。
+ * pi の `usage` と型は `test/pi.fixture.ts` から読む。同じ物を作らない。
  *
  * 値と文字列を組み立てるだけで、プロセスも FS も開かない。
  * テストの外から読まれても、何も起きずに止まらない。
  */
+import { piUsage, type PiAssistantMessage } from '../../../test/pi.fixture.ts';
 
 /** 退化の前後の印。`degenerate()` と期待値を同じ値から組む */
 export const DEGENERATE_PREFIX = 'foo';
@@ -40,6 +45,22 @@ export function thinkingWithRun(length: number, base = 0): string {
     text += (text.length === 0 ? '' : ' ') + cycle;
   }
   return text.slice(0, length);
+}
+
+/** assistant メッセージを作る。既定は退化した thinking 1 件 */
+export function assistantMessage(overrides: Record<string, unknown> = {}): PiAssistantMessage {
+  const base = {
+    role: 'assistant',
+    content: [{ type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' }],
+    api: 'openai-completions',
+    provider: 'opencode-go',
+    model: 'deepseek-v4.1-flash',
+    usage: piUsage(),
+    stopReason: 'stop',
+    timestamp: 123,
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- テストの偽物を作る
+  return { ...base, ...overrides } as unknown as PiAssistantMessage;
 }
 
 /** 通知と指示の印を 1 か所に集める。製品の文言が変わればここだけ直す */

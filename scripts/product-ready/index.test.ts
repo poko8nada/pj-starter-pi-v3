@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ONLY_FLAG, RUN_FLAG, countLine, indented } from '../../test/scripts-fixture.ts';
+import { ONLY_FLAG, RUN_FLAG, countLine, indented } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
