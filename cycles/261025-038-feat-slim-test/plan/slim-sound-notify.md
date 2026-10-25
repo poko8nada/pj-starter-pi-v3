@@ -97,15 +97,27 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — `.pi/extensions/sound-notify/README.md:29,61,81` の 3 か所が `Ping` に揃い、残る `Glass` は `done` の既定だけで、古い音名は残りませんでした。
+- Unlisted: なし — 差分は `Files` の 2 件（`.pi/extensions/sound-notify/index.test.ts` と `.pi/extensions/sound-notify/README.md`）だけで、`index.ts` の変更はありませんでした。
+- Gaps: なし — `Steps` の各ケースは対応するテストに対応し、落とすと決めた 4 件以外の未カバーは重複か型の前提か気づかれない範囲でした。
+- Unproven: なし — 各テストは音や `cmux` の有無を変えると落ちる作りで、別名の 2 件が種類の取り違えを押さえていました。
+- Noise: なし — 断言に音名や旗の直書きはなく、型が決める前提の重複も誰も気づかない追加のケースもありませんでした。
 - Doubts:
+  - `.pi/extensions/sound-notify/index.test.ts:285` の入口テストは実物の `config.json` を読むため、手元に置いた設定があると結果が揺れる可能性があります。
+  - `.pi/extensions/sound-notify/index.test.ts:149` の `compact` と `question` は既定が共に `Ping` のため、単発の断言だけでは種類の取り違えを区別できませんが、別名の 2 件が押さえています。
+  - `.pi/extensions/sound-notify/index.test.ts:252` の `notifications: false` は `done` でのみ確かめ、`permission` と `question` は代表で押さえています。
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 55 ファイル / 880 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `dispatch` の `!config.enabled` を外す → 「enabled が false → commit でも compact でも鳴らない」が赤。戻して緑を確認。
+    - `isCommitResult` の `{7,40}` を `{6,40}` にする → 「コミットの形 → commit の音が 1 回鳴り、6 桁では鳴らない」が赤。戻して緑を確認。
+    - `dispatch` の `config.notifications &&` を外す → 「notifications が false → 音は鳴り、cmux を呼ばない」が赤。戻して緑を確認。
+- Findings: なし
 - Doubts:
+  - `.pi/extensions/sound-notify/index.test.ts:285` の入口テストは、`extensionDefault` が読む実物の `config.json` に依ります。この repo には置いていませんが、手元に設定を置くと結果が揺れます。
