@@ -629,10 +629,11 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 4: wiring-and-status
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `index.ts` に既定 export を足しました。Pi は拡張の既定 export を工場として読むため、これが無いと配線が読み込まれません。`registerPrecompact` に委ねるだけで、振る舞いは増やしていません。
+- Commit: 0d66042 consult(async-precompact): add wiring and status
+- Stopped: なし
 
 ### Slice 5: switch-and-docs
 
