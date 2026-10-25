@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import {
+  SCRUB_BROKEN_MARK,
+  SCRUB_DEFAULTS_MARK,
+  SCRUB_HIDE_LINE,
+  SCRUB_LAST_NONE,
+  SCRUB_OFF_LINE,
+  SCRUB_ON_LINE,
+  SCRUB_PREFIX,
+  SCRUB_REMOVED_LABEL,
+  SCRUB_SHOW_LINE,
+  SCRUB_SHOW_OFF,
+  SCRUB_SHOW_ON,
+  SCRUB_USAGE_LINE,
+} from '../scrub.fixture.ts';
 import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
 import type { SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';
 
-// CommandPort は記録する偽物で渡す。
+// CommandPort は記録する偽物で渡す。出力の文は工場の印と回数から組む。
 
 function fakePort(
   overrides: {
@@ -44,7 +58,7 @@ describe('runCommand', () => {
     const lines = runCommand(port, parseCommand('off'), 100);
     expect(written).toEqual([false]);
     expect(shown).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: off']);
+    expect(lines).toEqual([SCRUB_OFF_LINE]);
   });
 
   it('on → writeEnabled(true) が 1 回呼ばれ、on の行が返る', () => {
@@ -52,7 +66,7 @@ describe('runCommand', () => {
     const lines = runCommand(port, parseCommand('on'), 100);
     expect(written).toEqual([true]);
     expect(shown).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: on']);
+    expect(lines).toEqual([SCRUB_ON_LINE]);
   });
 
   it('show → writeShow(true) が 1 回、writeEnabled は呼ばれず、show の行が返る', () => {
@@ -60,7 +74,7 @@ describe('runCommand', () => {
     const lines = runCommand(port, parseCommand('show'), 100);
     expect(shown).toEqual([true]);
     expect(written).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: show']);
+    expect(lines).toEqual([SCRUB_SHOW_LINE]);
   });
 
   it('hide → writeShow(false) が 1 回、writeEnabled は呼ばれず、hide の行が返る', () => {
@@ -68,7 +82,7 @@ describe('runCommand', () => {
     const lines = runCommand(port, parseCommand('hide'), 100);
     expect(shown).toEqual([false]);
     expect(written).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: hide']);
+    expect(lines).toEqual([SCRUB_HIDE_LINE]);
   });
 
   it('空文字と空白だけ → どちらも呼ばれず、状態の行が返る', () => {
@@ -77,69 +91,68 @@ describe('runCommand', () => {
       const lines = runCommand(port, parseCommand(raw), 100);
       expect(written).toEqual([]);
       expect(shown).toEqual([]);
-      expect(lines.join('\n')).toContain('thinking-scrub:');
-      expect(lines.join('\n')).toContain('removed:');
+      expect(lines.join('\n')).toContain(SCRUB_PREFIX);
+      expect(lines.join('\n')).toContain(SCRUB_REMOVED_LABEL);
     }
   });
 
-  it('foo → どちらも呼ばれず、使い方の行が 1 行返る', () => {
+  it('foo → どちらも呼ばれず、使い方の 1 行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('foo'), 100);
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
-    expect(lines).toHaveLength(1);
-    expect(lines.at(0)).toContain('usage');
-    expect(lines.at(0)).toContain('show');
-    expect(lines.at(0)).toContain('hide');
+    expect(lines).toEqual([SCRUB_USAGE_LINE]);
   });
 
-  it('" off " → set で偽', () => {
-    const command = parseCommand(' off ');
-    expect(command).toEqual({ kind: 'set', enabled: false });
-  });
-
-  it('ON → set で真', () => {
+  it('" off " → set で偽、ON → set で真、SHOW → display で真', () => {
+    expect(parseCommand(' off ')).toEqual({ kind: 'set', enabled: false });
     expect(parseCommand('ON')).toEqual({ kind: 'set', enabled: true });
-  });
-
-  it('SHOW → display で真', () => {
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
   });
 
-  it('lastAt が null の状態 → 「まだ無い」の行', () => {
+  it('lastAt が null の状態 → まだ無い旨の行', () => {
     const { port } = fakePort({ status: { removed: 0, lastAt: null, failures: 0 } });
     const lines = runCommand(port, parseCommand(''), 100);
-    expect(lines.join('\n')).toContain('まだ無い');
+    expect(lines.join('\n')).toContain(SCRUB_LAST_NONE);
   });
 
   it('lastAt が数値の状態 → その時刻の行', () => {
-    const { port } = fakePort({ status: { removed: 2, lastAt: 456, failures: 0 } });
+    const lastAt = 456;
+    const removed = 2;
+    const { port } = fakePort({ status: { removed, lastAt, failures: 0 } });
     const lines = runCommand(port, parseCommand(''), 100);
-    expect(lines.join('\n')).toContain('456');
-    expect(lines.join('\n')).toContain('removed: 2');
+    expect(lines.join('\n')).toContain(String(lastAt));
+    expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
   });
 
-  it('settings が enabled:false のときの status → off と回数と時刻の行', () => {
+  it('enabled:false の status → off と回数と時刻の行', () => {
+    const removed = 3;
+    const lastAt = 200;
     const { port, written, shown } = fakePort({
       settings: { kind: 'ok', settings: { enabled: false, show: true } },
-      status: { removed: 3, lastAt: 200, failures: 0 },
+      status: { removed, lastAt, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: off', 'show: on', 'removed: 3', 'last: 200']);
+    expect(lines).toEqual([
+      SCRUB_OFF_LINE,
+      SCRUB_SHOW_ON,
+      `${SCRUB_REMOVED_LABEL} ${removed}`,
+      `last: ${lastAt}`,
+    ]);
   });
 
-  it('settings が show:false のときの status → 行に show: off が入る', () => {
+  it('show:false の status → 行に off の印が入る', () => {
     const { port } = fakePort({
       settings: { kind: 'ok', settings: { enabled: true, show: false } },
       status: { removed: 1, lastAt: null, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
-    expect(lines.join('\n')).toContain('show: off');
+    expect(lines.join('\n')).toContain(SCRUB_SHOW_OFF);
   });
 
-  it('settings が broken のときの status → 壊れている旨と既定で動いている旨の行', () => {
+  it('broken の status → 壊れている旨と既定で動いている旨', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
       status: { removed: 1, lastAt: null, failures: 0 },
@@ -147,17 +160,17 @@ describe('runCommand', () => {
     const lines = runCommand(port, parseCommand(''), 100);
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
-    expect(lines.join('\n')).toContain('broken');
-    expect(lines.join('\n')).toContain('defaults');
+    expect(lines.join('\n')).toContain(SCRUB_BROKEN_MARK);
+    expect(lines.join('\n')).toContain(SCRUB_DEFAULTS_MARK);
   });
 
-  it('settings が broken のときの off → writeEnabled(false) が呼ばれ、off の行が返る', () => {
+  it('broken の off → writeEnabled(false) が 1 回、off の行が返る', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
     });
     const lines = runCommand(port, parseCommand('off'), 100);
     expect(written).toEqual([false]);
     expect(shown).toEqual([]);
-    expect(lines).toEqual(['thinking-scrub: off']);
+    expect(lines).toEqual([SCRUB_OFF_LINE]);
   });
 });

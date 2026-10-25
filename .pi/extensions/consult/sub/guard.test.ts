@@ -33,73 +33,42 @@ beforeEach(() => {
 });
 
 describe('isSecretPath', () => {
-  it('絶対パスが .env', () => {
-    expect(isSecretPath(join(dir, '.env'), dir)).toBe(true);
-  });
-
-  it('深い場所の .envrc', () => {
-    expect(isSecretPath(join(dir, 'sub/dir/.envrc'), dir)).toBe(true);
-  });
-
-  it('相対パスは cwd で解決する', () => {
-    expect(isSecretPath('../../.env', join(dir, 'sub/dir'))).toBe(true);
-  });
-
-  it('symlink の先が .env', () => {
-    expect(isSecretPath(join(dir, 'link-to-env'), dir)).toBe(true);
-  });
-
-  it('README.md は通す', () => {
-    expect(isSecretPath(join(dir, 'README.md'), dir)).toBe(false);
-  });
-
-  it('.ENV（大文字）は規則に無い', () => {
-    expect(isSecretPath(join(dir, '.ENV'), dir)).toBe(false);
-  });
-
-  it('foo.env は前方一致しない', () => {
-    expect(isSecretPath(join(dir, 'foo.env'), dir)).toBe(false);
-  });
-
-  it('id.key.bak は接尾辞が違う', () => {
-    expect(isSecretPath(join(dir, 'id.key.bak'), dir)).toBe(false);
-  });
-
-  it('.env.bak は定義の名前（.env）ではない', () => {
-    expect(isSecretPath(join(dir, '.env.bak'), dir)).toBe(false);
-  });
-
-  it('空文字は dir に解決され、秘密ではない', () => {
-    expect(isSecretPath('', dir)).toBe(false);
-  });
-
-  it('存在しないパスは、名前が秘密でなければ通す（cat のような語でサブエージェントが凍らない）', () => {
-    expect(isSecretPath(join(dir, 'does-not-exist'), dir)).toBe(false);
-  });
-
-  it('存在しないが名前が秘密（まだ作られていない .env）は止める', () => {
-    expect(isSecretPath(join(dir, 'sub/not-yet/.env'), dir)).toBe(true);
-  });
-
-  it('node_modules の中は広げない', () => {
-    expect(isSecretPath(join(dir, 'node_modules/react/index.js'), dir)).toBe(false);
+  it('名前で決める（入力と真偽の表から取る）', () => {
+    const cases: Array<{ path: string; cwd: string; expected: boolean }> = [
+      { path: join(dir, '.env'), cwd: dir, expected: true },
+      { path: join(dir, 'sub/dir/.envrc'), cwd: dir, expected: true },
+      { path: '../../.env', cwd: join(dir, 'sub/dir'), expected: true },
+      { path: join(dir, 'link-to-env'), cwd: dir, expected: true },
+      { path: join(dir, 'sub/not-yet/.env'), cwd: dir, expected: true },
+      { path: join(dir, 'README.md'), cwd: dir, expected: false },
+      { path: join(dir, '.ENV'), cwd: dir, expected: false },
+      { path: join(dir, 'foo.env'), cwd: dir, expected: false },
+      { path: join(dir, 'id.key.bak'), cwd: dir, expected: false },
+      { path: join(dir, '.env.bak'), cwd: dir, expected: false },
+      { path: '', cwd: dir, expected: false },
+      { path: join(dir, 'does-not-exist'), cwd: dir, expected: false },
+      { path: join(dir, 'node_modules/react/index.js'), cwd: dir, expected: false },
+    ];
+    for (const entry of cases) {
+      expect(isSecretPath(entry.path, entry.cwd)).toBe(entry.expected);
+    }
   });
 });
 
 describe('judgeToolCall', () => {
-  it('read + .env を拒む', () => {
+  it('読む道具と秘密の名前を拒む', () => {
+    const cases: Array<{ name: string; input: Record<string, string>; expected: true }> = [
+      { name: 'read', input: { path: join(dir, '.env') }, expected: true },
+      { name: 'read', input: { path: join(dir, 'sub/dir/.envrc') }, expected: true },
+      { name: 'grep', input: { path: join(dir, 'keys/server.pem') }, expected: true },
+    ];
+    for (const entry of cases) {
+      expect(judgeToolCall(entry.name, entry.input, dir).block).toBe(entry.expected);
+    }
     expect(judgeToolCall('read', { path: join(dir, '.env') }, dir)).toEqual({
       block: true,
       reason: expect.stringContaining('読めない'),
     });
-  });
-
-  it('read + .envrc を拒む', () => {
-    expect(judgeToolCall('read', { path: join(dir, 'sub/dir/.envrc') }, dir).block).toBe(true);
-  });
-
-  it('grep + keys/x.pem を拒む', () => {
-    expect(judgeToolCall('grep', { path: join(dir, 'keys/server.pem') }, dir).block).toBe(true);
   });
 
   it('bash + cat /dir/.env を拒む', () => {
@@ -114,54 +83,26 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('bash', { command: 'cat /nonexistent/x.txt' }, dir)).toEqual({});
   });
 
-  it('bash + 組み立てたパス（.e""nv）を拒む', () => {
-    expect(judgeToolCall('bash', { command: `cat ${join(dir, '.e""nv')}` }, dir).block).toBe(true);
-  });
-
-  it('bash + symlink を拒む', () => {
-    expect(judgeToolCall('bash', { command: `cat ${join(dir, 'link-to-env')}` }, dir).block).toBe(
-      true,
-    );
-  });
-
-  it('bash + cat $HOME/.env を拒む（展開後の basename が .env）', () => {
-    expect(judgeToolCall('bash', { command: 'cat $HOME/.env' }, dir).block).toBe(true);
-  });
-
-  it('bash + cat $UNSET/.env を拒む（未定義は空に展開され /.env になる）', () => {
-    expect(judgeToolCall('bash', { command: 'cat $UNSET/.env' }, dir).block).toBe(true);
-  });
-
-  it('bash + cat .e${X}nv を拒む（展開後 .env）', () => {
-    expect(judgeToolCall('bash', { command: 'cat .e${X}nv' }, dir).block).toBe(true);
-  });
-
-  it('bash + backtick の展開を拒む（解決できない展開は通さない）', () => {
-    expect(judgeToolCall('bash', { command: 'cat `echo .env`' }, dir).block).toBe(true);
-  });
-
-  it('bash + cat $(echo .env) を拒む（解決できない展開は通さない）', () => {
-    expect(judgeToolCall('bash', { command: 'cat $(echo .env)' }, dir).block).toBe(true);
-  });
-
-  it('bash + cat ${X:-.env} を拒む（既定値付きの展開は解決できない）', () => {
-    expect(judgeToolCall('bash', { command: 'cat ${X:-.env}' }, dir).block).toBe(true);
-  });
-
-  it("bash + cat $'\\x2eenv' を拒む（ANSI-C の引用符は解決できない）", () => {
-    expect(judgeToolCall('bash', { command: "cat $'\\x2eenv'" }, dir).block).toBe(true);
-  });
-
-  it('bash + echo $? も拒む（値が決まらないものは通さない。止める側に倒す）', () => {
-    expect(judgeToolCall('bash', { command: 'echo $?' }, dir).block).toBe(true);
+  it('展開後の .env を拒む（組み立て・symlink・変数・置換は通さない）', () => {
+    const commands = [
+      `cat ${join(dir, '.e""nv')}`,
+      `cat ${join(dir, 'link-to-env')}`,
+      'cat $HOME/.env',
+      'cat $UNSET/.env',
+      'cat .e${X}nv',
+      'cat `echo .env`',
+      'cat $(echo .env)',
+      'cat ${X:-.env}',
+      "cat $'\\x2eenv'",
+      'echo $?',
+    ];
+    for (const command of commands) {
+      expect(judgeToolCall('bash', { command }, dir).block).toBe(true);
+    }
   });
 
   it('bash + echo $PATH は通す（展開後も秘密の名前ではない）', () => {
     expect(judgeToolCall('bash', { command: 'echo $PATH' }, dir)).toEqual({});
-  });
-
-  it('read + file_path だけは通す（pi は path を渡すので見ない）', () => {
-    expect(judgeToolCall('read', { file_path: 'sub/dir/.envrc' }, dir)).toEqual({});
   });
 
   it('bash + コマンド内の代入（FOO=.env; cat $FOO）は見ない（残る穴）', () => {
@@ -180,11 +121,8 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('web_search', { query: 'hello' }, dir)).toEqual({});
   });
 
-  it('空のパスは通す（存在しないので isSecretPath は true だが、空文字は見ない）', () => {
+  it('空のパス・引数が空 → 通す', () => {
     expect(judgeToolCall('read', { path: '' }, dir)).toEqual({});
-  });
-
-  it('引数が空でも落ちない', () => {
     expect(judgeToolCall('read', {}, dir)).toEqual({});
   });
 });

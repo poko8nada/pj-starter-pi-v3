@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FOLLOWUP_CONTINUE,
+  FOLLOWUP_DO_NOT,
+  FOLLOWUP_REPEATING,
+  loopSentence,
+  thinkingWithRun,
+} from '../scrub.fixture.ts';
+import {
   emptyGuard,
   followUpText,
   MAX_ABORTS,
@@ -14,32 +21,12 @@ import { MIN_CYCLES, SAMPLE_CHARS } from '../scrub/units.ts';
 
 // 長い thinking は factory で組み立てる。定数は名前で使う。
 
-function loopSentence(index: number): string {
-  return `guard loop ${index} proceeds with steady reasoning about the task and its details.`;
-}
-
 function plainSentence(index: number): string {
   return `plain note ${index} walks through a different idea about the task at hand.`;
 }
 
-function thinkingWithRun(length: number): string {
-  const pattern = [loopSentence(0), loopSentence(1), loopSentence(2)];
-  const cycle = pattern.join(' ');
-  let text = '';
-  while (text.length < length) {
-    text += (text.length === 0 ? '' : ' ') + cycle;
-  }
-  return text.slice(0, length);
-}
-
 function thinkingWithOtherRun(length: number): string {
-  const pattern = [loopSentence(10), loopSentence(11), loopSentence(12)];
-  const cycle = pattern.join(' ');
-  let text = '';
-  while (text.length < length) {
-    text += (text.length === 0 ? '' : ' ') + cycle;
-  }
-  return text.slice(0, length);
+  return thinkingWithRun(length, 10);
 }
 
 function plainThinking(length: number): string {
@@ -170,11 +157,13 @@ describe('followUpText', () => {
   it('指示と見本を含み、長い見本は切れる', () => {
     const sample = loopSentence(0);
     const text = followUpText(sample);
-    expect(text).toContain('repeating');
-    expect(text).toContain('Do not repeat');
-    expect(text).toContain('Continue');
+    expect(text).toContain(FOLLOWUP_REPEATING);
+    expect(text).toContain(FOLLOWUP_DO_NOT);
+    expect(text).toContain(FOLLOWUP_CONTINUE);
     expect(text).toContain(sample);
-    const longSample = `${loopSentence(0)} ${loopSentence(0)} ${loopSentence(0)} ${loopSentence(0)}`;
+    const longSample = [loopSentence(0), loopSentence(0), loopSentence(0), loopSentence(0)].join(
+      ' ',
+    );
     expect(longSample.length).toBeGreaterThan(SAMPLE_CHARS);
     const cut = followUpText(longSample);
     expect(cut).toContain(longSample.slice(0, SAMPLE_CHARS));

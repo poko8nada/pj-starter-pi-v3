@@ -5,6 +5,8 @@
     "lib",
     ".github/workflows",
     "test/temp-dir.ts",
+    "test/pi.fixture.ts",
+    "test/scripts.fixture.ts",
     "AGENTS.md",
     "lefthook.yaml",
     "tsconfig.json",

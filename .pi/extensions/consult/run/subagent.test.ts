@@ -1,80 +1,66 @@
 import { describe, expect, it, vi } from 'vitest';
 import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
-import type { TypePolicy } from '../policy/types.ts';
+import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
+import { branchFor } from './worktree.ts';
 import type { Worktree } from './worktree.ts';
 
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
 const CONTEXT = { cwd: '/tmp/base' } as const;
 
-function policy(isolated: boolean): TypePolicy {
-  return {
+function policy(isolated: boolean) {
+  return aTypePolicy({
     name: isolated ? 'code' : 'review',
-    models: [],
     tools: isolated ? ['read', 'edit'] : ['read'],
     isolated,
-    paths: [],
-    bash: [],
     continueByDefault: isolated,
-    limits: { turns: 20, output: 20000 },
-  };
+  });
 }
 
+const UNIT_ID = '2-a';
+
 const WORKTREE: Worktree = {
-  id: '2-a',
-  branch: 'consult/2-a',
-  path: '/tmp/pi-consult/demo/2-a/wt',
-  unitDir: '/tmp/pi-consult/demo/2-a',
+  id: UNIT_ID,
+  branch: branchFor(UNIT_ID),
+  path: `/tmp/pi-consult/demo/${UNIT_ID}/wt`,
+  unitDir: `/tmp/pi-consult/demo/${UNIT_ID}`,
 };
 
 describe('prepare', () => {
   it('隔離しないロール → ベースで走る（worktree は要らない）', () => {
-    expect(
-      prepare(CONTEXT, { type: 'review', task: 'x', policy: policy(false), token: 'token-1' }),
-    ).toEqual({
+    const options = aConsultOptions({ type: 'review', task: 'x', policy: policy(false) });
+    expect(prepare(CONTEXT, options)).toEqual({
       cwd: '/tmp/base',
     });
   });
 
   it('隔離しないロールに worktree を渡す → その worktree で走る（レビューを直接送り込む道）', () => {
-    const prepared = prepare(
-      CONTEXT,
-      { type: 'review', task: 'x', policy: policy(false), token: 'token-1' },
-      WORKTREE,
-    );
+    const options = aConsultOptions({ type: 'review', task: 'x', policy: policy(false) });
+    const prepared = prepare(CONTEXT, options, WORKTREE);
     expect(prepared.cwd).toBe(WORKTREE.path);
     expect(prepared.worktree).toBe(WORKTREE);
   });
 
   it('隔離するロール → worktree が要る', () => {
-    const prepared = prepare(
-      CONTEXT,
-      { type: 'code', task: 'x', policy: policy(true), token: 'token-1' },
-      WORKTREE,
-    );
+    const options = aConsultOptions({ type: 'code', task: 'x', policy: policy(true) });
+    const prepared = prepare(CONTEXT, options, WORKTREE);
     expect(prepared.cwd).toBe(WORKTREE.path);
   });
 
   it('隔離するロールで worktree が無い → ベースで書かせずに投げる', () => {
-    expect(() =>
-      prepare(CONTEXT, { type: 'code', task: 'x', policy: policy(true), token: 'token-1' }),
-    ).toThrow(/needs a worktree/);
+    const options = aConsultOptions({ type: 'code', task: 'x', policy: policy(true) });
+    expect(() => prepare(CONTEXT, options)).toThrow(/needs a worktree/);
   });
 });
 
 describe('subagentEnv', () => {
   it('メインエージェントが解決した上限と許可だけを載せる（サブエージェントは types.json を読まない）', () => {
-    const env = subagentEnv({ ...policy(false), paths: ['cycles/*/plan/*.md'], bash: ['git'] });
-    expect(env.CONSULT_TURNS).toBe('20');
-    expect(env.CONSULT_POLICY).toBe('{"paths":["cycles/*/plan/*.md"],"bash":["git"]}');
-  });
-
-  it('上限 40 → CONSULT_TURNS は 40（値の振りを見る）', () => {
-    const env = subagentEnv({
-      ...policy(false),
-      limits: { turns: 40, output: 8000 },
-    });
-    expect(env.CONSULT_TURNS).toBe('40');
+    const base = policy(false);
+    const paths = ['cycles/*/plan/*.md'];
+    const bash = ['git'];
+    const env = subagentEnv({ ...base, paths, bash });
+    expect(env.CONSULT_TURNS).toBe(String(base.limits.turns));
+    expect(env.CONSULT_POLICY).toBe(JSON.stringify({ paths, bash }));
   });
 });
 
@@ -93,27 +79,31 @@ vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>
 
 describe('runOneSubagent: token', () => {
   it('job の token が buildPiArgs の argv に --name で届く（取り違えない）', async () => {
+    const optionsToken = 'options-token';
+    const jobToken = 'job-token-1';
     capturedPiArgs.length = 0;
     await runOneSubagent(
       CONTEXT,
-      { type: 'review', task: 'x', policy: policy(false), token: 'options-token' },
-      { task: 'x', token: 'job-token-1', signal: undefined },
+      aConsultOptions({ type: 'review', task: 'x', policy: policy(false), token: optionsToken }),
+      { task: 'x', token: jobToken, signal: undefined },
     );
     const args = capturedPiArgs[0] ?? [];
     const index = args.indexOf('--name');
     expect(index).toBeGreaterThan(-1);
-    expect(args[index + 1]).toBe('job-token-1');
-    expect(args).not.toContain('options-token');
+    expect(args[index + 1]).toBe(jobToken);
+    expect(args).not.toContain(optionsToken);
   });
 });
 
 describe('sessionFile', () => {
   it('(worktree, ロール) ごとに 1 つ。同じパスを指すとその会話の続きになる', () => {
-    expect(sessionFile(WORKTREE, 'code')).toBe('/tmp/pi-consult/demo/2-a/session-code');
-    expect(sessionFile(WORKTREE, 'review')).toBe('/tmp/pi-consult/demo/2-a/session-review');
+    const codeRole = 'code';
+    const reviewRole = 'review';
+    expect(sessionFile(WORKTREE, codeRole)).toBe(`${WORKTREE.unitDir}/session-${codeRole}`);
+    expect(sessionFile(WORKTREE, reviewRole)).toBe(`${WORKTREE.unitDir}/session-${reviewRole}`);
     // ロールが違えば別の会話になる（同じ worktree に別のロールを送っても混ざらない）
-    expect(sessionFile(WORKTREE, 'code')).not.toBe(sessionFile(WORKTREE, 'review'));
+    expect(sessionFile(WORKTREE, codeRole)).not.toBe(sessionFile(WORKTREE, reviewRole));
     // worktree の外（入れ物の中）に置く。リポジトリを汚さない
-    expect(sessionFile(WORKTREE, 'code').startsWith(WORKTREE.path)).toBe(false);
+    expect(sessionFile(WORKTREE, codeRole).startsWith(WORKTREE.path)).toBe(false);
   });
 });

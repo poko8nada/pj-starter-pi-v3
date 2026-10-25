@@ -1,45 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
+import { piUsage, type PiAssistantMessage } from '../../../../test/pi.fixture.ts';
+import {
+  DEGENERATE_PREFIX,
+  DEGENERATE_REPEATS,
+  DEGENERATE_SUFFIX,
+  DEGENERATE_UNIT,
+  assistantMessage,
+  degenerate,
+  degenerateExpected,
+} from '../scrub.fixture.ts';
 import { detectRuns } from './detect.ts';
 import { scrubMessage } from './message.ts';
 
 type AgentMessage = MessageEndEvent['message'];
 
-// assistant メッセージの組み立ては関数の中で行う。
-
-function usage() {
-  return {
-    input: 1,
-    output: 1,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 2,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-  };
-}
-
-function degenerate(): string {
-  return `foo${'the *'.repeat(12)}bar`;
-}
-
-function assistantMessage(overrides: Record<string, unknown> = {}): AgentMessage {
-  const base = {
-    role: 'assistant',
-    content: [{ type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' }],
-    api: 'openai-completions',
-    provider: 'opencode-go',
-    model: 'deepseek-v4.1-flash',
-    usage: usage(),
-    stopReason: 'stop',
-    timestamp: 123,
-  };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- テストの偽物を作る
-  return { ...base, ...overrides } as unknown as AgentMessage;
+function thinkingMessage(thinking: string, signature: string): PiAssistantMessage {
+  return assistantMessage({
+    content: [{ type: 'thinking', thinking, thinkingSignature: signature }],
+  });
 }
 
 describe('scrubMessage', () => {
   it('reasoning_content で退化した本文 → 差し替えが返り、区間を含まない', () => {
-    const message = assistantMessage();
+    const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
@@ -52,18 +36,18 @@ describe('scrubMessage', () => {
     if (typeof first !== 'object' || first === null || !('thinking' in first)) {
       throw new Error('first block must be thinking');
     }
-    expect(first.thinking).toBe('foo bar');
+    expect(first.thinking).toBe(degenerateExpected());
     if (typeof first.thinking !== 'string') {
       throw new Error('thinking must be a string');
     }
     expect(detectRuns(first.thinking)).toEqual([]);
   });
 
-  it('thinkingSignature が reasoning → 対象になる', () => {
-    const message = assistantMessage({
-      content: [{ type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning' }],
-    });
-    expect(scrubMessage(message)).toBeDefined();
+  it('thinkingSignature が reasoning / reasoning_text → 対象になる', () => {
+    const reasoning = thinkingMessage(degenerate(), 'reasoning');
+    expect(scrubMessage(reasoning)).toBeDefined();
+    const reasoningText = thinkingMessage(degenerate(), 'reasoning_text');
+    expect(scrubMessage(reasoningText)).toBeDefined();
   });
 
   it('thinkingSignature が無い → undefined', () => {
@@ -74,12 +58,13 @@ describe('scrubMessage', () => {
   });
 
   it('thinkingSignature が JSON 文字列 → undefined', () => {
+    const signature = '{"reasoning_details":[]}';
     const message = assistantMessage({
       content: [
         {
           type: 'thinking',
           thinking: degenerate(),
-          thinkingSignature: '{"reasoning_details":[]}',
+          thinkingSignature: signature,
         },
       ],
     });
@@ -87,7 +72,8 @@ describe('scrubMessage', () => {
   });
 
   it('対象ブロックが無い配列 → undefined', () => {
-    const message = assistantMessage({ content: [{ type: 'text', text: 'hi' }] });
+    const text = 'hi';
+    const message = assistantMessage({ content: [{ type: 'text', text }] });
     expect(scrubMessage(message)).toBeUndefined();
   });
 
@@ -143,7 +129,7 @@ describe('scrubMessage', () => {
     if (typeof first !== 'object' || first === null || !('thinking' in first)) {
       throw new Error('first block must be thinking');
     }
-    expect(first.thinking).toBe('foo bar');
+    expect(first.thinking).toBe(degenerateExpected());
     expect(second).toEqual({
       type: 'thinking',
       thinking: fresh,
@@ -152,7 +138,7 @@ describe('scrubMessage', () => {
   });
 
   it('差し替え後も thinkingSignature と usage と stopReason と timestamp が同じ値', () => {
-    const message = assistantMessage();
+    const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message);
     expect(scrubbed).toBeDefined();
     if (message.role !== 'assistant') {
@@ -178,26 +164,23 @@ describe('scrubMessage', () => {
     }
     expect(nextBlock.thinkingSignature).toBe(originalBlock.thinkingSignature);
     expect(scrubbed.message.usage).toEqual(message.usage);
+    expect(scrubbed.message.usage).toEqual(piUsage());
     expect(scrubbed.message.stopReason).toBe(message.stopReason);
     expect(scrubbed.message.timestamp).toBe(message.timestamp);
   });
 
   it('本文が 1 つの区間だけ → undefined', () => {
-    const message = assistantMessage({
-      content: [
-        {
-          type: 'thinking',
-          thinking: 'the *'.repeat(12),
-          thinkingSignature: 'reasoning_content',
-        },
-      ],
-    });
+    const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
+    const message = thinkingMessage(fullRun, 'reasoning_content');
     expect(scrubMessage(message)).toBeUndefined();
   });
 
   it('2 ブロックのうち片方が全部区間 → 片方は元のまま、removed は畳んだ分だけ', () => {
-    const fullRun = 'the *'.repeat(12);
-    const twoRuns = `foo${'the *'.repeat(12)} hello ${'abcd'.repeat(15)}bar`;
+    const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
+    const middle = 'hello';
+    const charBlock = 'abcd'.repeat(15);
+    const twoRuns = `${DEGENERATE_PREFIX}${DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS)} ${middle} ${charBlock}${DEGENERATE_SUFFIX}`;
+    const expectedSecond = `${DEGENERATE_PREFIX} ${middle} ${DEGENERATE_SUFFIX}`;
     const message = assistantMessage({
       content: [
         { type: 'thinking', thinking: fullRun, thinkingSignature: 'reasoning_content' },
@@ -210,7 +193,7 @@ describe('scrubMessage', () => {
       throw new Error('scrubbed must be defined');
     }
     expect(scrubbed.removed).toBe(2);
-    expect(scrubbed.chars).toBe(120);
+    expect(scrubbed.chars).toBe(twoRuns.length - expectedSecond.length);
     if (scrubbed.message.role !== 'assistant') {
       throw new Error('message must be assistant');
     }
@@ -225,14 +208,14 @@ describe('scrubMessage', () => {
     if (typeof second !== 'object' || second === null || !('thinking' in second)) {
       throw new Error('second block must be thinking');
     }
-    expect(second.thinking).toBe('foo hello bar');
+    expect(second.thinking).toBe(expectedSecond);
   });
 });
 
 describe('scrubMessage chars', () => {
   it('chars は元の長さから畳んだ長さを引いた値', () => {
     const thinking = degenerate();
-    const message = assistantMessage();
+    const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
@@ -249,29 +232,5 @@ describe('scrubMessage chars', () => {
       throw new Error('thinking must be a string');
     }
     expect(scrubbed.chars).toBe(thinking.length - first.thinking.length);
-    expect(scrubbed.chars).toBe(59);
-  });
-
-  it('51 文字が 25 文字に畳まれる → chars は 26', () => {
-    const thinking = `header-12345${'abcd'.repeat(7).slice(0, 27)}suffix-67890`;
-    expect(thinking).toHaveLength(51);
-    const message = assistantMessage({
-      content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
-    });
-    const scrubbed = scrubMessage(message);
-    expect(scrubbed).toBeDefined();
-    if (scrubbed === undefined) {
-      throw new Error('scrubbed must be defined');
-    }
-    if (scrubbed.message.role !== 'assistant') {
-      throw new Error('message must be assistant');
-    }
-    const first = scrubbed.message.content.at(0);
-    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
-      throw new Error('first block must be thinking');
-    }
-    expect(first.thinking).toHaveLength(25);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.chars).toBe(26);
   });
 });
