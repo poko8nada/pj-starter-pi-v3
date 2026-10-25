@@ -98,7 +98,12 @@ Section and field names are English; the content is Japanese.
 
 - The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
 - Walk the relations before writing it: what imports the thing that changes, calls it, renders it, migrates with it, seeds with it, documents it, checks it. A follower that is not written is a follower that gets missed.
-- A new double or fixture is a file: it goes in the tree, and `test/` is where the doubles live. Say how it behaves when it is run outside its test: refuse, do not hang.
+- A new double or fixture is a file: it sits at the root of the feature whose shape it holds.
+- A fixture that holds a shape the feature does not own — the host, the OS, a format several units share — goes in `test/`.
+- `test/` is shared, not the harness's own: a project may keep its own files there.
+- Name a fixture `<name>.fixture.ts`, wherever it sits. A helper that is not a double keeps its own name.
+- A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy`.
+- Say how a fixture behaves when it is run outside its test: refuse, do not hang.
 
 ### Structure
 
