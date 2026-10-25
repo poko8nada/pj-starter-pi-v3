@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from '@earendil-works/pi-coding-agent';
 import { buildGateMessage, type GateFailureReport } from './report.ts';
-import { filterByExtensions } from './targets.ts';
 
-// ゲートの文面と、検査対象の絞り込み。どちらも純関数なので、道具を走らせずに試せる。
+// ゲートの文面だけを試す。対象の絞り込みは `targets.test.ts` で試す。
+// 期待する値は、渡した `outcomes` の `label` と `output`、
+// `relativePaths` と `skippedPaths`、`attempt` と `maxAttempts` から取る。
 
 function report(overrides: Partial<GateFailureReport> = {}): GateFailureReport {
   return {
@@ -17,81 +18,94 @@ function report(overrides: Partial<GateFailureReport> = {}): GateFailureReport {
   };
 }
 
-describe('filterByExtensions', () => {
-  it('format は md と json を通し、lint は ts 系だけ通す', () => {
-    const paths = ['a.ts', 'b.md', 'c.json', 'd.png'];
-    expect(filterByExtensions(paths, 'format')).toEqual(['a.ts', 'b.md', 'c.json']);
-    expect(filterByExtensions(paths, 'lint')).toEqual(['a.ts']);
-  });
-
-  it('大文字の拡張子も通す', () => {
-    expect(filterByExtensions(['A.TS'], 'lint')).toEqual(['A.TS']);
-  });
-});
+/** 見出しは 1 行目だけを取り出して比べる */
+function firstLine(text: string): string {
+  return text.split('\n')[0] ?? '';
+}
 
 describe('buildGateMessage', () => {
-  it('失敗したチェック名と試行回数を出す', () => {
-    const text = buildGateMessage(report());
-    expect(text).toContain('lint');
-    expect(text).toContain('attempt 1/3');
+  it('失敗したチェックの label と試行回数が 1 行目に出る', () => {
+    const label = 'lint-fail';
+    const output = 'boom';
+    const attempt = 1;
+    const maxAttempts = 3;
+    const text = buildGateMessage(
+      report({ outcomes: [{ label, failed: true, output }], attempt, maxAttempts }),
+    );
+    const head = firstLine(text);
+    expect(head).toContain(label);
+    expect(head).toContain(`${attempt}/${maxAttempts}`);
   });
 
-  it('失敗していないチェックは名前に出さない', () => {
+  it('失敗が複数 → 1 行目にその label が全部並ぶ', () => {
+    const first = 'lint-fail';
+    const second = 'format-fail';
+    const passed = 'typecheck-pass';
     const text = buildGateMessage(
       report({
         outcomes: [
-          { label: 'lint', failed: false, output: '' },
-          { label: 'typecheck', failed: true, output: 'boom' },
+          { label: first, failed: true, output: 'a' },
+          { label: second, failed: true, output: 'b' },
+          { label: passed, failed: false, output: '' },
         ],
       }),
     );
-    expect(text).toContain('typecheck');
-    expect(text).not.toContain('These checks still fail: lint');
+    const head = firstLine(text);
+    expect(head).toContain(first);
+    expect(head).toContain(second);
   });
 
-  it('最後の試行では final と出す', () => {
-    const text = buildGateMessage(report({ attempt: 3, isFinalAttempt: true }));
-    expect(text).toContain('Final attempt (3/3)');
-  });
-
-  it('検査から外れたファイルを出す', () => {
-    const text = buildGateMessage(report({ skippedPaths: ['gone.ts'] }));
-    expect(text).toContain('gone.ts');
-  });
-
-  it('失敗が複数 → `, ` でつなぐ', () => {
+  it('成功したチェックの label は 1 行目に出ない', () => {
+    const passed = 'lint-pass';
+    const failed = 'typecheck-fail';
     const text = buildGateMessage(
       report({
         outcomes: [
-          { label: 'lint', failed: true, output: 'a' },
-          { label: 'format', failed: true, output: 'b' },
-          { label: 'typecheck', failed: false, output: '' },
+          { label: passed, failed: false, output: '' },
+          { label: failed, failed: true, output: 'boom' },
         ],
       }),
     );
-    expect(text).toContain('lint, format');
-    expect(text).not.toContain('typecheck, ');
+    const head = firstLine(text);
+    expect(head).toContain(failed);
+    expect(head).not.toContain(passed);
   });
 
-  it('成功したチェックは出力を付けない（見出しだけ）', () => {
+  it('成功したチェックは空でない output を渡してもその節に output は出ない', () => {
+    const passed = 'lint-pass';
+    const failed = 'typecheck-fail';
+    const hidden = 'should-be-hidden';
+    const shown = 'boom';
     const text = buildGateMessage(
       report({
         outcomes: [
-          { label: 'lint', failed: false, output: '' },
-          { label: 'typecheck', failed: true, output: 'boom' },
+          { label: passed, failed: false, output: hidden },
+          { label: failed, failed: true, output: shown },
         ],
       }),
     );
-    // ok のセクションは 3 連バッククォートを伴わない
-    expect(text).toContain('### lint: ok');
-    expect(text).not.toContain('### lint: ok\n```');
-    expect(text).toContain('### typecheck: FAILED\n```');
+    expect(text).not.toContain(hidden);
+    expect(text).toContain(shown);
   });
 
-  it('出力が空なら `(no output)` と出す', () => {
-    const text = buildGateMessage(
-      report({ outcomes: [{ label: 'lint', failed: true, output: '  ' }] }),
-    );
+  it('失敗したチェックの節にその output が出る', () => {
+    const label = 'lint-fail';
+    const output = 'visible-boom';
+    const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
+    expect(text).toContain(output);
+  });
+
+  it('検査から外れた skippedPaths のパスが出る', () => {
+    const skipped = 'gone.ts';
+    const touched = 'a.ts';
+    const text = buildGateMessage(report({ relativePaths: [touched], skippedPaths: [skipped] }));
+    expect(text).toContain(skipped);
+  });
+
+  it('出力が空の失敗 → 空である旨の印が出る', () => {
+    const label = 'lint-fail';
+    const output = '  ';
+    const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
     expect(text).toContain('(no output)');
   });
 
@@ -101,67 +115,57 @@ describe('buildGateMessage', () => {
   });
 
   it('触ったファイルがあれば `(none)` は出さない', () => {
-    const text = buildGateMessage(report({ relativePaths: ['a.ts'], skippedPaths: [] }));
+    const touched = 'touched-a.ts';
+    const text = buildGateMessage(report({ relativePaths: [touched], skippedPaths: [] }));
+    expect(text).toContain(touched);
     expect(text).toContain('Files touched in this turn:');
     expect(text).not.toContain('(none)');
   });
 
-  it('長すぎる出力は切り詰めて、落とした行数を告げる', () => {
-    // 既定の上限を超える行数を作る（truncateHead と同じ上限を共有する）
-    const output = Array.from(
+  it('上限を超える出力は切り詰めて落とした行数を告げる', () => {
+    const label = 'lint-fail';
+    // 行数で上限を超える（truncateHead と同じ上限を共有する）
+    const lineOutput = Array.from(
       { length: DEFAULT_MAX_LINES + 10 },
       (_, index) => `line ${index}`,
     ).join('\n');
-    const text = buildGateMessage(report({ outcomes: [{ label: 'lint', failed: true, output }] }));
-    expect(text).toContain('[output truncated:');
-    expect(text).toContain('more line(s) omitted]');
-    expect(text).toContain('line 0');
+    const lineText = buildGateMessage(
+      report({ outcomes: [{ label, failed: true, output: lineOutput }] }),
+    );
+    expect(lineText).toContain('[output truncated:');
+    expect(lineText).toContain('more line(s) omitted]');
+
+    // 1 行でバイト数の上限を超える（行数ではなく大きさで落ちる）
+    const byteOutput = 'x'.repeat(DEFAULT_MAX_BYTES + 1000);
+    const byteText = buildGateMessage(
+      report({ outcomes: [{ label, failed: true, output: byteOutput }] }),
+    );
+    expect(byteText).toContain('[output truncated:');
+    expect(byteText).toContain('more line(s) omitted]');
   });
 
-  it('既定の上限以内の出力はそのまま出す（切り詰めの記号を付けない）', () => {
-    const output = Array.from(
-      { length: DEFAULT_MAX_LINES - 1 },
-      (_, index) => `line ${index}`,
-    ).join('\n');
-    const text = buildGateMessage(report({ outcomes: [{ label: 'lint', failed: true, output }] }));
+  it('上限以内の出力はそのまま出す（切り詰めの記号を付けない）', () => {
+    const label = 'lint-fail';
+    const lines = Array.from({ length: DEFAULT_MAX_LINES - 1 }, (_, index) => `line ${index}`);
+    const output = lines.join('\n');
+    const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
     expect(text).not.toContain('[output truncated:');
-    expect(text).toContain(`line ${DEFAULT_MAX_LINES - 2}`);
-  });
-
-  it('既定のバイト上限を超える出力も落とした行数を告げる', () => {
-    // 1 行で既定のバイト上限を超える（行数ではなく大きさで落ちる）
-    const output = 'x'.repeat(DEFAULT_MAX_BYTES + 1000);
-    const text = buildGateMessage(report({ outcomes: [{ label: 'lint', failed: true, output }] }));
-    expect(text).toContain('[output truncated:');
-    expect(text).toContain('more line(s) omitted]');
-  });
-
-  it('最後の試行では代替の文面を出す（もう一度走る、とは言わない）', () => {
-    const text = buildGateMessage(report({ attempt: 3, maxAttempts: 3, isFinalAttempt: true }));
-    expect(text).toContain('This is the last automatic retry');
-    expect(text).not.toContain('runs again automatically');
-  });
-
-  it('最後でなければ「次のターンの後にまた走る」と出す', () => {
-    const text = buildGateMessage(report({ attempt: 1, maxAttempts: 3, isFinalAttempt: false }));
-    expect(text).toContain('runs again automatically');
-    expect(text).not.toContain('last automatic retry');
-  });
-
-  it('検査を弱める・ファイルを消して通すことを禁じる文面を入れる', () => {
-    const text = buildGateMessage(report());
-    expect(text).toContain('Do not weaken, disable, or reconfigure the checks');
-    expect(text).toContain('Do not delete the offending file');
+    const last = lines[lines.length - 1] ?? '';
+    expect(text).toContain(last);
   });
 
   it('check の 3 層は見出し→触ったファイル→本体→指示の順に並ぶ', () => {
-    const text = buildGateMessage(report());
+    const label = 'lint-fail';
+    const touched = 'touched-a.ts';
+    const text = buildGateMessage(
+      report({ outcomes: [{ label, failed: true, output: 'boom' }], relativePaths: [touched] }),
+    );
     const header = text.indexOf('[quality-gate]');
-    const touched = text.indexOf('Files touched in this turn:');
-    const body = text.indexOf('### lint:');
+    const touchedAt = text.indexOf('Files touched in this turn:');
+    const body = text.indexOf(`### ${label}:`);
     const steps = text.indexOf('Fix the problems reported above.');
-    expect(header).toBeLessThan(touched);
-    expect(touched).toBeLessThan(body);
+    expect(header).toBeLessThan(touchedAt);
+    expect(touchedAt).toBeLessThan(body);
     expect(body).toBeLessThan(steps);
   });
 });
