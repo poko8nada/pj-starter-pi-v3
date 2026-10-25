@@ -137,9 +137,18 @@ test/
 ### Slice 2: 写す一覧と検査
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: e3a70d0
 - Stopped:
+
+### Cleanup: 重複と不要な枝の掃除
+
+- Findings:
+  - なし — 触った test 群に同じ振る舞いの重複も消えた振る舞いも無くなった枝も `## Test cases` に反する物も無かった。
+- Unplanned:
+  - なし
 
 ## Review
 
