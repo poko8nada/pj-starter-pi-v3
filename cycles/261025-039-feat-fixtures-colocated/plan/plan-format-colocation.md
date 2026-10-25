@@ -39,15 +39,17 @@
 - Always:
   - 既定の 5 つ
 - Added:
-  - other: 新しい 5 つの文が `## Files` にあることを、各文の特徴的な句の `grep` で見る（`sits at the root of the feature`、`goes in `test/``、`is shared, not the harness's own`、`<name>.fixture.ts`、`harness.json`'s `copy`）。古い文（`test/` is where the doubles live）が消えたことは、既定の 5 つ目の `grep` が見る。
+  - other: 新しい 7 つの文が `## Files` にあることを、各文の特徴的な句の `grep` で見る（`sits at the root of the feature`、`goes in `test/``、`is shared, not the harness's own`、`<name>.fixture.ts`、`A helper that is not a double`、`harness.json`'s `copy`、`Say how a double or a fixture behaves`）。古い文（`test/` is where the doubles live）が消えたことは、既定の 5 つ目の `grep` が見る。
 
 ## Notes
 
 ### Slice 1: 置き場所の規則
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `.pi/skills/plan/references/format.md:105` の 5 行目のバッククォート前後の空白を補い、`test/` that と in `scripts/harness/harness.json` に直した。plan の写しには空白がなく、そのままでは `## Files` の他の行と調子が合わないため、ここで直した。
+- Commit: 91a7dd6
 - Stopped:
 
 ## Review
@@ -67,11 +69,21 @@
 ### Round 1
 
 - Stale:
+  - なし — `.pi/skills/plan/references/format.md:101-106` の置き換えにより、他の節と食い違う記述は残っておりません。`test/` の置き場所に触れる記述は当該6行のみであることを確認しました。`### Structure` (`format.md:108-114`) は関心の置き場所とテストの隣接を述べており、double・fixture の置き場所とは重なりません。旧文言は `adr.md:8` の経緯説明と plan の写し・検査説明に残るのみであり、歴史的記録として適切です。
 - Unlisted:
+  - なし — `git diff 7d9e006..HEAD` が触れておりますのは `.pi/skills/plan/references/format.md` の1行から6行への置き換えのみであり、plan の `## Files` が示す `format.md update` の範囲内でございます。5行目の空白補正 (`format.md:105`) も同一ファイル内の調子合わせであり、`## Notes` に `Unplanned` として記録されております。
 - Gaps:
+  - なし — 本 slice は文書のみの変更であり、実行時の振る舞いはございません。6行の文言はいずれも `Steps` で定められた決定値であり、定義により `Gaps` の対象外です。`Steps` の2の前後読みにつきましても、重複・食い違いは見当たりませんでした。
 - Unproven:
+  - なし — 本 slice にテストファイルはございません (`Types` は `なし`)。`Verify` の `Added` の `grep` は文言の有無を見る shell の確認であり、外したときに緑のまま残るテストにはあたりません。
 - Noise:
+  - `.pi/skills/plan/references/format.md:104` は2文になっております (`Name a fixture `<name>.fixture.ts`, wherever it sits.` と `A helper that is not a double keeps its own name.`)。plan の `Steps` が求める `1行は1文` および `format.md:205` の `One bullet is one sentence.` を満たしておりません。なお、当該2文は plan の `Steps` の4行目 (`plan-format-colocation.md:30`) の写しのままであり、差分が `Steps` の例文から外れたものではございません。英語・`-` 箇条の調子自体は `## Files` の他の行と合っております。
+    - fixed: 2 文の 1 行を分け、`Name a fixture ...` と `A helper that is not a double ...` の 2 行にし、`One bullet is one sentence.` に合わせた（`format.md:104-105`）。
 - Doubts:
+  - `.pi/skills/plan/references/format.md:106` では旧文の `Say how it behaves ...` が `Say how a fixture behaves ...` となり、主語が `double or fixture` から `fixture` のみに狭まっております。`Steps` の理由書きはダブルとフィクスチャの振る舞いを失わないためとしておりますので、意図的な狭め化なのか、`a double or fixture` とすべきなのかが判然といたしません。差分は `Steps` の例文通りであり、影響のご判断を残すため疑義といたします。
+    - fixed: 最終行を `Say how a double or a fixture behaves ...` に戻し、ダブルの外での振る舞いを失わないようにした（`format.md:107`）。
+  - `Verify` の `Added` は新しい5文の特徴句のみを `grep` しており、6行目 (`format.md:106`、`refuse, do not hang` を含む行) の有無や `it` から `a fixture` への言い換えを区別できません。6行目を削除しても5つの `grep` は緑のままでございます。文言の決定値は `Gaps` の対象外との定義により、疑義として残します。
+    - fixed: `Verify` の `Added` に `A helper that is not a double` と `Say how a double or a fixture behaves` の `grep` を足し、7 行すべての有無を見るようにした。
 
 ## Acceptance
 

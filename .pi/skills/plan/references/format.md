@@ -101,9 +101,10 @@ Section and field names are English; the content is Japanese.
 - A new double or fixture is a file: it sits at the root of the feature whose shape it holds.
 - A fixture that holds a shape the feature does not own — the host, the OS, a format several units share — goes in `test/`.
 - `test/` is shared, not the harness's own: a project may keep its own files there.
-- Name a fixture `<name>.fixture.ts`, wherever it sits. A helper that is not a double keeps its own name.
+- Name a fixture `<name>.fixture.ts`, wherever it sits.
+- A helper that is not a double keeps its own name.
 - A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy`.
-- Say how a fixture behaves when it is run outside its test: refuse, do not hang.
+- Say how a double or a fixture behaves when it is run outside its test: refuse, do not hang.
 
 ### Structure
 
