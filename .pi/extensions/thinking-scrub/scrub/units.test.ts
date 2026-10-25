@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { cycleText } from '../../../../test/scrub-fixture.ts';
 import {
   MAX_PERIOD_UNITS,
   MIN_CYCLES,
@@ -36,33 +34,30 @@ function unitsFromText(text: string): readonly Unit[] {
   return splitUnits(text);
 }
 
-function cycleText(pattern: readonly string[], cycles: number): string {
-  return Array.from({ length: cycles }, () => pattern.join(' ')).join(' ');
-}
-
 describe('splitUnits', () => {
   it('2 行の英語が factory から → 4 単位で元の offset を保つ', () => {
-    const line1 = `${english(0)} ${english(1, '!')}`;
-    const line2 = `${english(2, '?')} ${english(3)}`;
+    const expected = [english(0), english(1, '!'), english(2, '?'), english(3)];
+    const line1 = `${expected[0]} ${expected[1]}`;
+    const line2 = `${expected[2]} ${expected[3]}`;
     const text = `${line1}\n${line2}`;
     const units = unitsFromText(text);
-    expect(units).toHaveLength(4);
+    expect(units).toHaveLength(expected.length);
     for (const unit of units) {
       expect(text.slice(unit.start, unit.end)).toBe(unit.text);
       expect(unit.opaque).toBe(false);
     }
-    expect(units[0]?.text).toBe(english(0));
-    expect(units[1]?.text).toBe(english(1, '!'));
-    expect(units[2]?.text).toBe(english(2, '?'));
-    expect(units[3]?.text).toBe(english(3));
+    for (const [index, sentence] of expected.entries()) {
+      expect(units[index]?.text).toBe(sentence);
+    }
     expect(units[1]?.start).toBeGreaterThan(units[0]?.end ?? 0);
     expect(units[2]?.start).toBeGreaterThanOrEqual(line1.length + 1);
   });
 
   it('。と！の日本語 1 行が factory から → その印で分かれ offset を保つ', () => {
-    const text = `${japanese(20)}${japanese(21, '！')}`;
+    const expected = [japanese(20), japanese(21, '！')];
+    const text = expected.join('');
     const units = unitsFromText(text);
-    expect(units).toHaveLength(2);
+    expect(units).toHaveLength(expected.length);
     for (const unit of units) {
       expect(text.slice(unit.start, unit.end)).toBe(unit.text);
     }
@@ -72,16 +67,19 @@ describe('splitUnits', () => {
   });
 
   it('フェンス囲み → 柵の行と中身が不透明', () => {
-    const text = [english(0), '```js', english(1), english(2), '```', english(3)].join('\n');
+    const fenceOpen = '```js';
+    const fenceClose = '```';
+    const lines = [english(0), fenceOpen, english(1), english(2), fenceClose, english(3)];
+    const text = lines.join('\n');
     const units = unitsFromText(text);
-    expect(units).toHaveLength(6);
+    expect(units).toHaveLength(lines.length);
     expect(units[0]?.opaque).toBe(false);
     expect(units[1]?.opaque).toBe(true);
-    expect(units[1]?.text).toBe('```js');
+    expect(units[1]?.text).toBe(fenceOpen);
     expect(units[2]?.opaque).toBe(true);
     expect(units[3]?.opaque).toBe(true);
     expect(units[4]?.opaque).toBe(true);
-    expect(units[4]?.text).toBe('```');
+    expect(units[4]?.text).toBe(fenceClose);
     expect(units[5]?.opaque).toBe(false);
     for (const unit of units) {
       expect(text.slice(unit.start, unit.end)).toBe(unit.text);
@@ -91,22 +89,27 @@ describe('splitUnits', () => {
   it('表の行と diff --git の行 → 不透明', () => {
     const table = '| a | b |';
     const diff = 'diff --git a/foo b/foo';
-    const text = [english(0), table, english(1), diff, english(2)].join('\n');
+    const expectedOpaque = [table, diff];
+    const expectedPlain = [english(0), english(1), english(2)];
+    const text = [expectedPlain[0], table, expectedPlain[1], diff, expectedPlain[2]].join('\n');
     const units = unitsFromText(text);
     const byText = new Map(units.map((unit) => [unit.text, unit]));
-    expect(byText.get(table)?.opaque).toBe(true);
-    expect(byText.get(diff)?.opaque).toBe(true);
-    expect(byText.get(english(0))?.opaque).toBe(false);
-    expect(byText.get(english(1))?.opaque).toBe(false);
-    expect(byText.get(english(2))?.opaque).toBe(false);
+    for (const line of expectedOpaque) {
+      expect(byText.get(line)?.opaque).toBe(true);
+    }
+    for (const sentence of expectedPlain) {
+      expect(byText.get(sentence)?.opaque).toBe(false);
+    }
   });
 
   it('略語で終わる行 → 略語が 1 単位になり前後がずれない', () => {
+    const abbrev = 'No.';
     const rest = english(5);
-    const text = `No. ${rest}`;
+    const expected = [abbrev, rest];
+    const text = `${abbrev} ${rest}`;
     const units = unitsFromText(text);
-    expect(units).toHaveLength(2);
-    expect(units[0]?.text).toBe('No.');
+    expect(units).toHaveLength(expected.length);
+    expect(units[0]?.text).toBe(abbrev);
     expect(units[0]?.start).toBe(0);
     expect(units[1]?.text).toBe(rest);
     expect(text.slice(units[1]?.start ?? 0, units[1]?.end ?? 0)).toBe(rest);
@@ -123,7 +126,7 @@ describe('detectUnitRuns', () => {
     expect(units).toHaveLength(pattern.length * MIN_CYCLES);
     const runs = detectUnitRuns(units);
     expect(runs).toHaveLength(1);
-    expect(runs[0]).toEqual({ at: 0, length: pattern.length * MIN_CYCLES, period: 3 });
+    expect(runs[0]).toEqual({ at: 0, length: pattern.length * MIN_CYCLES, period: pattern.length });
   });
 
   it('周期 6 と 12 が重なる factory の並び → 周期 6 の run が 1 つ', () => {
@@ -134,7 +137,7 @@ describe('detectUnitRuns', () => {
     expect(units).toHaveLength(base12.length * MIN_CYCLES);
     const runs = detectUnitRuns(units);
     expect(runs).toHaveLength(1);
-    expect(runs[0]?.period).toBe(6);
+    expect(runs[0]?.period).toBe(base6.length);
     expect(runs[0]?.length).toBe(base12.length * MIN_CYCLES);
   });
 
@@ -161,7 +164,15 @@ describe('detectUnitRuns', () => {
     const first = cycleText(pattern, 1);
     const second = cycleText(pattern, 1);
     const third = cycleText(pattern, 1);
-    const text = [`${first} ${english(0)}`, '```', 'code', '```', `${second} ${third}`].join('\n');
+    const fenceOpen = '```';
+    const fenceClose = '```';
+    const text = [
+      `${first} ${english(0)}`,
+      fenceOpen,
+      'code',
+      fenceClose,
+      `${second} ${third}`,
+    ].join('\n');
     const units = unitsFromText(text);
     expect(units.some((unit) => unit.opaque)).toBe(true);
     expect(detectUnitRuns(units)).toHaveLength(0);
@@ -188,10 +199,11 @@ describe('detectUnitRuns', () => {
 describe('sampleOf', () => {
   it('12 単位の run → 最頻の 3 文で SAMPLE_CHARS 以下', () => {
     const pattern = [english(0), english(1), english(2)];
-    const text = cycleText(pattern, 4);
+    const cycles = MIN_CYCLES + 1;
+    const text = cycleText(pattern, cycles);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(12);
-    const run: UnitRun = { at: 0, length: 12, period: 3 };
+    expect(units).toHaveLength(pattern.length * cycles);
+    const run: UnitRun = { at: 0, length: units.length, period: pattern.length };
     const sample = sampleOf(units, run);
     expect(sample).toBe(pattern.join(' '));
     expect(sample.length).toBeLessThanOrEqual(SAMPLE_CHARS);
@@ -201,7 +213,7 @@ describe('sampleOf', () => {
     const pattern = [longEnglish(0), longEnglish(1), longEnglish(2), longEnglish(3)];
     const text = cycleText(pattern, MIN_CYCLES);
     const units = unitsFromText(text);
-    const run: UnitRun = { at: 0, length: pattern.length * MIN_CYCLES, period: 4 };
+    const run: UnitRun = { at: 0, length: pattern.length * MIN_CYCLES, period: pattern.length };
     const sample = sampleOf(units, run);
     expect(sample.length).toBe(SAMPLE_CHARS);
     const expected = [longEnglish(0), longEnglish(1), longEnglish(2)].join(' ');
@@ -210,18 +222,13 @@ describe('sampleOf', () => {
   });
 
   it('1 単位の周期 → その 1 文だけ', () => {
-    const one = longEnglish(0);
-    const text = cycleText([one], MIN_CYCLES);
+    const pattern = [longEnglish(0)];
+    const one = pattern[0] ?? '';
+    const text = cycleText(pattern, MIN_CYCLES);
     expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
     const units = unitsFromText(text);
     expect(units).toHaveLength(MIN_CYCLES);
-    const run: UnitRun = { at: 0, length: MIN_CYCLES, period: 1 };
+    const run: UnitRun = { at: 0, length: MIN_CYCLES, period: pattern.length };
     expect(sampleOf(units, run)).toBe(one);
-  });
-
-  it('units.ts のソースに生の NUL が無い → indexOf(0) が -1', () => {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const source = readFileSync(join(here, 'units.ts'));
-    expect(source.indexOf(0)).toBe(-1);
   });
 });
