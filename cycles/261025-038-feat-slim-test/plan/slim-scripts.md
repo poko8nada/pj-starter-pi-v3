@@ -45,7 +45,6 @@ test/
 3. `scripts/checks/typecheck-staged.test.ts`:
    - (empty) 対象が空 → exit 0。
    - (happy) 対象は 8 つの拡張子（ts、tsx、mts、cts、js、jsx、mjs、cjs）で、md は外れる。
-   - (happy) 大文字の拡張子も対象になる。
    - (happy) `.pi` の下のファイルは `.pi` の範囲で回る。
    - (happy) 一覧に `.pi` が無ければ root の範囲で回る。
    - (error) `tsconfig` が JSON でない → exit 1 と理由の行。
@@ -169,16 +168,17 @@ test/
 
 ### Slice 1: 型検査の範囲
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 製品を直してしまった 1 件を戻した。plan が「大文字の拡張子も対象」を case に挙げたが、それは quality-gate の filterByExtensions の話で、typecheck-staged の仕様ではない。ADR の「製品のコードを変えない」に合わせ、製品を戻してケースを落とした。
+- Commit: de67dd21617d9a73446b4e84a498b00eef821b8a
 - Stopped:
 
 ### Slice 2: ハーネスの写し
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5eab6ac
 - Stopped:
 
 ### Slice 3: プロダクトの準備

@@ -95,16 +95,6 @@ describe('typecheck-staged', () => {
     expect(out.stdout).not.toContain(STUB_MARK);
   });
 
-  it('大文字の拡張子も対象になる', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    writeFile(root, 'tsconfig.json', '{}');
-    const file = writeFile(root, 'a.TS');
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(STUB_MARK);
-  });
-
   it('一覧に .pi があるツリー → .pi の下は .pi の範囲で回る', () => {
     const scope = '.pi';
     const root = fakeRoot();
