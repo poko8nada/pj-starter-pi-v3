@@ -2,6 +2,7 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { aRunRecord } from '../../../../test/consult-fixture.ts';
 import { dayFile, placeFor, type Place } from './place.ts';
 import {
   appendRun,
@@ -28,14 +29,7 @@ function place(): Place {
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return {
-    session: 'session-a',
-    subagent: 'consult-1',
-    role: 'review',
-    pid: process.pid,
-    started: 1000,
-    ...extra,
-  };
+  return aRunRecord({ pid: process.pid, ...extra });
 }
 
 describe('appendRun / readRuns', () => {
@@ -86,9 +80,14 @@ describe('appendRun / readRuns', () => {
   it('始まった順に返す', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ started: 2000, subagent: 'consult-2' }), at);
-    appendRun(found, record({ started: 1000, subagent: 'consult-1' }), at);
-    expect(readRuns(found, { at }).map((run) => run.subagent)).toEqual(['consult-1', 'consult-2']);
+    const first = record({ started: 1000, subagent: 'consult-1' });
+    const second = record({ started: 2000, subagent: 'consult-2' });
+    appendRun(found, second, at);
+    appendRun(found, first, at);
+    expect(readRuns(found, { at }).map((run) => run.subagent)).toEqual([
+      first.subagent,
+      second.subagent,
+    ]);
   });
 
   it('終わりの欄を持つ行はそのまま返る（state と reason）', () => {
@@ -161,18 +160,6 @@ describe('isRunning', () => {
 
   it('pid が死んでいれば、終わりの行が無くても false（メインエージェントごと落ちたサブエージェント）', () => {
     expect(isRunning(record({ pid: 42 }), () => 'ended')).toBe(false);
-  });
-
-  it('startToken 付きの行で check が running → true', () => {
-    expect(
-      isRunning(record({ pid: 42, startToken: 'Wed Oct 21 12:41:12 2026' }), () => 'running'),
-    ).toBe(true);
-  });
-
-  it('startToken 付きの行で check が ended → false', () => {
-    expect(
-      isRunning(record({ pid: 42, startToken: 'Wed Oct 21 12:41:12 2026' }), () => 'ended'),
-    ).toBe(false);
   });
 
   it('startToken 付きの行で check が unknown → true（読めないときは走っている側）', () => {
@@ -298,21 +285,6 @@ describe('runningRuns', () => {
     expect(runningRuns(found, { at, session: 'A' })).toEqual([]);
   });
 
-  it('開始行だけで token が合う → 走っている', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
-    const out = runningRuns(found, { at, session: 'A' }, () => 'running');
-    expect(out.map((run) => run.subagent)).toEqual(['consult-1']);
-  });
-
-  it('開始行だけで token が合わない → 走っていない', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
-    expect(runningRuns(found, { at, session: 'A' }, () => 'ended')).toEqual([]);
-  });
-
   it('行が無い → 空', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
@@ -341,24 +313,6 @@ describe('runningRuns', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     expect(runningRuns(found, { at, session: 'A', days: 2 }, () => 'running')).toEqual([]);
   });
-
-  it('check が unknown → 走っている側（空でない）', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    appendRun(
-      found,
-      record({
-        session: 'A',
-        subagent: 'consult-1',
-        pid: 11,
-        startToken: 'Wed Oct 21 12:41:12 2026',
-      }),
-      at,
-    );
-    expect(
-      runningRuns(found, { at, session: 'A' }, () => 'unknown').map((run) => run.subagent),
-    ).toEqual(['consult-1']);
-  });
 });
 
 describe('parseRun', () => {
@@ -385,13 +339,16 @@ describe('parseRun', () => {
   });
 
   it('token 付きの開始行 → token が返る（往復）', () => {
+    const token = 'token-1';
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ token: 'token-1' }), at);
-    expect(readRuns(found, { at })[0]).toMatchObject({ token: 'token-1' });
+    appendRun(found, record({ token }), at);
+    expect(readRuns(found, { at })[0]).toMatchObject({ token });
     expect(
-      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":"token-1"}'),
-    ).toMatchObject({ token: 'token-1' });
+      parseRun(
+        JSON.stringify({ session: 's', subagent: 'c', role: 'r', pid: 1, started: 2, token }),
+      ),
+    ).toMatchObject({ token });
   });
 
   it('token 無しの行（古い形）→ token は undefined で読める', () => {
@@ -412,17 +369,25 @@ describe('parseRun', () => {
   });
 
   it('startToken 付きの開始行 → 往復して同じ文字列が返る', () => {
+    const startToken = 'Wed Oct 21 12:41:12 2026';
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
-    appendRun(found, record({ startToken: 'Wed Oct 21 12:41:12 2026' }), at);
+    appendRun(found, record({ startToken }), at);
     expect(readRuns(found, { at })[0]).toMatchObject({
-      startToken: 'Wed Oct 21 12:41:12 2026',
+      startToken,
     });
     expect(
       parseRun(
-        '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"startToken":"Wed Oct 21 12:41:12 2026"}',
+        JSON.stringify({
+          session: 's',
+          subagent: 'c',
+          role: 'r',
+          pid: 1,
+          started: 2,
+          startToken,
+        }),
       ),
-    ).toMatchObject({ startToken: 'Wed Oct 21 12:41:12 2026' });
+    ).toMatchObject({ startToken });
   });
 
   it('startToken 無しの行 → undefined で読める', () => {

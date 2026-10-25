@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { aRunRecord } from '../../../../test/consult-fixture.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
-import { consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
+import { branchFor, consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
 import { createWorktreeTool, removeText, runningIn } from './worktree.ts';
 
 const mockGit = vi.hoisted(() =>
@@ -156,6 +157,22 @@ function text(outcome: { content: readonly { type: string; text?: string }[] }):
   return outcome.content.map((part) => part.text ?? '').join('\n');
 }
 
+/** unit の記録を 1 本書く。開始行が要る検査の重複をここに集める */
+function seedUnit(dir: string, id: string, extra: Record<string, unknown> = {}): void {
+  appendRun(
+    placeFor(consultRoot(), topLevel(dir)),
+    aRunRecord({
+      session: 'session-a',
+      subagent: 'consult-9',
+      role: 'code',
+      pid: process.pid,
+      started: 1,
+      worktree: id,
+      ...extra,
+    }),
+  );
+}
+
 beforeEach(() => {
   resetFake();
   installFake();
@@ -169,11 +186,12 @@ afterEach(() => {
 describe('consult_worktree', () => {
   it('new → id / branch / path / base を返す', async () => {
     const { dir } = repo();
-    const outcome = await call({ action: 'new', id: '2-b' }, dir);
+    const id = '2-b';
+    const outcome = await call({ action: 'new', id }, dir);
     const body = text(outcome);
 
-    expect(body).toContain('id: 2-b');
-    expect(body).toContain('branch: consult/2-b');
+    expect(body).toContain(`id: ${id}`);
+    expect(body).toContain(`branch: ${branchFor(id)}`);
     expect(body).toContain('base: HEAD');
     expect(body).toMatch(/path: .*2-b\/wt/);
   });
@@ -188,7 +206,7 @@ describe('consult_worktree', () => {
     expect(text(await call({ action: 'list' }, dir))).toContain('作業場は無い');
 
     await call({ action: 'new', id: '2-b' }, dir);
-    expect(text(await call({}, dir))).toContain('consult/2-b');
+    expect(text(await call({}, dir))).toContain(branchFor('2-b'));
   });
 
   it('変更の残る worktree → list に changed、remove は dirty で断る', async () => {
@@ -223,173 +241,108 @@ describe('consult_worktree', () => {
 
   it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
-    appendRun(placeFor(consultRoot(), topLevel(dir)), {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      worktree: '2-b',
-    });
+    const id = '2-b';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
+    seedUnit(dir, id);
 
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    const outcome = await call({ action: 'remove', id }, dir);
     expect(text(outcome)).toContain('サブエージェントが走っている');
     expect(outcome.details['outcome']).toBe('busy');
-    expect(findWorktree(dir, '2-b')).toBeDefined();
+    expect(findWorktree(dir, id)).toBeDefined();
   });
 
   it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
-    appendRun(placeFor(consultRoot(), topLevel(dir)), {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: 999_999,
-      started: 1,
-      worktree: '2-b',
-    });
+    const id = '2-b';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
+    seedUnit(dir, id, { pid: 999_999 });
 
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    const outcome = await call({ action: 'remove', id }, dir);
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('終わったサブエージェントの記録だけなら、走っていない（消える）', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    appendRun(placeFor(consultRoot(), topLevel(dir)), {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      ended: 2,
-      state: 'done',
-      worktree: '2-b',
-    });
+    const id = '2-b';
+    await call({ action: 'new', id }, dir);
+    seedUnit(dir, id, { ended: 2, state: 'done' });
 
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    const outcome = await call({ action: 'remove', id }, dir);
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('別の session の走っているサブエージェントでも busy（作業場を守る側なので session で絞らない）', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    appendRun(placeFor(consultRoot(), topLevel(dir)), {
-      session: 'session-elsewhere',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      worktree: '2-b',
-    });
+    const id = '2-b';
+    await call({ action: 'new', id }, dir);
+    seedUnit(dir, id, { session: 'session-elsewhere' });
 
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    const outcome = await call({ action: 'remove', id }, dir);
     expect(outcome.details['outcome']).toBe('busy');
   });
 
   it('list が、走っているサブエージェントの居る unit に印を付ける', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
-    appendRun(placeFor(consultRoot(), topLevel(dir)), {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      worktree: '2-b',
-    });
+    const id = '2-b';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
+    seedUnit(dir, id);
 
     expect(text(await call({ action: 'list' }, dir))).toContain('a subagent is running');
   });
 
   it('start と end のある unit → busy でない', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
+    const id = '2-b';
+    const token = 'token-9';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
-    appendRun(place, {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      token: 'token-9',
-      worktree: '2-b',
-    });
-    appendRun(place, {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: process.pid,
-      started: 1,
-      ended: 2,
-      state: 'done',
-      worktree: '2-b',
-    });
-    expect(runningIn(place, '2-b', () => 'running')).toBe(false);
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir, () => 'running');
+    seedUnit(dir, id, { token });
+    seedUnit(dir, id, { ended: 2, state: 'done' });
+    expect(runningIn(place, id, () => 'running')).toBe(false);
+    const outcome = await call({ action: 'remove', id }, dir, () => 'running');
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('開始行だけ（startToken 付き）+ check が running の worktree → busy', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
+    const id = '2-b';
+    const startToken = 'Wed Oct 21 12:41:12 2026';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
-    appendRun(place, {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: 11,
-      started: 1,
-      startToken: 'Wed Oct 21 12:41:12 2026',
-      worktree: '2-b',
-    });
-    expect(runningIn(place, '2-b', () => 'running')).toBe(true);
-    expect(text(await call({ action: 'remove', id: '2-b' }, dir, () => 'running'))).toContain(
+    seedUnit(dir, id, { pid: 11, startToken });
+    expect(runningIn(place, id, () => 'running')).toBe(true);
+    expect(text(await call({ action: 'remove', id }, dir, () => 'running'))).toContain(
       'サブエージェントが走っている',
     );
   });
 
   it('開始行だけ（startToken 付き）+ check が ended の worktree → busy でない', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
+    const id = '2-b';
+    const startToken = 'Wed Oct 21 12:41:12 2026';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
-    appendRun(place, {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: 11,
-      started: 1,
-      startToken: 'Wed Oct 21 12:41:12 2026',
-      worktree: '2-b',
-    });
-    expect(runningIn(place, '2-b', () => 'ended')).toBe(false);
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir, () => 'ended');
+    seedUnit(dir, id, { pid: 11, startToken });
+    expect(runningIn(place, id, () => 'ended')).toBe(false);
+    const outcome = await call({ action: 'remove', id }, dir, () => 'ended');
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('開始行だけ（startToken 付き）+ check が unknown の worktree → busy（走っている側）', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
-    findWorktree(dir, '2-b');
+    const id = '2-b';
+    const startToken = 'Wed Oct 21 12:41:12 2026';
+    await call({ action: 'new', id }, dir);
+    findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
-    appendRun(place, {
-      session: 'session-a',
-      subagent: 'consult-9',
-      role: 'code',
-      pid: 11,
-      started: 1,
-      startToken: 'Wed Oct 21 12:41:12 2026',
-      worktree: '2-b',
-    });
-    expect(runningIn(place, '2-b', () => 'unknown')).toBe(true);
+    seedUnit(dir, id, { pid: 11, startToken });
+    expect(runningIn(place, id, () => 'unknown')).toBe(true);
   });
 
   it('知らない action → エラー', async () => {
@@ -400,21 +353,23 @@ describe('consult_worktree', () => {
 
 describe('removeText', () => {
   it('消した物（枝）・掃除した登録を言う', () => {
+    const id = '2-b';
     expect(
-      removeText('2-b', {
+      removeText(id, {
         outcome: 'removed',
-        cleanup: { pruned: [], branches: [{ state: 'removed', branch: 'consult/2-b' }] },
+        cleanup: { pruned: [], branches: [{ state: 'removed', branch: branchFor(id) }] },
       }),
     ).toContain('ブランチも消した');
   });
 
   it('残した物（未マージは残す）を言う', () => {
+    const id = '2-b';
     expect(
-      removeText('2-b', {
+      removeText(id, {
         outcome: 'removed',
         cleanup: {
           pruned: [],
-          branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
+          branches: [{ state: 'kept', branch: branchFor(id), reason: 'unmerged' }],
         },
       }),
     ).toContain('ブランチは未マージなので残した');
@@ -430,15 +385,14 @@ describe('removeText', () => {
   });
 
   it('無い登録でも、残した枝（未マージ）を言う', () => {
+    const id = '2-b';
+    const branch = branchFor(id);
     expect(
-      removeText('2-b', {
+      removeText(id, {
         outcome: 'missing',
-        cleanup: {
-          pruned: [],
-          branches: [{ state: 'kept', branch: 'consult/2-b', reason: 'unmerged' }],
-        },
+        cleanup: { pruned: [], branches: [{ state: 'kept', branch, reason: 'unmerged' }] },
       }),
-    ).toContain('残した枝（未マージ）: consult/2-b');
+    ).toContain(`残した枝（未マージ）: ${branch}`);
   });
 
   it('変更が残る断りでも、掃除した物を言う', () => {

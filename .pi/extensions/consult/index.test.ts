@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../test/temp-dir.ts';
+import { aRunRecord } from '../../../test/consult-fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
@@ -13,17 +14,7 @@ function place(): Place {
 }
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return {
-    session: 'session-a',
-    subagent: 'consult-1',
-    role: 'review',
-    pid: 1,
-    started: 1000,
-    ended: 2000,
-    state: 'done',
-    notice: 'できた',
-    ...extra,
-  };
+  return aRunRecord({ ended: 2000, state: 'done', notice: 'できた', ...extra });
 }
 
 function pending(found: Place, at: Date, extra: Partial<RunRecord> = {}): void {
@@ -83,13 +74,14 @@ describe('flushPending', () => {
   it('印の無い完了を 1 件渡す → 1 を返す。印の行が 1 本増える', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    const notice = 'できた';
+    pending(found, at, { notice });
     const { pi, sent } = fakePi();
 
     expect(flushPending(portFor(found, pi))).toBe(1);
 
     expect(sent).toHaveLength(1);
-    expect(sent[0]?.content).toBe('できた');
+    expect(sent[0]?.content).toBe(notice);
     const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
     expect(runs).toHaveLength(2);
     expect(deliveredKeys(runs).size).toBe(1);
@@ -125,15 +117,19 @@ describe('startTick / stopTick', () => {
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
     const found = place();
+    const subagent = 'consult-1';
     appendRun(
       found,
-      {
+      aRunRecord({
         session: 'session-a',
-        subagent: 'consult-1',
+        subagent,
         role: 'review',
         pid: process.pid,
         started: 1000,
-      },
+        ended: undefined,
+        state: undefined,
+        notice: undefined,
+      }),
       new Date(),
     );
     const { pi, sent } = fakePi();
@@ -218,8 +214,9 @@ describe('startTick / stopTick', () => {
 describe('reload', () => {
   it('古いインスタンスの完了 → 新しい tick が 1 回渡し、印を書く。次は渡さない', () => {
     const found = place();
+    const subagent = 'consult-9';
     // old instance wrote the completion row and is gone
-    appendRun(found, record({ subagent: 'consult-9' }), new Date());
+    appendRun(found, record({ subagent }), new Date());
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
 
@@ -233,7 +230,8 @@ describe('reload', () => {
 
   it('同じ印で一覧は running から done へ、音は鳴るから鳴らないへ', () => {
     const found = place();
-    appendRun(found, record({ subagent: 'consult-9' }), new Date());
+    const subagent = 'consult-9';
+    appendRun(found, record({ subagent }), new Date());
 
     const before = rowsOf(readRuns(found, { session: 'session-a' }), undefined, 0);
     expect(before).toHaveLength(1);
