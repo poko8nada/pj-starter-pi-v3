@@ -449,5 +449,14 @@ test/
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 55 ファイル / 834 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `sub/budget.ts` の `turns - 2` を `turns - 1` に → 5 件が赤。戻して緑を確認。
+    - `tool/consult.ts` の `highestInRecord` を最大から最終行に → 「記録に consult-7 と consult-2 が混ざっている → 次は consult-8」が赤。戻して緑を確認。
+    - `sub/guard.ts` の `isSecretPath` が常に false を返す → 4 件が赤。戻して緑を確認。
+- Findings: なし
 - Doubts:
+  - `## Files` が `update` としている `run/place.test.ts` と `tool/sound.test.ts` に差分がありません。plan の `Steps` と照らすと既に痩せた状態で、変える所が無かったためです。
