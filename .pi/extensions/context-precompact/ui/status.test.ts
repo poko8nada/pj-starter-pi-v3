@@ -28,6 +28,14 @@ describe('statusText', () => {
     );
   });
 
+  it('discarded → status は undefined、通知はフォールバック warning', () => {
+    expect(statusText({ kind: 'discarded' })).toBeUndefined();
+    expect(notifyText({ kind: 'discarded' })).toBe(
+      'precompact: failed; default compaction will run',
+    );
+    expect(notifyType({ kind: 'discarded' })).toBe('warning');
+  });
+
   it('idle → status も通知も undefined', () => {
     expect(statusText({ kind: 'idle' })).toBeUndefined();
     expect(notifyText({ kind: 'idle' })).toBeUndefined();

@@ -55,6 +55,15 @@ describe('gate', () => {
     expect(gate(makeInput({ tokens: null }))).toEqual({ kind: 'skip', reason: 'unknown' });
   });
 
+  it('contextWindow が 0 で tokens が非 null → skip unknown', () => {
+    expect(gate(makeInput({ contextWindow: 0, tokens: THRESHOLD_RATIO * CONTEXT_WINDOW }))).toEqual(
+      {
+        kind: 'skip',
+        reason: 'unknown',
+      },
+    );
+  });
+
   it('running が true → skip running', () => {
     expect(gate(makeInput({ running: true }))).toEqual({ kind: 'skip', reason: 'running' });
   });
