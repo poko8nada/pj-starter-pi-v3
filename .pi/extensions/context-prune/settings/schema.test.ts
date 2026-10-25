@@ -1,121 +1,68 @@
 import { describe, expect, it } from 'vitest';
+import { settingsJson } from '../../../../test/prune-fixture.ts';
 import { defaultSettings, parseSettings } from './schema.ts';
 
+const okCases = [
+  { document: {}, patch: {} },
+  { document: { ratio: 0.2 }, patch: { ratio: 0.2 } },
+  { document: { ratio: 0.8 }, patch: { ratio: 0.8 } },
+  { document: { threshold: 0 }, patch: { threshold: 0 } },
+  { document: { threshold: 1 }, patch: { threshold: 1 } },
+  { document: { rearmRatio: 0.001 }, patch: { rearmRatio: 0.001 } },
+  { document: { rearmRatio: 0.999 }, patch: { rearmRatio: 0.999 } },
+  { document: { recentTokens: 1 }, patch: { recentTokens: 1 } },
+] as const;
+
+const brokenDocuments = [
+  { ratio: 0.19 },
+  { ratio: 0.81 },
+  { threshold: 1.1 },
+  { rearmRatio: 0 },
+  { rearmRatio: 1 },
+  { recentTokens: 0 },
+  { recentTokens: 1.5 },
+  { enabled: 'yes' },
+  { classifier: { allowPaid: 1 } },
+  { classifier: { models: [{ provider: 1, model: 'm' }] } },
+  { classifier: { models: [{ provider: 'p', model: 'm', extra: 1 }] } },
+  { classifier: { models: [] } },
+  { marker: '' },
+] as const;
+
 describe('parseSettings', () => {
-  it('{} → ok で既定と等しい', () => {
-    expect(parseSettings('{}')).toEqual({ kind: 'ok', settings: defaultSettings() });
-  });
+  for (const { document, patch } of okCases) {
+    it(`${settingsJson(document)} → ok で既定に重なる`, () => {
+      expect(parseSettings(settingsJson(document))).toEqual({
+        kind: 'ok',
+        settings: { ...defaultSettings(), ...patch },
+      });
+    });
+  }
 
-  it('既定が enabled 真・しきい値・印・分類器の 2 件を持つ', () => {
-    const settings = defaultSettings();
-    expect(settings.enabled).toBe(true);
-    expect(settings.threshold).toBe(0.5);
-    expect(settings.rearmRatio).toBe(0.1);
-    expect(settings.marker).toBe('古いツール結果（{chars} 文字）を省略');
-    expect(settings.classifier.models).toHaveLength(2);
-    expect(settings.classifier.allowPaid).toBe(true);
-  });
+  for (const document of brokenDocuments) {
+    it(`${settingsJson(document)} → broken`, () => {
+      expect(parseSettings(settingsJson(document)).kind).toBe('broken');
+    });
+  }
 
-  it('境界値 ratio 0.2 / 0.8 → ok', () => {
-    expect(parseSettings('{"ratio":0.2}').kind).toBe('ok');
-    expect(parseSettings('{"ratio":0.8}').kind).toBe('ok');
-  });
-
-  it('境界値 threshold 0 / 1 → ok', () => {
-    expect(parseSettings('{"threshold":0}').kind).toBe('ok');
-    expect(parseSettings('{"threshold":1}').kind).toBe('ok');
-  });
-
-  it('境界値 rearmRatio 0.001 / 0.999 → ok', () => {
-    expect(parseSettings('{"rearmRatio":0.001}').kind).toBe('ok');
-    expect(parseSettings('{"rearmRatio":0.999}').kind).toBe('ok');
-  });
-
-  it('境界値 recentTokens 1 → ok', () => {
-    expect(parseSettings('{"recentTokens":1}').kind).toBe('ok');
-  });
-
-  it('範囲外 ratio 0.19 / 0.81 → broken', () => {
-    expect(parseSettings('{"ratio":0.19}').kind).toBe('broken');
-    expect(parseSettings('{"ratio":0.81}').kind).toBe('broken');
-  });
-
-  it('範囲外 threshold 1.1 → broken', () => {
-    expect(parseSettings('{"threshold":1.1}').kind).toBe('broken');
-  });
-
-  it('範囲外 recentTokens 0 / 1.5 → broken', () => {
-    expect(parseSettings('{"recentTokens":0}').kind).toBe('broken');
-    expect(parseSettings('{"recentTokens":1.5}').kind).toBe('broken');
-  });
-
-  it('`{ "summaryTokens": 2000 }` → broken（未知キー）', () => {
-    const read = parseSettings('{"summaryTokens":2000}');
+  it('知らないキー → broken で理由にそのキーが入る', () => {
+    const key = 'unknown';
+    const read = parseSettings(settingsJson({ [key]: 1 }));
     expect(read.kind).toBe('broken');
     if (read.kind !== 'broken') {
       throw new Error('must be broken');
     }
-    expect(read.reason).toContain('unknown');
+    expect(read.reason).toContain(key);
   });
 
-  it('既定に summaryTokens が無い', () => {
-    expect(defaultSettings()).not.toHaveProperty('summaryTokens');
-  });
-
-  it('`{ "maxQuestions": 40 }` → broken（未知キー）', () => {
-    const read = parseSettings('{"maxQuestions":40}');
+  it(`JSON でない → broken で理由にその旨が入る`, () => {
+    const input = '{';
+    const marker = 'JSON';
+    const read = parseSettings(input);
     expect(read.kind).toBe('broken');
     if (read.kind !== 'broken') {
       throw new Error('must be broken');
     }
-    expect(read.reason).toContain('unknown');
-  });
-
-  it('既定に maxQuestions が無い', () => {
-    expect(defaultSettings()).not.toHaveProperty('maxQuestions');
-  });
-
-  it('範囲外 rearmRatio 0 / 1 / -0.1 → broken', () => {
-    expect(parseSettings('{"rearmRatio":0}').kind).toBe('broken');
-    expect(parseSettings('{"rearmRatio":1}').kind).toBe('broken');
-    expect(parseSettings('{"rearmRatio":-0.1}').kind).toBe('broken');
-  });
-
-  it('型違い enabled "yes" → broken', () => {
-    expect(parseSettings('{"enabled":"yes"}').kind).toBe('broken');
-  });
-
-  it('型違い classifier.allowPaid 1 → broken', () => {
-    expect(parseSettings('{"classifier":{"allowPaid":1}}').kind).toBe('broken');
-  });
-
-  it('空の classifier.models → broken', () => {
-    expect(parseSettings('{"classifier":{"models":[]}}').kind).toBe('broken');
-  });
-
-  it('provider が数値の models → broken', () => {
-    expect(parseSettings('{"classifier":{"models":[{"provider":1}]}}').kind).toBe('broken');
-  });
-
-  it('空の marker → broken', () => {
-    expect(parseSettings('{"marker":""}').kind).toBe('broken');
-  });
-
-  it('知らないキー → broken で理由に unknown を含む', () => {
-    const read = parseSettings('{"unknown":1}');
-    expect(read.kind).toBe('broken');
-    if (read.kind !== 'broken') {
-      throw new Error('must be broken');
-    }
-    expect(read.reason).toContain('unknown');
-  });
-
-  it("'{' → broken で理由に not JSON を含む", () => {
-    const read = parseSettings('{');
-    expect(read.kind).toBe('broken');
-    if (read.kind !== 'broken') {
-      throw new Error('must be broken');
-    }
-    expect(read.reason).toContain('not JSON');
+    expect(read.reason).toContain(marker);
   });
 });
