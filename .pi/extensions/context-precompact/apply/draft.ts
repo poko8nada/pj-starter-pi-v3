@@ -17,6 +17,11 @@ export interface ReadyCompaction {
   readonly tokensAfter: number;
 }
 
+/** 要約の文字数からトークンを見積もる */
+export function summaryTokens(summary: string): number {
+  return Math.ceil(summary.length / 4);
+}
+
 /** 結果と準備から適用可能な形を作る。`tokensAfter` は概算 */
 export function readyFrom(
   result: CompactionResult,
@@ -31,8 +36,7 @@ export function readyFrom(
   for (const message of prepared.turnPrefixMessages) {
     oldTokens += estimateTokens(message);
   }
-  const summaryTokens = Math.ceil(result.summary.length / 4);
-  const tokensAfter = Math.max(0, tokensBefore - oldTokens + summaryTokens);
+  const tokensAfter = Math.max(0, tokensBefore - oldTokens + summaryTokens(result.summary));
   return {
     draft: {
       type: 'compaction',

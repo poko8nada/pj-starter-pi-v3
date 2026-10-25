@@ -10,6 +10,9 @@ import {
 } from '@earendil-works/pi-coding-agent';
 import type { PreparedCompaction } from '../prepare/types.ts';
 
+/** モデルが無いときの理由 */
+export const NO_MODEL_REASON = 'context-precompact: no model available';
+
 export interface CompactRequest {
   readonly preparation: PreparedCompaction;
   readonly signal: AbortSignal;
@@ -46,7 +49,7 @@ function headersOf(
 /** 要約の口を作る。モデル無し・認証失敗は throw */
 export function createSummaryPorts(ctx: SummaryCtx): SummaryPorts {
   if (ctx.model === undefined) {
-    throw new Error('context-precompact: no model available');
+    throw new Error(NO_MODEL_REASON);
   }
   const model = ctx.model;
   return {

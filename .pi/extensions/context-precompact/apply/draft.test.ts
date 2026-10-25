@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { estimateTokens, type CompactionResult } from '@earendil-works/pi-coding-agent';
-import { readyFrom } from './draft.ts';
+import { readyFrom, summaryTokens } from './draft.ts';
 import type { PreparedCompaction, PrepareStamp } from '../prepare/types.ts';
+import { RESERVE_TOKENS } from '../settings/constants.ts';
+
+const TOKENS_BEFORE = 1_000;
+const BELOW_OLD_TOKENS = 1;
 
 function usage() {
   return {
@@ -33,10 +37,10 @@ function preparedOf(): PreparedCompaction {
       },
     ],
     isSplitTurn: true,
-    tokensBefore: 1000,
+    tokensBefore: TOKENS_BEFORE,
     previousSummary: undefined,
     fileOps: { read: new Set(), written: new Set(), edited: new Set() },
-    settings: { enabled: true, reserveTokens: 16_384, keepRecentTokens: 2000 },
+    settings: { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens: 2000 },
   };
 }
 
@@ -44,7 +48,7 @@ function resultOf(summary: string): CompactionResult {
   return {
     summary,
     firstKeptEntryId: 'kept-1',
-    tokensBefore: 1000,
+    tokensBefore: TOKENS_BEFORE,
     usage: usage(),
     details: { readFiles: ['a.ts'], modifiedFiles: [] },
   };
@@ -54,37 +58,39 @@ function stampOf(): PrepareStamp {
   return { sessionId: 's1', leafId: 'leaf', latestCompactionId: undefined };
 }
 
+function oldTokensOf(prepared: PreparedCompaction): number {
+  let total = 0;
+  for (const message of prepared.messagesToSummarize) {
+    total += estimateTokens(message);
+  }
+  for (const message of prepared.turnPrefixMessages) {
+    total += estimateTokens(message);
+  }
+  return total;
+}
+
 describe('readyFrom', () => {
   it('result と prepared → draft の summary、firstKept、details、usage が同じ', () => {
     const prepared = preparedOf();
-    const result = resultOf('x'.repeat(100));
-    const ready = readyFrom(result, prepared, stampOf(), 1000);
+    const result = resultOf('summary text');
+    const ready = readyFrom(result, prepared, stampOf(), TOKENS_BEFORE);
     expect(ready.draft.summary).toBe(result.summary);
     expect(ready.draft.firstKeptEntryId).toBe(result.firstKeptEntryId);
     expect(ready.draft.details).toEqual(result.details);
     expect(ready.draft.usage).toEqual(result.usage);
   });
 
-  it('tokensBefore、estimate 合計、summary 文字数 → tokensAfter が一致する', () => {
+  it('tokensAfter は tokensBefore - old + summaryTokens', () => {
     const prepared = preparedOf();
     const result = resultOf('z'.repeat(80));
-    const tokensBefore = 1000;
-    const ready = readyFrom(result, prepared, stampOf(), tokensBefore);
-    let oldTokens = 0;
-    for (const message of prepared.messagesToSummarize) {
-      oldTokens += estimateTokens(message);
-    }
-    for (const message of prepared.turnPrefixMessages) {
-      oldTokens += estimateTokens(message);
-    }
-    const expected = tokensBefore - oldTokens + Math.ceil(result.summary.length / 4);
-    expect(ready.tokensAfter).toBe(expected);
+    const ready = readyFrom(result, prepared, stampOf(), TOKENS_BEFORE);
+    expect(ready.tokensAfter).toBe(
+      TOKENS_BEFORE - oldTokensOf(prepared) + summaryTokens(result.summary),
+    );
   });
 
   it('oldTokens が tokensBefore を超える → tokensAfter が 0', () => {
-    const prepared = preparedOf();
-    const result = resultOf('short');
-    const ready = readyFrom(result, prepared, stampOf(), 1);
+    const ready = readyFrom(resultOf('short'), preparedOf(), stampOf(), BELOW_OLD_TOKENS);
     expect(ready.tokensAfter).toBe(0);
   });
 });

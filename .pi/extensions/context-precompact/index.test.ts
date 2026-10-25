@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  sessionEntryToContextMessages,
   type ContextUsage,
   type ExtensionContext,
   type SessionBeforeCompactEvent,
@@ -15,21 +14,30 @@ import {
   type PiPort,
   type PrecompactCtx,
 } from './index.ts';
-import type { SummaryCtx } from './run/ports.ts';
+import { NO_MODEL_REASON, type SummaryCtx } from './run/ports.ts';
 import { prepareFromProjection } from './prepare/copied.ts';
-import { RESERVE_TOKENS } from './settings/constants.ts';
+import { DEFAULT_THRESHOLD_RATIO, LEAD_RATIO, RESERVE_TOKENS } from './settings/constants.ts';
 import { readSettings } from './settings/read.ts';
+import type { Settings } from './settings/schema.ts';
+import { createSessionFixture, projectEntries } from './test/session-entries.ts';
+import {
+  brokenText,
+  chatText,
+  FALLBACK_TEXT,
+  failureText,
+  noticeText,
+  statusLine,
+  type NotifiableStatus,
+} from './ui/status.ts';
 
 const CONTEXT_WINDOW = 10_000;
-const LEAD_TOKENS = 7_600;
-const THRESHOLD_TOKENS = 8_100;
-
-let seq = 0;
-
-function nextId(): { readonly id: string; readonly parentId: string | null } {
-  seq += 1;
-  return { id: `n${seq}`, parentId: seq > 1 ? `n${seq - 1}` : null };
-}
+const THRESHOLD_RATIO = DEFAULT_THRESHOLD_RATIO;
+const THRESHOLD_TOKENS = Math.floor(THRESHOLD_RATIO * CONTEXT_WINDOW);
+const LEAD_TOKENS = Math.floor((THRESHOLD_RATIO - LEAD_RATIO / 2) * CONTEXT_WINDOW);
+const KEEP_RECENT_TOKENS = 1_500;
+const SESSION_ID = 'sess-1';
+const OTHER_SESSION_ID = 'sess-2';
+const BOOM = 'boom';
 
 function llmUsage() {
   return {
@@ -42,60 +50,8 @@ function llmUsage() {
   };
 }
 
-function userEntry(text: string): SessionEntry {
-  const ids = nextId();
-  return {
-    type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
-    message: { role: 'user', content: [{ type: 'text', text }], timestamp: seq },
-  };
-}
-
-function assistantEntry(text: string): SessionEntry {
-  const ids = nextId();
-  return {
-    type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
-    message: {
-      role: 'assistant',
-      content: [{ type: 'text', text }],
-      api: 'openai-completions',
-      provider: 'test',
-      model: 'test-model',
-      usage: llmUsage(),
-      stopReason: 'stop',
-      timestamp: seq,
-    },
-  };
-}
-
-function compactionEntry(summary: string): SessionEntry {
-  const ids = nextId();
-  return {
-    type: 'compaction',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
-    summary,
-    firstKeptEntryId: 'kept',
-    tokensBefore: 100,
-    details: undefined,
-    fromHook: true,
-  };
-}
-
-/** 6 件・約 6000 トークンの 3 ターンを作る */
-function threeTurns(): SessionEntry[] {
-  const entries: SessionEntry[] = [];
-  for (let turn = 0; turn < 3; turn++) {
-    entries.push(userEntry(`u${turn}-${'x'.repeat(4000)}`));
-    entries.push(assistantEntry(`a${turn}-${'y'.repeat(4000)}`));
-  }
-  return entries;
+function settingsDocument(overrides: Partial<Settings> = {}): Record<string, unknown> {
+  return { keepRecentTokens: KEEP_RECENT_TOKENS, thresholdRatio: THRESHOLD_RATIO, ...overrides };
 }
 
 function settingsDirWith(document: Record<string, unknown>): string {
@@ -105,11 +61,11 @@ function settingsDirWith(document: Record<string, unknown>): string {
 }
 
 function defaultSettingsDir(): string {
-  return settingsDirWith({ keepRecentTokens: 1500, thresholdRatio: 0.8 });
+  return settingsDirWith(settingsDocument());
 }
 
 function contextUsageOf(tokens: number | null): ContextUsage {
-  return { tokens, contextWindow: CONTEXT_WINDOW, percent: tokens === null ? null : 50 };
+  return { tokens, contextWindow: CONTEXT_WINDOW, percent: null };
 }
 
 function modelFake(): ExtensionContext['model'] {
@@ -144,7 +100,7 @@ function compactOnceOk(): SummaryCtx['compactFn'] {
     if (calls === 1) {
       return ok(...args);
     }
-    throw new Error('boom');
+    throw new Error(BOOM);
   };
 }
 
@@ -165,16 +121,13 @@ function fakeCtx(options: {
   const calls: string[] = [];
   const notified: { message: string; type: string | undefined }[] = [];
   const statuses: (string | undefined)[] = [];
-  const sessionId = options.sessionId ?? 'sess-1';
+  const sessionId = options.sessionId ?? SESSION_ID;
   const branch = options.branch;
   const manager = {
     buildSessionProjection: () => {
       calls.push('buildSessionProjection');
       return {
-        entries: branch.map((sourceEntry) => ({
-          sourceEntry,
-          messages: [...sessionEntryToContextMessages(sourceEntry)],
-        })),
+        entries: projectEntries(branch),
         messages: [],
         thinkingLevel: 'off',
         model: null,
@@ -241,26 +194,22 @@ function fakePi(piEnabled = true): PiSetup {
 
 function wiringWith(dir?: string) {
   const { pi } = fakePi();
-  const wiring = createPrecompactWiring(pi, {
+  return createPrecompactWiring(pi, {
     settingsDir: dir ?? defaultSettingsDir(),
-    now: () => 1000,
+    now: () => 0,
     compactFn: compactOk(),
   });
-  return wiring;
-}
-
-function projectedOf(branch: readonly SessionEntry[]) {
-  return branch.map((sourceEntry) => ({
-    sourceEntry,
-    messages: [...sessionEntryToContextMessages(sourceEntry)],
-  }));
 }
 
 function matchingPreparation(branch: readonly SessionEntry[]) {
   const theirs = prepareFromProjection({
-    projectedEntries: projectedOf(branch),
+    projectedEntries: projectEntries(branch),
     pathEntries: branch,
-    settings: { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens: 1500 },
+    settings: {
+      enabled: true,
+      reserveTokens: RESERVE_TOKENS,
+      keepRecentTokens: KEEP_RECENT_TOKENS,
+    },
     tokensBefore: LEAD_TOKENS,
   });
   if (theirs === undefined) {
@@ -279,15 +228,21 @@ function compactEvent(
     branchEntries: branch,
     reason: 'threshold',
     willRetry: false,
-    signal: AbortSignal.timeout(1000),
+    signal: new AbortController().signal,
   };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 判定に使う口だけ持つ偽物
   return event as unknown as SessionBeforeCompactEvent;
 }
 
+function appliedChat(before: number, after: number): string {
+  const status: NotifiableStatus = { kind: 'applied', before, after };
+  return chatText(status);
+}
+
 describe('precompact wiring', () => {
   it('turn_end で比率が閾値の手前 → running が true、status が preparing', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { ctx } = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(ctx);
@@ -297,7 +252,8 @@ describe('precompact wiring', () => {
   });
 
   it('flush が実行中の pass を待つ → prepared が立ち、status が ready', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { ctx } = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(ctx);
@@ -307,8 +263,9 @@ describe('precompact wiring', () => {
     expect(wiring.getState().status.kind).toBe('ready');
   });
 
-  it('次の turn_end で比率が閾値 → draft 1 件・footer に applied・lastApplied', async () => {
-    const branch = threeTurns();
+  it('次の turn_end で比率が閾値 → draft 1 件・chat に applied・lastApplied', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
@@ -321,23 +278,34 @@ describe('precompact wiring', () => {
     const outcome = await wiring.onTurnEnd(hot.ctx);
     expect(outcome?.entries).toHaveLength(1);
     expect(outcome?.entries?.[0]).toMatchObject({ type: 'compaction' });
-    expect(hot.notified.some((n) => n.message.includes('applied'))).toBe(false);
-    expect(hot.statuses[hot.statuses.length - 1]).toContain('precompact: applied');
+    const applied = appliedChat(ready.tokensBefore, ready.tokensAfter);
+    expect(hot.notified).toContainEqual({ message: applied, type: 'info' });
+    expect(hot.statuses.at(-1)).toBe(applied);
     expect(wiring.getState().lastAppliedTokens).toBe(ready.tokensAfter);
   });
 
   it('agent_before_settle で prepared があり比率が閾値 → draft 1 件', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
+    const ready = wiring.getState().prepared;
+    if (ready === undefined) {
+      throw new Error('prepared must be ready');
+    }
     const hot = fakeCtx({ branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
     expect(wiring.onBeforeSettle(hot.ctx)?.entries).toHaveLength(1);
+    const applied = appliedChat(ready.tokensBefore, ready.tokensAfter);
+    expect(hot.notified).toContainEqual({ message: applied, type: 'info' });
+    expect(wiring.getState().lastAppliedTokens).toBe(ready.tokensAfter);
+    expect(hot.statuses.at(-1)).toBe(applied);
   });
 
   it('agent_before_settle で比率が閾値未満 → undefined', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
@@ -347,48 +315,53 @@ describe('precompact wiring', () => {
   });
 
   it('agent_before_settle で prepared が stale → draft 無し・フォールバック通知', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
     expect(wiring.getState().prepared).toBeDefined();
     const stale = fakeCtx({
-      branch: branch.slice(0, 5),
+      branch: branch.slice(0, -1),
       usage: contextUsageOf(THRESHOLD_TOKENS),
     });
     expect(wiring.onBeforeSettle(stale.ctx)).toBeUndefined();
     expect(wiring.getState().prepared).toBeUndefined();
-    expect(stale.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
+    expect(stale.notified).toContainEqual({ message: FALLBACK_TEXT, type: 'warning' });
   });
 
   it('turn_end の apply で stale → draft 無し・フォールバック通知', async () => {
-    const branch = threeTurns();
-    const last = branch[branch.length - 1];
-    const kept = branch[4];
-    if (last === undefined || kept === undefined) {
-      throw new Error('branch must have leaf and kept');
+    const session = createSessionFixture();
+    const branch = session.turns(3);
+    const last = branch.at(-1);
+    if (last === undefined) {
+      throw new Error('branch must have leaf');
     }
     const variants: {
       readonly name: string;
       readonly branch: SessionEntry[];
       readonly sessionId: string;
     }[] = [
-      { name: 'session', branch: [...branch], sessionId: 'sess-2' },
-      { name: 'leaf', branch: branch.slice(0, 5), sessionId: 'sess-1' },
+      { name: 'session', branch: [...branch], sessionId: OTHER_SESSION_ID },
+      { name: 'leaf', branch: branch.slice(0, -1), sessionId: SESSION_ID },
       {
         name: 'firstKept',
-        branch: [...branch.slice(0, 4), ...(branch[5] === undefined ? [] : [branch[5]])],
-        sessionId: 'sess-1',
+        branch: [...branch.slice(0, 4), ...branch.slice(5)],
+        sessionId: SESSION_ID,
       },
-      { name: 'compaction', branch: [...branch, compactionEntry('new')], sessionId: 'sess-1' },
+      {
+        name: 'compaction',
+        branch: [...branch, session.compaction('new')],
+        sessionId: SESSION_ID,
+      },
     ];
     for (const variant of variants) {
       const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
       const { pi } = fakePi();
       const wiring = createPrecompactWiring(pi, {
         settingsDir: defaultSettingsDir(),
-        now: () => 1000,
+        now: () => 0,
         compactFn: compactOk(),
       });
       // eslint-disable-next-line no-await-in-loop -- stale の 4 分岐を順に確かめる
@@ -403,50 +376,68 @@ describe('precompact wiring', () => {
       // eslint-disable-next-line no-await-in-loop -- stale の 4 分岐を順に確かめる
       const outcome = await wiring.onTurnEnd(hot.ctx);
       expect(outcome, variant.name).toBeUndefined();
-      expect(
-        hot.notified.some((n) => n.message.includes('default compaction')),
-        variant.name,
-      ).toBe(true);
+      expect(hot.notified, variant.name).toContainEqual({
+        message: FALLBACK_TEXT,
+        type: 'warning',
+      });
     }
   });
 
   it('session_before_compact で一致 → compaction を返し tokensBefore が現在値', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
-    const hot = fakeCtx({ branch, usage: contextUsageOf(8_200) });
+    const ready = wiring.getState().prepared;
+    if (ready === undefined) {
+      throw new Error('prepared must be ready');
+    }
+    const hot = fakeCtx({ branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
     const outcome = wiring.onSessionBeforeCompact(
       compactEvent(matchingPreparation(branch), branch),
       hot.ctx,
     );
-    expect(outcome?.compaction?.tokensBefore).toBe(8_200);
+    expect(outcome?.compaction?.tokensBefore).toBe(THRESHOLD_TOKENS);
+    expect(wiring.getState().status).toEqual({
+      kind: 'applied',
+      before: THRESHOLD_TOKENS,
+      after: ready.tokensAfter,
+    });
+    expect(wiring.getState().lastAppliedTokens).toBe(ready.tokensAfter);
+    expect(hot.notified).toContainEqual({
+      message: appliedChat(THRESHOLD_TOKENS, ready.tokensAfter),
+      type: 'info',
+    });
+    expect(hot.statuses.at(-1)).toBe(appliedChat(THRESHOLD_TOKENS, ready.tokensAfter));
   });
 
-  it('session_before_compact で firstKept が違う → undefined・フォールバック通知', async () => {
-    const branch = threeTurns();
+  it('session_before_compact で firstKept が違う → 照合の不一致でフォールバック通知', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
-    const hot = fakeCtx({ branch, usage: contextUsageOf(8_200) });
+    const hot = fakeCtx({ branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
     const event = compactEvent(
       { ...matchingPreparation(branch), firstKeptEntryId: 'other-kept' },
       branch,
     );
     expect(wiring.onSessionBeforeCompact(event, hot.ctx)).toBeUndefined();
-    expect(hot.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
+    expect(hot.notified).toContainEqual({ message: FALLBACK_TEXT, type: 'warning' });
+    expect(wiring.getState().prepared).toBeUndefined();
   });
 
   it('拡張か Pi の enabled が false → 開始しない', async () => {
-    const branch = threeTurns();
-    const offDir = settingsDirWith({ enabled: false, keepRecentTokens: 1500, thresholdRatio: 0.8 });
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const offSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const enabledPi = fakePi(true);
     const wiringOff = createPrecompactWiring(enabledPi.pi, {
-      settingsDir: offDir,
-      now: () => 1000,
+      settingsDir: settingsDirWith(settingsDocument({ enabled: false })),
+      now: () => 0,
       compactFn: compactOk(),
     });
     await wiringOff.onTurnEnd(offSetup.ctx);
@@ -455,35 +446,44 @@ describe('precompact wiring', () => {
     const disabledPi = fakePi(false);
     const wiringPi = createPrecompactWiring(disabledPi.pi, {
       settingsDir: defaultSettingsDir(),
-      now: () => 1000,
+      now: () => 0,
       compactFn: compactOk(),
     });
     await wiringPi.onTurnEnd(piSetup.ctx);
     expect(wiringPi.getState().running).toBe(false);
   });
+});
 
+describe('precompact wiring lifecycle', () => {
   it('設定が壊れている → 1 度だけ notify', async () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
-    const branch = threeTurns();
+    const broken = readSettings(dir);
+    if (broken.kind !== 'broken') {
+      throw new Error('settings must be broken');
+    }
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { pi } = fakePi();
     const wiring = createPrecompactWiring(pi, {
       settingsDir: dir,
-      now: () => 1000,
+      now: () => 0,
       compactFn: compactOk(),
     });
     const first = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onTurnEnd(first.ctx);
     const second = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onTurnEnd(second.ctx);
-    expect(first.notified.filter((n) => n.message.includes('broken'))).toHaveLength(1);
-    expect(first.notified.find((n) => n.message.includes('broken'))?.type).toBe('warning');
-    expect(second.notified.filter((n) => n.message.includes('broken'))).toHaveLength(0);
+    const expected = { message: brokenText(broken.reason), type: 'warning' };
+    expect(first.notified).toContainEqual(expected);
+    expect(first.notified).toHaveLength(1);
+    expect(second.notified).toHaveLength(0);
     expect(wiring.getState().running).toBe(false);
   });
 
   it('session_start / shutdown → clear・prepared 無し', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { ctx } = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(ctx);
@@ -501,12 +501,13 @@ describe('precompact wiring', () => {
 });
 
 describe('precompact failure reason', () => {
-  it('1回目成功で prepared が立ち2回目の要約が boom で失敗 → 通知は1通で文面どおりで failed で prepared 無し', async () => {
-    const branch = threeTurns();
+  it('1回目成功で prepared が立ち2回目の要約が boom で失敗 → preparing と warning の2通で理由入りで failed', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { pi } = fakePi();
     const wiring = createPrecompactWiring(pi, {
       settingsDir: defaultSettingsDir(),
-      now: () => 1000,
+      now: () => 0,
       compactFn: compactOnceOk(),
     });
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -516,21 +517,21 @@ describe('precompact failure reason', () => {
     const hot = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('now', hot.ctx);
     await wiring.flush();
-    expect(wiring.getState().status).toEqual({ kind: 'failed' });
+    expect(wiring.getState().status).toEqual({ kind: 'failed', reason: BOOM });
     expect(wiring.getState().prepared).toBeUndefined();
-    expect(hot.notified).toHaveLength(1);
-    expect(hot.notified[0]).toEqual({
-      message: 'precompact: failed (boom); default compaction will run',
-      type: 'warning',
-    });
+    expect(hot.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: failureText(BOOM), type: 'warning' },
+    ]);
   });
 
-  it('1回目に model ありで prepared が立ち2回目に model が undefined → 通知は1通で理由入りで failed で prepared 無し', async () => {
-    const branch = threeTurns();
+  it('1回目に model ありで prepared が立ち2回目に model が undefined → 理由入りで failed', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { pi } = fakePi();
     const wiring = createPrecompactWiring(pi, {
       settingsDir: defaultSettingsDir(),
-      now: () => 1000,
+      now: () => 0,
       compactFn: compactOk(),
     });
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -540,22 +541,83 @@ describe('precompact failure reason', () => {
     const hot = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS), model: undefined });
     await wiring.onCommand('now', hot.ctx);
     await wiring.flush();
-    expect(wiring.getState().status).toEqual({ kind: 'failed' });
+    expect(wiring.getState().status).toEqual({ kind: 'failed', reason: NO_MODEL_REASON });
     expect(wiring.getState().prepared).toBeUndefined();
-    expect(hot.notified).toHaveLength(1);
-    expect(hot.notified[0]?.message).toContain('no model available');
-    expect(hot.notified[0]?.message).toContain('default compaction');
-    expect(hot.notified[0]?.type).toBe('warning');
+    expect(hot.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: failureText(NO_MODEL_REASON), type: 'warning' },
+    ]);
+  });
+});
+
+describe('precompact now response', () => {
+  it('now で拡張が off → preparing と off、pass なし', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: settingsDirWith(settingsDocument({ enabled: false })),
+      now: () => 0,
+      compactFn: compactOk(),
+    });
+    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', setup.ctx);
+    await wiring.flush();
+    expect(setup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: noticeText('off'), type: 'info' },
+    ]);
+    expect(wiring.getState().status).toEqual({ kind: 'idle' });
+    expect(wiring.getState().running).toBe(false);
+  });
+
+  it('now で Pi が off → preparing と off', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
+    const { pi } = fakePi(false);
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: defaultSettingsDir(),
+      now: () => 0,
+      compactFn: compactOk(),
+    });
+    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', setup.ctx);
+    await wiring.flush();
+    expect(setup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: noticeText('off'), type: 'info' },
+    ]);
+    expect(wiring.getState().running).toBe(false);
+  });
+
+  it('now で準備なし → preparing と nothing、status idle', async () => {
+    const session = createSessionFixture();
+    const branch = [...session.turns(3), session.compaction('summary')];
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: defaultSettingsDir(),
+      now: () => 0,
+      compactFn: compactOk(),
+    });
+    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', setup.ctx);
+    await wiring.flush();
+    expect(setup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: noticeText('nothing'), type: 'info' },
+    ]);
+    expect(wiring.getState().status).toEqual({ kind: 'idle' });
   });
 });
 
 describe('precompact commands', () => {
-  it('/precompact status と usage → それぞれの通知', async () => {
-    const branch = threeTurns();
+  it('/precompact status と usage → statusLine と usage の通知', async () => {
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const wiring = wiringWith();
     const statusSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('', statusSetup.ctx);
-    expect(statusSetup.notified[0]?.message).toContain('precompact: on');
+    expect(statusSetup.notified[0]?.message).toContain(`status: ${statusLine({ kind: 'idle' })}`);
     const usageSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('foo', usageSetup.ctx);
     expect(usageSetup.notified[0]?.message).toContain('usage');
@@ -563,16 +625,17 @@ describe('precompact commands', () => {
 
   it('/precompact on / off / now → settings の書き換えと裏での準備開始', async () => {
     const dir = defaultSettingsDir();
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const { pi } = fakePi();
     const wiring = createPrecompactWiring(pi, {
       settingsDir: dir,
-      now: () => 1000,
+      now: () => 0,
       compactFn: compactOk(),
     });
     const offSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('off', offSetup.ctx);
-    expect(offSetup.notified[0]?.message).toContain('off');
+    expect(offSetup.notified[0]).toEqual({ message: noticeText('off'), type: undefined });
     const afterOff = readSettings(dir);
     if (afterOff.kind !== 'ok') {
       throw new Error('settings must stay readable');
@@ -580,8 +643,11 @@ describe('precompact commands', () => {
     expect(afterOff.settings.enabled).toBe(false);
     const onSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('on', onSetup.ctx);
-    expect(readFileSync(join(dir, 'settings.json'), 'utf8')).toContain('"enabled": true');
-    const deferredSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    const afterOn = readSettings(dir);
+    if (afterOn.kind !== 'ok') {
+      throw new Error('settings must stay readable');
+    }
+    expect(afterOn.settings.enabled).toBe(true);
     let resolveGate!: () => void;
     const gate = new Promise<void>((resolve) => {
       resolveGate = resolve;
@@ -599,25 +665,42 @@ describe('precompact commands', () => {
     const { pi: piNow } = fakePi();
     const wiringNow = createPrecompactWiring(piNow, {
       settingsDir: defaultSettingsDir(),
-      now: () => 1000,
+      now: () => 0,
       compactFn: deferredCompact,
     });
+    const deferredSetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiringNow.onCommand('now', deferredSetup.ctx);
     expect(wiringNow.getState().running).toBe(true);
     expect(wiringNow.getState().status).toEqual({ kind: 'preparing' });
-    expect(deferredSetup.notified).toHaveLength(0);
+    expect(deferredSetup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+    ]);
     const busySetup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiringNow.onCommand('now', busySetup.ctx);
-    expect(busySetup.notified).toHaveLength(0);
+    expect(busySetup.notified).toEqual([{ message: noticeText('running'), type: 'info' }]);
     expect(wiringNow.getState().status).toEqual({ kind: 'preparing' });
     resolveGate();
     await wiringNow.flush();
-    expect(wiringNow.getState().status.kind).toBe('ready');
-    expect(deferredSetup.notified).toHaveLength(0);
+    const readyStatus = wiringNow.getState().status;
+    if (readyStatus.kind !== 'ready') {
+      throw new Error('status must be ready');
+    }
+    expect(deferredSetup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      {
+        message: chatText({
+          kind: 'ready',
+          before: readyStatus.before,
+          after: readyStatus.after,
+        }),
+        type: 'info',
+      },
+    ]);
   });
 
   it('prepare が 4 つの getter の値を使う', async () => {
-    const branch = threeTurns();
+    const session = createSessionFixture();
+    const branch = session.turns(3);
     const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(setup.ctx);

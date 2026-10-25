@@ -1,53 +1,85 @@
 import { describe, expect, it } from 'vitest';
-import { notifyText, notifyType, statusText } from './status.ts';
+import { brokenText, chatText, failureText, noticeText, statusLine, statusText } from './status.ts';
+import { formatCount } from './count.ts';
 
-const BEFORE = 1_000;
-const AFTER = 500;
-const MILLION = 1_000_000;
+const REASON = 'reason';
+
+function pairOf() {
+  return { before: 1_000, after: 500 } as const;
+}
+
+describe('chatText', () => {
+  it('preparing → preparing…', () => {
+    expect(chatText({ kind: 'preparing' })).toBe('precompact: preparing…');
+  });
+
+  it('ready → ready X → Y', () => {
+    const pair = pairOf();
+    expect(chatText({ kind: 'ready', ...pair })).toBe(
+      `precompact: ready (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
+    );
+  });
+
+  it('applied → applied X → Y', () => {
+    const pair = pairOf();
+    expect(chatText({ kind: 'applied', ...pair })).toBe(
+      `precompact: applied (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
+    );
+  });
+});
 
 describe('statusText', () => {
-  it('preparing → preparing…', () => {
-    expect(statusText({ kind: 'preparing' })).toBe('precompact: preparing…');
+  it('failed → failed だけ。理由は入れない', () => {
+    expect(statusText({ kind: 'failed', reason: REASON })).not.toContain(REASON);
   });
 
-  it('ready の BEFORE → AFTER → ready 1,000 → 500', () => {
-    expect(statusText({ kind: 'ready', before: BEFORE, after: AFTER })).toBe(
-      'precompact: ready (1,000 → 500)',
-    );
-  });
-
-  it('failed → failed とフォールバック通知', () => {
-    expect(statusText({ kind: 'failed' })).toBe('precompact: failed');
-    expect(notifyText({ kind: 'failed' })).toBe('precompact: failed; default compaction will run');
-  });
-
-  it('applied → footer に applied 1,000 → 500、通知はなし', () => {
-    expect(statusText({ kind: 'applied', before: BEFORE, after: AFTER })).toBe(
-      'precompact: applied (1,000 → 500)',
-    );
-    expect(notifyText({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
-    expect(notifyType({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
-  });
-
-  it('discarded → status は undefined、通知はフォールバック warning', () => {
-    expect(statusText({ kind: 'discarded' })).toBeUndefined();
-    expect(notifyText({ kind: 'discarded' })).toBe(
-      'precompact: failed; default compaction will run',
-    );
-    expect(notifyType({ kind: 'discarded' })).toBe('warning');
-  });
-
-  it('idle → status も通知も undefined', () => {
+  it('idle / discarded → undefined', () => {
     expect(statusText({ kind: 'idle' })).toBeUndefined();
-    expect(notifyText({ kind: 'idle' })).toBeUndefined();
-    expect(notifyType({ kind: 'idle' })).toBeUndefined();
+    expect(statusText({ kind: 'discarded' })).toBeUndefined();
+  });
+});
+
+describe('statusLine', () => {
+  it('idle / preparing / discarded → kind の名前', () => {
+    expect(statusLine({ kind: 'idle' })).toBe('idle');
+    expect(statusLine({ kind: 'preparing' })).toBe('preparing');
+    expect(statusLine({ kind: 'discarded' })).toBe('discarded');
   });
 
-  it('0 と MILLION の組 → カンマが入る', () => {
-    expect(statusText({ kind: 'ready', before: MILLION, after: 0 })).toBe(
-      'precompact: ready (1,000,000 → 0)',
+  it('ready / applied → X → Y', () => {
+    const pair = pairOf();
+    expect(statusLine({ kind: 'ready', ...pair })).toBe(
+      `ready (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
     );
-    expect(notifyType({ kind: 'applied', before: BEFORE, after: AFTER })).toBeUndefined();
-    expect(notifyType({ kind: 'failed' })).toBe('warning');
+    expect(statusLine({ kind: 'applied', ...pair })).toBe(
+      `applied (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
+    );
+  });
+
+  it('failed → 理由を入れる', () => {
+    expect(statusLine({ kind: 'failed', reason: REASON })).toBe(`failed (${REASON})`);
+  });
+});
+
+describe('noticeText', () => {
+  it('on / off / nothing / running → それぞれの文面', () => {
+    expect(noticeText('on')).toBe('precompact: on');
+    expect(noticeText('off')).toBe('precompact: off');
+    expect(noticeText('nothing')).toBe('precompact: nothing to prepare');
+    expect(noticeText('running')).toBe('precompact: running');
+  });
+});
+
+describe('failureText', () => {
+  it('失敗の理由と、既定のコンパクションに任せることを入れる', () => {
+    const text = failureText(REASON);
+    expect(text).toContain(REASON);
+    expect(text).toContain('default compaction');
+  });
+});
+
+describe('brokenText', () => {
+  it('設定が壊れている理由を入れる', () => {
+    expect(brokenText(REASON)).toContain(REASON);
   });
 });

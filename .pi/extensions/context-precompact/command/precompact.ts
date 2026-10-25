@@ -2,6 +2,7 @@
  * `/precompact` の引数と状態表示。設定の `enabled` だけを書き換える。
  */
 import type { Settings } from '../settings/schema.ts';
+import { statusLine, type StatusState } from '../ui/status.ts';
 
 export type Command =
   | { readonly kind: 'status' }
@@ -15,6 +16,7 @@ export interface StatusInput {
   readonly prepared: boolean;
   readonly running: boolean;
   readonly lastAppliedTokens: number | undefined;
+  readonly status: StatusState;
 }
 
 /** 引数なしは status、`on` / `off` / `now`、それ以外は usage */
@@ -46,7 +48,7 @@ export function usageText(): string {
   ].join('\n');
 }
 
-/** 状態の表示。設定・準備・実行中・最後の適用を並べる */
+/** 状態の表示。設定・準備・実行中・最後の適用・status を並べる */
 export function statusLines(input: StatusInput): readonly string[] {
   const head = input.settings.enabled ? 'precompact: on' : 'precompact: off';
   const prepared = input.prepared ? 'prepared: yes' : 'prepared: none';
@@ -55,5 +57,5 @@ export function statusLines(input: StatusInput): readonly string[] {
     input.lastAppliedTokens === undefined
       ? 'lastApplied: none'
       : `lastApplied: ${input.lastAppliedTokens}`;
-  return [head, prepared, running, last];
+  return [head, prepared, running, last, `status: ${statusLine(input.status)}`];
 }

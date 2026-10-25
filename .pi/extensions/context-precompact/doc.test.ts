@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { formatCount } from './ui/count.ts';
+import { chatText, noticeText } from './ui/status.ts';
+import { SUMMARY_TIMEOUT_MS } from './settings/constants.ts';
 
 const HERE = import.meta.dirname;
 const ROOT = join(HERE, '..', '..', '..');
@@ -17,22 +20,34 @@ const OLD_MODEL = ['J', 'ev'].join('');
 const OLD_STACK = ['Stack', 'Agent', 'Classifier'].join('.');
 const OLD_UNIT_LINE = ['Unit', OLD_UNIT].join('.');
 
+/** 拡張の README.md が持つべき、実行と表示の文言 */
+function readmeNeedles(): readonly string[] {
+  return [
+    'turn_end',
+    'session_before_compact',
+    'agent_before_settle',
+    'keepRecentTokens',
+    'thresholdRatio',
+    '/precompact status|on|off|now',
+    chatText({ kind: 'preparing' }),
+    'ready (',
+    'applied (',
+    'failed',
+    'default compaction',
+    `${formatCount(SUMMARY_TIMEOUT_MS)} ms (5 minutes)`,
+    noticeText('off'),
+    noticeText('nothing'),
+    noticeText('running'),
+    'status:',
+    'latest',
+    'console',
+  ];
+}
+
 describe('doc', () => {
-  it('拡張の README.md に 11 の文言がある', () => {
+  it('拡張の README.md に実行と表示の文言がある', () => {
     const readme = readFileSync(join(HERE, 'README.md'), 'utf8');
-    for (const needle of [
-      'turn_end',
-      'session_before_compact',
-      'agent_before_settle',
-      'keepRecentTokens',
-      'thresholdRatio',
-      '/precompact status|on|off|now',
-      'preparing',
-      'ready',
-      'applied',
-      'failed',
-      'default compaction',
-    ]) {
+    for (const needle of readmeNeedles()) {
       expect(readme).toContain(needle);
     }
   });

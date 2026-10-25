@@ -1,5 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { parseCommand } from './precompact.ts';
+import { parseCommand, statusLines } from './precompact.ts';
+import type { Settings } from '../settings/schema.ts';
+import { statusLine, type StatusState } from '../ui/status.ts';
+
+const SETTINGS: Settings = {
+  enabled: true,
+  keepRecentTokens: 20_000,
+  thresholdRatio: 0.8,
+};
+
+const REASON = 'reason';
+
+function pairOf() {
+  return { before: 1_000, after: 500 } as const;
+}
+
+function statuses(): readonly StatusState[] {
+  const pair = pairOf();
+  return [
+    { kind: 'idle' },
+    { kind: 'preparing' },
+    { kind: 'ready', ...pair },
+    { kind: 'applied', ...pair },
+    { kind: 'failed', reason: REASON },
+    { kind: 'discarded' },
+  ];
+}
+
+function statusOf(status: StatusState): string | undefined {
+  return statusLines({
+    settings: SETTINGS,
+    prepared: false,
+    running: false,
+    lastAppliedTokens: undefined,
+    status,
+  }).at(-1);
+}
 
 describe('parseCommand', () => {
   it('空 → status、on / off / now → それぞれ', () => {
@@ -11,5 +47,13 @@ describe('parseCommand', () => {
 
   it('foo → usage', () => {
     expect(parseCommand('foo')).toEqual({ kind: 'usage' });
+  });
+});
+
+describe('statusLines', () => {
+  it('最後の行は status と statusLine の文面', () => {
+    for (const status of statuses()) {
+      expect(statusOf(status)).toBe(`status: ${statusLine(status)}`);
+    }
   });
 });

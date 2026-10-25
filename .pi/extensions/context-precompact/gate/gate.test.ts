@@ -3,6 +3,7 @@ import { LEAD_RATIO, REARM_RATIO } from '../settings/constants.ts';
 import { gate, type GateInput } from './gate.ts';
 
 const CONTEXT_WINDOW = 200_000;
+const SMALL_CONTEXT_WINDOW = 20_000;
 const THRESHOLD_RATIO = 0.8;
 const KEEP_RECENT_TOKENS = 20_000;
 
@@ -69,10 +70,15 @@ describe('gate', () => {
   });
 
   it('古い領域が MIN_OLD_RATIO 未満 → wait old-region-too-small', () => {
-    const contextWindow = 20_000;
-    const tokens = Math.floor(THRESHOLD_RATIO * contextWindow);
+    const tokens = Math.floor(THRESHOLD_RATIO * SMALL_CONTEXT_WINDOW);
     expect(
-      gate(makeInput({ contextWindow, tokens, keepRecentTokens: KEEP_RECENT_TOKENS })),
+      gate(
+        makeInput({
+          contextWindow: SMALL_CONTEXT_WINDOW,
+          tokens,
+          keepRecentTokens: KEEP_RECENT_TOKENS,
+        }),
+      ),
     ).toEqual({ kind: 'wait', reason: 'old-region-too-small' });
   });
 

@@ -3,6 +3,11 @@ import type { CompactionResult } from '@earendil-works/pi-coding-agent';
 import { summarize } from './summarize.ts';
 import type { SummaryPorts } from './ports.ts';
 import type { PreparedCompaction } from '../prepare/types.ts';
+import { RESERVE_TOKENS } from '../settings/constants.ts';
+
+const CLOCK_START = 1_000;
+const ELAPSED_MS = 50;
+const FAILURE = 'boom';
 
 function preparedOf(): PreparedCompaction {
   return {
@@ -13,13 +18,13 @@ function preparedOf(): PreparedCompaction {
     tokensBefore: 100,
     previousSummary: undefined,
     fileOps: { read: new Set(), written: new Set(), edited: new Set() },
-    settings: { enabled: true, reserveTokens: 16_384, keepRecentTokens: 2000 },
+    settings: { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens: 2000 },
   };
 }
 
 function resultOf(): CompactionResult {
   return {
-    summary: 'まとめ',
+    summary: 'summary',
     firstKeptEntryId: 'kept-1',
     tokensBefore: 100,
     usage: undefined,
@@ -27,34 +32,45 @@ function resultOf(): CompactionResult {
   };
 }
 
+function advancingClock(): () => number {
+  let reading = CLOCK_START;
+  return () => {
+    const current = reading;
+    reading += ELAPSED_MS;
+    return current;
+  };
+}
+
 describe('summarize', () => {
   it('fake port が結果を返す → done で latency が経過', async () => {
     const expected = resultOf();
-    const ports: SummaryPorts = {
-      compact: async () => expected,
-    };
-    let clock = 1000;
-    const outcome = await summarize(ports, preparedOf(), AbortSignal.timeout(1000), () => {
-      const current = clock;
-      clock += 50;
-      return current;
-    });
-    expect(outcome.kind).toBe('done');
+    const ports: SummaryPorts = { compact: async () => expected };
+    const outcome = await summarize(
+      ports,
+      preparedOf(),
+      new AbortController().signal,
+      advancingClock(),
+    );
     if (outcome.kind !== 'done') {
       throw new Error('must be done');
     }
     expect(outcome.result).toEqual(expected);
-    expect(outcome.latencyMs).toBe(50);
+    expect(outcome.latencyMs).toBe(ELAPSED_MS);
   });
 
   it('fake port が throw → failed', async () => {
     const ports: SummaryPorts = {
       compact: async () => {
-        throw new Error('boom');
+        throw new Error(FAILURE);
       },
     };
-    const outcome = await summarize(ports, preparedOf(), AbortSignal.timeout(1000), () => 1);
-    expect(outcome).toEqual({ kind: 'failed', reason: 'boom' });
+    const outcome = await summarize(
+      ports,
+      preparedOf(),
+      new AbortController().signal,
+      () => CLOCK_START,
+    );
+    expect(outcome).toEqual({ kind: 'failed', reason: FAILURE });
   });
 
   it('signal が abort 済み → failed aborted', async () => {
@@ -67,7 +83,7 @@ describe('summarize', () => {
     };
     const controller = new AbortController();
     controller.abort();
-    const outcome = await summarize(ports, preparedOf(), controller.signal, () => 1);
+    const outcome = await summarize(ports, preparedOf(), controller.signal, () => CLOCK_START);
     expect(outcome).toEqual({ kind: 'failed', reason: 'aborted' });
     expect(called).toBe(false);
   });

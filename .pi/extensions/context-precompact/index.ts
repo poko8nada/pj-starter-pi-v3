@@ -27,7 +27,16 @@ import type { Prepared, PrepareStamp } from './prepare/types.ts';
 import { createSummaryPorts, type SummaryCtx } from './run/ports.ts';
 import { summarize } from './run/summarize.ts';
 import { readyFrom, type ReadyCompaction } from './apply/draft.ts';
-import { statusText, type StatusState } from './ui/status.ts';
+import {
+  brokenText,
+  chatText,
+  FALLBACK_TEXT,
+  failureText,
+  noticeText,
+  statusText,
+  type NotifiableStatus,
+  type StatusState,
+} from './ui/status.ts';
 import { parseCommand, statusLines, usageText } from './command/precompact.ts';
 
 export type { StatusState };
@@ -103,7 +112,7 @@ function readSettingsOrNotify(deps: Deps, ctx: PrecompactCtx): Settings | undefi
   if (read.kind === 'broken') {
     if (!deps.state.brokenNotified) {
       deps.state.brokenNotified = true;
-      ctx.ui.notify(`context-precompact: settings broken (${read.reason})`, 'warning');
+      ctx.ui.notify(brokenText(read.reason), 'warning');
     }
     return undefined;
   }
@@ -127,6 +136,11 @@ function setStatusState(deps: Deps, ctx: PrecompactCtx, status: StatusState): vo
   refreshStatus(deps, ctx);
 }
 
+/** チャットに状態を出す。preparing / ready / applied だけ */
+function notifyStatus(ctx: PrecompactCtx, status: NotifiableStatus): void {
+  ctx.ui.notify(chatText(status), 'info');
+}
+
 /** branch の最新の compaction の id。無ければ undefined */
 function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefined {
   for (let i = branch.length - 1; i >= 0; i--) {
@@ -139,11 +153,11 @@ function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefin
 }
 
 /** 準備を捨ててフォールバックを知らせる */
-function discardWithFallback(deps: Deps, ctx: PrecompactCtx, reason: string): void {
+function discardWithFallback(deps: Deps, ctx: PrecompactCtx): void {
   deps.state.prepared = undefined;
   deps.state.status = { kind: 'discarded' };
   refreshStatus(deps, ctx);
-  ctx.ui.notify(reason, 'warning');
+  ctx.ui.notify(FALLBACK_TEXT, 'warning');
 }
 
 /** 準備の stamp が今も使えるかを見る */
@@ -167,6 +181,7 @@ function applyReady(deps: Deps, ctx: PrecompactCtx, ready: ReadyCompaction): Bou
   deps.state.lastAppliedTokens = ready.tokensAfter;
   deps.state.status = { kind: 'applied', before: ready.tokensBefore, after: ready.tokensAfter };
   refreshStatus(deps, ctx);
+  notifyStatus(ctx, { kind: 'applied', before: ready.tokensBefore, after: ready.tokensAfter });
   return { entries: [{ ...ready.draft }] };
 }
 
@@ -179,6 +194,7 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
   }
   if (!settings.enabled || !piEnabledOf(deps.port)) {
     setStatusState(deps, ctx, { kind: 'idle' });
+    ctx.ui.notify(noticeText('off'), 'info');
     return 'idle';
   }
   const tokensRaw = ctx.getContextUsage()?.tokens;
@@ -193,6 +209,7 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
   });
   if (prepared === undefined) {
     setStatusState(deps, ctx, { kind: 'idle' });
+    ctx.ui.notify(noticeText('nothing'), 'info');
     return 'idle';
   }
   const signal =
@@ -216,6 +233,7 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
         before: ready.tokensBefore,
         after: ready.tokensAfter,
       });
+      notifyStatus(ctx, { kind: 'ready', before: ready.tokensBefore, after: ready.tokensAfter });
       return 'ready';
     }
     return failPass(deps, ctx, outcome.reason);
@@ -227,8 +245,8 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
 /** 失敗の後始末。理由を通知して `failed` を返す */
 function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
   deps.state.prepared = undefined;
-  setStatusState(deps, ctx, { kind: 'failed' });
-  ctx.ui.notify(`precompact: failed (${reason}); default compaction will run`, 'warning');
+  setStatusState(deps, ctx, { kind: 'failed', reason });
+  ctx.ui.notify(failureText(reason), 'warning');
   return 'failed';
 }
 
@@ -236,6 +254,7 @@ function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
 function beginPass(deps: Deps, ctx: PrecompactCtx): void {
   deps.state.running = true;
   setStatusState(deps, ctx, { kind: 'preparing' });
+  notifyStatus(ctx, { kind: 'preparing' });
   const flight: Promise<PassOutcome> = doPass(deps, ctx).then(
     (outcome): PassOutcome => outcome,
     (): PassOutcome => 'failed',
@@ -275,7 +294,7 @@ async function onTurnEnd(deps: Deps, ctx: PrecompactCtx): Promise<BoundaryResult
     const branch = ctx.sessionManager.getBranch();
     const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
     if (guarded.kind === 'stale') {
-      discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
+      discardWithFallback(deps, ctx);
       return undefined;
     }
     return applyReady(deps, ctx, ready);
@@ -308,7 +327,7 @@ function onBeforeSettle(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefi
   const branch = ctx.sessionManager.getBranch();
   const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
   if (guarded.kind === 'stale') {
-    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
+    discardWithFallback(deps, ctx);
     return undefined;
   }
   return applyReady(deps, ctx, ready);
@@ -329,22 +348,28 @@ function onSessionBeforeCompact(
     previousSummary: event.preparation.previousSummary,
   });
   if (compared.kind === 'mismatch') {
-    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
+    discardWithFallback(deps, ctx);
     return undefined;
   }
   const branch = ctx.sessionManager.getBranch();
   const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
   if (guarded.kind === 'stale') {
-    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
+    discardWithFallback(deps, ctx);
     return undefined;
   }
   const tokensNow = ctx.getContextUsage()?.tokens;
   const tokensBefore = typeof tokensNow === 'number' ? tokensNow : ready.result.tokensBefore;
   const compaction: CompactionResult = { ...ready.result, tokensBefore };
+  const applied: NotifiableStatus = {
+    kind: 'applied',
+    before: tokensBefore,
+    after: ready.tokensAfter,
+  };
   deps.state.prepared = undefined;
   deps.state.lastAppliedTokens = ready.tokensAfter;
-  deps.state.status = { kind: 'idle' };
+  deps.state.status = applied;
   refreshStatus(deps, ctx);
+  notifyStatus(ctx, applied);
   return { compaction };
 }
 
@@ -371,7 +396,7 @@ async function onCommand(deps: Deps, args: string, ctx: PrecompactCtx): Promise<
       ctx.ui.notify(outcome.reason);
       return;
     }
-    ctx.ui.notify(enabled ? 'precompact: on' : 'precompact: off');
+    ctx.ui.notify(noticeText(enabled ? 'on' : 'off'));
     return;
   }
   if (command.kind === 'status') {
@@ -385,11 +410,13 @@ async function onCommand(deps: Deps, args: string, ctx: PrecompactCtx): Promise<
         prepared: deps.state.prepared !== undefined,
         running: deps.state.running,
         lastAppliedTokens: deps.state.lastAppliedTokens,
+        status: deps.state.status,
       }).join('\n'),
     );
     return;
   }
   if (deps.state.running) {
+    ctx.ui.notify(noticeText('running'), 'info');
     return;
   }
   beginPass(deps, ctx);
