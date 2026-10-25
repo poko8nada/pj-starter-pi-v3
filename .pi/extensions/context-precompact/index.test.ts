@@ -136,8 +136,14 @@ function compactOk(): SummaryCtx['compactFn'] {
   });
 }
 
-function compactFailing(): SummaryCtx['compactFn'] {
-  return async (): Promise<never> => {
+function compactOnceOk(): SummaryCtx['compactFn'] {
+  const ok = compactOk();
+  let calls = 0;
+  return async (...args: Parameters<SummaryCtx['compactFn']>) => {
+    calls += 1;
+    if (calls === 1) {
+      return ok(...args);
+    }
     throw new Error('boom');
   };
 }
@@ -154,6 +160,7 @@ function fakeCtx(options: {
   readonly sessionId?: string;
   readonly usage?: ContextUsage | undefined;
   readonly signal?: AbortSignal | undefined;
+  readonly model?: ExtensionContext['model'];
 }): CtxSetup {
   const calls: string[] = [];
   const notified: { message: string; type: string | undefined }[] = [];
@@ -185,7 +192,7 @@ function fakeCtx(options: {
   const ctx: PrecompactCtx = {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 枝の読みだけ持つ偽物
     sessionManager: manager as unknown as ExtensionContext['sessionManager'],
-    model: modelFake(),
+    model: 'model' in options ? options.model : modelFake(),
     modelRegistry: registryFake(),
     thinkingLevel: 'medium',
     getContextUsage: () => {
@@ -432,22 +439,6 @@ describe('precompact wiring', () => {
     expect(hot.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
   });
 
-  it('要約が失敗 → failed・フォールバック通知・prepared 無し', async () => {
-    const branch = threeTurns();
-    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: defaultSettingsDir(),
-      now: () => 1000,
-      compactFn: compactFailing(),
-    });
-    await wiring.onTurnEnd(setup.ctx);
-    await wiring.flush();
-    expect(wiring.getState().status).toEqual({ kind: 'failed' });
-    expect(wiring.getState().prepared).toBeUndefined();
-    expect(setup.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
-  });
-
   it('拡張か Pi の enabled が false → 開始しない', async () => {
     const branch = threeTurns();
     const offDir = settingsDirWith({ enabled: false, keepRecentTokens: 1500, thresholdRatio: 0.8 });
@@ -506,6 +497,55 @@ describe('precompact wiring', () => {
     wiring.onSessionShutdown(ctx);
     expect(wiring.getState().prepared).toBeUndefined();
     expect(wiring.getState().status).toEqual({ kind: 'idle' });
+  });
+});
+
+describe('precompact failure reason', () => {
+  it('1回目成功で prepared が立ち2回目の要約が boom で失敗 → 通知は1通で文面どおりで failed で prepared 無し', async () => {
+    const branch = threeTurns();
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: defaultSettingsDir(),
+      now: () => 1000,
+      compactFn: compactOnceOk(),
+    });
+    const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onTurnEnd(lead.ctx);
+    await wiring.flush();
+    expect(wiring.getState().prepared).toBeDefined();
+    const hot = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', hot.ctx);
+    await wiring.flush();
+    expect(wiring.getState().status).toEqual({ kind: 'failed' });
+    expect(wiring.getState().prepared).toBeUndefined();
+    expect(hot.notified).toHaveLength(1);
+    expect(hot.notified[0]).toEqual({
+      message: 'precompact: failed (boom); default compaction will run',
+      type: 'warning',
+    });
+  });
+
+  it('1回目に model ありで prepared が立ち2回目に model が undefined → 通知は1通で理由入りで failed で prepared 無し', async () => {
+    const branch = threeTurns();
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: defaultSettingsDir(),
+      now: () => 1000,
+      compactFn: compactOk(),
+    });
+    const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onTurnEnd(lead.ctx);
+    await wiring.flush();
+    expect(wiring.getState().prepared).toBeDefined();
+    const hot = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS), model: undefined });
+    await wiring.onCommand('now', hot.ctx);
+    await wiring.flush();
+    expect(wiring.getState().status).toEqual({ kind: 'failed' });
+    expect(wiring.getState().prepared).toBeUndefined();
+    expect(hot.notified).toHaveLength(1);
+    expect(hot.notified[0]?.message).toContain('no model available');
+    expect(hot.notified[0]?.message).toContain('default compaction');
+    expect(hot.notified[0]?.type).toBe('warning');
   });
 });
 

@@ -67,8 +67,9 @@
   - `fileOps` の照合は `read`、`written`、`edited` の集合で行う。
   - 設定は `enabled`、`keepRecentTokens`、`thresholdRatio` の 3 つにする。`thresholdRatio` は適用閾値で、準備の lead は内部定数にする。`reserveTokens`、timeout、rearm も内部にする。
   - Pi の `compaction.enabled` を `getSettings()` で読み、false なら自動のプレコンパクトを動かさない。拡張の `enabled` と Pi の `compaction.enabled` の両方が true のときだけ動く。
-  - 準備の開始時に `ctx.ui.setStatus('precompact', 'precompact: preparing…')` を出し、完了時に `precompact: ready (X → Y)`、失敗時に `precompact: failed` を出す。適用、破棄、session 切替で clear する。適用時は `precompact: applied (X → Y)`、フォールバック時は `precompact: failed; default compaction will run` を `ctx.ui.notify` で出す。
-  - `tokensAfter` は `tokensBefore - oldTokens + summaryTokens` の概算にし、ready の数字は概算としてログに残す。
+  - 準備の開始時に `ctx.ui.setStatus('precompact', 'precompact: preparing…')` を出し、完了時に `precompact: ready (X → Y)`、失敗時に `precompact: failed` を出す。適用、破棄、session 切替で clear する。適用時は `precompact: applied (X → Y)` を出す。要約失敗時は `precompact: failed (<reason>); default compaction will run`、stale と不一致の破棄時は `precompact: failed; default compaction will run` を `ctx.ui.notify` で出す。
+  - 記録の口は通知とフッターとセッション entry とし、`console` は使わない。失敗理由の通知は要約失敗に限り、stale と不一致は汎用文面のままにする。
+  - `tokensAfter` は `tokensBefore - oldTokens + summaryTokens` の概算にし、ready の数字は概算として status に出す。
   - 今の `context-prune` を削除する。`Stack.Agent.Classifier` の Jev 1.13 を落とす。
 - Options:
   - A: 内部モジュールをファイル URL で import する（Pi の破壊的変更に弱い。owner が B を選んだ）。

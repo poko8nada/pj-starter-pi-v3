@@ -27,7 +27,7 @@ import type { Prepared, PrepareStamp } from './prepare/types.ts';
 import { createSummaryPorts, type SummaryCtx } from './run/ports.ts';
 import { summarize } from './run/summarize.ts';
 import { readyFrom, type ReadyCompaction } from './apply/draft.ts';
-import { notifyText, statusText, type StatusState } from './ui/status.ts';
+import { statusText, type StatusState } from './ui/status.ts';
 import { parseCommand, statusLines, usageText } from './command/precompact.ts';
 
 export type { StatusState };
@@ -138,14 +138,6 @@ function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefin
   return undefined;
 }
 
-/** フォールバックの通知を出す */
-function notifyFallback(ctx: PrecompactCtx): void {
-  const text = notifyText({ kind: 'failed' });
-  if (text !== undefined) {
-    ctx.ui.notify(text, 'warning');
-  }
-}
-
 /** 準備を捨ててフォールバックを知らせる */
 function discardWithFallback(deps: Deps, ctx: PrecompactCtx, reason: string): void {
   deps.state.prepared = undefined;
@@ -226,17 +218,17 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
       });
       return 'ready';
     }
-    return failPass(deps, ctx);
-  } catch {
-    return failPass(deps, ctx);
+    return failPass(deps, ctx, outcome.reason);
+  } catch (error) {
+    return failPass(deps, ctx, error instanceof Error ? error.message : String(error));
   }
 }
 
-/** 失敗の後始末。フォールバックを知らせて `failed` を返す */
-function failPass(deps: Deps, ctx: PrecompactCtx): PassOutcome {
+/** 失敗の後始末。理由を通知して `failed` を返す */
+function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
   deps.state.prepared = undefined;
   setStatusState(deps, ctx, { kind: 'failed' });
-  notifyFallback(ctx);
+  ctx.ui.notify(`precompact: failed (${reason}); default compaction will run`, 'warning');
   return 'failed';
 }
 
