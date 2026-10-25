@@ -34,7 +34,7 @@ The footer keeps the current state. In the transcript, a new `info` notice repla
 | key                | default | what it does                                  |
 | ------------------ | ------- | --------------------------------------------- |
 | `enabled`          | `true`  | the extension prepares only when true         |
-| `keepRecentTokens` | `20000` | recent tokens kept out of the summary         |
-| `thresholdRatio`   | `0.8`   | usage ratio at which a ready draft is applied |
+| `keepRecentTokens` | `50000` | recent tokens kept out of the summary         |
+| `thresholdRatio`   | `0.6`   | usage ratio at which a ready draft is applied |
 
 Both the extension's `enabled` and Pi's `compaction.enabled` must be true, otherwise nothing starts. A broken `settings.json` is reported once and nothing starts until it is fixed.
