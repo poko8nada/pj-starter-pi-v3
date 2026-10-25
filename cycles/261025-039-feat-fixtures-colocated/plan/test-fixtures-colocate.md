@@ -162,14 +162,27 @@ test/
 ### Round 1
 
 - Stale:
+  - なし — 旧名 (`scripts-fixture` 等) が製品コードに残っていないことと、`scripts/checks/typecheck.test.ts:7` 等の注記が新名であることを確認しました。
 - Unlisted:
+  - なし — `Files` の45項目が `git diff 3b92383..HEAD` の40件 (改名5件の畳み込み) と計画書自体の記録更新のみに対応することを確認しました。
 - Gaps:
+  - なし — `scripts/harness/config.test.ts:53` が実物の `test/` 走査で `copy` 包含を検査すること、`test/` に機能への import が無いことと `scripts/harness/harness.json:8` が `test/` の3件を全て含むことを実物で確認しました。
 - Unproven:
+  - なし — `scripts/harness/config.test.ts:53` の期待一覧は `readdirSync` による実物走査で組み、製品関数で期待を組む形ではないこと (`readList` の利用は計画の決定どおり) を確認しました。
 - Noise:
+  - なし — 新検査は件数や文言の直書きを持たず、`test/pi.fixture.ts:15` 等の工場利用は `## Test cases` の要請に沿うことを確認しました。
 - Doubts:
+  - なし
 
 ## Acceptance
 
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run` → 54 ファイル / 767 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 2 件試した。
+    - `harness.json` の `copy` から `test/pi.fixture.ts` を消す → 「test/ 直下の *.ts → すべて copy の項目にある」が赤。戻して緑を確認。
+    - `copy` に無い `test/extra.fixture.ts` を置く → 同じ検査が赤。ファイルを消して緑を確認。
+- Findings: なし
+- Doubts: なし
