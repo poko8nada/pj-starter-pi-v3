@@ -86,5 +86,11 @@
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related` 2 files / 25 tests（plan の Verify）。
+  - `pnpm test:run` 56 files / 806 tests。
+  - `pnpm typecheck`（root / .pi）、`pnpm lint`、`pnpm format:check`。
+  - 壊して戻す 2 件: `status.ts` の `applied` を `undefined` にすると `status.test.ts` の applied と `index.test.ts` の footer applied が赤。`index.ts` の `now` に info 通知を足すと `now` の通知空検証が赤。いずれも復旧して緑に戻した。
 - Findings:
+  - なし
 - Doubts:
+  - なし
