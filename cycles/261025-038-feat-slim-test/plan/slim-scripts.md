@@ -240,8 +240,32 @@ test/
   - `scripts/product-ready/index.test.ts:129` の 2 回目の `--run` は scripts と config の表示だけを見て cycles の無い旨の行を見ていませんが、仕様の範囲が曖昧なため所見に留めます。
   - `scripts/harness/config.test.ts:9` は実リポジトリの一覧を読むため現状に依存しますが、Steps の指定どおりであり所見に留めます。
 
+### Round 2
+
+- Stale:
+  - なし — `scripts/checks/typecheck-staged.test.ts:9` の `fixed:` が実態どおりに直っていることを確認しました。
+- Unlisted:
+  - なし — Round 1 のとおり差分と Files の一致は確認済みで、`fixed:` 対象外のため見直していません。
+- Gaps:
+  - なし — Round 1 のとおり Steps と検査の対応は確認済みで、`fixed:` 対象外のため見直していません。
+- Unproven:
+  - なし — `scripts/harness/config.test.ts:13` と `scripts/product-ready/targets.test.ts:81` の 2 件の `fixed:` がいずれも製品参照を外していることを確認しました。
+- Noise:
+  - なし — `scripts/product-ready/cli.test.ts:19` と `:60,80,82` の 2 件の `fixed:` がいずれも工場・定数・一覧長から導いていることを確認しました。
+- Doubts:
+  - なし
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 55 ファイル / 864 ケース緑。ただし 1 回目の全量で `scripts/checks/typecheck-staged.test.ts > 対象は 8 つの拡張子で、md は外れる` の 1 件だけが落ち、理由の再現はできなかった。3 回続けて全量を走らせ、3 回とも 864 緑だった。
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `harnessExcludes` から `<道>/**` を外す → 「false の一覧 → copy の各道から除外の glob を作る」が赤。戻して緑を確認。
+    - `typecheck.mjs` が失敗の範囲にも `ok` を出す → 「1 つの範囲が失敗する → その範囲だけ failed の行を出す」が赤。戻して緑を確認。
+    - `harness/index.mjs` の `pull` と `push` の向きを入れ替える → 12 件が赤。戻して緑を確認。
+- Findings: なし
 - Doubts:
+  - `scripts/checks/typecheck-staged.test.ts:79` のケースは、1 回目の全量で 1 件だけ落ちて再現しなかった。スタブの `tsc` を書いてすぐ実行するため、負荷の高い時に `ETXTBSY` のような競合が出ている可能性がある。
