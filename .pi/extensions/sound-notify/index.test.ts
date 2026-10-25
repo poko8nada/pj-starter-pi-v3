@@ -9,7 +9,7 @@
 
 import type { ToolExecutionEndEvent } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import extensionDefault, {
+import {
   handleSessionCompact,
   handleToolExecutionEnd,
   isCommitResult,
@@ -283,18 +283,7 @@ describe('sound-notify.entry', () => {
   });
 
   it('session_compact を登録し、そのハンドラを呼ぶ → compact が 1 回鳴る', async () => {
-    const handlers = new Map<string, (...args: unknown[]) => unknown>();
-    const recordingPi: EntryPiPort = {
-      on: (...args: unknown[]) => {
-        const [event, handler] = args;
-        if (typeof event === 'string' && isHandler(handler)) {
-          handlers.set(event, handler);
-        }
-        return () => undefined;
-      },
-      exec: async () => undefined,
-    };
-    extensionDefault(recordingPi);
+    const { handlers } = createEntry(defaultConfig);
     const handler = handlers.get('session_compact');
     expect(handler).toBeDefined();
     await handler?.({}, ctx);
