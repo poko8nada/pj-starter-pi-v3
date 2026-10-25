@@ -63,10 +63,15 @@
 
 ### Slice 1: 音の仕様
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 86f93f3
 - Stopped:
+
+### Cleanup: 重複・消えた振る舞いの確認
+
+- Findings: なし — 同じ振る舞いの重複・消えた振る舞い・消えた分岐・型が決める前提・気づかれない振る舞いはいずれもなく、落とす物はなかった。
+- Unplanned: なし
 
 ## Review
 
