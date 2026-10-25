@@ -701,7 +701,6 @@ describe('beginRun: token', () => {
     const end = records[1];
     expect(start?.ended).toBeUndefined();
     expect(typeof start?.token).toBe('string');
-    expect(start?.token).toBe(seen.optionsToken);
     expect(seen.optionsToken).toBe(start?.token);
     expect(seen.jobToken).toBe(start?.token);
     expect(end?.ended).toBeDefined();

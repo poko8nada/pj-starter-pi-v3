@@ -370,31 +370,36 @@ test/
 
 ### Slice 1: 役割と仕様
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: af6a591
 - Stopped:
 
 ### Slice 2: 記録と走行
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 9676e66
 - Stopped:
 
 ### Slice 3: 道具の面
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: bf5e8e0
 - Stopped:
 
 ### Slice 4: 配線
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: fb08009
 - Stopped:
+
+### Cleanup: token の重複断言
+
+- Findings: なし
+- Unplanned: `tool/consult.test.ts` の token 双方向断言の重複 1 本を落とした。同じ振る舞いを 2 方向から試していた。
 
 ## Review
 
