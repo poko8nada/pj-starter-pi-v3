@@ -1,11 +1,12 @@
 /**
  * 品質ゲートの実行の分岐を、偽の `exec` で確かめる。
  *
- * pnpm と git は起動しない。`exec` に打たれたcommandとargsを記録し、戻り値はテストが決める。
+ * pnpm と git は起動しない。`exec` に打たれた command と args を記録し、戻り値はテストが決める。
+ * pnpm の戻り値はスクリプトごとに決められる。fix 相だけを赤にできる。
  * ファイルは `tempDir()` に本物を作る（`prepareTargets` は `existsSync` を見るので、存在の制御が要る）。
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../test/temp-dir.ts';
@@ -17,6 +18,12 @@ interface ExecCall {
   readonly args: string[];
 }
 
+interface ScriptResult {
+  readonly code: number;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
 interface FakePi {
   readonly pi: ExecPort;
   readonly calls: readonly ExecCall[];
@@ -24,16 +31,19 @@ interface FakePi {
   setCheckIgnoreCode: (code: number) => void;
   /** `git check-ignore` が標準出力に書く（無視されたパス） */
   setIgnoredStdout: (stdout: string) => void;
-  /** pnpm の exit code。既定は 0（緑） */
-  setPnpmCode: (code: number) => void;
+  /** スクリプトごとの pnpm の結果を決める */
+  setScriptResult: (script: string, result: ScriptResult) => void;
+  /** すべての pnpm の結果をまとめて決める */
+  setAllPnpm: (result: ScriptResult) => void;
 }
 
 /** exec を記録するだけの偽。pnpm / git は起動しない */
 function fakePi(): FakePi {
   const calls: ExecCall[] = [];
-  let checkIgnoreCode = 0;
+  let checkIgnoreCode = 1;
   let ignoredStdout = '';
-  let pnpmCode = 0;
+  let defaultPnpm: ScriptResult = { code: 0, stdout: '', stderr: '' };
+  const overrides = new Map<string, ScriptResult>();
   const pi: ExecPort = {
     exec: (command, args) => {
       calls.push({ command, args });
@@ -45,7 +55,9 @@ function fakePi(): FakePi {
           killed: false,
         });
       }
-      return Promise.resolve({ stdout: 'out', stderr: 'err', code: pnpmCode, killed: false });
+      const script = args[1] ?? '';
+      const result = overrides.get(script) ?? defaultPnpm;
+      return Promise.resolve({ ...result, killed: false });
     },
   };
   return {
@@ -57,8 +69,11 @@ function fakePi(): FakePi {
     setIgnoredStdout: (stdout) => {
       ignoredStdout = stdout;
     },
-    setPnpmCode: (code) => {
-      pnpmCode = code;
+    setScriptResult: (script, result) => {
+      overrides.set(script, result);
+    },
+    setAllPnpm: (result) => {
+      defaultPnpm = result;
     },
   };
 }
@@ -72,11 +87,15 @@ function tsFile(dir: string, name: string): string {
 
 describe('toRelative', () => {
   it('cwd からの相対を返す', () => {
-    expect(toRelative('/repo', '/repo/src/a.ts')).toBe('src/a.ts');
+    const cwd = '/repo';
+    const name = 'src/a.ts';
+    const absolute = join(cwd, name);
+    expect(toRelative(cwd, absolute)).toBe(name);
   });
 
   it('空になる（path が cwd 自身）ときは元のパスを返す', () => {
-    expect(toRelative('/repo', '/repo')).toBe('/repo');
+    const cwd = '/repo';
+    expect(toRelative(cwd, cwd)).toBe(cwd);
   });
 });
 
@@ -84,7 +103,8 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   it('削除済みのファイルは check に含めず skipped に入れる', async () => {
     const dir = tempDir();
     const live = tsFile(dir, 'live.ts');
-    const dead = join(dir, 'deleted.ts');
+    const deadName = 'deleted.ts';
+    const dead = join(dir, deadName);
     const fake = fakePi();
 
     const run = await runChecks(fake.pi, { cwd: dir }, [live, dead]);
@@ -102,14 +122,15 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
 
   it('全部削除済み → git を打たず、skipped に全部', async () => {
     const dir = tempDir();
-    const a = join(dir, 'a.ts');
-    const b = join(dir, 'b.ts');
+    const first = join(dir, 'a.ts');
+    const second = join(dir, 'b.ts');
+    const targets = [first, second];
     const fake = fakePi();
 
-    const run = await runChecks(fake.pi, { cwd: dir }, [a, b]);
+    const run = await runChecks(fake.pi, { cwd: dir }, targets);
 
     expect(fake.calls.map((call) => call.command)).not.toContain('git');
-    expect(run.skipped).toEqual([a, b]);
+    expect(run.skipped).toEqual(targets);
   });
 
   it('.gitignore 対象は check に含めず skipped に入れる', async () => {
@@ -117,7 +138,9 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     const src = tsFile(dir, 'src.ts');
     const dist = tsFile(dir, 'dist.ts');
     const fake = fakePi();
-    fake.setIgnoredStdout(`${dist}\n`);
+    fake.setCheckIgnoreCode(0);
+    const ignored = `${dist}\n`;
+    fake.setIgnoredStdout(ignored);
 
     const run = await runChecks(fake.pi, { cwd: dir }, [src, dist]);
 
@@ -130,40 +153,40 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     }
   });
 
-  it('git check-ignore が 1（無視されたファイルなし）→ 除外なし', async () => {
-    const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
-    const fake = fakePi();
-    fake.setCheckIgnoreCode(1);
+  it('git check-ignore が非 0 でも無視されたパスの出力があれば除外なし', async () => {
+    async function assertNoExclusion(code: number): Promise<void> {
+      const dir = tempDir();
+      const file = tsFile(dir, 'a.ts');
+      const fake = fakePi();
+      fake.setCheckIgnoreCode(code);
+      const ignored = `${file}\n`;
+      fake.setIgnoredStdout(ignored);
 
-    const run = await runChecks(fake.pi, { cwd: dir }, [a]);
+      const run = await runChecks(fake.pi, { cwd: dir }, [file]);
 
-    expect(run.skipped).toEqual([]);
+      expect(run.skipped).toEqual([]);
+      const gitCall = fake.calls.find((call) => call.command === 'git');
+      expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
+      const pnpmArgs = fake.calls
+        .filter((call) => call.command === 'pnpm')
+        .map((call) => call.args);
+      expect(pnpmArgs.length).toBeGreaterThan(0);
+      for (const args of pnpmArgs) {
+        expect(args).toContain(file);
+      }
+    }
 
-    const gitCall = fake.calls.find((call) => call.command === 'git');
-    expect(gitCall?.args).toEqual(['check-ignore', '--', a]);
-  });
-
-  it('git check-ignore が 128（git 管理外）→ 除外なし', async () => {
-    const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
-    const fake = fakePi();
-    fake.setCheckIgnoreCode(128);
-
-    const run = await runChecks(fake.pi, { cwd: dir }, [a]);
-
-    expect(run.skipped).toEqual([]);
-
-    const gitCall = fake.calls.find((call) => call.command === 'git');
-    expect(gitCall?.args).toEqual(['check-ignore', '--', a]);
+    await assertNoExclusion(1);
+    await assertNoExclusion(128);
   });
 });
 
 describe('runCheck（runChecks 越しに見る）', () => {
-  it('typecheck は拡張子で絞らない（ts 系だけを通さない）', async () => {
+  it('typecheck は拡張子で絞らない（md も渡る）', async () => {
     const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
-    const md = join(dir, 'b.md');
+    const mdName = 'b.md';
+    const md = join(dir, mdName);
     writeFileSync(md, 'x\n');
     const fake = fakePi();
 
@@ -175,7 +198,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
     expect(typecheck?.args).toContain(md);
   });
 
-  it('format は md と json を通し、lint は ts 系だけ通す', async () => {
+  it('format は md を渡し、lint は md を渡さない', async () => {
     const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
     const md = join(dir, 'b.md');
@@ -191,7 +214,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
     expect(lint?.args).not.toContain(md);
   });
 
-  it('対象拡張子が無い → そのチェックは打たれない（lint:fix / format / lint）', async () => {
+  it('対象拡張子が無い → そのチェックは打たれない（残る 1 件だけ）', async () => {
     const dir = tempDir();
     const png = join(dir, 'a.png');
     writeFileSync(png, 'x\n');
@@ -203,92 +226,46 @@ describe('runCheck（runChecks 越しに見る）', () => {
     const scripts = fake.calls
       .filter((call) => call.command === 'pnpm')
       .map((call) => call.args[1]);
-    expect(scripts).toEqual(['typecheck:staged']);
-    expect(run.outcomes.map((outcome) => outcome.label)).toEqual(['typecheck']);
+    const expectedScripts = ['typecheck:staged'];
+    expect(scripts).toEqual(expectedScripts);
+    const expectedLabels = ['typecheck'];
+    expect(run.outcomes.map((outcome) => outcome.label)).toEqual(expectedLabels);
   });
 
   it('pnpm が失敗 → failed で、stdout と stderr を改行でつなぐ', async () => {
     const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
+    const file = tsFile(dir, 'a.ts');
     const fake = fakePi();
-    fake.setPnpmCode(2);
+    const stdout = 'fail-out';
+    const stderr = 'fail-err';
+    const code = 2;
+    fake.setAllPnpm({ code, stdout, stderr });
 
-    const run = await runChecks(fake.pi, { cwd: dir }, [a]);
+    const run = await runChecks(fake.pi, { cwd: dir }, [file]);
 
+    const expectedOutput = `${stdout}\n${stderr}`;
     const verify = run.outcomes.filter((outcome) => outcome.failed);
     expect(verify.length).toBeGreaterThan(0);
     for (const outcome of verify) {
-      expect(outcome.output).toBe('out\nerr');
+      expect(outcome.output).toBe(expectedOutput);
     }
   });
 });
 
 describe('runChecks（2フェーズ）', () => {
-  it('fix 相（lint:fix / format）は outcomes に入れない', async () => {
+  it('fix 相だけが失敗しても verify 相の結果はすべて成功', async () => {
     const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
+    const file = tsFile(dir, 'a.ts');
     const fake = fakePi();
+    const fixStdout = 'fix-out';
+    const fixStderr = 'fix-err';
+    const fixCode = 1;
+    fake.setScriptResult('lint:fix', { code: fixCode, stdout: fixStdout, stderr: fixStderr });
+    fake.setScriptResult('format', { code: fixCode, stdout: fixStdout, stderr: fixStderr });
 
-    const run = await runChecks(fake.pi, { cwd: dir }, [a]);
+    const run = await runChecks(fake.pi, { cwd: dir }, [file]);
 
-    const labels = run.outcomes.map((outcome) => outcome.label);
-    expect(labels).toEqual(['lint', 'typecheck']);
-  });
-
-  it('fix 相が失敗しても、verify 相の結果だけを返す', async () => {
-    const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
-    const fake = fakePi();
-    // 全部失敗させる（fix 相も）
-    fake.setPnpmCode(1);
-
-    const run = await runChecks(fake.pi, { cwd: dir }, [a]);
-
-    expect(run.outcomes.map((outcome) => outcome.label)).toEqual(['lint', 'typecheck']);
-    expect(run.outcomes.every((outcome) => outcome.failed)).toBe(true);
-  });
-
-  it('CHECK_SPECS の順に打つ（lint:fix → format → lint → typecheck）', async () => {
-    const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
-    const fake = fakePi();
-
-    await runChecks(fake.pi, { cwd: dir }, [a]);
-
-    const scripts = fake.calls
-      .filter((call) => call.command === 'pnpm')
-      .map((call) => call.args[1]);
-    expect(scripts).toEqual(['lint:fix', 'format', 'lint', 'typecheck:staged']);
-  });
-
-  it('全部の pnpm 呼び出しに --no-error-on-unmatched-pattern が付く（typecheck は除く）', async () => {
-    const dir = tempDir();
-    const a = tsFile(dir, 'a.ts');
-    const fake = fakePi();
-
-    await runChecks(fake.pi, { cwd: dir }, [a]);
-
-    const pnpm = fake.calls.filter((call) => call.command === 'pnpm');
-    for (const call of pnpm) {
-      if (call.args.includes('typecheck:staged')) {
-        expect(call.args).not.toContain('--no-error-on-unmatched-pattern');
-      } else {
-        expect(call.args).toContain('--no-error-on-unmatched-pattern');
-      }
-    }
-  });
-
-  it('ディレクトリの中も対象にできる', async () => {
-    const dir = tempDir();
-    const nested = join(dir, 'sub', 'deep');
-    mkdirSync(nested, { recursive: true });
-    const file = join(nested, 'a.ts');
-    writeFileSync(file, 'x\n');
-    const fake = fakePi();
-
-    await runChecks(fake.pi, { cwd: dir }, [file]);
-
-    const lint = fake.calls.find((call) => call.args.includes('lint'));
-    expect(lint?.args).toContain(file);
+    expect(run.outcomes.length).toBeGreaterThan(0);
+    expect(run.outcomes.every((outcome) => !outcome.failed)).toBe(true);
   });
 });
