@@ -6,7 +6,7 @@
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
  * だから `-p` の道に `.pi` が入るかで、`.pi` の group か root の group かが分かる。
  * tsc そのものが成功するかは pre-commit の時系列で担保されているので、ここでは見ない。
- * 印と旗は `test/scripts-fixture.ts` から取る。
+ * 理由行は `test/scripts-fixture.ts` から取る。`stub -p` は下のスタブが出す目印で、断言はそこから取る。
  */
 
 import { spawnSync } from 'node:child_process';

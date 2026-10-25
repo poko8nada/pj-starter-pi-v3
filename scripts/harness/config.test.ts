@@ -1,7 +1,7 @@
 import { configDefaults } from 'vitest/config';
 import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../vitest.config.ts';
-import { harnessExcludes, readList } from './list.mjs';
+import { readList } from './list.mjs';
 
 describe('testConfig', () => {
   it('false の一覧 → copy の各道から除外の glob を作る', () => {
@@ -10,7 +10,18 @@ describe('testConfig', () => {
     const config = testConfig(false);
     const exclude = config.test?.exclude ?? [];
     expect(exclude.slice(0, configDefaults.exclude.length)).toEqual([...configDefaults.exclude]);
-    expect(exclude.slice(configDefaults.exclude.length)).toEqual(harnessExcludes(list));
+    const expectedTail: string[] = [];
+    for (const entry of list.copy) {
+      if (typeof entry !== 'string') {
+        continue;
+      }
+      const rel = entry.replace(/\/+$/, '');
+      if (rel === '' || rel === '.') {
+        continue;
+      }
+      expectedTail.push(rel, `${rel}/**`);
+    }
+    expect(exclude.slice(configDefaults.exclude.length)).toEqual(expectedTail);
     const first = list.copy[0];
     expect(exclude).toContain(first);
     expect(exclude).toContain(`${first}/**`);

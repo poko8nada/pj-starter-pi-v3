@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../test/temp-dir.ts';
-import { STARTER_ONLY, labels, plan, remove } from './targets.mjs';
+import { labels, plan, remove } from './targets.mjs';
 
 function writeFile(path: string): void {
   mkdirSync(join(path, '..'), { recursive: true });
@@ -78,8 +78,7 @@ describe('plan', () => {
 
 describe('labels', () => {
   it('labels(undefined) → 既定の名前', () => {
-    const expected = STARTER_ONLY.map((row) => row.label);
-    expect(labels(undefined)).toEqual(expected);
+    expect(labels(undefined)).toEqual(['cycles']);
   });
 
   it("labels('cycles') → その名前", () => {

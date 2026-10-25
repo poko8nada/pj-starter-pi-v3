@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   ONLY_FLAG,
   RUN_FLAG,
+  configLine,
   countLine,
   indented,
   onlyEquals,
+  scriptsLine,
 } from '../../test/scripts-fixture.ts';
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 
@@ -14,10 +16,11 @@ function makeScriptNames(): readonly string[] {
 
 describe('switchLines', () => {
   it('config あり・scripts 2件 → 2行', () => {
+    const configAt = 'vitest.starter.config.ts';
     const scripts = makeScriptNames();
     expect(switchLines({ config: true, scripts: [...scripts] })).toEqual([
-      'config: vitest.starter.config.ts',
-      `scripts: ${scripts.join(', ')}`,
+      configLine(configAt),
+      scriptsLine(scripts),
     ]);
   });
 
@@ -54,10 +57,11 @@ describe('planLines', () => {
     const ordered = ['harness', 'tests', 'cycles'];
     const label = 'tests';
     const at = 'a';
-    const lines = planLines(ordered, [{ label, at, path: `/${at}` }]);
+    const entries = [{ label, at, path: `/${at}` }];
+    const lines = planLines(ordered, entries);
     const expected: readonly string[] = [
       `no ${ordered[0]} to remove`,
-      countLine(label, 1),
+      countLine(label, entries.length),
       indented(at),
       `no ${ordered[2]} to remove`,
     ];
@@ -69,17 +73,15 @@ describe('planLines', () => {
     const second = 'tests';
     const firstAt = 'a';
     const secondAt = 'b';
-    const lines = planLines(
-      [first, second],
-      [
-        { label: second, at: secondAt, path: `/${secondAt}` },
-        { label: first, at: firstAt, path: `/${firstAt}` },
-      ],
-    );
+    const entries = [
+      { label: second, at: secondAt, path: `/${secondAt}` },
+      { label: first, at: firstAt, path: `/${firstAt}` },
+    ];
+    const lines = planLines([first, second], entries);
     expect(lines).toEqual([
-      countLine(first, 1),
+      countLine(first, entries.filter((entry) => entry.label === first).length),
       indented(firstAt),
-      countLine(second, 1),
+      countLine(second, entries.filter((entry) => entry.label === second).length),
       indented(secondAt),
     ]);
   });

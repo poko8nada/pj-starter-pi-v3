@@ -55,6 +55,16 @@ export function indented(value: string): string {
   return `  ${value}`;
 }
 
+/** `config: <path>` の形を作る */
+export function configLine(path: string): string {
+  return `config: ${path}`;
+}
+
+/** `scripts: <a>, <b>` の形を作る */
+export function scriptsLine(names: readonly string[]): string {
+  return `scripts: ${names.join(', ')}`;
+}
+
 /** `--only=<value>` の形を作る */
 export function onlyEquals(value: string): string {
   return `${ONLY_FLAG}=${value}`;

@@ -220,11 +220,25 @@ test/
 ### Round 1
 
 - Stale:
+  - `scripts/checks/typecheck-staged.test.ts:9` の「印と旗は fixture から取る」との説明は、実際には理由行のみを使い印は独自定数で置いているため、注釈が実態とずれています。
+  - fixed: 注釈を実態（理由行のみ fixture、`stub -p` はスタブの目印）に直した。
 - Unlisted:
+  - なし — 差分の 9 件は Files の 9 件と一致し、計画書自体の更新以外に名の無い変更はありませんでした。
 - Gaps:
+  - なし — Steps の各ケースは対応する検査に存在し、落とすとされた分岐も計画どおりに除かれています。
 - Unproven:
+  - `scripts/harness/config.test.ts:13` は期待値を製品の `harnessExcludes` で組み立てるため、その変換が壊れても両側が同じく壊れて緑のままになります。
+  - fixed: 期待の後半を渡した `copy` の一覧から自前で組み立てるよう直し、製品の `harnessExcludes` を呼ばないようにした。
+  - `scripts/product-ready/targets.test.ts:81` は既定名の期待値を製品の `STARTER_ONLY` から作るため、既定値が変わっても緑のままになります。
+  - fixed: 既定名の期待を `cycles` の直書きにし、製品の `STARTER_ONLY` を読まないようにした。
 - Noise:
+  - `scripts/product-ready/cli.test.ts:19` の断言に製品の表示文が直書きされており、工場や定数から導かれていません。
+  - fixed: 表示文を fixture の `configLine` / `scriptsLine` から組み立てるよう直した。
+  - `scripts/product-ready/cli.test.ts:60,80,82` の `countLine(..., 1)` は件数の直書きであり、2 件の例のような `entries.length` から導かれていません。
+  - fixed: 件数を渡した一覧の長さ（`entries.length` と label ごとの filter の長さ）から取るよう直した。
 - Doubts:
+  - `scripts/product-ready/index.test.ts:129` の 2 回目の `--run` は scripts と config の表示だけを見て cycles の無い旨の行を見ていませんが、仕様の範囲が曖昧なため所見に留めます。
+  - `scripts/harness/config.test.ts:9` は実リポジトリの一覧を読むため現状に依存しますが、Steps の指定どおりであり所見に留めます。
 
 ## Acceptance
 
