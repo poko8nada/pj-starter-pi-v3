@@ -74,7 +74,8 @@ export function statusText(state: StatusState): string | undefined {
     case 'idle':
       return undefined;
   }
-  return undefined;
+  const exhaustive: never = state;
+  return exhaustive;
 }
 
 /** `/precompact` の status 行に出す文言 */

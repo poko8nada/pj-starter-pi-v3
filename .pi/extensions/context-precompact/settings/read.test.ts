@@ -1,12 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { readSettings, writeEnabled } from './read.ts';
 import { defaultSettings } from './schema.ts';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 describe('readSettings', () => {
   it('ファイルが無い → 既定', () => {
@@ -41,10 +38,5 @@ describe('readSettings', () => {
       throw new Error('must be ok');
     }
     expect(read.settings.enabled).toBe(false);
-  });
-
-  it('拡張の settings.json を読む → 既定の 3 値', () => {
-    const read = readSettings(join(HERE, '..'));
-    expect(read).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 });

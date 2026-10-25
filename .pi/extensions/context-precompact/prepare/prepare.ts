@@ -2,9 +2,9 @@
  * 準備の入口。設定の有効と Pi の有効を見て、下ごしらえと切れ目の印を作る。
  */
 import { RESERVE_TOKENS } from '../settings/constants.ts';
-import { prepareFromProjection } from './copied.ts';
-import type { Prepared, PrepareInput } from './types.ts';
-import type { FileOperations } from '@earendil-works/pi-coding-agent';
+import { prepareFromProjection, compactionMessagesOf } from './copied.ts';
+import type { Prepared, PrepareInput, ProjectedEntry } from './types.ts';
+import { estimateTokens, type FileOperations } from '@earendil-works/pi-coding-agent';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -56,7 +56,26 @@ export function prepare(input: PrepareInput): Prepared | undefined {
   return {
     compaction: merged,
     stamp: { sessionId: input.sessionId, leafId: leaf.id, latestCompactionId },
+    keptTokens: keptTokensOf(input.projectedEntries, merged.firstKeptEntryId),
   };
+}
+
+/** 切れ目から後ろのメッセージを、要約と同じ物差しで見積もる */
+function keptTokensOf(
+  projectedEntries: readonly ProjectedEntry[],
+  firstKeptEntryId: string,
+): number {
+  const start = projectedEntries.findIndex((entry) => entry.sourceEntry.id === firstKeptEntryId);
+  if (start < 0) {
+    return 0;
+  }
+  let total = 0;
+  for (const entry of projectedEntries.slice(start)) {
+    for (const message of compactionMessagesOf(entry)) {
+      total += estimateTokens(message);
+    }
+  }
+  return total;
 }
 
 /** 配列の中の文字列だけを集める。配列でなければ何もしない */

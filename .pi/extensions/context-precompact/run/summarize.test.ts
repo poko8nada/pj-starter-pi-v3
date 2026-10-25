@@ -5,8 +5,6 @@ import type { SummaryPorts } from './ports.ts';
 import type { PreparedCompaction } from '../prepare/types.ts';
 import { RESERVE_TOKENS } from '../settings/constants.ts';
 
-const CLOCK_START = 1_000;
-const ELAPSED_MS = 50;
 const FAILURE = 'boom';
 
 function preparedOf(): PreparedCompaction {
@@ -32,30 +30,15 @@ function resultOf(): CompactionResult {
   };
 }
 
-function advancingClock(): () => number {
-  let reading = CLOCK_START;
-  return () => {
-    const current = reading;
-    reading += ELAPSED_MS;
-    return current;
-  };
-}
-
 describe('summarize', () => {
-  it('fake port が結果を返す → done で latency が経過', async () => {
+  it('fake port が結果を返す → done で結果をそのまま返す', async () => {
     const expected = resultOf();
     const ports: SummaryPorts = { compact: async () => expected };
-    const outcome = await summarize(
-      ports,
-      preparedOf(),
-      new AbortController().signal,
-      advancingClock(),
-    );
+    const outcome = await summarize(ports, preparedOf(), new AbortController().signal, Date.now);
     if (outcome.kind !== 'done') {
       throw new Error('must be done');
     }
     expect(outcome.result).toEqual(expected);
-    expect(outcome.latencyMs).toBe(ELAPSED_MS);
   });
 
   it('fake port が throw → failed', async () => {
@@ -64,12 +47,7 @@ describe('summarize', () => {
         throw new Error(FAILURE);
       },
     };
-    const outcome = await summarize(
-      ports,
-      preparedOf(),
-      new AbortController().signal,
-      () => CLOCK_START,
-    );
+    const outcome = await summarize(ports, preparedOf(), new AbortController().signal, Date.now);
     expect(outcome).toEqual({ kind: 'failed', reason: FAILURE });
   });
 
@@ -83,7 +61,7 @@ describe('summarize', () => {
     };
     const controller = new AbortController();
     controller.abort();
-    const outcome = await summarize(ports, preparedOf(), controller.signal, () => CLOCK_START);
+    const outcome = await summarize(ports, preparedOf(), controller.signal, Date.now);
     expect(outcome).toEqual({ kind: 'failed', reason: 'aborted' });
     expect(called).toBe(false);
   });

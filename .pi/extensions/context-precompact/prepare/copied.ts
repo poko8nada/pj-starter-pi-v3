@@ -226,7 +226,7 @@ function findProjectedCutPoint(
   };
 }
 
-function getMessagesFromProjectedEntryForCompaction(entry: ProjectedEntry): PreparedMessage[] {
+export function compactionMessagesOf(entry: ProjectedEntry): PreparedMessage[] {
   if (entry.sourceEntry.type === 'compaction') {
     return [];
   }
@@ -360,11 +360,11 @@ export function prepareFromProjection(
   const historyEnd = cutPoint.isSplitTurn ? cutPoint.turnStartIndex : cutPoint.firstKeptEntryIndex;
   const messagesToSummarize = projectedEntries
     .slice(boundaryStart, historyEnd)
-    .flatMap(getMessagesFromProjectedEntryForCompaction);
+    .flatMap(compactionMessagesOf);
   const turnPrefixMessages = cutPoint.isSplitTurn
     ? projectedEntries
         .slice(cutPoint.turnStartIndex, cutPoint.firstKeptEntryIndex)
-        .flatMap(getMessagesFromProjectedEntryForCompaction)
+        .flatMap(compactionMessagesOf)
     : [];
   if (messagesToSummarize.length === 0 && turnPrefixMessages.length === 0) {
     return undefined;

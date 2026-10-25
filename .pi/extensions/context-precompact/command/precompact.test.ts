@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCommand, statusLines } from './precompact.ts';
 import type { Settings } from '../settings/schema.ts';
 import { statusLine, type StatusState } from '../ui/status.ts';
+import { formatCount } from '../ui/count.ts';
 
 const SETTINGS: Settings = {
   enabled: true,
@@ -13,6 +14,10 @@ const REASON = 'reason';
 
 function pairOf() {
   return { before: 1_000, after: 500 } as const;
+}
+
+function lastAppliedOf(): number {
+  return 20_000;
 }
 
 function statuses(): readonly StatusState[] {
@@ -38,8 +43,9 @@ function statusOf(status: StatusState): string | undefined {
 }
 
 describe('parseCommand', () => {
-  it('空 → status、on / off / now → それぞれ', () => {
+  it('空 → status、status / on / off / now → それぞれ', () => {
     expect(parseCommand('')).toEqual({ kind: 'status' });
+    expect(parseCommand('status')).toEqual({ kind: 'status' });
     expect(parseCommand('on')).toEqual({ kind: 'on' });
     expect(parseCommand('off')).toEqual({ kind: 'off' });
     expect(parseCommand('now')).toEqual({ kind: 'now' });
@@ -55,5 +61,17 @@ describe('statusLines', () => {
     for (const status of statuses()) {
       expect(statusOf(status)).toBe(`status: ${statusLine(status)}`);
     }
+  });
+
+  it('lastAppliedTokens → 桁区切りの値', () => {
+    const value = lastAppliedOf();
+    const lines = statusLines({
+      settings: SETTINGS,
+      prepared: false,
+      running: false,
+      lastAppliedTokens: value,
+      status: { kind: 'idle' },
+    });
+    expect(lines[3]).toBe(`lastApplied: ${formatCount(value)}`);
   });
 });

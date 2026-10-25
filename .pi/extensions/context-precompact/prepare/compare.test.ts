@@ -2,19 +2,33 @@ import { describe, expect, it } from 'vitest';
 import { compare } from './compare.ts';
 import type { PreparedCompaction } from './types.ts';
 
-function fileOpsOf(read: readonly string[] = []): PreparedCompaction['fileOps'] {
-  return { read: new Set(read), written: new Set(), edited: new Set() };
+interface FileOpsInput {
+  readonly read?: readonly string[];
+  readonly written?: readonly string[];
+  readonly edited?: readonly string[];
+}
+
+function fileOpsOf(input: FileOpsInput = {}): PreparedCompaction['fileOps'] {
+  return {
+    read: new Set(input.read ?? []),
+    written: new Set(input.written ?? []),
+    edited: new Set(input.edited ?? []),
+  };
+}
+
+function messageOf(): PreparedCompaction['messagesToSummarize'][number] {
+  return { role: 'user', content: [{ type: 'text', text: 'hi' }], timestamp: 1 };
 }
 
 function base(): PreparedCompaction {
   return {
     firstKeptEntryId: 'kept-1',
-    messagesToSummarize: [{ role: 'user', content: [{ type: 'text', text: 'hi' }], timestamp: 1 }],
+    messagesToSummarize: [messageOf()],
     turnPrefixMessages: [],
     isSplitTurn: false,
     tokensBefore: 100,
     previousSummary: 'prev',
-    fileOps: fileOpsOf(['a.ts']),
+    fileOps: fileOpsOf({ read: ['a.ts'] }),
     settings: { enabled: true, reserveTokens: 16_384, keepRecentTokens: 2000 },
   };
 }
@@ -38,6 +52,13 @@ describe('compare', () => {
     });
   });
 
+  it('turnPrefix の数が違う → mismatch turnPrefixMessages', () => {
+    expect(compare(base(), { ...base(), turnPrefixMessages: [messageOf()] })).toEqual({
+      kind: 'mismatch',
+      fields: ['turnPrefixMessages'],
+    });
+  });
+
   it('previousSummary が違う → mismatch previousSummary', () => {
     expect(compare(base(), { ...base(), previousSummary: 'other' })).toEqual({
       kind: 'mismatch',
@@ -46,9 +67,21 @@ describe('compare', () => {
   });
 
   it('fileOps.read だけ違う → mismatch fileOps', () => {
-    expect(compare(base(), { ...base(), fileOps: fileOpsOf(['b.ts']) })).toEqual({
+    expect(compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['b.ts'] }) })).toEqual({
       kind: 'mismatch',
       fields: ['fileOps'],
     });
+  });
+
+  it('fileOps.written だけ違う → mismatch fileOps', () => {
+    expect(
+      compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], written: ['b.ts'] }) }),
+    ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });
+  });
+
+  it('fileOps.edited だけ違う → mismatch fileOps', () => {
+    expect(
+      compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], edited: ['b.ts'] }) }),
+    ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });
   });
 });

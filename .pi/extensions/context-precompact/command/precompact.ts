@@ -2,6 +2,7 @@
  * `/precompact` の引数と状態表示。設定の `enabled` だけを書き換える。
  */
 import type { Settings } from '../settings/schema.ts';
+import { formatCount } from '../ui/count.ts';
 import { statusLine, type StatusState } from '../ui/status.ts';
 
 export type Command =
@@ -19,7 +20,7 @@ export interface StatusInput {
   readonly status: StatusState;
 }
 
-/** 引数なしは status、`on` / `off` / `now`、それ以外は usage */
+/** 引数なしと `status` は status、`on` / `off` / `now`、それ以外は usage */
 export function parseCommand(args: string): Command {
   const trimmed = args.trim();
   if (trimmed === '') {
@@ -31,6 +32,9 @@ export function parseCommand(args: string): Command {
   if (trimmed === 'off') {
     return { kind: 'off' };
   }
+  if (trimmed === 'status') {
+    return { kind: 'status' };
+  }
   if (trimmed === 'now') {
     return { kind: 'now' };
   }
@@ -40,7 +44,7 @@ export function parseCommand(args: string): Command {
 /** `/precompact` の使い方 */
 export function usageText(): string {
   return [
-    'precompact usage: /precompact [now|on|off]',
+    'precompact usage: /precompact [status|on|off|now]',
     '/precompact        show status',
     '/precompact now    prepare once now',
     '/precompact on     enable',
@@ -56,6 +60,6 @@ export function statusLines(input: StatusInput): readonly string[] {
   const last =
     input.lastAppliedTokens === undefined
       ? 'lastApplied: none'
-      : `lastApplied: ${input.lastAppliedTokens}`;
+      : `lastApplied: ${formatCount(input.lastAppliedTokens)}`;
   return [head, prepared, running, last, `status: ${statusLine(input.status)}`];
 }

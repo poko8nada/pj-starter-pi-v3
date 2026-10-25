@@ -7,6 +7,7 @@ import { createSessionFixture, projectEntries } from '../test/session-entries.ts
 const KEEP_RECENT_TOKENS = 1_500;
 const SMALL_KEEP_TOKENS = 500;
 const TOKENS_BEFORE = 6_000;
+const PREVIOUS_SUMMARY = 'previous summary';
 
 function settingsOf(keepRecentTokens: number): CompactionSettings {
   return { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens };
@@ -67,7 +68,7 @@ describe('prepareFromProjection', () => {
 
   it('前回の compaction がある → previousSummary がその summary', () => {
     const session = createSessionFixture();
-    const prev = session.compaction('previous summary');
+    const prev = session.compaction(PREVIOUS_SUMMARY);
     const pathEntries = [prev, ...session.turns(3)];
     const prepared = prepareFromProjection({
       projectedEntries: projectEntries(pathEntries),
@@ -75,7 +76,7 @@ describe('prepareFromProjection', () => {
       settings: settingsOf(KEEP_RECENT_TOKENS),
       tokensBefore: TOKENS_BEFORE,
     });
-    expect(prepared?.previousSummary).toBe('previous summary');
+    expect(prepared?.previousSummary).toBe(PREVIOUS_SUMMARY);
   });
 
   it('read / edit / write の tool call → それぞれの集合に path', () => {

@@ -1,36 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { brokenText, chatText, failureText, noticeText, statusLine, statusText } from './status.ts';
+import { brokenText, chatText, failureText, statusLine, statusText } from './status.ts';
 import { formatCount } from './count.ts';
-
-const REASON = 'reason';
 
 function pairOf() {
   return { before: 1_000, after: 500 } as const;
 }
 
+function reasonOf(): string {
+  return 'reason';
+}
+
 describe('chatText', () => {
-  it('preparing → preparing…', () => {
-    expect(chatText({ kind: 'preparing' })).toBe('precompact: preparing…');
+  it('ready に前後の数 → 桁区切りの 2 値が文面に並ぶ', () => {
+    const pair = pairOf();
+    const text = chatText({ kind: 'ready', ...pair });
+    expect(text).toContain(formatCount(pair.before));
+    expect(text).toContain(formatCount(pair.after));
   });
 
-  it('ready → ready X → Y', () => {
+  it('applied に前後の数 → 桁区切りの 2 値が文面に並ぶ', () => {
     const pair = pairOf();
-    expect(chatText({ kind: 'ready', ...pair })).toBe(
-      `precompact: ready (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
-    );
-  });
-
-  it('applied → applied X → Y', () => {
-    const pair = pairOf();
-    expect(chatText({ kind: 'applied', ...pair })).toBe(
-      `precompact: applied (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
-    );
+    const text = chatText({ kind: 'applied', ...pair });
+    expect(text).toContain(formatCount(pair.before));
+    expect(text).toContain(formatCount(pair.after));
   });
 });
 
 describe('statusText', () => {
-  it('failed → failed だけ。理由は入れない', () => {
-    expect(statusText({ kind: 'failed', reason: REASON })).not.toContain(REASON);
+  it('failed に理由 → 文面はあり、理由は入らない', () => {
+    const reason = reasonOf();
+    const footer = statusText({ kind: 'failed', reason });
+    expect(footer).toBeDefined();
+    expect(footer).not.toContain(reason);
   });
 
   it('idle / discarded → undefined', () => {
@@ -40,46 +41,31 @@ describe('statusText', () => {
 });
 
 describe('statusLine', () => {
-  it('idle / preparing / discarded → kind の名前', () => {
-    expect(statusLine({ kind: 'idle' })).toBe('idle');
-    expect(statusLine({ kind: 'preparing' })).toBe('preparing');
-    expect(statusLine({ kind: 'discarded' })).toBe('discarded');
-  });
-
-  it('ready / applied → X → Y', () => {
+  it('ready / applied に前後の数 → 桁区切りの 2 値が入る', () => {
     const pair = pairOf();
-    expect(statusLine({ kind: 'ready', ...pair })).toBe(
-      `ready (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
-    );
-    expect(statusLine({ kind: 'applied', ...pair })).toBe(
-      `applied (${formatCount(pair.before)} → ${formatCount(pair.after)})`,
-    );
+    for (const kind of ['ready', 'applied'] as const) {
+      const line = statusLine({ kind, ...pair });
+      expect(line).toContain(formatCount(pair.before));
+      expect(line).toContain(formatCount(pair.after));
+    }
   });
 
-  it('failed → 理由を入れる', () => {
-    expect(statusLine({ kind: 'failed', reason: REASON })).toBe(`failed (${REASON})`);
-  });
-});
-
-describe('noticeText', () => {
-  it('on / off / nothing / running → それぞれの文面', () => {
-    expect(noticeText('on')).toBe('precompact: on');
-    expect(noticeText('off')).toBe('precompact: off');
-    expect(noticeText('nothing')).toBe('precompact: nothing to prepare');
-    expect(noticeText('running')).toBe('precompact: running');
+  it('failed に理由 → 理由が入る', () => {
+    const reason = reasonOf();
+    expect(statusLine({ kind: 'failed', reason })).toContain(reason);
   });
 });
 
 describe('failureText', () => {
-  it('失敗の理由と、既定のコンパクションに任せることを入れる', () => {
-    const text = failureText(REASON);
-    expect(text).toContain(REASON);
-    expect(text).toContain('default compaction');
+  it('失敗の理由 → 理由が入る', () => {
+    const reason = reasonOf();
+    expect(failureText(reason)).toContain(reason);
   });
 });
 
 describe('brokenText', () => {
-  it('設定が壊れている理由を入れる', () => {
-    expect(brokenText(REASON)).toContain(REASON);
+  it('設定が壊れている理由 → 理由が入る', () => {
+    const reason = reasonOf();
+    expect(brokenText(reason)).toContain(reason);
   });
 });

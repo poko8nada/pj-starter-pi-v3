@@ -20,7 +20,7 @@ export interface PreparedCompaction {
   readonly turnPrefixMessages: readonly PreparedMessage[];
   readonly isSplitTurn: boolean;
   readonly tokensBefore: number;
-  readonly previousSummary: string | undefined;
+  readonly previousSummary?: string;
   readonly fileOps: FileOperations;
   readonly settings: CompactionSettings;
 }
@@ -39,6 +39,7 @@ export interface PrepareStamp {
 export interface Prepared {
   readonly compaction: PreparedCompaction;
   readonly stamp: PrepareStamp;
+  readonly keptTokens: number;
 }
 
 export type CompareField =

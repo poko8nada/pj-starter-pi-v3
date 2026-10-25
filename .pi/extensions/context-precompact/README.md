@@ -18,14 +18,14 @@ The summary is capped at 300,000 ms (5 minutes); when it fails, the draft is dis
 
 - `/precompact` shows on/off, whether a draft is prepared, whether a pass is running, the last applied tokens, and the current `status:` line with the failure reason.
 - `/precompact on` and `/precompact off` rewrite only `enabled` in `settings.json`.
-- `/precompact now` starts one preparation pass in the background and returns immediately. The chat shows `precompact: preparing…` at the start, then `precompact: ready (X → Y)` or `precompact: applied (X → Y)`. When a pass cannot run it says `precompact: off` or `precompact: nothing to prepare`; when one is already running it says `precompact: running`.
+- `/precompact now` starts one preparation pass in the background and returns immediately. The chat shows `precompact: preparing…` at the start, then `precompact: ready (X → Y)`. The next `turn_end` (or `agent_before_settle`) applies the draft at once, below `thresholdRatio` too, and shows `precompact: applied (X → Y)`. When a pass cannot run it says `precompact: off` or `precompact: nothing to prepare`; when one is already running it says `precompact: running` and that pass's draft is applied at the next boundary.
 
 ## Status line
 
 - `precompact: preparing…` while a pass runs.
 - `precompact: ready (X → Y)` when a draft is ready (an estimate).
 - `precompact: failed` when the pass failed; the warning that follows carries the reason and says the default compaction will run.
-- `precompact: applied (X → Y)` when a draft was applied (an estimate).
+- `precompact: applied (X → Y)` when a draft was applied (an estimate). The `X` here is the usage at the moment of applying; the `X` of `ready` is the usage at the moment of preparing. The `Y` is an estimate of the kept messages plus the summary.
 
 The footer keeps the current state. In the transcript, a new `info` notice replaces the latest `info` notice, while `warning` and `error` notices stay. The extension never writes to `console`.
 
