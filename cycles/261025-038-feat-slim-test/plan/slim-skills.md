@@ -118,7 +118,7 @@ test/
 ## Acceptance
 
 - Ran:
-  - `pnpm test:run` → 55 ファイル / 882 ケース緑
+  - `pnpm test:run` → 55 ファイル / 881 ケース緑（acceptance の修正の後、やり直した）
   - `pnpm typecheck` → root: ok、`.pi`: ok
   - `pnpm lint` → 緑
   - `pnpm format:check` → 緑
