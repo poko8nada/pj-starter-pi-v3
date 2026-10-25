@@ -26,7 +26,7 @@ notifications.
 | Any other dialog  | `ui_prompt_start`                                           | Ping  | Question      |
 | Turn complete     | `agent_settled`                                             | Glass | Done          |
 | Commit            | `tool_execution_end` (bash output has `[main abc1234] ...`) | Pop   | -             |
-| Compact           | `session_compact`                                           | Glass | -             |
+| Compact           | `session_compact`                                           | Ping  | -             |
 
 - `agent_settled` fires once per turn, after retries, auto-compaction, and queued
   follow-ups have all finished. It does not fire per `agent_end`.
@@ -58,7 +58,7 @@ in this directory (it is not committed):
     "question": "Ping",
     "done": "Glass",
     "commit": "Pop",
-    "compact": "Glass"
+    "compact": "Ping"
   }
 }
 ```
@@ -78,7 +78,7 @@ defaults):
 | `notifications`  | `false` keeps the sound and drops the cmux notification                      |
 | `sounds`         | System sound name per kind, resolved as `/System/Library/Sounds/<name>.aiff` |
 | `sounds.commit`  | Sound for a `git commit` (default `Pop`)                                     |
-| `sounds.compact` | Sound for compaction finish (default `Glass`)                                |
+| `sounds.compact` | Sound for compaction finish (default `Ping`)                                 |
 
 The file is read once when the extension loads, so run `/reload` after editing
 it. It sits next to the loaded copy: this directory for a project-local install,
