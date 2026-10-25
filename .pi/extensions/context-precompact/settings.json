@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "keepRecentTokens": 20000,
+  "thresholdRatio": 0.8
+}
