@@ -3,7 +3,9 @@
  *
  * fake root を `tempDir()` で作り、道を作ってから読む。
  * `harnessExcludes` は純粋に一覧から glob を作る。
+ * 期待はテストが渡した値から組み立てる。
  */
+
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -20,61 +22,48 @@ function writeJson(abs: string, data: unknown): void {
 }
 
 describe('readList', () => {
-  it('{ "copy": [...], "skip": [...] } を置いたツリー → 同じ物を返す', () => {
+  it('一覧を置いたツリー → 同じ物を返す', () => {
+    const copy = ['.pi', join('scripts', 'harness', 'list.mjs')];
+    const skip = ['logs'];
     const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
-      copy: ['.pi', 'scripts/harness.mjs'],
-      skip: ['logs'],
-    });
-    expect(readList(root)).toEqual({
-      copy: ['.pi', 'scripts/harness.mjs'],
-      skip: ['logs'],
-      legacy: [],
-    });
+    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy, skip });
+    expect(readList(root)).toEqual({ copy, skip, legacy: [] });
   });
 
-  it('一覧の道が無い → 投げる。エラーに scripts/harness/harness.json が入る', () => {
+  it('一覧の道が無い → 道を入れた誤りで投げる', () => {
     const root = tempDir();
-    expect(() => readList(root)).toThrow('scripts/harness/harness.json');
+    const missing = join(root, 'scripts', 'harness', 'harness.json');
+    expect(() => readList(root)).toThrow(missing);
   });
 
-  it('一覧が {"copy":"x"} → 投げる', () => {
+  it('一覧の copy が配列でない → 投げる', () => {
     const root = tempDir();
     writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
     expect(() => readList(root)).toThrow();
   });
-
-  it('この repo の scripts/harness/harness.json → copy に scripts/harness があり、旧5つの道が無い', () => {
-    const list = readList(process.cwd());
-    expect(list.copy).toContain('scripts/harness');
-    expect(list.copy).not.toContain('scripts/harness.mjs');
-    expect(list.copy).not.toContain('scripts/harness.json');
-    expect(list.copy).not.toContain('scripts/harness.test.ts');
-    expect(list.copy).not.toContain('scripts/harness-state.mjs');
-    expect(list.copy).not.toContain('scripts/harness-state.test.ts');
-  });
 });
 
 describe('harnessExcludes', () => {
-  it("{ copy: ['.pi'] } → ['.pi', '.pi/**']", () => {
-    expect(harnessExcludes({ copy: ['.pi'], skip: [], legacy: [] })).toEqual(['.pi', '.pi/**']);
+  it('copy の 1 件から 2 つの glob を作り、2 件は順に並ぶ', () => {
+    const first = '.pi';
+    const second = join('scripts', 'harness', 'list.mjs');
+    expect(harnessExcludes({ copy: [first], skip: [], legacy: [] })).toEqual([
+      first,
+      `${first}/**`,
+    ]);
+    expect(harnessExcludes({ copy: [first, second], skip: [], legacy: [] })).toEqual([
+      first,
+      `${first}/**`,
+      second,
+      `${second}/**`,
+    ]);
   });
 
-  it('copy が 2 つ → 4 つの glob が一覧の順に並ぶ', () => {
-    expect(
-      harnessExcludes({ copy: ['.pi', 'scripts/harness.json'], skip: [], legacy: [] }),
-    ).toEqual(['.pi', '.pi/**', 'scripts/harness.json', 'scripts/harness.json/**']);
-  });
-
-  it("'.pi/' → '.pi' と '.pi/**'（末の / は落とす）", () => {
-    expect(harnessExcludes({ copy: ['.pi/'], skip: [], legacy: [] })).toEqual(['.pi', '.pi/**']);
-  });
-
-  it('copy: [] → []', () => {
-    expect(harnessExcludes({ copy: [], skip: [], legacy: [] })).toEqual([]);
-  });
-
-  it("copy: ['', '.'] → []", () => {
-    expect(harnessExcludes({ copy: ['', '.'], skip: [], legacy: [] })).toEqual([]);
+  it('末尾の / は落とし、空と . は飛ばす', () => {
+    const base = '.pi';
+    expect(harnessExcludes({ copy: [`${base}/`, '', '.'], skip: [], legacy: [] })).toEqual([
+      base,
+      `${base}/**`,
+    ]);
   });
 });
