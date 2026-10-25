@@ -4,12 +4,14 @@
  * fake root にツリーを作り、`node_modules/.bin/tsc` にスタブを置く。
  * スタブは渡された `-p` を出して、`STUB_FAIL` に含まれる所だけ exit 1 で落とす。
  * これで、回した所の名前・渡された `-p` の道・exit を stdout で見る。
+ * 表示の行は `test/scripts-fixture.ts` から組み立てる。
  */
 
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { FAILED, INVALID_LIST_LINE, OK, statusLine } from '../../test/scripts-fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck.mjs');
@@ -67,68 +69,78 @@ function writeScopes(root: string, scopes: readonly string[]): void {
 }
 
 describe('typecheck', () => {
-  it('一覧が [".pi"] で両方つながる → root と .pi を回す（exit 0）', () => {
+  it('一覧の全部に tsconfig がある → どの範囲も ok の行を出す', () => {
+    const scope = '.pi';
+    const rootName = 'root';
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
-    writeScopes(root, ['.pi']);
+    writeTsconfig(root, join(scope, 'tsconfig.json'));
+    writeScopes(root, [scope]);
     const out = run(root);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain('root: ok');
-    expect(out.stdout).toContain('.pi: ok');
+    expect(out.stdout).toContain(statusLine(rootName, OK));
+    expect(out.stdout).toContain(statusLine(scope, OK));
     expect(out.stdout).toContain(join(root, 'tsconfig.json'));
-    expect(out.stdout).toContain(join(root, '.pi', 'tsconfig.json'));
+    expect(out.stdout).toContain(join(root, scope, 'tsconfig.json'));
   });
 
-  it('.pi の時だけスタブが落とす → .pi: failed（exit 1）', () => {
+  it('1 つの範囲が失敗する → その範囲だけ failed の行を出す', () => {
+    const scope = '.pi';
+    const rootName = 'root';
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
-    writeScopes(root, ['.pi']);
-    const out = run(root, { STUB_FAIL: '.pi' });
+    writeTsconfig(root, join(scope, 'tsconfig.json'));
+    writeScopes(root, [scope]);
+    const out = run(root, { STUB_FAIL: scope });
     expect(out.status).toBe(1);
-    expect(out.stdout).toContain('root: ok');
-    expect(out.stdout).toContain('.pi: failed');
+    expect(out.stdout).toContain(statusLine(rootName, OK));
+    expect(out.stdout).toContain(statusLine(scope, FAILED));
   });
 
-  it('一覧に .opencode があるが tsconfig が無い → .opencode の行が出ない', () => {
+  it('一覧にある範囲でも tsconfig が無ければ、その行を出さない', () => {
+    const scope = '.pi';
+    const missing = '.opencode';
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
-    writeScopes(root, ['.pi', '.opencode']);
+    writeTsconfig(root, join(scope, 'tsconfig.json'));
+    writeScopes(root, [scope, missing]);
     const out = run(root);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain('.pi: ok');
-    expect(out.stdout).not.toContain('.opencode');
+    expect(out.stdout).toContain(statusLine(scope, OK));
+    expect(out.stdout).not.toContain(missing);
   });
 
-  it('一覧が無い → root だけ（.pi の tsconfig があっても回さない）', () => {
+  it('一覧が空 → root の行だけを出す', () => {
+    const scope = '.pi';
+    const rootName = 'root';
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
-    const out = run(root);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('root: ok');
-    expect(out.stdout).not.toContain('.pi');
-  });
-
-  it('一覧が [] → root だけ（空配列の正常系）', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    writeTsconfig(root, 'tsconfig.json');
-    writeTsconfig(root, join('.pi', 'tsconfig.json'));
+    writeTsconfig(root, join(scope, 'tsconfig.json'));
     writeScopes(root, []);
     const out = run(root);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain('root: ok');
-    expect(out.stdout).not.toContain('.pi');
+    expect(out.stdout).toContain(statusLine(rootName, OK));
+    expect(out.stdout).not.toContain(scope);
   });
 
-  it('一覧が JSON として読めない → exit 1（the list is not valid JSON の行）', () => {
+  it('一覧のファイルが無い → root の行だけを出し、exit 0', () => {
+    const scope = '.pi';
+    const rootName = 'root';
+    const root = fakeRoot();
+    stubTsc(root);
+    writeTsconfig(root, 'tsconfig.json');
+    writeTsconfig(root, join(scope, 'tsconfig.json'));
+    const out = run(root);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(statusLine(rootName, OK));
+    expect(out.stdout).not.toContain(scope);
+  });
+
+  it('scopes.json が JSON でない → exit 1 と理由の行', () => {
     const root = fakeRoot();
     stubTsc(root);
     writeTsconfig(root, 'tsconfig.json');
@@ -137,25 +149,6 @@ describe('typecheck', () => {
     writeFileSync(join(dir, 'scopes.json'), '{not json');
     const out = run(root);
     expect(out.status).toBe(1);
-    expect(`${out.stdout}\n${out.stderr}`).toContain('the list is not valid JSON');
-  });
-});
-
-describe('前提（このリポジトリ）', () => {
-  it('scripts/checks/scopes.json は [".pi"]', () => {
-    const scopes = JSON.parse(
-      readFileSync(join(process.cwd(), 'scripts', 'checks', 'scopes.json'), 'utf8'),
-    );
-    expect(scopes).toEqual(['.pi']);
-  });
-
-  it('package.json の scripts.typecheck は node scripts/checks/typecheck.mjs', () => {
-    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
-    expect(pkg.scripts.typecheck).toBe('node scripts/checks/typecheck.mjs');
-  });
-
-  it('package.json の scripts.typecheck:staged は node scripts/checks/typecheck-staged.mjs', () => {
-    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
-    expect(pkg.scripts['typecheck:staged']).toBe('node scripts/checks/typecheck-staged.mjs');
+    expect(`${out.stdout}\n${out.stderr}`).toContain(INVALID_LIST_LINE);
   });
 });

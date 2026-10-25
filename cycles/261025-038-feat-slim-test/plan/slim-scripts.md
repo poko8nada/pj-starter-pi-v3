@@ -45,7 +45,6 @@ test/
 3. `scripts/checks/typecheck-staged.test.ts`:
    - (empty) 対象が空 → exit 0。
    - (happy) 対象は 8 つの拡張子（ts、tsx、mts、cts、js、jsx、mjs、cjs）で、md は外れる。
-   - (happy) 大文字の拡張子も対象になる。
    - (happy) `.pi` の下のファイルは `.pi` の範囲で回る。
    - (happy) 一覧に `.pi` が無ければ root の範囲で回る。
    - (error) `tsconfig` が JSON でない → exit 1 と理由の行。
@@ -169,24 +168,31 @@ test/
 
 ### Slice 1: 型検査の範囲
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - 製品を直してしまった 1 件を戻した。plan が「大文字の拡張子も対象」を case に挙げたが、それは quality-gate の filterByExtensions の話で、typecheck-staged の仕様ではない。ADR の「製品のコードを変えない」に合わせ、製品を戻してケースを落とした。
+- Commit: de67dd21617d9a73446b4e84a498b00eef821b8a
 - Stopped:
 
 ### Slice 2: ハーネスの写し
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5eab6ac
 - Stopped:
 
 ### Slice 3: プロダクトの準備
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b84300d774ebf0f6117f5f548a2749916f2eb160
 - Stopped:
+
+### Cleanup: 重なった写しの検査
+
+- Findings: なし
+- Unplanned:
+  - `scripts/harness/index.test.ts` の弱い logs 1 件と `~` 単体 1 件を落とした。強い logs（skip なしでも集めない）が残り、`~` は `~/starter` と `~foo` が残るので、写しは変わらない。
 
 ## Review
 
@@ -214,14 +220,52 @@ test/
 ### Round 1
 
 - Stale:
+  - `scripts/checks/typecheck-staged.test.ts:9` の「印と旗は fixture から取る」との説明は、実際には理由行のみを使い印は独自定数で置いているため、注釈が実態とずれています。
+  - fixed: 注釈を実態（理由行のみ fixture、`stub -p` はスタブの目印）に直した。
 - Unlisted:
+  - なし — 差分の 9 件は Files の 9 件と一致し、計画書自体の更新以外に名の無い変更はありませんでした。
 - Gaps:
+  - なし — Steps の各ケースは対応する検査に存在し、落とすとされた分岐も計画どおりに除かれています。
 - Unproven:
+  - `scripts/harness/config.test.ts:13` は期待値を製品の `harnessExcludes` で組み立てるため、その変換が壊れても両側が同じく壊れて緑のままになります。
+  - fixed: 期待の後半を渡した `copy` の一覧から自前で組み立てるよう直し、製品の `harnessExcludes` を呼ばないようにした。
+  - `scripts/product-ready/targets.test.ts:81` は既定名の期待値を製品の `STARTER_ONLY` から作るため、既定値が変わっても緑のままになります。
+  - fixed: 既定名の期待を `cycles` の直書きにし、製品の `STARTER_ONLY` を読まないようにした。
 - Noise:
+  - `scripts/product-ready/cli.test.ts:19` の断言に製品の表示文が直書きされており、工場や定数から導かれていません。
+  - fixed: 表示文を fixture の `configLine` / `scriptsLine` から組み立てるよう直した。
+  - `scripts/product-ready/cli.test.ts:60,80,82` の `countLine(..., 1)` は件数の直書きであり、2 件の例のような `entries.length` から導かれていません。
+  - fixed: 件数を渡した一覧の長さ（`entries.length` と label ごとの filter の長さ）から取るよう直した。
 - Doubts:
+  - `scripts/product-ready/index.test.ts:129` の 2 回目の `--run` は scripts と config の表示だけを見て cycles の無い旨の行を見ていませんが、仕様の範囲が曖昧なため所見に留めます。
+  - `scripts/harness/config.test.ts:9` は実リポジトリの一覧を読むため現状に依存しますが、Steps の指定どおりであり所見に留めます。
+
+### Round 2
+
+- Stale:
+  - なし — `scripts/checks/typecheck-staged.test.ts:9` の `fixed:` が実態どおりに直っていることを確認しました。
+- Unlisted:
+  - なし — Round 1 のとおり差分と Files の一致は確認済みで、`fixed:` 対象外のため見直していません。
+- Gaps:
+  - なし — Round 1 のとおり Steps と検査の対応は確認済みで、`fixed:` 対象外のため見直していません。
+- Unproven:
+  - なし — `scripts/harness/config.test.ts:13` と `scripts/product-ready/targets.test.ts:81` の 2 件の `fixed:` がいずれも製品参照を外していることを確認しました。
+- Noise:
+  - なし — `scripts/product-ready/cli.test.ts:19` と `:60,80,82` の 2 件の `fixed:` がいずれも工場・定数・一覧長から導いていることを確認しました。
+- Doubts:
+  - なし
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 55 ファイル / 864 ケース緑。ただし 1 回目の全量で `scripts/checks/typecheck-staged.test.ts > 対象は 8 つの拡張子で、md は外れる` の 1 件だけが落ち、理由の再現はできなかった。3 回続けて全量を走らせ、3 回とも 864 緑だった。
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `harnessExcludes` から `<道>/**` を外す → 「false の一覧 → copy の各道から除外の glob を作る」が赤。戻して緑を確認。
+    - `typecheck.mjs` が失敗の範囲にも `ok` を出す → 「1 つの範囲が失敗する → その範囲だけ failed の行を出す」が赤。戻して緑を確認。
+    - `harness/index.mjs` の `pull` と `push` の向きを入れ替える → 12 件が赤。戻して緑を確認。
+- Findings: なし
 - Doubts:
+  - `scripts/checks/typecheck-staged.test.ts:79` のケースは、1 回目の全量で 1 件だけ落ちて再現しなかった。スタブの `tsc` を書いてすぐ実行するため、負荷の高い時に `ETXTBSY` のような競合が出ている可能性がある。
