@@ -55,7 +55,7 @@ test/
    - (empty) `parseArgs` は引数無し → root は cwd、nnn は null。
    - (happy) `parseArgs` は `--root` を読む。
    - (error) `parseArgs` は数でない位置引数（`abc` と `1.5` と `0` の表）を投げる。
-   - (error) `parseArgs` は知らない旗の後に数が来ても投げる。
+   - 落とす: 「知らない旗の後に数が来ても投げる」（旗の枝を外しても `--bogus` は数でない位置引数として同じく投げるため、枝の有無で振る舞いが変わりません）。
    - (error) `parseArgs` は `--root` の値が欠けていても投げる。
    - (error) `parseArgs` は 2 つ目の位置引数を投げる。
    - 落とす: 「一桁月日は 0 埋めする」（`toYYMMDD` の 1 つのケースの表に畳む）。
@@ -73,10 +73,20 @@ test/
 
 ### Slice 1: 書式と雛形
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c0061d1
 - Stopped:
+
+### Cleanup: createLeafDir の重複断定の整理
+
+- Findings:
+  - `.pi/skills/adr/scripts/scaffold.test.ts` の `createLeafDir` の成功確認から `statSync(leaf).isDirectory()` の断定を削り、`existsSync` と道の一致に寄せました（同じ作りの確認の重複であり、dir であることは Node の `mkdirSync` が決める前提のためです）。
+  - 消えた振る舞いを確かめる試験は残っておらず、削る対象はありませんでした（`80文字`・`///`・`=` 形・`EEXIST` の errno は slice で除去済みです）。
+  - 本計画が止めた分岐を踏む試験はなく、削る対象はありませんでした（製品の分岐は変えず、試験だけを整えたためです）。
+  - 残りは型や schema が決める前提の再現ではなく、誰も気づかない振る舞いでもないため、保ちました。
+  - 削除後は `pnpm test:related`・`pnpm typecheck`・`pnpm lint`・`pnpm format:check` が緑です。
+- Unplanned: なし
 
 ## Review
 
@@ -95,15 +105,29 @@ test/
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — `scaffold.mjs:127,208` の EEXIST 記述は製品の振る舞いとして今も正しく、`scaffold.test.ts:1` の整理による文書・注釈・試験の stale はありません。
+- Unlisted: なし — 差分の code/test 3 件は Files（`slim-skills.md:5-18`）の命名と一致し、残る 1 件は計画書の Notes 更新のため Unlisted はありません。
+- Gaps: なし — Steps の全項目と「落とす」4 件の除去が試験に対応していることを `collect.test.ts:29-50` と `scaffold.test.ts:16-181` および `test/close-fixture.ts:16-32` で確認しました。
+- Unproven: なし — 観察可能な投げる・返す・集めるの水準では各試験が振る舞い除去で失敗することを確認し、枝の同一性まで問う点は Doubts に置きました。
+- Noise: なし — 断言は表・変数の値から取り直接のリテラルを含まず、残るリテラルは計画が決めた値か一度だけ書く入力であることを `scaffold.test.ts:18-24,146-149` と `collect.test.ts:8-15,48-49` で確認しました。
 - Doubts:
+  - `scaffold.test.ts:167-170` は未知旗分岐（`scaffold.mjs:153-154`）を外しても位置引数検証で投げるため緑のままですが、メッセージ断言には hardcoded 文字列が必要で Test cases と衝突するため finding にしませんでした。
+  - `collect.test.ts:44-50` は `ex-missing` の `ADR 未特定` 見出し（`collect.mjs:265`）を断言しませんが、`noOf` の null 試験が経路を持ち描画の断言には `未特定` リテラルが必要で plan 方針と衝突するため finding にしませんでした。
+  - `test/close-fixture.ts:1-6` の外側振る舞いは注釈で満たされ自動検査がなく、`scaffold.test.ts:110,130` の `cycleDirName` による入力組み立ては製品結合でもありますが、いずれも plan 範囲内のため finding にしませんでした。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` → 55 ファイル / 881 ケース緑（acceptance の修正の後、やり直した）
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 4 件試した。
+    - `slugBranch` の `develop → 'dev'` を `'develop'` にする → 「main/develop/feature/fix を写像する」が赤。戻して緑を確認。
+    - `nextNNN` の旧形の正規表現を外す（`const prev = null`）→ 「旧形だけでも max+1 を返す」が赤。戻して緑を確認。
+    - `collect.mjs` の Triage 行の正規表現を `ADR` から `ADRZ` に変える → 「`ex-` plan は Triage 行から読む」と「`## Collected` の見出しに No を付ける」の 2 件が赤。戻して緑を確認。
+    - `parseArgs` の `else if (arg.startsWith('-'))` の枝を外す → 20 件とも緑のまま。赤にならなかった。
 - Findings:
+  - `.pi/skills/adr/scripts/scaffold.test.ts` の「知らない旗の後に数が来ても投げる」は、旗の枝を外しても緑のままです。`--bogus` は数でない位置引数として同じく投げるため、枝の有無で振る舞いが変わりません。ケースを落とし、この枝を確かめる手は捨てます。
+    - fixed: ケースを落とし、Steps の該当行を消して落とす理由を書き足しました。
 - Doubts:
