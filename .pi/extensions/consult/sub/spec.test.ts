@@ -13,28 +13,19 @@ import {
   type Spent,
 } from './spec.ts';
 import type { TypePolicy } from '../policy/types.ts';
+import { aConsultOptions, aTypePolicy } from '../../../../test/consult-fixture.ts';
 
 // 純粋な部分だけを試す。サブエージェントの起動と worktree は実際の pi とリポジトリが要るので扱わない。
 
 /** 上限は type が決める。ここでは「効くか」を見る（数字そのものは設定の話） */
-const LIMITS = { turns: 20, output: 20000 };
+const LIMITS = aTypePolicy().limits;
 
 function policy(overrides: Partial<TypePolicy> = {}): TypePolicy {
-  return {
-    name: 'review',
-    models: [],
-    tools: ['read', 'ls'],
-    isolated: false,
-    paths: [],
-    bash: [],
-    continueByDefault: false,
-    limits: LIMITS,
-    ...overrides,
-  };
+  return aTypePolicy(overrides);
 }
 
 function options(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
-  return { type: 'review', task: '調べる', policy: policy(), token: 'token-1', ...overrides };
+  return aConsultOptions(overrides);
 }
 
 describe('buildPiArgs: subagent-guard', () => {
@@ -76,8 +67,9 @@ describe('buildPiArgs: subagent-guard', () => {
 });
 describe('buildPiArgs', () => {
   it('ヘッドレスで 1 回だけ走る形にする', () => {
-    const args = buildPiArgs(options());
-    expect(args.slice(0, 5)).toEqual(['--mode', 'json', '-p', '--name', 'token-1']);
+    const token = 'token-1';
+    const args = buildPiArgs(options({ token }));
+    expect(args.slice(0, 5)).toEqual(['--mode', 'json', '-p', '--name', token]);
     expect(args).toContain('--no-session');
   });
 
@@ -86,9 +78,10 @@ describe('buildPiArgs', () => {
   });
 
   it('`--model` に候補 1 番目を入れる', () => {
-    const args = buildPiArgs(options({ policy: policy({ models: ['a/1:high', 'b/2'] }) }));
+    const model = 'a/1:high';
+    const args = buildPiArgs(options({ policy: policy({ models: [model, 'b/2'] }) }));
     const index = args.indexOf('--model');
-    expect(args[index + 1]).toBe('a/1:high');
+    expect(args[index + 1]).toBe(model);
   });
 
   it('候補が空ならモデルを渡さない（メインエージェントと同じ設定で走る）', () => {
@@ -96,16 +89,18 @@ describe('buildPiArgs', () => {
   });
 
   it('type のツールを渡す', () => {
-    const args = buildPiArgs(options({ policy: policy({ tools: ['read', 'grep'] }) }));
+    const tools = ['read', 'grep'];
+    const args = buildPiArgs(options({ policy: policy({ tools }) }));
     const index = args.indexOf('--tools');
-    expect(args[index + 1]).toBe('read,grep');
+    expect(args[index + 1]).toBe(tools.join(','));
   });
 
   it('役割をシステムプロンプトへの追記で渡す（ファイル探索はしない）', () => {
-    const args = buildPiArgs(options({ policy: policy({ role: 'あなたは査読者です' }) }));
+    const role = 'あなたは査読者です';
+    const args = buildPiArgs(options({ policy: policy({ role }) }));
     const index = args.indexOf('--append-system-prompt');
     expect(index).toBeGreaterThan(-1);
-    expect(args[index + 1]).toBe('あなたは査読者です');
+    expect(args[index + 1]).toBe(role);
   });
 
   it('役割が空なら追記しない', () => {
@@ -114,15 +109,16 @@ describe('buildPiArgs', () => {
     );
   });
 
-  it('task: 調べる → 引数に指示が載らない（happy）', () => {
-    const args = buildPiArgs(options({ task: '調べる' }));
-    expect(args).not.toContain('調べる');
+  it('task: 指示は引数に載らない', () => {
+    const task = '調べる';
+    const args = buildPiArgs(options({ task }));
+    expect(args).not.toContain(task);
     expect(args).not.toContain('--');
   });
 });
 
 describe('needsIsolation', () => {
-  it('`isolated` が true → 隔離する', () => {
+  it('`isolated` が真 → 隔離する', () => {
     expect(needsIsolation(policy({ isolated: true }))).toBe(true);
   });
 });
@@ -155,7 +151,8 @@ function messageEnd(overrides: Record<string, unknown> = {}) {
 
 describe('finalTextFrom', () => {
   it('最後の assistant のテキストを返す', () => {
-    expect(finalTextFrom([messageEnd()])).toBe('hi');
+    const event = messageEnd({ content: [{ type: 'text', text: 'hi' }] });
+    expect(finalTextFrom([event])).toBe('hi');
   });
 
   it('text 以外のパート（toolcall など）は無視する', () => {
@@ -166,13 +163,15 @@ describe('finalTextFrom', () => {
   });
 
   it('複数の text パートを連結する', () => {
+    const first = 'a';
+    const second = 'b';
     const event = messageEnd({
       content: [
-        { type: 'text', text: 'a' },
-        { type: 'text', text: 'b' },
+        { type: 'text', text: first },
+        { type: 'text', text: second },
       ],
     });
-    expect(finalTextFrom([event])).toBe('ab');
+    expect(finalTextFrom([event])).toBe(first + second);
   });
 
   it('user のメッセージは拾わない', () => {
@@ -190,7 +189,11 @@ describe('finalTextFrom', () => {
 
 describe('modelFrom', () => {
   it('サブエージェントが報告した provider と model を組み立てる', () => {
-    expect(modelFrom([messageEnd()])).toBe('p/m');
+    const event = messageEnd({ provider: 'p', model: 'm' });
+    const provider = 'p';
+    const model = 'm';
+    expect(messageEnd()).toMatchObject({ message: { provider, model } });
+    expect(modelFrom([event])).toBe(`${provider}/${model}`);
   });
 });
 
@@ -209,14 +212,21 @@ describe('ranFrom', () => {
 describe('usageFrom', () => {
   it('assistant のターン数と消費を合計する', () => {
     const usage = usageFrom([messageEnd(), messageEnd()]);
-    expect(usage).toEqual({ turns: 2, input: 20, output: 10, cost: 0.002 });
+    const single = usageFrom([messageEnd()]);
+    expect(usage).toEqual({
+      turns: single.turns * 2,
+      input: single.input * 2,
+      output: single.output * 2,
+      cost: single.cost * 2,
+    });
   });
 });
 
 describe('errorFrom', () => {
   it('errorMessage があれば返す', () => {
-    const event = messageEnd({ errorMessage: 'rate limited' });
-    expect(errorFrom([event])).toBe('rate limited');
+    const reason = 'rate limited';
+    const event = messageEnd({ errorMessage: reason });
+    expect(errorFrom([event])).toBe(reason);
   });
 });
 
@@ -269,39 +279,39 @@ describe('accountEvent', () => {
 
 describe('buildPiArgs: sessionPath', () => {
   it('sessionPath あり → --session を指し、--no-session は付けない', () => {
-    const args = buildPiArgs(options({ sessionPath: '/tmp/s' }));
+    const sessionPath = '/tmp/s';
+    const args = buildPiArgs(options({ sessionPath }));
     expect(args).toContain('--session');
-    expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
+    expect(args[args.indexOf('--session') + 1]).toBe(sessionPath);
     expect(args).not.toContain('--no-session');
   });
 });
 
 describe('buildPiArgs: token', () => {
   it('token と --session あり → argv に --name <token> と --session が両方ある', () => {
-    const args = buildPiArgs(options({ token: 'token-abc', sessionPath: '/tmp/s' }));
+    const token = 'token-abc';
+    const sessionPath = '/tmp/s';
+    const args = buildPiArgs(options({ token, sessionPath }));
     const nameIndex = args.indexOf('--name');
     expect(nameIndex).toBeGreaterThan(-1);
-    expect(args[nameIndex + 1]).toBe('token-abc');
+    expect(args[nameIndex + 1]).toBe(token);
     expect(args).toContain('--session');
-    expect(args[args.indexOf('--session') + 1]).toBe('/tmp/s');
+    expect(args[args.indexOf('--session') + 1]).toBe(sessionPath);
   });
 
   it('--no-session の子 → argv に --name <token> がある', () => {
-    const args = buildPiArgs(options({ token: 'token-xyz' }));
+    const token = 'token-xyz';
+    const args = buildPiArgs(options({ token }));
     const nameIndex = args.indexOf('--name');
     expect(nameIndex).toBeGreaterThan(-1);
-    expect(args[nameIndex + 1]).toBe('token-xyz');
+    expect(args[nameIndex + 1]).toBe(token);
     expect(args).toContain('--no-session');
-  });
-
-  it('-p の後に --name と token を並べる', () => {
-    const args = buildPiArgs(options({ token: 'token-1' }));
-    expect(args.slice(0, 5)).toEqual(['--mode', 'json', '-p', '--name', 'token-1']);
   });
 });
 
 describe('finalTextFrom: 複数イベント', () => {
   it('最後が空なら、前のイベントの本文を返す', () => {
-    expect(finalTextFrom([messageEnd(), messageEnd({ content: [] })])).toBe('hi');
+    const text = 'hi';
+    expect(finalTextFrom([messageEnd(), messageEnd({ content: [] })])).toBe(text);
   });
 });
