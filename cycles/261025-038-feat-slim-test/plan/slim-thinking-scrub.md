@@ -205,10 +205,15 @@ test/
 
 ### Slice 2: 設定と記録
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f1cbc38
 - Stopped:
+
+### Cleanup: テストの重複掃除
+
+- Findings: なし — 同じ振る舞いの重複、消えた振る舞い、止まった分岐、指針外のケースはいずれも見当たらず、落とす物はなかった。
+- Unplanned: なし
 
 ## Review
 
