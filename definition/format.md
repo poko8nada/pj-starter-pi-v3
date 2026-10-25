@@ -54,7 +54,6 @@ These lines are the starter's: every definition has them, and a product keeps th
 | Checks | Git hooks       | lefthook                          |
 | Agent  | Host            | `@earendil-works/pi-coding-agent` |
 | Agent  | Schema          | typebox                           |
-| Agent  | Classifier      | Jev 1.13                          |
 ```
 
 The `Who` in these lines is the starter's. A product whose `Who` is different writes its own word for it.

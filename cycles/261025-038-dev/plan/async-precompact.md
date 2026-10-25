@@ -608,52 +608,73 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 1: settings-and-gate
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 53b4231 consult(async-precompact): add settings and gate
+- Stopped: なし
 
 ### Slice 2: prepare-copy
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: ab984ad consult(async-precompact): add prepare copy, compare and guard
+- Stopped: なし
 
 ### Slice 3: summarize-and-draft
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d17d5e7 consult(async-precompact): add summarize ports and draft
+- Stopped: なし
 
 ### Slice 4: wiring-and-status
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `index.ts` に既定 export を足しました。Pi は拡張の既定 export を工場として読むため、これが無いと配線が読み込まれません。`registerPrecompact` に委ねるだけで、振る舞いは増やしていません。
+- Commit: 0d66042 consult(async-precompact): add wiring and status
+- Stopped: なし
 
 ### Slice 5: switch-and-docs
 
+- Findings: なし
+- Unplanned: なし
+- Commit: 3801e6f consult(async-precompact): switch docs to precompact
+- Stopped: なし
+
+### Cleanup: 重複と前提の整理
+
 - Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+  - `.pi/extensions/context-precompact/index.test.ts` の `signal が undefined → pass が始まり status が preparing` の 1 件を削りました。すべての偽 ctx が既定で `signal: undefined` のため、`AbortSignal.timeout` 枝は残る pass 試験のすべてで通り、開始と ready の断定は `turn_end で比率が閾値の手前` と `flush が実行中の pass を待つ` に残ります。
+  - `.pi/extensions/context-precompact/run/summarize.test.ts` の `done` の試験を 2 回呼びから 1 回呼びにしました。2 回とも同じ `done` の振る舞いで、結果と経過の断定は 1 回に残ります。
+  - `.pi/extensions/context-precompact/gate/gate.test.ts` の 2 件から前提の断定を削りました。`oldRegion < MIN_OLD_RATIO` と `tokens >= lastApplied + REARM` は試験の組み立ての確認で、振る舞いの確認は `old-region-too-small` と `start` の断定に残ります。使わなくなった `MIN_OLD_RATIO` の import も外しました。
+  - 消えた振る舞いの試験は見当たりませんでした。prune 削除後の全件実行で残る試験は現在の振る舞いだけを確かめています。
+  - 止めた分岐の試験は見当たりませんでした。今回の変更で到達不能になった分岐を確かめる試験はなく、残る分岐（有効・準備・適用・stale・失敗）は試験に残ります。
+  - 削除後は `pnpm test:run` 56 件・802 件、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` のすべてが通過しました。
+- Unplanned: なし
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 旧名の残存は `cycles/` 内のみで、Verify の除外指定の範囲内であることを確認しました（`README.md:13`、`README.ja.md:13`、`DEFINITION.md:45`、`definition/format.md:54` に新名があり、`.pi/extensions/context-precompact/doc.test.ts:40-64` が旧名の不在を検査します）。コメントやテストに古くなった記述は見当たりませんでした（`.pi/extensions/context-precompact/prepare/copied.ts:2` の出所注記、`.pi/extensions/context-precompact/gate/gate.test.ts:2` の定数名利用など）。
+- Unlisted: なし — `git diff 02d8709..HEAD` の産物変更はすべて `## Files` の木に含まれます（`.pi/extensions/context-precompact/index.ts:1` 以下の 35 件の追加、`.pi/extensions/context-prune/index.ts:1` 以下の削除、`README.md:13`、`README.ja.md:13`、`DEFINITION.md:45`、`definition/format.md:54` の更新）。`cycles/261025-038-dev/plan/async-precompact.md:656` の差分は Notes の記録であり、産物の変更ではないため対象外としました。
+- Gaps: なし — 各 Slice の `Steps` の事例はすべて対応するテストに存在することを確認しました（`.pi/extensions/context-precompact/settings/schema.test.ts:11-43` の 6 件、`.pi/extensions/context-precompact/settings/read.test.ts:12-49` の 5 件、`.pi/extensions/context-precompact/gate/gate.test.ts:25-83` の 11 件、`.pi/extensions/context-precompact/prepare/copied.test.ts:121-253` の 9 件、`.pi/extensions/context-precompact/prepare/prepare.test.ts:119-161` の 5 件、`.pi/extensions/context-precompact/prepare/compare.test.ts:23-53` の 5 件、`.pi/extensions/context-precompact/prepare/guard.test.ts:32-62` の 5 件、`.pi/extensions/context-precompact/run/ports.test.ts:50-131` の 4 件、`.pi/extensions/context-precompact/run/summarize.test.ts:31-73` の 3 件、`.pi/extensions/context-precompact/apply/draft.test.ts:58-89` の 3 件、`.pi/extensions/context-precompact/ui/count.test.ts:8-18` の 2 件、`.pi/extensions/context-precompact/ui/status.test.ts:9-43` の 6 件、`.pi/extensions/context-precompact/command/precompact.test.ts:5-14` の 2 件、`.pi/extensions/context-precompact/index.test.ts:283` 以下の wiring と命令の 17 件、`.pi/extensions/context-precompact/doc.test.ts:21-64` の 4 件）。Cleanup で削られた 2 件は Notes に理由があり、残る試験で枝が通ることを確認しました。
+- Unproven: なし — 代表の振る舞いを外せば赤になる形であることを読み合わせで確認しました（`.pi/extensions/context-precompact/settings/schema.ts:67` の下限を外せば `schema.test.ts:29-33` が赤、`.pi/extensions/context-precompact/gate/gate.ts:36` の `null` を外せば `gate.test.ts:54-56` が赤、`.pi/extensions/context-precompact/prepare/compare.ts:21-28` の不一致を外せば `compare.test.ts:27-38` が赤、`.pi/extensions/context-precompact/apply/draft.ts:35` の `max(0,…)` を外せば `draft.test.ts:84-89` が赤、`.pi/extensions/context-precompact/index.ts:404` の `tokensBefore` 更新を外せば `index.test.ts` の `8_200` 断定が赤）。上限のみ・`turnPrefix` の不一致のみ・`written/edited` のみを外すと緑のままですが、境界は仕様ごとに確かめるという `.pi/skills/plan/references/format.md:156-164` の `## Test cases` と影響の軽微さに照らして所見にしませんでした。
+- Noise: なし — 型やスキーマが保証する前提の再現や、誰も気付かない微細枝の試験は見当たりませんでした。固定の期待値は計画が仕様として要求したものに限られます（`.pi/extensions/context-precompact/ui/count.test.ts:4-5` の `THOUSAND`・`MILLION` 名、`.pi/extensions/context-precompact/ui/status.test.ts:4-6` の `BEFORE`・`AFTER` 名）。`1500`・`7600`・`8100` などは振る舞いを起こすための入力であり、断定に魔数は含まれません。
 - Doubts:
+  - `cycles/261025-038-dev/plan/async-precompact.md:656` の差分は Notes の追記であり、産物の `## Files` には含めない記録です。判定には含めていません。
+  - `thresholdRatio` の上限（`.pi/extensions/context-precompact/settings/schema.ts:67` の `> MAX`）、`contextWindow <= 0`（`.pi/extensions/context-precompact/gate/gate.ts:36`）、`onBeforeSettle` の stale 破棄（`.pi/extensions/context-precompact/index.ts:356-363`）、`discarded` の単位試験（`.pi/extensions/context-precompact/ui/status.ts:24`）には専用の事例がありませんが、いずれも計画が事例を定めなかった範囲、または到達が希少で影響が軽微な枝のため、所見にせず疑義に留めます。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` 56 files / 802 tests。
+  - `pnpm typecheck`（root / .pi）、`pnpm lint`、`pnpm format:check`。
+  - `test -d .pi/extensions/context-precompact && test ! -d .pi/extensions/context-prune`。
+  - 旧名の grep は exit 1（`context-prune` / `/prune` / `Jev` / `Stack.Agent.Classifier` の残存なし）。新名は `README.md`、`README.ja.md`、`DEFINITION.md`、拡張の `README.md` にある。
+  - 壊して戻す 3 件: `gate.ts` の `tokens === null` を外すと `gate.test.ts` の `tokens が null` が赤。`compare.ts` の `previousSummary` の比較を反転すると `compare.test.ts` 5 件と `index.test.ts` の一致試験が赤。`draft.ts` の `Math.max(0, …)` を外すと `draft.test.ts` の 0 境界が赤。いずれも復旧して緑に戻した。
 - Findings:
+  - なし
 - Doubts:
+  - なし
