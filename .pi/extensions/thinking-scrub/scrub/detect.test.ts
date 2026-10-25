@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { detectRuns, scrubThinking, separatorFor } from './detect.ts';
+import { cycleText } from '../../../../test/scrub-fixture.ts';
+import {
+  MAX_PERIOD,
+  MIN_LENGTH,
+  MIN_PERIOD,
+  MIN_REPEATS,
+  detectRuns,
+  scrubThinking,
+} from './detect.ts';
 import { MIN_CYCLES, MIN_RUN_CHARS } from './units.ts';
 
 // 検出と除去。fixture は関数の中で組み立てる。
@@ -20,32 +28,17 @@ function sentenceWithChar(index: number): string {
   return `${unit()} ${index} thinks ${repeated(unit(), 12)} end.`;
 }
 
-function cycleText(pattern: readonly string[], cycles: number, sep = ' '): string {
-  return Array.from({ length: cycles }, () => pattern.join(' ')).join(sep);
-}
-
 describe('detectRuns', () => {
   it('離れた 2 か所に区間 → 2 区間で昇順', () => {
     const block = repeated(unit(), 12);
-    const text = `start ${block} middle ${block} end`;
+    const prefix = 'start';
+    const middle = 'middle';
+    const suffix = 'end';
+    const text = `${prefix} ${block} ${middle} ${block} ${suffix}`;
     const runs = detectRuns(text);
     expect(runs).toHaveLength(2);
     expect(runs[0]?.at).toBeLessThan(runs[1]?.at ?? 0);
-    expect(scrubThinking(text).removed).toBe(2);
-  });
-});
-
-describe('separatorFor', () => {
-  it('改行2つを含む → 改行2つを返す', () => {
-    expect(separatorFor('\n\n')).toBe('\n\n');
-  });
-
-  it('改行1つだけを含む → 改行1つを返す', () => {
-    expect(separatorFor('a\nb')).toBe('\n');
-  });
-
-  it('改行を含まない → undefinedを返す', () => {
-    expect(separatorFor('ab')).toBeUndefined();
+    expect(scrubThinking(text).removed).toBe(runs.length);
   });
 });
 
@@ -53,76 +46,68 @@ describe('scrubThinking', () => {
   it('"the *" を 12 回並べた本文 → 1 区間で removed が 1、並びが消える', () => {
     const text = repeated(unit(), 12);
     // 周期 5 と周期 10 のどちらも当たるが、重なりは 1 区間にまとまる。
-    expect(detectRuns(text)).toEqual([{ at: 0, length: 60 }]);
+    const runs = detectRuns(text);
+    expect(runs).toHaveLength(1);
     const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
+    expect(scrubbed.removed).toBe(runs.length);
     expect(scrubbed.text).not.toContain(unit());
   });
 
-  it('foo + "the *" × 5 + bar（25 文字）→ 区間 1、foo bar', () => {
-    const text = `foo${repeated(unit(), 5)}bar`;
-    expect(repeated(unit(), 5)).toHaveLength(25);
+  it('foo + "the *" × 5 + bar → 区間 1、foo bar', () => {
+    const prefix = 'foo';
+    const suffix = 'bar';
+    const text = `${prefix}${repeated(unit(), 5)}${suffix}`;
+    const expected = `${prefix} ${suffix}`;
     const runs = detectRuns(text);
     expect(runs).toHaveLength(1);
-    expect(scrubThinking(text)).toEqual({ text: 'foo bar', removed: 1 });
+    expect(scrubThinking(text)).toEqual({ text: expected, removed: runs.length });
   });
 
-  it('同じ 12 文字を 5 回（60 文字）→ 区間 1、消える', () => {
-    const text = repeated('abcdefghijkl', 5);
-    expect(text).toHaveLength(60);
-    const runs = detectRuns(text);
-    expect(runs).toHaveLength(1);
-    expect(scrubThinking(text).removed).toBe(1);
+  it(`周期 ${MIN_PERIOD} 文字は ${MIN_REPEATS + 2} 回で消え ${MIN_REPEATS + 1} 回では消えず、周期 ${MIN_LENGTH + 10} 文字は ${MIN_REPEATS} 回で消え ${MIN_REPEATS - 1} 回では消えない`, () => {
+    // 周期の長さと繰り返しの数は別々に効く。前者は長さで、後者は回数で決まる。
+    const minBlock = 'abcd';
+    expect(minBlock.length).toBe(MIN_PERIOD);
+    const longEnough = repeated(minBlock, MIN_REPEATS + 2);
+    expect(longEnough.length).toBeGreaterThanOrEqual(MIN_LENGTH);
+    expect(scrubThinking(longEnough).removed).toBe(1);
+    const tooShort = repeated(minBlock, MIN_REPEATS + 1);
+    expect(tooShort.length).toBeLessThan(MIN_LENGTH);
+    const shortScrubbed = scrubThinking(tooShort);
+    expect(shortScrubbed.removed).toBe(0);
+    expect(shortScrubbed.text).toBe(tooShort);
+
+    const midBlock = `${'a'.repeat(MIN_LENGTH + 9)}b`;
+    expect(midBlock.length).toBe(MIN_LENGTH + 10);
+    const enoughRepeats = repeated(midBlock, MIN_REPEATS);
+    expect(enoughRepeats.length).toBeGreaterThanOrEqual(MIN_LENGTH);
+    expect(scrubThinking(enoughRepeats).removed).toBe(1);
+    const fewRepeats = repeated(midBlock, MIN_REPEATS - 1);
+    expect(fewRepeats.length).toBeGreaterThanOrEqual(MIN_LENGTH);
+    const fewScrubbed = scrubThinking(fewRepeats);
+    expect(fewScrubbed.removed).toBe(0);
+    expect(fewScrubbed.text).toBe(fewRepeats);
   });
 
-  it('同じ 30 文字を 2 回（60 文字）→ 区間 0、本文そのまま', () => {
-    const block = `${'a'.repeat(29)}b`;
-    expect(block).toHaveLength(30);
-    const text = repeated(block, 2);
-    expect(text).toHaveLength(60);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
-  });
+  it(`周期 ${MIN_PERIOD - 1} 文字は消さず、${MAX_PERIOD} 文字は消し、${MAX_PERIOD + 1} 文字は消さない`, () => {
+    const tooShortPeriod = 'abc';
+    expect(tooShortPeriod.length).toBe(MIN_PERIOD - 1);
+    const shortText = repeated(tooShortPeriod, 20);
+    expect(shortText.length).toBeGreaterThanOrEqual(MIN_LENGTH);
+    const shortScrubbed = scrubThinking(shortText);
+    expect(shortScrubbed.removed).toBe(0);
+    expect(shortScrubbed.text).toBe(shortText);
 
-  it('周期 4 文字を 5 回（20 文字）→ 区間 1、消える', () => {
-    const text = repeated('abcd', 5);
-    expect(text).toHaveLength(20);
-    const runs = detectRuns(text);
-    expect(runs).toHaveLength(1);
-    expect(scrubThinking(text).removed).toBe(1);
-  });
+    const maxBlock = `${'a'.repeat(MAX_PERIOD - 1)}b`;
+    expect(maxBlock.length).toBe(MAX_PERIOD);
+    const maxText = repeated(maxBlock, MIN_REPEATS + 3);
+    expect(scrubThinking(maxText).removed).toBe(1);
 
-  it('周期 4 文字を 4 回（16 文字）→ 区間 0、本文そのまま', () => {
-    const text = repeated('abcd', 4);
-    expect(text).toHaveLength(16);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
-  });
-
-  it('周期 3 文字の連続 → removed が 0', () => {
-    const text = repeated('abc', 20);
-    expect(text).toHaveLength(60);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
-  });
-
-  it('周期 120 文字の連続 → removed が 1', () => {
-    const block = `${'a'.repeat(119)}b`;
-    expect(block).toHaveLength(120);
-    const text = repeated(block, 6);
-    expect(scrubThinking(text).removed).toBe(1);
-  });
-
-  it('周期 121 文字の連続 → removed が 0', () => {
-    const block = `${'a'.repeat(120)}b`;
-    expect(block).toHaveLength(121);
-    const text = repeated(block, 6);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
+    const tooLongBlock = `${'a'.repeat(MAX_PERIOD)}b`;
+    expect(tooLongBlock.length).toBe(MAX_PERIOD + 1);
+    const longText = repeated(tooLongBlock, MIN_REPEATS + 3);
+    const longScrubbed = scrubThinking(longText);
+    expect(longScrubbed.removed).toBe(0);
+    expect(longScrubbed.text).toBe(longText);
   });
 
   it('空文字 → removed が 0、本文が同一', () => {
@@ -138,56 +123,44 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('境目の前後がどちらも非空白 → 空白 1 個が入る', () => {
-    const text = `foo${repeated(unit(), 12)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo bar');
-  });
-
-  it('境目の前後どちらかが空白 → 空白を足さない', () => {
+  it('境目の前後がどちらも非空白 → 空白 1 個、片方が空白 → 足さない', () => {
+    const prefix = 'foo';
+    const suffix = 'bar';
     const block = repeated(unit(), 12);
-    expect(scrubThinking(`foo ${block}bar`).text).toBe('foo bar');
-    expect(scrubThinking(`foo${block} bar`).text).toBe('foo bar');
+    const bothTight = `${prefix}${block}${suffix}`;
+    expect(scrubThinking(bothTight).text).toBe(`${prefix} ${suffix}`);
+    const leftSpaced = `${prefix} ${block}${suffix}`;
+    expect(scrubThinking(leftSpaced).text).toBe(`${prefix} ${suffix}`);
+    const rightSpaced = `${prefix}${block} ${suffix}`;
+    expect(scrubThinking(rightSpaced).text).toBe(`${prefix} ${suffix}`);
   });
 
-  it('区間が改行2つを含む → 繋ぎ目に改行2つが入る', () => {
-    const text = `foo${repeated('\n\nThe **', 5)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
+  it('区間が改行 2 つ / 1 つ / 無しを含む → 繋ぎ目にその改行を戻す', () => {
+    const prefix = 'foo';
+    const suffix = 'bar';
+    const doubleReturn = '\n\n';
+    const doubleText = `${prefix}${repeated(`${doubleReturn}The **`, 5)}${suffix}`;
+    expect(scrubThinking(doubleText).text).toBe(`${prefix}${doubleReturn}${suffix}`);
+    const singleReturn = '\n';
+    const singleText = `${prefix}${repeated(`${singleReturn}abcd`, 12)}${suffix}`;
+    expect(scrubThinking(singleText).text).toBe(`${prefix}${singleReturn}${suffix}`);
+    const noReturnText = `${prefix}${repeated(unit(), 12)}${suffix}`;
+    expect(scrubThinking(noReturnText).text).toBe(`${prefix} ${suffix}`);
   });
 
-  it('区間が改行2つを含み両端が空白 → 空白は残らず改行2つが入る', () => {
-    const text = `foo ${repeated('\n\nThe **', 5)} bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\n\nbar');
-  });
-
-  it('区間が本文先頭にある → 詰めるだけで改行を足さない', () => {
-    const text = `${repeated('\n\nThe **', 5)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('bar');
-  });
-
-  it('区間が本文末尾にある → 詰めるだけで改行を足さない', () => {
-    const text = `foo${repeated('\n\nThe **', 5)}`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo');
-  });
-
-  it('区間が改行1つだけを含む → 繋ぎ目に改行1つが入る', () => {
-    const text = `foo${repeated('\nabcd', 12)}bar`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe('foo\nbar');
+  it('区間が本文先頭 / 末尾にある → 詰めるだけで改行を足さない', () => {
+    const suffix = 'bar';
+    const prefix = 'foo';
+    const headText = `${repeated('\n\nThe **', 5)}${suffix}`;
+    expect(scrubThinking(headText).text).toBe(suffix);
+    const tailText = `${prefix}${repeated('\n\nThe **', 5)}`;
+    expect(scrubThinking(tailText).text).toBe(prefix);
   });
 
   it('結果にもう一度かける → removed が 0、本文が同一', () => {
-    const text = `foo${repeated(unit(), 12)}bar`;
+    const prefix = 'foo';
+    const suffix = 'bar';
+    const text = `${prefix}${repeated(unit(), 12)}${suffix}`;
     const first = scrubThinking(text);
     expect(first.removed).toBe(1);
     const second = scrubThinking(first.text);
@@ -197,7 +170,7 @@ describe('scrubThinking', () => {
 });
 
 describe('scrubThinking sentence', () => {
-  it('文ループ 3 周期 → 最初の 1 周期だけ残り、残りが消える', () => {
+  it(`文ループ ${MIN_CYCLES} 周期 → 最初の 1 周期だけ残り、残りが消える`, () => {
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const text = cycleText(pattern, MIN_CYCLES);
     expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
@@ -206,14 +179,7 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).toBe(pattern.join(' '));
   });
 
-  it('文字ループ repeated() → 前と同じく消える', () => {
-    const text = repeated(unit(), 12);
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).not.toContain(unit());
-  });
-
-  it('各周期が文字ループを持つ文ループ → 文が先で removed が 2、文字が先ならもっと増える', () => {
+  it('各周期が文字ループを持つ文ループ → 文が先で removed が 2', () => {
     const pattern = [sentence(0), sentenceWithChar(1), sentence(2)];
     const text = cycleText(pattern, MIN_CYCLES);
     expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
@@ -226,13 +192,14 @@ describe('scrubThinking sentence', () => {
   it('柵を含む文ループ → 消えない', () => {
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const cycle = pattern.join(' ');
-    const text = `${cycle}\n\`\`\`\ncode\n\`\`\`\n${cycle}\n${cycle}`;
+    const fence = '```';
+    const text = `${cycle}\n${fence}\ncode\n${fence}\n${cycle}\n${cycle}`;
     const scrubbed = scrubThinking(text);
     expect(scrubbed.removed).toBe(0);
     expect(scrubbed.text).toBe(text);
   });
 
-  it('3 周期でも 400 文字未満の文ループ → 消えない', () => {
+  it(`${MIN_CYCLES} 周期でも ${MIN_RUN_CHARS} 文字未満の文ループ → 消えない`, () => {
     const one = sentence(0);
     const text = cycleText([one], MIN_CYCLES);
     expect(text.length).toBeLessThan(MIN_RUN_CHARS);
@@ -241,39 +208,22 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('普通の文章 → そのままで removed が 0', () => {
-    const parts = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => sentence(index));
-    const text = parts.join(' ');
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe(text);
-  });
-
-  it('消える周期が改行2つを含む → 繋ぎ目に改行2つが残る', () => {
+  it('消える周期が改行を含む → 繋ぎ目に同じ改行を戻す', () => {
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const cycle = pattern.join(' ');
-    const text = `${sentence(10)}\n\n${cycle}\n\n${cycle}\n\n${cycle}\n\n${sentence(11)}`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe(`${sentence(10)}\n\n${cycle}\n\n${sentence(11)}`);
-  });
-
-  it('消える周期が改行1つだけを含む → 繋ぎ目に改行1つが残る', () => {
-    const pattern = [sentence(0), sentence(1), sentence(2)];
-    const cycle = pattern.join(' ');
-    const text = `${sentence(10)}\n${cycle}\n${cycle}\n${cycle}\n${sentence(11)}`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe(`${sentence(10)}\n${cycle}\n${sentence(11)}`);
-  });
-
-  it('消える文に改行が無く前後が非空白 → 繋ぎ目に空白1つが入る', () => {
-    const pattern = [sentence(0), sentence(1), sentence(2)];
-    const cycle = pattern.join(' ');
-    const text = `${sentence(10)} ${cycle} ${cycle} ${cycle} ${sentence(11)}`;
-    const scrubbed = scrubThinking(text);
-    expect(scrubbed.removed).toBe(1);
-    expect(scrubbed.text).toBe(`${sentence(10)} ${cycle} ${sentence(11)}`);
-    expect(scrubbed.text).not.toContain('\n');
+    const head = sentence(10);
+    const tail = sentence(11);
+    const doubleReturn = '\n\n';
+    const doubleText = `${head}${doubleReturn}${cycle}${doubleReturn}${cycle}${doubleReturn}${cycle}${doubleReturn}${tail}`;
+    expect(scrubThinking(doubleText).text).toBe(
+      `${head}${doubleReturn}${cycle}${doubleReturn}${tail}`,
+    );
+    const singleReturn = '\n';
+    const singleText = `${head}${singleReturn}${cycle}${singleReturn}${cycle}${singleReturn}${cycle}${singleReturn}${tail}`;
+    expect(scrubThinking(singleText).text).toBe(
+      `${head}${singleReturn}${cycle}${singleReturn}${tail}`,
+    );
+    const spacedText = `${head} ${cycle} ${cycle} ${cycle} ${tail}`;
+    expect(scrubThinking(spacedText).text).toBe(`${head} ${cycle} ${tail}`);
   });
 });

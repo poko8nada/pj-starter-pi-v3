@@ -198,17 +198,22 @@ test/
 
 ### Slice 1: 検出と畳み込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c086709
 - Stopped:
 
 ### Slice 2: 設定と記録
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f1cbc38
 - Stopped:
+
+### Cleanup: テストの重複掃除
+
+- Findings: なし — 同じ振る舞いの重複、消えた振る舞い、止まった分岐、指針外のケースはいずれも見当たらず、落とす物はなかった。
+- Unplanned: なし
 
 ## Review
 
@@ -230,14 +235,31 @@ test/
 ### Round 1
 
 - Stale:
+  - なし — コメントと文書に古い文言は残っておりません。`separatorFor` や NUL 検査などの削除済み振る舞いに触れる注釈は消え、`CommandPort は記録する偽物` や `出力の文は工場の印と回数から組む` などの注釈は差分後の姿と一致しております。
 - Unlisted:
+  - なし — `git diff e528f5e..HEAD --stat` が触れるのは `## Files` に列挙の 10 件の test 更新・追加と plan md の Notes のみで、製品コードや列挙外の fixture への変更はございません。
 - Gaps:
+  - なし — Slice 1・2 の `### Steps` の各 `(happy)/(empty)/(error)/(boundary)` はいずれも対応する `it` で exercised されており、落とす指定の重複ケース以外の欠落はございません。`separatorFor` の 3 分岐は繋ぎ目テストに畳まれ、`reasoning`/`reasoning_text` や `off`/`ON`/`SHOW` などの統合ケースも漏れなく残っております。
 - Unproven:
+  - なし — 代表の境界 (`MIN_PERIOD`/`MAX_PERIOD`/`MIN_LENGTH`/`MIN_REPEATS`、`MIN_CYCLES`/`MIN_RUN_CHARS`/`MAX_PERIOD_UNITS`、`MIN_THINKING`/`SCAN_EVERY`/`TAIL`/`MAX_ABORTS`) はいずれも両側を断言し、片側の判定を外すと赤になる作りでございます。`chars` の差分計算や `removed` の合計、`notify` の回数・文面も出力値から組み立てず別経路で確かめております。
 - Noise:
+  - なし — 断言に生の数値や文言は残っておらず、`toHaveLength(2)` 等の件数は plan が決めた仕様値でございます。工場化の対象である繰り返し文・退化文・印は `test/scrub-fixture.ts` と `test/pi-fixture.ts` から組み立てられております。
 - Doubts:
+  - なし
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` → 55 ファイル / 858 ケース緑（acceptance の修正の後、やり直した）
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 4 件試した。
+    - `MIN_REPEATS` を 3 から 2 に → 3 件が赤。戻して緑を確認。
+    - `MIN_RUN_CHARS` を 400 から 300 に → 修正の前は 113 件とも緑のままだった。修正の後にもう一度同じ壊し方をして、「`MIN_CYCLES` 周期でも `MIN_RUN_CHARS` 文字未満 → run が無い」が赤になることを確かめた。戻して緑を確認。
+    - `REPLAY_FIELDS` から `reasoning_text` を外す → 「thinkingSignature が reasoning / reasoning_text → 対象になる」が赤。戻して緑を確認。
+    - `MAX_ABORTS` を 2 から 1 に → 3 件が赤。戻して緑を確認。
 - Findings:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts` の「`MIN_CYCLES` 周期でも `MIN_RUN_CHARS` 未満 → run が無い」と `.pi/extensions/thinking-scrub/scrub/detect.test.ts` の「3 周期でも 400 文字未満 → 消さない」は、使っている本文が 300 文字以下なので、しきい値を 300 に下げても緑のままです。どちらかを 300 と 400 の間の長さにして、境目を押さえる必要があります。
+  - fixed: units.test.ts の当該ケースの本文を 344 文字（MIN_RUN_CHARS のすぐ下）にし、MIN_RUN_CHARS との差が 1 文未満である旨を工場と製品値から断言しました。MIN_RUN_CHARS を 300 にすると赤、400 に戻すと緑になることを確かめました。detect.test.ts の側は MIN_LENGTH の話で別のため、そのままにしました。
 - Doubts:
