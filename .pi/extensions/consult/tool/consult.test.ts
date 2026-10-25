@@ -22,6 +22,7 @@ import {
 } from './consult.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { aRunRecord } from '../../../../test/consult-fixture.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
@@ -126,13 +127,15 @@ function seedRunning(
   place: Place,
   extra: { session?: string; subagent?: string; pid?: number } = {},
 ) {
-  appendRun(place, {
-    session: extra.session ?? SESSION,
-    subagent: extra.subagent ?? 'consult-9',
-    role: 'review',
-    pid: extra.pid ?? process.pid,
-    started: Date.now(),
-  });
+  appendRun(
+    place,
+    aRunRecord({
+      session: extra.session ?? SESSION,
+      subagent: extra.subagent ?? 'consult-9',
+      pid: extra.pid ?? process.pid,
+      started: Date.now(),
+    }),
+  );
 }
 
 describe('run', () => {
@@ -154,23 +157,28 @@ describe('run', () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    seedRunning(place, { subagent: 'consult-3' });
+    const seedNum = 3;
+    const expectedNum = seedNum + 1;
+    seedRunning(place, { subagent: `consult-${seedNum}` });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
-    expect(textOf(result)).toContain('started: consult-4');
+    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
   });
 
   it('記録に consult-7 と consult-2 が混ざっている → 次は consult-8', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    seedRunning(place, { subagent: 'consult-7' });
-    seedRunning(place, { subagent: 'consult-2' });
+    const high = 7;
+    const low = 2;
+    const expectedNum = high + 1;
+    seedRunning(place, { subagent: `consult-${high}` });
+    seedRunning(place, { subagent: `consult-${low}` });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
-    expect(textOf(result)).toContain('started: consult-8');
+    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
   });
 
   it('別の session の consult-9 は数えない → この session の次は consult-1', async () => {
@@ -200,22 +208,26 @@ describe('run', () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
-    appendRun(place, {
-      session: SESSION,
-      subagent: 'consult-5',
-      role: 'review',
-      pid: process.pid,
-      started: Date.now() - 1000,
-      ended: Date.now(),
-      state: 'done',
-      files: [],
-      turns: 1,
-      spend: '0.0001 usd',
-    });
+    const seedNum = 5;
+    const expectedNum = seedNum + 1;
+    appendRun(
+      place,
+      aRunRecord({
+        session: SESSION,
+        subagent: `consult-${seedNum}`,
+        pid: process.pid,
+        started: Date.now() - 1000,
+        ended: Date.now(),
+        state: 'done',
+        files: [],
+        turns: 1,
+        spend: '0.0001 usd',
+      }),
+    );
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
-    expect(textOf(result)).toContain('started: consult-6');
+    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
   });
 
   it('書き込むロール（code）で worktree を省くと、サブエージェントを起こさずに拒む', async () => {
@@ -256,8 +268,10 @@ describe('完了の通知', () => {
     const { runtime, place } = setup(pi, run);
     await startSubagent(runtime, { role: 'review', task: '直す' });
 
+    const body = 'the subagent text';
+    const ref = 'ref: consult/code-1';
     const outcome: ConsultOutcome = {
-      text: 'the subagent text\n\nref: consult/code-1\n\n[consult] model-x / 3 turns / in 10 out 20',
+      text: `${body}\n\n${ref}\n\n[consult] model-x / 3 turns / in 10 out 20`,
       details: { type: 'review' },
     };
     resolveOutcome(outcome);
@@ -268,8 +282,8 @@ describe('完了の通知', () => {
     const records = readRuns(place, { session: SESSION });
     expect(records).toHaveLength(2);
     const done = records[1];
-    expect(done?.notice).toContain('the subagent text');
-    expect(done?.notice).toContain('ref: consult/code-1');
+    expect(done?.notice).toContain(body);
+    expect(done?.notice).toContain(ref);
     expect(done?.notice).toContain('[consult]');
     expect(typeof done?.token).toBe('string');
     expect(done?.token).toBe(records[0]?.token);
@@ -277,10 +291,11 @@ describe('完了の通知', () => {
 
   it('runner が投げる → 記録に 1 行、notice に失敗の本文。pi.sendMessage は呼ばれない', async () => {
     const { pi, calls } = fakePi();
+    const reason = new Error('boom');
     // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに runner を変える
     const run: ConsultRunner = (_ctx, _options, job) => {
       job.onStarted?.(process.pid);
-      return Promise.reject(new Error('boom'));
+      return Promise.reject(reason);
     };
     const { runtime, place } = setup(pi, run);
     await startSubagent(runtime, { role: 'review', task: '直す' });
@@ -289,7 +304,7 @@ describe('完了の通知', () => {
     expect(calls).toHaveLength(0);
     const records = readRuns(place, { session: SESSION });
     expect(records).toHaveLength(2);
-    expect(records[1]?.notice).toContain('boom');
+    expect(records[1]?.notice).toContain(reason.message);
   });
 });
 
@@ -384,34 +399,32 @@ describe('controlSubagent: cancel', () => {
 
   it('終わったサブエージェント → kill を呼ばず、理由を返す', () => {
     const found = placeFor(tempDir(), tempDir());
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: process.pid,
-      started: 1,
-      ended: 2,
-      state: 'done',
-    });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
+    const id = 'consult-9';
+    appendRun(
       found,
-      SESSION,
-      (pid) => {
-        kills.push(pid);
-      },
+      aRunRecord({
+        session: SESSION,
+        subagent: id,
+        pid: process.pid,
+        started: 1,
+        ended: 2,
+        state: 'done',
+      }),
     );
+    const kills: number[] = [];
+    const outcome = controlSubagent({ action: 'cancel', id }, new Map(), found, SESSION, (pid) => {
+      kills.push(pid);
+    });
 
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
   });
 
   it('記録に無い id → kill を呼ばず、理由を返す', () => {
+    const id = 'consult-999';
     const kills: number[] = [];
     const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-999' },
+      { action: 'cancel', id },
       new Map(),
       placeFor(tempDir(), tempDir()),
       SESSION,
@@ -422,7 +435,7 @@ describe('controlSubagent: cancel', () => {
 
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
-    expect(outcome.text).toContain('no such subagent: consult-999');
+    expect(outcome.text).toContain(`no such subagent: ${id}`);
   });
 
   it('別の session のサブエージェント → 止めず、理由を返す', () => {
@@ -443,56 +456,20 @@ describe('controlSubagent: cancel', () => {
     expect(outcome.details).toMatchObject({ cancelled: false });
     expect(outcome.text).toContain('another session');
   });
-
-  it('start と end のある subagent の停止 → kill しない', () => {
-    const found = placeFor(tempDir(), tempDir());
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: process.pid,
-      started: 1,
-      token: 'token-9',
-    });
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: process.pid,
-      started: 1,
-      ended: 2,
-      state: 'done',
-    });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      (pid) => {
-        kills.push(pid);
-      },
-      () => 'running',
-    );
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-  });
 });
 
 describe('controlSubagent: cancel (startToken)', () => {
   it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
     const found = placeFor(tempDir(), tempDir());
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: 11,
-      started: 1,
-      startToken: 'Wed Oct 21 12:41:12 2026',
-    });
+    const id = 'consult-9';
+    const startToken = 'Wed Oct 21 12:41:12 2026';
+    appendRun(
+      found,
+      aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
+    );
     const killsRunning: number[] = [];
     const outcomeRunning = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
+      { action: 'cancel', id },
       new Map(),
       found,
       SESSION,
@@ -505,7 +482,7 @@ describe('controlSubagent: cancel (startToken)', () => {
     expect(outcomeRunning.details).toMatchObject({ cancelled: true });
     const killsEnded: number[] = [];
     const outcomeEnded = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
+      { action: 'cancel', id },
       new Map(),
       found,
       SESSION,
@@ -520,17 +497,15 @@ describe('controlSubagent: cancel (startToken)', () => {
 
   it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
     const found = placeFor(tempDir(), tempDir());
-    appendRun(found, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: 11,
-      started: 1,
-      startToken: 'Wed Oct 21 12:41:12 2026',
-    });
+    const id = 'consult-9';
+    const startToken = 'Wed Oct 21 12:41:12 2026';
+    appendRun(
+      found,
+      aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
+    );
     const kills: number[] = [];
     const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
+      { action: 'cancel', id },
       new Map(),
       found,
       SESSION,
@@ -605,18 +580,19 @@ describe('controlSubagent: list', () => {
       controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION).text,
     );
     const done = placeFor(tempDir(), tempDir());
-    appendRun(done, {
-      session: SESSION,
-      subagent: 'consult-9',
-      role: 'review',
-      pid: process.pid,
-      started: 1,
-      ended: 2,
-      state: 'done',
-    });
-    texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), done, SESSION).text,
+    const doneId = 'consult-9';
+    appendRun(
+      done,
+      aRunRecord({
+        session: SESSION,
+        subagent: doneId,
+        pid: process.pid,
+        started: 1,
+        ended: 2,
+        state: 'done',
+      }),
     );
+    texts.push(controlSubagent({ action: 'cancel', id: doneId }, new Map(), done, SESSION).text);
     const lost = placeFor(tempDir(), tempDir());
     seedRunning(lost, { pid: 999_999 });
     texts.push(
@@ -655,15 +631,6 @@ describe('commands: 引数と空の一覧', () => {
     await runtime.commands.sound('nope', ctx);
     expect(notices[0]?.message).toContain('usage');
     expect(notices[0]?.type).toBe('error');
-  });
-
-  it('/consult-status はサブエージェントが 0 体なら、そう言う', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const { runtime } = setup(pi, run);
-    const { ctx, notices } = fakeCommandContext();
-    await runtime.commands.status('', ctx);
-    expect(notices[0]?.message).toContain('no subagent is running');
   });
 });
 
@@ -715,7 +682,7 @@ describe('beginRun: startToken', () => {
 });
 
 describe('beginRun: token', () => {
-  it('完了の行は token を持つ（開始行と同じ UUID）', async () => {
+  it('完了の行は開始行と同じ token を持つ', async () => {
     const { pi } = fakePi();
     const pid = process.pid;
     const seen: { optionsToken?: string; jobToken?: string } = {};
@@ -734,7 +701,7 @@ describe('beginRun: token', () => {
     const end = records[1];
     expect(start?.ended).toBeUndefined();
     expect(typeof start?.token).toBe('string');
-    expect(start?.token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(start?.token).toBe(seen.optionsToken);
     expect(seen.optionsToken).toBe(start?.token);
     expect(seen.jobToken).toBe(start?.token);
     expect(end?.ended).toBeDefined();

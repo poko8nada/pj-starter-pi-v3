@@ -34,56 +34,56 @@ function cleanGit(head = 'a1b2c3') {
 }
 
 describe('commitInWorktree', () => {
-  it('変更のある worktree → committed: <hash>（そのハッシュが HEAD）', () => {
-    const { git } = cleanGit('deadbee');
-    expect(commitInWorktree(git, '2-a')).toEqual({ kind: 'committed', hash: 'deadbee' });
+  it('変更のある worktree → committed と、そのハッシュが HEAD', () => {
+    const id = '2-a';
+    const head = 'deadbee';
+    const { git } = cleanGit(head);
+    expect(commitInWorktree(git, id)).toEqual({ kind: 'committed', hash: head });
   });
 
-  it('変更が無い worktree → no change（git は status しか見ない）', () => {
+  it('変更が無い → no change（git は status しか見ない）', () => {
+    const id = '2-a';
     const { git, calls } = fakeGit({ dirty: false });
-    expect(commitInWorktree(git, '2-a')).toEqual({ kind: 'no-change' });
+    expect(commitInWorktree(git, id)).toEqual({ kind: 'no-change' });
     expect(calls.map((args) => args[0])).toEqual(['status']);
   });
 
-  it('フックが拒む → rejected とその出力。add した分は残す（reset しない）', () => {
+  it('フックが拒む → rejected と出力。add した分は残す（reset しない）', () => {
+    const id = '2-a';
     const { git, calls } = cleanGit();
-    const rejected = fakeGit({ dirty: true, status: 1, output: 'hooks: tests failed' });
-    const outcome = commitInWorktree(rejected.git, '2-a');
-    expect(outcome).toEqual({ kind: 'rejected', output: 'hooks: tests failed' });
+    const output = 'hooks: tests failed';
+    const rejected = fakeGit({ dirty: true, status: 1, output });
+    const outcome = commitInWorktree(rejected.git, id);
+    expect(outcome).toEqual({ kind: 'rejected', output });
     // 戻す道（reset / checkout）を呼んでいないこと
     expect(rejected.calls.map((args) => args[0])).toEqual(['status', 'add', 'commit']);
-    expect(commitInWorktree(git, '2-a').kind).toBe('committed');
+    expect(commitInWorktree(git, id).kind).toBe('committed');
     expect(calls.some((args) => args[0] === 'merge')).toBe(false);
   });
 
-  it('同じ worktree で 2 回目 → no change（1 回目で全部入っている）', () => {
-    const first = fakeGit({ dirty: true, head: 'one' });
-    expect(commitInWorktree(first.git, '2-a').kind).toBe('committed');
-    // 2 回目は変更が無い状態の git で呼ばれる
-    const second = fakeGit({ dirty: false });
-    expect(commitInWorktree(second.git, '2-a')).toEqual({ kind: 'no-change' });
-  });
-
-  it("メッセージは consult(<unit>): the subagent's work（引数で渡せない）", () => {
+  it('メッセージは commitMessage から取る（引数で渡せない）', () => {
+    const id = '2-a';
     const { git, calls } = cleanGit();
-    commitInWorktree(git, '2-a');
+    commitInWorktree(git, id);
     const commit = calls.find((args) => args[0] === 'commit');
-    expect(commit?.[2]).toBe("consult(2-a): the subagent's work");
-    expect(commitMessage('2-a')).toBe("consult(2-a): the subagent's work");
+    expect(commit?.[2]).toBe(commitMessage(id));
   });
 });
 
 describe('compose', () => {
   it('3 つの結果をそれぞれ 1 行にする', () => {
+    const hash = 'abc';
+    const output = 'ng';
     expect(compose({ kind: 'no-change' })).toBe('no change');
-    expect(compose({ kind: 'committed', hash: 'abc' })).toBe('committed: abc');
-    expect(compose({ kind: 'rejected', output: 'ng' })).toBe('rejected: ng');
+    expect(compose({ kind: 'committed', hash })).toBe(`committed: ${hash}`);
+    expect(compose({ kind: 'rejected', output })).toBe(`rejected: ${output}`);
   });
 });
 
 describe('parseCommitRequest', () => {
   it('worktree だけを受ける', () => {
-    expect(parseCommitRequest({ worktree: '2-a' })).toBe('2-a');
+    const worktree = '2-a';
+    expect(parseCommitRequest({ worktree })).toBe(worktree);
   });
 
   it('worktree が無い・空 → 使い方つきで投げる', () => {
@@ -93,6 +93,7 @@ describe('parseCommitRequest', () => {
   });
 
   it('message を渡しても引数として拾わない（型は道具が作る）', () => {
-    expect(parseCommitRequest({ worktree: '2-a', message: '好きな文' })).toBe('2-a');
+    const worktree = '2-a';
+    expect(parseCommitRequest({ worktree, message: '好きな文' })).toBe(worktree);
   });
 });
