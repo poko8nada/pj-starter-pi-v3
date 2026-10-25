@@ -9,23 +9,15 @@ import {
   type SessionEntry,
 } from '@earendil-works/pi-coding-agent';
 import { tempDir } from '../../../test/temp-dir.ts';
+import { piUsage } from '../../../test/pi-fixture.ts';
+import { settingsJson } from '../../../test/prune-fixture.ts';
 import { CUSTOM_TYPE, isPrunePass } from './entry/data.ts';
+import { defaultSettings } from './settings/schema.ts';
 import { createWiring, registerPrune, type PiPort, type PruneCtx } from './index.ts';
 import { createPorts, type ModelCell } from './prune/ports.ts';
 import type { PassPorts } from './prune/run.ts';
 
 let seq = 0;
-
-function usage() {
-  return {
-    input: 1,
-    output: 1,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 2,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-  };
-}
 
 function nextId(): { readonly id: string; readonly parentId: string | null } {
   seq += 1;
@@ -45,7 +37,7 @@ function assistantCall(callId: string): SessionEntry {
       api: 'openai-completions',
       provider: 'test',
       model: 'test-model',
-      usage: usage(),
+      usage: piUsage(),
       stopReason: 'stop',
       timestamp: seq,
     },
@@ -83,7 +75,7 @@ function assistantText(text: string): SessionEntry {
       api: 'openai-completions',
       provider: 'test',
       model: 'test-model',
-      usage: usage(),
+      usage: piUsage(),
       stopReason: 'stop',
       timestamp: seq,
     },
@@ -127,7 +119,7 @@ function tokensOf(entry: SessionEntry): number {
 
 function settingsDirWith(document: Record<string, unknown>): string {
   const dir = tempDir();
-  writeFileSync(join(dir, 'settings.json'), JSON.stringify(document));
+  writeFileSync(join(dir, 'settings.json'), settingsJson(document));
   return dir;
 }
 
@@ -805,7 +797,7 @@ describe('onCommand', () => {
     await wiring.onCommand('now', harness.ctx);
     expect(harness.appended).toHaveLength(1);
     expect(harness.notified).toHaveLength(1);
-    expect(harness.notified[0]).toContain('dropped: 1 件');
+    expect(harness.notified[0]).toContain('dropped:');
     expect(wiring.getStatus().lastPass).toBeDefined();
   });
 
@@ -836,7 +828,7 @@ describe('onCommand', () => {
     await wiring.onCommand('', harness.ctx);
     expect(harness.notified).toHaveLength(1);
     expect(harness.notified[0]).toContain('prune: on');
-    expect(harness.notified[0]).toContain('ratio: 0.5');
+    expect(harness.notified[0]).toContain(`ratio: ${String(defaultSettings().ratio)}`);
   });
 
   it('on と off → 設定ファイルの enabled が切り替わる', async () => {

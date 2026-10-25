@@ -1,91 +1,75 @@
 import { describe, expect, it } from 'vitest';
 import { estimateTokens } from '@earendil-works/pi-coding-agent';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
-import { collect, excerptOf, messageText, OMITTED_MARK, type EntryMessage } from './collect.ts';
+import { piUsage } from '../../../../test/pi-fixture.ts';
+import { collect, excerptOf, messageText, type EntryMessage } from './collect.ts';
 
-let seq = 0;
-
-function usage() {
+function userEntry(id: string, text: string): SessionEntry {
   return {
-    input: 1,
-    output: 1,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 2,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+    type: 'message',
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
+    message: { role: 'user', content: [{ type: 'text', text }], timestamp: 1 },
   };
 }
 
-function nextId(): { readonly id: string; readonly parentId: string | null } {
-  seq += 1;
-  return { id: `e${seq}`, parentId: seq > 1 ? `e${seq - 1}` : null };
-}
-
-function userEntry(text: string): SessionEntry {
-  const ids = nextId();
+function callEntry(
+  id: string,
+  callId: string,
+  name: string,
+  args: Record<string, string>,
+): SessionEntry {
   return {
     type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
-    message: { role: 'user', content: [{ type: 'text', text }], timestamp: seq },
-  };
-}
-
-function callEntry(callId: string, name: string, args: Record<string, string>): SessionEntry {
-  const ids = nextId();
-  return {
-    type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
     message: {
       role: 'assistant',
       content: [{ type: 'toolCall', id: callId, name, arguments: args }],
       api: 'openai-completions',
       provider: 'test',
       model: 'test-model',
-      usage: usage(),
+      usage: piUsage(),
       stopReason: 'stop',
-      timestamp: seq,
+      timestamp: 1,
     },
   };
 }
 
-function resultEntry(callId: string, toolName: string, text: string): SessionEntry {
-  const ids = nextId();
+function resultEntry(id: string, callId: string, toolName: string, text: string): SessionEntry {
   return {
     type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
     message: {
       role: 'toolResult',
       toolCallId: callId,
       toolName,
       content: [{ type: 'text', text }],
       isError: false,
-      timestamp: seq,
+      timestamp: 1,
     },
   };
 }
 
-function assistantEntry(text: string): SessionEntry {
-  const ids = nextId();
+function assistantEntry(id: string, text: string): SessionEntry {
   return {
     type: 'message',
-    id: ids.id,
-    parentId: ids.parentId,
-    timestamp: new Date(seq).toISOString(),
+    id,
+    parentId: null,
+    timestamp: new Date(1).toISOString(),
     message: {
       role: 'assistant',
       content: [{ type: 'text', text }],
       api: 'openai-completions',
       provider: 'test',
       model: 'test-model',
-      usage: usage(),
+      usage: piUsage(),
       stopReason: 'stop',
-      timestamp: seq,
+      timestamp: 1,
     },
   };
 }
@@ -101,44 +85,52 @@ function tokensOf(entry: SessionEntry): number {
 function oldAndRecent(): {
   readonly entries: readonly SessionEntry[];
   readonly oldId: string;
+  readonly toolName: string;
+  readonly oldText: string;
   readonly recentTokens: number;
 } {
-  const user = userEntry('古い質問');
-  const oldCall = callEntry('c-old', 'read', { path: 'old.txt' });
-  const oldResult = resultEntry('c-old', 'read', '古い結果の本文');
-  const newCall = callEntry('c-new', 'read', { path: 'new.txt' });
-  const newResult = resultEntry('c-new', 'read', '直近の結果の本文');
+  const toolName = 'read';
+  const oldText = '古い結果の本文';
+  const user = userEntry('e-user', '古い質問');
+  const oldCall = callEntry('e-old-call', 'c-old', toolName, { path: 'old.txt' });
+  const oldResult = resultEntry('e-old-result', 'c-old', toolName, oldText);
+  const newCall = callEntry('e-new-call', 'c-new', toolName, { path: 'new.txt' });
+  const newResult = resultEntry('e-new-result', 'c-new', toolName, '直近の結果の本文');
   const entries = [user, oldCall, oldResult, newCall, newResult];
   return {
     entries,
     oldId: oldResult.id,
+    toolName,
+    oldText,
     recentTokens: tokensOf(newCall) + tokensOf(newResult),
   };
 }
 
 describe('collect', () => {
-  it('古い toolResult 1 件と直近の toolResult 1 件 → 候補は古い 1 件', () => {
-    const { entries, oldId, recentTokens } = oldAndRecent();
+  it('古い toolResult と直近の 1 件 → 候補は古い 1 件', () => {
+    const { entries, oldId, toolName, oldText, recentTokens } = oldAndRecent();
     const collected = collect({ entries, recentTokens, done: new Set() });
     expect(collected.candidates).toHaveLength(1);
     expect(collected.candidates[0]?.id).toBe(oldId);
-    expect(collected.candidates[0]?.toolName).toBe('read');
-    expect(collected.candidates[0]?.chars).toBe('古い結果の本文'.length);
+    expect(collected.candidates[0]?.toolName).toBe(toolName);
+    expect(collected.candidates[0]?.chars).toBe(oldText.length);
   });
 
-  it('直近の合計がちょうど recentTokens → 境界のエントリは直近に残る', () => {
-    const oldCall = callEntry('c-edge', 'read', { path: 'edge.txt' });
-    const oldResult = resultEntry('c-edge', 'read', 'さらに古い結果');
-    const mid = assistantEntry('途中の返答');
-    const recent = assistantEntry('直近の返答');
+  it('直近の合計がちょうど recentTokens → 境目のエントリは直近に残る', () => {
+    const toolName = 'read';
+    const oldCall = callEntry('e-edge-call', 'c-edge', toolName, { path: 'edge.txt' });
+    const oldResult = resultEntry('e-edge-result', 'c-edge', toolName, 'さらに古い結果');
+    const mid = assistantEntry('e-mid', '途中の返答');
+    const recent = assistantEntry('e-recent', '直近の返答');
     const entries = [oldCall, oldResult, mid, recent];
+    const recentIds = [mid.id, recent.id];
     const collected = collect({
       entries,
       recentTokens: tokensOf(mid) + tokensOf(recent),
       done: new Set(),
     });
     expect(collected.candidates.map((candidate) => candidate.id)).toEqual([oldResult.id]);
-    expect(collected.recent).toHaveLength(2);
+    expect(collected.recent).toHaveLength(recentIds.length);
   });
 
   it('recent が直近 2 件を古い順に持ち、tokens が全件の合計', () => {
@@ -166,7 +158,7 @@ describe('collect', () => {
   });
 
   it('古いエントリが user と assistant だけ → 候補 0', () => {
-    const entries = [userEntry('質問'), assistantEntry('返答')];
+    const entries = [userEntry('e-q', '質問'), assistantEntry('e-a', '返答')];
     const collected = collect({ entries, recentTokens: 0, done: new Set() });
     expect(collected.candidates).toHaveLength(0);
   });
@@ -179,48 +171,57 @@ describe('collect', () => {
     ).toHaveLength(1);
   });
 
-  it('結果に対応する toolCall が無い → args は空文字で候補には残る', () => {
-    const orphan = resultEntry('c-missing', 'bash', '呼び出しの無い結果');
+  it('対応する toolCall が無い → args は空文字で候補には残る', () => {
+    const toolName = 'bash';
+    const orphan = resultEntry('e-orphan', 'c-missing', toolName, '呼び出しの無い結果');
     const collected = collect({ entries: [orphan], recentTokens: 0, done: new Set() });
     expect(collected.candidates).toHaveLength(1);
     expect(collected.candidates[0]?.args).toBe('');
   });
 
-  it('引数の文字列が 199 / 200 / 201 文字 → 199 と 200 はそのまま、201 は 200 文字に切れる', () => {
-    // `read({"text":"..."})` は 17 文字の頭に本文が付く。182 / 183 / 184 文字で 199 / 200 / 201 文字になる
-    const short = callEntry('c-199', 'read', { text: 'x'.repeat(182) });
-    const shortResult = resultEntry('c-199', 'read', '短い');
-    const exact = callEntry('c-200', 'read', { text: 'x'.repeat(183) });
-    const exactResult = resultEntry('c-200', 'read', 'ぴったり');
-    const long = callEntry('c-201', 'read', { text: 'x'.repeat(184) });
-    const longResult = resultEntry('c-201', 'read', '長い');
+  it('引数が短い・ちょうど・長い → 短いとちょうどはそのまま、長いだけ切れる', () => {
+    const toolName = 'read';
+    const shortArgs = { text: 'x'.repeat(182) };
+    const exactArgs = { text: 'x'.repeat(183) };
+    const longArgs = { text: 'x'.repeat(184) };
+    const short = callEntry('e-short', 'c-199', toolName, shortArgs);
+    const shortResult = resultEntry('e-short-result', 'c-199', toolName, '短い');
+    const exact = callEntry('e-exact', 'c-200', toolName, exactArgs);
+    const exactResult = resultEntry('e-exact-result', 'c-200', toolName, 'ぴったり');
+    const long = callEntry('e-long', 'c-201', toolName, longArgs);
+    const longResult = resultEntry('e-long-result', 'c-201', toolName, '長い');
     const entries = [short, shortResult, exact, exactResult, long, longResult];
     const collected = collect({ entries, recentTokens: 0, done: new Set() });
     const byId = new Map(collected.candidates.map((candidate) => [candidate.id, candidate]));
-    expect(byId.get(shortResult.id)?.args.length).toBe(199);
-    expect(byId.get(exactResult.id)?.args.length).toBe(200);
-    expect(byId.get(longResult.id)?.args.length).toBe(200);
+    const shortRaw = `${toolName}(${JSON.stringify(shortArgs)})`;
+    const exactRaw = `${toolName}(${JSON.stringify(exactArgs)})`;
+    const longRaw = `${toolName}(${JSON.stringify(longArgs)})`;
+    expect(byId.get(shortResult.id)?.args).toBe(shortRaw);
+    expect(byId.get(exactResult.id)?.args).toBe(exactRaw);
+    const longArgsText = byId.get(longResult.id)?.args ?? '';
+    expect(longArgsText.length).toBeLessThan(longRaw.length);
+    expect(longRaw.startsWith(longArgsText)).toBe(true);
+    expect(longArgsText.length).toBe((byId.get(exactResult.id)?.args ?? '').length);
   });
 
   it('結果が空の text ブロック → chars 0 で候補に残る', () => {
-    // 空の結果は 0 トークンで境界を動かさないので、そのあとに大きい伝言を置いて古い側に残す
-    const call = callEntry('c-empty', 'read', { path: 'empty.txt' });
-    const ids = nextId();
+    const toolName = 'read';
+    const call = callEntry('e-call', 'c-empty', toolName, { path: 'empty.txt' });
     const empty: SessionEntry = {
       type: 'message',
-      id: ids.id,
-      parentId: ids.parentId,
-      timestamp: new Date(seq).toISOString(),
+      id: 'e-empty',
+      parentId: null,
+      timestamp: new Date(1).toISOString(),
       message: {
         role: 'toolResult',
         toolCallId: 'c-empty',
-        toolName: 'read',
+        toolName,
         content: [],
         isError: false,
-        timestamp: seq,
+        timestamp: 1,
       },
     };
-    const big = assistantEntry('y'.repeat(1000));
+    const big = assistantEntry('e-big', 'y'.repeat(1000));
     const collected = collect({ entries: [call, empty, big], recentTokens: 0, done: new Set() });
     expect(collected.candidates).toHaveLength(1);
     expect(collected.candidates[0]?.id).toBe(empty.id);
@@ -237,20 +238,22 @@ function assistantMessage(content: AssistantContent): EntryMessage {
     api: 'openai-completions',
     provider: 'test',
     model: 'test-model',
-    usage: usage(),
+    usage: piUsage(),
     stopReason: 'stop',
     timestamp: 1,
   };
 }
 
 describe('messageText', () => {
-  it('text 2 つと toolCall が混ざる → text だけを連結した文字列', () => {
+  it('text 2 つと toolCall が混ざる → text だけを連結', () => {
+    const first = 'hello ';
+    const second = 'world';
     const message = assistantMessage([
-      { type: 'text', text: 'hello ' },
+      { type: 'text', text: first },
       { type: 'toolCall', id: 'c1', name: 'read', arguments: { path: 'a.txt' } },
-      { type: 'text', text: 'world' },
+      { type: 'text', text: second },
     ]);
-    expect(messageText(message)).toBe('hello world');
+    expect(messageText(message)).toBe(first + second);
   });
 
   it('text ブロックが無い → 空文字', () => {
@@ -262,27 +265,32 @@ describe('messageText', () => {
 });
 
 describe('excerptOf', () => {
-  it('3000 文字 → 先頭 500 と末尾 500 を残し注記を挟む', () => {
+  it('長い文 → 先頭と末尾を残し注記を挟む', () => {
+    const head = 500;
+    const tail = 500;
     const text = 'a'.repeat(3000);
-    const excerpt = excerptOf(text, 500, 500);
-    expect(excerpt.startsWith(text.slice(0, 500))).toBe(true);
-    expect(excerpt.endsWith(text.slice(3000 - 500))).toBe(true);
-    expect(excerpt).toContain(OMITTED_MARK);
-    expect(excerpt).toContain('2000');
+    const excerpt = excerptOf(text, head, tail);
+    expect(excerpt.startsWith(text.slice(0, head))).toBe(true);
+    expect(excerpt.endsWith(text.slice(text.length - tail))).toBe(true);
+    expect(excerpt).toContain(String(text.length - head - tail));
+    expect(excerpt.length).toBeLessThan(text.length);
   });
 
   it('1000 文字ちょうど → 注記なしで全文', () => {
-    const text = 'b'.repeat(1000);
-    expect(excerptOf(text, 500, 500)).toBe(text);
+    const head = 500;
+    const tail = 500;
+    const text = 'b'.repeat(head + tail);
+    expect(excerptOf(text, head, tail)).toBe(text);
   });
 
   it('空 → 空', () => {
-    expect(excerptOf('', 500, 500)).toBe('');
+    const input = '';
+    expect(excerptOf(input, 500, 500)).toBe(input);
   });
 
   it('候補の excerpt は結果の抜粋', () => {
-    const { entries, recentTokens } = oldAndRecent();
+    const { entries, recentTokens, oldText } = oldAndRecent();
     const collected = collect({ entries, recentTokens, done: new Set() });
-    expect(collected.candidates[0]?.excerpt).toBe('古い結果の本文');
+    expect(collected.candidates[0]?.excerpt).toBe(oldText);
   });
 });

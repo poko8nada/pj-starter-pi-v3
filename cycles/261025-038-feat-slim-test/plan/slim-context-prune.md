@@ -250,23 +250,36 @@ test/
 ### Slice 1: 設定と記録
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 8348585b79bbdede85afde6f71bbe530e11e5c62
 - Stopped:
 
 ### Slice 2: 候補の選別
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: a9175ede8d8fc617a48e9b56a5b2b792b5087e34
 - Stopped:
 
 ### Slice 3: 配線と記録
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 9a8de9149ad344e86dd1b261caf86d7168569971
 - Stopped:
+
+### Cleanup: 未使用の工場関数
+
+- Findings:
+  - なし
+- Unplanned:
+  - `test/prune-fixture.ts` の `pruneDrop` と `pruneMarker` を落とした。suite から参照がなく、製品関数の写しになるため。
 
 ## Review
 
@@ -288,14 +301,57 @@ test/
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/context-prune/prune/run.test.ts:242` の表題「合計してから割った値」は製品（`run.ts:106` の件ごとの `Math.ceil(chars / 4)` の合計で 102 になります）と断言の双方と食い違い、旧表題の「合計してから割った 101 ではない」という正しい注記を落としたため誤解を招きます。
+    - fixed: 表題を「件ごとに切り上げて合計した値」に直した。
 - Unlisted:
+  - なし — Files の 15 件と差分の 15 件が一致することを確かめました。
 - Gaps:
+  - なし — Slices の Steps の各ケースに対応する検査が存在することを確かめました。
 - Unproven:
+  - `.pi/extensions/context-prune/entry/render.test.ts:32` は `formatCount` を使わず素の数値（900 前後）で期待を組むため、`render.ts:24` の桁区切りを外しても緑のままになります。
+    - fixed: `chars` を 1000 以上にし、期待表示を表（12345→12,345、12036→12,036、1234→1,234）に 1 度だけ書いた。`formatCount` を外すと赤になることを確かめて戻した。
+  - `.pi/extensions/context-prune/apply/drafts.test.ts:6` の `textOf` は `String(chars)` で期待を組み `formatCount` を使わないため、10〜123 の小さな値では `drafts.ts:11` の桁区切りが壊れても緑のままになります。
+    - fixed: `textOf` をやめ、`chars` を 1234 にし、期待表示を表（1234→1,234）に 1 度だけ書いた。`formatCount` を外すと赤になることを確かめて戻した。
 - Noise:
+  - なし — 断言に残る数値・文字列は仕様の値（状態の種別や件数の長さなど）であり、型やスキーマが保証する前提の再掲は見当たりませんでした。
 - Doubts:
+  - なし
+
+### Round 2
+
+- Stale:
+  - `.pi/extensions/context-prune/prune/run.test.ts:242` の表題修正は有効であることを確認しました。
+    - fixed: 表題が「件ごとに切り上げて合計した値」になっており（現行 242 行目）、断言が `Math.ceil(chars / 4) + Math.ceil(chars / 4)` と `chars + chars` になっております（現行 262〜263 行目、`chars` は 201）。
+    - 根拠: `git diff cea8b9e..HEAD` に表題と断言の変更が現れております。製品 `.pi/extensions/context-prune/prune/run.ts:104〜106` は verdict ごとに `droppedTokens += Math.ceil(chars / 4)` を合計しており、201 文字×2 件は 51＋51＝102 となります。旧表題の「合計してから割った値」が示す `Math.ceil(402 / 4)`＝101 とは一致しないため、旧表題は製品と断言の双方と食い違うという Round 1 の指摘は正しく、新表題は製品の計算方法と一致しております。
+- Unlisted:
+  - なし — Round 1 の `fixed:` 対象ではございませんため、今回の確認範囲として新たな判定は行っておりません。
+- Gaps:
+  - なし — Round 1 の `fixed:` 対象ではございませんため、今回の確認範囲として新たな判定は行っておりません。
+- Unproven:
+  - `.pi/extensions/context-prune/entry/render.test.ts:32` の桁区切り修正は有効であることを確認しました。
+    - fixed: `shownCounts` の表に 12345→12,345、12036→12,036、1234→1,234 が各 1 度だけ書かれ（現行 15〜19 行目）、`smallPass()` が `tokensBefore` 12345 と `chars` 1234 を使っております（現行 21〜28 行目）。期待表示は表の値から組まれております（現行 36〜37・55・59・93 行目）。
+    - 根拠: `git diff cea8b9e..HEAD` に `shownCounts` の導入と 900 前後の素数値からの置き換えが現れております。`test/prune-fixture.ts:44〜46` のとおり `chars` 1234 の `droppedTokens` は 309 となり、後は 12345−309＝12036 です。製品 `entry/render.ts:22〜30` は前後トークンと文字数に `formatCount` を使い、`format/count.ts:4〜6` は `toLocaleString('ja-JP')` です。`formatCount` を外して素の文字列にしますと 12345・12036・1234 は区切り無しになり、表の区切り有り文字列と一致しないため赤になります。旧来の 900 前後の値では区切りの有無が現れないという Round 1 の指摘は解消されております。
+  - `.pi/extensions/context-prune/apply/drafts.test.ts:6` の桁区切り修正は有効であることを確認しました。
+    - fixed: `textOf`（`String(chars)` で期待を組む関数）が無くなり、`shownCases` の表に 1234→1,234 が 1 度だけ書かれ（現行 5 行目）、各ケースが `template.split('{chars}').join(shown)` で期待を組んでおります（現行 17・30・32・52 行目）。
+    - 根拠: `git diff cea8b9e..HEAD` に `textOf` の削除と `chars` 1234 への置き換えが現れております。製品 `apply/drafts.ts:10〜12` の `markerText` は `formatCount(chars)` を使います。`formatCount` を外しますと 1234 は「1234」となり表の「1,234」と一致しないため赤になります。旧来の 10〜123 の小さな値では区切りの有無が現れないという Round 1 の指摘は解消されております。
+- Noise:
+  - なし — Round 1 の `fixed:` 対象ではございませんため、今回の確認範囲として新たな判定は行っておりません。
+- Doubts:
+  - 「`formatCount` を外すと赤になることを確かめて戻した」との赤確認自体は、本レビューでは再実行しておらず、差分と製品コードの静的な照合による判断でございます。コードを変更しない制約のため、ミューテーションの再実行は行っておりません。
+  - `render.test.ts:59` の `droppedTokens`（309）は 3 桁のため単独では区切りを検証しませんが、同一ケースの前後トークンと文字数で検証されるため、所見とはしておりません。
+  - `drafts.test.ts:42` の 2 パス目の `chars: 20` は 3 桁以下ですが、同一ファイルの 1234 のケースで区切りが検証されるため、所見とはしておりません。
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 54 ファイル / 832 ケース緑（`format/count.test.ts` を削除したため 1 ファイル減）
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `settings/schema.ts` の `ratio` の範囲を 0.2〜0.8 から 0〜1 に広げる → 「{"ratio":0.19} → broken」と「{"ratio":0.81} → broken」が赤。戻して緑を確認。
+    - `prune/collect.ts` の引数の上限を 200 から 201 に → 「引数が短い・ちょうど・長い」が赤。戻して緑を確認。
+    - `prune/plan.ts` の割合の比較を `<` から `<=` に → 4 件が赤。戻して緑を確認。
+- Findings: なし
 - Doubts:
+  - `format/count.test.ts` を削除したので、桁区切りを単体で試すテストはありません。桁区切りは `render.test.ts` と `drafts.test.ts` の表（1,234 など）が押さえています。
