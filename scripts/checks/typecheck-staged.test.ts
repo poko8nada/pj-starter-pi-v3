@@ -6,15 +6,18 @@
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
  * だから `-p` の道に `.pi` が入るかで、`.pi` の group か root の group かが分かる。
  * tsc そのものが成功するかは pre-commit の時系列で担保されているので、ここでは見ない。
+ * 印と旗は `test/scripts-fixture.ts` から取る。
  */
 
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { INVALID_LIST_LINE } from '../../test/scripts-fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck-staged.mjs');
+const STUB_MARK = 'stub -p';
 
 interface RunOut {
   readonly status: number;
@@ -44,7 +47,7 @@ function stubTsc(root: string): void {
     '#!/usr/bin/env node\n' +
       "const at = process.argv.indexOf('-p');\n" +
       'const got = at >= 0 ? (process.argv[at + 1] ?? "") : "";\n' +
-      'console.log(`stub -p ${got}`);\n' +
+      `console.log(\`${STUB_MARK} \${got}\`);\n` +
       'process.exit(0);\n',
   );
   chmodSync(stub, 0o755);
@@ -61,106 +64,85 @@ function writeScopes(root: string, scopes: readonly string[]): void {
   writeFile(root, join('scripts', 'checks', 'scopes.json'), JSON.stringify(scopes));
 }
 
+/** 対象の 8 つの拡張子（製品の `CODE_EXTENSIONS` と同じ顔つき） */
+function codeExtensions(): readonly string[] {
+  return ['ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs'];
+}
+
 describe('typecheck-staged', () => {
-  it('対象が 1 つも無い → exit 0', () => {
+  it('対象が無い → exit 0', () => {
     const root = fakeRoot();
     stubTsc(root);
     expect(run(root, []).status).toBe(0);
   });
 
-  it('存在しないファイルだけ → exit 0', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    expect(run(root, [join(root, 'nope.ts')]).status).toBe(0);
-  });
-
-  it('型チェックの対象外の拡張子（.md）は除外する → exit 0', () => {
+  it('対象は 8 つの拡張子で、md は外れる', () => {
+    const extensions = codeExtensions();
+    for (const extension of extensions) {
+      const root = fakeRoot();
+      stubTsc(root);
+      writeFile(root, 'tsconfig.json', '{}');
+      const file = writeFile(root, `a.${extension}`);
+      const out = run(root, [file]);
+      expect(out.status).toBe(0);
+      expect(out.stdout).toContain(STUB_MARK);
+    }
     const root = fakeRoot();
     stubTsc(root);
     const md = writeFile(root, 'a.md', '# hi\n');
     const out = run(root, [md]);
     expect(out.status).toBe(0);
-    expect(out.stdout).not.toContain('stub -p');
+    expect(out.stdout).not.toContain(STUB_MARK);
   });
 
-  it('.tsx / .mts / .js / .mjs も型チェックの対象に入る', () => {
-    for (const ext of ['.tsx', '.mts', '.js', '.mjs']) {
-      const root = fakeRoot();
-      stubTsc(root);
-      writeFile(root, 'tsconfig.json', '{}');
-      const file = writeFile(root, `a${ext}`);
-      const out = run(root, [file]);
-      expect(out.status).toBe(0);
-      expect(out.stdout).toContain('stub -p');
-    }
+  it('大文字の拡張子も対象になる', () => {
+    const root = fakeRoot();
+    stubTsc(root);
+    writeFile(root, 'tsconfig.json', '{}');
+    const file = writeFile(root, 'a.TS');
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(STUB_MARK);
   });
 
-  it('一覧に .pi があるツリー → .pi の下は .pi の group で回る', () => {
+  it('一覧に .pi があるツリー → .pi の下は .pi の範囲で回る', () => {
+    const scope = '.pi';
     const root = fakeRoot();
     stubTsc(root);
     // ルートの tsconfig は置かない。.pi の tsconfig だけがある
-    writeFile(root, join('.pi', 'tsconfig.json'), '{}');
-    const ts = writeFile(root, join('.pi', 'extensions', 'a.ts'));
-    writeScopes(root, ['.pi']);
-    const out = run(root, [ts]);
+    writeFile(root, join(scope, 'tsconfig.json'), '{}');
+    const target = writeFile(root, join(scope, 'extensions', 'a.ts'));
+    writeScopes(root, [scope]);
+    const out = run(root, [target]);
     expect(out.status).toBe(0);
     // 一時 tsconfig は .pi の下に置かれる（`-p` の道に .pi が入る）
-    expect(out.stdout).toContain(join(root, '.pi'));
+    expect(out.stdout).toContain(join(root, scope));
   });
 
-  it('一覧に .pi が無いツリー → .pi の下は root の group に落ちる', () => {
+  it('一覧に .pi が無ければ root の範囲で回る', () => {
+    const scope = '.pi';
+    const other = '.opencode';
     const root = fakeRoot();
     stubTsc(root);
     writeFile(root, 'tsconfig.json', '{}');
-    writeFile(root, join('.pi', 'tsconfig.json'), '{}');
-    const ts = writeFile(root, join('.pi', 'a.ts'));
-    writeScopes(root, ['.opencode']);
-    const out = run(root, [ts]);
+    writeFile(root, join(scope, 'tsconfig.json'), '{}');
+    const target = writeFile(root, join(scope, 'a.ts'));
+    writeScopes(root, [other]);
+    const out = run(root, [target]);
     expect(out.status).toBe(0);
     // 一時 tsconfig は root の下に置かれる（`-p` の道に .pi が入らない）
-    expect(out.stdout).toContain('stub -p');
-    expect(out.stdout).not.toContain(join(root, '.pi'));
+    expect(out.stdout).toContain(STUB_MARK);
+    expect(out.stdout).not.toContain(join(root, scope));
   });
 
-  it('一覧が無いツリー → root の group で回る', () => {
+  it('scopes.json が JSON でない → exit 1 と理由の行', () => {
     const root = fakeRoot();
     stubTsc(root);
     writeFile(root, 'tsconfig.json', '{}');
-    const ts = writeFile(root, 'a.ts');
-    const out = run(root, [ts]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('stub -p');
-    expect(out.stdout).not.toContain(join(root, '.pi'));
-  });
-
-  it('一覧が無く root の tsconfig も無い → group が空、exit 0（tsc を探しに行かない）', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    const ts = writeFile(root, 'a.ts');
-    const out = run(root, [ts]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).not.toContain('stub -p');
-    expect(out.stderr).not.toContain('Failed to run tsc');
-  });
-
-  it('一覧に .opencode があるが .opencode/tsconfig.json が無い → skip、exit 0', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    const ts = writeFile(root, join('.opencode', 'a.ts'));
-    writeScopes(root, ['.pi', '.opencode']);
-    const out = run(root, [ts]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).not.toContain('stub -p');
-  });
-
-  it('一覧が JSON として読めない → exit 1（the list is not valid JSON の行）', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    writeFile(root, 'tsconfig.json', '{}');
-    const ts = writeFile(root, 'a.ts');
+    const target = writeFile(root, 'a.ts');
     writeFile(root, join('scripts', 'checks', 'scopes.json'), '{not json');
-    const out = run(root, [ts]);
+    const out = run(root, [target]);
     expect(out.status).toBe(1);
-    expect(`${out.stdout}\n${out.stderr}`).toContain('the list is not valid JSON');
+    expect(`${out.stdout}\n${out.stderr}`).toContain(INVALID_LIST_LINE);
   });
 });

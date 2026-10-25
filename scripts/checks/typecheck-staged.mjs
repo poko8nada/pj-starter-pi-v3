@@ -32,10 +32,10 @@ const checkableExt = new Set(CODE_EXTENSIONS);
 const root = process.cwd();
 const bin = (name) => path.join(root, 'node_modules', '.bin', name);
 
-// 引数から対象ファイルを抽出（存在する ts/tsx のみ）
+// 引数から対象ファイルを抽出（存在する 8 つの拡張子のみ、大文字小文字を問わない）
 const files = process.argv.slice(2).filter((f) => {
   const abs = path.isAbsolute(f) ? f : path.join(root, f);
-  return fs.existsSync(abs) && checkableExt.has(path.extname(abs));
+  return fs.existsSync(abs) && checkableExt.has(path.extname(abs).toLowerCase());
 });
 
 if (files.length === 0) process.exit(0);
