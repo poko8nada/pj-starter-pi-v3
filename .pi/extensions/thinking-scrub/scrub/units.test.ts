@@ -151,9 +151,10 @@ describe('detectUnitRuns', () => {
   });
 
   it(`${MIN_CYCLES} 周期でも ${MIN_RUN_CHARS} 文字未満 → run が無い`, () => {
-    const one = english(0);
+    const one = `${sentenceUnit(0)} ${sentenceUnit(0)}.`;
     const text = cycleText([one], MIN_CYCLES);
     expect(text.length).toBeLessThan(MIN_RUN_CHARS);
+    expect(MIN_RUN_CHARS - text.length).toBeLessThan(one.length);
     const units = unitsFromText(text);
     expect(units).toHaveLength(MIN_CYCLES);
     expect(detectUnitRuns(units)).toHaveLength(0);
