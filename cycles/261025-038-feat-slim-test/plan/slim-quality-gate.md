@@ -31,7 +31,7 @@
    - (error) 削除済みのファイルは `skipped` に入り、pnpm に渡らない。
    - (empty) 全部が削除済み → git を打たず、全部が `skipped`。
    - (error) `.gitignore` の対象は `skipped` に入り、pnpm に渡らない。
-   - (boundary) `git check-ignore` が非 0（1 と 128）で、無視されたパスの出力があっても → 除外なし。
+   - (boundary) `git check-ignore` が非 0（1 と 128）で、無視されたパスの出力があっても → 除外なし（道は pnpm に届く）。
    - (happy) typecheck は拡張子で絞らず、md も pnpm に渡る。
    - (happy) format は md を渡し、lint は md を渡さない。
    - (empty) 対象の拡張子が無いファイルだけ → 拡張子で絞るチェックは打たず、残る 1 件だけを返す。
@@ -122,15 +122,25 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — checks.tsとreport.tsとtargets.tsおよびREADMEを確認し、今回の変更で古くなる文書や注釈は見つかりませんでした。
+- Unlisted: なし — 差分が触れたのはFilesに挙げられた3件のテストとplanのNotes記入のみであることを確認しました。
+- Gaps: なし — Stepsの全ての事例が各テストに対応し、VerifyのAddedがなしであることと合わせて、検査が覆わない振る舞いは見つかりませんでした。
+- Unproven: なし — 偽のexecの分岐や見出しの1行目比較などを変異させても赤になることを読みで確かめ、緑のまま残る断言は見つかりませんでした。
+- Noise: なし — 型や定数で定まる前提の再掲や、魔数と直書きの期待値で書かれた事例は残っていないことを確認しました。
+- Doubts: なし — いずれも所見に当たらないため、残す覚書はありません。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:run` → 55 ファイル / 871 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 緑
+  - 「振る舞いを壊す」を 3 件試した。
+    - `prepareTargets` の非 0 の分岐を `checked: []` にする → 「typecheck は拡張子で絞らない」と「format は md を渡し、lint は md を渡さない」の 2 件が赤。狙った「非 0 でも除外なし」は緑のままだった。戻して緑を確認。
+    - `runChecks` で fix 相の結果も `outcomes` に入れる → 「fix 相だけが失敗しても verify 相の結果はすべて成功」が赤。戻して緑を確認。
+    - `filterByExtensions` の `toLowerCase()` を外す → 「大文字の拡張子も通す」が赤。戻して緑を確認。
 - Findings:
+  - `.pi/extensions/quality-gate/checks.test.ts:156` の「git check-ignore が非 0 でも無視されたパスの出力があれば除外なし」は、`checked` を空にしても緑のままです。`skipped` が空で、git に道を渡すことしか見ていないためです。道が pnpm に届くことまで見る必要があります。
+    - fixed: 非 0 の境目の事例で、pnpm の呼び出しのどれかに道が渡ること（`fake.calls` の `pnpm` の引数にその道が含まれること）を足し、Steps の文も「非 0 でも除外なし（道は pnpm に届く）」に合わせた。
 - Doubts:

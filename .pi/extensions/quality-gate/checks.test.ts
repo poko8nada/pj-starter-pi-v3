@@ -167,6 +167,13 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
       expect(run.skipped).toEqual([]);
       const gitCall = fake.calls.find((call) => call.command === 'git');
       expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
+      const pnpmArgs = fake.calls
+        .filter((call) => call.command === 'pnpm')
+        .map((call) => call.args);
+      expect(pnpmArgs.length).toBeGreaterThan(0);
+      for (const args of pnpmArgs) {
+        expect(args).toContain(file);
+      }
     }
 
     await assertNoExclusion(1);
