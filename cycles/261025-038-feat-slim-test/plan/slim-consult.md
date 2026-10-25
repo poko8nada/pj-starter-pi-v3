@@ -427,11 +427,24 @@ test/
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/proc.test.ts:104`: 試験名は「前後の空白を落とした文字列」と記しておりますが、入力が `${START}\n` のみとなり、前後の空白の除去を確かめておらず、名称が実態とずれて古くなっております。
+    - fixed: 入力の先頭に空白を足し、前後両方の除去を確かめる形に直した。
 - Unlisted:
+  - なし — 差分の試験文書は `Files` に挙げられた範囲に収まり、`plan` 自体の `Notes` 追記は運用上の記録のため数えておりません。
 - Gaps:
+  - `.pi/extensions/consult/run/proc.test.ts:104`: `readStartToken` の前後空白除去の振る舞いが、残された検査では末尾改行のみで確かめられており、先頭側の空白を含む入力での除去が検査されておりません（落とされた 28 桁詰めの事例と同一仕様のため、残る側での担保が必要でございます）。
+    - fixed: 入力の先頭に空白を足し、落とした 28 桁詰めと同じ仕様を残る側で担保した。
 - Unproven:
+  - `.pi/extensions/consult/policy/types.test.ts:99`: 期待値に製品定数 `CONFIG_FILE` を用いており、当該定数が壊れても同じ値同士の比較となり緑のままとなります。
+    - fixed: テストが作った道の名前で比べる形に直した。
+  - `.pi/extensions/consult/sub/spec.test.ts:215`: 期待値に製品関数 `usageFrom` 自身の出力を用いており（`single` の倍加）、当該関数が壊れても両辺が同じく壊れるため緑のままとなります。
+    - fixed: 入力の usage の値から直接期待を組む形に直した。
 - Noise:
+  - `.pi/extensions/consult/sub/spec.test.ts:195`: 試験補助 `messageEnd` の既定値自体を断言しており、製品の振る舞いではなく試験道具の写しを確かめるもので、どなたも気づかれない書き方となっております。
+    - fixed: 補助の既定値を確かめる断言を落とした。
 - Doubts:
+  - `Files` に `update` と記された `.pi/extensions/consult/run/place.test.ts` と `.pi/extensions/consult/tool/sound.test.ts` に差分がございません。既に痩せた状態のため変更不要とお見受けしますが、念のため申し添えます。
+  - `branchFor` および `commitMessage` を期待値に用いる箇所は、計画書の `Steps` にて明示的に指示されておりますため、所見から除いております。
 
 ## Acceptance
 

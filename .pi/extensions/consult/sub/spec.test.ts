@@ -189,10 +189,9 @@ describe('finalTextFrom', () => {
 
 describe('modelFrom', () => {
   it('サブエージェントが報告した provider と model を組み立てる', () => {
-    const event = messageEnd({ provider: 'p', model: 'm' });
     const provider = 'p';
     const model = 'm';
-    expect(messageEnd()).toMatchObject({ message: { provider, model } });
+    const event = messageEnd({ provider, model });
     expect(modelFrom([event])).toBe(`${provider}/${model}`);
   });
 });
@@ -211,13 +210,15 @@ describe('ranFrom', () => {
 
 describe('usageFrom', () => {
   it('assistant のターン数と消費を合計する', () => {
-    const usage = usageFrom([messageEnd(), messageEnd()]);
-    const single = usageFrom([messageEnd()]);
-    expect(usage).toEqual({
-      turns: single.turns * 2,
-      input: single.input * 2,
-      output: single.output * 2,
-      cost: single.cost * 2,
+    const input = 10;
+    const output = 5;
+    const total = 0.001;
+    const event = messageEnd({ usage: { input, output, cost: { total } } });
+    expect(usageFrom([event, event])).toEqual({
+      turns: 2,
+      input: input * 2,
+      output: output * 2,
+      cost: total * 2,
     });
   });
 });

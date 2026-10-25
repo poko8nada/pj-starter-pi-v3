@@ -95,8 +95,9 @@ describe('loadTypes', () => {
 
   it('types.json が無い → 理由の文面つきで投げる', () => {
     const dir = tempDir();
+    const file = join(dir, 'types.json');
     const attempt = () => loadTypes(dir);
-    expect(attempt).toThrow(CONFIG_FILE);
+    expect(attempt).toThrow(file);
     expect(attempt).toThrow(/restore it/);
   });
 

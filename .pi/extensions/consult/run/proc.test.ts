@@ -104,7 +104,7 @@ describe('readStartToken', () => {
   it('ps が lstart を返す → 前後の空白を落とした文字列', () => {
     const run = ps({
       status: 0,
-      stdout: `${START}\n`,
+      stdout: `  ${START}\n`,
       stderr: '',
     });
     expect(readStartToken(123, run)).toBe(START);
