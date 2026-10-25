@@ -85,8 +85,31 @@
   - `Verify` の `Added` は新しい5文の特徴句のみを `grep` しており、6行目 (`format.md:106`、`refuse, do not hang` を含む行) の有無や `it` から `a fixture` への言い換えを区別できません。6行目を削除しても5つの `grep` は緑のままでございます。文言の決定値は `Gaps` の対象外との定義により、疑義として残します。
     - fixed: `Verify` の `Added` に `A helper that is not a double` と `Say how a double or a fixture behaves` の `grep` を足し、7 行すべての有無を見るようにした。
 
+### Round 2
+
+- Stale:
+  - なし — 今回は `### Round 1` の `fixed:` 3 件のみを確認対象といたしますため、`Stale` には `fixed:` がございません。
+- Unlisted:
+  - なし — 同上の理由により、`Unlisted` には `fixed:` がございません。
+- Gaps:
+  - なし — 同上の理由により、`Gaps` には `fixed:` がございません。
+- Unproven:
+  - なし — 同上の理由により、`Unproven` には `fixed:` がございません。
+- Noise:
+  - 修正を確認いたしました — `### Round 1` の `Noise` の `fixed:`（4 行目の 1 文化）は直っております。`git diff 7d9e006..HEAD -- .pi/skills/plan/references/format.md` では旧 1 行が 7 行に置き換わっており、現行 `format.md:104` が `Name a fixture \`<name>.fixture.ts\`, wherever it sits.`の 1 文、現行`format.md:105`が`A helper that is not a double keeps its own name.` の 1 文で、各箇条は 1 文となっております。`format.md:205`の`One bullet is one sentence.` に合っております。
+- Doubts:
+  - 修正を確認いたしました — `Doubts` 1 件目の `fixed:`（最終行の主語）は直っております。現行 `format.md:107` は `Say how a double or a fixture behaves when it is run outside its test: refuse, do not hang.` であり、`double` が主語に戻っております。`Steps` の理由書き（ダブルとフィクスチャの振る舞いを失わない）と整合しております。
+  - 修正を確認いたしました — `Doubts` 2 件目の `fixed:`（`Added` の `grep` の網羅）は直っております。現行 plan `:42` の `Added` は 7 つの特徴句（`sits at the root of the feature`、`goes in test/`、`is shared, not the harness's own`、`\`<name>.fixture.ts\``、`A helper that is not a double`、`harness.json's copy`、`Say how a double or a fixture behaves`）を `grep`で見るとしており、現行`format.md:101-107` の 7 行に 1 対 1 で対応しております。`git diff 7d9e006..HEAD` の plan 差分でも 5 文から 7 文への書き換えを確認いたしました。
+  - Doubts: なし — 上記 3 件のほか、所見に至らない疑義はございません。
+
 ## Acceptance
 
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run` → 54 ファイル / 767 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok
+  - `pnpm lint` → 緑
+  - `pnpm format:check` → 1 回目は plan md の整形で赤だった。`pnpm format` で直し、もう一度通して緑。
+  - 「振る舞いを壊す」を 1 件試した。
+    - `format.md` から `A helper that is not a double keeps its own name.` の行を消す → `Added` の `grep -c` が 0 になり、検査が赤。戻して 1 を確認。
+- Findings: なし
+- Doubts: なし
