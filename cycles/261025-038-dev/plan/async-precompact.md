@@ -615,10 +615,10 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 2: prepare-copy
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: ab984ad consult(async-precompact): add prepare copy, compare and guard
+- Stopped: なし
 
 ### Slice 3: summarize-and-draft
 
