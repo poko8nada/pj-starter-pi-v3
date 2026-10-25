@@ -608,10 +608,10 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 1: settings-and-gate
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 53b4231 consult(async-precompact): add settings and gate
+- Stopped: なし
 
 ### Slice 2: prepare-copy
 
