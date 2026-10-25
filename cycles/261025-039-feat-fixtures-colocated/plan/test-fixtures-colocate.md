@@ -128,8 +128,10 @@ test/
 ### Slice 1: フィクスチャの配置
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 98b0c10
 - Stopped:
 
 ### Slice 2: 写す一覧と検査
