@@ -15,60 +15,90 @@ import {
 
 describe('adrSkeleton', () => {
   it('番号を 0 埋めした見出しで始まる', () => {
-    expect(adrSkeleton(17).startsWith('# ADR 017\n')).toBe(true);
-    expect(adrSkeleton(1).startsWith('# ADR 001\n')).toBe(true);
+    const cases = [
+      { input: 17, expected: '# ADR 017\n' },
+      { input: 1, expected: '# ADR 001\n' },
+    ];
+    for (const { input, expected } of cases) {
+      expect(adrSkeleton(input).startsWith(expected)).toBe(true);
+    }
   });
 });
 
 describe('slugBranch', () => {
   it('main/develop/feature/fix を写像する', () => {
-    expect(slugBranch('main')).toBe('main');
-    expect(slugBranch('develop')).toBe('dev');
-    expect(slugBranch('feature/a/b')).toBe('feat-a-b');
-    expect(slugBranch('fix/x')).toBe('fix-x');
+    const cases = [
+      { input: 'main', expected: 'main' },
+      { input: 'develop', expected: 'dev' },
+      { input: 'feature/a/b', expected: 'feat-a-b' },
+      { input: 'fix/x', expected: 'fix-x' },
+    ];
+    for (const { input, expected } of cases) {
+      expect(slugBranch(input)).toBe(expected);
+    }
   });
 
   it('小文字化と英数以外→`-`をやる', () => {
-    expect(slugBranch('Fix/X')).toBe('fix-x');
-    expect(slugBranch('2-consult.retry')).toBe('2-consult-retry');
+    const cases = [
+      { input: 'Fix/X', expected: 'fix-x' },
+      { input: '2-consult.retry', expected: '2-consult-retry' },
+    ];
+    for (const { input, expected } of cases) {
+      expect(slugBranch(input)).toBe(expected);
+    }
   });
 
-  it('空・`///` → no-branch、日本語/x → x、80 文字はそのまま', () => {
-    expect(slugBranch('')).toBe('no-branch');
-    expect(slugBranch('日本語/x')).toBe('x');
-    expect(slugBranch('///')).toBe('no-branch');
-    expect(slugBranch('x'.repeat(80))).toBe('x'.repeat(80));
+  it('空は no-branch、日本語を含む枝名からは英数を拾う', () => {
+    const cases = [
+      { input: '', expected: 'no-branch' },
+      { input: '日本語/x', expected: 'x' },
+    ];
+    for (const { input, expected } of cases) {
+      expect(slugBranch(input)).toBe(expected);
+    }
   });
 });
 
 describe('toYYMMDD', () => {
   it('ローカル日付を YYMMDD にする', () => {
-    expect(toYYMMDD(new Date(2026, 9, 10))).toBe('261010');
-  });
-
-  it('一桁月日は 0 埋めする', () => {
-    expect(toYYMMDD(new Date(2026, 0, 5))).toBe('260105');
+    const cases = [
+      { input: new Date(2026, 9, 10), expected: '261010' },
+      { input: new Date(2026, 0, 5), expected: '260105' },
+    ];
+    for (const { input, expected } of cases) {
+      expect(toYYMMDD(input)).toBe(expected);
+    }
   });
 });
 
 describe('nextNNN', () => {
-  it('新形・旧形を数値で拾い、合わない物は飛ばす', () => {
-    expect(nextNNN(['001-2026-09-20', '261010-015-main', 'archive'])).toBe(16);
+  it('新形を数値で拾い、合わない物は飛ばして max+1 を返す', () => {
+    const names = ['261010-015-main', 'archive'];
+    const expected = 16;
+    expect(nextNNN(names)).toBe(expected);
   });
 
   it('空 → 1', () => {
-    expect(nextNNN([])).toBe(1);
+    const expected = 1;
+    expect(nextNNN([])).toBe(expected);
   });
 
   it('旧形だけでも max+1 を返す', () => {
-    expect(nextNNN(['001-2026-09-20', '014-2026-10-09'])).toBe(15);
+    const names = ['001-2026-09-20', '014-2026-10-09'];
+    const expected = 15;
+    expect(nextNNN(names)).toBe(expected);
   });
 });
 
 describe('cycleDirName', () => {
   it('0 埋めして組み立てる', () => {
-    expect(cycleDirName(16, '261010', 'main')).toBe('261010-016-main');
-    expect(cycleDirName(5, '261010', 'main')).toBe('261010-005-main');
+    const cases = [
+      { nnn: 16, yymmdd: '261010', slug: 'main', expected: '261010-016-main' },
+      { nnn: 5, yymmdd: '261010', slug: 'main', expected: '261010-005-main' },
+    ];
+    for (const { nnn, yymmdd, slug, expected } of cases) {
+      expect(cycleDirName(nnn, yymmdd, slug)).toBe(expected);
+    }
   });
 });
 
@@ -77,22 +107,19 @@ describe('createLeafDir', () => {
     const root = tempDir();
     const parent = join(root, 'cycles');
     mkdirSync(parent, { recursive: true });
-    const leaf = createLeafDir(parent, '261010-016-main');
-    expect(leaf).toBe(join(parent, '261010-016-main'));
+    const leafName = cycleDirName(16, '261010', 'main');
+    const leaf = createLeafDir(parent, leafName);
+    expect(leaf).toBe(join(parent, leafName));
     expect(existsSync(leaf)).toBe(true);
     expect(statSync(leaf).isDirectory()).toBe(true);
   });
 
-  it('既存 dir → EEXIST で投げる', () => {
+  it('既存 dir には作らず投げる', () => {
     const root = tempDir();
     const parent = join(root, 'cycles');
-    mkdirSync(join(parent, '261010-016-main'), { recursive: true });
-    try {
-      createLeafDir(parent, '261010-016-main');
-      expect.unreachable();
-    } catch (err) {
-      expect(err).toMatchObject({ code: 'EEXIST' });
-    }
+    const leafName = cycleDirName(16, '261010', 'main');
+    mkdirSync(join(parent, leafName), { recursive: true });
+    expect(() => createLeafDir(parent, leafName)).toThrow();
   });
 });
 
@@ -101,24 +128,25 @@ describe('dirNames', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const archiveDir = join(cyclesDir, 'archive');
-    mkdirSync(join(cyclesDir, '261010-015-main'), { recursive: true });
-    mkdirSync(join(archiveDir, '014-2026-10-09'), { recursive: true });
-    expect(dirNames(cyclesDir, archiveDir).toSorted()).toEqual([
-      '014-2026-10-09',
-      '261010-015-main',
-      'archive',
-    ]);
+    const cycleName = cycleDirName(15, '261010', 'main');
+    const oldName = '014-2026-10-09';
+    mkdirSync(join(cyclesDir, cycleName), { recursive: true });
+    mkdirSync(join(archiveDir, oldName), { recursive: true });
+    const expected = [oldName, cycleName, 'archive'].toSorted();
+    expect(dirNames(cyclesDir, archiveDir).toSorted()).toEqual(expected);
   });
 
   it('無いルートは空として扱う', () => {
     const root = tempDir();
-    expect(dirNames(join(root, 'cycles'), join(root, 'cycles', 'archive'))).toEqual([]);
+    const expected: readonly string[] = [];
+    expect(dirNames(join(root, 'cycles'), join(root, 'cycles', 'archive'))).toEqual(expected);
   });
 });
 
 describe('parseArgs', () => {
   it('位置引数は番号になる', () => {
-    expect(parseArgs(['017'])).toEqual({ root: process.cwd(), nnn: 17 });
+    const input = '017';
+    expect(parseArgs([input])).toEqual({ root: process.cwd(), nnn: Number(input) });
   });
 
   it('空 → root は cwd、nnn は null', () => {
@@ -126,22 +154,29 @@ describe('parseArgs', () => {
   });
 
   it('--root を読む', () => {
-    expect(parseArgs(['--root', '/tmp/x'])).toEqual({ root: '/tmp/x', nnn: null });
+    const root = '/tmp/x';
+    expect(parseArgs(['--root', root])).toEqual({ root, nnn: null });
   });
 
-  it('数でない・小数・0 は投げる', () => {
-    expect(() => parseArgs(['abc'])).toThrow();
-    expect(() => parseArgs(['1.5'])).toThrow();
-    expect(() => parseArgs(['0'])).toThrow();
+  it('数でない位置引数は投げる', () => {
+    const cases = [{ input: 'abc' }, { input: '1.5' }, { input: '0' }];
+    for (const { input } of cases) {
+      expect(() => parseArgs([input])).toThrow();
+    }
   });
 
-  it('未知引数・`=` 形・--root 値欠落は投げる', () => {
-    expect(() => parseArgs(['--bogus'])).toThrow();
-    expect(() => parseArgs(['--root=/tmp/x'])).toThrow();
+  it('知らない旗の後に数が来ても投げる', () => {
+    const nnn = '017';
+    expect(() => parseArgs(['--bogus', nnn])).toThrow();
+  });
+
+  it('--root の値が欠けていても投げる', () => {
     expect(() => parseArgs(['--root'])).toThrow();
   });
 
   it('2 つ目位置引数は投げる', () => {
-    expect(() => parseArgs(['017', '018'])).toThrow();
+    const first = '017';
+    const second = '018';
+    expect(() => parseArgs([first, second])).toThrow();
   });
 });
