@@ -250,23 +250,36 @@ test/
 ### Slice 1: 設定と記録
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 8348585b79bbdede85afde6f71bbe530e11e5c62
 - Stopped:
 
 ### Slice 2: 候補の選別
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: a9175ede8d8fc617a48e9b56a5b2b792b5087e34
 - Stopped:
 
 ### Slice 3: 配線と記録
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 9a8de9149ad344e86dd1b261caf86d7168569971
 - Stopped:
+
+### Cleanup: 未使用の工場関数
+
+- Findings:
+  - なし
+- Unplanned:
+  - `test/prune-fixture.ts` の `pruneDrop` と `pruneMarker` を落とした。suite から参照がなく、製品関数の写しになるため。
 
 ## Review
 
@@ -288,11 +301,21 @@ test/
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/context-prune/prune/run.test.ts:242` の表題「合計してから割った値」は製品（`run.ts:106` の件ごとの `Math.ceil(chars / 4)` の合計で 102 になります）と断言の双方と食い違い、旧表題の「合計してから割った 101 ではない」という正しい注記を落としたため誤解を招きます。
+    - fixed: 表題を「件ごとに切り上げて合計した値」に直した。
 - Unlisted:
+  - なし — Files の 15 件と差分の 15 件が一致することを確かめました。
 - Gaps:
+  - なし — Slices の Steps の各ケースに対応する検査が存在することを確かめました。
 - Unproven:
+  - `.pi/extensions/context-prune/entry/render.test.ts:32` は `formatCount` を使わず素の数値（900 前後）で期待を組むため、`render.ts:24` の桁区切りを外しても緑のままになります。
+    - fixed: `chars` を 1000 以上にし、期待表示を表（12345→12,345、12036→12,036、1234→1,234）に 1 度だけ書いた。`formatCount` を外すと赤になることを確かめて戻した。
+  - `.pi/extensions/context-prune/apply/drafts.test.ts:6` の `textOf` は `String(chars)` で期待を組み `formatCount` を使わないため、10〜123 の小さな値では `drafts.ts:11` の桁区切りが壊れても緑のままになります。
+    - fixed: `textOf` をやめ、`chars` を 1234 にし、期待表示を表（1234→1,234）に 1 度だけ書いた。`formatCount` を外すと赤になることを確かめて戻した。
 - Noise:
+  - なし — 断言に残る数値・文字列は仕様の値（状態の種別や件数の長さなど）であり、型やスキーマが保証する前提の再掲は見当たりませんでした。
 - Doubts:
+  - なし
 
 ## Acceptance
 

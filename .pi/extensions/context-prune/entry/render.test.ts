@@ -12,10 +12,16 @@ function fakeTheme(): Theme {
   return theme as unknown as Theme;
 }
 
+const shownCounts = [
+  { value: 12345, shown: '12,345' },
+  { value: 12036, shown: '12,036' },
+  { value: 1234, shown: '1,234' },
+] as const;
+
 function smallPass() {
   return prunePass({
-    tokensBefore: 900,
-    dropped: [{ id: 'e1', chars: 100 }],
+    tokensBefore: shownCounts[0].value,
+    dropped: [{ id: 'e1', chars: shownCounts[2].value }],
     summary: '話題の要約',
     latencyMs: 1200,
   });
@@ -25,11 +31,10 @@ describe('cardText', () => {
   it('折りたたみ → 前後のトークン数と展開キー', () => {
     const pass = smallPass();
     const expandKey = 'ctrl+e';
-    const after = pass.tokensBefore - pass.droppedTokens;
     const lines = cardText(pass, false, expandKey);
     expect(lines).toHaveLength(3);
     expect(lines[2]).toBe(
-      `Compacted from ${pass.tokensBefore} → ${after} tokens (${expandKey} to expand)`,
+      `Compacted from ${shownCounts[0].shown} → ${shownCounts[1].shown} tokens (${expandKey} to expand)`,
     );
   });
 
@@ -43,16 +48,15 @@ describe('cardText', () => {
   it('展開 → 見出し、要約、省略、秒数の順', () => {
     const pass = smallPass();
     const expandKey = 'ctrl+e';
-    const after = pass.tokensBefore - pass.droppedTokens;
     const lines = cardText(pass, true, expandKey);
     expect(lines).toEqual([
       '[prune]',
       '',
-      `**Compacted from ${pass.tokensBefore} → ${after} tokens**`,
+      `**Compacted from ${shownCounts[0].shown} → ${shownCounts[1].shown} tokens**`,
       '',
       pass.summary,
       '',
-      `省略: ${pass.dropped.length} 件 / ${pass.droppedTokens} トークン / ${pass.droppedChars} 文字`,
+      `省略: ${pass.dropped.length} 件 / ${pass.droppedTokens} トークン / ${shownCounts[2].shown} 文字`,
       `要約と判定: ${(pass.latencyMs / 1000).toFixed(1)} 秒`,
     ]);
   });
@@ -82,11 +86,12 @@ describe('cardText', () => {
 describe('createCard', () => {
   it('偽の Theme で render → 折りたたみに印と前後のトークン', () => {
     const pass = smallPass();
-    const after = pass.tokensBefore - pass.droppedTokens;
     const lines = createCard(pass, fakeTheme()).render(80);
     expect(lines.some((line) => line.includes('[prune]'))).toBe(true);
     expect(
-      lines.some((line) => line.includes(`Compacted from ${pass.tokensBefore} → ${after} tokens`)),
+      lines.some((line) =>
+        line.includes(`Compacted from ${shownCounts[0].shown} → ${shownCounts[1].shown} tokens`),
+      ),
     ).toBe(true);
   });
 });

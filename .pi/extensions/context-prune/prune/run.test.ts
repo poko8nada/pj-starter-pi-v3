@@ -239,7 +239,7 @@ describe('runPass', () => {
     expect(outcome.pass.droppedTokens).toBe(0);
   });
 
-  it('201 文字を 2 件落とす → droppedTokens は合計してから割った値', async () => {
+  it('201 文字を 2 件落とす → 件ごとに切り上げて合計した値', async () => {
     const chars = 201;
     const ports: PassPorts = {
       summarize: summarizeOk('テストの要約'),
