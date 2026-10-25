@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ONLY_FLAG, RUN_FLAG, countLine } from '../../test/scripts-fixture.ts';
+import { ONLY_FLAG, RUN_FLAG, countLine, indented } from '../../test/scripts-fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
@@ -128,11 +128,16 @@ describe('product-ready index', () => {
 
   it('もう一度 --run → 無い旨の表示', () => {
     const tree = makeTree();
+    const names = makeCycleNames();
     expect(run(INDEX, [RUN_FLAG], tree.root).status).toBe(0);
     const second = run(INDEX, [RUN_FLAG], tree.root);
     expect(second.status).toBe(0);
     expect(second.output).toContain('no scripts to change');
     expect(second.output).toContain('no config to remove');
+    expect(second.output).not.toContain(countLine(CYCLES_LABEL, names.length));
+    for (const name of names) {
+      expect(second.output).not.toContain(indented(join(CYCLES_LABEL, name)));
+    }
   });
 
   it('flag の無い混在 → ある物だけ変わり、無い物は同じまま', () => {
