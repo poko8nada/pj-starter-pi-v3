@@ -65,11 +65,11 @@
   - 適用時に `firstKeptEntryId` が現在の branch にあるかを確認する。session id と準備時の leaf id を保持し、現在の branch にその leaf が含まれるかを確認する。
   - 適用前に、準備後に新しい `compaction` が積まれていないかを確認する。積まれていれば、その準備は古いので捨てる。
   - `fileOps` の照合は `read`、`written`、`edited` の集合で行う。
-  - 設定は `enabled`、`keepRecentTokens`、`thresholdRatio` の 3 つにする。`thresholdRatio` は適用閾値で、準備の lead は内部定数にする。`reserveTokens`、timeout、rearm も内部にする。
+  - 設定は `enabled`、`keepRecentTokens`、`thresholdRatio` の 3 つにする。`thresholdRatio` は適用閾値で、準備の lead は内部定数にする。`reserveTokens`、timeout、rearm も内部にする。`SUMMARY_TIMEOUT_MS` は 5 分（300,000 ms）にし、失敗時は既定のコンパクションへフォールバックする。
   - Pi の `compaction.enabled` を `getSettings()` で読み、false なら自動のプレコンパクトを動かさない。拡張の `enabled` と Pi の `compaction.enabled` の両方が true のときだけ動く。
-  - 準備の開始時に `ctx.ui.setStatus('precompact', 'precompact: preparing…')` を出し、完了時に `precompact: ready (X → Y)`、失敗時に `precompact: failed` を出す。適用、破棄、session 切替で clear する。適用時は `precompact: applied (X → Y)` を出す。要約失敗時は `precompact: failed (<reason>); default compaction will run`、stale と不一致の破棄時は `precompact: failed; default compaction will run` を `ctx.ui.notify` で出す。
+  - 準備の開始時に `preparing…`、完了時に `ready (X → Y)`、適用時に `applied (X → Y)` をフッターとチャットの両方に出す。`/precompact now` も同じ経路で即時に `preparing…` を返し、結果は背景で出し、次の `turn_end` と `agent_before_settle` では閾値を見ずに適用する。枝は `precompact: off`、`precompact: nothing to prepare`、`precompact: running` を出す。要約失敗時は `precompact: failed (<reason>); default compaction will run`、stale と不一致の破棄時は `precompact: failed; default compaction will run` を `ctx.ui.notify` の warning で出す。`info` は最新の 1 行に上書きされ、`warning` / `error` は残る。chat が本体で、`/precompact` の `status` は保険とする。
   - 記録の口は通知とフッターとセッション entry とし、`console` は使わない。失敗理由の通知は要約失敗に限り、stale と不一致は汎用文面のままにする。
-  - `tokensAfter` は `tokensBefore - oldTokens + summaryTokens` の概算にし、ready の数字は概算として status に出す。
+  - `tokensAfter` は、切れ目から後ろのメッセージの推定と要約の推定の和にする。実測から別の物差しの概算を引かない。`ready` の前は準備時の使用量、`applied` の前は適用時の使用量とし、`session_before_compact` では `before` を現在値に更新し、`after` は準備時の推定のままにする。
   - 今の `context-prune` を削除する。`Stack.Agent.Classifier` の Jev 1.13 を落とす。
 - Options:
   - A: 内部モジュールをファイル URL で import する（Pi の破壊的変更に弱い。owner が B を選んだ）。
