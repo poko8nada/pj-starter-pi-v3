@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   sessionEntryToContextMessages,
   type ContextUsage,
@@ -417,25 +417,19 @@ describe('precompact wiring', () => {
     expect(outcome?.compaction?.tokensBefore).toBe(8_200);
   });
 
-  it('session_before_compact で firstKept が違う → undefined・warn・フォールバック通知', async () => {
+  it('session_before_compact で firstKept が違う → undefined・フォールバック通知', async () => {
     const branch = threeTurns();
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
-      const hot = fakeCtx({ branch, usage: contextUsageOf(8_200) });
-      const event = compactEvent(
-        { ...matchingPreparation(branch), firstKeptEntryId: 'other-kept' },
-        branch,
-      );
-      expect(wiring.onSessionBeforeCompact(event, hot.ctx)).toBeUndefined();
-      expect(warn).toHaveBeenCalled();
-      expect(hot.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
-    } finally {
-      warn.mockRestore();
-    }
+    const hot = fakeCtx({ branch, usage: contextUsageOf(8_200) });
+    const event = compactEvent(
+      { ...matchingPreparation(branch), firstKeptEntryId: 'other-kept' },
+      branch,
+    );
+    expect(wiring.onSessionBeforeCompact(event, hot.ctx)).toBeUndefined();
+    expect(hot.notified.some((n) => n.message.includes('default compaction'))).toBe(true);
   });
 
   it('要約が失敗 → failed・フォールバック通知・prepared 無し', async () => {
@@ -595,44 +589,6 @@ describe('precompact commands', () => {
       'getSessionId',
     ] as const) {
       expect(setup.calls).toContain(key);
-    }
-  });
-
-  it('apply と fallback が console.info / warn を呼ぶ', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
-      const branch = threeTurns();
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: defaultSettingsDir(),
-        now: () => 1000,
-        compactFn: compactOk(),
-      });
-      const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-      await wiring.onTurnEnd(lead.ctx);
-      await wiring.flush();
-      const hot = fakeCtx({ branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
-      await wiring.onTurnEnd(hot.ctx);
-      expect(info).toHaveBeenCalled();
-      const wiring2 = createPrecompactWiring(pi, {
-        settingsDir: defaultSettingsDir(),
-        now: () => 1000,
-        compactFn: compactOk(),
-      });
-      const lead2 = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-      await wiring2.onTurnEnd(lead2.ctx);
-      await wiring2.flush();
-      const stale = fakeCtx({
-        branch,
-        sessionId: 'sess-2',
-        usage: contextUsageOf(THRESHOLD_TOKENS),
-      });
-      await wiring2.onTurnEnd(stale.ctx);
-      expect(warn).toHaveBeenCalled();
-    } finally {
-      info.mockRestore();
-      warn.mockRestore();
     }
   });
 });

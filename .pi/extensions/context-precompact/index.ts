@@ -147,11 +147,10 @@ function notifyFallback(ctx: PrecompactCtx): void {
 }
 
 /** 準備を捨ててフォールバックを知らせる */
-function discardWithFallback(deps: Deps, ctx: PrecompactCtx, reason: string, warn: string): void {
+function discardWithFallback(deps: Deps, ctx: PrecompactCtx, reason: string): void {
   deps.state.prepared = undefined;
   deps.state.status = { kind: 'discarded' };
   refreshStatus(deps, ctx);
-  console.warn(warn);
   ctx.ui.notify(reason, 'warning');
 }
 
@@ -172,7 +171,6 @@ function guardOf(
 
 /** 適用する。`lastAppliedTokens` を進め、footer に applied を出す */
 function applyReady(deps: Deps, ctx: PrecompactCtx, ready: ReadyCompaction): BoundaryResult {
-  console.info(`context-precompact: applied (${ready.tokensBefore} → ${ready.tokensAfter})`);
   deps.state.prepared = undefined;
   deps.state.lastAppliedTokens = ready.tokensAfter;
   deps.state.status = { kind: 'applied', before: ready.tokensBefore, after: ready.tokensAfter };
@@ -205,9 +203,6 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
     setStatusState(deps, ctx, { kind: 'idle' });
     return 'idle';
   }
-  console.info(
-    `context-precompact: prepared ${prepared.compaction.messagesToSummarize.length} messages (firstKept ${prepared.compaction.firstKeptEntryId})`,
-  );
   const signal =
     ctx.signal !== undefined
       ? AbortSignal.any([ctx.signal, AbortSignal.timeout(SUMMARY_TIMEOUT_MS)])
@@ -229,22 +224,18 @@ async function doPass(deps: Deps, ctx: PrecompactCtx): Promise<PassOutcome> {
         before: ready.tokensBefore,
         after: ready.tokensAfter,
       });
-      console.info(
-        `context-precompact: ready (${ready.tokensBefore} → ${ready.tokensAfter}, approx)`,
-      );
       return 'ready';
     }
-    return failPass(deps, ctx, outcome.reason);
-  } catch (error) {
-    return failPass(deps, ctx, error instanceof Error ? error.message : String(error));
+    return failPass(deps, ctx);
+  } catch {
+    return failPass(deps, ctx);
   }
 }
 
 /** 失敗の後始末。フォールバックを知らせて `failed` を返す */
-function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
+function failPass(deps: Deps, ctx: PrecompactCtx): PassOutcome {
   deps.state.prepared = undefined;
   setStatusState(deps, ctx, { kind: 'failed' });
-  console.warn(`context-precompact: summarize failed (${reason}); default compaction will run`);
   notifyFallback(ctx);
   return 'failed';
 }
@@ -292,12 +283,7 @@ async function onTurnEnd(deps: Deps, ctx: PrecompactCtx): Promise<BoundaryResult
     const branch = ctx.sessionManager.getBranch();
     const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
     if (guarded.kind === 'stale') {
-      discardWithFallback(
-        deps,
-        ctx,
-        'precompact: failed; default compaction will run',
-        `context-precompact: discarded stale preparation (${guarded.reason}); default compaction will run`,
-      );
+      discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
       return undefined;
     }
     return applyReady(deps, ctx, ready);
@@ -330,12 +316,7 @@ function onBeforeSettle(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefi
   const branch = ctx.sessionManager.getBranch();
   const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
   if (guarded.kind === 'stale') {
-    discardWithFallback(
-      deps,
-      ctx,
-      'precompact: failed; default compaction will run',
-      `context-precompact: discarded stale preparation (${guarded.reason}); default compaction will run`,
-    );
+    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
     return undefined;
   }
   return applyReady(deps, ctx, ready);
@@ -356,26 +337,15 @@ function onSessionBeforeCompact(
     previousSummary: event.preparation.previousSummary,
   });
   if (compared.kind === 'mismatch') {
-    discardWithFallback(
-      deps,
-      ctx,
-      'precompact: failed; default compaction will run',
-      `context-precompact: preparation mismatch (${compared.fields.join(',')}); default compaction will run`,
-    );
+    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
     return undefined;
   }
   const branch = ctx.sessionManager.getBranch();
   const guarded = guardOf(ready, branch, ctx.sessionManager.getSessionId());
   if (guarded.kind === 'stale') {
-    discardWithFallback(
-      deps,
-      ctx,
-      'precompact: failed; default compaction will run',
-      `context-precompact: discarded stale preparation (${guarded.reason}); default compaction will run`,
-    );
+    discardWithFallback(deps, ctx, 'precompact: failed; default compaction will run');
     return undefined;
   }
-  console.info(`context-precompact: applied (${ready.tokensBefore} → ${ready.tokensAfter})`);
   const tokensNow = ctx.getContextUsage()?.tokens;
   const tokensBefore = typeof tokensNow === 'number' ? tokensNow : ready.result.tokensBefore;
   const compaction: CompactionResult = { ...ready.result, tokensBefore };
