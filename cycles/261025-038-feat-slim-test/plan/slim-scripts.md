@@ -183,10 +183,16 @@ test/
 
 ### Slice 3: プロダクトの準備
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b84300d774ebf0f6117f5f548a2749916f2eb160
 - Stopped:
+
+### Cleanup: 重なった写しの検査
+
+- Findings: なし
+- Unplanned:
+  - `scripts/harness/index.test.ts` の弱い logs 1 件と `~` 単体 1 件を落とした。強い logs（skip なしでも集めない）が残り、`~` は `~/starter` と `~foo` が残るので、写しは変わらない。
 
 ## Review
 

@@ -180,18 +180,6 @@ describe('harness diff', () => {
     expect(out.stdout).toContain('no files to remove');
   });
 
-  it('logs の中のファイルが両側にある → どちらの塊にも出ない', () => {
-    const { origin, local } = pair();
-    const rel = 'logs/a.ts';
-    writeFile(join(origin, '.pi', 'logs', 'a.ts'), 'B\n');
-    writeFile(join(local, '.pi', 'logs', 'a.ts'), 'A\n');
-    const out = run(['pull'], local);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain('no files to copy');
-    expect(out.stdout).toContain('no files to remove');
-    expect(out.stdout).not.toContain(rel);
-  });
-
   it('skip に書かなくても logs の中身は両塊に出ない', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
@@ -657,20 +645,6 @@ describe('harness starter', () => {
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     const out = run(['pull'], local);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(countLine(COPY, [rel].length));
-    expect(out.stdout).toContain(indented(rel));
-  });
-
-  it('~ 単体 → HOME そのものを starter として copy する', () => {
-    const home = fakeRoot();
-    const rel = '.pi/a.ts';
-    writeFile(join(home, '.pi', 'a.ts'), 'B\n');
-    const local = fakeRoot();
-    writeList(local);
-    writeStarter(local, '~');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const out = run(['pull'], local, { HOME: home });
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(countLine(COPY, [rel].length));
     expect(out.stdout).toContain(indented(rel));
