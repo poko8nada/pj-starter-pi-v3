@@ -132,12 +132,12 @@
 ## Acceptance
 
 - Ran:
-  - `pnpm test:run` → 55 ファイル / 871 ケース緑
+  - `pnpm test:run` → 55 ファイル / 871 ケース緑（acceptance の修正の後、やり直した）
   - `pnpm typecheck` → root: ok、`.pi`: ok
   - `pnpm lint` → 緑
   - `pnpm format:check` → 緑
   - 「振る舞いを壊す」を 3 件試した。
-    - `prepareTargets` の非 0 の分岐を `checked: []` にする → 「typecheck は拡張子で絞らない」と「format は md を渡し、lint は md を渡さない」の 2 件が赤。狙った「非 0 でも除外なし」は緑のままだった。戻して緑を確認。
+    - `prepareTargets` の非 0 の分岐を `checked: []` にする → 修正の前は「typecheck は拡張子で絞らない」と「format は md を渡し、lint は md を渡さない」の 2 件だけが赤で、狙った「非 0 でも除外なし」は緑のままだった。修正の後にもう一度同じ壊し方をして、3 件とも赤になることを確かめた。戻して緑を確認。
     - `runChecks` で fix 相の結果も `outcomes` に入れる → 「fix 相だけが失敗しても verify 相の結果はすべて成功」が赤。戻して緑を確認。
     - `filterByExtensions` の `toLowerCase()` を外す → 「大文字の拡張子も通す」が赤。戻して緑を確認。
 - Findings:
