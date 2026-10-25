@@ -4,17 +4,12 @@
  * 設定の JSON、`custom` のエントリ、prune の記録を作る。
  * 期待値は `defaultSettings()` と工場に渡した値から取る。
  * pi の `usage` とメッセージは `test/pi-fixture.ts` から読む。同じ物を作らない。
- * 印の文（`markerText`）はここに集める。
+ * 印の雛形はここに集める。
  *
  * 値と文字列を組み立てるだけで、プロセスも FS も開かない。
  * テストの外から読まれても、何も起きずに止まらない。
  */
-import { markerText } from '../.pi/extensions/context-prune/apply/drafts.ts';
-import {
-  CUSTOM_TYPE,
-  type Drop,
-  type PrunePass,
-} from '../.pi/extensions/context-prune/entry/data.ts';
+import { CUSTOM_TYPE, type PrunePass } from '../.pi/extensions/context-prune/entry/data.ts';
 import type { Failure, Status } from '../.pi/extensions/context-prune/command/prune.ts';
 import { defaultSettings, type Settings } from '../.pi/extensions/context-prune/settings/schema.ts';
 import type { SessionEntry } from '@earendil-works/pi-coding-agent';
@@ -35,15 +30,6 @@ export function pruneSettings(overrides: Partial<Settings> = {}): Settings {
       ...base.classifier,
       ...classifier,
     },
-  };
-}
-
-/** 落とし物の 1 件を作る */
-export function pruneDrop(overrides: Partial<Drop> = {}): Drop {
-  return {
-    id: 'e1',
-    chars: 10,
-    ...overrides,
   };
 }
 
@@ -109,9 +95,4 @@ export function customPassEntry(pass: PrunePass, id = 'e-pass'): SessionEntry {
 /** 印の雛形。`defaultSettings().marker` と同じ */
 export function pruneTemplate(): string {
   return defaultSettings().marker;
-}
-
-/** 印の文。`markerText` の呼び出しはここに集める */
-export function pruneMarker(chars: number, template?: string): string {
-  return markerText(chars, template ?? defaultSettings().marker);
 }
