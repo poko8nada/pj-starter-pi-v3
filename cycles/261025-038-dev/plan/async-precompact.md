@@ -622,10 +622,10 @@ export function registerPrecompact(pi: PiPort): void;
 
 ### Slice 3: summarize-and-draft
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d17d5e7 consult(async-precompact): add summarize ports and draft
+- Stopped: なし
 
 ### Slice 4: wiring-and-status
 
