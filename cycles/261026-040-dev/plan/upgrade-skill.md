@@ -67,38 +67,43 @@ DEFINITION.md            update
 ### Steps
 
 1. `DEFINITION.md`: `Users can do` の `yolo-skill` の次に、`upgrade-skill` の 1 行を足す。
-2. `README.md`: `Cycle mechanism` の行を、8 つから 9 つにし、`upgrade` を並びに足す。
-3. `README.ja.md`: 同じ行を、日本語で同じように直す。
+2. `README.md`: `Cycle mechanism` の行は 8 つのままにし、その次の行に `Packages` の 1 行を足す。`upgrade` はサイクルに乗らないので、サイクルの一覧には入れない。
+3. `README.ja.md`: 同じく、`サイクルの仕組み` の行は 8 つのままにし、その次の行に `パッケージ` の 1 行を足す。
 
 ### Verify
 
 - Always:
   - 既定の 5 つ
 - Added:
-  - other: `grep -c 'nine skills' README.md` が 1、`grep -c '9 つ' README.ja.md` が 1、`grep -c 'upgrade' README.md README.ja.md DEFINITION.md` が 3 つとも 1 以上、`grep -c 'eight skills' README.md` と `grep -c '8 つ' README.ja.md` が 0。
-  - base: owner が 3 つの差分を読み、`upgrade` が一覧に入り、数が 9 になり、`DEFINITION.md` の行が `yolo-skill` の次にあり、書式がほかの行と同じであることを認める。
+  - other: `grep -c 'eight skills' README.md` が 1、`grep -c '8 つ' README.ja.md` が 1（サイクルの一覧は 8 つのまま）。`grep -c 'upgrade' README.md README.ja.md DEFINITION.md` が 3 つとも 1 以上。
+  - base: owner が 3 つの差分を読み、`README` のサイクルの一覧が 8 つのままで、`upgrade` が別の 1 行にあり、`DEFINITION.md` の行が `yolo-skill` の次にあり、書式がほかの行と同じであることを認める。
 
 ## Notes
 
 ### Slice 1: レポートの形と、並列リサーチの文
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - slice 1 の `base` の条件が「ADR 040 の `## 02` と `## 03` の規則が写っている」としていたが、その規則は `SKILL.md`（slice 2）の持ち物で、references には入らない。条件を「レポートの形が `upgrade-run` と合い、タスクの文が範囲・読むファイル・当たる / 当たらない / 不明・根拠 URL を持つ」に直した。
+- Commit: b70b10e
 - Stopped:
 
 ### Slice 2: スキルの本体
 
 - Findings:
+  - なし
 - Unplanned:
   - `SKILL.md` の `description` に「サイクルに乗せず、単独で走る」の 1 節を入れ、本文に `## Not a cycle` を足した。「`upgrade` をサイクルに乗せるか」の問いが ADR 040 に無く、slice 2 の文面からは決まらないため、ここで吸収した（owner の指示で `Unplanned` に残す）。
-- Commit:
+- Commit: f4c32a6
 - Stopped:
 
 ### Slice 3: 定義と一覧
 
 - Findings:
+  - なし
 - Unplanned:
+  - plan の step と `Verify` が「`README` のサイクルの一覧を 8 つから 9 つに」としていたが、`upgrade` はサイクルに乗らないので一覧は 8 つのままにし、`upgrade` は別の 1 行にした（owner の判断）。
 - Commit:
 - Stopped:
 
