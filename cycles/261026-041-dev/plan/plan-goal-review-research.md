@@ -62,7 +62,7 @@ README.ja.md                  update
 ### Steps
 
 1. `.pi/skills/plan/SKILL.md`:
-   - 手順 9 のレビューの観点を `Goal`、`Files`、`Types`、`Cases`、`Checks` に並べ直し、`Goal` は手順と検査の抜けと `Non-goal` の踏み込み、`Files` は `Files` のツリーの抜けと古くなる文書、`Types` は宣言の抜けと型規則の違反、`Cases` は `plan/references/format.md` の `## Test cases` の 6 規則、`Checks` は `Verify` が書いたとおりに走ることと、振る舞いを外したときに `Verify` が落ちることを見るようにします。
+   - 手順 10 のレビューの観点を `Goal`、`Files`、`Types`、`Cases`、`Checks` に並べ直し、`Goal` は手順と検査の抜けと `Non-goal` の踏み込み、`Files` は `Files` のツリーの抜けと古くなる文書、`Types` は宣言の抜けと型規則の違反、`Cases` は `plan/references/format.md` の `## Test cases` の 6 規則、`Checks` は `Verify` が書いたとおりに走ることと、振る舞いを外したときに `Verify` が落ちることを見るようにします。
 2. `.pi/skills/plan/references/tasks.md`:
    - レビューのタスクの観点を 5 つに並べ直し、各観点の確認内容（`Goal` の 2 点、`Files` の 2 点、`Types` の 2 点、`Cases` は `plan/references/format.md` の `## Test cases` の 6 規則、`Checks` の 2 点）を書きます。
 3. `.pi/skills/yolo/SKILL.md`:
@@ -115,17 +115,17 @@ README.ja.md                  update
 
 ### Slice 1: goal-read
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 617537d
+- Stopped: なし
 
 ### Slice 2: review-viewpoints
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: 計画の `Steps` が観点の名前だけだったので、`plan/SKILL.md` の手順 10 を 5 観点の箇条書きにしました。
+- Commit: 1fae8d0
+- Stopped: なし
 
 ### Slice 3: research-step
 

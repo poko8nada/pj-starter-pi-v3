@@ -62,7 +62,7 @@ propose      read the state and lay the next candidates out (the three questions
 brief        settle the owner's intent and lay the options out (the research, the trial, the talk)
 adr          decide what needs deciding (the options, the decision)
 design       walk what each entry affects, cut the cycle into plans, review the cut, and say where each runs
-plan         write one plan per worktree (the files, the types, the steps, the checks)
+plan         write one plan per worktree (the research, the files, the types, the steps, the checks)
 work         carry a plan to done (the slices, the test cleanup, the review, the acceptance, the merge with the base's dependencies set again)
 close        judge the cycle, then ask the owner to verify the Units (a leftover is one of four; `ex-` plan, `proposed` or `dropped`)
 yolo         walk the whole cycle without the owner's confirmations

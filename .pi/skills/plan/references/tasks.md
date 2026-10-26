@@ -30,3 +30,18 @@ Do not change the code or the plan.
 
 - One subagent per plan; the plans do not wait for each other.
 - One round: the agent fixes the plan from the findings, and says in its report to the owner what it did with each: `fixed: <what was done>`, or `left: <why>` for one it did not adopt. The plan stage reserves the section; its content belongs to the work.
+
+## Research the unwritable lines (a `research` subagent)
+
+```
+Answer for one line the plan cannot write, and nothing else. The task names the line, the design's `Goal` and `Non-goal`, and what the plan holds so far.
+
+Ask one question within these four kinds:
+- the code's present shape
+- the contract of the thing it calls
+- the library's or the package's practice
+- the shape of the test double
+
+Report the facts that exist now, with where they were found. Do not decide, and do not write the plan.
+If the missing fact is none of the four kinds, answer なし; the plan writes the line as `Stopped`, with the question and the reason.
+```
