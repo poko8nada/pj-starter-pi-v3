@@ -91,6 +91,7 @@ DEFINITION.md            update
 
 - Findings:
 - Unplanned:
+  - `SKILL.md` の `description` に「サイクルに乗せず、単独で走る」の 1 節を入れ、本文に `## Not a cycle` を足した。「`upgrade` をサイクルに乗せるか」の問いが ADR 040 に無く、slice 2 の文面からは決まらないため、ここで吸収した（owner の指示で `Unplanned` に残す）。
 - Commit:
 - Stopped:
 
