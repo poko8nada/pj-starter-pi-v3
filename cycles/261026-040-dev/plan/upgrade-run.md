@@ -200,15 +200,19 @@ pnpm-workspace.yaml                update
 ### Slice 5: vitest
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - plan の `Verify` が `pnpm ls vite` としていたが、vite は top-level に出ず `@vitest/mocker` が引いていた。`pnpm why vite` に直した（vite 8.3.5 で 6.4 以上）。
+- Commit: 01f08c5
 - Stopped:
 
 ### Slice 6: typescript
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 9ceca56
 - Stopped:
 
 ### Slice 7: 監査
@@ -223,7 +227,7 @@ pnpm-workspace.yaml                update
 ### Cleanup: なし
 
 - Findings:
-  - なし
+  - なし — `## Files` の 4 本の `.test.ts`（`consult/sub/spec.test.ts`、`quality-gate/checks.test.ts`、`sound-notify/index.test.ts`、`thinking-scrub/index.test.ts`）を読んだ。同じ振る舞いを 2 度見る試し、消えた振る舞いの試し、この plan が作らなくした枝の試し、`## Test cases` が書かない試しは、どれも無かった。
 - Unplanned:
   - なし
 
