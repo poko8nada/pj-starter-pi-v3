@@ -134,24 +134,24 @@ README.ja.md                        update
 
 ### Slice 2: 飛ばす所と説明
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 24be6d6
+- Stopped: なし
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — `.pi/skills/design/SKILL.md:76`のstep 9修正と`.pi/skills/close/SKILL.md:73,78,83,87`の繰り下げを確認し、旧番号・旧見出しの残存がないことをgrepで確かめた。
+- Unlisted: なし — `git diff 2426f2f..HEAD`の7件が`## Files`の7件と一致し、plan mdの差分は`## Notes`の記録のみだった。
+- Gaps: なし — 文言変更のみで実行可能な振る舞いがなく、`Added`のオーナーの目が各スライスに与え済みのため追加の検査は要らない。
+- Unproven: なし — テスト対象の振る舞いがなく、オーナーの目は壊して赤を確認する対象外であることを`.pi/skills/work/SKILL.md:71`で確認した。
+- Noise: なし — テスト手順が無く`Types`もなしのため、`## Test cases`に照らす雑音の判定対象が存在しない。
+- Doubts: なし。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（55 本、721 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。古い番号（`before step 8`、`### 11. Show the owner`、`### 6. Owner`）の `grep` は 0 件。オーナーが 2 つのスライスの文面を読み、それぞれ OK を返した。
+- Findings: なし
+- Doubts: なし
