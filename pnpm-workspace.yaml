@@ -3,3 +3,5 @@ allowBuilds:
   lefthook: true
   protobufjs: false
 minimumReleaseAge: 1440
+overrides:
+  undici: ^8.12.3
