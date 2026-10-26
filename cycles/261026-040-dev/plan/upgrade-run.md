@@ -162,8 +162,10 @@ tsconfig.json                      update
 ### Slice 1: 範囲内の更新と設定の整理
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - `.pi/extensions/**/*.test.ts` の lint の警告 6 件を、この slice で直した。plan を書く前に `pnpm lint` が赤で、全 slice の `Always` がその緑を前提にしているため、ここで吸収した。関数 3 つをモジュールの外へ出し、`as unknown as` の 3 件を型で置き換えた。
+- Commit: 086ba09
 - Stopped:
 
 ### Slice 2: @types/node
