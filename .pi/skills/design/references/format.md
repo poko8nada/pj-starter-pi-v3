@@ -29,6 +29,14 @@ Section and field names are English; the content is Japanese.
 - Why: <なぜこの plan か。1 文>
 - Where: worktree | base（owner が見る）
 
+### Goal
+
+- <この plan の達成を、検査を落とせる一文で>
+
+### Non-goal
+
+- <この plan が触れないこと。理由付き>
+
 ### Summary
 
 - <この plan が何をするか。1 文>
@@ -96,6 +104,16 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 - A yolo plan is worktree; the base condition does not apply.
 - Propose one place per plan with the reason, and record the owner's answer. `worktree`, or `base` with what the owner watches.
 - A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes: keep the files apart, or order the two.
+
+## Goal
+
+- One sentence a check can make red: with `X`, `Y` is observed. A summary is not a goal: with the summary, a plan that does all the steps is true; with the goal, the steps done and `Y` not observed is red.
+- The sentence comes from the entry's items: `Adopted` is its content, the `Scope`'s `in` its range, and `Research & Trial` how it is observed.
+
+## Non-goal
+
+- The `Scope`'s `out` that touches this plan, and the `Options` a worker would mistake, with the reason.
+- It says what this plan does not do, and why. A plan that goes past it is a finding.
 
 ## Summary
 

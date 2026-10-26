@@ -13,7 +13,7 @@ A plan is a worktree, a branch and a merge — the unit the work runs in. The pl
 
 `cycles/<YYMMDD>-<NNN>-<slug>/design.md`, in the shape `references/format.md` gives.
 
-Read that file before writing. It holds the section for the related files, a section per plan (`Summary`, `Paths` and `Boundary`), the rules for the cut, and `Boundary`'s two groups.
+Read that file before writing. It holds the section for the related files, a section per plan (`Summary`, `Goal`, `Non-goal`, `Paths` and `Boundary`), the rules for the cut, and `Boundary`'s two groups.
 
 ## Procedure
 
@@ -50,6 +50,8 @@ The plan id is the name of the change (`worktree-cleanup`), not the Unit's name.
 ### 5. Write each plan's section
 
 - `ADR & Where` — `No` (the entries this plan cuts), `Why` (one sentence), `Where`
+- `Goal` — one sentence a check can make red, from the entry's items: `Adopted` is the content, the `Scope`'s `in` the range, `Research & Trial` how it is observed
+- `Non-goal` — the `Scope`'s `out` that touches this plan, and the `Options` a worker would mistake, with the reason
 - `Summary` — what this plan does, as a digest of the entries it cuts
 - `Paths` — the files this plan changes, from the entries' subjects and the followers that change with them
 - `Boundary` — the edge: `Plans` and `External`. `External` is what the research reported as outside; `なし` when the change talks to nothing outside
@@ -68,7 +70,7 @@ Propose one place per plan, with the reason. The owner answers, and the answer c
 
 A `review` subagent reads design.md and what it names, and answers on six viewpoints. The task is in `references/tasks.md`.
 
-- the viewpoints: a decided line, the cut's reason, the outside, the followers, the readers, the checks
+- the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, and the `Goal` is checkable), the cut's reason, the outside, the followers, the readers, the checks
 - coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## External` is in some plan's `External`
 - one subagent, one round: the design is fixed from the findings, and the report to the owner says what was done with each
 - the review is not the owner's look: it runs before step 8, and it does not wait
