@@ -35,6 +35,10 @@ const pi: PiPort = { exec: async () => undefined };
 const ctx: CtxPort = { hasUI: true };
 const defaultConfig = parseConfig({});
 
+function run(event: ToolExecutionEndEvent, config = defaultConfig): void {
+  handleToolExecutionEnd(pi, ctx, event, config);
+}
+
 function commitEvent(overrides: Partial<ToolExecutionEndEvent> = {}): ToolExecutionEndEvent {
   return {
     type: 'tool_execution_end',
@@ -89,10 +93,6 @@ describe('sound-notify.commit', () => {
   afterEach(() => {
     restorePlayer();
   });
-
-  function run(event: ToolExecutionEndEvent, config = defaultConfig): void {
-    handleToolExecutionEnd(pi, ctx, event, config);
-  }
 
   it('bash の結果にコミットの形 → commit の音が 1 回鳴り、6 桁では鳴らない', () => {
     run(commitEvent());

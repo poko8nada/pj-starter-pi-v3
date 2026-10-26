@@ -6,6 +6,7 @@ import type {
   BeforeAgentStartEvent,
   MessageEndEvent,
   MessageUpdateEvent,
+  NormalizedBuildSystemPromptOptions,
 } from '@earendil-works/pi-coding-agent';
 import {
   DEGENERATE_UNIT,
@@ -108,16 +109,33 @@ function messageEnd(message: AgentMessage): MessageEndEvent {
 }
 
 function messageUpdate(message: AgentMessage): MessageUpdateEvent {
+  if (message.role !== 'assistant') {
+    throw new Error('messageUpdate は assistant のメッセージだけを受ける');
+  }
   return {
     type: 'message_update',
     message,
     assistantMessageEvent: { type: 'thinking_delta', contentIndex: 0, delta: '', partial: message },
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物の event を作る
-  } as unknown as MessageUpdateEvent;
+  };
 }
 
 function agentSettled(aborted: boolean): AgentSettledEvent {
   return { type: 'agent_settled', aborted };
+}
+
+function normalizedPromptOptions(): NormalizedBuildSystemPromptOptions {
+  return {
+    cwd: '/repo',
+    selectedTools: [],
+    hiddenTools: [],
+    toolSnippets: {},
+    toolGuidelines: {},
+    promptGuidelines: [],
+    appendSystemPrompt: '',
+    sections: {},
+    contextFiles: [],
+    skills: [],
+  };
 }
 
 function beforeUser(): BeforeAgentStartEvent {
@@ -126,9 +144,8 @@ function beforeUser(): BeforeAgentStartEvent {
     messageType: 'user',
     prompt: 'do the task',
     systemPrompt: '',
-    systemPromptOptions: {},
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物の event を作る
-  } as unknown as BeforeAgentStartEvent;
+    systemPromptOptions: normalizedPromptOptions(),
+  };
 }
 
 function beforeCustom(): BeforeAgentStartEvent {
@@ -143,9 +160,8 @@ function beforeCustom(): BeforeAgentStartEvent {
       timestamp: 1,
     },
     systemPrompt: '',
-    systemPromptOptions: {},
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物の event を作る
-  } as unknown as BeforeAgentStartEvent;
+    systemPromptOptions: normalizedPromptOptions(),
+  };
 }
 
 function degenerateChars(): number {

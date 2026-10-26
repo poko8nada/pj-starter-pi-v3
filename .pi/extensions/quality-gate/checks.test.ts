@@ -85,6 +85,26 @@ function tsFile(dir: string, name: string): string {
   return file;
 }
 
+async function assertNoExclusion(code: number): Promise<void> {
+  const dir = tempDir();
+  const file = tsFile(dir, 'a.ts');
+  const fake = fakePi();
+  fake.setCheckIgnoreCode(code);
+  const ignored = `${file}\n`;
+  fake.setIgnoredStdout(ignored);
+
+  const run = await runChecks(fake.pi, { cwd: dir }, [file]);
+
+  expect(run.skipped).toEqual([]);
+  const gitCall = fake.calls.find((call) => call.command === 'git');
+  expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
+  const pnpmArgs = fake.calls.filter((call) => call.command === 'pnpm').map((call) => call.args);
+  expect(pnpmArgs.length).toBeGreaterThan(0);
+  for (const args of pnpmArgs) {
+    expect(args).toContain(file);
+  }
+}
+
 describe('toRelative', () => {
   it('cwd からの相対を返す', () => {
     const cwd = '/repo';
@@ -154,28 +174,6 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
   });
 
   it('git check-ignore が非 0 でも無視されたパスの出力があれば除外なし', async () => {
-    async function assertNoExclusion(code: number): Promise<void> {
-      const dir = tempDir();
-      const file = tsFile(dir, 'a.ts');
-      const fake = fakePi();
-      fake.setCheckIgnoreCode(code);
-      const ignored = `${file}\n`;
-      fake.setIgnoredStdout(ignored);
-
-      const run = await runChecks(fake.pi, { cwd: dir }, [file]);
-
-      expect(run.skipped).toEqual([]);
-      const gitCall = fake.calls.find((call) => call.command === 'git');
-      expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
-      const pnpmArgs = fake.calls
-        .filter((call) => call.command === 'pnpm')
-        .map((call) => call.args);
-      expect(pnpmArgs.length).toBeGreaterThan(0);
-      for (const args of pnpmArgs) {
-        expect(args).toContain(file);
-      }
-    }
-
     await assertNoExclusion(1);
     await assertNoExclusion(128);
   });

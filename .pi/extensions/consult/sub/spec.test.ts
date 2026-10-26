@@ -231,10 +231,10 @@ describe('errorFrom', () => {
   });
 });
 
-describe('accountEvent', () => {
-  // 上限は走りながら判定する。終わってから数えても、使った後では遅い。
-  const turn = (output: number) => messageEnd({ usage: { output } });
+// 上限は走りながら判定する。終わってから数えても、使った後では遅い。
+const turn = (output: number) => messageEnd({ usage: { output } });
 
+describe('accountEvent', () => {
   it('assistant 以外は数えない', () => {
     const spent: Spent = { turns: 0, output: 0 };
     expect(
