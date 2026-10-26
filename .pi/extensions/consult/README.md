@@ -19,16 +19,17 @@ The extension registers four tools.
 
 The caller picks a role, and the role holds the whole policy: model candidates, tools, whether the subagent writes, spend limits, and the words it works under. There is no way to override any of it per call — to change the policy, edit `types.json`.
 
-| Role       | Tools                                                     | Place                 | Turns | Output tokens | `continue` by default |
-| ---------- | --------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
-| `research` | read, ls, find, grep, web_search, fetch_content           | the base              | 40    | 60,000        | no                    |
-| `review`   | read, ls, find, grep, web_search, quick_edit, target_edit | the base              | 40    | 60,000        | no                    |
-| `trial`    | plus bash, and writing                                    | a worktree (required) | 60    | 120,000       | yes                   |
-| `code`     | plus bash, and writing                                    | a worktree (required) | 80    | 120,000       | yes                   |
+| Role          | Tools                                                      | Place                 | Turns | Output tokens | `continue` by default |
+| ------------- | ---------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
+| `research`    | read, ls, find, grep, web_search, fetch_content            | the base              | 40    | 60,000        | no                    |
+| `review`      | read, ls, find, grep, web_search, quick_edit, target_edit  | the base              | 40    | 60,000        | no                    |
+| `proofreader` | read, ls, find, grep, edit, quick_edit, target_edit, write | the base              | 80    | 120,000       | no                    |
+| `trial`       | plus bash, and writing                                     | a worktree (required) | 60    | 120,000       | yes                   |
+| `code`        | plus bash, and writing                                     | a worktree (required) | 80    | 120,000       | yes                   |
 
 `isolated` decides the place: a role that is not isolated may be given a worktree, and runs in the base when it is not. An isolated role has no such choice — without a worktree the call is refused, and consult never makes one on its own.
 
-`paths` and `bash` are the role's permissions, enforced inside the subagent: a write tool (`edit`, `quick_edit`, `target_edit`, `write`) may only touch a path the role allows, and `bash` may only run a command that starts with one of the role's prefixes. Reading is not limited. An empty list means no limit. A path is written from the subagent's cwd (its worktree): a file, a directory, or a glob (`cycles/*/plan/*.md`).
+`paths` and `bash` are the role's permissions, enforced inside the subagent: a write tool (`edit`, `quick_edit`, `target_edit`, `write`) may only touch a path the role allows, and `bash` may only run a command that starts with one of the role's prefixes. Reading is not limited. An empty list means no limit. A path is written from the subagent's cwd (its worktree): a file, a directory, or a glob (`cycles/*/plan/*.md`). One role writes only md, with (`["**/*.md", "**/.*/**/*.md"]`), so md under dot directories is also covered.
 
 The agent resolves the policy and hands it to the subagent on the way in; the subagent never reads `types.json`. The subagent's guard holds even where the host has no permission config — the real boundary is still the host and the OS (see Trust).
 

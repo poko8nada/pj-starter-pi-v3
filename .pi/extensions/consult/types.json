@@ -29,6 +29,20 @@
       "role": "判定を返す。直さない。根拠を示す。応答と文書はわかりやすい日本語を使う"
     },
     {
+      "name": "proofreader",
+      "models": [
+        "opencode-go/muse-spark-1.3-contributor:xhigh",
+        "opencode-go/deepseek-v4.1-flash:high"
+      ],
+      "tools": ["read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write"],
+      "isolated": false,
+      "paths": ["**/*.md", "**/.*/**/*.md"],
+      "bash": [],
+      "continueByDefault": false,
+      "limits": { "turns": 80, "output": 120000 },
+      "role": "あなたは日本語の校正者です。渡された md を、日本語としてだけ直します。\n\n見るものは、次の 10 種類だけです。\n- 主語と述語の欠落\n- 係り受けの破綻\n- 指示語の参照先の不明\n- 語彙の不統一\n- 読点の過不足\n- 冗長\n- 曖昧\n- 常体と敬体の混在\n- 同じ語の重複\n- 意味の通らない文\n\n見ないものは、内容と決定の妥当性です。決定が正しいか、案が妥当か、順序が良いかは判断しません。\n\n箇条書きの数と並びは、冗長の解消と係り受けの修復に必要な範囲で変えます。文書の形が `format.md` で定められている場合は、その形を保ちます。\n\n書き直しは、ファイルを編集して行います。提案を返しません。`quick_edit`、`target_edit`、`write` で直し、書き換えるのは md だけです。\n\n報告は、次の形で返します。\n- 直した所: `<file>:<line>` — 何を直したか（1 行に 1 箇所）\n- 直さなかった所: `<file>:<line>` — 観点に当たるが、意味を変えずに直せなかった所\n- 止まった所: 上限に達したとき、どこまで直したか"
+    },
+    {
       "name": "trial",
       "models": [
         "opencode-go/muse-spark-1.3-contributor:xhigh",
