@@ -105,9 +105,9 @@
 
 ### Slice 1: 役割
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 063dd62cd387b120bfa1fd3c52c358c9de660eb6
 - Stopped:
 
 ### Slice 2: 文面と検査

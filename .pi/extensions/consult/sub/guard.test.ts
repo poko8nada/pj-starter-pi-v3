@@ -219,6 +219,36 @@ describe('judgeToolCall + 役割の許可', () => {
   });
 });
 
+describe('pathAllowed + proofreader（md だけ）', () => {
+  it('cycles の adr.md は通す', () => {
+    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(
+      true,
+    );
+  });
+
+  it('.pi の SKILL.md は通す', () => {
+    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(true);
+  });
+
+  it('src の ts は止める', () => {
+    expect(pathAllowed('src/a.ts', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(false);
+  });
+});
+
+describe('judgeToolCall + proofreader の許可', () => {
+  const proofreader: Limits = { state: 'set', paths: ['**/*.md', '**/.*/**/*.md'], bash: [] };
+
+  it('md への write は通す', () => {
+    expect(
+      judgeToolCall('write', { path: 'cycles/261026-042-dev/design.md' }, '/w', proofreader),
+    ).toEqual({});
+  });
+
+  it('md 以外への write は止める', () => {
+    expect(judgeToolCall('write', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+  });
+});
+
 describe('judgeToolCall: OPEN（許可の設定が無い）', () => {
   it('書く道具も bash も通す（fail-closed は壊れた設定の時だけ）', () => {
     expect(judgeToolCall('edit', { path: 'x.txt' }, dir)).toEqual({});

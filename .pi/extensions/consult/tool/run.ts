@@ -11,7 +11,8 @@ import { Type } from 'typebox';
 /** 道具のパラメータ */
 export const PARAMETERS = Type.Object({
   role: Type.String({
-    description: 'How the subagent runs: research / review / trial / code. Set in types.json',
+    description:
+      'How the subagent runs: research / review / proofreader / trial / code. Set in types.json',
   }),
   task: Type.String({ description: 'What the subagent should do. Name any file it must read' }),
   worktree: Type.Optional(

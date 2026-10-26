@@ -224,7 +224,7 @@ export default function (pi: ExtensionAPI) {
     description:
       'Run one subagent pi in the background, with a role and a place: consult_run{role, task, worktree?, continue?}. One call starts exactly one subagent; call it again for another. The subagent reads the files it needs itself, so name them in task. An isolated role needs a worktree (consult_worktree); one that is not runs in the base when worktree is omitted. continue reopens the same conversation in that worktree. Returns started: <id> at once; the result arrives later as a message.',
     promptSnippet:
-      'Run one background subagent pi with a role (research / review / trial / code) and a place',
+      'Run one background subagent pi with a role (research / review / proofreader / trial / code) and a place',
     promptGuidelines: [
       'Use consult_run when a question or a piece of work is better done without this conversation in view: a review, a second opinion, or a role you were not given.',
       'One call is one subagent. For several, call it several times; it is background work, so do not wait.',
