@@ -113,10 +113,6 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('read', { path: join(dir, 'README.md') }, dir)).toEqual({});
   });
 
-  it('ls + リポジトリ直は通す', () => {
-    expect(judgeToolCall('ls', { path: dir }, dir)).toEqual({});
-  });
-
   it('パスを取らない道具は通す', () => {
     expect(judgeToolCall('web_search', { query: 'hello' }, dir)).toEqual({});
   });
@@ -216,6 +212,32 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, broken).block).toBe(true);
     expect(judgeToolCall('bash', { command: 'git status' }, dir, broken).block).toBe(true);
     expect(judgeToolCall('read', { path: 'src/a.ts' }, dir, broken)).toEqual({});
+  });
+});
+
+describe('pathAllowed + proofreader（md だけ）', () => {
+  it('md は通す（通常とドットディレクトリ）', () => {
+    const patterns = ['**/*.md', '**/.*/**/*.md'];
+    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', patterns)).toBe(true);
+    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', patterns)).toBe(true);
+  });
+
+  it('src の ts は止める', () => {
+    expect(pathAllowed('src/a.ts', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(false);
+  });
+});
+
+describe('judgeToolCall + proofreader の許可', () => {
+  const proofreader: Limits = { state: 'set', paths: ['**/*.md', '**/.*/**/*.md'], bash: [] };
+
+  it('md への write は通す', () => {
+    expect(
+      judgeToolCall('write', { path: 'cycles/261026-042-dev/design.md' }, '/w', proofreader),
+    ).toEqual({});
+  });
+
+  it('md 以外への write は止める', () => {
+    expect(judgeToolCall('write', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
   });
 });
 

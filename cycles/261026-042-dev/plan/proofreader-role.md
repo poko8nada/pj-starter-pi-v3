@@ -105,31 +105,44 @@
 
 ### Slice 1: 役割
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 063dd62cd387b120bfa1fd3c52c358c9de660eb6
 - Stopped:
 
 ### Slice 2: 文面と検査
 
 - Findings:
-- Unplanned:
-- Commit:
+  - マージ直後のベースでのproofreader実行を確かめていません。
+    - left: マージ後にベースで1回行う検査のため、worktreeの段階では行えません。受け入れまたはマージ直後に行う必要があります。
+- Unplanned: なし
+- Commit: b02789bb739f1b6b90d9c6bdf029e24cd9c3462b
 - Stopped:
+
+### Cleanup: md許可の重複と読むだけの通過
+
+- Findings:
+  - 重複: `pathAllowed + proofreader` の `cycles の adr.md は通す` と `.pi の SKILL.md は通す` は同じ `true` を別の `it` で確かめていた。1 つの `it('md は通す（通常とドットディレクトリ）')` にまとめ、2 つの `expect` は残した。拒否側（`src の ts は止める` と `md 以外への write は止める`）は直接層と `judgeToolCall` 層のため両方残した。
+  - 書かないはず: `judgeToolCall` の `ls + リポジトリ直は通す` を削った。計画の 5 件は md/ts の許可だけを見ており、`ls` は書かない。読みは縛らないことが `judgeLimits` の先頭（非書き・非 bash は `{}`）で決まっており、`読むのは縛らない` と `パスを取らない道具は通す` が同じ `{}` を既に確かめている。誰も気づかない単独の通過のため落とした。
+  - 消えた振る舞い: なし。2 つのスライスは足すだけで、削った振る舞いは無い。
+  - 止めた分岐: なし。`guard.ts`・`types.ts`・`run.ts` の分岐は変えておらず、到達不能になった枝は無い。
+- Unplanned: なし
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 役割を並べる文面は `.pi/extensions/consult/index.ts:227` と `.pi/extensions/consult/tool/run.ts:15` の2か所とも追随し、他に列挙は無いことを確かめた。`README.md:22-32` の表と説明は計画どおりで、古い文面は残っていない。
+- Unlisted: なし — 差分の5件は `Files` の `update` の5件と一致する。残る7件は汎用の追随で変える必要が無いことを確かめた（`sub/guard.ts:218-234`、`sub/spec.ts:31-84`、`policy/types.ts:57-82`、`run/subagent.ts:57-88`、`consult.fixture.ts:18-31`、`tool/run.test.ts:7-12`、`policy/types.test.ts:15-83`）。計画mdの差分は記録のため数えない。
+- Gaps: なし — 計画の5件の検査は4つの `it` に束ねても `expect` は5件とも残り（`sub/guard.test.ts:219-242`）、許可と拒否の両方向を確かめている。削った `ls` の通過は読みの縛り無しと同じ枝で、`sub/guard.test.ts:112-118` と `sub/guard.test.ts:200-203` が今も確かめている。
+- Unproven: なし — 許可と拒否が対で効き、片方だけ壊れても緑にならない（`sub/guard.test.ts:221-226` と `sub/guard.test.ts:233-241`）。`types.json:32-43` との直結は `Added` の目視が担い、自動検査の責めではない。
+- Noise: なし — 新しい断言の値と文は計画とADRが決めたもので、型や制約が保証する前提の再掲では無い。削った `ls` は誰も気づかない単独の通過で、掃除は妥当である（`sub/guard.test.ts:116-118`）。
 - Doubts:
+  - マージ直後のベースでの `proofreader` 実行は未了で、受け入れまたはマージ直後に行う（`Notes` の `Slice 2` の `left` どおり）。これを除けば差分は計画を閉じられる。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（55 本、721 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。`guard.test.ts` の md の許可のケースは、`patterns` から点で始まるディレクトリのパターンを抜いて赤になることを確かめ、戻した。`types.json` を読み、`proofreader` の項目が `isolated: false`、`paths` が 2 つ、`limits` がターン 80・出力 120000 であることを確かめた。
+- Findings: `Added` の 1 つ（マージの直後にベースで、`cycles/261026-041-dev/adr.md` の写しに `proofreader` を当てて差分を読む）は、ワークツリーの段では走らせられない。
+  - left: マージの直後にベースで 1 回行います。
+- Doubts: なし
