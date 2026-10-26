@@ -17,7 +17,7 @@ Read that file before writing. It holds the shape, the files and their structure
 
 ### 1. Read what the plan carries
 
-- design's section for this plan: `No`, `Why`, `Where`, `Summary`, `Paths`, `Boundary`
+- design's section for this plan: `No`, `Why`, `Where`, `Summary`, `Goal`, `Non-goal`, `Paths`, `Boundary`
 - entries the plan's `No` names, in full
 - `No` is the design's plan section's `No`; a normal plan writes it at the top of the plan md as it is
 - An `ex-` plan does not write `No`; the Triage line is the only source
@@ -42,6 +42,8 @@ One step is one file. The shape follows the file: a code file says what to do, a
 
 The cases of a test file follow `## Test cases` in `references/format.md`: what the types, the schema or the DB already guarantee is not a case, a case nobody would notice is not a case, and a mock is written only where the outside gives its types.
 
+The plan writes the `Goal`'s result as a test case, and no step that goes past the `Non-goal`.
+
 **A boundary with no answer is a hole in the plan.** Stop, and decide the shape before writing on.
 
 ### 6. Write the `Verify` of each slice
@@ -65,7 +67,7 @@ A pair found is a change to cut. The owner decides, the design's `Boundary.Plans
 
 ### 9. Review of each plan
 
-A `review` subagent reads one plan's slices — each `Verify`, and the test steps' cases against `## Test cases` — and answers with its findings. The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
+A `review` subagent reads one plan's slices — each `Verify`, and the test steps' cases against `## Test cases` — and the design's `Goal` and `Non-goal`, and answers with its findings; it checks the `Verify` against the `Goal`'s result and the steps against the `Non-goal`. The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
 
 ### 10. Show the owner
 

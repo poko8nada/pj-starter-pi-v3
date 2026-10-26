@@ -121,7 +121,7 @@ Section and field names are English; the content is Japanese.
 - A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
 - One step is one file: what to do in it. The shape follows the file:
   - a code file — what to do, in one sentence; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
-  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`
+  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`; the `Goal`'s result is one of those cases
   - a document — what to do, in one sentence
 - The cases of a test file follow `## Test cases`.
 - A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
@@ -145,6 +145,7 @@ Section and field names are English; the content is Japanese.
 
 - `Verify` is what closes the slice: what has to pass, not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
+- The `Goal`'s result is one of the related tests; a step that goes past the `Non-goal` is not written, and the review reads it.
 - `Always:` — these five, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
