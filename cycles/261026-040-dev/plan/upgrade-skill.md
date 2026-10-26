@@ -35,7 +35,7 @@ DEFINITION.md            update
 - Always:
   - 既定の 5 つ
 - Added:
-  - base: owner が 2 つの references を読み、ADR 040 の `## 02` と `## 03` の規則と、`upgrade-run` で出したレポートの形が写っていることを認める。
+  - base: owner が 2 つの references を読み、レポートの形が `upgrade-run` で出したものと合い、タスクの文が「範囲・読むファイル・当たる / 当たらない / 不明・根拠 URL」を持っていることを認める。
 
 ## 2.スキルの本体
 
