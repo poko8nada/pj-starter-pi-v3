@@ -171,8 +171,10 @@ tsconfig.json                      update
 ### Slice 2: @types/node
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - 計画では推移の 25.9.9（Vite 経由）が並ぶと見ていたが、実際は 26.6.5 の 1 本にまとまった。直すコードは無かった。
+- Commit: b002a2d
 - Stopped:
 
 ### Slice 3: lefthook
