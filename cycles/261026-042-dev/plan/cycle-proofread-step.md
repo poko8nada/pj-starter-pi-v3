@@ -127,10 +127,10 @@ README.ja.md                        update
 
 ### Slice 1: 4 つの手順
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: クローズの `Owner` の後に続く手順（`Leftovers`、`Commit`、`Clean the workspace`）の番号を 8、9、10 に直した。計画のステップ 4 は `Owner` だけを繰り下げる書き方で、`### 7.` が 2 つになっていた。
+- Commit: 103832d
+- Stopped: なし
 
 ### Slice 2: 飛ばす所と説明
 

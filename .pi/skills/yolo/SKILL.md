@@ -23,7 +23,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 - read the definition and the ADR, and walk what each accepted entry touches
 - write the paths at the top of design.md, cut them into plans, name each plan, and write its section
-- skips: the owner's answer to `Where` (the proposal stands), and the owner's look at the cut
+- skips: the owner's answer to `Where` (the proposal stands), the proofread (the owner does not read the design under `yolo`, so it does not run later either), and the owner's look at the cut
 - runs the design's review: the review is a subagent's, not the owner's look
 - go on to the plan
 
@@ -32,7 +32,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 - write every plan md: its files, its slices, the types, the steps, the verify and the record
 - run the research for the lines the plan cannot write, and write a `Stopped` line for what the four kinds do not cover
 - read the plans together, and review each plan on the five viewpoints: `Goal`, `Files`, `Types`, `Cases`, `Checks`
-- skips: the owner's look at the plan mds
+- skips: the proofread (the owner does not read the plan mds under `yolo`, so it does not run later either), and the owner's look at the plan mds
 - go on to the work
 
 ### work
@@ -48,7 +48,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 - check the trigger, read the cycle, and collect the leftovers
 - give every leftover a destination: a leftover that moves a part of `DEFINITION.md` goes to `proposed`; a leftover that does not move it, and is one of four — a contradiction, a hole, something broken, something left stale — is looked at as an `ex-` plan; what breaks nothing goes to `proposed`
 - `dropped` is not yolo's: when the fix weighs more, stop and ask the owner
-- skips: the verification of what the cycle delivered, and the owner's judgement on the triage
+- skips: the proofread here (it runs once `yolo` stops, before the owner's judgement of the triage), the verification of what the cycle delivered, and the owner's judgement on the triage
 - `## Verified` is left out: the Unit's verification is the owner's, and it waits for their judgement
 - it ends here: the triage stands as a proposal, and the owner judges it
 
