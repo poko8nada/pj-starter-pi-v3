@@ -1,6 +1,6 @@
 ---
 name: upgrade
-description: Use when the owner asks to update the packages. It runs on its own, outside a cycle: the report and the audit are its stops, and its record is the commits.
+description: Use when the owner asks to update the packages. It runs on its own, outside a cycle. The report and the audit are its stops, and its record is the commits.
 ---
 
 # upgrade
