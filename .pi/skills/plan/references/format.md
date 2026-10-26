@@ -151,7 +151,7 @@ Section and field names are English; the content is Japanese.
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - the comments and the documents hold no stale wording: a `grep` for the names and the descriptions this slice changed
+  - the comments and the documents hold no stale wording: a case-insensitive `grep` for the names and the descriptions this slice changed
 - `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.

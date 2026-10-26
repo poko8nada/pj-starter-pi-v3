@@ -60,7 +60,7 @@ The plan writes the `Goal`'s result as a test case, and no step that goes past t
 
 `Verify` is what closes the slice: what has to pass. It has two groups, the same in every plan:
 
-- `Always` — the five: the related tests, the typecheck, the lint, the format, and the `grep` for stale wording
+- `Always` — the five: the related tests, the typecheck, the lint, the format, and the case-insensitive `grep` for stale wording
 - `Added` — what the change adds: DB, front, auth, the base plan's look, or another check of the ADR's scope
 
 A `Verify` that cannot be run is a hole: fix it, or say why it does not apply. A check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution.

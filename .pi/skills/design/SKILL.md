@@ -70,14 +70,14 @@ Propose one place per plan, with the reason. The owner answers, and the answer c
 
 A `review` subagent reads design.md and what it names, and answers on six viewpoints. The task is in `references/tasks.md`.
 
-- the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, and the `Goal` is checkable), the cut's reason, the outside, the followers, the readers, the checks
+- the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, the `Goal` is checkable, and the `Goal` does not go past the `Non-goal`), the cut's reason, the outside, the followers, the readers, the checks
 - coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## External` is in some plan's `External`
 - one subagent, one round: the design is fixed from the findings, and the report to the owner says what was done with each
 - the review is not the owner's look: it runs before step 8, and it does not wait
 
 ### 8. Show the owner
 
-One list of plans, each with its summary, its paths and its boundary. They read the cut, and answer.
+One list of plans, each with its summary, its `Goal`, its `Non-goal`, its paths and its boundary. They read the cut, and answer.
 
 ### Changes after this
 
