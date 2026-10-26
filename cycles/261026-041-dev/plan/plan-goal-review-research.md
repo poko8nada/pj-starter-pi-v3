@@ -129,11 +129,35 @@ README.ja.md                  update
 
 ### Slice 3: research-step
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: 計画の `Steps` が番号を定めていなかったので、手順 2 として足し、以降を 3〜11 に振り直し、参照も直しました。
+- Commit: bb64f12
+- Stopped: なし
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Review
 
+### Round 1
+
+- Stale:
+  - なし — 古い観点名（`Unrunnable` 等）は製品下に残らず、`README.md:65` ・ `README.ja.md:65` ・ `.pi/skills/yolo/SKILL.md:34` は更新済み、`.pi/skills/work/SKILL.md` ・ `work/references/tasks.md` ・ `close/scripts/collect.mjs:24` ・ `format.md:69-78,185-197` は work 剴余の 5 観点のままで問題なく、`design/SKILL.md:91` の旧行も ADR entry 04 が `plan/SKILL.md` のみを変える決定のため古くならないことを確かめた。
+- Unlisted:
+  - なし — 製品変更の 6 件（`.pi/skills/plan/SKILL.md` ・ `plan/references/format.md` ・ `plan/references/tasks.md` ・ `.pi/skills/yolo/SKILL.md` ・ `README.md` ・ `README.ja.md`）は `plan-goal-review-research.md:7-22` の `update` 6 件と一致し、附随 2 件（`work/SKILL.md` ・ `work/references/tasks.md`）は変える必要がなく無変更、残る 2 件（`cycles/261026-041-dev/adr.md` ・当該 plan md）は作業記録で `Files` の対象外のため計画外の変更はないことを確かめた。
+- Gaps:
+  - なし — slice 1 の 3 手順（`plan-goal-review-research.md:37-42`）・ slice 2 の 3 手順（`:64-69`）・ slice 3 の 6 手順（`:91-102`）は差分に全て反映され（`plan/SKILL.md:20,25-33,55,80-86` ・ `format.md:124,148,180` ・ `tasks.md:8-14,34-47` ・ `yolo/SKILL.md:32-34` ・ `README.md:65` ・ `README.ja.md:65`）、検査は文書変更のみで `Always` 5 点＋`base` の owner 目視（`:46-52,73-79,106-112`）が閉じるため振る舞いの抜けはないことを確かめた。
+- Unproven:
+  - なし — 文書のみの変更で試験ファイルと試験ステップがなく（`Types: なし` ・ Steps に試験なし）、壊して赤を確認すべき実行検査が存在せず、owner 目視は壊して試す対象外のため緑のまま残る検査はないことを確かめた。
+- Noise:
+  - なし — 試験ケース自体がなく `format.md:163-171` の 6 規則の判定対象が存在せず、`grep` の語は plan ・ ADR が決めた値で magic number ・ hardcoded 文字列に当たらず、型や DB が済ませる断言も誰も気づかない検査もないことを確かめた。
+- Doubts:
+  - なし — `adr.md:73-75` の entry 02 が引く `plan/SKILL.md:90` は手順追加で行が後ろにずれたが、ADR は決定時の記録で `Files` の対象外のため所見にせず残さないことを確かめた。
+
 ## Acceptance
+
+- Ran: `pnpm test:related`（関連なし）、`pnpm test:run`（718）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、古い文言の `grep`（0 件）。オーナーが 3 スライスの変更を読み、OK を出しました。
+- Findings: なし
+- Doubts: なし
