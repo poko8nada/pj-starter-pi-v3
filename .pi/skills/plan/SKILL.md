@@ -67,7 +67,15 @@ A pair found is a change to cut. The owner decides, the design's `Boundary.Plans
 
 ### 9. Review of each plan
 
-A `review` subagent reads one plan's slices — each `Verify`, and the test steps' cases against `## Test cases` — and the design's `Goal` and `Non-goal`, and answers with its findings; it checks the `Verify` against the `Goal`'s result and the steps against the `Non-goal`. The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
+A `review` subagent reads one plan's slices — each `Verify` and the test steps' cases — and the design's `Goal` and `Non-goal`, and answers on five viewpoints:
+
+- `Goal` — the steps and the checks that do not carry the design's `Goal`/`Non-goal`
+- `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
+- `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
+- `Cases` — the test steps' cases against `## Test cases`
+- `Checks` — a `Verify` that does not run as written, and a check that stays green with the behavior removed
+
+The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
 
 ### 10. Show the owner
 

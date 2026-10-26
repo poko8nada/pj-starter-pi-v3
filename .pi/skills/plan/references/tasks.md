@@ -7,19 +7,21 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` and its `### Steps` — the design's `Goal` and `Non-goal`, and the code, the test files and the documents those checks name. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
 Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify`, and these `Steps`, close the slice?
-- `Unrunnable` — the `Verify` does not run as written, the way the file it names already works
-- `Unproven` — it stays green with the behavior it names removed
-- `Noise` — a test step whose case a type, a schema or a DB constraint already settles, or one nobody would notice; a case written with a magic number or a hardcoded string
-- `Gaps` — a rule of the change that no step and no check carries; a value the plan or the ADR decided is not a gap
+- `Goal` — the design's `Goal` and `Non-goal` that no step and no check carries, and a step that goes past the `Non-goal`
+- `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
+- `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
+- `Cases` — the test steps' cases against `## Test cases`
+- `Checks` — a `Verify` that does not run as written, and a check that stays green with the behavior removed
 
 Answer in this shape, one section per slice:
 
 ### <slice name>
 
-- Unrunnable: なし, or `<file>:<line>` — what is wrong
-- Unproven: ...
-- Noise: ...
-- Gaps: ...
+- Goal: なし, or `<file>:<line>` — what is wrong
+- Files: ...
+- Types: ...
+- Cases: ...
+- Checks: ...
 
 One finding is one bullet. Write なし for a name that found nothing.
 This is the only round: the findings come back once.

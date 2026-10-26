@@ -30,7 +30,7 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 ### plan
 
 - write every plan md: its files, its slices, the types, the steps, the verify and the record
-- read the plans together, and review each plan's checks
+- read the plans together, and review each plan on the five viewpoints: `Goal`, `Files`, `Types`, `Cases`, `Checks`
 - skips: the owner's look at the plan mds
 - go on to the work
 
