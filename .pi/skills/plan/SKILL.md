@@ -22,10 +22,6 @@ Read that file before writing. It holds the shape, the files and their structure
 - `No` is the design's plan section's `No`; a normal plan writes it at the top of the plan md as it is
 - An `ex-` plan does not write `No`; the Triage line is the only source
 
-### 2.
-
-- a `research` subagent runs it, and the research runs once the owner approves
-
 ### 2. Walk the relations, and write `Files`
 
 Walk what the change touches: what imports it, calls it, renders it, documents it, checks it. Write the tree: what changes, with a marker, and what follows, without one. The dirs follow the structure rules: a concern per dir, the tests beside the file, one `index` as the way in.
