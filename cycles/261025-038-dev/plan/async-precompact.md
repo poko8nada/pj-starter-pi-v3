@@ -102,7 +102,10 @@ export type GateDecision =
   | {
       readonly kind: 'wait';
       readonly reason:
-        'below-lead' | 'old-region-too-small' | 'cooling' | 'prepared-below-threshold';
+        | 'below-lead'
+        | 'old-region-too-small'
+        | 'cooling'
+        | 'prepared-below-threshold';
     }
   | { readonly kind: 'start' }
   | { readonly kind: 'apply' };
@@ -209,7 +212,11 @@ export interface Prepared {
 }
 
 export type CompareField =
-  'firstKeptEntryId' | 'messagesToSummarize' | 'turnPrefixMessages' | 'previousSummary' | 'fileOps';
+  | 'firstKeptEntryId'
+  | 'messagesToSummarize'
+  | 'turnPrefixMessages'
+  | 'previousSummary'
+  | 'fileOps';
 
 export type CompareResult =
   | { readonly kind: 'match' }
@@ -224,10 +231,14 @@ export interface GuardInput {
 }
 
 export type GuardReason =
-  'session-changed' | 'leaf-not-on-branch' | 'first-kept-missing' | 'new-compaction';
+  | 'session-changed'
+  | 'leaf-not-on-branch'
+  | 'first-kept-missing'
+  | 'new-compaction';
 
 export type GuardResult =
-  { readonly kind: 'ok' } | { readonly kind: 'stale'; readonly reason: GuardReason };
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'stale'; readonly reason: GuardReason };
 
 export interface ProjectedPrepareInput {
   readonly projectedEntries: readonly ProjectedEntry[];

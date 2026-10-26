@@ -180,8 +180,10 @@ tsconfig.json                      update
 ### Slice 3: lefthook
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: 24c2f9b
 - Stopped:
 
 ### Slice 4: oxfmt

@@ -76,7 +76,8 @@ export function formatCount(value: number): string;
 
 ```ts
 export type EnableOutcome =
-  { readonly kind: 'ok' } | { readonly kind: 'failed'; readonly reason: string };
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'failed'; readonly reason: string };
 
 export function writeEnabled(dir: string, enabled: boolean): EnableOutcome;
 ```
