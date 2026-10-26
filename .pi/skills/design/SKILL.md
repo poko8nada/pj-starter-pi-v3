@@ -73,9 +73,20 @@ A `review` subagent reads design.md and what it names, and answers on six viewpo
 - the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, the `Goal` is checkable, and the `Goal` does not go past the `Non-goal`), the cut's reason, the outside, the followers, the readers, the checks
 - coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## External` is in some plan's `External`
 - one subagent, one round: the design is fixed from the findings, and the report to the owner says what was done with each
-- the review is not the owner's look: it runs before step 8, and it does not wait
+- the review is not the owner's look: it runs before step 9, and it does not wait
 
-### 8. Show the owner
+### 8. Proofread
+
+Before the owner reads design.md, it goes through one proofread.
+
+- the document: `cycles/<YYMMDD>-<NNN>-<slug>/design.md`
+- run one `proofreader` subagent, and name that file in the task
+- read its report and `git diff` of the file
+- if a plan's `Goal`, `Non-goal` or `Why` changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
+- one round: the repaired file does not go through the subagent again
+
+### 9. Show the owner
 
 One list of plans, each with its summary, its `Goal`, its `Non-goal`, its paths and its boundary. They read the cut, and answer.
 

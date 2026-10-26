@@ -59,21 +59,32 @@ Texts handed to subagents are in `references/tasks.md`.
 - a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design and no `No` at the top; its `No` is read from the Triage, its work run, and this step runs again for that Unit when it is merged. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
 - what they answered goes in `## Verified`, which sits after `## Triage`
 
-### 6. Owner
+### 6. Proofread
+
+Before the owner reads close.md, it goes through one proofread.
+
+- the document: `cycles/<YYMMDD>-<NNN>-<slug>/close.md`
+- run one `proofreader` subagent, and name that file in the task
+- read its report and `git diff` of the file
+- if a `Triage` line, a `Verified` line or a destination changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
+- one round: the repaired file does not go through the subagent again
+
+### 7. Owner
 
 - they read the whole `close.md` — the triage and the verification — and answer. A missing line comes back
 - a rejection sends you back to the step it came from: 3 for a collected line, 4 for a destination, 5 for a Unit
 
-### 7. Leftovers
+### 8. Leftovers
 
 - before the commit: `consult_worktree list`, and remove what no plan and no line keeps
 - nothing is decided here: what this step finds that step 4 did not decide goes back to step 4, before the commit
 
-### 8. Commit
+### 9. Commit
 
 - `close.md` and the `ex-` plans, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
 
-### 9. Clean the workspace
+### 10. Clean the workspace
 
 - after the commit: delete the `memo-*` and temp files this cycle created. They are not part of the cycle's commit
 

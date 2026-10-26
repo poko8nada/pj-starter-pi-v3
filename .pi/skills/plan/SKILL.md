@@ -87,7 +87,18 @@ A `review` subagent reads one plan's slices — each `Verify` and the test steps
 
 The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
 
-### 11. Show the owner
+### 11. Proofread
+
+Before the owner reads the plan mds, each one goes through one proofread.
+
+- the documents: `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, one run per file
+- run one `proofreader` subagent per file, and name that file in the task
+- read its report and `git diff` of the file
+- if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
+- one round: a repaired file does not go through the subagent again
+
+### 12. Show the owner
 
 Every plan of cycle: files, slices, types, steps, verify. They read them, and answer.
 

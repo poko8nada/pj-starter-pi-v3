@@ -77,6 +77,17 @@ When every entry is decided, read them together: the names they write, and the l
 
 Two entries that touch the same name must not contradict, and a contradiction is settled here with the owner.
 
+## Proofread
+
+Before the owner reads `adr.md`, it goes through one proofread.
+
+- the document: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`
+- run one `proofreader` subagent, and name that file in the task
+- read its report and `git diff` of the file
+- if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
+- one round: the repaired file does not go through the subagent again
+
 ## What comes after an entry
 
 An entry decided here is not work done: the design cuts it, the plan writes it, and the work carries it out.
