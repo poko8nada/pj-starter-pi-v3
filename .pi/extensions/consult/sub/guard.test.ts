@@ -113,10 +113,6 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('read', { path: join(dir, 'README.md') }, dir)).toEqual({});
   });
 
-  it('ls + リポジトリ直は通す', () => {
-    expect(judgeToolCall('ls', { path: dir }, dir)).toEqual({});
-  });
-
   it('パスを取らない道具は通す', () => {
     expect(judgeToolCall('web_search', { query: 'hello' }, dir)).toEqual({});
   });
@@ -220,14 +216,10 @@ describe('judgeToolCall + 役割の許可', () => {
 });
 
 describe('pathAllowed + proofreader（md だけ）', () => {
-  it('cycles の adr.md は通す', () => {
-    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(
-      true,
-    );
-  });
-
-  it('.pi の SKILL.md は通す', () => {
-    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(true);
+  it('md は通す（通常とドットディレクトリ）', () => {
+    const patterns = ['**/*.md', '**/.*/**/*.md'];
+    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', patterns)).toBe(true);
+    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', patterns)).toBe(true);
   });
 
   it('src の ts は止める', () => {

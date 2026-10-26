@@ -113,9 +113,20 @@
 ### Slice 2: 文面と検査
 
 - Findings:
-- Unplanned:
-- Commit:
+  - マージ直後のベースでのproofreader実行を確かめていません。
+    - left: マージ後にベースで1回行う検査のため、worktreeの段階では行えません。受け入れまたはマージ直後に行う必要があります。
+- Unplanned: なし
+- Commit: b02789bb739f1b6b90d9c6bdf029e24cd9c3462b
 - Stopped:
+
+### Cleanup: md許可の重複と読むだけの通過
+
+- Findings:
+  - 重複: `pathAllowed + proofreader` の `cycles の adr.md は通す` と `.pi の SKILL.md は通す` は同じ `true` を別の `it` で確かめていた。1 つの `it('md は通す（通常とドットディレクトリ）')` にまとめ、2 つの `expect` は残した。拒否側（`src の ts は止める` と `md 以外への write は止める`）は直接層と `judgeToolCall` 層のため両方残した。
+  - 書かないはず: `judgeToolCall` の `ls + リポジトリ直は通す` を削った。計画の 5 件は md/ts の許可だけを見ており、`ls` は書かない。読みは縛らないことが `judgeLimits` の先頭（非書き・非 bash は `{}`）で決まっており、`読むのは縛らない` と `パスを取らない道具は通す` が同じ `{}` を既に確かめている。誰も気づかない単独の通過のため落とした。
+  - 消えた振る舞い: なし。2 つのスライスは足すだけで、削った振る舞いは無い。
+  - 止めた分岐: なし。`guard.ts`・`types.ts`・`run.ts` の分岐は変えておらず、到達不能になった枝は無い。
+- Unplanned: なし
 
 ## Review
 
