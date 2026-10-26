@@ -261,6 +261,22 @@ pnpm-workspace.yaml                update
   - `cycles/261026-040-dev/plan/upgrade-skill.md:1` は同じ差分に入る別計画の新規でこの計画の仕事ではないので判断は相手の close に任せる。
   - lock の差分は 700 行を超え行読みが難しく Verify の `ls` と `why` の命令を信じるしかないことを残す (`pnpm-lock.yaml:1`)。
 
+### Round 2
+
+- Stale:
+  - なし — Round 1 の Stale に `fixed:` はないので、見るものはない。
+- Unlisted:
+  - なし — 4 件とも直っている。`## Files` の 12〜15 行に 4 本の `.test.ts` が `update` で並んでいる。外に出した場所も現物と合う（`consult/sub/spec.test.ts:235` の `turn`、`quality-gate/checks.test.ts:88` の `assertNoExclusion`、`sound-notify/index.test.ts:38` の `run`、`thinking-scrub/index.test.ts:107` の作り物）。振る舞いの変更はなく記録のずれだけなので、Files に書く直しで閉じている。
+- Gaps:
+  - なし — 直っている。Slice 7 の `Added`（`cycles/261026-040-dev/plan/upgrade-run.md:159`）に `overrides` の値・lock の 8.12.3・`audit` の終了コード 0 を見る 1 行がある。`pnpm-workspace.yaml:6-7` は `overrides: undici: ^8.12.3`、`pnpm-lock.yaml:1303,2539` に `undici@8.12.3` がある。`## Acceptance` の `Ran` に `audit` の終了コード 0 と `No known vulnerabilities found` がある。
+- Unproven:
+  - なし — Round 1 の Unproven に `fixed:` はないので、見るものはない。
+- Noise:
+  - なし — Round 1 の Noise に `fixed:` はないので、見るものはない。
+- Doubts:
+  - 今回は紙の上だけの確認である。テストや `audit` を自分で走らせていない。緑の証拠は `## Acceptance` の `Ran` の記録に頼っている。
+  - lock の差分 700 行超は全部読んでいない。`pnpm why` と `ls` の記録を信じている。
+
 ## Acceptance
 
 - Ran:
