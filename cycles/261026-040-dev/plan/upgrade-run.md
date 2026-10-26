@@ -111,7 +111,7 @@ tsconfig.json                      update
 - Always:
   - 既定の 5 つ（`scripts/harness/config.test.ts` が `testConfig(false)` の除外の振る舞いを見る）
 - Added:
-  - other: `pnpm ls vitest` が 5.0.5。`pnpm ls vite` が 6.4.0 以上。`node -v` が 22.12.0 以上。
+  - other: `pnpm ls vitest` が 5.0.5。`pnpm why vite` が 6.4.0 以上（vite は top-level に出ず、`@vitest/mocker` が引く）。`node -v` が 22.12.0 以上。
   - base: owner が `package.json` と `vitest.config.ts` の差分を読む。
 
 ## 6.typescript
@@ -189,8 +189,10 @@ tsconfig.json                      update
 ### Slice 4: oxfmt
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
+  - なし
+- Commit: db0af94
 - Stopped:
 
 ### Slice 5: vitest
