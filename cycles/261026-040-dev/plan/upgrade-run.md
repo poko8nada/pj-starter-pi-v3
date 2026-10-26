@@ -8,10 +8,11 @@
 package.json                       update
 pnpm-lock.yaml                     update
 pnpm-workspace.yaml                update
-vitest.config.ts                   update
-tsconfig.json                      update
 **/*.md                            update
-**/*.mjs                           update
+.pi/extensions/consult/sub/spec.test.ts        update
+.pi/extensions/quality-gate/checks.test.ts     update
+.pi/extensions/sound-notify/index.test.ts      update
+.pi/extensions/thinking-scrub/index.test.ts    update
 ```
 
 ## Slices
@@ -155,6 +156,7 @@ tsconfig.json                      update
 - Added:
   - other: `pnpm audit --audit-level low` の結果。脆弱性で落ちた時は終了コード 1、レジストリの失敗は例外で、その 2 つを区別して報告する。
   - other: `minimumReleaseAgeExclude` の各行が、いま入っているバージョンを指していること。
+  - other: `pnpm-workspace.yaml` の `overrides` が `undici: ^8.12.3` であること、lock の `undici` が 8.12.3 であること、`pnpm audit --audit-level low` の終了コードが 0 であること。
   - base: owner が監査のレポートを読み、残件の理由を読んで「想定どおり」と認める。
 
 ## Notes
@@ -212,23 +214,62 @@ tsconfig.json                      update
 ### Slice 7: 監査
 
 - Findings:
+  - `@earendil-works/pi-coding-agent@1.4.0` が `undici` を `8.10.2` に固定しているため、`pnpm audit --fix=update` は 0 件しか直さなかった。owner の OK を得て `overrides: undici: ^8.12.3` を入れ、8.12.3 にした。
 - Unplanned:
-- Commit:
+  - なし
+- Commit: d4cb4f1
 - Stopped:
+
+### Cleanup: なし
+
+- Findings:
+  - なし
+- Unplanned:
+  - なし
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし — ADR の旧版の列挙は変更前の記録で、md 整形は見た目だけ、試しの移動は注釈を残すことを確かめた。
 - Unlisted:
+  - Slice 1 で外へ出した `turn` の移動は Files に `.ts` の名前がなく計画外の変更である (`.pi/extensions/consult/sub/spec.test.ts:235`)。
+    - fixed: `## Files` に 4 本の `.test.ts` を `update` で名指しした。
+  - Slice 1 で外へ出した `assertNoExclusion` の移動は Files に `.ts` の名前がなく計画外の変更である (`.pi/extensions/quality-gate/checks.test.ts:88`)。
+    - fixed: 同じく `## Files` に名指しした。
+  - Slice 1 で外へ出した `run` の移動は Files に `.ts` の名前がなく計画外の変更である (`.pi/extensions/sound-notify/index.test.ts:38`)。
+    - fixed: 同じく `## Files` に名指しした。
+  - Slice 1 で型に置き換えた偽物の event 作りは Files に `.ts` の名前がなく計画外の変更である (`.pi/extensions/thinking-scrub/index.test.ts:111`)。
+    - fixed: 同じく `## Files` に名指しした。
 - Gaps:
+  - Slice 7 で入れた `overrides: undici` の値と lock の 8.12.3 と直後の audit の緑を確かめる Added がなく Verify は exclude の行だけを見ている (`pnpm-workspace.yaml:6`、`cycles/261026-040-dev/plan/upgrade-run.md:157`)。
+    - fixed: Slice 7 の `Added` に、`overrides` の値・lock の 8.12.3・`pnpm audit --audit-level low` の終了コード 0 を見る 1 行を足した（すでに走らせて確かめた）。
 - Unproven:
+  - なし — 動かした 4 本の試しは製品が壊れれば赤くなり版の `grep` や `pnpm ls` も違う版では落ちることを確かめた。
 - Noise:
+  - なし — 計画に試しの段がなく動かした助けは主張を足さず版の数字は計画と ADR が決めた値なので挙げないことを確かめた。
 - Doubts:
+  - `cycles/261026-040-dev/plan/upgrade-run.md:54` の推移 25.9.9 の文は実際は 1 本にまとまったが計画が決めた見込みなので所見にせず読み違え注意として残す。
+  - `vitest.config.ts:13` と `tsconfig.json:2` は Files に update とあるが差分がなく条件付きの段の結果なので書きすぎとして残す。
+  - `cycles/261026-040-dev/plan/upgrade-run.md:14` の `**/*.mjs` は差分がなく tsc が指さなかったため触らない結論なので書きすぎとして残す。
+  - Slice 7 の直後の Always の再実行の記録が Notes になく commit は lock と workspace だけなので緑の証拠の置き場所として残す (`cycles/261026-040-dev/plan/upgrade-run.md:149`)。
+  - `cycles/261026-040-dev/plan/upgrade-skill.md:1` は同じ差分に入る別計画の新規でこの計画の仕事ではないので判断は相手の close に任せる。
+  - lock の差分は 700 行を超え行読みが難しく Verify の `ls` と `why` の命令を信じるしかないことを残す (`pnpm-lock.yaml:1`)。
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm test:run` → 55 ファイル / 718 ケース緑
+  - `pnpm typecheck` → root: ok、`.pi`: ok（tsc 7.0.2）
+  - `pnpm lint` → 緑（警告 0）
+  - `pnpm format:check` → 279 ファイル緑
+  - `pnpm audit --audit-level low` → 終了コード 0、「No known vulnerabilities found」
+  - `pnpm why undici` → 8.12.3（pi 1.4.0 と openai 7.19.0 の下）
+  - 古い文言の `grep`（`25.9.9`、`1.13.6`、`0.63.0`、`4.1.12`、`6.0.3`）→ すべて 0 件
+  - この plan は振る舞いを足さない（依存と設定）ので、上の検査と、slice ごとの差分の読みが check。
+- Findings: なし
 - Doubts:
+  - `undici` 8.12.3 と `@earendil-works/pi-coding-agent` 1.4.0 の実行時の組み合わせは、このリポジトリのテストでは確かめられない（pi の HTTP の経路を走らせるテストが無く、このセッションの pi はグローバルの 1.3.0）。
+  - `pnpm-workspace.yaml` の `overrides: undici` は、pi が固定を上げたら外して確かめ直す。
+  - slice 2 の計画は推移の `@types/node` 25.9.9 が並ぶと見ていたが、実際は 1 本にまとまった。
