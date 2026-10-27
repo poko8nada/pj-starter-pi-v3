@@ -67,6 +67,61 @@ describe('parseSettings', () => {
     expect(read.settings.live.tail).toBe(2000);
   });
 
+  it('live.scanEvery だけが 3000 → ok で、tail は既定の 20000 になる', () => {
+    const input = JSON.stringify({ live: { scanEvery: 3000 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('ok');
+    if (read.kind !== 'ok') {
+      throw new Error('must be ok');
+    }
+    expect(read.settings.live.scanEvery).toBe(3000);
+    expect(read.settings.live.tail).toBe(20000);
+  });
+
+  it('live.scanEvery だけが 30000 → broken で、理由は live.scanEvery と live.tail の関係を示す', () => {
+    const input = JSON.stringify({ live: { scanEvery: 30000 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('live.scanEvery');
+    expect(read.reason).toContain('live.tail');
+  });
+
+  it('live.tail だけが 1000 → broken で、理由は live.scanEvery と live.tail の関係を示す', () => {
+    const input = JSON.stringify({ live: { tail: 1000 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('live.scanEvery');
+    expect(read.reason).toContain('live.tail');
+  });
+
+  it('char.minPeriod だけが 200 → broken で、理由は char.minPeriod と char.maxPeriod の関係を示す', () => {
+    const input = JSON.stringify({ char: { minPeriod: 200 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('char.minPeriod');
+    expect(read.reason).toContain('char.maxPeriod');
+  });
+
+  it('char.maxPeriod だけが 2 → broken で、理由は char.minPeriod と char.maxPeriod の関係を示す', () => {
+    const input = JSON.stringify({ char: { maxPeriod: 2 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('broken');
+    if (read.kind !== 'broken') {
+      throw new Error('must be broken');
+    }
+    expect(read.reason).toContain('char.minPeriod');
+    expect(read.reason).toContain('char.maxPeriod');
+  });
+
   it('壊れた JSON と配列と null → broken', () => {
     for (const input of ['{"enabled":', 'null', '[]']) {
       expect(parseSettings(input).kind).toBe('broken');
