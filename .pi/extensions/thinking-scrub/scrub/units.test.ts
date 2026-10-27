@@ -1,16 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cycleText } from '../scrub.fixture.ts';
-import {
-  MAX_PERIOD_UNITS,
-  MIN_CYCLES,
-  MIN_RUN_CHARS,
-  SAMPLE_CHARS,
-  detectUnitRuns,
-  sampleOf,
-  splitUnits,
-  type Unit,
-  type UnitRun,
-} from './units.ts';
+import { defaultSettings } from '../settings/schema.ts';
+import { detectUnitRuns, sampleOf, splitUnits, type Unit, type UnitRun } from './units.ts';
 
 // 繰り返しの文は factory で組み立てる。各 case で直書きしない。
 
@@ -118,49 +109,58 @@ describe('splitUnits', () => {
 });
 
 describe('detectUnitRuns', () => {
-  it(`${MIN_CYCLES} 周期ぶんの 3 文 → 周期 3 の run が 1 つ`, () => {
+  it('既定の sentence と 3 周期の並び → 1 つのラン', () => {
+    const sentence = defaultSettings().sentence;
     const pattern = [english(0), english(1), english(2)];
-    const text = cycleText(pattern, MIN_CYCLES);
-    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const text = cycleText(pattern, sentence.minCycles);
+    expect(text.length).toBeGreaterThanOrEqual(sentence.minRunChars);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(pattern.length * MIN_CYCLES);
-    const runs = detectUnitRuns(units);
+    expect(units).toHaveLength(pattern.length * sentence.minCycles);
+    const runs = detectUnitRuns(units, sentence);
     expect(runs).toHaveLength(1);
-    expect(runs[0]).toEqual({ at: 0, length: pattern.length * MIN_CYCLES, period: pattern.length });
+    expect(runs[0]).toEqual({
+      at: 0,
+      length: pattern.length * sentence.minCycles,
+      period: pattern.length,
+    });
   });
 
   it('周期 6 と 12 が重なる factory の並び → 周期 6 の run が 1 つ', () => {
+    const sentence = defaultSettings().sentence;
     const base6 = [0, 1, 2, 3, 4, 5].map((index) => english(index));
     const base12 = [...base6, ...base6];
-    const text = cycleText(base12, MIN_CYCLES);
+    const text = cycleText(base12, sentence.minCycles);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(base12.length * MIN_CYCLES);
-    const runs = detectUnitRuns(units);
+    expect(units).toHaveLength(base12.length * sentence.minCycles);
+    const runs = detectUnitRuns(units, sentence);
     expect(runs).toHaveLength(1);
     expect(runs[0]?.period).toBe(base6.length);
-    expect(runs[0]?.length).toBe(base12.length * MIN_CYCLES);
+    expect(runs[0]?.length).toBe(base12.length * sentence.minCycles);
   });
 
-  it(`${MIN_CYCLES - 1} 周期 → run が無い`, () => {
+  it('minCycles - 1 周期 → run が無い', () => {
+    const sentence = defaultSettings().sentence;
     const pattern = [longEnglish(0), longEnglish(1), longEnglish(2)];
-    const text = cycleText(pattern, MIN_CYCLES - 1);
-    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const text = cycleText(pattern, sentence.minCycles - 1);
+    expect(text.length).toBeGreaterThanOrEqual(sentence.minRunChars);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(pattern.length * (MIN_CYCLES - 1));
-    expect(detectUnitRuns(units)).toHaveLength(0);
+    expect(units).toHaveLength(pattern.length * (sentence.minCycles - 1));
+    expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it(`${MIN_CYCLES} 周期でも ${MIN_RUN_CHARS} 文字未満 → run が無い`, () => {
+  it('minRunChars - 1 文字 → run が無い', () => {
+    const sentence = defaultSettings().sentence;
     const one = `${sentenceUnit(0)} ${sentenceUnit(0)}.`;
-    const text = cycleText([one], MIN_CYCLES);
-    expect(text.length).toBeLessThan(MIN_RUN_CHARS);
-    expect(MIN_RUN_CHARS - text.length).toBeLessThan(one.length);
+    const text = cycleText([one], sentence.minCycles);
+    expect(text.length).toBeLessThan(sentence.minRunChars);
+    expect(sentence.minRunChars - text.length).toBeLessThan(one.length);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(MIN_CYCLES);
-    expect(detectUnitRuns(units)).toHaveLength(0);
+    expect(units).toHaveLength(sentence.minCycles);
+    expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
   it('柵を含む繰り返し → run が無い', () => {
+    const sentence = defaultSettings().sentence;
     const pattern = [english(0), english(1), english(2)];
     const first = cycleText(pattern, 1);
     const second = cycleText(pattern, 1);
@@ -176,60 +176,83 @@ describe('detectUnitRuns', () => {
     ].join('\n');
     const units = unitsFromText(text);
     expect(units.some((unit) => unit.opaque)).toBe(true);
-    expect(detectUnitRuns(units)).toHaveLength(0);
+    expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
   it('普通の文章 → run が無い', () => {
+    const sentence = defaultSettings().sentence;
     const sentences = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => english(index));
     const text = sentences.join(' ');
     const units = unitsFromText(text);
     expect(units).toHaveLength(sentences.length);
-    expect(detectUnitRuns(units)).toHaveLength(0);
+    expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it(`周期 ${MAX_PERIOD_UNITS + 1} の繰り返し → 上限を超えるため run が無い`, () => {
-    const pattern = Array.from({ length: MAX_PERIOD_UNITS + 1 }, (_, index) => english(index));
-    const text = cycleText(pattern, MIN_CYCLES);
-    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+  it('周期の上限を超える繰り返し → run が無い', () => {
+    const sentence = defaultSettings().sentence;
+    const pattern = Array.from({ length: sentence.maxPeriodUnits + 1 }, (_, index) =>
+      english(index),
+    );
+    const text = cycleText(pattern, sentence.minCycles);
+    expect(text.length).toBeGreaterThanOrEqual(sentence.minRunChars);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(pattern.length * MIN_CYCLES);
-    expect(detectUnitRuns(units)).toHaveLength(0);
+    expect(units).toHaveLength(pattern.length * sentence.minCycles);
+    expect(detectUnitRuns(units, sentence)).toHaveLength(0);
+  });
+
+  it('sentence.minRunChars を 200 にした設定で、240 文字のラン → 1 つ', () => {
+    const sentence = { ...defaultSettings().sentence, minRunChars: 200 };
+    const pattern = [english(0), english(1)];
+    const text = cycleText(pattern, sentence.minCycles);
+    expect(text.length).toBeGreaterThanOrEqual(240);
+    expect(text.length).toBeLessThan(defaultSettings().sentence.minRunChars);
+    const units = unitsFromText(text);
+    expect(detectUnitRuns(units, defaultSettings().sentence)).toHaveLength(0);
+    const runs = detectUnitRuns(units, sentence);
+    expect(runs).toHaveLength(1);
   });
 });
 
 describe('sampleOf', () => {
-  it('12 単位の run → 最頻の 3 文で SAMPLE_CHARS 以下', () => {
+  it('12 単位の run → 最頻の 3 文で sampleChars 以下', () => {
+    const tuning = defaultSettings();
     const pattern = [english(0), english(1), english(2)];
-    const cycles = MIN_CYCLES + 1;
+    const cycles = tuning.sentence.minCycles + 1;
     const text = cycleText(pattern, cycles);
     const units = unitsFromText(text);
     expect(units).toHaveLength(pattern.length * cycles);
     const run: UnitRun = { at: 0, length: units.length, period: pattern.length };
-    const sample = sampleOf(units, run);
+    const sample = sampleOf(units, run, tuning.live.sampleChars);
     expect(sample).toBe(pattern.join(' '));
-    expect(sample.length).toBeLessThanOrEqual(SAMPLE_CHARS);
+    expect(sample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
   });
 
-  it(`3 文で ${SAMPLE_CHARS} 文字を超える → SAMPLE_CHARS で切れる`, () => {
+  it('3 文で sampleChars を超える → 切れる', () => {
+    const tuning = defaultSettings();
     const pattern = [longEnglish(0), longEnglish(1), longEnglish(2), longEnglish(3)];
-    const text = cycleText(pattern, MIN_CYCLES);
+    const text = cycleText(pattern, tuning.sentence.minCycles);
     const units = unitsFromText(text);
-    const run: UnitRun = { at: 0, length: pattern.length * MIN_CYCLES, period: pattern.length };
-    const sample = sampleOf(units, run);
-    expect(sample.length).toBe(SAMPLE_CHARS);
+    const run: UnitRun = {
+      at: 0,
+      length: pattern.length * tuning.sentence.minCycles,
+      period: pattern.length,
+    };
+    const sample = sampleOf(units, run, tuning.live.sampleChars);
+    expect(sample.length).toBe(tuning.live.sampleChars);
     const expected = [longEnglish(0), longEnglish(1), longEnglish(2)].join(' ');
-    expect(expected.length).toBeGreaterThan(SAMPLE_CHARS);
-    expect(sample).toBe(expected.slice(0, SAMPLE_CHARS));
+    expect(expected.length).toBeGreaterThan(tuning.live.sampleChars);
+    expect(sample).toBe(expected.slice(0, tuning.live.sampleChars));
   });
 
   it('1 単位の周期 → その 1 文だけ', () => {
+    const tuning = defaultSettings();
     const pattern = [longEnglish(0)];
     const one = pattern[0] ?? '';
-    const text = cycleText(pattern, MIN_CYCLES);
-    expect(text.length).toBeGreaterThanOrEqual(MIN_RUN_CHARS);
+    const text = cycleText(pattern, tuning.sentence.minCycles);
+    expect(text.length).toBeGreaterThanOrEqual(tuning.sentence.minRunChars);
     const units = unitsFromText(text);
-    expect(units).toHaveLength(MIN_CYCLES);
-    const run: UnitRun = { at: 0, length: MIN_CYCLES, period: pattern.length };
-    expect(sampleOf(units, run)).toBe(one);
+    expect(units).toHaveLength(tuning.sentence.minCycles);
+    const run: UnitRun = { at: 0, length: tuning.sentence.minCycles, period: pattern.length };
+    expect(sampleOf(units, run, tuning.live.sampleChars)).toBe(one);
   });
 });

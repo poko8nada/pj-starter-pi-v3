@@ -10,6 +10,13 @@ function truncatedJson(): string {
 }
 
 describe('readSettings', () => {
+  it('3 グループを持つファイル → ok', () => {
+    const dir = tempDir();
+    const settings = defaultSettings();
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify(settings));
+    expect(readSettings(dir)).toEqual({ kind: 'ok', settings });
+  });
+
   it('ファイルが無い → ok で既定', () => {
     expect(readSettings(tempDir())).toEqual({ kind: 'ok', settings: defaultSettings() });
   });

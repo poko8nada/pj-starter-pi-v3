@@ -6,7 +6,6 @@ import {
   SCRUB_LAST_NONE,
   SCRUB_OFF_LINE,
   SCRUB_ON_LINE,
-  SCRUB_PREFIX,
   SCRUB_REMOVED_LABEL,
   SCRUB_SHOW_LINE,
   SCRUB_SHOW_OFF,
@@ -14,7 +13,7 @@ import {
   SCRUB_USAGE_LINE,
 } from '../scrub.fixture.ts';
 import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
-import type { SettingsRead } from '../settings/schema.ts';
+import { defaultSettings, type SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';
 
 // CommandPort は記録する偽物で渡す。出力の文は工場の印と回数から組む。
@@ -33,7 +32,7 @@ function fakePort(
   const shown: boolean[] = [];
   const settings: SettingsRead = overrides.settings ?? {
     kind: 'ok',
-    settings: { enabled: true, show: true },
+    settings: defaultSettings(),
   };
   const status: Status = overrides.status ?? { removed: 0, lastAt: null, failures: 0 };
   return {
@@ -85,17 +84,6 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_HIDE_LINE]);
   });
 
-  it('空文字と空白だけ → どちらも呼ばれず、状態の行が返る', () => {
-    for (const raw of ['', '   ']) {
-      const { port, written, shown } = fakePort();
-      const lines = runCommand(port, parseCommand(raw), 100);
-      expect(written).toEqual([]);
-      expect(shown).toEqual([]);
-      expect(lines.join('\n')).toContain(SCRUB_PREFIX);
-      expect(lines.join('\n')).toContain(SCRUB_REMOVED_LABEL);
-    }
-  });
-
   it('foo → どちらも呼ばれず、使い方の 1 行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('foo'), 100);
@@ -110,12 +98,6 @@ describe('runCommand', () => {
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
   });
 
-  it('lastAt が null の状態 → まだ無い旨の行', () => {
-    const { port } = fakePort({ status: { removed: 0, lastAt: null, failures: 0 } });
-    const lines = runCommand(port, parseCommand(''), 100);
-    expect(lines.join('\n')).toContain(SCRUB_LAST_NONE);
-  });
-
   it('lastAt が数値の状態 → その時刻の行', () => {
     const lastAt = 456;
     const removed = 2;
@@ -125,11 +107,25 @@ describe('runCommand', () => {
     expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
   });
 
+  it('3 グループの SettingsRead と status → on と show と removed と last の行', () => {
+    const { port } = fakePort({
+      settings: { kind: 'ok', settings: defaultSettings() },
+      status: { removed: 0, lastAt: null, failures: 0 },
+    });
+    const lines = runCommand(port, parseCommand(''), 100);
+    expect(lines).toEqual([
+      SCRUB_ON_LINE,
+      SCRUB_SHOW_ON,
+      `${SCRUB_REMOVED_LABEL} 0`,
+      SCRUB_LAST_NONE,
+    ]);
+  });
+
   it('enabled:false の status → off と回数と時刻の行', () => {
     const removed = 3;
     const lastAt = 200;
     const { port, written, shown } = fakePort({
-      settings: { kind: 'ok', settings: { enabled: false, show: true } },
+      settings: { kind: 'ok', settings: { ...defaultSettings(), enabled: false } },
       status: { removed, lastAt, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
@@ -145,7 +141,7 @@ describe('runCommand', () => {
 
   it('show:false の status → 行に off の印が入る', () => {
     const { port } = fakePort({
-      settings: { kind: 'ok', settings: { enabled: true, show: false } },
+      settings: { kind: 'ok', settings: { ...defaultSettings(), show: false } },
       status: { removed: 1, lastAt: null, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
@@ -162,6 +158,8 @@ describe('runCommand', () => {
     expect(shown).toEqual([]);
     expect(lines.join('\n')).toContain(SCRUB_BROKEN_MARK);
     expect(lines.join('\n')).toContain(SCRUB_DEFAULTS_MARK);
+    expect(lines).toContain(SCRUB_ON_LINE);
+    expect(lines).toContain(SCRUB_SHOW_ON);
   });
 
   it('broken の off → writeEnabled(false) が 1 回、off の行が返る', () => {

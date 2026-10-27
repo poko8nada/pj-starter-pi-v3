@@ -2,7 +2,7 @@
  * thinking-scrub の配線。`message_end` で畳み、実行の終わり（`agent_end`）に合計を 1 行で報告し、`/thinking-scrub` で scrub と表示を切り替える。
  *
  * 生成中は `message_update` で文の周期を見て止め、`agent_settled` でフォローアップを送る。
- * 設定は毎回読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
+ * 設定は生成中のスキャン時と `message_end` に読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
  * 数えて `undefined` を返す。状態はセッションの間だけ持つ。
  */
 
@@ -21,14 +21,18 @@ import { parseCommand, runCommand } from './command/scrub.ts';
 import {
   emptyGuard,
   followUpText,
-  MIN_THINKING,
   observe,
   resetOnUser,
   takeFollowUp,
   type Guard,
 } from './live/guard.ts';
 import { scrubMessage } from './scrub/message.ts';
-import { defaultSettings, SETTINGS_FILE, type SettingsRead } from './settings/schema.ts';
+import {
+  defaultSettings,
+  SETTINGS_FILE,
+  type Settings,
+  type SettingsRead,
+} from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import {
   addFailure,
@@ -62,10 +66,7 @@ interface WiringState {
   status: Status;
   tally: Tally;
   guard: Guard;
-}
-
-function emptyWiringState(): WiringState {
-  return { status: emptyStatus(), tally: emptyTally(), guard: emptyGuard() };
+  settings: Settings;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -87,9 +88,20 @@ function readDoc(file: string): Record<string, unknown> {
   }
 }
 
+function mergeGroup<T extends object>(defaults: T, doc: unknown, patch: unknown): T {
+  const docRecord: Record<string, unknown> = isRecord(doc) ? doc : {};
+  const patchRecord: Record<string, unknown> = isRecord(patch) ? patch : {};
+  return { ...defaults, ...docRecord, ...patchRecord };
+}
+
 function writePatch(settingsDir: string, patch: Record<string, unknown>): void {
   const file = join(settingsDir, SETTINGS_FILE);
-  const next = { ...readDoc(file), ...patch };
+  const doc = readDoc(file);
+  const defaults = defaultSettings();
+  const live = mergeGroup(defaults.live, doc['live'], patch['live']);
+  const sentence = mergeGroup(defaults.sentence, doc['sentence'], patch['sentence']);
+  const char = mergeGroup(defaults.char, doc['char'], patch['char']);
+  const next = { ...defaults, ...doc, ...patch, live, sentence, char };
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
 }
@@ -102,12 +114,16 @@ function writeShow(settingsDir: string, show: boolean): void {
   writePatch(settingsDir, { show });
 }
 
-function readEnabled(read: SettingsRead): boolean {
-  return read.kind === 'ok' ? read.settings.enabled : defaultSettings().enabled;
+function settingsOf(read: SettingsRead): Settings {
+  return read.kind === 'ok' ? read.settings : defaultSettings();
 }
 
-function readShow(read: SettingsRead): boolean {
-  return read.kind === 'ok' ? read.settings.show : defaultSettings().show;
+function readEnabled(settings: Settings): boolean {
+  return settings.enabled;
+}
+
+function readShow(settings: Settings): boolean {
+  return settings.show;
 }
 
 /** thinking ブロックか。取得時の例外は呼び出し側の try で数える */
@@ -148,10 +164,12 @@ function handleMessageEnd(
   event: MessageEndEvent,
 ): MessageEndEventResult | undefined {
   try {
-    if (!readEnabled(options.readSettings())) {
+    const settings = settingsOf(options.readSettings());
+    state.settings = settings;
+    if (!readEnabled(settings)) {
       return undefined;
     }
-    const scrubbed = scrubMessage(event.message);
+    const scrubbed = scrubMessage(event.message, settings);
     if (scrubbed === undefined) {
       return undefined;
     }
@@ -172,13 +190,26 @@ function handleMessageUpdate(
 ): void {
   try {
     const thinking = thinkingOf(event.message);
-    if (thinking.length < MIN_THINKING) {
+    const cached = state.settings;
+    let effective = state.guard.scanned;
+    if (thinking.length < effective) {
+      effective = 0;
+    }
+    if (thinking.length < cached.live.minThinking) {
+      state.guard = { ...state.guard, scanned: effective };
       return;
     }
-    if (!readEnabled(options.readSettings())) {
+    if (state.guard.aborts >= cached.live.maxAborts) {
+      state.guard = { ...state.guard, scanned: thinking.length };
       return;
     }
-    const step = observe(state.guard, thinking);
+    if (thinking.length - effective < cached.live.scanEvery) {
+      state.guard = { ...state.guard, scanned: effective };
+      return;
+    }
+    const fresh = settingsOf(options.readSettings());
+    state.settings = fresh;
+    const step = observe(state.guard, thinking, fresh, () => fresh.enabled);
     state.guard = step.guard;
     if (step.kind === 'stop') {
       ctx.abort();
@@ -201,7 +232,7 @@ function handleAgentSettled(
     return;
   }
   state.guard = taken.guard;
-  options.followUp(followUpText(taken.sample));
+  options.followUp(followUpText(taken.sample, state.settings.live.sampleChars));
 }
 
 function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent): void {
@@ -212,7 +243,9 @@ function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent
 }
 
 function handleAgentEnd(state: WiringState, options: WiringOptions, ctx: CommandCtx): void {
-  const show = readShow(options.readSettings());
+  const settings = settingsOf(options.readSettings());
+  state.settings = settings;
+  const show = readShow(settings);
   const current = state.tally;
   state.tally = emptyTally();
   if (!show) {
@@ -245,6 +278,7 @@ function handleCommand(
     command,
     options.now(),
   );
+  state.settings = settingsOf(options.readSettings());
   ctx.ui.notify(lines.join('\n'));
 }
 
@@ -266,7 +300,12 @@ export interface ScrubWiring {
 
 /** 配線の中身。`registerScrub` はこれを pi につなぐだけにする */
 export function createScrubWiring(options: WiringOptions): ScrubWiring {
-  const state = emptyWiringState();
+  const state: WiringState = {
+    status: emptyStatus(),
+    tally: emptyTally(),
+    guard: emptyGuard(),
+    settings: settingsOf(options.readSettings()),
+  };
   return {
     onMessageEnd: (event) => handleMessageEnd(state, options, event),
     onMessageUpdate: (event, ctx) => {
