@@ -21,14 +21,18 @@ import { parseCommand, runCommand } from './command/scrub.ts';
 import {
   emptyGuard,
   followUpText,
-  MIN_THINKING,
   observe,
   resetOnUser,
   takeFollowUp,
   type Guard,
 } from './live/guard.ts';
 import { scrubMessage } from './scrub/message.ts';
-import { defaultSettings, SETTINGS_FILE, type SettingsRead } from './settings/schema.ts';
+import {
+  defaultSettings,
+  SETTINGS_FILE,
+  type Settings,
+  type SettingsRead,
+} from './settings/schema.ts';
 import { readSettings } from './settings/read.ts';
 import {
   addFailure,
@@ -113,12 +117,16 @@ function writeShow(settingsDir: string, show: boolean): void {
   writePatch(settingsDir, { show });
 }
 
-function readEnabled(read: SettingsRead): boolean {
-  return read.kind === 'ok' ? read.settings.enabled : defaultSettings().enabled;
+function settingsOf(read: SettingsRead): Settings {
+  return read.kind === 'ok' ? read.settings : defaultSettings();
 }
 
-function readShow(read: SettingsRead): boolean {
-  return read.kind === 'ok' ? read.settings.show : defaultSettings().show;
+function readEnabled(settings: Settings): boolean {
+  return settings.enabled;
+}
+
+function readShow(settings: Settings): boolean {
+  return settings.show;
 }
 
 /** thinking ブロックか。取得時の例外は呼び出し側の try で数える */
@@ -159,10 +167,11 @@ function handleMessageEnd(
   event: MessageEndEvent,
 ): MessageEndEventResult | undefined {
   try {
-    if (!readEnabled(options.readSettings())) {
+    const settings = settingsOf(options.readSettings());
+    if (!readEnabled(settings)) {
       return undefined;
     }
-    const scrubbed = scrubMessage(event.message);
+    const scrubbed = scrubMessage(event.message, settings);
     if (scrubbed === undefined) {
       return undefined;
     }
@@ -183,13 +192,14 @@ function handleMessageUpdate(
 ): void {
   try {
     const thinking = thinkingOf(event.message);
-    if (thinking.length < MIN_THINKING) {
+    const settings = settingsOf(options.readSettings());
+    if (thinking.length < settings.live.minThinking) {
       return;
     }
-    if (!readEnabled(options.readSettings())) {
+    if (!readEnabled(settings)) {
       return;
     }
-    const step = observe(state.guard, thinking);
+    const step = observe(state.guard, thinking, settings.live, settings.sentence);
     state.guard = step.guard;
     if (step.kind === 'stop') {
       ctx.abort();
@@ -212,7 +222,8 @@ function handleAgentSettled(
     return;
   }
   state.guard = taken.guard;
-  options.followUp(followUpText(taken.sample));
+  const settings = settingsOf(options.readSettings());
+  options.followUp(followUpText(taken.sample, settings.live.sampleChars));
 }
 
 function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent): void {
@@ -223,7 +234,7 @@ function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent
 }
 
 function handleAgentEnd(state: WiringState, options: WiringOptions, ctx: CommandCtx): void {
-  const show = readShow(options.readSettings());
+  const show = readShow(settingsOf(options.readSettings()));
   const current = state.tally;
   state.tally = emptyTally();
   if (!show) {

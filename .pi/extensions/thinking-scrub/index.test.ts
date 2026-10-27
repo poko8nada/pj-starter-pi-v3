@@ -21,7 +21,6 @@ import {
 } from './scrub.fixture.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
 import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
-import { MAX_ABORTS, MIN_THINKING, SCAN_EVERY } from './live/guard.ts';
 import { readSettings } from './settings/read.ts';
 import { defaultSettings, type SettingsRead } from './settings/schema.ts';
 
@@ -311,13 +310,51 @@ describe('onMessageEnd', () => {
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(calls).toBe(1);
   });
+
+  it('okSettings と message_end → 3 グループの既定値で差し替える', () => {
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => okSettings(),
+    });
+    const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
+    expect(result).toBeDefined();
+    if (result?.message?.role !== 'assistant') {
+      throw new Error('message must be assistant');
+    }
+    const first = result.message.content.at(0);
+    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
+      throw new Error('first block must be thinking');
+    }
+    expect(first.thinking).toBe(degenerateExpected());
+  });
+
+  it('char.minLength を 100 にした設定と message_end → 66 文字の退化を差し替えない', () => {
+    const strict: SettingsRead = {
+      kind: 'ok',
+      settings: {
+        ...defaultSettings(),
+        char: { ...defaultSettings().char, minLength: 100 },
+      },
+    };
+    expect(degenerate().length).toBe(66);
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => strict,
+    });
+    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
+    expect(wiring.getStatus().removed).toBe(0);
+  });
 });
 
 describe('onMessageUpdate', () => {
-  it(`${MIN_THINKING} 未満では readSettings を呼ばず、以上では 1 回呼ぶ`, () => {
+  it('minThinking 未満でも以上でも readSettings を 1 回呼ぶ', () => {
     for (const [length, expectedCalls, expectedAborts] of [
-      [MIN_THINKING - 1, 0, 0],
-      [MIN_THINKING, 1, 1],
+      [defaultSettings().live.minThinking - 1, 1, 0],
+      [defaultSettings().live.minThinking, 1, 1],
     ] as const) {
       let calls = 0;
       const wiring = createScrubWiring({
@@ -329,7 +366,7 @@ describe('onMessageUpdate', () => {
           return okSettings();
         },
       });
-      const thinking = thinkingWithRun(MIN_THINKING).slice(0, length);
+      const thinking = thinkingWithRun(defaultSettings().live.minThinking).slice(0, length);
       const fake = fakeCmdCtx();
       wiring.onMessageUpdate(
         messageUpdate(assistantThinking(thinking, 'reasoning_content')),
@@ -353,7 +390,9 @@ describe('onMessageUpdate', () => {
     });
     const fake = fakeCmdCtx();
     wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
       fake.ctx,
     );
     expect(fake.aborts()).toBe(0);
@@ -369,7 +408,7 @@ describe('onMessageUpdate', () => {
     });
     const fake = fakeCmdCtx();
     wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING))),
+      messageUpdate(assistantThinking(thinkingWithRun(defaultSettings().live.minThinking))),
       fake.ctx,
     );
     expect(fake.aborts()).toBe(1);
@@ -402,7 +441,9 @@ describe('onAgentSettled', () => {
       },
     };
     update(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
       ctx,
     );
     expect(aborted).toBe(1);
@@ -432,7 +473,9 @@ describe('onAgentSettled', () => {
     });
     const fake = fakeCmdCtx();
     wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
       fake.ctx,
     );
     expect(fake.aborts()).toBe(1);
@@ -456,7 +499,7 @@ describe('onAgentSettled', () => {
 });
 
 describe('onBeforeAgentStart', () => {
-  it(`user で戻り、${MAX_ABORTS} 回の後もまた止まれる。custom では戻らない`, () => {
+  it(`user で戻り、${defaultSettings().live.maxAborts} 回の後もまた止まれる。custom では戻らない`, () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -465,14 +508,19 @@ describe('onBeforeAgentStart', () => {
     });
     const first = fakeCmdCtx();
     wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
       first.ctx,
     );
     expect(first.aborts()).toBe(1);
     const second = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
-        assistantThinking(thinkingWithRun(MIN_THINKING + SCAN_EVERY), 'reasoning_content'),
+        assistantThinking(
+          thinkingWithRun(defaultSettings().live.minThinking + defaultSettings().live.scanEvery),
+          'reasoning_content',
+        ),
       ),
       second.ctx,
     );
@@ -481,7 +529,12 @@ describe('onBeforeAgentStart', () => {
     const third = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
-        assistantThinking(thinkingWithRun(MIN_THINKING + SCAN_EVERY * 2), 'reasoning_content'),
+        assistantThinking(
+          thinkingWithRun(
+            defaultSettings().live.minThinking + defaultSettings().live.scanEvery * 2,
+          ),
+          'reasoning_content',
+        ),
       ),
       third.ctx,
     );
@@ -490,7 +543,12 @@ describe('onBeforeAgentStart', () => {
     const fourth = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
-        assistantThinking(thinkingWithRun(MIN_THINKING + SCAN_EVERY * 3), 'reasoning_content'),
+        assistantThinking(
+          thinkingWithRun(
+            defaultSettings().live.minThinking + defaultSettings().live.scanEvery * 3,
+          ),
+          'reasoning_content',
+        ),
       ),
       fourth.ctx,
     );
@@ -498,7 +556,9 @@ describe('onBeforeAgentStart', () => {
     wiring.onBeforeAgentStart(beforeUser());
     const fifth = fakeCmdCtx();
     wiring.onMessageUpdate(
-      messageUpdate(assistantThinking(thinkingWithRun(MIN_THINKING), 'reasoning_content')),
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
       fifth.ctx,
     );
     expect(fifth.aborts()).toBe(1);
