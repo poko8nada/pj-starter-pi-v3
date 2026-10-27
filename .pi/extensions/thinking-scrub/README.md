@@ -70,7 +70,7 @@ Missing keys fall back to the defaults above. A wrong type, an out-of-range valu
 ### Combinations
 
 - Earlier reaction without changing what counts as a loop: lower `live.minThinking` and `live.scanEvery` together (for example `8000` / `1000`), and keep `sentence` and `char` as they are.
-- Quieter scrub that only catches long loops: raise `sentence.minRunChars` (for example `350` → higher) and `char.minLength` together.
+- Quieter scrub that only catches long runs: raise `sentence.minRunChars` (for example, from `350` to a higher value) and `char.minLength` together.
 - Cheaper scans: lower `live.tail`, `sentence.maxPeriodUnits`, and `char.maxPeriod` together; each narrows what one scan examines.
 - Do not raise `live.scanEvery` above `live.tail`, and do not raise `char.minPeriod` above `char.maxPeriod`; both make the settings broken.
 
