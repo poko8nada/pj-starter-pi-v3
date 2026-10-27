@@ -23,10 +23,10 @@ import { tempDir } from '../../../test/temp-dir.ts';
 import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
 import { MAX_ABORTS, MIN_THINKING, SCAN_EVERY } from './live/guard.ts';
 import { readSettings } from './settings/read.ts';
-import type { SettingsRead } from './settings/schema.ts';
+import { defaultSettings, type SettingsRead } from './settings/schema.ts';
 
 function okSettings(): SettingsRead {
-  return { kind: 'ok', settings: { enabled: true, show: true } };
+  return { kind: 'ok', settings: defaultSettings() };
 }
 
 type AgentMessage = MessageEndEvent['message'];
@@ -348,7 +348,7 @@ describe('onMessageUpdate', () => {
       followUp: () => undefined,
       readSettings: (): SettingsRead => {
         calls += 1;
-        return { kind: 'ok', settings: { enabled: false, show: true } };
+        return { kind: 'ok', settings: { ...defaultSettings(), enabled: false } };
       },
     });
     const fake = fakeCmdCtx();
@@ -678,9 +678,41 @@ describe('onCommand', () => {
     });
     wiring.onCommand('off', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      ...defaultSettings(),
       enabled: false,
     });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
+  });
+
+  it('ファイルが無い所に command off → 3 グループとパッチを持つ完全なファイルができる', () => {
+    const dir = tempDir();
+    const wiring = createScrubWiring({
+      settingsDir: dir,
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => readSettings(dir),
+    });
+    wiring.onCommand('off', fakeCmdCtx().ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      ...defaultSettings(),
+      enabled: false,
+    });
+  });
+
+  it('壊れたファイルに command on → 既定の 3 グループとパッチを持つ完全なファイルができる', () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, 'settings.json'), '{');
+    const wiring = createScrubWiring({
+      settingsDir: dir,
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => readSettings(dir),
+    });
+    wiring.onCommand('on', fakeCmdCtx().ctx);
+    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      ...defaultSettings(),
+      enabled: true,
+    });
   });
 
   it('コマンド on → その後の message_end が差し替えを返す', () => {
@@ -722,6 +754,7 @@ describe('onCommand', () => {
     });
     wiring.onCommand('hide', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+      ...defaultSettings(),
       enabled: true,
       show: false,
     });
@@ -742,6 +775,7 @@ describe('onCommand', () => {
       });
       wiring.onCommand(command, fakeCmdCtx().ctx);
       expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+        ...defaultSettings(),
         enabled,
         show: false,
       });

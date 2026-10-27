@@ -18,7 +18,25 @@ Any other argument prints the usage instead of throwing.
 
 ## Settings
 
-`settings.json` sits next to this file and holds `{ "enabled": true, "show": true }`. It is re-read on every `message_end`, so editing the file applies without a reload. When the file is missing, the scrub runs enabled and the report shows; when it is broken, the scrub runs with defaults.
+`settings.json` sits next to this file and holds `enabled`, `show`, and the `live`, `sentence`, `char` tuning groups. It is re-read on scan and on every `message_end`, so editing the file applies without a reload. When the file is missing, the scrub runs enabled and the report shows; when it is broken, the scrub runs with defaults.
+
+```json
+{
+  "enabled": true,
+  "show": true,
+  "live": {
+    "minThinking": 20000,
+    "scanEvery": 2000,
+    "tail": 20000,
+    "maxAborts": 2,
+    "sampleChars": 200
+  },
+  "sentence": { "minCycles": 3, "minRunChars": 400, "maxPeriodUnits": 64 },
+  "char": { "minPeriod": 4, "maxPeriod": 120, "minRepeats": 3, "minLength": 20 }
+}
+```
+
+Missing keys fall back to the defaults above. A wrong type, an out-of-range value, `scanEvery` above `tail`, `minPeriod` above `maxPeriod`, or `minRepeats` below 2 makes the settings broken.
 
 ## Target blocks
 

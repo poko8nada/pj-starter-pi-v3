@@ -87,9 +87,20 @@ function readDoc(file: string): Record<string, unknown> {
   }
 }
 
+function mergeGroup<T extends object>(defaults: T, doc: unknown, patch: unknown): T {
+  const docRecord: Record<string, unknown> = isRecord(doc) ? doc : {};
+  const patchRecord: Record<string, unknown> = isRecord(patch) ? patch : {};
+  return { ...defaults, ...docRecord, ...patchRecord };
+}
+
 function writePatch(settingsDir: string, patch: Record<string, unknown>): void {
   const file = join(settingsDir, SETTINGS_FILE);
-  const next = { ...readDoc(file), ...patch };
+  const doc = readDoc(file);
+  const defaults = defaultSettings();
+  const live = mergeGroup(defaults.live, doc['live'], patch['live']);
+  const sentence = mergeGroup(defaults.sentence, doc['sentence'], patch['sentence']);
+  const char = mergeGroup(defaults.char, doc['char'], patch['char']);
+  const next = { ...defaults, ...doc, ...patch, live, sentence, char };
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
 }

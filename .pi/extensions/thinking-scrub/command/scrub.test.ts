@@ -14,7 +14,7 @@ import {
   SCRUB_USAGE_LINE,
 } from '../scrub.fixture.ts';
 import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
-import type { SettingsRead } from '../settings/schema.ts';
+import { defaultSettings, type SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';
 
 // CommandPort は記録する偽物で渡す。出力の文は工場の印と回数から組む。
@@ -33,7 +33,7 @@ function fakePort(
   const shown: boolean[] = [];
   const settings: SettingsRead = overrides.settings ?? {
     kind: 'ok',
-    settings: { enabled: true, show: true },
+    settings: defaultSettings(),
   };
   const status: Status = overrides.status ?? { removed: 0, lastAt: null, failures: 0 };
   return {
@@ -125,11 +125,25 @@ describe('runCommand', () => {
     expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
   });
 
+  it('3 グループの SettingsRead と status → on と show と removed と last の行', () => {
+    const { port } = fakePort({
+      settings: { kind: 'ok', settings: defaultSettings() },
+      status: { removed: 0, lastAt: null, failures: 0 },
+    });
+    const lines = runCommand(port, parseCommand(''), 100);
+    expect(lines).toEqual([
+      SCRUB_ON_LINE,
+      SCRUB_SHOW_ON,
+      `${SCRUB_REMOVED_LABEL} 0`,
+      SCRUB_LAST_NONE,
+    ]);
+  });
+
   it('enabled:false の status → off と回数と時刻の行', () => {
     const removed = 3;
     const lastAt = 200;
     const { port, written, shown } = fakePort({
-      settings: { kind: 'ok', settings: { enabled: false, show: true } },
+      settings: { kind: 'ok', settings: { ...defaultSettings(), enabled: false } },
       status: { removed, lastAt, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
@@ -145,7 +159,7 @@ describe('runCommand', () => {
 
   it('show:false の status → 行に off の印が入る', () => {
     const { port } = fakePort({
-      settings: { kind: 'ok', settings: { enabled: true, show: false } },
+      settings: { kind: 'ok', settings: { ...defaultSettings(), show: false } },
       status: { removed: 1, lastAt: null, failures: 0 },
     });
     const lines = runCommand(port, parseCommand(''), 100);
@@ -162,6 +176,8 @@ describe('runCommand', () => {
     expect(shown).toEqual([]);
     expect(lines.join('\n')).toContain(SCRUB_BROKEN_MARK);
     expect(lines.join('\n')).toContain(SCRUB_DEFAULTS_MARK);
+    expect(lines).toContain(SCRUB_ON_LINE);
+    expect(lines).toContain(SCRUB_SHOW_ON);
   });
 
   it('broken の off → writeEnabled(false) が 1 回、off の行が返る', () => {

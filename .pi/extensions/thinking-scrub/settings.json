@@ -1,1 +1,22 @@
-{ "enabled": true, "show": true }
+{
+  "enabled": true,
+  "show": true,
+  "live": {
+    "minThinking": 20000,
+    "scanEvery": 2000,
+    "tail": 20000,
+    "maxAborts": 2,
+    "sampleChars": 200
+  },
+  "sentence": {
+    "minCycles": 3,
+    "minRunChars": 400,
+    "maxPeriodUnits": 64
+  },
+  "char": {
+    "minPeriod": 4,
+    "maxPeriod": 120,
+    "minRepeats": 3,
+    "minLength": 20
+  }
+}
