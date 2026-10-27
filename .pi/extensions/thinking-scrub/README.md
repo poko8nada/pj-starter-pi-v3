@@ -18,7 +18,7 @@ Any other argument prints the usage instead of throwing.
 
 ## Settings
 
-`settings.json` sits next to this file and holds `enabled`, `show`, and the `live`, `sentence`, `char` tuning groups. It is re-read on scan and on every `message_end`, so editing the file applies without a reload. When the file is missing, the scrub runs enabled and the report shows; when it is broken, the scrub runs with defaults.
+`settings.json` sits next to this file and holds `enabled`, `show`, and the `live`, `sentence`, `char` tuning groups. Hand edits apply at the next scan; `message_end` and commands re-read immediately. When the file is missing, the scrub runs enabled and the report shows; when it is broken, the scrub runs with defaults.
 
 ```json
 {

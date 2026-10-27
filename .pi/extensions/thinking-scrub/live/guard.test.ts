@@ -37,7 +37,7 @@ describe('observe', () => {
     const tuning = defaultSettings();
     const thinking = thinkingWithRun(20_000);
     expect(thinking).toHaveLength(20_000);
-    const step = observe(emptyGuard(), thinking, tuning.live, tuning.sentence);
+    const step = observe(emptyGuard(), thinking, tuning, () => true);
     expect(step.kind).toBe('stop');
     if (step.kind !== 'stop') {
       throw new Error('must stop');
@@ -52,20 +52,20 @@ describe('observe', () => {
     const tuning = defaultSettings();
     const thinking = thinkingWithRun(20_000).slice(0, 19_999);
     expect(thinking).toHaveLength(19_999);
-    const step = observe(emptyGuard(), thinking, tuning.live, tuning.sentence);
+    const step = observe(emptyGuard(), thinking, tuning, () => true);
     expect(step.kind).toBe('idle');
   });
 
   it('同じ thinking に scanEvery 未満だけ足す → idle', () => {
     const tuning = defaultSettings();
     const base = thinkingWithRun(20_000);
-    const first = observe(emptyGuard(), base, tuning.live, tuning.sentence);
+    const first = observe(emptyGuard(), base, tuning, () => true);
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
     const extended = `${base}${'x'.repeat(tuning.live.scanEvery - 1)}`;
     expect(extended.length - first.guard.scanned).toBe(tuning.live.scanEvery - 1);
-    const second = observe(first.guard, extended, tuning.live, tuning.sentence);
+    const second = observe(first.guard, extended, tuning, () => true);
     expect(second.kind).toBe('idle');
   });
 
@@ -75,30 +75,30 @@ describe('observe', () => {
     const secondHalf = plainThinking(tuning.live.tail);
     const thinking = `${firstHalf} ${secondHalf}`.slice(0, tuning.live.tail * 2);
     expect(thinking).toHaveLength(tuning.live.tail * 2);
-    const step = observe(emptyGuard(), thinking, tuning.live, tuning.sentence);
+    const step = observe(emptyGuard(), thinking, tuning, () => true);
     expect(step.kind).toBe('idle');
   });
 
   it('2 倍の minThinking 文字のあと短い thinking → scanned が戻り既定で止まる', () => {
     const tuning = defaultSettings();
     const long = plainThinking(tuning.live.minThinking * 2);
-    const first = observe(emptyGuard(), long, tuning.live, tuning.sentence);
+    const first = observe(emptyGuard(), long, tuning, () => true);
     expect(first.kind).toBe('idle');
     expect(first.guard.scanned).toBe(tuning.live.minThinking * 2);
     const short = thinkingWithRun(tuning.live.minThinking);
-    const second = observe(first.guard, short, tuning.live, tuning.sentence);
+    const second = observe(first.guard, short, tuning, () => true);
     expect(second.kind).toBe('stop');
   });
 
   it('maxAborts 回のあと 2 倍の minThinking 文字 → idle', () => {
     const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
-    const first = observe(emptyGuard(), firstThinking, tuning.live, tuning.sentence);
+    const first = observe(emptyGuard(), firstThinking, tuning, () => true);
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
     const secondThinking = thinkingWithRun(tuning.live.minThinking * 2);
-    const second = observe(first.guard, secondThinking, tuning.live, tuning.sentence);
+    const second = observe(first.guard, secondThinking, tuning, () => true);
     if (second.kind !== 'stop') {
       throw new Error('second must stop');
     }
@@ -106,8 +106,8 @@ describe('observe', () => {
     const third = observe(
       second.guard,
       thinkingWithRun(tuning.live.minThinking * 2),
-      tuning.live,
-      tuning.sentence,
+      tuning,
+      () => true,
     );
     expect(third.kind).toBe('idle');
   });
@@ -117,14 +117,19 @@ describe('observe', () => {
     const live = { ...tuning.live, minThinking: 5000 };
     const thinking = thinkingWithRun(5000);
     expect(thinking).toHaveLength(5000);
-    const step = observe(emptyGuard(), thinking, live, tuning.sentence);
+    const step = observe(emptyGuard(), thinking, { ...tuning, live }, () => true);
     expect(step.kind).toBe('stop');
   });
 
   it('live.maxAborts を 0 にした設定 → idle', () => {
     const tuning = defaultSettings();
     const live = { ...tuning.live, maxAborts: 0 };
-    const step = observe(emptyGuard(), thinkingWithRun(live.minThinking), live, tuning.sentence);
+    const step = observe(
+      emptyGuard(),
+      thinkingWithRun(live.minThinking),
+      { ...tuning, live },
+      () => true,
+    );
     expect(step.kind).toBe('idle');
   });
 
@@ -134,10 +139,71 @@ describe('observe', () => {
     const step = observe(
       emptyGuard(),
       thinkingWithRun(tuning.live.minThinking),
-      tuning.live,
-      sentence,
+      { ...tuning, sentence },
+      () => true,
     );
     expect(step.kind).toBe('idle');
+  });
+
+  it('無効のとき、間隔が来たスキャンで scanned が進む', () => {
+    const tuning = defaultSettings();
+    const step = observe(
+      emptyGuard(),
+      thinkingWithRun(tuning.live.minThinking),
+      tuning,
+      () => false,
+    );
+    expect(step.kind).toBe('idle');
+    expect(step.guard.scanned).toBe(tuning.live.minThinking);
+  });
+
+  it('間隔が来ていないとき、enabled が呼ばれない', () => {
+    const tuning = defaultSettings();
+    const base = thinkingWithRun(tuning.live.minThinking);
+    const first = observe(emptyGuard(), base, tuning, () => true);
+    if (first.kind !== 'stop') {
+      throw new Error('first must stop');
+    }
+    let calls = 0;
+    const extended = `${base}${'x'.repeat(tuning.live.scanEvery - 1)}`;
+    const second = observe(first.guard, extended, tuning, () => {
+      calls += 1;
+      return true;
+    });
+    expect(second.kind).toBe('idle');
+    expect(calls).toBe(0);
+  });
+
+  it('MAX_ABORTS に達したら、scanned が進み、enabled が呼ばれない', () => {
+    const tuning = defaultSettings();
+    const first = observe(
+      emptyGuard(),
+      thinkingWithRun(tuning.live.minThinking),
+      tuning,
+      () => true,
+    );
+    if (first.kind !== 'stop') {
+      throw new Error('first must stop');
+    }
+    const second = observe(
+      first.guard,
+      thinkingWithRun(tuning.live.minThinking * 2),
+      tuning,
+      () => true,
+    );
+    if (second.kind !== 'stop') {
+      throw new Error('second must stop');
+    }
+    expect(second.guard.aborts).toBe(tuning.live.maxAborts);
+    let calls = 0;
+    const thirdThinking = thinkingWithRun(tuning.live.minThinking * 2);
+    const third = observe(second.guard, thirdThinking, tuning, () => {
+      calls += 1;
+      return true;
+    });
+    expect(third.kind).toBe('idle');
+    expect(third.guard.scanned).toBe(thirdThinking.length);
+    expect(calls).toBe(0);
   });
 });
 
@@ -145,23 +211,18 @@ describe('resetOnUser', () => {
   it('空に戻り、また止まれる', () => {
     const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
-    const first = observe(emptyGuard(), firstThinking, tuning.live, tuning.sentence);
+    const first = observe(emptyGuard(), firstThinking, tuning, () => true);
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
     const secondThinking = thinkingWithRun(tuning.live.minThinking * 2);
-    const second = observe(first.guard, secondThinking, tuning.live, tuning.sentence);
+    const second = observe(first.guard, secondThinking, tuning, () => true);
     if (second.kind !== 'stop') {
       throw new Error('second must stop');
     }
     const reset = resetOnUser(second.guard);
     expect(reset).toEqual(emptyGuard());
-    const again = observe(
-      reset,
-      thinkingWithRun(tuning.live.minThinking),
-      tuning.live,
-      tuning.sentence,
-    );
+    const again = observe(reset, thinkingWithRun(tuning.live.minThinking), tuning, () => true);
     expect(again.kind).toBe('stop');
   });
 });
@@ -170,12 +231,12 @@ describe('takeFollowUp', () => {
   it('2 回止める → 最新が見本で 1 回だけ取れる', () => {
     const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
-    const first = observe(emptyGuard(), firstThinking, tuning.live, tuning.sentence);
+    const first = observe(emptyGuard(), firstThinking, tuning, () => true);
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
     const secondThinking = thinkingWithOtherRun(tuning.live.minThinking + tuning.live.scanEvery);
-    const second = observe(first.guard, secondThinking, tuning.live, tuning.sentence);
+    const second = observe(first.guard, secondThinking, tuning, () => true);
     if (second.kind !== 'stop') {
       throw new Error('second must stop');
     }

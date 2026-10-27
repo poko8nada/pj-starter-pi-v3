@@ -296,7 +296,7 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().lastAt).toBe(7);
   });
 
-  it('1 回の message_end → readSettings を 1 回呼ぶ', () => {
+  it('1 回の message_end → 作成時の 1 回と message_end の 1 回で 2 回呼ぶ', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -307,8 +307,9 @@ describe('onMessageEnd', () => {
         return okSettings();
       },
     });
-    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(calls).toBe(1);
+    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
+    expect(calls).toBe(2);
   });
 
   it('okSettings と message_end → 3 グループの既定値で差し替える', () => {
@@ -351,33 +352,126 @@ describe('onMessageEnd', () => {
 });
 
 describe('onMessageUpdate', () => {
-  it('minThinking 未満でも以上でも readSettings を 1 回呼ぶ', () => {
-    for (const [length, expectedCalls, expectedAborts] of [
-      [defaultSettings().live.minThinking - 1, 1, 0],
-      [defaultSettings().live.minThinking, 1, 1],
-    ] as const) {
-      let calls = 0;
-      const wiring = createScrubWiring({
-        settingsDir: tempDir(),
-        now: () => 7,
-        followUp: () => undefined,
-        readSettings: () => {
-          calls += 1;
-          return okSettings();
-        },
-      });
-      const thinking = thinkingWithRun(defaultSettings().live.minThinking).slice(0, length);
-      const fake = fakeCmdCtx();
-      wiring.onMessageUpdate(
-        messageUpdate(assistantThinking(thinking, 'reasoning_content')),
-        fake.ctx,
-      );
-      expect(calls).toBe(expectedCalls);
-      expect(fake.aborts()).toBe(expectedAborts);
-    }
+  it('作成時に 1 回読み、minThinking 未満では読まない', () => {
+    let calls = 0;
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => {
+        calls += 1;
+        return okSettings();
+      },
+    });
+    expect(calls).toBe(1);
+    const thinking = thinkingWithRun(defaultSettings().live.minThinking).slice(
+      0,
+      defaultSettings().live.minThinking - 1,
+    );
+    const fake = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(assistantThinking(thinking, 'reasoning_content')),
+      fake.ctx,
+    );
+    expect(calls).toBe(1);
+    expect(fake.aborts()).toBe(0);
   });
 
-  it('enabled が偽の偽設定 → abort なし', () => {
+  it('差分が scanEvery 未満なら読まない', () => {
+    let calls = 0;
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => {
+        calls += 1;
+        return okSettings();
+      },
+    });
+    expect(calls).toBe(1);
+    const base = thinkingWithRun(defaultSettings().live.minThinking);
+    const first = fakeCmdCtx();
+    wiring.onMessageUpdate(messageUpdate(assistantThinking(base, 'reasoning_content')), first.ctx);
+    expect(first.aborts()).toBe(1);
+    expect(calls).toBe(2);
+    const extended = `${base}${'x'.repeat(defaultSettings().live.scanEvery - 1)}`;
+    const second = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(assistantThinking(extended, 'reasoning_content')),
+      second.ctx,
+    );
+    expect(calls).toBe(2);
+    expect(second.aborts()).toBe(0);
+  });
+
+  it('差分が scanEvery 以上なら 1 回読み、ランがあれば止まる', () => {
+    let calls = 0;
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => {
+        calls += 1;
+        return okSettings();
+      },
+    });
+    expect(calls).toBe(1);
+    const fake = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
+      fake.ctx,
+    );
+    expect(calls).toBe(2);
+    expect(fake.aborts()).toBe(1);
+  });
+
+  it('MAX_ABORTS に達したら読まず、scanned が進む', () => {
+    let calls = 0;
+    const wiring = createScrubWiring({
+      settingsDir: tempDir(),
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => {
+        calls += 1;
+        return okSettings();
+      },
+    });
+    expect(calls).toBe(1);
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
+      fakeCmdCtx().ctx,
+    );
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(
+          thinkingWithRun(defaultSettings().live.minThinking + defaultSettings().live.scanEvery),
+          'reasoning_content',
+        ),
+      ),
+      fakeCmdCtx().ctx,
+    );
+    expect(calls).toBe(3);
+    const fake = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(
+          thinkingWithRun(
+            defaultSettings().live.minThinking + defaultSettings().live.scanEvery * 2,
+          ),
+          'reasoning_content',
+        ),
+      ),
+      fake.ctx,
+    );
+    expect(calls).toBe(3);
+    expect(fake.aborts()).toBe(0);
+  });
+
+  it('無効のとき、間隔ごとに 1 回だけ読み、scanned が進む', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -388,15 +482,87 @@ describe('onMessageUpdate', () => {
         return { kind: 'ok', settings: { ...defaultSettings(), enabled: false } };
       },
     });
-    const fake = fakeCmdCtx();
+    expect(calls).toBe(1);
+    const base = thinkingWithRun(defaultSettings().live.minThinking);
+    const first = fakeCmdCtx();
+    wiring.onMessageUpdate(messageUpdate(assistantThinking(base, 'reasoning_content')), first.ctx);
+    expect(calls).toBe(2);
+    expect(first.aborts()).toBe(0);
+    const extended = `${base}${'x'.repeat(defaultSettings().live.scanEvery)}`;
+    const second = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(assistantThinking(extended, 'reasoning_content')),
+      second.ctx,
+    );
+    expect(calls).toBe(3);
+    expect(second.aborts()).toBe(0);
+    const third = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(assistantThinking(`${extended}x`, 'reasoning_content')),
+      third.ctx,
+    );
+    expect(calls).toBe(3);
+    expect(third.aborts()).toBe(0);
+  });
+
+  it('command off の後、次の更新でキャッシュが効いて止まらない', () => {
+    const dir = tempDir();
+    const wiring = createScrubWiring({
+      settingsDir: dir,
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => readSettings(dir),
+    });
+    const first = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
         assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
       ),
+      first.ctx,
+    );
+    expect(first.aborts()).toBe(1);
+    wiring.onCommand('off', fakeCmdCtx().ctx);
+    const second = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(
+          thinkingWithRun(defaultSettings().live.minThinking + defaultSettings().live.scanEvery),
+          'reasoning_content',
+        ),
+      ),
+      second.ctx,
+    );
+    expect(second.aborts()).toBe(0);
+  });
+
+  it('message_end の後、キャッシュが新しい設定になる', () => {
+    const dir = tempDir();
+    const custom = {
+      ...defaultSettings(),
+      live: { ...defaultSettings().live, minThinking: 5000 },
+    };
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify(custom));
+    let calls = 0;
+    const wiring = createScrubWiring({
+      settingsDir: dir,
+      now: () => 7,
+      followUp: () => undefined,
+      readSettings: () => {
+        calls += 1;
+        return readSettings(dir);
+      },
+    });
+    expect(calls).toBe(1);
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify(defaultSettings()));
+    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
+    expect(calls).toBe(2);
+    const fake = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(assistantThinking(thinkingWithRun(6000), 'reasoning_content')),
       fake.ctx,
     );
+    expect(calls).toBe(2);
     expect(fake.aborts()).toBe(0);
-    expect(calls).toBe(1);
   });
 
   it('署名の無い thinking でも run → abort', () => {
@@ -742,21 +908,6 @@ describe('onCommand', () => {
       enabled: false,
     });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
-  });
-
-  it('ファイルが無い所に command off → 3 グループとパッチを持つ完全なファイルができる', () => {
-    const dir = tempDir();
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
-    wiring.onCommand('off', fakeCmdCtx().ctx);
-    expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
-      ...defaultSettings(),
-      enabled: false,
-    });
   });
 
   it('壊れたファイルに command on → 既定の 3 グループとパッチを持つ完全なファイルができる', () => {

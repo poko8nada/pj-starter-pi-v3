@@ -2,7 +2,7 @@
  * thinking-scrub の配線。`message_end` で畳み、実行の終わり（`agent_end`）に合計を 1 行で報告し、`/thinking-scrub` で scrub と表示を切り替える。
  *
  * 生成中は `message_update` で文の周期を見て止め、`agent_settled` でフォローアップを送る。
- * 設定は毎回読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
+ * 設定は生成中のスキャン時と `message_end` に読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
  * 数えて `undefined` を返す。状態はセッションの間だけ持つ。
  */
 
@@ -66,10 +66,7 @@ interface WiringState {
   status: Status;
   tally: Tally;
   guard: Guard;
-}
-
-function emptyWiringState(): WiringState {
-  return { status: emptyStatus(), tally: emptyTally(), guard: emptyGuard() };
+  settings: Settings;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -168,6 +165,7 @@ function handleMessageEnd(
 ): MessageEndEventResult | undefined {
   try {
     const settings = settingsOf(options.readSettings());
+    state.settings = settings;
     if (!readEnabled(settings)) {
       return undefined;
     }
@@ -192,14 +190,26 @@ function handleMessageUpdate(
 ): void {
   try {
     const thinking = thinkingOf(event.message);
-    const settings = settingsOf(options.readSettings());
-    if (thinking.length < settings.live.minThinking) {
+    const cached = state.settings;
+    let effective = state.guard.scanned;
+    if (thinking.length < effective) {
+      effective = 0;
+    }
+    if (thinking.length < cached.live.minThinking) {
+      state.guard = { ...state.guard, scanned: effective };
       return;
     }
-    if (!readEnabled(settings)) {
+    if (state.guard.aborts >= cached.live.maxAborts) {
+      state.guard = { ...state.guard, scanned: thinking.length };
       return;
     }
-    const step = observe(state.guard, thinking, settings.live, settings.sentence);
+    if (thinking.length - effective < cached.live.scanEvery) {
+      state.guard = { ...state.guard, scanned: effective };
+      return;
+    }
+    const fresh = settingsOf(options.readSettings());
+    state.settings = fresh;
+    const step = observe(state.guard, thinking, fresh, () => fresh.enabled);
     state.guard = step.guard;
     if (step.kind === 'stop') {
       ctx.abort();
@@ -222,8 +232,7 @@ function handleAgentSettled(
     return;
   }
   state.guard = taken.guard;
-  const settings = settingsOf(options.readSettings());
-  options.followUp(followUpText(taken.sample, settings.live.sampleChars));
+  options.followUp(followUpText(taken.sample, state.settings.live.sampleChars));
 }
 
 function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent): void {
@@ -234,7 +243,9 @@ function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent
 }
 
 function handleAgentEnd(state: WiringState, options: WiringOptions, ctx: CommandCtx): void {
-  const show = readShow(settingsOf(options.readSettings()));
+  const settings = settingsOf(options.readSettings());
+  state.settings = settings;
+  const show = readShow(settings);
   const current = state.tally;
   state.tally = emptyTally();
   if (!show) {
@@ -267,6 +278,7 @@ function handleCommand(
     command,
     options.now(),
   );
+  state.settings = settingsOf(options.readSettings());
   ctx.ui.notify(lines.join('\n'));
 }
 
@@ -288,7 +300,12 @@ export interface ScrubWiring {
 
 /** 配線の中身。`registerScrub` はこれを pi につなぐだけにする */
 export function createScrubWiring(options: WiringOptions): ScrubWiring {
-  const state = emptyWiringState();
+  const state: WiringState = {
+    status: emptyStatus(),
+    tally: emptyTally(),
+    guard: emptyGuard(),
+    settings: settingsOf(options.readSettings()),
+  };
   return {
     onMessageEnd: (event) => handleMessageEnd(state, options, event),
     onMessageUpdate: (event, ctx) => {

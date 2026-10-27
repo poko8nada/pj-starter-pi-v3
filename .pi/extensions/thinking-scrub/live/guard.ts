@@ -5,7 +5,7 @@
  * `takeFollowUp` は止めた見本を 1 回だけ渡す。
  */
 
-import type { LiveTuning, SentenceTuning } from '../settings/schema.ts';
+import type { Tuning } from '../settings/schema.ts';
 import { detectUnitRuns, sampleOf, splitUnits } from '../scrub/units.ts';
 
 export interface Guard {
@@ -49,9 +49,11 @@ export function followUpText(sample: string, sampleChars: number): string {
 export function observe(
   guard: Guard,
   thinking: string,
-  live: LiveTuning,
-  sentence: SentenceTuning,
+  tuning: Tuning,
+  enabled: () => boolean,
 ): GuardStep {
+  const live = tuning.live;
+  const sentence = tuning.sentence;
   let effective = guard.scanned;
   if (thinking.length < effective) {
     effective = 0;
@@ -60,10 +62,13 @@ export function observe(
     return { kind: 'idle', guard: { ...guard, scanned: effective } };
   }
   if (guard.aborts >= live.maxAborts) {
-    return { kind: 'idle', guard: { ...guard, scanned: effective } };
+    return { kind: 'idle', guard: { ...guard, scanned: thinking.length } };
   }
   if (thinking.length - effective < live.scanEvery) {
     return { kind: 'idle', guard: { ...guard, scanned: effective } };
+  }
+  if (!enabled()) {
+    return { kind: 'idle', guard: { ...guard, scanned: thinking.length } };
   }
   const tailText = thinking.slice(-live.tail);
   const units = splitUnits(tailText);
