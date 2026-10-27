@@ -975,4 +975,30 @@ describe('onCommand', () => {
       });
     }
   });
+
+  it('独自キーを持つ settings.json に command off/on → 独自キーが残り enabled が切り替わる', () => {
+    for (const [command, enabled] of [
+      ['off', false],
+      ['on', true],
+    ] as const) {
+      const dir = tempDir();
+      writeFileSync(
+        join(dir, 'settings.json'),
+        JSON.stringify({ customTop: 'kept', live: { customLive: 'kept' } }),
+      );
+      const wiring = createScrubWiring({
+        settingsDir: dir,
+        now: () => 7,
+        followUp: () => undefined,
+        readSettings: () => readSettings(dir),
+      });
+      wiring.onCommand(command, fakeCmdCtx().ctx);
+      expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
+        ...defaultSettings(),
+        customTop: 'kept',
+        enabled,
+        live: { ...defaultSettings().live, customLive: 'kept' },
+      });
+    }
+  });
 });
