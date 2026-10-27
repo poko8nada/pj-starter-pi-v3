@@ -10,6 +10,7 @@ import {
   degenerate,
   degenerateExpected,
 } from '../scrub.fixture.ts';
+import { defaultSettings } from '../settings/schema.ts';
 import { detectRuns } from './detect.ts';
 import { scrubMessage } from './message.ts';
 
@@ -22,9 +23,10 @@ function thinkingMessage(thinking: string, signature: string): PiAssistantMessag
 }
 
 describe('scrubMessage', () => {
-  it('reasoning_content で退化した本文 → 差し替えが返り、区間を含まない', () => {
+  it('既定の設定と署名付きのループ → 差し替える', () => {
+    const tuning = defaultSettings();
     const message: AgentMessage = assistantMessage();
-    const scrubbed = scrubMessage(message);
+    const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
       throw new Error('scrubbed must be defined');
@@ -40,24 +42,35 @@ describe('scrubMessage', () => {
     if (typeof first.thinking !== 'string') {
       throw new Error('thinking must be a string');
     }
-    expect(detectRuns(first.thinking)).toEqual([]);
+    expect(detectRuns(first.thinking, tuning.char)).toEqual([]);
   });
 
   it('thinkingSignature が reasoning / reasoning_text → 対象になる', () => {
+    const tuning = defaultSettings();
     const reasoning = thinkingMessage(degenerate(), 'reasoning');
-    expect(scrubMessage(reasoning)).toBeDefined();
+    expect(scrubMessage(reasoning, tuning)).toBeDefined();
     const reasoningText = thinkingMessage(degenerate(), 'reasoning_text');
-    expect(scrubMessage(reasoningText)).toBeDefined();
+    expect(scrubMessage(reasoningText, tuning)).toBeDefined();
   });
 
-  it('thinkingSignature が無い → undefined', () => {
+  it('char.minLength を 100 にした設定で、66 文字の退化 → 差し替えない', () => {
+    const tuning = defaultSettings();
+    expect(degenerate().length).toBe(66);
+    const strict = { ...tuning, char: { ...tuning.char, minLength: 100 } };
+    const message = thinkingMessage(degenerate(), 'reasoning_content');
+    expect(scrubMessage(message, strict)).toBeUndefined();
+  });
+
+  it('署名の無いループ → 差し替えない', () => {
+    const tuning = defaultSettings();
     const message = assistantMessage({
       content: [{ type: 'thinking', thinking: degenerate() }],
     });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('thinkingSignature が JSON 文字列 → undefined', () => {
+    const tuning = defaultSettings();
     const signature = '{"reasoning_details":[]}';
     const message = assistantMessage({
       content: [
@@ -68,16 +81,18 @@ describe('scrubMessage', () => {
         },
       ],
     });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('対象ブロックが無い配列 → undefined', () => {
+    const tuning = defaultSettings();
     const text = 'hi';
     const message = assistantMessage({ content: [{ type: 'text', text }] });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('redacted が真 → undefined', () => {
+    const tuning = defaultSettings();
     const message = assistantMessage({
       content: [
         {
@@ -88,25 +103,28 @@ describe('scrubMessage', () => {
         },
       ],
     });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('role が assistant 以外 → undefined', () => {
+    const tuning = defaultSettings();
     // assistant なら差し替わる本文 (happy test と同じ): role のおかげで undefined。
     const message = assistantMessage({ role: 'user' });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('content が配列でない assistant → undefined', () => {
+    const tuning = defaultSettings();
     // Set は iterable だが配列でない: guard が無ければ thinking を拾って defined になる。
     const blocks = new Set([
       { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
     ]);
     const message = assistantMessage({ content: blocks });
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('2 ブロックのうち 1 つだけ退化 → その 1 つだけ書き換わる', () => {
+    const tuning = defaultSettings();
     const fresh = 'normal thinking here';
     const message = assistantMessage({
       content: [
@@ -114,7 +132,7 @@ describe('scrubMessage', () => {
         { type: 'thinking', thinking: fresh, thinkingSignature: 'reasoning_content' },
       ],
     });
-    const scrubbed = scrubMessage(message);
+    const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
       throw new Error('scrubbed must be defined');
@@ -138,8 +156,9 @@ describe('scrubMessage', () => {
   });
 
   it('差し替え後も thinkingSignature と usage と stopReason と timestamp が同じ値', () => {
+    const tuning = defaultSettings();
     const message: AgentMessage = assistantMessage();
-    const scrubbed = scrubMessage(message);
+    const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
     if (message.role !== 'assistant') {
       throw new Error('message must be assistant');
@@ -170,12 +189,14 @@ describe('scrubMessage', () => {
   });
 
   it('本文が 1 つの区間だけ → undefined', () => {
+    const tuning = defaultSettings();
     const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
     const message = thinkingMessage(fullRun, 'reasoning_content');
-    expect(scrubMessage(message)).toBeUndefined();
+    expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('2 ブロックのうち片方が全部区間 → 片方は元のまま、removed は畳んだ分だけ', () => {
+    const tuning = defaultSettings();
     const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
     const middle = 'hello';
     const charBlock = 'abcd'.repeat(15);
@@ -187,7 +208,7 @@ describe('scrubMessage', () => {
         { type: 'thinking', thinking: twoRuns, thinkingSignature: 'reasoning_content' },
       ],
     });
-    const scrubbed = scrubMessage(message);
+    const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
       throw new Error('scrubbed must be defined');
@@ -214,9 +235,10 @@ describe('scrubMessage', () => {
 
 describe('scrubMessage chars', () => {
   it('chars は元の長さから畳んだ長さを引いた値', () => {
+    const tuning = defaultSettings();
     const thinking = degenerate();
     const message: AgentMessage = assistantMessage();
-    const scrubbed = scrubMessage(message);
+    const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
     if (scrubbed === undefined) {
       throw new Error('scrubbed must be defined');

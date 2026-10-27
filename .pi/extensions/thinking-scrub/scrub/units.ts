@@ -18,10 +18,7 @@ export interface UnitRun {
   readonly period: number;
 }
 
-export const MAX_PERIOD_UNITS = 64;
-export const MIN_CYCLES = 3;
-export const MIN_RUN_CHARS = 400;
-export const SAMPLE_CHARS = 200;
+import type { SentenceTuning } from '../settings/schema.ts';
 
 function isWhitespace(char: string): boolean {
   return (
@@ -153,7 +150,11 @@ export function splitUnits(text: string): readonly Unit[] {
 }
 
 /** 単位の等しさで 1 つの周期の極大区間を集める */
-function runsForPeriod(units: readonly Unit[], period: number): UnitRun[] {
+function runsForPeriod(
+  units: readonly Unit[],
+  period: number,
+  sentence: SentenceTuning,
+): UnitRun[] {
   const runs: UnitRun[] = [];
   let start: number | undefined;
   const flush = (endExclusive: number): void => {
@@ -161,12 +162,12 @@ function runsForPeriod(units: readonly Unit[], period: number): UnitRun[] {
       return;
     }
     const length = endExclusive - start;
-    if (length >= MIN_CYCLES * period) {
+    if (length >= sentence.minCycles * period) {
       const first = units[start];
       const last = units[endExclusive - 1];
       if (first !== undefined && last !== undefined) {
         const chars = last.end - first.start;
-        if (chars >= MIN_RUN_CHARS) {
+        if (chars >= sentence.minRunChars) {
           runs.push({ at: start, length, period });
         }
       }
@@ -203,14 +204,20 @@ function overlaps(a: UnitRun, b: UnitRun): boolean {
 }
 
 /** 単位の並びの周期区間を、重なりを小さい周期で残して昇順で返す */
-export function detectUnitRuns(units: readonly Unit[]): readonly UnitRun[] {
-  if (units.length < MIN_CYCLES) {
+export function detectUnitRuns(
+  units: readonly Unit[],
+  sentence: SentenceTuning,
+): readonly UnitRun[] {
+  if (units.length < sentence.minCycles) {
     return [];
   }
-  const maxPeriod = Math.min(MAX_PERIOD_UNITS, Math.floor(units.length / MIN_CYCLES));
+  const maxPeriod = Math.min(
+    sentence.maxPeriodUnits,
+    Math.floor(units.length / sentence.minCycles),
+  );
   const found: UnitRun[] = [];
   for (let period = 1; period <= maxPeriod; period += 1) {
-    for (const run of runsForPeriod(units, period)) {
+    for (const run of runsForPeriod(units, period, sentence)) {
       found.push(run);
     }
   }
@@ -230,7 +237,7 @@ export function detectUnitRuns(units: readonly Unit[]): readonly UnitRun[] {
 }
 
 /** run の中で最も多い 3 文の連続を返す。周期が 3 以下なら周期そのもの */
-export function sampleOf(units: readonly Unit[], run: UnitRun): string {
+export function sampleOf(units: readonly Unit[], run: UnitRun, sampleChars: number): string {
   const slice = units.slice(run.at, run.at + run.length);
   if (slice.length === 0) {
     return '';
@@ -272,5 +279,5 @@ export function sampleOf(units: readonly Unit[], run: UnitRun): string {
     picked = best?.window ?? slice.slice(0, Math.min(3, slice.length));
   }
   const joined = picked.map((unit) => unit.text).join(' ');
-  return joined.length > SAMPLE_CHARS ? joined.slice(0, SAMPLE_CHARS) : joined;
+  return joined.length > sampleChars ? joined.slice(0, sampleChars) : joined;
 }

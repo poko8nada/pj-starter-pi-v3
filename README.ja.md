@@ -11,7 +11,7 @@ English: [README.md](README.md)
 - **エージェントの規則** — `AGENTS.md`（毎セッション読まれる）
 - **サイクルの仕組み** — `.pi/skills/` の 8 つ（`propose` / `brief` / `adr` / `design` / `plan` / `work` / `close` / `yolo`）
 - **パッケージ** — `.pi/skills/` の `upgrade`。サイクルに乗せず、単独で走る
-- **拡張** — `consult`（4 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）、`thinking-scrub`（ループした thinking を生成中に止めて取り除き、次のターンに持ち越さない）、`context-precompact`（標準コンパクションを待たず、閾値の手前で裏に準備して境界で差し込む。`/precompact`、`/precompact now`、`/precompact on|off`、status line、設定）（`.pi/extensions/`）
+- **拡張** — `consult`（4 つの道具を持つ 1 つの拡張）、`quality-gate`（ターンで変えた分を検査する）、`sound-notify`（pi が待っているときに音と cmux 通知を出す）、[`thinking-scrub`](.pi/extensions/thinking-scrub/README.ja.md)（ループした thinking を生成中に止めて取り除き、次のターンに持ち越さない）、`context-precompact`（標準コンパクションを待たず、閾値の手前で裏に準備して境界で差し込む。`/precompact`、`/precompact now`、`/precompact on|off`、status line、設定）（`.pi/extensions/`）
   - `consult_run` — ロールと行き先を指して、サブエージェントの `pi` を 1 体だけ走らせる。この会話は見せない
   - `consult_subagents` — このセッションのサブエージェントを一覧し、1 体止める。記録を読むので reload をまたいでもこのセッションのサブエージェントは出る
   - `consult_worktree` — unit の worktree を作り、一覧し、消す。明示しない限り残り、`remove` は取り込み済みのブランチも一緒に消す（未マージは残す）

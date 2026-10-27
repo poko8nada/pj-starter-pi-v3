@@ -7,6 +7,7 @@
  * 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む。
  */
 
+import type { CharTuning, SentenceTuning, Tuning } from '../settings/schema.ts';
 import { detectUnitRuns, splitUnits } from './units.ts';
 
 export interface Run {
@@ -18,11 +19,6 @@ export interface Scrub {
   readonly text: string;
   readonly removed: number;
 }
-
-export const MIN_PERIOD = 4;
-export const MAX_PERIOD = 120;
-export const MIN_REPEATS = 3;
-export const MIN_LENGTH = 20;
 
 function isWhitespace(char: string): boolean {
   return (
@@ -36,8 +32,8 @@ function isWhitespace(char: string): boolean {
 }
 
 /** 区間が下限より短い周期でも当たるとき真。短い周期は数えない */
-function isSmallPeriodic(text: string, at: number, end: number): boolean {
-  for (let q = 1; q < MIN_PERIOD; q += 1) {
+function isSmallPeriodic(text: string, at: number, end: number, minPeriod: number): boolean {
+  for (let q = 1; q < minPeriod; q += 1) {
     let periodic = true;
     for (let index = at + q; index < end; index += 1) {
       if (text[index] !== text[index - q]) {
@@ -53,7 +49,7 @@ function isSmallPeriodic(text: string, at: number, end: number): boolean {
 }
 
 /** 1 つの周期で極大区間を集める */
-function runsForPeriod(text: string, period: number): Run[] {
+function runsForPeriod(text: string, period: number, char: CharTuning): Run[] {
   const runs: Run[] = [];
   let start: number | undefined;
   for (let index = period; index < text.length; index += 1) {
@@ -65,8 +61,8 @@ function runsForPeriod(text: string, period: number): Run[] {
     }
     if (start !== undefined) {
       const length = index - start;
-      if (length >= MIN_LENGTH && length >= period * MIN_REPEATS) {
-        if (!isSmallPeriodic(text, start, index)) {
+      if (length >= char.minLength && length >= period * char.minRepeats) {
+        if (!isSmallPeriodic(text, start, index, char.minPeriod)) {
           runs.push({ at: start, length });
         }
       }
@@ -75,8 +71,8 @@ function runsForPeriod(text: string, period: number): Run[] {
   }
   if (start !== undefined) {
     const length = text.length - start;
-    if (length >= MIN_LENGTH && length >= period * MIN_REPEATS) {
-      if (!isSmallPeriodic(text, start, text.length)) {
+    if (length >= char.minLength && length >= period * char.minRepeats) {
+      if (!isSmallPeriodic(text, start, text.length, char.minPeriod)) {
         runs.push({ at: start, length });
       }
     }
@@ -107,16 +103,16 @@ function mergeRuns(sorted: readonly Run[]): readonly Run[] {
 }
 
 /** 周期が続く区間を、重なりをまとめて昇順で返す */
-export function detectRuns(text: string): readonly Run[] {
-  if (text.length < MIN_LENGTH) {
+export function detectRuns(text: string, char: CharTuning): readonly Run[] {
+  if (text.length < char.minLength) {
     return [];
   }
   const found: Run[] = [];
-  for (let period = MIN_PERIOD; period <= MAX_PERIOD; period += 1) {
-    if (period * MIN_REPEATS > text.length) {
+  for (let period = char.minPeriod; period <= char.maxPeriod; period += 1) {
+    if (period * char.minRepeats > text.length) {
       break;
     }
-    for (const run of runsForPeriod(text, period)) {
+    for (const run of runsForPeriod(text, period, char)) {
       found.push(run);
     }
   }
@@ -197,9 +193,9 @@ function removeSpans(text: string, spans: readonly Run[]): Scrub {
 }
 
 /** 文の run を文字の区間に直す。最初の 1 周期を残し、2 周期目から消す */
-function sentenceSpans(text: string): Run[] {
+function sentenceSpans(text: string, sentence: SentenceTuning): Run[] {
   const units = splitUnits(text);
-  const runs = detectUnitRuns(units);
+  const runs = detectUnitRuns(units, sentence);
   const spans: Run[] = [];
   for (const run of runs) {
     const firstKeptEnd = units[run.at + run.period - 1]?.end;
@@ -212,9 +208,9 @@ function sentenceSpans(text: string): Run[] {
 }
 
 /** 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む */
-export function scrubThinking(text: string): Scrub {
-  const afterSentence = removeSpans(text, sentenceSpans(text));
-  const charRuns = detectRuns(afterSentence.text);
+export function scrubThinking(text: string, tuning: Tuning): Scrub {
+  const afterSentence = removeSpans(text, sentenceSpans(text, tuning.sentence));
+  const charRuns = detectRuns(afterSentence.text, tuning.char);
   const afterChar = removeSpans(afterSentence.text, charRuns);
   return { text: afterChar.text, removed: afterSentence.removed + afterChar.removed };
 }

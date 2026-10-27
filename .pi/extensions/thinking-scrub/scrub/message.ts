@@ -6,6 +6,7 @@
  */
 
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
+import type { Tuning } from '../settings/schema.ts';
 import { scrubThinking } from './detect.ts';
 
 type AgentMessage = MessageEndEvent['message'];
@@ -53,7 +54,7 @@ function isThinkingBlock(block: unknown): block is ThinkingBlock {
 }
 
 /** assistant の thinking を書き換える。変わらなければ undefined */
-export function scrubMessage(message: AgentMessage): Scrubbed | undefined {
+export function scrubMessage(message: AgentMessage, tuning: Tuning): Scrubbed | undefined {
   if (message.role !== 'assistant') {
     return undefined;
   }
@@ -65,7 +66,7 @@ export function scrubMessage(message: AgentMessage): Scrubbed | undefined {
   const next: typeof message.content = [];
   for (const block of message.content) {
     if (isThinkingBlock(block) && isReplayable(block)) {
-      const scrubbed = scrubThinking(block.thinking);
+      const scrubbed = scrubThinking(block.thinking, tuning);
       if (scrubbed.removed > 0 && scrubbed.text.trim() !== '') {
         removed += scrubbed.removed;
         chars += block.thinking.length - scrubbed.text.length;
