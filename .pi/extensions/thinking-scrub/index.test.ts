@@ -402,7 +402,7 @@ describe('onMessageUpdate', () => {
     expect(fake.aborts()).toBe(1);
   });
 
-  it('MAX_ABORTS に達したら読まず、scanned が進む', () => {
+  it('live.maxAborts に達したら読まず、scanned が進む', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -482,12 +482,17 @@ describe('onMessageUpdate', () => {
 
   it('command off の後、次の更新でキャッシュが効いて止まらない', () => {
     const dir = tempDir();
+    let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: dir,
       now: () => 7,
       followUp: () => undefined,
-      readSettings: () => readSettings(dir),
+      readSettings: () => {
+        calls += 1;
+        return readSettings(dir);
+      },
     });
+    expect(calls).toBe(1);
     const first = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
@@ -495,8 +500,10 @@ describe('onMessageUpdate', () => {
       ),
       first.ctx,
     );
+    expect(calls).toBe(2);
     expect(first.aborts()).toBe(1);
     wiring.onCommand('off', fakeCmdCtx().ctx);
+    expect(calls).toBe(3);
     const second = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
@@ -507,6 +514,7 @@ describe('onMessageUpdate', () => {
       ),
       second.ctx,
     );
+    expect(calls).toBe(4);
     expect(second.aborts()).toBe(0);
   });
 

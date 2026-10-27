@@ -139,7 +139,7 @@ describe('observe', () => {
     expect(calls).toBe(0);
   });
 
-  it('MAX_ABORTS に達したら、scanned が進み、enabled が呼ばれない', () => {
+  it('live.maxAborts に達したら、scanned が進み、enabled が呼ばれない', () => {
     const tuning = defaultSettings();
     const first = observe(
       emptyGuard(),

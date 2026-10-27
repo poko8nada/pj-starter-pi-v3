@@ -49,6 +49,17 @@ describe('detectRuns', () => {
     expect(detectRuns(text, tuning.char)).toHaveLength(0);
   });
 
+  it('minRepeats 未満の繰り返し → 0 区間、minRepeats 回 → 1 区間', () => {
+    const tuning = defaultSettings();
+    const block = `${'a'.repeat(9)}b`;
+    expect(block.length).toBe(10);
+    const few = repeated(block, tuning.char.minRepeats - 1);
+    expect(few.length).toBeGreaterThanOrEqual(tuning.char.minLength);
+    expect(detectRuns(few, tuning.char)).toHaveLength(0);
+    const enough = repeated(block, tuning.char.minRepeats);
+    expect(detectRuns(enough, tuning.char)).toHaveLength(1);
+  });
+
   it('周期 minPeriod - 1 文字 → 0 区間', () => {
     const tuning = defaultSettings();
     const tooShortPeriod = 'abc';
