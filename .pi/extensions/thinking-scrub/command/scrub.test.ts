@@ -6,7 +6,6 @@ import {
   SCRUB_LAST_NONE,
   SCRUB_OFF_LINE,
   SCRUB_ON_LINE,
-  SCRUB_PREFIX,
   SCRUB_REMOVED_LABEL,
   SCRUB_SHOW_LINE,
   SCRUB_SHOW_OFF,
@@ -85,17 +84,6 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_HIDE_LINE]);
   });
 
-  it('空文字と空白だけ → どちらも呼ばれず、状態の行が返る', () => {
-    for (const raw of ['', '   ']) {
-      const { port, written, shown } = fakePort();
-      const lines = runCommand(port, parseCommand(raw), 100);
-      expect(written).toEqual([]);
-      expect(shown).toEqual([]);
-      expect(lines.join('\n')).toContain(SCRUB_PREFIX);
-      expect(lines.join('\n')).toContain(SCRUB_REMOVED_LABEL);
-    }
-  });
-
   it('foo → どちらも呼ばれず、使い方の 1 行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('foo'), 100);
@@ -108,12 +96,6 @@ describe('runCommand', () => {
     expect(parseCommand(' off ')).toEqual({ kind: 'set', enabled: false });
     expect(parseCommand('ON')).toEqual({ kind: 'set', enabled: true });
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
-  });
-
-  it('lastAt が null の状態 → まだ無い旨の行', () => {
-    const { port } = fakePort({ status: { removed: 0, lastAt: null, failures: 0 } });
-    const lines = runCommand(port, parseCommand(''), 100);
-    expect(lines.join('\n')).toContain(SCRUB_LAST_NONE);
   });
 
   it('lastAt が数値の状態 → その時刻の行', () => {

@@ -61,14 +61,6 @@ describe('scrubMessage', () => {
     expect(scrubMessage(message, strict)).toBeUndefined();
   });
 
-  it('thinkingSignature が無い → undefined', () => {
-    const tuning = defaultSettings();
-    const message = assistantMessage({
-      content: [{ type: 'thinking', thinking: degenerate() }],
-    });
-    expect(scrubMessage(message, tuning)).toBeUndefined();
-  });
-
   it('署名の無いループ → 差し替えない', () => {
     const tuning = defaultSettings();
     const message = assistantMessage({

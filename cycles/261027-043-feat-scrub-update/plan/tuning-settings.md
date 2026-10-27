@@ -302,31 +302,47 @@ export function observe(
 
 ### Slice 1: settings-shape
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: efb7589 consult(tuning-settings): add live sentence char tuning to settings
 - Stopped:
 
 ### Slice 2: tuning-injection
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `observe` が `sentence` を受けず live 経路で既定文設定に落ちていた穴を修正。`observe(guard, thinking, live, sentence)` にして `detectUnitRuns` に渡し、配線と試しを更新。以降は 5 引数系（`live, sentence, enabled`）で続ける。
+- Commit: 0f48108 consult(tuning-settings): inject tuning into guard scrub and wiring
 - Stopped:
 
 ### Slice 3: scan-read
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `observe` の 5 引数が `max-params` に触れたため `Tuning` 受け（`observe(guard, thinking, tuning, enabled)`）に集約。`index.test.ts` が `max-lines` に触れたため重複の writePatch 試しを統合。
+- Commit: 24b59cc consult(tuning-settings): cache settings and read on scan
 - Stopped:
 
 ### Slice 4: readme-pair
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `proofreader` による `README.ja.md` の校正は、主担当が実行した（`13b1079`）。
+    - fixed: `memo-readme-ja.md` に写して校正し、直した内容を worktree に戻した。
+- Unplanned: なし
+- Commit: 7e59f3d consult(tuning-settings): document tuning groups in readme pair
 - Stopped:
+
+### Cleanup: 重複と誰も気づかない試しの整理
+
+- Findings: なし
+- Unplanned: なし
+- Dropped (7 件、Suite は 748 → 741 件で全緑):
+  - `scrub/message.test.ts`「thinkingSignature が無い」 — 計画の「署名の無いループ」と入力・断定が同一のため落とし、計画側を残した。
+  - `index.test.ts`「退化した thinking を持つ assistant」 — 計画の「okSettings と message_end」と同一のため落とし、計画側を残した。
+  - `command/scrub.test.ts`「lastAt が null」 — 計画の 4 行完全一致が `SCRUB_LAST_NONE` を含むため落とした。
+  - `command/scrub.test.ts`「空文字と空白だけ」 — 既定出力は計画の完全一致と同一で、`'   '` 分岐は trim の前提のため落とした（未使用の `SCRUB_PREFIX` 輸入も除去）。
+  - `live/guard.test.ts`「scanEvery 未満だけ足す」 — Slice 3 の「間隔が来ていないとき」（idle＋不呼び出し）が包含するため落とした。
+  - `live/guard.test.ts`「maxAborts 回のあと」 — Slice 3 の「MAX_ABORTS に達したら」（idle＋scanned＋不呼び出し）が包含するため落とした。
+  - `scrub/detect.test.ts`「空文字」 — 空文字専用の分岐は無く長さ門を通るだけで誰も気づかないため落とした（通常文の否定は残した）。
+- Kept: `read.test.ts` のディレクトリ件（読み失敗分岐の唯一の被覆）、`followUpText` の印字件と幅件、`onAgentEnd` の書式件と集計リセット件、閾値の二層件（合成の釘）。
 
 ## Review
 

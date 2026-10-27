@@ -160,13 +160,6 @@ describe('scrubThinking', () => {
     expect(longScrubbed.text).toBe(longText);
   });
 
-  it('空文字 → removed が 0、本文が同一', () => {
-    const tuning = defaultSettings();
-    const scrubbed = scrubThinking('', tuning);
-    expect(scrubbed.removed).toBe(0);
-    expect(scrubbed.text).toBe('');
-  });
-
   it('反復の無い文章 → removed が 0、本文が同一', () => {
     const tuning = defaultSettings();
     const text = 'hello world, this is a normal sentence without repeats.';

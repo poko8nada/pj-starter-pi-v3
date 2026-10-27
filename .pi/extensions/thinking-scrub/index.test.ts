@@ -192,31 +192,6 @@ describe('registerScrub', () => {
 });
 
 describe('onMessageEnd', () => {
-  it('退化した thinking を持つ assistant を handler に渡す → { message } が返り、thinking から区間が消えている', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
-    const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
-    expect(result).toBeDefined();
-    if (result === undefined) {
-      throw new Error('result must be defined');
-    }
-    if (result.message === undefined) {
-      throw new Error('message must be defined');
-    }
-    if (result.message.role !== 'assistant') {
-      throw new Error('message must be assistant');
-    }
-    const first = result.message.content.at(0);
-    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
-      throw new Error('first block must be thinking');
-    }
-    expect(first.thinking).toBe(degenerateExpected());
-  });
-
   it('退化の無い assistant → undefined', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
