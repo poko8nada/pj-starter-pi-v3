@@ -1,7 +1,7 @@
 /**
  * `settings.json` の読み込み。無ければ既定、読めない・壊れていれば broken。
  *
- * 呼ぶたびにファイルを読む。入口は毎回読み直す。
+ * `readSettings` は呼ばれたときにその都度ファイルを読む。配線はスキャン時と `message_end` に読む。
  */
 
 import { readFileSync } from 'node:fs';
