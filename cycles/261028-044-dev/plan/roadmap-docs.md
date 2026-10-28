@@ -139,31 +139,36 @@ scripts/
 
 ### Slice 2: drop-propose
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `.pi/skills/adr/SKILL.md:70` の `definition/rules.md` を `rules/definition.rules.md` に直した。手順の第 3 ステップは `16` と `17` だけを名指ししており、`70` を見落としていた。`Verify` の `grep` を流したときに見つかった。
+- Commit: 7343da7
+- Stopped: なし
 
 ### Slice 3: brief-and-close
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `ROADMAP.md:22` の `0.9.0 001` を `todo` から `wip` にした。オーナーの指示で、`brief` の新しい第 2 ステージを、このサイクル自身に当てた物である。
+- Commit: 991eb97
+- Stopped: なし
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — `propose-skill`・`.pi/skills/propose`・`brief or propose`・`definition/rules.md`・`definition/format.md`・`prpduct`・`plans, in one commit`は`cycles/`外で0件であり、`.pi/skills/brief/SKILL.md:58`の動詞`propose`や`.pi/skills/close/SKILL.md:44`の`proposed`は技能名ではなく、`scripts/harness/harness.json:4`の`definition`残存は`cycles/261028-044-dev/design.md:73`で対象外と決まっているため数えない。
+- Unlisted: なし — `git diff 17a6466..HEAD`の13件は`cycles/261028-044-dev/plan/roadmap-docs.md:5-34`のFilesが全て名指ししており、`rules/roadmap.md:1`の新設と`definition/format.md → rules/definition.format.md`の改名を含めて名無しの変更はない。
+- Gaps: なし — `cycles/261028-044-dev/plan/roadmap-docs.md:47-60`等のStepsは`Verify`のgrep(`:68,:103,:128`)と`Added: base`のオーナー確認に対応し、`rules/roadmap.md:60-77`のSkeletonや`ROADMAP.md:15-22`の008/007追加・Ver付け替え・`todo/wip`付与も`Added`の範囲内のため漏れに数えない。
+- Unproven: なし — 全スライス`Types: なし`(`cycles/261028-044-dev/plan/roadmap-docs.md:41-45`)で追加テストが無く、唯一の`Added`であるオーナー確認は`.pi/skills/work/SKILL.md:71`により壊して確かめない対象のため緑のまま残るテストはない。
+- Noise: なし — テスト手順が無く(`cycles/261028-044-dev/plan/roadmap-docs.md:47-60`にテストファイルの手順が無い)、`## Test cases`の対象(マジックナンバー・ハードコード文字列・型やスキーマが保証する前提)が存在しないため重複断言はない。
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test:run`（55 ファイル、748 テスト）、及び 3 つの slice の `grep`。この plan は振る舞いを足さないので、変えた文書（`rules/roadmap.md`、`ROADMAP.md`、`.pi/skills/adr` / `brief` / `close` の `SKILL.md`、`README.md`、`README.ja.md`、`AGENTS.md`、`DEFINITION.md`）を読むことを検査とした。base の plan なので、`Added` のオーナー確認は slice ごとに得ている（`6a219e9`、`7343da7`、`991eb97`）。
+- Findings: なし
+- Doubts: なし
