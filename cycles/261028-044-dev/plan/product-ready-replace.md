@@ -155,6 +155,13 @@ function main(argv: readonly string[]): number;
 - Commit: b5b429b
 - Stopped: なし
 
+### Cleanup: `scripts/product-ready/targets.test.ts` の `remove` のテスト
+
+- Findings: なし
+- Unplanned: なし
+
+`remove` を 2 回呼ぶテストと、消した `at` を返すテストが、同じ振る舞い（消す・消した `at` を返す・次は `[]`）を確かめていた。1 つにまとめた。
+
 ## Review
 
 ### Round 1
@@ -190,6 +197,6 @@ function main(argv: readonly string[]): number;
 
 ## Acceptance
 
-- Ran: `pnpm test:run` は 55 ファイル 760 テストが通った。`pnpm typecheck` は `root: ok` と `.pi: ok`。`pnpm lint` は指摘なし。`pnpm format:check` は 307 ファイルが正しい形。`grep` は `STARTER_ONLY`、`skeleton: {`、`no replace to remove`、`A section with nothing in it` が `rules/` と `scripts/` に 0 件。
-- Findings: Round 1 で Stale 1 件（`targets.mjs:96` の JSDoc が今の動きと合わない）、Unproven 2 件（README と `DEFINITION.md` の確かめが弱い）、Doubts 1 件（error の原子性が目視のまま）が出た。4 件とも直して `fixed` を付けた。Round 2 で残りの指摘はないと確認された。Unlisted、Gaps、Noise は 0 件。
+- Ran: `pnpm test:run` は 55 ファイル 759 テストが通った。`pnpm typecheck` は `root: ok` と `.pi: ok`。`pnpm lint` は指摘なし。`pnpm format:check` は 308 ファイルが正しい形。`grep` は `STARTER_ONLY`、`skeleton: {`、`no replace to remove`、`A section with nothing in it` が `rules/` と `scripts/` に 0 件。加えて、この plan が足す振る舞いを 3 つ壊し、`scripts/product-ready` のテストが赤になるのを確かめて戻した。(1) `targets.mjs` の `only` の絞り込みを外すと 3 件が赤になった（`plan(root, 'harness')`、`plan(root, 'replace')`、`--only cycles`）。(2) `replaceSections` がブロック全体を返すようにすると 2 件が赤になった（`DEFINITION.md` の差し替えと、`## Product` が無いときのエラー）。(3) `package.json` の flag を外さないようにすると 4 件が赤になった（`--run` の 3 つと `1鍵欠け`）。
+- Findings: なし — Round 1 で Stale 1 件（`targets.mjs:96` の JSDoc が今の動きと合わない）、Unproven 2 件（README と `DEFINITION.md` の確かめが弱い）、Doubts 1 件（error の原子性が目視のまま）が出たが、4 件とも直して `fixed` を付けた。Round 2 で残りの指摘はないと確認された。Unlisted、Gaps、Noise は 0 件だった。
 - Doubts: なし。`## Shape` は `.pi/skills/*/references/format.md` に 5 件残るが、スキルの記録の見出しで、この雛形とは別物である。

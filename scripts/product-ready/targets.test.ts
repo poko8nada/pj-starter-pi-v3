@@ -145,23 +145,12 @@ describe('labels', () => {
 });
 
 describe('remove', () => {
-  it('remove を2回呼ぶ → 2回目は []', () => {
-    const root = tempDir();
-    mkdirSync(join(root, cycleAt('001-a')), { recursive: true });
-    const targets = plan(root);
-    expect(targets).toHaveLength(1);
-    const removing = targets.filter((entry) => entry.action === 'remove');
-    expect(remove(removing)).toHaveLength(removing.length);
-    expect(plan(root)).toEqual([]);
-    expect(remove(removing)).toEqual([]);
-  });
-
-  it('消した at を返す', () => {
+  it('消した at を返し、2回目は []', () => {
     const root = tempDir();
     mkdirSync(join(root, cycleAt('001-a')), { recursive: true });
     const removing = plan(root).filter((entry) => entry.action === 'remove');
-    const removed = remove(removing);
-    expect(removed).toEqual(removing.map((entry) => entry.at));
+    expect(remove(removing)).toEqual(removing.map((entry) => entry.at));
     expect(plan(root)).toEqual([]);
+    expect(remove(removing)).toEqual([]);
   });
 });
