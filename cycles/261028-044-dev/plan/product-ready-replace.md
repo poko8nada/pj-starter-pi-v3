@@ -148,24 +148,48 @@ function main(argv: readonly string[]): number;
 
 ### Slice 1: replace-and-docs
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `rules/roadmap.md` と `rules/definition.format.md` は `Files` では追随者だったが、中身を変えた。オーナーの指示で `R1`（表の区切り行）、`R2`（製品ファイルへの規則の混入）、`R3`（`cycles` の説明の配置）、`D2`（ロードマップの文の配置）、`M1`（「中身のないセクションは省く」の規則）を直し、`## Skeleton` を ready の姿に書き換えたためである。雛形の見出しも `## Shape` から `## Skeleton` に揃えた。
+- Unplanned: `scripts/product-ready/index.mjs` の `main` が 81 行になり `max-lines-per-function` に当たったため、flag を集める部分を `flaggedScripts` に切り出した。
+- Unplanned: `scripts/product-ready/index.test.ts` がスケルトンの写しを定数で持っていたため、実物の `rules/` から読む形に直した。形が変わればテストが落ちる。
+- Commit: b5b429b
+- Stopped: なし
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - `scripts/product-ready/targets.mjs:96` の「消す物を集める」は `plan` が差し替える行も集める今の動きと合わず、Steps が求めた両方を示す直しが入っていない。
+    - fixed: `scripts/product-ready/targets.mjs:96` を「消す物と差し替える物を集める（純）」に直した。
 - Unlisted:
+  - なし — 追随者だった `rules/roadmap.md` と `rules/definition.format.md` の中身の変更は `Notes` の `Unplanned` にオーナー指示と R1・R2・R3・D2・M1 および `## Shape` から `## Skeleton` への揃えまで書かれ、差分の 11 枚は `Files` の 9 枚と追随者の 2 枚に一致し他に `Files` 外の変更はない。
 - Gaps:
+  - なし — Steps の happy・empty・error の各ケースに対応するテストが `targets.test.ts` と `index.test.ts` にそろい、`whole` と `sections` の置き換えや欠け・失敗時の exit 1 まで検査が通っている。
 - Unproven:
+  - `scripts/product-ready/index.test.ts:173` の README 置き換えテストは見出しの有無だけを見て `writeReplaceTargets` の `# old` が消えたことを確かめないため、追記でも緑のままになる。
+    - fixed: README の 2 枚とも、置き換えた後に `old` を含まないことを確かめるようにした。
+  - `scripts/product-ready/index.test.ts:170` は `## Stack` の見出しだけを見て本文が旧来のままかを見ず `Users can do` の残存も見ないため、Stack を誤って置き換えても緑のままになる。
+    - fixed: 対象の `DEFINITION.md` に `### Users can do` と `- reader: x` を置き、`## Stack` の本文 `| a | b | c |` と `- reader: x` が残ることを確かめるようにした。
 - Noise:
+  - なし — 新規ケースの固定値は `REPLACE_TARGETS` の 4 行や `headings` など plan が決めた値であり、型が保証する前提の再現や誰も気づかない枝のテストはなく、写しの定数も仕様の確認に要る範囲である。
 - Doubts:
+  - `scripts/product-ready/index.mjs:214` は `jobsFor` を先に作り `remove` より前に投げる順序で原子性を保つが、error の 2 件は一部のファイルしか不変を見ないため全体の不変は目視に残る。
+    - fixed: error の 2 件で、4 つの対象ファイルすべてが変わらないことを確かめるようにした。
+
+### Round 2
+
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
+
+4 件とも `fixed` で閉じたことを確認した。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` は 55 ファイル 760 テストが通った。`pnpm typecheck` は `root: ok` と `.pi: ok`。`pnpm lint` は指摘なし。`pnpm format:check` は 307 ファイルが正しい形。`grep` は `STARTER_ONLY`、`skeleton: {`、`no replace to remove`、`A section with nothing in it` が `rules/` と `scripts/` に 0 件。
+- Findings: Round 1 で Stale 1 件（`targets.mjs:96` の JSDoc が今の動きと合わない）、Unproven 2 件（README と `DEFINITION.md` の確かめが弱い）、Doubts 1 件（error の原子性が目視のまま）が出た。4 件とも直して `fixed` を付けた。Round 2 で残りの指摘はないと確認された。Unlisted、Gaps、Noise は 0 件。
+- Doubts: なし。`## Shape` は `.pi/skills/*/references/format.md` に 5 件残るが、スキルの記録の見出しで、この雛形とは別物である。
