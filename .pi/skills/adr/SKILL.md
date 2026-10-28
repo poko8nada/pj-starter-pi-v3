@@ -1,6 +1,6 @@
 ---
 name: adr
-description: Use when the owner raises a point about the definition or the cycle, or when a question comes from `brief` or `propose` with its options laid out. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` and records the owner's decision on what the cycle does to `DEFINITION.md`.
+description: Use when the owner raises a point about the definition or the cycle, or when a question comes from `brief` with its options laid out. It writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` and records the owner's decision on what the cycle does to `DEFINITION.md`.
 ---
 
 # adr
@@ -13,12 +13,12 @@ The ADR records the owner's decision on what the picture becomes, and a plan wri
 
 - `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
 - `DEFINITION.md` — the product's picture. The entry names the parts of it it relates to, and what happens to each; a plan writes them.
-- `definition/rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
-- `definition/format.md` — the shape of the picture.
+- `rules/definition.rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
+- `rules/definition.format.md` — the shape of the picture.
 
 ## Cycle
 
-- the question comes from the front: `brief` or `propose` has settled it, and its options are on the table — or from a point the owner raises (step 2), whose options are laid out here
+- the question comes from the front: `brief` has settled it, and its options are on the table — or from a point the owner raises (step 2), whose options are laid out here
 - run the scaffold: `node .pi/skills/adr/scripts/scaffold.mjs`. It takes the cycle number from `cycles/` and `cycles/archive/`, the date from today, and the slug from the branch, and writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` with one entry's bones. It prints the directory it made
 - cycle's questions are the entries, and one entry is one question
 - each entry runs the flow below, in order
@@ -67,7 +67,7 @@ For the adopted option, look at `DEFINITION.md` as a whole, and name the parts i
 - each part carries one of four operations: `(added)`, `(updated)`, `(dropped)`, `(kept)`
 - `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up
 - the parts are named, not summarised: a part left unnamed is a part the entry did not weigh
-- a Unit that `definition/rules.md` does not allow is not a Unit
+- a Unit that `rules/definition.rules.md` does not allow is not a Unit
 - this is the record of what the adopted option does to the picture
 - a rejected entry adopts nothing: its `Definition` carries only `(kept)` for the parts that stand, or `なし（採らなかった）`
 

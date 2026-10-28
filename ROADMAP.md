@@ -13,7 +13,7 @@
 | No  | Ver   | status | cycles | priority | title                                        |
 | --- | ----- | ------ | ------ | -------- | -------------------------------------------- |
 | 008 | 0.9.2 | todo   |        | low      | proofreaderのスキル内での指示を改訂          |
-| 007 | 0.9.2 | todo   |        | mid      | briefのエントリ数分解を追加                  |
+| 007 | 0.9.2 | todo   |        | mid      | briefのエントリ分解、workコミットメッセ修正  |
 | 006 | 0.9.2 | todo   |        | mid      | product readyの調整                          |
 | 005 | 0.9.1 | todo   |        | low      | readmeのフォーマット改訂                     |
 | 004 | 0.9.1 | todo   |        | mid      | planスキル、ゴールフォーマットと導出方法変更 |

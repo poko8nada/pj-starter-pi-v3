@@ -132,10 +132,10 @@ scripts/
 
 ### Slice 1: rules-layer
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `ROADMAP.md:58` の `などのの予定` を `などの予定` に直した。タイポで、同じ節の行を同じ commit で直すのが最短だった。
+- Commit: 6a219e9
+- Stopped: なし
 
 ### Slice 2: drop-propose
 
