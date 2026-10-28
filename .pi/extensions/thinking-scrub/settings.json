@@ -2,15 +2,15 @@
   "enabled": true,
   "show": true,
   "live": {
-    "minThinking": 20000,
-    "scanEvery": 2000,
+    "minThinking": 8000,
+    "scanEvery": 1000,
     "tail": 20000,
     "maxAborts": 2,
     "sampleChars": 200
   },
   "sentence": {
     "minCycles": 3,
-    "minRunChars": 400,
+    "minRunChars": 350,
     "maxPeriodUnits": 64
   },
   "char": {
