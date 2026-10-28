@@ -35,19 +35,21 @@ describe('switchLines', () => {
 describe('planLines', () => {
   it('空 → 消える物が無い旨の1行', () => {
     const label = 'tests';
-    expect(planLines([label], [])).toEqual([`no ${label} to remove`]);
+    expect(planLines([{ label, verb: 'remove' }], [])).toEqual([`no ${label} to remove`]);
   });
 
   it('無い label → 表示だけ', () => {
     const missing = 'no-such-label';
-    expect(planLines([missing], [])).toEqual([`no ${missing} to remove`]);
+    expect(planLines([{ label: missing, verb: 'replace' }], [])).toEqual([
+      `no ${missing} to replace`,
+    ]);
   });
 
   it('2件 → 見出しと2件の3行', () => {
     const label = 'tests';
     const ats = ['a', 'b'];
     const entries = ats.map((at) => ({ label, at, path: `/${at}` }));
-    expect(planLines([label], entries)).toEqual([
+    expect(planLines([{ label, verb: 'remove' }], entries)).toEqual([
       countLine(label, entries.length),
       ...entries.map((entry) => indented(entry.at)),
     ]);
@@ -58,7 +60,10 @@ describe('planLines', () => {
     const label = 'tests';
     const at = 'a';
     const entries = [{ label, at, path: `/${at}` }];
-    const lines = planLines(ordered, entries);
+    const lines = planLines(
+      ordered.map((name) => ({ label: name, verb: 'remove' as const })),
+      entries,
+    );
     const expected: readonly string[] = [
       `no ${ordered[0]} to remove`,
       countLine(label, entries.length),
@@ -77,7 +82,13 @@ describe('planLines', () => {
       { label: second, at: secondAt, path: `/${secondAt}` },
       { label: first, at: firstAt, path: `/${firstAt}` },
     ];
-    const lines = planLines([first, second], entries);
+    const lines = planLines(
+      [
+        { label: first, verb: 'remove' },
+        { label: second, verb: 'remove' },
+      ],
+      entries,
+    );
     expect(lines).toEqual([
       countLine(first, entries.filter((entry) => entry.label === first).length),
       indented(firstAt),

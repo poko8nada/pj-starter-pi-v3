@@ -26,7 +26,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 pnpm install
 ```
 
-1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/`, removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. The product `test` scripts use `vitest.config.ts`, which excludes the harness paths; the starter `test` scripts use `vitest.starter.config.ts`, which covers all tests. Without `--run` it only shows what would change. Add `--only <label>` to target one kind
+1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/`, replaces `ROADMAP.md`, `DEFINITION.md`'s `Product` and `What`, `README.md` and `README.ja.md` with their skeletons, removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. The product `test` scripts use `vitest.config.ts`, which excludes the harness paths; the starter `test` scripts use `vitest.starter.config.ts`, which covers all tests. Without `--run` it only shows what would change. Add `--only <label>` to target one kind
 2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
 3. Start `pi`. The skills are found in `.pi/skills/`
 

@@ -1,5 +1,6 @@
 /**
  * @typedef {{ readonly run: boolean, readonly only: string | undefined }} Args
+ * @typedef {{ readonly label: string, readonly verb: 'remove' | 'replace' }} Label
  */
 
 /**
@@ -59,20 +60,20 @@ export function switchLines(plan) {
 }
 
 /**
- * 表示の行を作る（純）。
+ * 表示の行を作る（純）。label ごとに、無ければ `no <label> to <verb>`、あれば見出しと中身を出す。
  *
- * @param {readonly string[]} labels 出す label（一覧の順）
- * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} plan 消える物
+ * @param {readonly Label[]} labels 出す label（一覧の順）
+ * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} plan 見つけた物
  * @returns {readonly string[]} 表示の行
  */
 export function planLines(labels, plan) {
   const lines = [];
-  for (const label of labels) {
-    const targets = plan.filter((entry) => entry.label === label);
+  for (const item of labels) {
+    const targets = plan.filter((entry) => entry.label === item.label);
     if (targets.length === 0) {
-      lines.push(`no ${label} to remove`);
+      lines.push(`no ${item.label} to ${item.verb}`);
     } else {
-      lines.push(`${label} (${targets.length}):`);
+      lines.push(`${item.label} (${targets.length}):`);
       for (const target of targets) {
         lines.push(`  ${target.at}`);
       }

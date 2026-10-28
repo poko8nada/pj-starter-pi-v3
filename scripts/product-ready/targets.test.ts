@@ -1,11 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../test/temp-dir.ts';
-import { labels, plan, remove } from './targets.mjs';
+import { labels, plan, remove, skeletonFor } from './targets.mjs';
 
-function writeFile(path: string): void {
-  mkdirSync(join(path, '..'), { recursive: true });
+function writeAt(root: string, rel: string): void {
+  const path = join(root, rel);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, 'x\n');
 }
 
@@ -24,12 +25,12 @@ describe('plan', () => {
     for (const name of names) {
       mkdirSync(join(root, cycleAt(name)), { recursive: true });
     }
-    writeFile(join(root, 'cycles', 'README.md'));
+    writeAt(root, join('cycles', 'README.md'));
     const found = plan(root);
     expect(found).toHaveLength(names.length);
     for (const name of names) {
       const at = cycleAt(name);
-      expect(found).toContainEqual({ label: 'cycles', at, path: join(root, at) });
+      expect(found).toContainEqual({ action: 'remove', label: 'cycles', at, path: join(root, at) });
     }
   });
 
@@ -39,7 +40,7 @@ describe('plan', () => {
     const root = tempDir();
     mkdirSync(join(root, cycleAt(name)), { recursive: true });
     const at = cycleAt(name);
-    expect(plan(root, only)).toEqual([{ label: only, at, path: join(root, at) }]);
+    expect(plan(root, only)).toEqual([{ action: 'remove', label: only, at, path: join(root, at) }]);
   });
 
   it("plan(root, 'harness')（知らない label）→ []", () => {
@@ -69,21 +70,77 @@ describe('plan', () => {
     expect(found).toEqual(
       sorted.map((name) => {
         const at = cycleAt(name);
-        return { label: 'cycles', at, path: join(root, at) };
+        return { action: 'remove', label: 'cycles', at, path: join(root, at) };
       }),
     );
     expect(found.map((entry) => entry.at).toSorted()).toEqual(found.map((entry) => entry.at));
   });
 });
 
-describe('labels', () => {
-  it('labels(undefined) → 既定の名前', () => {
-    expect(labels(undefined)).toEqual(['cycles']);
+describe('replace', () => {
+  it('ROADMAP.md がある → 差し替える 1 行と、その雛形', () => {
+    const root = tempDir();
+    writeAt(root, 'ROADMAP.md');
+    writeAt(root, 'rules/roadmap.md');
+    const found = plan(root);
+    expect(found).toEqual([
+      { action: 'replace', label: 'replace', at: 'ROADMAP.md', path: join(root, 'ROADMAP.md') },
+    ]);
+    expect(skeletonFor(root, 'ROADMAP.md')).toEqual({
+      file: 'rules/roadmap.md',
+      heading: '## Skeleton',
+      part: { kind: 'whole' },
+    });
   });
 
-  it("labels('cycles') → その名前", () => {
+  it('DEFINITION.md は見出しで差し替える', () => {
+    const root = tempDir();
+    writeAt(root, 'DEFINITION.md');
+    writeAt(root, 'rules/definition.format.md');
+    expect(skeletonFor(root, 'DEFINITION.md')).toEqual({
+      file: 'rules/definition.format.md',
+      heading: '## Skeleton',
+      part: { kind: 'sections', headings: ['## Product', '### What'] },
+    });
+  });
+
+  it("plan(root, 'replace') → 差し替える行だけ", () => {
+    const root = tempDir();
+    mkdirSync(join(root, cycleAt('001-a')), { recursive: true });
+    writeAt(root, 'ROADMAP.md');
+    const found = plan(root, 'replace');
+    expect(found.map((entry) => entry.at)).toEqual(['ROADMAP.md']);
+  });
+
+  it('ROADMAP.md が無い → 差し替える行を返さない', () => {
+    const root = tempDir();
+    writeAt(root, 'rules/roadmap.md');
+    expect(plan(root, 'replace')).toEqual([]);
+  });
+
+  it('雛形のファイルが無い → その道を入れて投げる', () => {
+    const root = tempDir();
+    writeAt(root, 'ROADMAP.md');
+    expect(() => skeletonFor(root, 'ROADMAP.md')).toThrow(/rules\/roadmap\.md/);
+  });
+
+  it('表に無い at → 投げる', () => {
+    const root = tempDir();
+    expect(() => skeletonFor(root, 'package.json')).toThrow('no skeleton for: package.json');
+  });
+});
+
+describe('labels', () => {
+  it('labels(undefined) → 消す物と差し替える物の並び', () => {
+    expect(labels(undefined)).toEqual([
+      { label: 'cycles', verb: 'remove' },
+      { label: 'replace', verb: 'replace' },
+    ]);
+  });
+
+  it("labels('cycles') → その名前と動詞", () => {
     const only = 'cycles';
-    expect(labels(only)).toEqual([only]);
+    expect(labels(only)).toEqual([{ label: only, verb: 'remove' }]);
   });
 });
 
@@ -93,17 +150,18 @@ describe('remove', () => {
     mkdirSync(join(root, cycleAt('001-a')), { recursive: true });
     const targets = plan(root);
     expect(targets).toHaveLength(1);
-    expect(remove(targets)).toHaveLength(targets.length);
+    const removing = targets.filter((entry) => entry.action === 'remove');
+    expect(remove(removing)).toHaveLength(removing.length);
     expect(plan(root)).toEqual([]);
-    expect(remove(targets)).toEqual([]);
+    expect(remove(removing)).toEqual([]);
   });
 
   it('消した at を返す', () => {
     const root = tempDir();
     mkdirSync(join(root, cycleAt('001-a')), { recursive: true });
-    const targets = plan(root);
-    const removed = remove(targets);
-    expect(removed).toEqual(targets.map((entry) => entry.at));
+    const removing = plan(root).filter((entry) => entry.action === 'remove');
+    const removed = remove(removing);
+    expect(removed).toEqual(removing.map((entry) => entry.at));
     expect(plan(root)).toEqual([]);
   });
 });

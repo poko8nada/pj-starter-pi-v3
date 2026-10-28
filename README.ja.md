@@ -26,7 +26,7 @@ English: [README.md](README.md)
 pnpm install
 ```
 
-1. `pnpm product:ready` で clone を自分の物にする（一度きり） — `cycles/` を消し、`test`・`test:run`・`test:related` から ` --config vitest.starter.config.ts` を外し、`vitest.starter.config.ts` を消す。プロダクトの `test` は `vitest.config.ts` を使い、ハーネスの道を `exclude` で外す。スターターの `test` は `vitest.starter.config.ts` を使い、すべてのテストが対象になる。`--run` が無ければ表示だけ。1種だけなら `--only <label>` を足す
+1. `pnpm product:ready` で clone を自分の物にする（一度きり） — `cycles/` を消し、`ROADMAP.md`、`DEFINITION.md` の `Product` と `What`、2 枚の README を雛形に差し替え、`test`・`test:run`・`test:related` から ` --config vitest.starter.config.ts` を外し、`vitest.starter.config.ts` を消す。プロダクトの `test` は `vitest.config.ts` を使い、ハーネスの道を `exclude` で外す。スターターの `test` は `vitest.starter.config.ts` を使い、すべてのテストが対象になる。`--run` が無ければ表示だけ。1種だけなら `--only <label>` を足す
 2. `.pi/extensions/consult/types.json` がリポジトリにある。自分のモデルに変えて使う
 3. `pi` を起動する。スキルは `.pi/skills/` から見つかる
 

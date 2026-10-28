@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ONLY_FLAG, RUN_FLAG, countLine, indented } from '../../test/scripts.fixture.ts';
@@ -8,13 +8,38 @@ import { tempDir } from '../../test/temp-dir.ts';
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
 
 const INDEX = join(process.cwd(), 'scripts', 'product-ready', 'index.mjs');
+const RULES = join(process.cwd(), 'rules');
 const FLAG = ' --config vitest.starter.config.ts';
 const CONFIG_AT = 'vitest.starter.config.ts';
 const CYCLES_LABEL = 'cycles';
+const REPLACE_LABEL = 'replace';
+const RULE_FILES = ['roadmap.md', 'definition.format.md', 'readme.format.md'];
+
+// 雛形は実物の `rules/` から写す。形が変わったらこのテストが落ちる。
+const SKELETON_WITHOUT_PRODUCT = [
+  '# Definition format',
+  '',
+  '## Skeleton',
+  '',
+  '```md',
+  '# DEFINITION',
+  '',
+  '### Who',
+  '',
+  '- <name>: x',
+  '```',
+  '',
+].join('\n');
 
 function writeFile(path: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, 'x\n');
+}
+
+function writeText(root: string, rel: string, text: string): void {
+  const path = join(root, rel);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
 }
 
 function writePackageJson(root: string, scripts: Record<string, string>): void {
@@ -57,6 +82,34 @@ function writeStarterConfig(root: string): void {
   );
 }
 
+function writeRules(root: string): void {
+  for (const name of RULE_FILES) {
+    writeText(root, join('rules', name), readFileSync(join(RULES, name), 'utf8'));
+  }
+}
+
+function writeReplaceTargets(root: string): void {
+  writeText(
+    root,
+    'ROADMAP.md',
+    '# Roadmap\n\n## 1.x.x\n\n| No | Ver | cycles | priority | title |\n| --- | --- | --- | --- | --- |\n| 001 | 1.0.0 | | high | old |\n',
+  );
+  writeText(
+    root,
+    'DEFINITION.md',
+    '# DEFINITION\n\n## Product\n\nold name\n\n### What\n\nold what\n\n### Who\n\n- owner: x\n\n### Users can do\n\n- reader: x\n\n## Stack\n\n| a | b | c |\n',
+  );
+  writeText(root, 'README.md', '# old\n');
+  writeText(root, 'README.ja.md', '# old\n');
+  writeRules(root);
+}
+
+function readTargets(root: string): readonly string[] {
+  return ['ROADMAP.md', 'DEFINITION.md', 'README.md', 'README.ja.md'].map((name) =>
+    readFileSync(join(root, name), 'utf8'),
+  );
+}
+
 function makeTree(): {
   readonly root: string;
   readonly cycleA: string;
@@ -68,6 +121,7 @@ function makeTree(): {
   }
   writePackageJson(root, defaultScripts());
   writeStarterConfig(root);
+  writeReplaceTargets(root);
   return { root, cycleA: join(root, CYCLES_LABEL, names[0]) };
 }
 
@@ -99,20 +153,61 @@ describe('product-ready index', () => {
     expect(existsSync(join(tree.root, CONFIG_AT))).toBe(false);
   });
 
-  it('--run なし → 表示だけで、木は変わらない', () => {
+  it('--run → ROADMAP.md が rules/roadmap.md の雛形に置き換わる', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    const roadmap = readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8');
+    expect(roadmap).not.toContain('old');
+    expect(roadmap).toContain('## 0.x.x');
+    expect(roadmap).toContain('<何をするか。1 行>');
+  });
+
+  it('--run → DEFINITION.md の Product と What だけが入れ替わる', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    const definition = readFileSync(join(tree.root, 'DEFINITION.md'), 'utf8');
+    expect(definition).not.toContain('old name');
+    expect(definition).not.toContain('old what');
+    expect(definition).toContain('<プロダクトの名前>');
+    expect(definition).toContain('<何であるか、何をするか。1 文>');
+    expect(definition).toContain('- owner: x');
+    expect(definition).toContain('## Stack');
+    expect(definition).toContain('| a | b | c |');
+    expect(definition).toContain('- reader: x');
+  });
+
+  it('--run → README.md と README.ja.md がそれぞれの雛形に置き換わる', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    const readme = readFileSync(join(tree.root, 'README.md'), 'utf8');
+    const readmeJa = readFileSync(join(tree.root, 'README.ja.md'), 'utf8');
+    expect(readme).toContain('## What is in it');
+    expect(readme).not.toContain('old');
+    expect(readmeJa).toContain('## 入っているもの');
+    expect(readmeJa).not.toContain('old');
+    expect(readmeJa).not.toContain('## What is in it');
+  });
+
+  it('--run なし → 表示だけで、ツリーは変わらない', () => {
     const tree = makeTree();
     const names = makeCycleNames();
     const scripts = targetScriptNames();
     const beforePkg = readFileSync(join(tree.root, 'package.json'), 'utf8');
     const beforeConfig = readFileSync(join(tree.root, CONFIG_AT), 'utf8');
+    const beforeRoadmap = readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8');
     const result = run(INDEX, [], tree.root);
     expect(result.status).toBe(0);
     expect(result.output).toContain(`config: ${CONFIG_AT}`);
     expect(result.output).toContain(`scripts: ${scripts.join(', ')}`);
     expect(result.output).toContain(countLine(CYCLES_LABEL, names.length));
+    expect(result.output).toContain(countLine(REPLACE_LABEL, 4));
     expect(existsSync(tree.cycleA)).toBe(true);
     expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(beforePkg);
     expect(readFileSync(join(tree.root, CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8')).toBe(beforeRoadmap);
   });
 
   it('--only cycles 付き --run → cycles だけ消える', () => {
@@ -124,6 +219,7 @@ describe('product-ready index', () => {
     for (const name of names) {
       expect(existsSync(join(tree.root, CYCLES_LABEL, name))).toBe(false);
     }
+    expect(readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8')).toContain('old');
   });
 
   it('もう一度 --run → 無い旨の表示', () => {
@@ -224,5 +320,34 @@ describe('product-ready index', () => {
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe(`unknown argument: ${unknown}`);
     expect(existsSync(tree.cycleA)).toBe(true);
+  });
+
+  it('差し替える対象が 1 つも無い → 何も書かずに exit 0 で終わる', () => {
+    const root = tempDir();
+    writePackageJson(root, defaultScripts());
+    const result = run(INDEX, [RUN_FLAG], root);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('no replace to replace');
+  });
+
+  it('雛形のファイルが無い → 1行のエラーで exit 1、木は変わらない', () => {
+    const tree = makeTree();
+    const before = readTargets(tree.root);
+    rmSync(join(tree.root, 'rules/roadmap.md'));
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readTargets(tree.root)).toEqual(before);
+  });
+
+  it('雛形のブロックに ## Product が無い → 1行のエラーで exit 1、木は変わらない', () => {
+    const tree = makeTree();
+    const before = readTargets(tree.root);
+    writeText(tree.root, 'rules/definition.format.md', SKELETON_WITHOUT_PRODUCT);
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(readTargets(tree.root)).toEqual(before);
   });
 });
