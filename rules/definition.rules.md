@@ -2,7 +2,7 @@
 
 What may be a Unit of `DEFINITION.md`, and how the Units, the `Who` and the `Stack` are named and written.
 
-This file is read when a line is added, moved or dropped: the ADR decides the change, and a plan writes it. The shape of the file is in `definition/format.md`.
+This file is read when a line is added, moved or dropped: the ADR decides the change, and a plan writes it. The shape of the file is in `rules/definition.format.md`.
 
 ## What may be a Unit
 

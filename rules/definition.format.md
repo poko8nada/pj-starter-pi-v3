@@ -60,6 +60,8 @@ The `Who` in these lines is the starter's. A product whose `Who` is different wr
 
 The harness's other lines — the skills, the checks, `agent-rules`, `usage-readme`, the extensions — are the clone's, and they stay too.
 
+The roadmap is outside this picture: its shape and rules are in `rules/roadmap.md`.
+
 ## Sections
 
 - `Product` — the product's name.
@@ -68,7 +70,7 @@ The harness's other lines — the skills, the checks, `agent-rules`, `usage-read
 - `Users can do` — one line per Unit: what the `Who` can do with it. The name is the thing's name.
 - `Stack` — what the product stands on: a group, a role, and the thing that fills it.
 
-What may be a Unit, and how a Unit is named and written, is in `definition/rules.md`.
+What may be a Unit, and how a Unit is named and written, is in `rules/definition.rules.md`.
 
 ## Writing
 
