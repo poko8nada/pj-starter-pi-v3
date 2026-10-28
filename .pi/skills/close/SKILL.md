@@ -75,16 +75,24 @@ Before the owner reads close.md, it goes through one proofread.
 - they read the whole `close.md` — the triage and the verification — and answer. A missing line comes back
 - a rejection sends you back to the step it came from: 3 for a collected line, 4 for a destination, 5 for a Unit
 
-### 8. Leftovers
+### 8. Roadmap
+
+- after the owner's judgement, write the cycle into `ROADMAP.md`, with their word
+- append this cycle's number to the item's `cycles`; a number that is already there is kept
+- set the item's `status` to `done` when the owner says the item is finished, and leave it `wip` when it is not
+- the shape and the rules of the file are in `rules/roadmap.md`
+
+### 9. Leftovers
 
 - before the commit: `consult_worktree list`, and remove what no plan and no line keeps
 - nothing is decided here: what this step finds that step 4 did not decide goes back to step 4, before the commit
 
-### 9. Commit
+### 10. Commit
 
-- `close.md` and the `ex-` plans, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
+- `close.md` and `ROADMAP.md`, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
+- an `ex-` plan and its work are committed at its merge, each on its own; this commit does not carry them
 
-### 10. Clean the workspace
+### 11. Clean the workspace
 
 - after the commit: delete the `memo-*` and temp files this cycle created. They are not part of the cycle's commit
 
