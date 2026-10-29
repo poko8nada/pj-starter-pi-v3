@@ -43,7 +43,7 @@ Texts handed to subagents are in `references/tasks.md`.
   - it only ran out (work is sound): continue it (`continue: true`), without calling the owner
   - a premise the run disproves is triaged here with the owner: within tolerance, or a change the work absorbs. Plan is not rewritten to keep going
   - what work cannot absorb: the owner decides. Drop the plan: for a worktree plan, the subagent writes `Stopped` and the reason in the worktree's plan md; if it did not, continue it to write it. The agent copies that plan md into the base's plan md, commits it in the base, removes the worktree, and merges nothing. For a `base` plan, the agent writes `Stopped` and the reason in the base's plan md, and commits it in the base. A dropped plan is not carried to the close; the close reads its record as a dropped plan.
-- a `base` plan: the agent does the slices. Show the owner after each one, and wait for their OK before committing
+- a `base` plan: the agent does the slices. Show the owner after each one, and wait for their OK before committing with `base(<plan id>): <subject>`
 
 ### 5. Clean the tests
 
@@ -59,7 +59,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself
 - it writes `## Review`, `### Round 1`, under the five viewpoints and `Doubts`
 - it reads the test steps' cases by the plan's `## Test cases`, and each `Verify` by what closes its slice
-- fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line, and what it leaves carries a `left:` line
+- fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line, and what it leaves carries a `left:` line; a `base` plan commits with `base(<plan id>): round <N> fixes`
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review
 - Round 2 is the last look: the review ends there, and what is still open is fixed once more. No third round. What remains is written as `left: <why>` in the round, and the close reads it as a leftover
 - a doubt or a note that is not a finding goes under `- Doubts:` in the round it came from, and nowhere else
@@ -72,7 +72,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - a plan that adds no behavior (a document, a setting): the agent reads what it changed, and that is the check
 - write `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing). Merge's commit is not written there: the acceptance is committed before the merge
 - a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
-- commit it in the worktree: `consult(<plan id>): acceptance`. A `base` plan commits it in the base with the same message; there is no worktree
+- commit it in the worktree: `consult(<plan id>): acceptance`. A `base` plan commits it in the base with `base(<plan id>): acceptance`; there is no worktree
 
 ### 8. Merge
 
