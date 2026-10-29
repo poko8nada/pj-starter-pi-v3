@@ -8,7 +8,11 @@ import { defaultSettings } from './schema.ts';
 describe('readSettings', () => {
   it('正常な設定ファイルがある → ok を返す', () => {
     const dir = tempDir();
-    const settings = defaultSettings();
+    const settings = {
+      ...defaultSettings(),
+      enabled: false,
+      sounds: { ...defaultSettings().sounds, commit: 'Basso' },
+    };
     writeFileSync(join(dir, 'settings.json'), JSON.stringify(settings));
     expect(readSettings(dir)).toEqual({ kind: 'ok', settings });
   });

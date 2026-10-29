@@ -170,12 +170,16 @@ export function readSettings(dir: string): SettingsRead;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `parseConfig`/`loadConfig`/`DEFAULT_CONFIG`/`SoundNotifyConfig`/`CONFIG_PATH`のgrepはREADMEの移行1行（`config.json`→`settings.json`への手動移行、planのSlice 3が求める文言）のみに触れ、`not committed`/`コミットしない`は消えている。READMEの設定テーブル8行は`settings.json`のキー・既定値と一致し、入口コメントとテスト冒頭の`settings.json`言及も更新済みのため、古く残った文書・コメント・テストはない。
+- Unlisted: なし — diffの実装8件はFilesの8件（`settings.json`/`schema.ts`/`schema.test.ts`/`read.ts`/`read.test.ts`/`index.ts`/`index.test.ts`/`README.md`）と1対1で一致し、残りは記録としてのplan md自体のNotes追記のみのため、Filesにない変更はない。
 - Gaps:
+  - 入口の既定exportの結線（起動時に1回だけ読み、`broken`は既定で続行し通知しない）を確かめる検査がない。`read.test.ts`は`readSettings`単体、`index.test.ts`は`Settings`直接渡しの振る舞いのみで、既定exportを呼ばないため、読み回数・黙った継続の破損を検出できない。(.pi/extensions/sound-notify/index.ts:171)
+    fixed: 既定exportに検査用のdir引数（既定はEXTENSION_DIR、piの呼び方は不変）を足し、`index.test.ts`の`sound-notify.default-export`に3件（非既定ファイルの音・破損時の既定継続と通知なし・登録後の書換でも旧音）を追加した。
 - Unproven:
-- Noise:
-- Doubts:
+  - `readSettings`のhappyが`defaultSettings()`を書いて`defaultSettings()`と比べるため、実ファイルを読まず既定を返しても緑のまま。非既定値（例：`enabled: false`や別音名）を書いて比べないと読みを証明できない。(.pi/extensions/sound-notify/settings/read.test.ts:9)
+    fixed: happyが非既定値（`enabled: false`・`commit: 'Basso'`）を書いて比べるようにし、読まずに既定を返す実装では赤になるようにした。
+- Noise: なし — `schema.test.ts`8件と`read.test.ts`3件はplanの指定ケースと1対1で、結線テストと種別テストの分担はCleanup記録の通り重複ではない。`Basso`等の文字列は入力と期待の往復で魔数・決め打ち表明には当たらず、型やDBが保証する前提の再現もない。
+- Doubts: なし
 
 ## Acceptance
 

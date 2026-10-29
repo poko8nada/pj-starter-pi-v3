@@ -166,7 +166,8 @@ export function registerSoundHandlers(pi: EntryPiPort, config: Settings): void {
   });
 }
 
-export default function (pi: EntryPiPort) {
+/** 既定の export。dir は検査が一時ディレクトリを渡すための口で、pi は渡さない */
+export default function (pi: EntryPiPort, dir: string = EXTENSION_DIR) {
   // 起動時に 1 回だけ読む。壊れていれば既定で動き、知らせない。
-  registerSoundHandlers(pi, settingsOrDefault(readSettings(EXTENSION_DIR)));
+  registerSoundHandlers(pi, settingsOrDefault(readSettings(dir)));
 }

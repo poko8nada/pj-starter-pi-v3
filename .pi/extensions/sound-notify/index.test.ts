@@ -4,12 +4,15 @@
  * afplay は起動しない。`setPlayer` に記録するだけの関数を渡し、実際に鳴る所をテストから外す。
  * イベントの判定は `handleToolExecutionEnd` / `handleSessionCompact` に直接渡し、
  * pi と ctx は必要な口だけの偽物で足りる。入口の配線は `registerSoundHandlers` に
- * 設定を直接渡し、実 FS の `settings.json` に依存させない。
+ * 設定を直接渡し、実 FS の `settings.json` に依存させない。既定 export の結線だけは
+ * 一時ディレクトリの実ファイルで確かめる。
  */
 
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { ToolExecutionEndEvent } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
+import entry, {
   handleSessionCompact,
   handleToolExecutionEnd,
   isCommitResult,
@@ -19,6 +22,7 @@ import {
   type EntryPiPort,
   type PiPort,
 } from './index.ts';
+import { tempDir } from '../../../test/temp-dir.ts';
 import { defaultSettings, type Settings } from './settings/schema.ts';
 
 const CMUX_COMMAND = 'cmux';
@@ -28,6 +32,7 @@ const CMUX_FLAG_SUBTITLE = '--subtitle';
 const CMUX_FLAG_BODY = '--body';
 
 const CUSTOM_SOUND = 'Basso';
+const REWRITTEN_SOUND = 'Funk';
 const PERMISSION_TITLE = 'Permission Required';
 const QUESTION_TITLE = 'Which one?';
 
@@ -83,6 +88,36 @@ function createEntry(config: Settings = defaults): {
   return { handlers, calls };
 }
 
+/** 既定 export を一時ディレクトリの実ファイルで走らせる。dir も返す */
+function entryWithFile(document: unknown): {
+  dir: string;
+  handlers: Map<string, (...args: unknown[]) => unknown>;
+  calls: Array<{ command: string; args: string[] }>;
+} {
+  const dir = tempDir();
+  writeFileSync(
+    join(dir, 'settings.json'),
+    typeof document === 'string' ? document : JSON.stringify(document),
+  );
+  const handlers = new Map<string, (...args: unknown[]) => unknown>();
+  const calls: Array<{ command: string; args: string[] }> = [];
+  const recordingPi: EntryPiPort = {
+    on: (...args: unknown[]) => {
+      const [event, handler] = args;
+      if (typeof event === 'string' && isHandler(handler)) {
+        handlers.set(event, handler);
+      }
+      return () => undefined;
+    },
+    exec: async (command: string, args: string[]) => {
+      calls.push({ command, args });
+      return undefined;
+    },
+  };
+  entry(recordingPi, dir);
+  return { dir, handlers, calls };
+}
+
 describe('sound-notify.settings', () => {
   const played: string[] = [];
   let restorePlayer: () => void;
@@ -130,6 +165,45 @@ describe('sound-notify.settings', () => {
     await handlers.get('agent_settled')?.({}, ctx);
     expect(played).toEqual([defaults.sounds.done]);
     expect(calls).toEqual([]);
+  });
+});
+
+describe('sound-notify.default-export', () => {
+  const played: string[] = [];
+  let restorePlayer: () => void;
+
+  beforeEach(() => {
+    played.length = 0;
+    restorePlayer = setPlayer(async (_pi, soundName) => {
+      played.push(soundName);
+    });
+  });
+
+  afterEach(() => {
+    restorePlayer();
+  });
+
+  it('非既定の設定ファイル → その音で鳴る（起動時に読む）', async () => {
+    const { handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
+    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
+    expect(played).toEqual([CUSTOM_SOUND]);
+  });
+
+  it('壊れた設定ファイル → 既定で動き、余計な通知をしない', async () => {
+    const { handlers, calls } = entryWithFile('{"enabled":');
+    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
+    expect(played).toEqual([defaults.sounds.commit]);
+    expect(calls).toEqual([]);
+  });
+
+  it('登録後の書き換え → 旧い音のまま（起動時の 1 回だけ読む）', async () => {
+    const { dir, handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
+    writeFileSync(
+      join(dir, 'settings.json'),
+      JSON.stringify(withSounds({ commit: REWRITTEN_SOUND })),
+    );
+    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
+    expect(played).toEqual([CUSTOM_SOUND]);
   });
 });
 
