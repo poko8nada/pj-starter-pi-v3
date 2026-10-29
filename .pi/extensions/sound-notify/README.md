@@ -12,6 +12,8 @@ globally:
 ```bash
 mkdir -p ~/.pi/agent/extensions/sound-notify
 cp .pi/extensions/sound-notify/index.ts ~/.pi/agent/extensions/sound-notify/
+cp -r .pi/extensions/sound-notify/settings ~/.pi/agent/extensions/sound-notify/
+cp .pi/extensions/sound-notify/settings.json ~/.pi/agent/extensions/sound-notify/
 ```
 
 Do not keep both. The global and project-local locations are discovered
@@ -46,8 +48,8 @@ notifications.
 
 ## Configuration
 
-Nothing is needed to use the defaults above. To change them, create `config.json`
-in this directory (it is not committed):
+Nothing is needed to use the defaults above. To change them, edit `settings.json`
+in this directory:
 
 ```json
 {
@@ -72,15 +74,22 @@ defaults):
 }
 ```
 
-| Key              | Meaning                                                                      |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `enabled`        | `false` stops the sound and the notification                                 |
-| `notifications`  | `false` keeps the sound and drops the cmux notification                      |
-| `sounds`         | System sound name per kind, resolved as `/System/Library/Sounds/<name>.aiff` |
-| `sounds.commit`  | Sound for a `git commit` (default `Pop`)                                     |
-| `sounds.compact` | Sound for compaction finish (default `Ping`)                                 |
+| Key                 | Meaning                                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `enabled`           | `false` stops the sound and the notification                                 |
+| `notifications`     | `false` keeps the sound and drops the cmux notification                      |
+| `sounds`            | System sound name per kind, resolved as `/System/Library/Sounds/<name>.aiff` |
+| `sounds.permission` | Sound for a permission prompt (default `Blow`)                               |
+| `sounds.question`   | Sound for any other dialog (default `Ping`)                                  |
+| `sounds.done`       | Sound for turn complete (default `Glass`)                                    |
+| `sounds.commit`     | Sound for a `git commit` (default `Pop`)                                     |
+| `sounds.compact`    | Sound for compaction finish (default `Ping`)                                 |
 
 The file is read once when the extension loads, so run `/reload` after editing
 it. It sits next to the loaded copy: this directory for a project-local install,
-`~/.pi/agent/extensions/sound-notify/config.json` for a global one.
-A missing or invalid `config.json` falls back to the defaults above.
+`~/.pi/agent/extensions/sound-notify/settings.json` for a global one.
+A missing `settings.json` falls back to the defaults above. A broken
+`settings.json` continues with the defaults and sends no notification.
+
+If you have an existing `config.json`, rename it to `settings.json` and migrate
+its values by hand.

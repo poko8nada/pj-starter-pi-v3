@@ -139,38 +139,62 @@ export function readSettings(dir: string): SettingsRead;
 
 ### Slice 1: settings-shape
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: SETTINGS_FILE を `as const` で定義した。plan の注釈型だと lint の prefer-as-const に触れるため。意味は同じリテラル型。
+- Commit: ae59fe2
+- Stopped: なし
 
 ### Slice 2: settings-read
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8dc7d1d
+- Stopped: なし
 
 ### Slice 3: readme
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: Verify の `config.json` の grep は移行の 1 行に触れる。Steps が既存の `config.json` の手動移行を書くよう求めるため残し、「コミットしない」と `not committed` は消した。
+- Unplanned: なし
+- Commit: 63c4fcb
+- Stopped: なし
+
+### Cleanup
+
+- Dropped: `sound-notify.prompt` の「notifications が false → 音は鳴り、cmux を呼ばない」(`index.test.ts`)。`sound-notify.settings` の同名テストと設定・合図・表明が同一のため、plan が求める settings 側を残した。
+- Dropped: `sound-notify.guard` の「enabled が false → commit でも compact でも鳴らない」(`index.test.ts`)。`sound-notify.settings` の「enabled: false ではハンドラが鳴らさない」が同 2 合図を含む 4 合図で確かめるため、広い側を残した。
+- Dropped: `sound-notify.compact` の「圧縮が終わる → compact の音が 1 回鳴る」(`index.test.ts`)。直後の「cmux の exec は呼ばれない」が同じ鳴動に加えて exec 未呼出まで確かめるため、強い側を残した。
+- Kept: `schema.test.ts` の 8 件と `read.test.ts` の 3 件は plan のケースと 1 対 1 で重複なしのため残した。5 音の結線テストと種別ごとの単体テストは結線と分離の役割が違うため残した。
+- Suite: 整理後は 3 ファイル 30 テスト（`index.test.ts` 19、`schema.test.ts` 8、`read.test.ts` 3）で緑。`typecheck`・`lint`・`format:check` も緑。
 
 ## Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `parseConfig`/`loadConfig`/`DEFAULT_CONFIG`/`SoundNotifyConfig`/`CONFIG_PATH`のgrepはREADMEの移行1行（`config.json`→`settings.json`への手動移行、planのSlice 3が求める文言）のみに触れ、`not committed`/`コミットしない`は消えている。READMEの設定テーブル8行は`settings.json`のキー・既定値と一致し、入口コメントとテスト冒頭の`settings.json`言及も更新済みのため、古く残った文書・コメント・テストはない。
+- Unlisted: なし — diffの実装8件はFilesの8件（`settings.json`/`schema.ts`/`schema.test.ts`/`read.ts`/`read.test.ts`/`index.ts`/`index.test.ts`/`README.md`）と1対1で一致し、残りは記録としてのplan md自体のNotes追記のみのため、Filesにない変更はない。
 - Gaps:
+  - 入口の既定exportの結線（起動時に1回だけ読み、`broken`は既定で続行し通知しない）を確かめる検査がない。`read.test.ts`は`readSettings`単体、`index.test.ts`は`Settings`直接渡しの振る舞いのみで、既定exportを呼ばないため、読み回数・黙った継続の破損を検出できない。(.pi/extensions/sound-notify/index.ts:171)
+    fixed: 既定exportに検査用のdir引数（既定はEXTENSION_DIR、piの呼び方は不変）を足し、`index.test.ts`の`sound-notify.default-export`に3件（非既定ファイルの音・破損時の既定継続と通知なし・登録後の書換でも旧音）を追加した。
 - Unproven:
-- Noise:
-- Doubts:
+  - `readSettings`のhappyが`defaultSettings()`を書いて`defaultSettings()`と比べるため、実ファイルを読まず既定を返しても緑のまま。非既定値（例：`enabled: false`や別音名）を書いて比べないと読みを証明できない。(.pi/extensions/sound-notify/settings/read.test.ts:9)
+    fixed: happyが非既定値（`enabled: false`・`commit: 'Basso'`）を書いて比べるようにし、読まずに既定を返す実装では赤になるようにした。
+- Noise: なし — `schema.test.ts`8件と`read.test.ts`3件はplanの指定ケースと1対1で、結線テストと種別テストの分担はCleanup記録の通り重複ではない。`Basso`等の文字列は入力と期待の往復で魔数・決め打ち表明には当たらず、型やDBが保証する前提の再現もない。
+- Doubts: なし
+
+### Round 2
+
+- Scope: Round 1 の `fixed:` 2 件に対応する差分だけを見た（`git diff 8139c5f..HEAD` のうち既定 export の `dir` 引数、`index.test.ts` の助っ人と `sound-notify.default-export` 3 件、`read.test.ts` の happy の非既定化）。それ以外の差分は再審査していない。
+- Stale: なし — fixed 差分は文書や注釈を古く残さない。`index.ts:169-172` の注釈は `dir` が検査用の口で pi は渡さないことと起動時の 1 回読み・黙った継続だけを書き、テスト冒頭の `settings.json` 言及と食い違わない。
+- Unlisted: なし — fixed 差分は Files の 3 件（`index.ts`・`index.test.ts`・`settings/read.test.ts`）の中に収まり、新しい持ち物や Files 外の変更はない。
+- Gaps:
+  - Round 1 Gaps の fixed は解消 — `index.ts:170` が `export default function (pi: EntryPiPort, dir: string = EXTENSION_DIR)` で既定を `EXTENSION_DIR` にし、pi の呼び方（引数 1 個）は不変のため起動時の動きは変わらない。`index.test.ts:91-119` の助っ人 `entryWithFile` が一時実ファイルで既定 export を走らせ、`171-207` の 3 件が結線を確かめる。非既定（`186-190`：`commit: 'Basso'` を書いてその音を期待）は読まずに既定を返せば `Pop` になって赤になる。破損時（`192-197`：`'{"enabled":'` を書いて既定の `commit` 音と `calls` 空を期待）は読み込み時の余計な通知があれば `calls` に残るため黙った継続が赤で分かる。登録後の書換え（`199-207`：`Basso` で登録後に `Funk` へ書き換えて旧音を期待）は毎回読む実装なら `Funk` になって赤になるため 1 回読みが分かる。
+- Unproven:
+  - Round 1 Unproven の fixed は解消 — `read.test.ts:9-18` の happy が `enabled: false` と `commit: 'Basso'` の非既定値を書いて `toEqual({ kind: 'ok', settings })` で比べる。読まずに既定を返す実装では `enabled: true`・`commit: 'Pop'` とずれて赤になるため、読みを証明できる。
+- Noise: なし — `withSounds`・`entryWithFile`・`CUSTOM_SOUND`・`REWRITTEN_SOUND` は 3 件の結線検査に直接要り、`Basso`・`Funk` は書いた値と鳴った値の往復で魔数・決め打ち表明には当たらない。
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（57ファイル、770テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。plan の `Added` は `settings.json` の 8 キーと README の 8 行の一致。2 つの振る舞いを壊すと 5 テストが赤になり、戻すと緑。
+- Findings: なし
+- Doubts: なし
