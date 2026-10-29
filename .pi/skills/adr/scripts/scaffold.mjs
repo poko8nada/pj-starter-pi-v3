@@ -9,14 +9,12 @@ import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
 
 /**
- * `adr.md` の骨。`references/format.md` の形と合わせること。
+ * 1 エントリー分の骨。`references/format.md` のエントリーの形と合わせること。
  * @param {number} nnn
  * @returns {string}
  */
-export function adrSkeleton(nnn) {
-  return `# ADR ${String(nnn).padStart(3, '0')}
-
-## 01: <問い>
+export function entrySkeleton(nnn) {
+  return `## ${String(nnn).padStart(2, '0')}: <問い>
 
 ### Context
 
@@ -42,6 +40,7 @@ export function adrSkeleton(nnn) {
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
+  - <採った形>
 - Options:
   - <案>（採らなかった理由）
 
@@ -50,6 +49,51 @@ export function adrSkeleton(nnn) {
 - \`Unit.<name>\`(updated): <新しい行>
 - \`Unit.<name>\`(kept): <その行が動かない理由>
 `;
+}
+
+/**
+ * `adr.md` の骨。`references/format.md` の形と合わせること。
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function adrSkeleton(nnn) {
+  return `# ADR ${String(nnn).padStart(3, '0')}
+
+${entrySkeleton(1)}`;
+}
+
+/**
+ * `markdown` 中の `## NN:` の最大値を返す。`## ` で始まる見出しが `## NN:` と一致しなければ理由付きで投げる。該当がなければ `null`。
+ * @param {string} markdown
+ * @returns {number | null}
+ */
+export function lastEntryNumber(markdown) {
+  let max = null;
+  for (const line of markdown.split('\n')) {
+    if (!line.startsWith('## ')) continue;
+    const found = /^## (\d{2}):/.exec(line);
+    if (found) {
+      const n = Number(found[1]);
+      if (max === null || n > max) max = n;
+      continue;
+    }
+    throw new Error(`broken entry heading: expected "## NN:" but got "${line}"`);
+  }
+  return max;
+}
+
+/**
+ * 末尾の改行を調整して `entrySkeleton(nnn)` を追記する。`# ADR NNN` は重複させない。
+ * @param {string} markdown
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function appendEntry(markdown, nnn) {
+  const entry = entrySkeleton(nnn);
+  if (markdown === '') return entry;
+  const withNewline = markdown.endsWith('\n') ? markdown : `${markdown}\n`;
+  const sep = withNewline.endsWith('\n\n') ? '' : '\n';
+  return `${withNewline}${sep}${entry}`;
 }
 
 /**

@@ -4,9 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import {
   adrSkeleton,
+  appendEntry,
   createLeafDir,
   cycleDirName,
   dirNames,
+  entrySkeleton,
+  lastEntryNumber,
   nextNNN,
   parseArgs,
   slugBranch,
@@ -172,5 +175,73 @@ describe('parseArgs', () => {
     const first = '017';
     const second = '018';
     expect(() => parseArgs([first, second])).toThrow();
+  });
+});
+
+describe('entrySkeleton', () => {
+  it('format.md のエントリーの見出しと一致する', () => {
+    const headings = entrySkeleton(1)
+      .split('\n')
+      .filter((line) => line.startsWith('#'));
+    const expected = [
+      '## 01: <問い>',
+      '### Context',
+      '### Scope',
+      '### Research & Trial',
+      '### Decision',
+      '### Definition',
+    ];
+    expect(headings).toEqual(expected);
+  });
+});
+
+describe('lastEntryNumber', () => {
+  it('## 01: を持つ markdown → 1 を返す', () => {
+    const markdown = adrSkeleton(7);
+    expect(lastEntryNumber(markdown)).toBe(1);
+  });
+
+  it('## 02: を持つ markdown → 2 を返す', () => {
+    const markdown = appendEntry(adrSkeleton(7), 2);
+    expect(lastEntryNumber(markdown)).toBe(2);
+  });
+
+  it('エントリーのない markdown → null を返す', () => {
+    const markdown = '# ADR 007\n';
+    expect(lastEntryNumber(markdown)).toBe(null);
+  });
+
+  it('壊れた見出し → 理由付きで投げる', () => {
+    const cases = ['# ADR 007\n\n## 1: <問い>\n', '# ADR 007\n\n## 01 <問い>\n'];
+    for (const markdown of cases) {
+      expect(() => lastEntryNumber(markdown)).toThrow(/## NN:/);
+    }
+  });
+});
+
+describe('appendEntry', () => {
+  it('## 01: を持つ markdown → ## 02: を足し # ADR は1つのまま', () => {
+    const markdown = adrSkeleton(7);
+    const next = appendEntry(markdown, 2);
+    expect(next).toContain('## 02: <問い>');
+    expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
+    const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
+    expect(lastSharp).toBe('## 02: <問い>');
+  });
+
+  it('## 02: を持つ markdown → ## 03: を足す', () => {
+    const markdown = appendEntry(adrSkeleton(7), 2);
+    const next = appendEntry(markdown, 3);
+    expect(next).toContain('## 03: <問い>');
+    expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
+    const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
+    expect(lastSharp).toBe('## 03: <問い>');
+  });
+
+  it('エントリーのない markdown → ## 01: を足す', () => {
+    const markdown = '# ADR 007\n';
+    const next = appendEntry(markdown, 1);
+    expect(next).toContain('## 01: <問い>');
+    expect(lastEntryNumber(next)).toBe(1);
   });
 });
