@@ -16,7 +16,7 @@ It is the layer outside `DEFINITION.md`: the picture says what the product is, a
 
 ## Who writes it
 
-- `brief` picks the item the cycle fits, and sets its `status` to `wip`. When no item fits, `brief` adds one. Either way the owner agrees first.
+- `adr` picks the item the cycle fits, and sets its `status` to `wip`. When no item fits, `adr` adds one. Either way the owner agrees first.
 - `close` appends the cycle's number to `cycles`, and sets `status` to `done` or leaves it `wip`, with the owner's word.
 
 ## What is not here

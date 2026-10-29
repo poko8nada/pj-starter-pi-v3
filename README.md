@@ -9,7 +9,7 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
 - **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
 - **Agent rules** — `AGENTS.md`, read in every session
-- **Cycle mechanism** — seven skills in `.pi/skills/` (`brief` / `adr` / `design` / `plan` / `work` / `close` / `yolo`)
+- **Cycle mechanism** — six skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close` / `yolo`)
 - **Packages** — `upgrade` in `.pi/skills/`, which runs on its own, outside a cycle
 - **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md) (stops looped thinking while it is generated and removes it, so it is not carried into the next turn), `context-precompact` (prepares the standard compaction in the background before it is due and applies it at the boundary instead of waiting for it; `/precompact`, `/precompact now`, `/precompact on|off`, a status line, and settings) (`.pi/extensions/`)
   - `consult_run` — runs one subagent `pi` with a role and a place, without showing it this conversation
@@ -58,8 +58,7 @@ The agent harness travels with `scripts/harness/`:
 One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage calls the next stage; the next stage is found by its `description`.
 
 ```
-brief        settle the owner's intent and lay the options out (the research, the trial, the talk)
-adr          decide what needs deciding (the options, the decision), and proofread the record before the owner reads it
+adr          settle the intent, the roadmap and the entries, weigh the options, take the decision, and proofread the record before the owner reads it
 design       walk what each entry affects, cut the cycle into plans, review the cut, proofread it before the owner reads, and say where each runs
 plan         write one plan per worktree (the research, the files, the types, the steps, the checks), and proofread the mds before the owner reads
 work         carry a plan to done (the slices, the test cleanup, the review, the acceptance, the merge with the base's dependencies set again)
@@ -69,4 +68,4 @@ yolo         walk the whole cycle without the owner's confirmations
 
 The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the cycle's state. The ADR's `Status` is the decision, and the plan's `Commit`/`Stopped` are the work record; none of them is a cycle status field.
 
-`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it can be opened at any stage. A cycle starts with `brief`; an ADR entry can be added at any stage for a point the owner raises. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.
+`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it can be opened at any stage. A cycle starts with the `adr`; an ADR entry can be added at any stage for a point the owner raises. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.
