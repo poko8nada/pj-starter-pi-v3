@@ -200,11 +200,6 @@ describe('sound-notify.compact', () => {
     restorePlayer();
   });
 
-  it('圧縮が終わる → compact の音が 1 回鳴る', () => {
-    handleSessionCompact(pi, ctx, defaults);
-    expect(played).toEqual([defaults.sounds.compact]);
-  });
-
   it('圧縮が終わる → cmux の exec は呼ばれない', async () => {
     const calls: Array<{ command: string; args: string[] }> = [];
     const recordingPi: PiPort = {
@@ -244,13 +239,6 @@ describe('sound-notify.guard', () => {
     const noUI: CtxPort = { hasUI: false };
     handleToolExecutionEnd(pi, noUI, commitEvent(), defaults);
     handleSessionCompact(pi, noUI, defaults);
-    expect(played).toEqual([]);
-  });
-
-  it('enabled が false → commit でも compact でも鳴らない', () => {
-    const disabled = { ...defaults, enabled: false };
-    handleToolExecutionEnd(pi, ctx, commitEvent(), disabled);
-    handleSessionCompact(pi, ctx, disabled);
     expect(played).toEqual([]);
   });
 });
@@ -296,14 +284,6 @@ describe('sound-notify.prompt', () => {
           call.args.includes(CMUX_FLAG_BODY),
       ),
     ).toBe(true);
-  });
-
-  it('notifications が false → 音は鳴り、cmux を呼ばない', async () => {
-    const config: Settings = { ...defaults, notifications: false };
-    const { handlers, calls } = createEntry(config);
-    await handlers.get('agent_settled')?.({}, ctx);
-    expect(played).toEqual([defaults.sounds.done]);
-    expect(calls).toEqual([]);
   });
 
   it('permission の合図と普通の質問 → 通知の文面が違う', async () => {

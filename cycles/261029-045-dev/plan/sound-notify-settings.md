@@ -139,24 +139,32 @@ export function readSettings(dir: string): SettingsRead;
 
 ### Slice 1: settings-shape
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: SETTINGS_FILE を `as const` で定義した。plan の注釈型だと lint の prefer-as-const に触れるため。意味は同じリテラル型。
+- Commit: ae59fe2
+- Stopped: なし
 
 ### Slice 2: settings-read
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8dc7d1d
+- Stopped: なし
 
 ### Slice 3: readme
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: Verify の `config.json` の grep は移行の 1 行に触れる。Steps が既存の `config.json` の手動移行を書くよう求めるため残し、「コミットしない」と `not committed` は消した。
+- Unplanned: なし
+- Commit: 63c4fcb
+- Stopped: なし
+
+### Cleanup
+
+- Dropped: `sound-notify.prompt` の「notifications が false → 音は鳴り、cmux を呼ばない」(`index.test.ts`)。`sound-notify.settings` の同名テストと設定・合図・表明が同一のため、plan が求める settings 側を残した。
+- Dropped: `sound-notify.guard` の「enabled が false → commit でも compact でも鳴らない」(`index.test.ts`)。`sound-notify.settings` の「enabled: false ではハンドラが鳴らさない」が同 2 合図を含む 4 合図で確かめるため、広い側を残した。
+- Dropped: `sound-notify.compact` の「圧縮が終わる → compact の音が 1 回鳴る」(`index.test.ts`)。直後の「cmux の exec は呼ばれない」が同じ鳴動に加えて exec 未呼出まで確かめるため、強い側を残した。
+- Kept: `schema.test.ts` の 8 件と `read.test.ts` の 3 件は plan のケースと 1 対 1 で重複なしのため残した。5 音の結線テストと種別ごとの単体テストは結線と分離の役割が違うため残した。
+- Suite: 整理後は 3 ファイル 30 テスト（`index.test.ts` 19、`schema.test.ts` 8、`read.test.ts` 3）で緑。`typecheck`・`lint`・`format:check` も緑。
 
 ## Review
 
