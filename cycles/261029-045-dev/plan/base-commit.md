@@ -38,7 +38,7 @@
 - Added:
   - other — `base(<plan id>): <subject>`、`base(<plan id>): round <N> fixes`、`base(<plan id>): acceptance` の 3 つが `.pi/skills/work/SKILL.md` にあること。
   - other — `base` plan の 3 つのメッセージが ADR 04 の `Adopted` と一致すること。
-  - other — worktree plan の `consult(...)` の 3 つのメッセージが `.pi/skills/work/SKILL.md` で変わっていないこと。
+  - other — worktree plan の `consult(...)` の 3 つのメッセージ（`.pi/skills/work/SKILL.md` の acceptance、`.pi/skills/work/references/tasks.md` の slice と fixes）が変わっていないこと。
 
 ## Notes
 

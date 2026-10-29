@@ -230,7 +230,7 @@
 - `ROADMAP.md:19` の `004` の後半は「work コミットメッセ修正」で、`ROADMAP.md:49` は「work が base 時に、consult なんとか、みたいなコミットメッセージになってしまうのをスキル本文で、明示的に指示して変更」と書く。`status` は `wip` である。
 - `work/SKILL.md:75` は、acceptance を `consult(<plan id>): acceptance` でコミットし、「A `base` plan commits it in the base with the same message; there is no worktree」と書く。
 - `work/SKILL.md:40` と `work/references/tasks.md:10` は、worktree の `code` subagent が slice ごとに `consult(<plan id>): <short English subject>` でコミットすると定める。
-- `work/SKILL.md:64` は、review の fixes を `consult(<plan id>): round <N> fixes` でコミットすると定める。
+- `work/references/tasks.md:64` は、review の fixes を `consult(<plan id>): round <N> fixes` でコミットすると定める。
 - `work/SKILL.md:46` は、`base` plan ではエージェントが slice を行い、オーナーの OK を待ってコミットすると定めるが、メッセージは書いていない。
 - `work/SKILL.md:31` は、サイクルの文書のコミットを `update: NNN's ADR, design and plan` と定める。
 - `git log` — `044` のベースのコミットは `update: 044's ADR, design and plan`、`update: 044's replace-and-docs`、`update: 044's product-ready-replace cleanup and acceptance`、`update: 044's close` である。worktree のコミットは `consult(<plan id>): ...` である。ベースは `update: NNN's <plan id> ...` の形をすでに使っている。
@@ -261,7 +261,7 @@
 
 - `work/SKILL.md:31` — 文書のコミットは `update: NNN's ADR, design and plan`。`work/SKILL.md:40`、`work/references/tasks.md:10` — worktree の `code` subagent は `consult(<plan id>): <short English subject>`。
 - `work/SKILL.md:46` — `base` plan はエージェントが slice を行い、オーナーの OK を待ってコミットする。メッセージは無い。
-- `work/SKILL.md:64` — fixes は `consult(<plan id>): round <N> fixes`。`work/SKILL.md:75` — acceptance は `consult(<plan id>): acceptance` で、`base` plan も同じメッセージを使う。
+- `work/references/tasks.md:64` — fixes は `consult(<plan id>): round <N> fixes`。`work/SKILL.md:75` — acceptance は `consult(<plan id>): acceptance` で、`base` plan も同じメッセージを使う。
 - `git log` — `044` のベースのコミットは `update: 044's ...` であり、worktree のコミットは `consult(...)` である。ベースは `update: NNN's <plan id> ...` の実績を持つ。
 - `yolo/SKILL.md:42` — `yolo` は `base` plan を使わない。
 - `DEFINITION.md:39` — `Unit.work-skill` の行。
