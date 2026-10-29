@@ -77,7 +77,7 @@ A `review` subagent reads design.md and what it names, and answers on six viewpo
 
 ### 8. Proofread
 
-Before the owner reads `design.md`, run one `proofreader` subagent with `design.md` and `design/references/format.md`; the role's policy applies; edit only the named files.
+Before the owner reads `cycles/<YYMMDD>-<NNN>-<slug>/design.md`, run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/design.md` and `design/references/format.md`; the role's policy applies; edit only the named files.
 
 - read its report and `git diff` of the file
 - if a plan's `Goal`, `Non-goal` or `Why` changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
