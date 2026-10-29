@@ -1,5 +1,7 @@
-import { existsSync, mkdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import {
@@ -11,6 +13,7 @@ import {
   entrySkeleton,
   lastEntryNumber,
   nextNNN,
+  openCycleDir,
   parseArgs,
   slugBranch,
   toYYMMDD,
@@ -243,5 +246,100 @@ describe('appendEntry', () => {
     const next = appendEntry(markdown, 1);
     expect(next).toContain('## 01: <問い>');
     expect(lastEntryNumber(next)).toBe(1);
+  });
+});
+
+describe('openCycleDir', () => {
+  it('adr.md を持ち close.md を持たないサイクルが1つ → その dir を返す', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    expect(openCycleDir(cyclesDir)).toBe(join(cyclesDir, name));
+  });
+
+  it('adr.md を持つサイクルがなければ → null を返す', () => {
+    const root = tempDir();
+    expect(openCycleDir(join(root, 'cycles'))).toBe(null);
+  });
+
+  it('close.md を持つだけ → null を返す', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    writeFileSync(join(cyclesDir, name, 'close.md'), '# Close\n');
+    expect(openCycleDir(cyclesDir)).toBe(null);
+  });
+
+  it('開いたサイクルが2つ → NNN の大きい方を返す', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const first = cycleDirName(15, '261010', 'main');
+    const second = cycleDirName(16, '261011', 'main');
+    for (const name of [first, second]) {
+      mkdirSync(join(cyclesDir, name), { recursive: true });
+      writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    }
+    expect(openCycleDir(cyclesDir)).toBe(join(cyclesDir, second));
+  });
+});
+
+describe('CLI open cycle', () => {
+  const script = fileURLToPath(new URL('./scaffold.mjs', import.meta.url));
+
+  it('開いたサイクルでは adr.md に ## NN: が1つ増える', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    const before = readdirSync(cyclesDir).toSorted();
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    expect(readdirSync(cyclesDir).toSorted()).toEqual(before);
+    const after = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    expect(after).toContain('## 02: <問い>');
+    expect(after.match(/^# ADR /gm) ?? []).toHaveLength(1);
+    expect(lastEntryNumber(after)).toBe(2);
+  });
+
+  it('閉じたサイクルでは adr.md が変わらず新しい dir ができる', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    writeFileSync(join(cyclesDir, name, 'close.md'), '# Close\n');
+    const beforeAdr = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    const before = readdirSync(cyclesDir).toSorted();
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    expect(readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8')).toBe(beforeAdr);
+    expect(readdirSync(cyclesDir).toSorted().length).toBe(before.length + 1);
+  });
+
+  it('サイクルが無い場合も新しい dir ができる', () => {
+    const root = tempDir();
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    const cyclesDir = join(root, 'cycles');
+    expect(existsSync(cyclesDir)).toBe(true);
+    expect(readdirSync(cyclesDir).length).toBe(1);
+  });
+
+  it('開いたサイクルがあるときに <nnn> を渡す → 理由付きで止まる', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    const beforeAdr = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    const done = spawnSync(process.execPath, [script, '--root', root, '17'], { encoding: 'utf8' });
+    expect(done.status).not.toBe(0);
+    expect(`${done.stderr}${done.stdout}`).toMatch(/open cycle exists/);
+    expect(readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8')).toBe(beforeAdr);
   });
 });
