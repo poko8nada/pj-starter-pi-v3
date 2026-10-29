@@ -227,6 +227,7 @@ describe('appendEntry', () => {
     const markdown = adrSkeleton(7);
     const next = appendEntry(markdown, 2);
     expect(next).toContain('## 02: <問い>');
+    expect(next).toContain('\n\n## 02: <問い>');
     expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
     const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
     expect(lastSharp).toBe('## 02: <問い>');
@@ -236,6 +237,7 @@ describe('appendEntry', () => {
     const markdown = appendEntry(adrSkeleton(7), 2);
     const next = appendEntry(markdown, 3);
     expect(next).toContain('## 03: <問い>');
+    expect(next).toContain('\n\n## 03: <問い>');
     expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
     const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
     expect(lastSharp).toBe('## 03: <問い>');
@@ -245,6 +247,7 @@ describe('appendEntry', () => {
     const markdown = '# ADR 007\n';
     const next = appendEntry(markdown, 1);
     expect(next).toContain('## 01: <問い>');
+    expect(next).toContain('\n\n## 01: <問い>');
     expect(lastEntryNumber(next)).toBe(1);
   });
 });
@@ -262,6 +265,13 @@ describe('openCycleDir', () => {
   it('adr.md を持つサイクルがなければ → null を返す', () => {
     const root = tempDir();
     expect(openCycleDir(join(root, 'cycles'))).toBe(null);
+  });
+
+  it('dir はあるが adr.md がなければ → null を返す', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    mkdirSync(join(cyclesDir, cycleDirName(15, '261010', 'main')), { recursive: true });
+    expect(openCycleDir(cyclesDir)).toBe(null);
   });
 
   it('close.md を持つだけ → null を返す', () => {
@@ -304,6 +314,22 @@ describe('CLI open cycle', () => {
     expect(after).toContain('## 02: <問い>');
     expect(after.match(/^# ADR /gm) ?? []).toHaveLength(1);
     expect(lastEntryNumber(after)).toBe(2);
+  });
+
+  it('## 02: を持つ開いたサイクルでは ## 03: が増える', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), appendEntry(adrSkeleton(15), 2));
+    const before = readdirSync(cyclesDir).toSorted();
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    expect(readdirSync(cyclesDir).toSorted()).toEqual(before);
+    const after = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    expect(after).toContain('\n\n## 03: <問い>');
+    expect(after.match(/^# ADR /gm) ?? []).toHaveLength(1);
+    expect(lastEntryNumber(after)).toBe(3);
   });
 
   it('閉じたサイクルでは adr.md が変わらず新しい dir ができる', () => {
