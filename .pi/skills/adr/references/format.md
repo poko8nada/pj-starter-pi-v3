@@ -48,9 +48,10 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 ## Entries
 
 - `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
+- The entries are the cycle's split, and the order is the split's.
 - One bullet is one sentence.
 - `Context` — what is happening, and what the `Who` wants.
-- `Scope` — the list the front agreed: every item is `in` or `out`, and an `out` item carries its reason.
+- `Scope` — the list the owner agreed: every item is `in` or `out`, and an `out` item carries its reason.
 - `Research & Trial` — the facts the decision rests on. The record is the ADR's, not the definition's.
 - `Decision` — `Status`, `Adopted`, `Options`.
   - `Status` — `accepted` or `rejected`. A rejected entry carries its reason on the same line, in parentheses.
@@ -60,8 +61,8 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 ## Scope
 
-- The front's list, as it was agreed: the entry's whole scope, in the front's own words. For a point the owner raises, it is the list the owner agreed with the agent.
-- The axes and the kinds are the front's: `変更`, `品質`, `運用` and the kinds under each. This file does not name them; it holds the place they are written.
+- The list the owner agreed: the entry's whole scope. For a point the owner raises, it is the list the owner agreed with the agent.
+- The axes and the kinds are the skill's: `変更`, `品質`, `運用` and the kinds under each. This file does not name them; it holds the place they are written.
 - Under each axis, one line per kind: `<kind>: in`, or `<kind>: out` with its reason. A revisit condition goes on the kind that needs one.
 - The list is the entry's whole scope: a reader can tell what the entry does not do.
 
