@@ -181,8 +181,20 @@ export function readSettings(dir: string): SettingsRead;
 - Noise: なし — `schema.test.ts`8件と`read.test.ts`3件はplanの指定ケースと1対1で、結線テストと種別テストの分担はCleanup記録の通り重複ではない。`Basso`等の文字列は入力と期待の往復で魔数・決め打ち表明には当たらず、型やDBが保証する前提の再現もない。
 - Doubts: なし
 
+### Round 2
+
+- Scope: Round 1 の `fixed:` 2 件に対応する差分だけを見た（`git diff 8139c5f..HEAD` のうち既定 export の `dir` 引数、`index.test.ts` の助っ人と `sound-notify.default-export` 3 件、`read.test.ts` の happy の非既定化）。それ以外の差分は再審査していない。
+- Stale: なし — fixed 差分は文書や注釈を古く残さない。`index.ts:169-172` の注釈は `dir` が検査用の口で pi は渡さないことと起動時の 1 回読み・黙った継続だけを書き、テスト冒頭の `settings.json` 言及と食い違わない。
+- Unlisted: なし — fixed 差分は Files の 3 件（`index.ts`・`index.test.ts`・`settings/read.test.ts`）の中に収まり、新しい持ち物や Files 外の変更はない。
+- Gaps:
+  - Round 1 Gaps の fixed は解消 — `index.ts:170` が `export default function (pi: EntryPiPort, dir: string = EXTENSION_DIR)` で既定を `EXTENSION_DIR` にし、pi の呼び方（引数 1 個）は不変のため起動時の動きは変わらない。`index.test.ts:91-119` の助っ人 `entryWithFile` が一時実ファイルで既定 export を走らせ、`171-207` の 3 件が結線を確かめる。非既定（`186-190`：`commit: 'Basso'` を書いてその音を期待）は読まずに既定を返せば `Pop` になって赤になる。破損時（`192-197`：`'{"enabled":'` を書いて既定の `commit` 音と `calls` 空を期待）は読み込み時の余計な通知があれば `calls` に残るため黙った継続が赤で分かる。登録後の書換え（`199-207`：`Basso` で登録後に `Funk` へ書き換えて旧音を期待）は毎回読む実装なら `Funk` になって赤になるため 1 回読みが分かる。
+- Unproven:
+  - Round 1 Unproven の fixed は解消 — `read.test.ts:9-18` の happy が `enabled: false` と `commit: 'Basso'` の非既定値を書いて `toEqual({ kind: 'ok', settings })` で比べる。読まずに既定を返す実装では `enabled: true`・`commit: 'Pop'` とずれて赤になるため、読みを証明できる。
+- Noise: なし — `withSounds`・`entryWithFile`・`CUSTOM_SOUND`・`REWRITTEN_SOUND` は 3 件の結線検査に直接要り、`Basso`・`Funk` は書いた値と鳴った値の往復で魔数・決め打ち表明には当たらない。
+- Doubts: なし
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（57ファイル、770テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。plan の `Added` は `settings.json` の 8 キーと README の 8 行の一致。2 つの振る舞いを壊すと 5 テストが赤になり、戻すと緑。
+- Findings: なし
+- Doubts: なし
