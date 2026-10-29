@@ -3,20 +3,18 @@
  *
  *   node scaffold.mjs [--root <dir>] [<nnn>]
  */
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
 
 /**
- * `adr.md` の骨。`references/format.md` の形と合わせること。
+ * 1 エントリー分の骨。`references/format.md` のエントリーの形と合わせること。
  * @param {number} nnn
  * @returns {string}
  */
-export function adrSkeleton(nnn) {
-  return `# ADR ${String(nnn).padStart(3, '0')}
-
-## 01: <問い>
+export function entrySkeleton(nnn) {
+  return `## ${String(nnn).padStart(2, '0')}: <問い>
 
 ### Context
 
@@ -42,6 +40,7 @@ export function adrSkeleton(nnn) {
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
+  - <採った形>
 - Options:
   - <案>（採らなかった理由）
 
@@ -50,6 +49,51 @@ export function adrSkeleton(nnn) {
 - \`Unit.<name>\`(updated): <新しい行>
 - \`Unit.<name>\`(kept): <その行が動かない理由>
 `;
+}
+
+/**
+ * `adr.md` の骨。`references/format.md` の形と合わせること。
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function adrSkeleton(nnn) {
+  return `# ADR ${String(nnn).padStart(3, '0')}
+
+${entrySkeleton(1)}`;
+}
+
+/**
+ * `markdown` 中の `## NN:` の最大値を返す。`## ` で始まる見出しが `## NN:` と一致しなければ理由付きで投げる。該当がなければ `null`。
+ * @param {string} markdown
+ * @returns {number | null}
+ */
+export function lastEntryNumber(markdown) {
+  let max = null;
+  for (const line of markdown.split('\n')) {
+    if (!line.startsWith('## ')) continue;
+    const found = /^## (\d{2}):/.exec(line);
+    if (found) {
+      const n = Number(found[1]);
+      if (max === null || n > max) max = n;
+      continue;
+    }
+    throw new Error(`broken entry heading: expected "## NN:" but got "${line}"`);
+  }
+  return max;
+}
+
+/**
+ * 末尾の改行を調整して `entrySkeleton(nnn)` を追記する。`# ADR NNN` は重複させない。
+ * @param {string} markdown
+ * @param {number} nnn
+ * @returns {string}
+ */
+export function appendEntry(markdown, nnn) {
+  const entry = entrySkeleton(nnn);
+  if (markdown === '') return entry;
+  const withNewline = markdown.endsWith('\n') ? markdown : `${markdown}\n`;
+  const sep = withNewline.endsWith('\n\n') ? '' : '\n';
+  return `${withNewline}${sep}${entry}`;
 }
 
 /**
@@ -186,31 +230,73 @@ export function dirNames(cyclesDir, archiveDir) {
   return names;
 }
 
+/**
+ * 開いている cycle の dir を返す。`cycles/` 直下で `adr.md` を持ち `close.md` を持たない物のうち、名前の `NNN` が最大の物。なければ `null`。
+ * @param {string} cyclesDir
+ * @returns {string | null}
+ */
+export function openCycleDir(cyclesDir) {
+  let entries;
+  try {
+    entries = readdirSync(cyclesDir, { withFileTypes: true });
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return null;
+    throw err;
+  }
+  let bestName = null;
+  let bestNNN = -1;
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const nnn = extractNNN(entry.name);
+    if (nnn === null) continue;
+    if (!existsSync(join(cyclesDir, entry.name, 'adr.md'))) continue;
+    if (existsSync(join(cyclesDir, entry.name, 'close.md'))) continue;
+    if (nnn > bestNNN) {
+      bestNNN = nnn;
+      bestName = entry.name;
+    }
+  }
+  if (bestName === null) return null;
+  return join(cyclesDir, bestName);
+}
+
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const { root, nnn: argNNN } = parseArgs(process.argv.slice(2));
   const cyclesDir = join(root, 'cycles');
   const archiveDir = join(cyclesDir, 'archive');
-  let branch = '';
-  try {
-    const result = git(root, ['branch', '--show-current']);
-    if (result.status === 0) branch = (result.stdout ?? '').trim();
-  } catch {
-    branch = '';
-  }
-  const nnn = argNNN ?? nextNNN(dirNames(cyclesDir, archiveDir));
-  const dirName = cycleDirName(nnn, toYYMMDD(new Date()), slugBranch(branch));
-  mkdirSync(cyclesDir, { recursive: true });
-  let leaf;
-  try {
-    leaf = createLeafDir(cyclesDir, dirName);
-  } catch (err) {
-    if (err && err.code === 'EEXIST') {
-      console.error(`exists: ${join(cyclesDir, dirName)}`);
-      process.exit(1);
+  const openDir = openCycleDir(cyclesDir);
+  if (openDir !== null) {
+    if (argNNN !== null) {
+      throw new Error(`open cycle exists: ${openDir}; refusing nnn ${argNNN}`);
     }
-    throw err;
+    const adrPath = join(openDir, 'adr.md');
+    const current = readFileSync(adrPath, 'utf8');
+    const next = (lastEntryNumber(current) ?? 0) + 1;
+    writeFileSync(adrPath, appendEntry(current, next));
+    console.log(`appended: ${adrPath}`);
+  } else {
+    let branch = '';
+    try {
+      const result = git(root, ['branch', '--show-current']);
+      if (result.status === 0) branch = (result.stdout ?? '').trim();
+    } catch {
+      branch = '';
+    }
+    const nnn = argNNN ?? nextNNN(dirNames(cyclesDir, archiveDir));
+    const dirName = cycleDirName(nnn, toYYMMDD(new Date()), slugBranch(branch));
+    mkdirSync(cyclesDir, { recursive: true });
+    let leaf;
+    try {
+      leaf = createLeafDir(cyclesDir, dirName);
+    } catch (err) {
+      if (err && err.code === 'EEXIST') {
+        console.error(`exists: ${join(cyclesDir, dirName)}`);
+        process.exit(1);
+      }
+      throw err;
+    }
+    writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn));
+    console.log(`created: ${leaf}`);
   }
-  writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn));
-  console.log(`created: ${leaf}`);
 }
