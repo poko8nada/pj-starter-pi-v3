@@ -61,10 +61,8 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 6. Proofread
 
-Before the owner reads close.md, it goes through one proofread.
+Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` and `.pi/skills/close/references/format.md`; the role's policy applies; edit only the named files.
 
-- the document: `cycles/<YYMMDD>-<NNN>-<slug>/close.md`
-- run one `proofreader` subagent, and name that file in the task
 - read its report and `git diff` of the file
 - if a `Triage` line, a `Verified` line or a destination changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
