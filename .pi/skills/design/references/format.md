@@ -31,7 +31,7 @@ Section and field names are English; the content is Japanese.
 
 ### Goal
 
-- <この plan の達成を、検査を落とせる一文で>
+- <この plan の行。`Adopted` の行と `Scope.in` の項目ごとに 1 行で、検査を落とせる結果>
 
 ### Non-goal
 
@@ -107,8 +107,9 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 ## Goal
 
-- One sentence a check can make red: with `X`, `Y` is observed. A summary is not a goal: with the summary, a plan that does all the steps is true; with the goal, the steps done and `Y` not observed is red.
-- The sentence comes from the entry's items: `Adopted` is its content, the `Scope`'s `in` its range, and `Research & Trial` how it is observed.
+- One or more bullets. One line per `Adopted` row and per `Scope`'s `in` item; each line is a result a check can make red: with `X`, `Y` is observed. A summary is not a goal: with the summary, a plan that does all the steps is true; with a line, the steps done and `Y` not observed is red.
+- The lines come from the entry's items: `Adopted` is the content, the `Scope`'s `in` the range, and `Research & Trial` how it is observed.
+- The shape matches `Non-goal`'s.
 
 ## Non-goal
 

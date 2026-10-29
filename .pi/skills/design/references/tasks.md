@@ -42,7 +42,7 @@ If the change talks to nothing outside, answer なし.
 Read cycles/<YYMMDD>-<NNN>-<slug>/design.md, the cycle's adr.md, and the files they name.
 Answer on six viewpoints, one section each. A viewpoint with no finding is なし. Give each finding with its file:line.
 
-1. a decided line: every line of each accepted entry's Adopted appears in Affected, Summary or Paths, and nothing else does; each plan's `Goal` carries the entries' `Adopted`, its `Scope`'s `in` and its `Research & Trial`, and is checkable; its `Non-goal` carries the touching `out` and the mistaken `Options` with the reason, and the `Goal` does not go past it
+1. a decided line: every line of each accepted entry's Adopted appears in Affected, Summary or Paths, and nothing else does; each plan's `Goal` carries the entries' `Adopted` and its `Scope`'s `in` one line each, and each line is checkable; its `Non-goal` carries the touching `out` and the mistaken `Options` with the reason, and the `Goal` does not go past it
 2. the cut's reason: Why says the input it shares, the condition that applies, and what it waits for
 3. the outside: every outside thing in External appears in some plan's Boundary.External, and no Boundary.External line is missing from External
 4. the followers: every follower in Affected that changes is in some plan's Paths

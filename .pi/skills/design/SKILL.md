@@ -50,7 +50,7 @@ The plan id is the name of the change (`worktree-cleanup`), not the Unit's name.
 ### 5. Write each plan's section
 
 - `ADR & Where` — `No` (the entries this plan cuts), `Why` (one sentence), `Where`
-- `Goal` — one sentence a check can make red, from the entry's items: `Adopted` is the content, the `Scope`'s `in` the range, `Research & Trial` how it is observed
+- `Goal` — one line per `Adopted` row and per `Scope`'s `in` item, each a check can make red: `Adopted` is the content, the `Scope`'s `in` the range, `Research & Trial` how it is observed
 - `Non-goal` — the `Scope`'s `out` that touches this plan, and the `Options` a worker would mistake, with the reason
 - `Summary` — what this plan does, as a digest of the entries it cuts
 - `Paths` — the files this plan changes, from the entries' subjects and the followers that change with them
@@ -70,17 +70,15 @@ Propose one place per plan, with the reason. The owner answers, and the answer c
 
 A `review` subagent reads design.md and what it names, and answers on six viewpoints. The task is in `references/tasks.md`.
 
-- the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, the `Goal` is checkable, and the `Goal` does not go past the `Non-goal`), the cut's reason, the outside, the followers, the readers, the checks
+- the viewpoints: a decided line (the `Goal` and `Non-goal` carry the `Adopted`'s rows and the `out`, each `Goal` line is checkable, and the `Goal` does not go past the `Non-goal`), the cut's reason, the outside, the followers, the readers, the checks
 - coverage: every follower in `## Affected` that changes is in some plan's `Paths`, and every outside thing in `## External` is in some plan's `External`
 - one subagent, one round: the design is fixed from the findings, and the report to the owner says what was done with each
 - the review is not the owner's look: it runs before step 9, and it does not wait
 
 ### 8. Proofread
 
-Before the owner reads design.md, it goes through one proofread.
+Before the owner reads `design.md`, run one `proofreader` subagent with `design.md` and `design/references/format.md`; the role's policy applies; edit only the named files.
 
-- the document: `cycles/<YYMMDD>-<NNN>-<slug>/design.md`
-- run one `proofreader` subagent, and name that file in the task
 - read its report and `git diff` of the file
 - if a plan's `Goal`, `Non-goal` or `Why` changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
