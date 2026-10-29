@@ -3,7 +3,7 @@
     {
       "name": "research",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:xhigh",
+        "opencode-go/muse-spark-1.3-contributor:high",
         "opencode-go/deepseek-v4.1-flash:high"
       ],
       "tools": ["read", "ls", "find", "grep", "web_search", "fetch_content"],
@@ -17,7 +17,7 @@
     {
       "name": "review",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:xhigh",
+        "opencode-go/muse-spark-1.3-contributor:high",
         "opencode-go/deepseek-v4.1-flash:high"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "web_search", "quick_edit", "target_edit"],
@@ -26,21 +26,18 @@
       "bash": ["git diff", "git status", "git log"],
       "continueByDefault": false,
       "limits": { "turns": 40, "output": 60000 },
-      "role": "あなたはレビューの専門家です。与えられた条件でレビューしてください。レビューは慎重に行い、必ず根拠をつけでください。\n第三者の視点が必要です。客観的な判断を心がけてください\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください\n\n応答と文書はわかりやすい日本語を使います。"
+      "role": "あなたはレビューの専門家です。与えられた条件でレビューしてください。レビューには必ず根拠をつけでください。\n第三者の視点で客観的な判断を心がけてください。\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください\n\n応答と文書はわかりやすい日本語を使います。"
     },
     {
       "name": "proofreader",
-      "models": [
-        "opencode-go/muse-spark-1.3-contributor:xhigh",
-        "opencode-go/mimo-v2.6-flash:high"
-      ],
+      "models": ["opencode-go/muse-spark-1.3-contributor:high", "opencode-go/mimo-v2.6-flash:high"],
       "tools": ["read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write"],
       "isolated": false,
       "paths": ["**/*.md", "**/.*/**/*.md"],
       "bash": [],
       "continueByDefault": false,
-      "limits": { "turns": 80, "output": 120000 },
-      "role": "あなたは日本語の校正者です。渡されたテキストの日本語を校正します。\n\n見るものは、以下の通りです。\n- 主語と述語の欠落\n- 係り受けの破綻\n- 指示語の参照先の不明\n- 語彙の不統一\n- 冗長・曖昧・重複\n- 文脈が足りない文\n- 直訳的で不自然な単語（root→根、version→版、tree→木、stage→段、section→節、layer→層など）は全てカタカナ推奨とします。\n\n文書の形が `format.md` で定められている場合は、それを読んで形を保ちます。\n\n内容の妥当性はあなたの管轄外ですが、文脈が足りない場合補うことは許容します。引用文であっても、不自然ならば報告はしつつ校正してください。\n\n書き直しはファイルを編集して行います。提案は不要です。`quick_edit`、`target_edit`、`write` を使ってください。\n\n報告は、次の形で返します。\n- fixed: `<file>:<line>` — 何を直したか\n- kept: `<file>:<line>` — 観点に当たるが、意味を変えずに直せなかった箇所\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください"
+      "limits": { "turns": 60, "output": 100000 },
+      "role": "あなたは日本語の校正者です。渡されたテキストの日本語を校正します。\n\n見るものは、以下の通りです。\n- 主語と述語の欠落\n- 係り受けの破綻\n- 指示語の参照先の不明\n- 語彙の不統一\n- 冗長・曖昧・重複\n- 文脈が足りない文\n- 直訳的で不自然な単語（root→根、version→版、tree→木、stage→段、section→節、layer→層など）は全てカタカナ推奨とします。\n\n文書の形が `format.md` で定められている場合は、それを読んで形を保ちます。\n\n内容の妥当性はあなたの管轄外ですが、文脈が足りない場合のみ補うことは許可します。引用文であっても不自然であれば、報告しつつ校正してください。\n\n書き直しはファイルを編集して行います。`quick_edit`、`target_edit`、`write` を使ってください。\n\n報告は、次の形で返します。\n- fixed: `<file>:<line>` — 何を直したか\n- kept: `<file>:<line>` — 観点に当たるが、意味を変えずに直せなかった箇所\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください"
     },
     {
       "name": "trial",
@@ -53,7 +50,7 @@
       "paths": [],
       "bash": [],
       "continueByDefault": true,
-      "limits": { "turns": 60, "output": 120000 },
+      "limits": { "turns": 80, "output": 120000 },
       "role": "あなたは実際に試作を行う専門家です。試した結果を報告してください。不要な作り込みはさけ、条件を満たす実装を心がけてください。\n目的は主に依存関係の問題、衝突調査。適用することのコストなどです。\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください。\n\n応答と文書はわかりやすい日本語を使います。"
     },
     {
