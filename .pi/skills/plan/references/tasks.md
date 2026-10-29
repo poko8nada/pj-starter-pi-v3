@@ -7,7 +7,7 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` and its `### Steps` — the design's `Goal` and `Non-goal`, and the code, the test files and the documents those checks name. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
 Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify`, and these `Steps`, close the slice?
-- `Goal` — the design's `Goal` and `Non-goal` that no step and no check carries, and a step that goes past the `Non-goal`
+- `Goal` — each line of the design's `Goal` and the `Non-goal` that no step and no check carries, and a step that goes past the `Non-goal`
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
 - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
 - `Cases` — the test steps' cases against `## Test cases`

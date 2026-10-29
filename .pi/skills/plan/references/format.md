@@ -121,7 +121,7 @@ Section and field names are English; the content is Japanese.
 - A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
 - One step is one file: what to do in it. The shape follows the file:
   - a code file — what to do, in one sentence; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
-  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`; the `Goal`'s result is one of those cases
+  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`; each `Goal` line's result is one of those cases
   - a document — what to do, in one sentence
 - The cases of a test file follow `## Test cases`.
 - A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
@@ -145,7 +145,7 @@ Section and field names are English; the content is Japanese.
 
 - `Verify` is what closes the slice: what has to pass, not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
-- The `Goal`'s result is one of the related tests; a step that goes past the `Non-goal` is not written, and the review reads it.
+- Each `Goal` line's result is one of the related tests; a step that goes past the `Non-goal` is not written, and the review reads it.
 - `Always:` — these five, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
@@ -157,7 +157,8 @@ Section and field names are English; the content is Japanese.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.
   - a `base` plan's look — the owner reads the slice's change; their OK closes it.
-  - other — a check the ADR's scope names that the four above do not cover, by a throwaway script or a shell command.
+  - a proofread — the plan md and the skill's `references/format.md`, with the skill's proofread sentence
+  - other — a check the ADR's scope names that the five above do not cover, by a throwaway script or a shell command.
 - A `Verify` that cannot be run is a hole: fix it, or say why it does not apply.
 
 ## Test cases

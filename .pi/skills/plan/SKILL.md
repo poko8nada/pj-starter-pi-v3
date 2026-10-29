@@ -52,7 +52,7 @@ One step is one file. The shape follows the file: a code file says what to do, a
 
 The cases of a test file follow `## Test cases` in `references/format.md`: what the types, the schema or the DB already guarantee is not a case, a case nobody would notice is not a case, and a mock is written only where the outside gives its types.
 
-The plan writes the `Goal`'s result as a test case, and no step that goes past the `Non-goal`.
+The plan writes each `Goal` line's result as a test case, and no step that goes past the `Non-goal`.
 
 **A boundary with no answer is a hole in the plan.** Stop, and decide the shape before writing on.
 
@@ -77,9 +77,9 @@ A pair found is a change to cut. The owner decides, the design's `Boundary.Plans
 
 ### 10. Review of each plan
 
-A `review` subagent reads one plan's slices — each `Verify` and the test steps' cases — and the design's `Goal` and `Non-goal`, and answers on five viewpoints:
+A `review` subagent reads one plan's slices — each `Verify` and the test steps' cases — and each line of the design's `Goal` and `Non-goal`, and answers on five viewpoints:
 
-- `Goal` — the steps and the checks that do not carry the design's `Goal`/`Non-goal`
+- `Goal` — the steps and the checks that do not carry each line of the design's `Goal`, and the `Non-goal`
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
 - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
 - `Cases` — the test steps' cases against `## Test cases`
@@ -89,10 +89,8 @@ The task is in `references/tasks.md`. The plan is fixed from them, and the repor
 
 ### 11. Proofread
 
-Before the owner reads the plan mds, each one goes through one proofread.
+Before the owner reads the plan mds, run one `proofreader` subagent per file with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
 
-- the documents: `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, one run per file
-- run one `proofreader` subagent per file, and name that file in the task
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
