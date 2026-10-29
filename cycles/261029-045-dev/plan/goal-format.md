@@ -119,38 +119,46 @@
 
 ### Slice 1: design-goal
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d6d672e
+- Stopped: なし
 
 ### Slice 2: plan-goal
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0413fef
+- Stopped: なし
 
 ### Slice 3: work-cleanup
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: bf8e2c8
+- Stopped: なし
 
 ## Review
 
 ### Round 1
 
 - Stale:
+  - なし — 旧文言の残存なし。`.pi/skills/design/SKILL.md:53` の Goal は複数行化済み、`design/references/format.md:32-34,108-111` の one sentence 要求は Goal から除かれ他節 (`.pi/skills/design/SKILL.md:52` の Why、`.pi/skills/design/references/format.md:140` の Writing) のみ残存。`.pi/skills/plan/SKILL.md:55` と `.pi/skills/plan/references/format.md:124,148` に単数形 `Goal's result` なし。旧 proofread 定型なし。`.pi/skills/work/SKILL.md:52` と `.pi/skills/work/references/tasks.md:25` に Goal 行あり。
 - Unlisted:
+  - なし — `git diff 92e28dd..HEAD --stat` は Files の8件のみ。`git diff 7bd7a01..HEAD` に含まれる3件 (`.pi/skills/adr/scripts/scaffold.mjs`、`.pi/skills/adr/scripts/scaffold.test.ts`、`cycles/261029-045-dev/plan/adr-scaffold.md`) は `git log` の merge `92e28dd` 以前の別プラン (adr-scaffold) のもので本計画の変更ではない。
 - Gaps:
+  - なし — Slice 1〜3 の Steps は差分どおり実施済み。各 Verify の Added (grep と owner 読会) が対応する行為を直接確認する構成で、自動テストでしか確かめられない行為は本計画にない。
 - Unproven:
+  - なし — 本計画の8件にテストファイルの変更なし。壊して赤を確認すべき新規テストが存在しない。別プランの `scaffold.test.ts` は本計画の対象外。
 - Noise:
+  - なし — 本計画で追加したテストなし。magic number / hardcoded string を含むケースなし。
 - Doubts:
+  - `.pi/skills/close/SKILL.md:64` — `git status` で未コミットの proofread 定型更新あり。Files 外・コミット外のため finding とせず。別途処置 (取込または破棄) が必要。
+  - `.pi/skills/plan/SKILL.md:63-64` と `.pi/skills/plan/references/format.md:155-161` — SKILL の Added 要約に proofread の明記なし。SKILL の `or another check` が proofread を含む解釈で矛盾なしと判断し finding とせず。気になるなら close 時に文言統一を検討。
+  - `.pi/skills/design/SKILL.md:80` — proofread の対象表記が短形 (`design.md`) で plan/close の長形 (`cycles/...`) と異なる。指示ファイルの特定は可能と判断し finding とせず。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（57ファイル、788テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。plan の `Verify` の grep（`the Goal's result` の単数形は 0 件、design の `Goal` に「one sentence」なし、4 スキルの proofread の一文）を確認した。オーナーは 3 スライスに OK を返した。
+- Findings: なし
+- Doubts: なし
