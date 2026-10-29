@@ -12,13 +12,15 @@
 
 | No  | Ver   | status | cycles | priority | title                                        |
 | --- | ----- | ------ | ------ | -------- | -------------------------------------------- |
+| 010 | 0.9.2 | todo   |        | mid      | planの作成手順改訂                           |
+| 009 | 0.9.2 | todo   |        | mid      | planの残り物をcloseで集める件                |
 | 008 | 0.9.2 | todo   |        | high     | ハーネスのコピープッシュ機能更新             |
 | 007 | 0.9.1 | todo   |        | mid      | DEFINITIONの調整                             |
 | 006 | 0.9.1 | todo   |        | mid      | readmeのフォーマット改訂                     |
-| 005 | 0.9.1 | wip    |        | low      | proofreaderのスキル内での指示を改訂          |
-| 004 | 0.9.1 | wip    |        | mid      | adrのエントリ分解、workコミットメッセ修正    |
-| 003 | 0.9.1 | wip    |        | mid      | planスキル、ゴールフォーマットと導出方法変更 |
-| 002 | 0.9.1 | wip    |        | low      | sound-notifyの設定値json化                   |
+| 005 | 0.9.1 | done   | 045    | low      | proofreaderのスキル内での指示を改訂          |
+| 004 | 0.9.1 | done   | 045    | mid      | adrのエントリ分解、workコミットメッセ修正    |
+| 003 | 0.9.1 | done   | 045    | mid      | planスキル、ゴールフォーマットと導出方法変更 |
+| 002 | 0.9.1 | done   | 045    | low      | sound-notifyの設定値json化                   |
 | 001 | 0.9.0 | done   | 044    | high     | ロードマップの初版の基盤整備                 |
 
 ### 0.9.2 008
