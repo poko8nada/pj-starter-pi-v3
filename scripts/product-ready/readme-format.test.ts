@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { blockUnder, sectionOf } from './blocks.mjs';
 
 type SkeletonLines = {
   readonly en: readonly string[];
@@ -8,8 +10,9 @@ type SkeletonLines = {
   readonly writing: readonly string[];
 };
 
-const RULES = join(process.cwd(), 'rules');
-const FORMAT_FILE = 'readme.format.md';
+// config 自身の道からルートを出す（`vitest.config.ts:9` と同じ形）。
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FORMAT_AT = join(HERE, '..', '..', 'rules', 'readme.format.md');
 
 const EXPECTED_EN: readonly string[] = [
   "# <the product's name>",
@@ -43,48 +46,6 @@ const EXPECTED_WRITING: readonly string[] = [
 ];
 
 const FENCE = /^(`{3,}|~{3,})/;
-const HEADING = /^#{1,6} /;
-
-function blockUnder(text: string, heading: string): string | null {
-  const lines = text.split('\n');
-  const start = lines.findIndex((line) => line.trim() === heading);
-  if (start === -1) {
-    return null;
-  }
-  let mark = '';
-  let open = -1;
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i].trim();
-    if (open === -1) {
-      const found = FENCE.exec(line);
-      if (found) {
-        mark = found[1];
-        open = i;
-      }
-      continue;
-    }
-    if (line === mark) {
-      return lines.slice(open + 1, i).join('\n');
-    }
-  }
-  return null;
-}
-
-function sectionBody(text: string, heading: string): string | null {
-  const lines = text.split('\n');
-  const start = lines.findIndex((line) => line.trim() === heading);
-  if (start === -1) {
-    return null;
-  }
-  let to = lines.length;
-  for (let i = start + 1; i < lines.length; i += 1) {
-    if (HEADING.test(lines[i])) {
-      to = i;
-      break;
-    }
-  }
-  return lines.slice(start + 1, to).join('\n');
-}
 
 function nonEmptyLines(block: string): readonly string[] {
   return block.split('\n').filter((line) => line.trim() !== '');
@@ -127,11 +88,11 @@ function readChecked(text: string): SkeletonLines {
   if (!sameLines(jaLines, EXPECTED_JA)) {
     throw new Error('Japanese skeleton changed');
   }
-  const writing = sectionBody(text, '## Writing');
-  if (writing === null) {
+  const range = sectionOf(text.split('\n'), '## Writing');
+  if (range === null) {
     throw new Error('no section ## Writing');
   }
-  const writingLines = nonEmptyLines(writing);
+  const writingLines = nonEmptyLines(text.split('\n').slice(range.from, range.to).join('\n'));
   if (!sameLines(writingLines, EXPECTED_WRITING)) {
     throw new Error('Writing rules changed');
   }
@@ -139,7 +100,18 @@ function readChecked(text: string): SkeletonLines {
 }
 
 function readFormat(): string {
-  return readFileSync(join(RULES, FORMAT_FILE), 'utf8');
+  return readFileSync(FORMAT_AT, 'utf8');
+}
+
+/** 行を差し替えた写しを返す（純）。対象の行が 1 つでなければ投げる */
+function withLine(text: string, target: string, replacement: readonly string[]): string {
+  const lines = text.split('\n');
+  const hits = lines.flatMap((line, index) => (line === target ? [index] : []));
+  if (hits.length !== 1) {
+    throw new Error(`the line must appear once: ${target}`);
+  }
+  const at = hits[0];
+  return [...lines.slice(0, at), ...replacement, ...lines.slice(at + 1)].join('\n');
 }
 
 describe('readme-format guard', () => {
@@ -151,25 +123,26 @@ describe('readme-format guard', () => {
   });
 
   it('1行を別の見出しに変えた写しは通らない', () => {
-    const mutated = readFormat().replace('## What is in it', '## Extra');
+    const mutated = withLine(readFormat(), '## What is in it', ['## Extra']);
     expect(() => readChecked(mutated)).toThrow();
   });
 
   it('1行を落とした写しは通らない', () => {
-    const mutated = readFormat().replace('## Getting started\n\n', '');
+    const mutated = withLine(readFormat(), '## Getting started', []);
     expect(() => readChecked(mutated)).toThrow();
   });
 
   it('Writingから1行を消した写しは通らない', () => {
-    const mutated = readFormat().replace(
-      '- Keep only related badges, each with a value from a source.\n',
-      '',
+    const mutated = withLine(
+      readFormat(),
+      '- Keep only related badges, each with a value from a source.',
+      [],
     );
     expect(() => readChecked(mutated)).toThrow();
   });
 
   it('雛形の中にフェンスを足した写しは通らない', () => {
-    const mutated = readFormat().replace('## What is in it', '```\n## What is in it');
+    const mutated = withLine(readFormat(), '## What is in it', ['```', '## What is in it']);
     expect(() => readChecked(mutated)).toThrow();
   });
 });
