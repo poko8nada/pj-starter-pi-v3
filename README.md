@@ -60,12 +60,12 @@ The agent harness travels with `scripts/harness/`:
 One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage calls the next stage; the next stage is found by its `description`.
 
 ```
-adr          settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
-design       walk what each entry touches, decide the cut and the order, propose where each plan runs, and write `cycles/<YYMMDD>-<NNN>-<slug>/design.md`; the owner answers
-plan         write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify, ready to hand to a subagent
-work         run the slices, the review, the acceptance and the merge, and leave the record in the plan md
-close        collect what the plans left, triage it with the owner, then ask the owner, Unit by Unit, whether they will verify the function
-yolo         walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
+adr          when the owner starts a cycle or raises a point about the definition or the cycle, settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
+design       when the cycle's entries are decided and the work has to be cut, walk what each entry touches, decide the cut and the order, propose where each plan runs, and write `cycles/<YYMMDD>-<NNN>-<slug>/design.md`; the owner answers
+plan         when design is agreed and one of its plans has to become work — after cut is settled and a plan is ready to be handed to a subagent, write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify, ready to hand to a subagent
+work         when a plan is agreed and its work has to be carried out — after the plan md is written and the owner has read it, run the slices, the review, the acceptance and the merge, and leave the record in the plan md
+close        when every plan of a cycle is done (done, or dropped by the owner), collect what the plans left, triage it with the owner, then ask the owner, Unit by Unit, whether they will verify the function
+yolo         when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted, walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
 ```
 
 The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the cycle's state. The ADR's `Status` is the decision, and the plan's `Commit`/`Stopped` are the work record; none of them is a cycle status field.
