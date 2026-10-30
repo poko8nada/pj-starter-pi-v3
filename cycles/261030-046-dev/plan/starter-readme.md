@@ -88,6 +88,6 @@ package.json
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（788 件）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`（警告込みで緑）、`pnpm format:check`（全ファイルが整形済み）、陳腐な文言の `grep -in` が 0 件、`Added` の 4 つの読み合わせ（見出しの並び、バッジの 2 つの URL と `package.json:29` の版、言語のリンクの行、4 節と `## Contributing`、`## License` と `## Cycle` の 6 行）。
+- Findings: なし
+- Doubts: なし（`## Review` の `Doubts` が同じ点を持つ）
