@@ -10,7 +10,7 @@ type SkeletonLines = {
   readonly writing: readonly string[];
 };
 
-// config 自身の道からルートを出す（`vitest.config.ts:9` と同じ形）。
+// このファイルの道からルートを出す（起動位置に依存しない）。
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FORMAT_AT = join(HERE, '..', '..', 'rules', 'readme.format.md');
 
@@ -45,8 +45,6 @@ const EXPECTED_WRITING: readonly string[] = [
   '- `## Getting started` covers install and usage. There is no `## Usage`.',
 ];
 
-const FENCE = /^(`{3,}|~{3,})/;
-
 function nonEmptyLines(block: string): readonly string[] {
   return block.split('\n').filter((line) => line.trim() !== '');
 }
@@ -74,14 +72,6 @@ function readChecked(text: string): SkeletonLines {
   }
   const enLines = nonEmptyLines(en);
   const jaLines = nonEmptyLines(ja);
-  for (const line of [...enLines, ...jaLines]) {
-    if (FENCE.test(line.trim())) {
-      throw new Error('fence line inside skeleton block');
-    }
-    if (line.includes('## Usage')) {
-      throw new Error('## Usage must not be in skeleton');
-    }
-  }
   if (!sameLines(enLines, EXPECTED_EN)) {
     throw new Error('English skeleton changed');
   }
