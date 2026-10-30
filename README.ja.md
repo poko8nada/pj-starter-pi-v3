@@ -1,5 +1,7 @@
 # ハーネス付きスターター
 
+[![Pullfrog](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml/badge.svg)](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml) [![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)](https://www.typescriptlang.org/)
+
 プロジェクトと、その**エージェント用ハーネス**が最初から揃っているスターター。clone した時点で、検査・commit ゲート・エージェントの規則・サイクルの仕組みが入っている。
 
 English: [README.md](README.md)
@@ -58,14 +60,30 @@ pnpm install
 1 サイクル = ADR → 設計 → プラン → その実行 → 閉じる。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段が次の段を呼ぶことはない。次の段は `description` で見つかる。
 
 ```
-adr          意図、ロードマップ、エントリーを詰め、選択肢を並べて決定し、オーナーが読む前の校正
-design       entry ごとに影響されるものと外の接点を調べ、サイクルをプランに切り、レビューし、オーナーが読む前に校正して、どこで走らせるかを決める
-plan         1 プラン = 1 枚を書く（リサーチ / ファイル / 型 / 手順 / 検査）と、オーナーが読む前の校正
-work         1 プランを片付ける（スライス / テストの整理 / レビュー / 受け入れ / マージと、その後の base の依存揃え）
-close        サイクルを裁き、オーナーが読む前に `close.md` を校正し、最後にオーナーへ Unit の確認を求める（残り物は `ex-` の plan / `proposed` / `dropped`）
-yolo         オーナーの確認を挟まずに 1 サイクルを歩く
+adr          意図・ロードマップの項目・エントリーを詰め、`cycles/<YYMMDD>-<NNN>-<slug>/adr.md` を書き、サイクルが `DEFINITION.md` に何をするかのオーナーの決定を残す
+design       各エントリーが触るものを調べ、切り方と順序を決め、各プランをどこで走らせるか提案し、`cycles/<YYMMDD>-<NNN>-<slug>/design.md` を書く。オーナーが答える
+plan         `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` を書く。ファイル・スライス・型・手順・検証を持ち、サブエージェントに渡せる形にする
+work         スライス・レビュー・受け入れ・マージを走らせ、記録をプランの md に残す
+close        プランが残したものを集め、オーナーとトリアージし、Unit ごとに関数を確認するかをオーナーに聞く
+yolo         立っている場所からサイクルの段をオーナーの確認なしに歩き、close のトリアージで止まり、`Added` のオーナー確認を通過させる
 ```
 
 記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つ。ADR の `Status` は決定の状態で、plan の `Commit` / `Stopped` は作業の記録であり、サイクルの状態欄ではない。
 
 製品を持つのは `DEFINITION.md`。その裏の議論を持つのは ADR で、ADR はどの段からでも開ける。サイクルは `adr` から始まり、owner が点を上げたときはどの段からでも ADR の entry を追加できる。変更はどのサイクルでも ADR の entry を開き、その entry が `DEFINITION.md` のどの部分に関わるかと、それぞれが変わるかそのままかを書く。
+
+## コントリビュート
+
+commit と push は `lefthook` が検査する。commit 時は変えた分に format・lint・`typecheck:staged`・`test:related`、push 時は typecheck（ルートとハーネス）と test が走る。
+
+commit の前に、次を通しておく:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:run
+```
+
+## ライセンス
+
+UNLICENSED

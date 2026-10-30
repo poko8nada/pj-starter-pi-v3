@@ -1,5 +1,7 @@
 # Harness-included starter
 
+[![Pullfrog](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml/badge.svg)](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml) [![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)](https://www.typescriptlang.org/)
+
 A starter where a project and its **agent harness** come up together. Clone it, and the checks, the commit gates, the agent rules and the cycle mechanism are already in place.
 
 日本語: [README.ja.md](README.ja.md)
@@ -58,14 +60,30 @@ The agent harness travels with `scripts/harness/`:
 One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage calls the next stage; the next stage is found by its `description`.
 
 ```
-adr          settle the intent, the roadmap and the entries, weigh the options, take the decision, and proofread the record before the owner reads it
-design       walk what each entry affects, cut the cycle into plans, review the cut, proofread it before the owner reads, and say where each runs
-plan         write one plan per worktree (the research, the files, the types, the steps, the checks), and proofread the mds before the owner reads
-work         carry a plan to done (the slices, the test cleanup, the review, the acceptance, the merge with the base's dependencies set again)
-close        judge the cycle, proofread `close.md` before the owner reads it, then ask the owner to verify the Units (a leftover is an `ex-` plan, `proposed` or `dropped`)
-yolo         walk the whole cycle without the owner's confirmations
+adr          settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
+design       walk what each entry touches, decide the cut and the order, propose where each plan runs, and write `cycles/<YYMMDD>-<NNN>-<slug>/design.md`; the owner answers
+plan         write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify, ready to hand to a subagent
+work         run the slices, the review, the acceptance and the merge, and leave the record in the plan md
+close        collect what the plans left, triage it with the owner, then ask the owner, Unit by Unit, whether they will verify the function
+yolo         walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
 ```
 
 The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the cycle's state. The ADR's `Status` is the decision, and the plan's `Commit`/`Stopped` are the work record; none of them is a cycle status field.
 
 `DEFINITION.md` holds the product. The ADR holds the argument behind it, and it can be opened at any stage. A cycle starts with the `adr`; an ADR entry can be added at any stage for a point the owner raises. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.
+
+## Contributing
+
+`lefthook` gates every commit and push. On commit it runs format, lint, `typecheck:staged` and `test:related` on what changed; on push it runs typecheck (the root and the harness) and test.
+
+Before committing, keep these green:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:run
+```
+
+## License
+
+UNLICENSED
