@@ -61,10 +61,10 @@ package.json
 
 ### Slice 1: 2 枚の README
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2e28b0b consult(starter-readme): rewrite two READMEs to harness product format
+- Stopped: なし
 
 ## Review
 
