@@ -16,7 +16,7 @@
 | 009 | 0.9.2 | todo   |        | mid      | planの残り物をcloseで集める件                |
 | 008 | 0.9.2 | todo   |        | high     | ハーネスのコピープッシュ機能更新             |
 | 007 | 0.9.1 | todo   |        | mid      | DEFINITIONの調整                             |
-| 006 | 0.9.1 | todo   |        | mid      | readmeのフォーマット改訂                     |
+| 006 | 0.9.1 | done   | 046    | mid      | readmeのフォーマット改訂                     |
 | 005 | 0.9.1 | done   | 045    | low      | proofreaderのスキル内での指示を改訂          |
 | 004 | 0.9.1 | done   | 045    | mid      | adrのエントリ分解、workコミットメッセ修正    |
 | 003 | 0.9.1 | done   | 045    | mid      | planスキル、ゴールフォーマットと導出方法変更 |
