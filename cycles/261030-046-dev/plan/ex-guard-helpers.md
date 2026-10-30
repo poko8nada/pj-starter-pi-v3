@@ -72,10 +72,25 @@ scripts/
   - `scripts/product-ready/readme-format.test.ts:14-15` の `import.meta.url` 化は、ルートから走らせる既定の Verify では旧 `process.cwd()` でも緑になる。cwd を変えた証明は plan の Added（なし）の範囲外であり、今回は問わない。
     - fixed: `scripts/product-ready` を作業ディレクトリにして `pnpm exec vitest run --config ../../vitest.starter.config.ts readme-format.test.ts` を走らせ、5 件が緑であることを確かめた。`Ran` に書いた。
 
+### Round 2
+
+- Stale: なし — 今回は `### Round 1` の `fixed:` 3 件のみを確認対象とするため、`Stale` には `fixed:` がございません。
+- Unlisted: なし — 同上の理由により、`Unlisted` には `fixed:` がございません。
+- Gaps: なし — 同上の理由により、`Gaps` には `fixed:` がございません。
+- Unproven: なし — 同上の理由により、`Unproven` には `fixed:` がございません。
+- Noise: なし — 同上の理由により、`Noise` には `fixed:` がございません。
+- Doubts:
+  - 修正を確認いたしました — `scripts/product-ready/readme-format.test.ts:48` の `fixed:`（重複した `FENCE` と、それを用いるフェンスの検査と `## Usage` の検査を落とした）は直っております。現行 `readme-format.test.ts` に `const FENCE` はなく、`function blockUnder|sectionOf|sectionBody` の `grep` は `scripts/product-ready/blocks.mjs:4` ・ `:14` ・ `:46` の 3 行のみであります。フェンス件は `readme-format.test.ts:134-137` が `withLine` で ` ``` ` を挿入し、`readChecked:64-90` の 8 行完全一致（`sameLines:52-62` と `nonEmptyLines:48-50`）で落とす構造であります。
+  - 修正を確認いたしました — `scripts/product-ready/readme-format.test.ts:13` の `fixed:`（注釈の言い換え）は直っております。現行 `:13` は「このファイルの道からルートを出す（起動位置に依存しない）。」であります。
+  - `scripts/product-ready/readme-format.test.ts:14-15` の `fixed:`（作業ディレクトリを変えた証明と `Ran` 記載）は、コードは直っているが記録が確認できません。現行 `:14-15` は `import.meta.url` 化（`HERE` と `FORMAT_AT`）で `process.cwd()` の `grep` は 0 件、`withLine:97-105` は対象行がちょうど 1 つでなければ投げる構造であります。一方、現行 `## Acceptance` の `Ran` に作業ディレクトリを変えた実行（`scripts/product-ready` からの `vitest` 5 件緑）の記載がなく、「`Ran` に書いた」は確認できません。
+    - left: 作業ディレクトリを変えた証明の `Ran` 記載が残っておらず、証明の記録としては閉じていないため、close で残りとして読む。
+
 ## Acceptance
 
-- Ran: `pnpm exec vitest run --config vitest.starter.config.ts scripts/product-ready/readme-format.test.ts scripts/product-ready/index.test.ts`（22 件）、`pnpm test:run`（793 件）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`（警告込みで緑）、`pnpm format:check`（全ファイルが整形済み）、`grep -n "function blockUnder\|function sectionOf\|function sectionBody\|const FENCE" scripts/product-ready/*.mjs scripts/product-ready/*.ts` が `blocks.mjs` の 3 行だけである。
+- Ran: `pnpm exec vitest run --config vitest.starter.config.ts scripts/product-ready/readme-format.test.ts scripts/product-ready/index.test.ts`（22 件）、`pnpm test:run`（793 件）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`（警告込みで緑）、`pnpm format:check`（全ファイルが整形済み）、`grep -n "function blockUnder\|function sectionOf\|function sectionBody\|const FENCE" scripts/product-ready/*.mjs scripts/product-ready/*.ts` が `blocks.mjs` の 3 行だけである、`scripts/product-ready` を作業ディレクトリにして `pnpm exec vitest run --config ../../vitest.starter.config.ts readme-format.test.ts`（5 件）。
 - Findings:
-  - `scripts/product-ready/readme-format.test.ts:13`、`:48` と、`Ran` に書いた cwd の証明は、`Round 1` の `Doubts` を直したものである。
-    - fixed: 上の `fixed:` の 3 行のとおり。直したあとで `Ran` の 5 つを走らせ直した。
+  - `scripts/product-ready/readme-format.test.ts:13`、`:48` と、cwd の証明は、`Round 1` の `Doubts` を直したものである。
+    - fixed: 上の `fixed:` の 3 行のとおり。直したあとで `Ran` の 6 つを走らせ直した。
+  - `## Review` の `Round 2` が、cwd を変えた実行が `Ran` に無いと指摘した。`fixed:` には「`Ran` に書いた」と書いたが、`Ran` に入れていなかった。
+    - fixed: `Ran` の末尾に、`scripts/product-ready` を作業ディレクトリにした実行を足した。
 - Doubts: なし
