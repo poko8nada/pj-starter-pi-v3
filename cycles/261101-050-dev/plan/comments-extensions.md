@@ -377,8 +377,18 @@
   - `.pi/extensions/thinking-scrub/index.test.ts:233` の `設定が enabled が false` は助詞の `が` が重なり不自然である。基準違反とまでは言えないため所見にせず残す。
   - left: 規則違反と断定できる根拠がなく、直すと意味を変える危険があるため残す。
 
+### Round 2
+
+- Stale: なし — fixed 指定なしのため対象外
+- Unlisted:
+  - なし — fixed 1件を確認。`.pi/extensions/thinking-scrub/index.test.ts:112` が `'messageUpdate は assistant のメッセージだけを受ける'` で句点なしに戻り、文字列リテラルの変更は残っていない。Round 1 の指摘（句点追加はStepsの文字列リテラル不変とADR 02に反する計画外変更）は閉じている
+- Gaps: なし — fixed 指定なしのため対象外
+- Unproven: なし — fixed 指定なしのため対象外
+- Noise: なし — fixed 指定なしのため対象外
+- Doubts: なし
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 791 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 63 changed files
+- Findings: なし
+- Doubts: なし
