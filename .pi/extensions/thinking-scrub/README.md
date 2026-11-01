@@ -2,7 +2,7 @@
 
 日本語: [README.ja.md](README.ja.md)
 
-Looped thinking is stopped while it is generated at 20,000 chars with a sentence run, and folded at `message_end`, so the broken reasoning is not carried into the next request. Sentence runs need 3 cycles, 400 chars or more, and period 1〜64 units; char runs need period 4〜120 chars, 3 repeats, and 20 chars or more. The rest of the text is left untouched.
+Looped thinking is stopped while it is generated at 20,000 chars with a sentence run, and collapsed at `message_end`, so the broken reasoning is not carried into the next request. Sentence runs need 3 cycles, 400 chars or more, and period 1〜64 units; char runs need period 4〜120 chars, 3 repeats, and 20 chars or more. The rest of the text is left untouched.
 
 ## Commands
 
@@ -50,22 +50,22 @@ Missing keys fall back to the defaults above. A wrong type, an out-of-range valu
 | `maxAborts`   | Stops per user turn.                         | `2`     | More interruptions before giving up.              | Fewer interruptions; `0` disables live stopping.   | Past the limit, `scanned` still advances without reading. |
 | `sampleChars` | Follow-up sample truncation length.          | `200`   | Longer repeating sample in the follow-up.         | Shorter sample.                                    | Also bounds the stored pending sample.                    |
 
-### `sentence`: sentence-period runs (stop and fold)
+### `sentence`: sentence-period runs (stop and collapse)
 
-| Key              | Description                                      | Default | If raised                             | If lowered                                             | Notes                                                 |
-| ---------------- | ------------------------------------------------ | ------- | ------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
-| `minCycles`      | Repeats of one sentence period needed for a run. | `3`     | Fewer detections.                     | More detections.                                       | Minimum is `2`.                                       |
-| `minRunChars`    | Shortest char length of a sentence run.          | `400`   | Fewer detections.                     | More detections, short repetitions may false-positive. | The fold keeps the first period and removes the rest. |
-| `maxPeriodUnits` | Widest sentence period examined, in units.       | `64`    | Wider coverage, each scan costs more. | Cheaper scans, long-period loops are missed.           | Overlapping runs keep the smaller period.             |
+| Key              | Description                                      | Default | If raised                             | If lowered                                             | Notes                                                     |
+| ---------------- | ------------------------------------------------ | ------- | ------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------- |
+| `minCycles`      | Repeats of one sentence period needed for a run. | `3`     | Fewer detections.                     | More detections.                                       | Minimum is `2`.                                           |
+| `minRunChars`    | Shortest char length of a sentence run.          | `400`   | Fewer detections.                     | More detections, short repetitions may false-positive. | The collapse keeps the first period and removes the rest. |
+| `maxPeriodUnits` | Widest sentence period examined, in units.       | `64`    | Wider coverage, each scan costs more. | Cheaper scans, long-period loops are missed.           | Overlapping runs keep the smaller period.                 |
 
-### `char`: char-period runs (fold only)
+### `char`: char-period runs (collapse only)
 
-| Key          | Description                                  | Default | If raised                            | If lowered                                         | Notes                                                                               |
-| ------------ | -------------------------------------------- | ------- | ------------------------------------ | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `minPeriod`  | Shortest char period counted, in chars.      | `4`     | Short-period loops are ignored.      | More detections, short repeats may false-positive. | Also the boundary that excludes shorter periods; must stay at or below `maxPeriod`. |
-| `maxPeriod`  | Widest char period scanned, in chars.        | `120`   | Wider coverage, the fold costs more. | Cheaper folds, long-period loops are missed.       | The scan ceiling for char periods.                                                  |
-| `minRepeats` | Repeats of one char period needed for a run. | `3`     | Stricter, fewer detections.          | More detections.                                   | Minimum is `2`.                                                                     |
-| `minLength`  | Shortest char length of a char run.          | `20`    | Stricter, fewer detections.          | More detections, short repeats may false-positive. | Runs below this length are left alone.                                              |
+| Key          | Description                                  | Default | If raised                                | If lowered                                         | Notes                                                                               |
+| ------------ | -------------------------------------------- | ------- | ---------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `minPeriod`  | Shortest char period counted, in chars.      | `4`     | Short-period loops are ignored.          | More detections, short repeats may false-positive. | Also the boundary that excludes shorter periods; must stay at or below `maxPeriod`. |
+| `maxPeriod`  | Widest char period scanned, in chars.        | `120`   | Wider coverage, the collapse costs more. | Cheaper collapses, long-period loops are missed.   | The scan ceiling for char periods.                                                  |
+| `minRepeats` | Repeats of one char period needed for a run. | `3`     | Stricter, fewer detections.              | More detections.                                   | Minimum is `2`.                                                                     |
+| `minLength`  | Shortest char length of a char run.          | `20`    | Stricter, fewer detections.              | More detections, short repeats may false-positive. | Runs below this length are left alone.                                              |
 
 ### Combinations
 
@@ -87,11 +87,11 @@ The first adjustment after extracting the settings keeps the loop definition and
 
 - `live.minThinking: 8000` — scans start at 8,000 chars instead of 20,000.
 - `live.scanEvery: 1000` — once started, scans run every 1,000 new chars; hand edits still apply at the next scan.
-- `sentence.minRunChars: 350` — sentence runs count from 350 chars, so slightly shorter loops fold while `minCycles` still demands 3 periods.
+- `sentence.minRunChars: 350` — sentence runs count from 350 chars, so slightly shorter loops collapse while `minCycles` still demands 3 periods.
 
 ## Target blocks
 
-The live detection reads the streaming thinking without requiring a signature. The fold at `message_end` keeps the existing signature rule: only thinking blocks whose `thinkingSignature` is `reasoning_content`, `reasoning`, or `reasoning_text` are rewritten. Blocks without a signature, with a JSON signature, and `redacted` blocks are left alone. When a run is removed, the joint keeps newlines when the removed run contained them (`\n\n` wins over `\n`); otherwise one space is inserted only when both neighbors are non-space.
+The live detection reads the streaming thinking without requiring a signature. The collapse at `message_end` keeps the existing signature rule: only thinking blocks whose `thinkingSignature` is `reasoning_content`, `reasoning`, or `reasoning_text` are rewritten. Blocks without a signature, with a JSON signature, and `redacted` blocks are left alone. When a run is removed, the joint keeps newlines when the removed run contained them (`\n\n` wins over `\n`); otherwise one space is inserted only when both neighbors are non-space.
 
 ## Follow-up
 
