@@ -13,8 +13,8 @@
 | No  | Ver   | status | cycles | priority | title                                        |
 | --- | ----- | ------ | ------ | -------- | -------------------------------------------- |
 | 010 | 0.9.2 | todo   |        | mid      | DEFINITIONの調整                             |
-| 009 | 0.9.2 | todo   |        | mid      | planの作成手順改訂                           |
-| 008 | 0.9.2 | todo   |        | mid      | closeの手順等の改訂                          |
+| 009 | 0.9.2 | done   | 047    | mid      | planの作成手順改訂                           |
+| 008 | 0.9.2 | done   | 047    | mid      | closeの手順等の改訂                          |
 | 007 | 0.9.2 | todo   |        | high     | ハーネスのコピープッシュ機能更新             |
 | 006 | 0.9.1 | done   | 046    | mid      | readmeのフォーマット改訂                     |
 | 005 | 0.9.1 | done   | 045    | low      | proofreaderのスキル内での指示を改訂          |
