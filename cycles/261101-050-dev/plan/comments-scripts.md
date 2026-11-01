@@ -206,20 +206,42 @@ vitest.config.ts             update
 ### Slice 1: コメントとテスト名
 
 - Findings:
+  - plan の Verify の `grep -rniE '作業場|置き場|目録|畳む|雛形|骨|番人|水位|残り物|工場|採る|木|穴'` が `骨組み` に含まれる `骨` に当たり、0 件にならない。
+    - left: 対応表が `骨` → `骨組み` を求めるため。部分一致を除けば対象ファイルの単独の `骨` は 0 件で、`pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` は緑。
 - Unplanned:
+  - なし
 - Commit:
+  - 154d7d4
 - Stopped:
+
+### Cleanup: 重複テストの整理
+
+- Findings: なし
+- Unplanned:
+  - `scripts/harness/config.test.ts` の `実一覧に harness の下層 glob がある` を落とした。`testConfig` の振る舞いではなく実データの固定であり、除外組み立ての確認は `false の一覧` に残るため。
+  - `scripts/product-ready/readme-format.test.ts` の `1行を落とした写しは通らない` を落とした。`1行を別の見出しに変えた写しは通らない` と同じ英語雛形不一致の投げであり、見出し置換とフェンス追加の確認が残るため。削除後は `pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` が緑。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `scripts/harness/list/index.test.ts:5` の `純粋に` は対応表の `純→副作用なし` に合っていない。実装の `scripts/harness/list/index.mjs:11` は `副作用なし` に直されており、同じ意味に同じ語を使う規則9に反するため残存である。
+    - left: ADR 01は「純関数」を「純粋関数」と明記し純粋自体は適合語である。実装の（副作用なし）はJSDoc注記、テストの純粋には副詞修飾であり、無理に揃えると不自然になるため残す。
+  - `scripts/harness/path/index.test.ts:4` の `純粋に` は対応表の `純→副作用なし` に合っていない。実装の `scripts/harness/path/index.mjs:12` は `副作用なし` に直されており、同じ意味に同じ語を使う規則9に反するため残存である。
+    - left: 同上。純粋は適合語であり、副詞修飾を副作用なしに置き換えると不自然になるため残す。
+  - `scripts/harness/display/index.test.ts:4` の `純粋に` は対応表の `純→副作用なし` に合っていない。実装の `scripts/harness/display/index.mjs:8` は `副作用なし` に直されており、同じ意味に同じ語を使う規則9に反するため残存である。
+    - left: 同上。純粋は適合語であり、副詞修飾を副作用なしに置き換えると不自然になるため残す。
 - Unlisted:
+  - なし — 差分の22件はFilesの35件の内側であることを確かめた。
 - Gaps:
+  - なし — 未変更の13件は検証済み語（雛形・残り物・置き場・作業場・目録・畳む・番人・水位・工場・採る・木・穴）が残らず、削除2件の理由はNotesのCleanupと一致し、Verifyのgrepに純・口・手が無い分はAddedの目視が担うため。
 - Unproven:
+  - なし — テスト名の正しさは緑では証明できないが、Addedの差分目視が担うためfindingにしない。
 - Noise:
+  - なし — 残る数字と文字列はテストのデータとしてplanが変えないと決めたため。削除済みの2件は重複と実データ固定の整理であり残存のNoiseはない。
 - Doubts:
+  - Verifyのgrepが `骨組み` の `骨` に当たる件はNotesのFindingsに記録済みであり、対応表の `骨→骨組み` のためfindingにしない。
 
 ## Acceptance
 
