@@ -65,6 +65,7 @@ The roadmap is outside this picture: its shape and rules are in `rules/roadmap.m
 - `What` — what the product is, in one sentence.
 - `Who` — the roles that act in the product. Each carries `Does` and `Needs`.
 - `Users can do` — one line per Unit: what the `Who` can do with it. The name is the thing's name.
+- `Users can do` may be grouped under `####` headings; a heading is not a Unit.
 - `Stack` — what the product stands on: a group, a role, and the thing that fills it.
 
 What may be a Unit, and how a Unit is named and written, is in `rules/definition.rules.md`.

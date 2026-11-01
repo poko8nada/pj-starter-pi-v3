@@ -79,29 +79,50 @@ scripts/
   - other — `grep -n "heading" .pi/skills/adr/references/format.md .pi/skills/close/references/format.md .pi/skills/close/SKILL.md` が 3 ファイルそれぞれで 1 件以上あり、`####` の見出しを Unit と読まないと書いていることを読む
   - other — `pnpm exec vitest run --config vitest.starter.config.ts scripts/product-ready/targets.test.ts scripts/product-ready/index.test.ts .pi/skills/adr/scripts/scaffold.test.ts .pi/skills/close/scripts/collect.test.ts` を走らせ、4 件とも緑であることを見る
   - other — `git diff --stat` で `scripts/product-ready/targets.mjs` と `scripts/product-ready/index.mjs` に差分が無いことを見る
+  - other — `rules/definition.rules.md` の `## How the list is grouped` の節を読み、階層は最大 2、親は `Who` が何をするかの単位、親は Unit にしない（試験 04）、親の下は 1 行 1 Unit、種類の語を軸にしない、束ねない選択、の 6 点があることを見る
+  - other — `rules/definition.format.md` の `## Sections` の `Users can do` の項を読み、見出しで束ねてよいことと、見出しは Unit でないことが書かれていることを見る
+  - other — `git diff f457113 -- rules/definition.format.md` を読み、`## Skeleton` の `### Users can do` の下の 2 行に hunk が無いことを見る
 
 ## Notes
 
 ### Slice 1: 束ね方と読み方
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c863c8a
 - Stopped:
+
+### Cleanup: test files
+
+- 対象: `Files` に並ぶ4件 (`scripts/product-ready/targets.test.ts`、`scripts/product-ready/index.test.ts`、`.pi/skills/adr/scripts/scaffold.test.ts`、`.pi/skills/close/scripts/collect.test.ts`) を精読し、重複・消えた振る舞い・止めた分岐・前提の再掲がないか見た。fallen `####` 見出しは `targets` の `sections` (`## Product`、`### What`) と `scaffold` の `#` 見出し検査に触れず、`index` の `- reader: x` 残存検査も `Product`/`What` 置換だけを見るため有効のままである。`appendEntry`/`lastEntryNumber`/`CLI open cycle` の数違いは単発と連鎖で守る物が違い、`package.json` の欠けと壊れ・雛形の欠けと見出し欠けも枝が違うため残す。削る物なし、4件76テスト緑のままである。
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — `DEFINITION.md`、`rules/`、`.pi/skills/adr/SKILL.md`、`.pi/skills/design/SKILL.md`、`.pi/skills/yolo/SKILL.md`、`scripts/product-ready/`、4件のテストにフラット前提の文言や数は残っていないことを `grep` で確かめた。`rules/definition.format.md:76` の「One line is one Unit」は ADR 01 の決定どおり見出しを行と数えないため陳腐化ではない。
 - Unlisted:
+  - なし — `git diff --stat` の変更は `DEFINITION.md`、`rules/definition.rules.md:22`、`rules/definition.format.md:68`、`.pi/skills/adr/references/format.md:73`、`.pi/skills/close/references/format.md:72`、`.pi/skills/close/SKILL.md:90` の6件だけで、Files の `update` 6件と一致し、計画外のファイル差分はない。
 - Gaps:
+  - `rules/definition.rules.md:24-28` の新節の内容（最大2階層・親は `Who` の単位・親は Unit にしない・下は1行1Unit・種類語を軸にしない・束ねない選択）を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:72` の Always は節名の存在だけを見るため、内容の正しさは検査されない。
+    - fixed: `Verify` の `Added` に `## How the list is grouped` の6点読みの `other` を足し、`rules/definition.rules.md:24-28` を読んで6点があるのを見た。
+  - `rules/definition.format.md:68` の Sections 追記（見出しで束ねてよい・見出しは Unit でない）を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:78` の Added は `:67` と `:75` の無差分だけを見るため、追記文の読みがない。
+    - fixed: `Verify` の `Added` に `## Sections` の `Users can do` 項読みの `other` を足し、`rules/definition.format.md:68` に2点があり `:67` が残るのを見た。
+  - `rules/definition.format.md:33-36` の Skeleton の `### Users can do` 下2行の無変更を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:78` の Added は `:67` と `:75` だけを見るため、雛形の同一性は検査されない。
+    - fixed: `Verify` の `Added` に `git diff f457113` の Skeleton hunk無しの `other` を足し、hunkが Sections の1件だけで雛形に無いことを見た。
 - Unproven:
+  - なし — 新規テストの追加はなく、Verify が走らせる4件（`targets.test.ts`、`index.test.ts`、`scaffold.test.ts`、`collect.test.ts`）は旧来の互換性だけを守り、新しい束ね方を名指ししないため、壊れても緑になる振る舞いはない。
 - Noise:
+  - なし — 新規テストの Steps がなく、`5` や `6 / 6 / 5 / 3 / 3` は ADR 01 と plan が決めた値のため魔数ではなく、既存4件に重複や前提の再掲の追加もない。
 - Doubts:
+  - `cycles/261101-048-dev/plan/users-can-do-groups.md:55` と `rules/definition.rules.md:28` は種類語に `command` を使うが、同 plan `:77` と `cycles/261101-048-dev/design.md:77` の grep は `script` を使う。`DEFINITION.md:22-58` の見出し5つは英字を含まないため両方0件で閉塞に影響しない。
+  - `cycles/261101-048-dev/plan/users-can-do-groups.md:53,75` の「ほかの行が無い」は空行を数えていない読みで運用している。差分の `DEFINITION.md:22-58` は内容行が `####` 5行と `- ` 23行だけで、空行は従来どおりのため findings にしない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（58 ファイル、796 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、いずれも緑。`Verify` の `Added`: `grep -c "^#### "` = 5、`grep -c "^#### .*: "` = 0、`grep -c "^- #### "` = 0、種類語の見出し = 0、`### Users can do` から `## Stack` の手前を読み、`####` の 5 行と Unit の 23 行だけで、文言は変更前のままで、6 / 6 / 5 / 3 / 3、`grep -c "How the list is grouped"` = 1、3 つの読む側に「見出しは Unit でない」、`git diff f457113 -- rules/definition.format.md` は `## Sections` の 1 hunk だけで Skeleton に hunk なし、`git diff --stat f457113 -- scripts/product-ready/` が 0 行、4 ファイルの vitest が 76 テスト緑。
+- Findings: なし
+- Doubts: なし

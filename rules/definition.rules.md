@@ -19,6 +19,14 @@ A Unit may span many directories. A directory is not a Unit.
 
 The kinds below are how the Units of this product happen to appear. They are examples, not a rule: an extension, a skill, a gate, a document, a command.
 
+## How the list is grouped
+
+- `Users can do` may stay flat, or be grouped under `####` headings. The hierarchy is at most 2: `### Users can do` and `####`.
+- A heading names what the `Who` does with the Units below it.
+- A heading is not a Unit: by test 04, a line that groups multiple Units is not a Unit.
+- Lines under a heading stay one line per Unit.
+- A heading does not use a kind word (extension, skill, gate, document, command) as its axis.
+
 ## Each field
 
 - A Unit's line — written from the `Who`'s side: `<Who> が、xxx する`. The name is the thing's name; the description is not.

@@ -69,7 +69,7 @@
 
 - The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
 - At the completion of `close.md` `## Verified` is empty, and that is normal. It is filled after the owner's judgement on the triage and the `ex-` merges.
-- `### <Unit>` — one section per Unit listed in `Users can do`. The name is copied as it is. `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
+- `### <Unit>` — one section per Unit listed in `Users can do`. A Unit is a line under `Users can do`; a `####` heading is not a Unit. The name is copied as it is. `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
 - `Plans` — one bullet per plan that cuts an entry the Unit is named by, taken from the design's `No`.
 - `Result` — `OK` when the owner checked the Unit's function and it worked; what they found when it did not; `しない` with the reason on the same line when they will not check.
 - `Fixed` — written only when the function did not work: the `ex-` plan, and the commit it merged as, on one line. It takes the place of the `done <commit>` a `Triage` line carries, and the close resumes at its verification step for that Unit.
