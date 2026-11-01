@@ -139,12 +139,18 @@ export type PlanDocOptions = {
 
 ## Acceptance
 
-- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run` (58 files / 796 tests)、`pnpm test:related .pi/skills/close/scripts/collect.mjs` (7 tests)、`Added` の `other` (`grep -n` で `.pi/skills/close/SKILL.md` の軸 4 語が順に並び、`解決済み` / `Fact:` / `Why:` / `Then:` / `## Verified` が 1 件以上、`.pi/skills/close/references/format.md` に `Doing` / `Left` / `Cost` が 0 件で `Fact:` / `Why:` / `Then:` が 1 件以上)、振る舞いを壊す確かめ (`collect.mjs` の `'Work Review'` を `'Review'` に戻すと `(happy)` が赤、戻すと 7 件緑)、`Added` の校正 2 件 (plan と close)
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run` (58 files / 796 tests)、`pnpm test:related .pi/skills/close/scripts/collect.mjs` (7 tests)、`Added` の `other` (`grep -n` で `.pi/skills/close/SKILL.md` の軸 4 語 (cycle's own concern / obvious bug / `proposed` / `dropped`) がこの順に並び、`resolved` / `Fact:` / `Why:` / `Then:` / `## Verified` が 1 件以上、`.pi/skills/close/references/format.md` に `Doing` / `Left` / `Cost` が 0 件で `Fact:` / `Why:` / `Then:` が 1 件以上)、振る舞いを壊す確かめ (`collect.mjs` の `'Work Review'` を `'Review'` に戻すと `(happy)` が赤、戻すと 7 件緑)、`Added` の校正 2 件 (plan と close)。修正の後に、このすべてをやり直した。
 - Findings:
   - `.pi/skills/close/SKILL.md:44` — 「a 解決済みの leftover」と日本語が英語の本文に混ざっている (ほかの skill 文書は英語で書かれている)。
+    - fixed: 「a resolved leftover」に直した。
   - `.pi/skills/close/SKILL.md:51` から `:54` — 判断軸の 4 行が日本語のままである。
+    - fixed: 4 行を英語にし、最後の行き先を `dropped` にした。
   - `.pi/skills/close/SKILL.md:58` — 「`Then:` for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `drop` なし」が英語として読めない。
+    - fixed: 「`Then:` what comes next — for an `ex-`, the policy its plan follows; for a `proposed`, the question the next cycle discusses; for a `dropped`, nothing.」に書き直した。
   - `.pi/skills/close/SKILL.md:54`、`.pi/skills/close/references/format.md:58`、`.pi/skills/yolo/SKILL.md:49` — 行き先の語が `drop` と `dropped` で揺れ、worker が close.md にどちらを書くか分からない (形は format.md の `- <N>: dropped`)。
+    - fixed: `close.md` の行き先を `dropped` に統一した。
   - `.pi/skills/close/references/format.md:62` — 「`dropped` — rare, and the fix weighs more.」が新しい軸 (それ以外 → `dropped`) と矛盾したまま残っている。
+    - fixed: 「`dropped` — the rest: the fix weighs more than leaving it.」に直した。
   - `.pi/skills/yolo/SKILL.md:50` — 「`## Verified` is left out (empty at completion, and that is normal)」が「省く」と「空で残る」の両方を言っていて矛盾している。
+    - fixed: 「`## Verified` stays empty at the completion (and that is normal)」に直した。
 - Doubts: なし
