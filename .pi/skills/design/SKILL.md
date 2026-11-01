@@ -26,7 +26,7 @@ Read that file before writing. It holds the section for the related files, a sec
 
 ### 2. Walk what the change affects, and find what it talks to
 
-Run two `research` subagents per `accepted` entry, at once: one walks the paths the change affects, the other finds what the change talks to outside the repository. Hand both the entry and the files the entry rewrites — the subject. The tasks are in `references/tasks.md`.
+Run one `research` subagent per `accepted` entry: it walks the paths the change affects and finds what the change talks to outside the repository. Hand it the entry and the files the entry rewrites — the subject. The task is in `references/tasks.md`.
 
 - the paths: what reads the result of the change, what checks it, what is generated from it
 - the outside: a service, a contract, an environment, data, a limit; a thing and what the entry does with it, not a path

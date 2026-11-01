@@ -60,23 +60,32 @@ package.json
 ### Slice 1: リサーチを 1 人に
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `grep -in "limit\|打ち切り\|stopped"` が 0 件にならず 1 件残る。`## Walk the change` 内の外側の例示 `a service, a contract, an environment, data, a limit` の `a limit` がヒットする（変更前からある文言の継承）。
+    - left: 外で話すものの観点を残すためと `SKILL.md` の `the outside` 列挙との整合のため `a limit` を残した。削って件数合わせをすると観点・整合を壊す。Verify の意図（限界・打ち切りを求める行・打ち切りの新規定が無いこと）は満たすが、文字通りの 0 件は満たさない。
+- Unplanned: なし
+- Commit: f0d9ade
 - Stopped:
+
+### Cleanup: test files
+
+- 対象: plan の `Files` で `update` 指定の `.pi/skills/design/SKILL.md` と `.pi/skills/design/references/tasks.md` に対応するテストファイル。`design/` 配下にテストは無く、全テスト中にも当該文書を参照するテストは無い（`test:related` は該当なし）。plan に `## Test cases` は無い。
+- 結果: 削除なし（重複・消滅行為・分岐消滅・書かないはずのケースのいずれも該当なし）。
+- Suite: `pnpm test:run` 796 件合格（本掃除後に再実行して確認。変更は無い）。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 旧文言（`two `research` subagents`、旧2見出し、`runs beside the paths' walk`）は `.pi/skills/design` に残っていないことを `grep` で確認し、`.pi/skills/design/references/format.md` と `.pi/skills/yolo/SKILL.md` に件数言及の残骸は無い。
+- Unlisted: なし — `git diff --stat` の変更は `.pi/skills/design/SKILL.md` と `.pi/skills/design/references/tasks.md` の2件のみで、いずれも `## Files` の `update` 指定と一致する。
+- Gaps: なし — `Steps` の書換え（単数化・タスク統合・`:37`文削除・`Review`不変・打切り行なし・関連外無差分）は `Verify` の `Added` 6件と `Always` の残存文言 `grep` に対応し、`git diff` を読んで内容の一致を確認した。
+- Unproven: なし — 計画にテストファイルの `Steps` が無く（`### Test cleanup` も対応テストなしを記録）、`Added` の各 `grep` は対象の文言・件数が壊れれば赤になる。
+- Noise: なし — 計画にテストファイルの `Steps` が無く、`Added` は型・スキーマ・DB制約が保証する前提の再現でも、誰も気づかない行為の検査でも無い。
 - Doubts:
+  - `Verify` の `grep -in "limit\|打ち切り\|stopped"` が文字通り0件にならず、`.pi/skills/design/references/tasks.md:18` の例示 `a limit`（および `.pi/skills/design/SKILL.md:32` の同例示）が1件残るが、`## Notes` の `Slice 1: Findings` に継承文言として `left` 理由付きで記録済みのため所見としない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: 変えた 2 ファイルの diff を読んだ（文書の plan なので、読むことが検査である）。`pnpm test:run`（58 ファイル、796 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、いずれも緑。`Verify` の `Always`: `grep -rin "two `research` subagents" .pi/skills/design` が 0 件。`Verify` の `Added`: `grep -c "^## " .pi/skills/design/references/tasks.md` が 2、`grep -c "runs beside the paths' walk"` が 0、`reads the result`、`checks it`、`generated from it`、`outside the repository` が `## Walk the change` の節に各 1 件以上、`## Review the design` の節に差分なし、`git diff --stat` で `design/references/format.md` と `yolo/SKILL.md` に差分なし。`grep -in "limit\|打ち切り\|stopped"` は 1 件で、それは変更前から在る例示 `a limit` であり、限界・打ち切りを求める行が増えていないことは diff で確かめた。
+- Findings: なし
+- Doubts: なし
