@@ -242,8 +242,18 @@
   - `## Files` が `update` とする `.pi/extensions/consult/tool/run.ts:1` に差分がなく、既に基準に合うと判断された形であるため所見にせず残す。
     - left: 基準に合う行は残すと決めており、変える理由がないため。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` の 1 件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: 修正を確認した — `.pi/extensions/consult/run/log.test.ts:354-364` の「`token` と `startToken` のない行（古い形）→ どちらも `undefined` で読める」が、同じ入力行について `token` が `undefined` であることと `startToken` が `undefined` であることの両方を断言しているため、修正済みである。根拠は、実装 `.pi/extensions/consult/run/log.ts:138-139` が両欄とも文字列のときだけ取り込む構造であり、欠落時に既定値（空文字など）を設ければこの断言が失敗し、回帰を検出できることである。
+- Unproven: なし — 同じ理由により、`Unproven` には `fixed:` がないため対象外である。
+- Noise: なし — 同じ理由により、`Noise` には `fixed:` がないため対象外である。
+- Doubts:
+  - Doubts: なし — `Doubts` には `fixed:` がなく、新たに所見に至らない疑義もない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 787 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 38 changed files and the unchanged `tool/run.ts`
+- Findings: the plan's grep stays red on the two `作業場` in `.pi/extensions/consult/tool/worktree.ts:198` and `tool/worktree.test.ts:206`; entry 03 fixes them (the Notes' `left:`)
+- Doubts: なし
