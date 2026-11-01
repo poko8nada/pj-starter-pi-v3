@@ -99,14 +99,20 @@ scripts/product-ready/
 ### Round 1
 
 - Stale:
+  - なし — .pi に作業場/まだ無い/つけでは残らず、残る採った形/採らなかったは docs plan の範囲のため直さない（設計の Non-goal と ADR 05 が決めた分担）。
 - Unlisted:
+  - なし — 製品の差分 8 件は Files の update と一致し、あとは plan md の記録だけのため。
 - Gaps:
+  - なし — 4 件の実行時文字列は各テストが exercised し、残りの不変条件は Added の差分読みの範囲のため。
 - Unproven:
+  - なし — 各テストは対応する文字列を旧字面に戻すと赤になる（toContain の新旧字面は重ならない／scrub は定数経由で不一致になる）ため。
 - Noise:
+  - なし — 字面の固定値と entrySkeleton(1) の引数は plan の Steps と ADR が決めた値のため finding にしない。
 - Doubts:
+  - `.pi/skills/adr/references/format.md:38` と `.pi/skills/adr/SKILL.md:112` に残る旧表記は docs plan が直す範囲であり、strings の差分に含めないことを確認した。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 787 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 8 changed files and the unchanged followers
+- Findings: なし
+- Doubts: なし
