@@ -182,6 +182,12 @@ describe('parseArgs', () => {
 });
 
 describe('entrySkeleton', () => {
+  it('採用した形と採用しなかった理由を含む', () => {
+    const skeleton = entrySkeleton(1);
+    expect(skeleton).toContain('<採用した形>');
+    expect(skeleton).toContain('（採用しなかった理由）');
+  });
+
   it('format.md のエントリーの見出しと一致する', () => {
     const headings = entrySkeleton(1)
       .split('\n')
