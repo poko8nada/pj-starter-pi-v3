@@ -17,13 +17,17 @@
     "scripts/checks",
     "scripts/product-ready",
     "scripts/harness/*.mjs",
-    "scripts/harness/*.test.ts"
+    "scripts/harness/*.test.ts",
+    "scripts/harness/*/*.mjs",
+    "scripts/harness/*/*.test.ts"
   ],
   "push": [
     "lib",
     "scripts/checks",
     "scripts/harness/*.mjs",
     "scripts/harness/*.test.ts",
+    "scripts/harness/*/*.mjs",
+    "scripts/harness/*/*.test.ts",
     "test/temp-dir.ts",
     "test/pi.fixture.ts",
     "test/scripts.fixture.ts"

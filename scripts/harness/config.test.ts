@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { configDefaults } from 'vitest/config';
 import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../vitest.config.ts';
-import { readList } from './list.mjs';
+import { readList } from './list/index.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -20,6 +20,19 @@ describe('testConfig', () => {
       expectedTail.push(rel, `${rel}/**`);
     }
     expect(exclude.slice(configDefaults.exclude.length)).toEqual(expectedTail);
+  });
+
+  it('実一覧に harness の下層 glob がある', () => {
+    const { copy, push } = readList(root);
+    for (const pattern of [
+      'scripts/harness/*.mjs',
+      'scripts/harness/*.test.ts',
+      'scripts/harness/*/*.mjs',
+      'scripts/harness/*/*.test.ts',
+    ]) {
+      expect(copy).toContain(pattern);
+      expect(push).toContain(pattern);
+    }
   });
 
   it('true の一覧 → 除外が無い', () => {
