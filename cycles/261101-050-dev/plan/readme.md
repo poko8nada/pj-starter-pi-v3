@@ -45,24 +45,30 @@ README.md                 update
 
 ### Slice 1: 利用者向け文書
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8c7828e consult(readme): align user READMEs with wording rules
+- Stopped: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — 畳むからまとめる等の語換えは対応表どおりで見出し・リンク・コマンド・引用は残り、この差分が新たに古くした文書・コメント・テストはないことを差分で確かめた。
 - Unlisted:
+  - なし — 差分の4件がFilesの4件と一致することをstatで確かめた。
 - Gaps:
+  - なし — grepが3語をAddedの目視がworktree・見出し・表・コード・リンク・英語追随・体言止め・長文・引用・コマンド名を担い、テスト段がないためTest casesの対象もないことを確かめた。
 - Unproven:
+  - なし — テストの段がなく壊しても緑に残る振る舞い主張がないことを確かめた。
 - Noise:
+  - なし — テストの段がなく型や制約が決める断言や魔数・直書きの対象がないことを確かめた。
 - Doubts:
+  - 検証コマンドを自走せずCommitの記録と差分の読みに頼っている (`cycles/261101-050-dev/plan/readme.md:50`)。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 791 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 4 changed documents
+- Findings: なし
+- Doubts: なし
