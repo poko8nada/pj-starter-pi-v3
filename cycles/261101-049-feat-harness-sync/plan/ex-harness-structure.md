@@ -213,8 +213,19 @@ function formatLines(
     - fixed: countLine(MISSING, [missing].length)とcountLine(COPY, [rel].length)に直した
 - Doubts: なし — 以下は所見だが計上しない。scripts/harness/diff/index.mjs:17のsameFileのcatch→false経路に単独検査がないが、収集後の削除など到達困難な競合のみのため(旧振る舞い継承)。scripts/harness/collect/index.mjs:36のtoPathsに直の検査がないが、collectの6件経由で除外・変換・重複除去・辞書順が運動するため。scripts/harness/index.mjs:16のArgs残存はNotesのUnplannedで記録済みの決定事項のため
 
+### Round 2
+
+- Stale: なし — fixed 指定なしのため対象外
+- Unlisted: なし — fixed 指定なしのため対象外
+- Gaps: なし — fixed 指定なしのため対象外
+- Unproven:
+  - なし — fixed 1件を確認。`scripts/harness/config.test.ts:25-36` が実一覧（`readList(root)`）の `copy` と `push` に `scripts/harness/*.mjs`、`scripts/harness/*.test.ts`、`scripts/harness/*/*.mjs`、`scripts/harness/*/*.test.ts` の4件を含むことを `toContain` で確かめるため、`scripts/harness/harness.json:19-22`（`copy`）や `:27-30`（`push`）のいずれかが欠ければ赤になる。Round 1 の指摘（期待値を実一覧から組み立てるため欠落を見逃す）は閉じている
+- Noise:
+  - なし — fixed 2件を確認。`scripts/harness/index.test.ts:216,223` が入力を `rels` 配列に切り出し `countLine(COPY, rels.length)` で件数を導くため、`2` の直書きは残っていない。`scripts/harness/display/index.test.ts:23-24,26,28` が `countLine(MISSING, [missing].length)` と `countLine(COPY, [rel].length)` で件数を導くため、`1` の直書きは残っていない。同ディレクトリの `grep countLine` でも残る件数はすべて `.length` 導出である
+- Doubts: なし
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files / 791 tests)、`pnpm typecheck` (root と .pi が ok)、`pnpm lint`、`pnpm format:check`、`scripts/harness` の `grep` (`道`、`diffSides`、`readStarter` が 0 件)、純粋な 3 関数の中の `fs` の `grep` (0 件)、`mktemp -d` のツリーの `node_modules/a.js` を元に置いた `pull` (`copy` に出ない)、赤の確かめ 3 件 (`toPaths` から `isExcluded` を外すと `collect` の 1 件が赤、0 件の `missing` を外すと 3 件が赤、`diffPaths` から `isSame` を外すと 4 件が赤。いずれも戻した)
+- Findings: なし
+- Doubts: `Added` の `.git/b.js` の側は、この環境の権限が `**/.git/**` への書き込みを拒むため、私は書捨てのツリーに作れなかった。サブエージェントは作って確かめており、単体テスト (`collect` の `node_modules` と `.git`) も両方を被っている
