@@ -50,10 +50,10 @@ pnpm install
 
 エージェント用ハーネスは `scripts/harness/` で運ぶ:
 
-- `pnpm harness:pull` でスターターのハーネスを取り込み、`pnpm harness:push` で戻す。`--run` が無ければ表示だけ（`copy` / `remove` / `legacy`）。
-- 一覧は `scripts/harness/harness.json`。相手の道は `scripts/harness/starter.json` に `{ "starter": "~/..." }` と書く（commit する）。
+- `pnpm harness:pull` で `copy` の物をスターターから取り込み、`pnpm harness:push` で `push` の物を戻す。`--run` が無ければ表示だけ。消すことはない。
+- 一覧は `scripts/harness/harness.json` で、`starter`、`copy`、`push` の 3 キーを持つ。`starter` は相手のパス（例 `"~/..."`）、`copy` は pull 用、`push` は push 用。項目にはパスと glob を書ける（例 `scripts/harness/*.mjs`）。
 - `package.json` は一覧の外にあるので、pull の後に `scripts` と `devDependencies` を手で見る。
-- この形より前に作ったプロダクトは、`scripts/harness.local.json` の `starter` の値を `scripts/harness/starter.json` へ移してから、一度だけ `--run` 付きで pull する：平置きの6件（`scripts/harness.mjs`、`scripts/harness-state.mjs`、`scripts/harness.json`、`scripts/harness.mode.json`、`scripts/harness.test.ts`、`scripts/harness-state.test.ts`）は `legacy` として消える。
+- コピー元に無い項目は `missing (<件数>):` に 1 件 1 行で出し、`--run` の有無にかかわらず終了コード 1 になる。`--run` では写せる物は写す。
 
 ## サイクル
 

@@ -177,9 +177,9 @@ function resolveStarter(root: string, starter: string): Starter;
 
 ### Slice 1: 一覧と運搬の書き換え
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e1b9e8c
 - Stopped:
 
 ### Slice 2: 説明の書き換え
