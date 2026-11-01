@@ -118,7 +118,7 @@ describe('replace', () => {
     expect(plan(root, 'replace')).toEqual([]);
   });
 
-  it('雛形のファイルが無い → その道を入れて投げる', () => {
+  it('雛形のファイルが無い → そのパスを入れて投げる', () => {
     const root = tempDir();
     writeAt(root, 'ROADMAP.md');
     expect(() => skeletonFor(root, 'ROADMAP.md')).toThrow(/rules\/roadmap\.md/);

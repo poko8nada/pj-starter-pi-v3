@@ -34,7 +34,7 @@ describe('prepare', () => {
     });
   });
 
-  it('隔離しないロールに worktree を渡す → その worktree で走る（レビューを直接送り込む道）', () => {
+  it('隔離しないロールに worktree を渡す → その worktree で走る（レビューを直接送り込む経路）', () => {
     const options = aConsultOptions({ type: 'review', task: 'x', policy: policy(false) });
     const prepared = prepare(CONTEXT, options, WORKTREE);
     expect(prepared.cwd).toBe(WORKTREE.path);
