@@ -14,7 +14,7 @@ import {
   type SubagentsArgs,
 } from './subagents.ts';
 
-// 置き場を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
+// 保存場所を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
 // サブエージェントは起こさない（記録と、runtime の偽物だけで試す）。
 
 function place(): Place {
@@ -25,7 +25,7 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
   return aRunRecord({ pid: 999_999, ...extra });
 }
 
-/** 記録を置き場に書き、その置き場を返す。`at` を渡せばその日の file に入る */
+/** 記録を保存場所に書き、その保存場所を返す。`at` を渡せばその日の file に入る */
 function withLog(records: readonly RunRecord[] = [record()], at?: Date): Place {
   const found = place();
   for (const run of records) {
@@ -34,7 +34,7 @@ function withLog(records: readonly RunRecord[] = [record()], at?: Date): Place {
   return found;
 }
 
-/** 一覧に出す口。置き場と、いまの session と、止める手を持つ偽の runtime */
+/** 一覧に出すための関数。保存場所と、いまの session と、止める手段を持つ偽の runtime */
 function fakeHost(found: Place, session = 'session-a', check?: CheckRecord) {
   const cancelled: string[] = [];
   return {
@@ -89,7 +89,7 @@ describe('rowOf / rowsOf', () => {
     expect(row).toContain(spend);
   });
 
-  it('worktree が無いサブエージェントはベースと出す', () => {
+  it('worktree がないサブエージェントはベースと出す', () => {
     expect(rowOf(record(), { alive: false, waiting: false }, 0)).toContain('base');
   });
 
@@ -107,7 +107,7 @@ describe('rowOf / rowsOf', () => {
     expect(running).not.toContain('reason:');
   });
 
-  it('終わりの行が無く check が ended → lost（done と偽らない）', () => {
+  it('終わりの行がなく check が ended → lost（done と偽らない）', () => {
     const token = 'a';
     const row = rowsOf([record({ token })], endedCheck, 0)[0] ?? '';
     expect(row).toContain('lost');
@@ -122,7 +122,7 @@ describe('rowOf / rowsOf', () => {
     expect(rows[0]).toContain(subagent);
   });
 
-  it('印の無い完了の行 → running で pid を出さない', () => {
+  it('印のない完了の行 → running で pid を出さない', () => {
     const subagent = 'consult-9';
     const notice = 'できた';
     const done = record({ subagent, ended: 2000, state: 'done', notice });
@@ -148,7 +148,7 @@ describe('rowOf / rowsOf', () => {
 });
 
 describe('latest', () => {
-  it('サブエージェントごとに 1 本に畳み、終わりの行があれば順序に依らずそれを採る', () => {
+  it('サブエージェントごとに 1 本にまとめ、終わりの行があれば順序に依らずそれを選ぶ', () => {
     const first = 'consult-1';
     const second = 'consult-2';
     const running = record({ subagent: first, pid: 5 });
@@ -166,7 +166,7 @@ describe('latest', () => {
 });
 
 describe('listText', () => {
-  it('記録が無ければそう言う（空行を返さない）', () => {
+  it('記録がなければそう言う（空行を返さない）', () => {
     const text = listText([], 0);
     expect(text).toBe('no subagents in this project yet');
   });
@@ -203,7 +203,7 @@ describe('createSubagentsTool', () => {
     expect(textOf(out)).toContain(subagent);
   });
 
-  it('list の check の口が効く（running と ended を返す差し替えで一覧の状態が変わる）', async () => {
+  it('list の check の関数が効く（running と ended を返す差し替えで一覧の状態が変わる）', async () => {
     const subagent = 'consult-1';
     const pid = 11;
     const startToken = 'Wed Oct 21 12:41:12 2026';
@@ -258,7 +258,7 @@ describe('createSubagentsTool', () => {
     expect(text).not.toContain(second);
   });
 
-  it('3 日前に始まっていまも走っているサブエージェント（終わりの行が無い）→ 一覧に出ない', async () => {
+  it('3 日前に始まっていまも走っているサブエージェント（終わりの行がない）→ 一覧に出ない', async () => {
     const subagent = 'consult-old';
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -312,7 +312,7 @@ describe('createSubagentsTool', () => {
     expect(cancelled).toEqual([id]);
   });
 
-  it('{action: cancel}（id 無し）→ 使い方つきで投げる', async () => {
+  it('{action: cancel}（id なし）→ 使い方つきで投げる', async () => {
     const found = withLog();
     const { host } = fakeHost(found);
     const args: SubagentsArgs = [

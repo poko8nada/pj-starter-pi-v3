@@ -71,7 +71,7 @@ afterEach(() => {
 });
 
 describe('flushPending', () => {
-  it('印の無い完了を 1 件渡す → 1 を返す。印の行が 1 本増える', () => {
+  it('印のない完了を 1 件渡す → 1 を返す。印の行が 1 本増える', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     const notice = 'できた';
@@ -98,7 +98,7 @@ describe('flushPending', () => {
 });
 
 describe('startTick / stopTick', () => {
-  it('印の無い完了の行、startTick、5 秒進める → 送り 1 回、印 1 本、音 1 回', () => {
+  it('印のない完了の行、startTick、5 秒進める → 送り 1 回、印 1 本、音 1 回', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     pending(found, at);
@@ -141,7 +141,7 @@ describe('startTick / stopTick', () => {
     expect(played).toHaveLength(1);
   });
 
-  it('何も無い → 5 秒進めても、送らず鳴らさない', () => {
+  it('何もない → 5 秒進めても、送らず鳴らさない', () => {
     const found = place();
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
@@ -152,7 +152,7 @@ describe('startTick / stopTick', () => {
     expect(played).toHaveLength(0);
   });
 
-  it('音が off、印の無い完了 → 鳴らさず、送る', () => {
+  it('音が off、印のない完了 → 鳴らさず、送る', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);
     pending(found, at);
@@ -228,7 +228,7 @@ describe('reload', () => {
     expect(sent).toHaveLength(1);
   });
 
-  it('同じ印で一覧は running から done へ、音は鳴るから鳴らないへ', () => {
+  it('同じ印で一覧は running から done へ、音は鳴る状態から鳴らない状態へ', () => {
     const found = place();
     const subagent = 'consult-9';
     appendRun(found, record({ subagent }), new Date());

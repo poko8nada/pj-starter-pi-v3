@@ -2,7 +2,7 @@
  * consult の runtime — 走っているサブエージェントを 1 か所で持ち、完了をメインエージェントに届ける。
  *
  * サブエージェントを起こすのは `consult_run`（`tool/run.ts` の面）から。1 呼び出し = 1 体で、行き先の worktree と、続きを使うかをメインエージェントが指す。
- * 設定（モデル・ツール・isolated・paths・bash・続きの既定・上限・役割）は types.json が持ち、上書きの口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
+ * 設定（モデル・ツール・isolated・paths・bash・続きの既定・上限・役割）は types.json が持ち、上書きする窓口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
  *
  * 起こしたらすぐ `started: <id>` を返し、メインエージェントは待たない。サブエージェントごとの完了で `pi.sendMessage` に本文を渡す。走っているサブエージェントの一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
  */
@@ -52,7 +52,7 @@ export interface CommandContext {
   };
 }
 
-/** consult_run の引数。params は consult_run の物 */
+/** consult_run の引数。params は consult_run のもの */
 type RunExecuteArgs = [
   toolCallId: string,
   params: Static<typeof RUN_PARAMETERS>,
@@ -127,10 +127,10 @@ function describeSubagent(subagent: RunningSubagent): string {
 /**
  * 走っているサブエージェントの一覧と、1 体の停止。道具の action とスラッシュコマンドが呼ぶ 1 か所。
  *
- * 掴んでいるサブエージェント（このインスタンスが起こした物）は `abort()` で止める。掴んでいないサブエージェントは記録から
- * 引いて、まだ走っている（同じ subagent に終わりの行が無く、startToken の照合が通る）物にだけ `kill`（既定は SIGTERM）を送る.
+ * 掴んでいるサブエージェント（このインスタンスが起こしたもの）は `abort()` で止める。掴んでいないサブエージェントは記録から
+ * 引いて、まだ走っている（同じ subagent に終わりの行がなく、startToken の照合が通る）ものにだけ `kill`（既定は SIGTERM）を送る.
  * 記録は書かない（終わりの行は、そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
- * 知らない id・終わったサブエージェント・照合の通らない物・別の session のサブエージェントは、理由を返して止めない。
+ * 知らない id・終わったサブエージェント・照合の通らないもの・別の session のサブエージェントは、理由を返して止めない。
  */
 // eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill, check の 6 つ）
 export function controlSubagent(
@@ -270,9 +270,9 @@ interface RuntimeState {
   readonly run: ConsultRunner;
   readonly subagents: Map<string, RunningSubagent>;
   readonly sessionNow: () => string;
-  /** 生死の照合。テストが差し替える口（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`） */
+  /** 生死の照合。テストが差し替える関数（既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`） */
   readonly check?: CheckRecord;
-  /** 起動時刻を読む `ps`。テストが差し替える口（既定は本物の `ps`） */
+  /** 起動時刻を読む `ps`。テストが差し替える関数（既定は本物の `ps`） */
   readonly psRun?: PsRun;
   /** 番号の床。記録の最大で種を取り、同じ runtime で続けて起こす時も重ねない */
   number: { session: string; next: number };
@@ -358,7 +358,7 @@ function highestInRecord(place: Place, session: string): number {
 /**
  * 次に使うサブエージェントの番号。その session の記録の最大 + 1。
  *
- * 番号を拡張のメモリーだけで数えると reload のたびに 1 に戻り、名前で 1 行に畳む一覧
+ * 番号を拡張のメモリーだけで数えると reload のたびに 1 に戻り、名前で 1 行にまとめる一覧
  *（`subagents.ts` の `latest`）が、走っている前のサブエージェントを新しいサブエージェントで上書きして見えなくする。
  * だから記録から数える。掃除と同じ幅で読み、長く走る session でも戻らないようにする。
  *

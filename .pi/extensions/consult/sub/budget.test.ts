@@ -21,7 +21,7 @@ describe('lastTurn', () => {
     expect(lastTurn(turns)).toBe(turns - 2);
   });
 
-  it('上限が無い・1 以下・数でない → 何もしない', () => {
+  it('上限がない・1 以下・数でない → 何もしない', () => {
     expect(lastTurn(undefined)).toBeUndefined();
     expect(lastTurn(1)).toBeUndefined();
     expect(lastTurn(0)).toBeUndefined();

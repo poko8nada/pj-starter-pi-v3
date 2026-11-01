@@ -5,8 +5,8 @@
  * （`consult(<unit>): the subagent's work`）。引数でメッセージを渡す方法は作らない。型が崩れると、あとから
  * `git log` で unit を数えられなくなる。
  *
- * merge はここではしない。メインエージェントのブランチへ取り込むのは CLI の仕事（境界: メインエージェントのディレクトリで完結する物は
- * CLI、tmp のパスが要る物は道具）。
+ * merge はここではしない。メインエージェントのブランチへ取り込むのは CLI の仕事（境界: メインエージェントのディレクトリで完結するものは
+ * CLI、tmp のパスが要るものは道具）。
  *
  * フックが拒んだ場合は `rejected` とその出力を返し、**作業は worktree に残す**（消さない）。
  */
@@ -76,7 +76,7 @@ export function parseCommitRequest(raw: unknown): string {
 /**
  * worktree でコミットする。
  *
- * 変更が無ければ `no-change`。フックが拒んだら `rejected` とその出力を返し、`add` した分も含めて作業は
+ * 変更がなければ `no-change`。フックが拒んだら `rejected` とその出力を返し、`add` した分も含めて作業は
  * そのまま残す（`git reset` で戻さない。メインエージェントが中身を見て決められるように）。
  */
 export function commitInWorktree(git: GitRun, id: string): CommitResult {

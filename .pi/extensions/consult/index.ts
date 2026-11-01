@@ -1,8 +1,8 @@
 /**
- * consult 拡張の入口。道具とスラッシュコマンドの登録だけを行う。
+ * consult 拡張の入口であり、道具とスラッシュコマンドの登録だけを行う。
  *
- * 走っているサブエージェントの管理は `tool/consult.ts` の `createRuntime` が 1 か所で持ち、道具の `action` とコマンドの両方が同じ `control` を呼ぶ。
- * 置き場（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは置き場を一時ディレクトリに逃がせる。
+ * 走っているサブエージェントの管理は `tool/consult.ts` の `createRuntime` が 1 か所で持つ。道具の `action` とコマンドは同じ `control` を呼ぶ。
+ * 保存場所（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは保存場所を一時ディレクトリに逃がせる。
  */
 
 import { rmSync } from 'node:fs';
@@ -24,10 +24,10 @@ import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
 
-/** いまの pi のセッション id。`session_start` で読み直す（照合に使うだけ） */
+/** いまの pi のセッション id である。`session_start` で読み直す（照合に使うだけ） */
 let session = '';
 
-/** cwd から置き場を決める。頂点が引けなければ cwd 自身に落とす（読み込みで投げない） */
+/** cwd から保存場所を決める。頂点が取れなければ cwd 自身に落とす（読み込みで例外を投げない） */
 function placeOf(cwd: string): Place {
   let toplevel: string;
   try {
@@ -38,13 +38,13 @@ function placeOf(cwd: string): Place {
   return placeFor(consultRoot(), toplevel);
 }
 
-/** session_start の文脈からセッション id を読む。取れなければ今のまま */
+/** session_start の文脈からセッション id を読む。取れなければ今のままにする */
 function readSession(ctx: ExtensionContext): string {
   const id = ctx.sessionManager.getSessionId();
   return id === '' ? session : id;
 }
 
-/** 渡す通知の details。記録の欄から組み直す（完了のメッセージと同じ形） */
+/** 渡す通知の details を作る。記録の欄から組み直す（完了のメッセージと同じ形） */
 function noticeDetails(record: RunRecord): Record<string, unknown> {
   return {
     id: record.subagent,
@@ -58,7 +58,7 @@ function noticeDetails(record: RunRecord): Record<string, unknown> {
   };
 }
 
-/** tick に渡す口。置き場と、いまのセッションと、送る pi だけ */
+/** tick に渡す窓口である。保存場所と、いまのセッションと、送る pi だけを持つ */
 export interface TickPort {
   readonly pi: PiFace;
   readonly place: Place;
@@ -67,9 +67,9 @@ export interface TickPort {
 }
 
 /**
- * 印の無い完了を渡す。渡した数を返す。
+ * 印のない完了を渡す。渡した数を返す。
  *
- * 渡すたびに印の行を足す。送る途中で投げたら、その行から印は進めない（次の tick が送り直す）。
+ * 渡すたびに印の行を足す。送る途中で例外を投げたら、その行から印は進めない（次の tick が送り直す）。
  */
 export function flushPending(port: TickPort): number {
   const current = port.sessionNow();
@@ -96,7 +96,7 @@ export function flushPending(port: TickPort): number {
 let tickTimer: ReturnType<typeof setInterval> | undefined;
 
 /**
- * 5 秒ごとに、印の無い完了を渡し、まだあれば音を鳴らす。すでに動いていれば何もしない。
+ * 5 秒ごとに、印のない完了を渡し、まだあれば音を鳴らす。すでに動いていれば何もしない。
  *
  * `flushPending` の失敗は捕まえ、次の tick に任せる。音の判定の失敗も tick を止めない。
  */
@@ -109,7 +109,7 @@ export function startTick(port: TickPort): void {
     try {
       delivered = flushPending(port);
     } catch {
-      // 次の tick に任せる。印は進めていないので、同じ物を送り直す
+      // 次の tick に任せる。印は進めていないので、同じものを送り直す
     }
     try {
       const current = port.sessionNow();
@@ -127,7 +127,7 @@ export function startTick(port: TickPort): void {
   }, SOUND_INTERVAL_MS);
 }
 
-/** tick のタイマーを止める。無ければ何もしない */
+/** tick のタイマーを止める。なければ何もしない */
 export function stopTick(): void {
   if (tickTimer === undefined) {
     return;
@@ -158,7 +158,7 @@ function announceRunningSubagents(
   );
 }
 
-/** 人が使う口。サブエージェントの一覧と停止、音の切り替え */
+/** 人が使う入口である。サブエージェントの一覧と停止、音の切り替えを受け付ける */
 function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
   pi.registerCommand('consult-status', {
     description: 'List the consult subagents that are still running',
@@ -175,7 +175,7 @@ function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
 }
 
 /**
- * 起動の掃除。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児枝を静かに 1 回片付ける。
+ * 起動の掃除を行う。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児枝を静かに 1 回片付ける。
  *
  * 失敗は握って続ける（開始を止めない）。
  */
@@ -194,12 +194,12 @@ function sweep(place: Place, cwd: string): void {
   }
 }
 
-/** 終わりの無い開始行を閉じる。失敗は握って続ける（開始を止めない） */
+/** 終わりのない開始行を閉じる。失敗は握って続ける（開始を止めない） */
 function closeQuietly(place: Place, current: string): void {
   try {
     closeOrphans(place, current);
   } catch {
-    // 閉じ損ねても開始は止めない。走っていない物は次の判定で止まる
+    // 閉じ損ねても開始は止めない。走っていないものは次の判定で止まる
   }
 }
 

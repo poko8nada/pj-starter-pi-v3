@@ -37,7 +37,7 @@ describe('sound', () => {
     expect(played).toHaveLength(0);
   });
 
-  it('鳴らす所を差し替えると、渡した物だけが呼ばれる', () => {
+  it('鳴らす所を差し替えると、渡したものだけが呼ばれる', () => {
     const restore = setPlayer(() => {
       played.push('swapped');
     });

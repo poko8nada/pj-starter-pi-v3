@@ -86,7 +86,7 @@ function installFake(): void {
       const base = args[5] ?? '';
       lastAdd = { branch, path, base };
       if (branch.includes(' ') || branch.includes('\n') || addStatus !== 0) {
-        // git が置き場を作ってから失敗した形にする。作らなければ `createWorktree` の後始末が何も消さず、テストが空振りになる。
+        // git が保存場所を作ってから失敗した形にする。作らなければ `createWorktree` の後始末が何も消さず、テストが空振りになる。
         mkdirSync(path, { recursive: true });
         return { status: 1, stdout: '', stderr: 'fatal: bad branch' };
       }
@@ -205,7 +205,7 @@ describe('rootFor', () => {
     }
   });
 
-  it('worktree が無ければ undefined → 作らない', () => {
+  it('worktree がなければ undefined → 作らない', () => {
     const dir = tempDir();
     const root = process.env[ROOT_KEY] ?? '';
     const before = readdirSync(root);
@@ -237,7 +237,7 @@ describe('ensureRoot', () => {
     }
   });
 
-  it('worktree が無ければ新しく 1 つ作る', () => {
+  it('worktree がなければ新しく 1 つ作る', () => {
     const dir = tempDir();
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(0);
     expect(ensureRoot(dir).endsWith('/')).toBe(false);
@@ -246,7 +246,7 @@ describe('ensureRoot', () => {
 });
 
 describe('createWorktree', () => {
-  it('unit の worktree を作る → ブランチと置き場が決まる', () => {
+  it('unit の worktree を作る → ブランチと保存場所が決まる', () => {
     const dir = tempDir();
     const id = '1-a';
     const made = createWorktree(dir, id);
@@ -259,7 +259,7 @@ describe('createWorktree', () => {
     expect(listWorktrees(dir).map((row) => row.id)).toEqual([id]);
   });
 
-  it('2 回呼んでも増えない → 同じ物が返る', () => {
+  it('2 回呼んでも増えない → 同じものが返る', () => {
     const dir = tempDir();
     const first = createWorktree(dir, '1-a');
     const second = createWorktree(dir, '1-a');
@@ -301,7 +301,7 @@ describe('listWorktrees のゴースト', () => {
     expect(findWorktree(dir, id)).toBeDefined();
   });
 
-  it('実体の無い path の登録 → 一覧に出ない', () => {
+  it('実体のない path の登録 → 一覧に出ない', () => {
     const dir = tempDir();
     const id = '1-a';
     const made = createWorktree(dir, id);
@@ -311,7 +311,7 @@ describe('listWorktrees のゴースト', () => {
     expect(findWorktree(dir, id)).toBeUndefined();
   });
 
-  it('porcelain に consult 以外と prunable の囮 → consult の実体ある物だけ', () => {
+  it('porcelain に consult 以外と prunable の囮 → consult の実体あるものだけ', () => {
     const dir = tempDir();
     const id = '1-a';
     const realPath = join(tempDir(), 'wt');
@@ -333,7 +333,7 @@ describe('listWorktrees のゴースト', () => {
 });
 
 describe('listWorktrees / findWorktree', () => {
-  it('作業場が 1 つも無い → 空', () => {
+  it('ワークツリーが 1 つもない → 空', () => {
     const dir = tempDir();
     expect(listWorktrees(dir)).toEqual([]);
     expect(findWorktree(dir, '1-a')).toBeUndefined();
@@ -391,7 +391,7 @@ describe('removeWorktree', () => {
     expect(after.cleanup.pruned).toContain(ghost.path);
   });
 
-  it('変更が残っている → force 無しでは断る', () => {
+  it('変更が残っている → force なしでは断る', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
@@ -401,7 +401,7 @@ describe('removeWorktree', () => {
     expect(listWorktrees(dir)).toHaveLength(1);
   });
 
-  it('変更が残っていても、孤児の枝は掃除される（作業場は残す）', () => {
+  it('変更が残っていても、孤児の枝は掃除される（ワークツリーは残す）', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
@@ -439,7 +439,7 @@ describe('removeWorktree', () => {
     ]);
   });
 
-  it('実体の無い登録（ゴースト）→ prune で消え、missing と pruned にそのパス', () => {
+  it('実体のない登録（ゴースト）→ prune で消え、missing と pruned にそのパス', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     rmSync(made.path, { recursive: true, force: true });
@@ -451,7 +451,7 @@ describe('removeWorktree', () => {
     expect(listWorktrees(dir)).toEqual([]);
   });
 
-  it('実体の無い登録でも、force なら未マージの枝を捨てる', () => {
+  it('実体のない登録でも、force なら未マージの枝を捨てる', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
@@ -497,7 +497,7 @@ describe('removeWorktree', () => {
     expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
   });
 
-  it('consult/ のような空の id → 作業場が無いので missing', () => {
+  it('consult/ のような空の id → ワークツリーがないので missing', () => {
     const dir = tempDir();
     expect(removeWorktree(dir, 'consult/').outcome).toBe('missing');
     expect(removeWorktree(dir, '').outcome).toBe('missing');
@@ -565,7 +565,7 @@ describe('cleanWorktrees', () => {
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
   });
 
-  it('走っているサブエージェントの作業場 → 消さず、その枝も消さない', () => {
+  it('走っているサブエージェントのワークツリー → 消さず、その枝も消さない', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
@@ -588,7 +588,7 @@ describe('cleanWorktrees', () => {
   });
 });
 
-describe('unit の置き場', () => {
+describe('unit の保存場所', () => {
   it('worktree の外を指す → 記録を置いてもリポジトリは汚れない', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');

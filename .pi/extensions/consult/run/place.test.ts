@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { dayFile, dayName, oldFiles, placeFor, projectKey, windowFiles } from './place.ts';
 
-// 置き場を偽物にするテストは、`tempDir()` と `placeFor` で作る。実物の /tmp/pi-consult を触らない。
+// 保存場所を偽物にするテストは、`tempDir()` と `placeFor` で作る。実ものの /tmp/pi-consult を触らない。
 
 describe('projectKey', () => {
-  it('別のパスで同じ名前の repo → 違う値になる（置き場が分かれる）', () => {
+  it('別のパスで同じ名前の repo → 違う値になる（保存場所が分かれる）', () => {
     const left = join(tempDir(), 'repo');
     const right = join(tempDir(), 'repo');
     expect(projectKey(left)).not.toBe(projectKey(right));
@@ -22,7 +22,7 @@ describe('dayName', () => {
 });
 
 describe('windowFiles', () => {
-  it('置き場が無い → []', () => {
+  it('保存場所がない → []', () => {
     const place = placeFor(tempDir(), tempDir());
     expect(windowFiles(place, new Date(2026, 9, 10), 2)).toEqual([]);
   });
@@ -70,7 +70,7 @@ describe('oldFiles', () => {
     ]);
   });
 
-  it('置き場が無い → []', () => {
+  it('保存場所がない → []', () => {
     const place = placeFor(tempDir(), tempDir());
     expect(oldFiles(place, new Date(2026, 9, 10), 30)).toEqual([]);
   });

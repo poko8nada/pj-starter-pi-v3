@@ -1,20 +1,20 @@
 /**
- * consult のテストが使う工場。
+ * consult のテストで使うファクトリを集める。
  *
- * 何をする物か
+ * 何をするものか
  * - `types.json` の 1 つの type、サブエージェントの依頼、記録の 1 行を組み立てる。
  * - 値と文字列を組み立てるだけで、プロセスも FS も開かない。
  * - テストの外から読まれても、何も起きずに止まらない（副作用を持たない）。
  *
  * どう呼ぶか
- * - 期待値は工場に渡した値から取る。断言に数や文を直書きしない。
+ * - 期待値はファクトリに渡した値から取る。断言に数や文を直書きしない。
  */
 
 import type { TypePolicy } from './policy/types.ts';
 import type { ConsultOptions } from './sub/spec.ts';
 import type { RunRecord } from './run/log.ts';
 
-/** 最小の正しい type。1 箇所だけ壊すのに使う */
+/** 最小の正しい type を作る。1 箇所だけ壊すときに使う */
 export function aTypePolicy(overrides: Partial<TypePolicy> = {}): TypePolicy {
   const { limits, ...rest } = overrides;
   return {
@@ -30,13 +30,13 @@ export function aTypePolicy(overrides: Partial<TypePolicy> = {}): TypePolicy {
   };
 }
 
-/** type の一覧を `types.json` の本文にする。空なら既定の 1 つ */
+/** type の一覧を `types.json` の本文にする。空なら既定の 1 つを返す */
 export function aTypesText(...policies: unknown[]): string {
   const types = policies.length > 0 ? policies : [aTypePolicy()];
   return JSON.stringify({ types });
 }
 
-/** サブエージェントへの依頼。argv の期待はここに渡した値から組む */
+/** サブエージェントへの依頼を作る。argv の期待はここに渡した値から組む */
 export function aConsultOptions(overrides: Partial<ConsultOptions> = {}): ConsultOptions {
   const policy = overrides.policy ?? aTypePolicy();
   return {
@@ -48,7 +48,7 @@ export function aConsultOptions(overrides: Partial<ConsultOptions> = {}): Consul
   };
 }
 
-/** 記録の 1 行。期待する番号や文はここに渡した値から組む */
+/** 記録の 1 行を作る。期待する番号や文はここに渡した値から組む */
 export function aRunRecord(overrides: Partial<RunRecord> = {}): RunRecord {
   return {
     session: 'session-a',

@@ -29,7 +29,7 @@ export interface RunResult {
 
 export interface RunOptions {
   readonly piArgs: readonly string[];
-  /** サブエージェントの標準入力に流す本文。指示を argv に載せないための口 */
+  /** サブエージェントの標準入力に流す本文。指示を argv に載せないための入口 */
   readonly stdin: string;
   readonly cwd: string;
   readonly signal?: AbortSignal;
@@ -40,7 +40,7 @@ export interface RunOptions {
    * サブエージェントのプロセス 1 回ごとに数え直す。続けて走らせた分（拒否や打ち切りのあとの再走）は、合計でその回数だけ上限を使う。
    */
   readonly limits: Limits;
-  /** サブエージェントのプロセスが起きた直後の口。記録を先に書きたい呼び出し側が使う */
+  /** サブエージェントのプロセスが起きた直後に呼ぶ関数。記録を先に書きたい呼び出し側が使う */
   readonly onStarted?: (pid: number) => void;
   /** `agent_end` の後の猶予。静かならサブエージェントを止める（既定 30 秒） */
   readonly watchdogMs?: number;
@@ -49,7 +49,7 @@ export interface RunOptions {
     readonly stream: 'stdout' | 'stderr';
     readonly text: string;
   }) => void;
-  /** 完了のフック。待たずに結果を受け取る口で、返す promise より先に呼ぶ */
+  /** 完了のフック。待たずに結果を受け取る関数で、返す promise より先に呼ぶ */
   readonly onDone?: (result: RunResult) => void;
 }
 
@@ -63,7 +63,7 @@ export function modelAttempts(models: readonly string[]): (string | undefined)[]
 /**
  * 候補を順に試す。
  *
- * サブエージェントが何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID が無い、鍵が無い、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼ無い。
+ * サブエージェントが何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID がない、鍵がない、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない。
  *
  * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後にメインエージェントと同じ設定で走る。
  */
@@ -87,7 +87,7 @@ export async function runWithFallback(
   return tryAt(0);
 }
 
-/** worktree に初手で走らせるコマンド。lockfile で決める */
+/** worktree で最初に走らせるコマンド。lockfile で決める */
 export function installCommand(dir: string): readonly string[] | undefined {
   if (existsSync(join(dir, 'pnpm-lock.yaml'))) {
     return ['pnpm', 'install', '--frozen-lockfile'];
@@ -213,9 +213,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * 1 イベントを state に反映する純関数。サブエージェントの停止はしない。
+ * 1 イベントを state に反映する純粋関数。サブエージェントの停止はしない。
  *
- * 壊れた入力（record でない物）は無視する。上限で止まった後のイベントは数えない。
+ * 壊れた入力（record でないもの）は無視する。上限で止まった後のイベントは数えない。
  * `agent_end`（`type === 'agent_end'`）を見たら `endedAt` を入れる。有効なイベントのたびに `lastOutputAt` を進める。
  * 報告後の出力は時計だけ進め、上限には数えない（`ended` を `done` で閉じるため）。
  */
@@ -324,7 +324,7 @@ interface LiveRun {
   watchdog?: NodeJS.Timeout;
 }
 
-/** 見張りの時計を止める。無ければ何もしない。 */
+/** 見張りの時計を止める。なければ何もしない。 */
 function clearWatchdog(live: LiveRun): void {
   if (live.watchdog === undefined) {
     return;
@@ -449,7 +449,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
 
 /** 行単位の出力を、行の切れ目を保ったまま繋ぐ。詰めると最後の行が壊れる */
 
-/** サブエージェントの終わり方。理由は done のときだけ無い */
+/** サブエージェントの終わり方。理由は done のときだけない */
 export type SubagentState = 'done' | 'turn-limit' | 'error' | 'aborted';
 
 /**

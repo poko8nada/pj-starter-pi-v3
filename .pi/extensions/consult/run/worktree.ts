@@ -1,9 +1,9 @@
 /**
- * unit ごとの作業場（worktree）。
+ * unit ごとのワークツリー（worktree）。
  *
  * 既定で残る。消すのは `removeWorktree` を明示的に呼んだときだけ。サブエージェントが何をしたかは worktree に残るので、diff や ref で受け渡さない。
  *
- * 置き場はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
+ * 保存場所はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
  *   `/tmp/pi-consult/<project>-<YYYYMMDD-HHMM>/<unit>/wt`
  * ブランチは `consult/<unit>`。base の既定は HEAD で、`main` を仮定しない。
  *
@@ -14,10 +14,10 @@ import { mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { git } from '../../../../lib/git-env.mjs';
 
-/** consult の作業場をまとめる場所 */
+/** consult のワークツリーをまとめる場所 */
 export const CONSULT_ROOT = '/tmp/pi-consult';
 
-/** 1 つの作業場。`unitDir` は unit のディレクトリ（記録と会話ファイルをここに置く） */
+/** 1 つのワークツリー。`unitDir` は unit のディレクトリ（記録と会話ファイルをここに置く） */
 export interface Worktree {
   readonly id: string;
   readonly branch: string;
@@ -62,7 +62,7 @@ export function branchFor(id: string): ConsultBranch {
   return `consult/${id}`;
 }
 
-/** `YYYYMMDD-HHMM`。作業場の root に 1 回だけ付く */
+/** `YYYYMMDD-HHMM`。ワークツリーの root に 1 回だけ付く */
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -88,7 +88,7 @@ export function topLevel(cwd: string): string {
   return result.stdout.trim();
 }
 
-/** 実体のパスに揃える。無い場合はそのまま返す（比較の文字列を作るだけなので、投げない） */
+/** 実体のパスに揃える。ない場合はそのまま返す（比較の文字列を作るだけなので、投げない） */
 export function resolveReal(path: string): string {
   try {
     return realpathSync(path);
@@ -100,20 +100,20 @@ export function resolveReal(path: string): string {
 /**
  * 実行のルート（runRoot）を読み取るだけ。作らない。
  *
- * 既に consult の worktree があれば、その実行のルートを返す。無ければ `undefined`
- *（読む経路が置き場を作ると、呼ぶたびに場所が変わり、記録を読む側が迷子になる）。
+ * 既に consult の worktree があれば、その実行のルートを返す。なければ `undefined`
+ *（読む経路が保存場所を作ると、呼ぶたびに場所が変わり、記録を読む側が迷子になる）。
  */
 export function rootFor(cwd: string): string | undefined {
   const base = resolveReal(consultRoot());
   // git は /private/tmp のように実体のパスを返す（macOS の /tmp は symlink）。文字列で比べると、
-  // 同じ置き場を別物と見てしまう（記録を読む側が迷子になる）。
+  // 同じ保存場所を別ものと見てしまう（記録を読む側が迷子になる）。
   return parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`))?.runRoot;
 }
 
 /**
  * 実行のルート（runRoot）を決める。1 回だけ作る。
  *
- * 既に consult の worktree があれば、その実行のルートを引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。無ければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここには無い。
+ * 既に consult の worktree があれば、その実行のルートを引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。なければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここにはない。
  */
 export function ensureRoot(cwd: string): string {
   const existing = rootFor(cwd);
@@ -127,12 +127,12 @@ export function ensureRoot(cwd: string): string {
   return resolveReal(dir);
 }
 
-/** 置き場の大元。テストは `CONSULT_ROOT` で自分の一時ディレクトリに逃がす */
+/** 保存場所の大元。テストは `CONSULT_ROOT` で自分の一時ディレクトリに逃がす */
 export function consultRoot(): string {
   return process.env.CONSULT_ROOT ?? CONSULT_ROOT;
 }
 
-/** `git worktree list --porcelain` の 1 ブロックから、consult の物だけを拾う */
+/** `git worktree list --porcelain` の 1 ブロックから、consult のものだけを拾う */
 function parseWorktrees(cwd: string): WorktreeRow[] {
   const result = git(cwd, ['worktree', 'list', '--porcelain']);
   if (result.status !== 0) {
@@ -168,18 +168,18 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
   return rows;
 }
 
-/** 作業場の一覧。台帳は持たず、git から毎回作る */
+/** ワークツリーの一覧。台帳は持たず、git から毎回作る */
 export function listWorktrees(cwd: string): WorktreeRow[] {
   return parseWorktrees(cwd);
 }
 
-/** unit の作業場。無ければ undefined */
+/** unit のワークツリー。なければ undefined */
 export function findWorktree(cwd: string, id: string): WorktreeRow | undefined {
   return parseWorktrees(cwd).find((row) => row.id === id);
 }
 
 /**
- * unit の作業場を作る。既にあれば同じ物を返す（2 回呼んでも増えない）。
+ * unit のワークツリーを作る。既にあれば同じものを返す（2 回呼んでも増えない）。
  *
  * base の既定は HEAD。`main` を仮定しない。
  */
@@ -201,7 +201,7 @@ export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree
   return { id, branch, path, unitDir: join(runRoot, id) };
 }
 
-/** `git worktree list --porcelain` の出力から、実体の無い登録のパスを抜く（純粋） */
+/** `git worktree list --porcelain` の出力から、実体のない登録のパスを抜く（純粋関数） */
 export function prunablePathsIn(output: string): string[] {
   const pruned: string[] = [];
   for (const block of output.split('\n\n')) {
@@ -217,7 +217,7 @@ export function prunablePathsIn(output: string): string[] {
   return pruned;
 }
 
-/** 実体の無い登録のパス（`prune` の前後で比べる元） */
+/** 実体のない登録のパス（`prune` の前後で比べる元） */
 function listPrunablePaths(cwd: string): string[] {
   const result = git(cwd, ['worktree', 'list', '--porcelain']);
   if (result.status !== 0) {
@@ -227,7 +227,7 @@ function listPrunablePaths(cwd: string): string[] {
 }
 
 /**
- * 実体の無い登録を `prune` で落とす。消えたパスを返す。
+ * 実体のない登録を `prune` で落とす。消えたパスを返す。
  *
  * 失敗したら例外を投げる（`createWorktree` と同じ形。成功として扱わない）。
  */
@@ -242,7 +242,7 @@ function pruneWorktrees(cwd: string): string[] {
   return before;
 }
 
-/** `for-each-ref` の出力から、どの作業場にも checkout されていない `consult/*` を抜く（純粋） */
+/** `for-each-ref` の出力から、どのワークツリーにも checkout されていない `consult/*` を抜く（純粋関数） */
 export function orphanBranchesIn(output: string): ConsultBranch[] {
   const branches: ConsultBranch[] = [];
   for (const line of output.split('\n')) {
@@ -267,7 +267,7 @@ export function orphanBranchesIn(output: string): ConsultBranch[] {
   return branches;
 }
 
-/** どの作業場にも checkout されていない `consult/*`。`%(worktreepath)` が空の物（git 2.23+） */
+/** どのワークツリーにも checkout されていない `consult/*`。`%(worktreepath)` が空のもの（git 2.23+） */
 function listOrphanBranches(cwd: string): ConsultBranch[] {
   const result = git(cwd, [
     'for-each-ref',
@@ -317,10 +317,10 @@ function emptyCleanup(): CleanupReport {
 }
 
 /**
- * 掃除だけを単独で呼べる形（`removeWorktree` の中と同じ物を使う）。
+ * 掃除だけを単独で呼べる形（`removeWorktree` の中と同じものを使う）。
  *
- * 実体の無い登録を `prune` で落とし、どの作業場にも checkout されていない `consult/*` のうち
- * 取り込み済みを消す。未マージは残して報告する。走っているサブエージェントの作業場は checkout 中なので触らない
+ * 実体のない登録を `prune` で落とし、どのワークツリーにも checkout されていない `consult/*` のうち
+ * 取り込み済みを消す。未マージは残して報告する。走っているサブエージェントのワークツリーは checkout 中なので触らない
  * （登録も枝も残る）。git が断ったら例外にする。
  */
 export function cleanWorktrees(cwd: string): CleanupReport {
@@ -330,11 +330,11 @@ export function cleanWorktrees(cwd: string): CleanupReport {
 }
 
 /**
- * 作業場を消す。サブエージェントが動いているときは消さない（busy）。掃除もしない。
+ * ワークツリーを消す。サブエージェントが動いているときは消さない（busy）。掃除もしない。
  *
  * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。枝の掃除は
  * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児の枝は片付ける）。変更が
- * 残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れ物を
+ * 残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れものを
  * 消す（順序を逆にすると登録が残る）。枝の運命は掃除が決める（この関数は自分の枝を直接消さない）。
  * `prune` と `worktree remove` の失敗は例外にする（成功として扱わない）。
  */
@@ -343,7 +343,7 @@ export function removeWorktree(cwd: string, id: string, options: RemoveOptions =
     return { outcome: 'busy', cleanup: emptyCleanup() };
   }
   const pruned = pruneWorktrees(cwd);
-  // `force` はこの unit の枝だけを捨てる印。実体が無くても、枝が残っていれば効かせる
+  // `force` はこの unit の枝だけを捨てる印。実体がなくても、枝が残っていれば効かせる
   const forceBranch = options.force === true ? branchFor(id) : undefined;
   const found = findWorktree(cwd, id);
   if (found === undefined) {

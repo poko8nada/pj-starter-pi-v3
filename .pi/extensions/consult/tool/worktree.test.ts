@@ -143,7 +143,7 @@ const ROOT_KEY = 'CONSULT_ROOT';
 
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
-/** 道具は位置で 5 つ受け取る。置き場は cwd から決め、ここで組み立てる */
+/** 道具は位置で 5 つ受け取る。保存場所は cwd から決め、ここで組み立てる */
 function call(params: Record<string, unknown>, cwd: string, check?: CheckRecord): Promise<Outcome> {
   const place = placeFor(consultRoot(), topLevel(cwd));
   return createWorktreeTool(place, check)('call-1', params, undefined, undefined, { cwd });
@@ -196,12 +196,12 @@ describe('consult_worktree', () => {
     expect(body).toMatch(/path: .*2-b\/wt/);
   });
 
-  it('new で id が無い → エラー', async () => {
+  it('new で id がない → エラー', async () => {
     const { dir } = repo();
     await expect(call({ action: 'new' }, dir)).rejects.toThrow(/needs an id/);
   });
 
-  it('list → 作った物を出す。1 つも無ければそう言う', async () => {
+  it('list → 作ったものを出す。1 つもなければそう言う', async () => {
     const { dir } = repo();
     expect(text(await call({ action: 'list' }, dir))).toContain('作業場は無い');
 
@@ -273,7 +273,7 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('別の session の走っているサブエージェントでも busy（作業場を守る側なので session で絞らない）', async () => {
+  it('別の session の走っているサブエージェントでも busy（ワークツリーを守る側なので session で絞らない）', async () => {
     const { dir } = repo();
     const id = '2-b';
     await call({ action: 'new', id }, dir);
@@ -352,7 +352,7 @@ describe('consult_worktree', () => {
 });
 
 describe('removeText', () => {
-  it('消した物（枝）・掃除した登録を言う', () => {
+  it('消したもの（枝）・掃除した登録を言う', () => {
     const id = '2-b';
     expect(
       removeText(id, {
@@ -362,7 +362,7 @@ describe('removeText', () => {
     ).toContain('ブランチも消した');
   });
 
-  it('残した物（未マージは残す）を言う', () => {
+  it('残したもの（未マージは残す）を言う', () => {
     const id = '2-b';
     expect(
       removeText(id, {
@@ -375,7 +375,7 @@ describe('removeText', () => {
     ).toContain('ブランチは未マージなので残した');
   });
 
-  it('無い登録でも掃除した物があれば言う', () => {
+  it('ない登録でも掃除したものがあれば言う', () => {
     expect(
       removeText('2-b', {
         outcome: 'missing',
@@ -384,7 +384,7 @@ describe('removeText', () => {
     ).toContain('登録を掃除した');
   });
 
-  it('無い登録でも、残した枝（未マージ）を言う', () => {
+  it('ない登録でも、残した枝（未マージ）を言う', () => {
     const id = '2-b';
     const branch = branchFor(id);
     expect(
@@ -395,7 +395,7 @@ describe('removeText', () => {
     ).toContain(`残した枝（未マージ）: ${branch}`);
   });
 
-  it('変更が残る断りでも、掃除した物を言う', () => {
+  it('変更が残る断りでも、掃除したものを言う', () => {
     expect(
       removeText('2-b', {
         outcome: 'dirty',

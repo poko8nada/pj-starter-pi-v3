@@ -2,7 +2,7 @@
  * consult 道具のバックグラウンドの面を、偽の API で確かめる。
  *
  * サブエージェントは起こさない。`createRuntime` に差し替えた `run` を渡し、完了のタイミングと届くメッセージを自分で決める。pi の `sendMessage` と slash command の `ctx.ui.notify` も記録する。
- * 記録の置き場は `placeFor(tempDir(), tempDir())` で作り、session は `'test-session'` を渡す
+ * 記録の保存場所は `placeFor(tempDir(), tempDir())` で作り、session は `'test-session'` を渡す
  * （`parseRun` が空の session を弾くため、既定の `''` は使わない）。
  */
 
@@ -27,11 +27,11 @@ import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 
-/** テストの session。記録に書く側と、runtime に渡す側で同じ物を使う */
+/** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
 
 // 道具の文脈は cwd だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
-// 一時物を本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の置き場を指す。
+// 一時ものを本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の保存場所を指す。
 const toolCtx: ConsultContext = { cwd: process.cwd() };
 
 beforeEach(() => {
@@ -42,7 +42,7 @@ afterEach(() => {
   setSoundEnabled(true);
 });
 
-/** runtime と置き場を組む。session は `SESSION`。`check` を渡すと生死の照合を差し替えられる */
+/** runtime と保存場所を組む。session は `SESSION`。`check` を渡すと生死の照合を差し替えられる */
 function setup(
   pi: PiFace,
   run: ConsultRunner,
@@ -420,7 +420,7 @@ describe('controlSubagent: cancel', () => {
     expect(outcome.details).toMatchObject({ cancelled: false });
   });
 
-  it('記録に無い id → kill を呼ばず、理由を返す', () => {
+  it('記録にない id → kill を呼ばず、理由を返す', () => {
     const id = 'consult-999';
     const kills: number[] = [];
     const outcome = controlSubagent(
@@ -612,7 +612,7 @@ describe('controlSubagent: list', () => {
 });
 
 describe('commands: 引数と空の一覧', () => {
-  it('/consult-cancel に id が無ければ、使い方を出して止めない', async () => {
+  it('/consult-cancel に id がなければ、使い方を出して止めない', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime } = setup(pi, run);
@@ -662,7 +662,7 @@ describe('beginRun: startToken', () => {
     expect(typeof records[0]?.token).toBe('string');
   });
 
-  it('onStarted で ps が読めない → startToken 無しの開始行になる', async () => {
+  it('onStarted で ps が読めない → startToken なしの開始行になる', async () => {
     const { pi } = fakePi();
     const pid = 4242;
     const run: ConsultRunner = async (_ctx, _options, job) => {

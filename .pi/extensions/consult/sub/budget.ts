@@ -6,7 +6,7 @@
  *
  * この版の pi（0.87.1 以降）は `turn_end` から値を返せる。そこを 1 度だけ使って、上限の 2 つ手前で
  * 「次が最後のターン」と伝え、その 1 ターンを報告に使わせる（`continue: true`）。
- * ここが働かなくても、サブエージェントは上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ための物で、安全網ではない。
+ * ここが働かなくても、サブエージェントは上限で pi 側から打ち切られる。この仕掛けは「打ち切られる前に報告させる」ためのもので、安全網ではない。
  */
 
 import type { TurnEndEventResult } from '@earendil-works/pi-coding-agent';
@@ -58,7 +58,7 @@ export function nudge(
   };
 }
 
-/** 促しを登録する口。`default export` から切り出した試せる形 */
+/** 促しを登録する関数。`default export` から切り出した試せる形 */
 export interface BudgetPiPort {
   on(event: 'turn_end', handler: (event: { turnIndex: number }) => TurnEndEventResult): void;
 }

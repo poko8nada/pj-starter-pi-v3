@@ -5,7 +5,7 @@ import { aTypePolicy } from '../consult.fixture.ts';
 // 面（引数の検証）だけを試す。サブエージェントの起動と worktree は consult.test.ts が runtime ごと見る。
 
 describe('parseRunRequest', () => {
-  it('role と task だけ → worktree も continue も無い依頼になる', () => {
+  it('role と task だけ → worktree も continue もない依頼になる', () => {
     const role = aTypePolicy({ name: 'review' }).name;
     const task = '判定する';
     expect(parseRunRequest({ role, task })).toEqual({ role, task });
@@ -33,7 +33,7 @@ describe('parseRunRequest', () => {
     });
   });
 
-  it('role が無い → 使い方つきで投げる', () => {
+  it('role がない → 使い方つきで投げる', () => {
     expect(() => parseRunRequest({ task: 'x' })).toThrow(/role must be a non-empty string/);
   });
 
@@ -49,7 +49,7 @@ describe('parseRunRequest', () => {
     expect(() => parseRunRequest('review')).toThrow(/not an object/);
   });
 
-  it('input を渡しても引数として拾わない（面に無い）', () => {
+  it('input を渡しても引数として拾わない（面にない）', () => {
     const role = 'review';
     const task = 'x';
     const request = parseRunRequest({ role, task, input: ['a.md'] });

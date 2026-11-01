@@ -1,15 +1,15 @@
 /**
- * consult_subagents — サブエージェントの一覧と、止める手。
+ * consult_subagents — サブエージェントの一覧と、止める手段。
  *
  * 一覧は記録（`run/log.ts` の日ごとのファイル）から作る。サブエージェントはメインエージェントのプロセスに従属しないので、
  * reload でメインエージェントが差し替わっても、同じ session のサブエージェントは出る。
  *
  * 出るのは**いまのセッションのサブエージェント**だけ（session で絞る）。別のセッションのサブエージェントの報告はこのセッションには
- * 来ないので、待たせない。行方不明（終わりの行が無く、生死の照合にも通らないサブエージェント）は `lost` と出す。
- * 照合は startToken があれば `ps` の `lstart`、無ければ pid の生存で見るので、pid が生きていても startToken が合わなければ `lost` になる。
+ * 来ないので、待たせない。行方不明（終わりの行がなく、生死の照合にも通らないサブエージェント）は `lost` と出す。
+ * 照合は startToken があれば `ps` の `lstart`、なければ pid の生存で見るので、pid が生きていても startToken が合わなければ `lost` になる。
  *
  * 止められるのは**いまのセッションが走らせているサブエージェント**だけ。記録には pid があるが、止めるのに要る
- * `AbortController` はこのプロセスの物しか無い。前のセッションのサブエージェントは、理由を返して止めない。
+ * `AbortController` はこのプロセスのものしかない。前のセッションのサブエージェントは、理由を返して止めない。
  */
 
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
@@ -29,7 +29,7 @@ import type { ControlAction, ControlOutcome } from './consult.ts';
 /**
  * この道具が runtime に求める面。
  *
- * 置き場と、いまのセッション id と、止める手（`control`）だけ。狭くしておくと、テストが本物の
+ * 保存場所と、いまのセッション id と、止める手段（`control`）だけ。狭くしておくと、テストが本物の
  * runtime を組み立てずに偽物を渡せる。
  */
 export interface SubagentsHost {
@@ -83,10 +83,10 @@ export function elapsed(record: RunRecord, now: number): string {
 }
 
 /**
- * サブエージェントごとに 1 行に畳む。
+ * サブエージェントごとに 1 行にまとめる。
  *
- * 同じ subagent に `ended` の行が 1 つでもあればそれを返す（終わり）。無ければ開始行を返す。
- * 行の並びに依らない（逆順でも終わりを採る）。
+ * 同じ subagent に `ended` の行が 1 つでもあればそれを返す（終わり）。なければ開始行を返す。
+ * 行の並びに依らない（逆順でも終わりを選ぶ）。
  */
 export function latest(records: readonly RunRecord[]): RunRecord[] {
   const groups = new Map<string, RunRecord[]>();
@@ -126,7 +126,7 @@ export interface RowState {
  * 1 体を 1 行にする。生きているか・渡し待ちかは、ここでは決めない。
  *
  * 生きていれば `running (pid N)`、渡し待ちなら `running`（pid を出さない）。どちらでもなければ
- * `stateOf`。走っているように見える間は `reason` を出さない。終わりの行が無く生きてもいなければ
+ * `stateOf`。走っているように見える間は `reason` を出さない。終わりの行がなく生きてもいなければ
  * `lost`（`done` と偽らない）。
  */
 export function rowOf(record: RunRecord, state: RowState, now: number): string {
@@ -150,16 +150,16 @@ export function rowOf(record: RunRecord, state: RowState, now: number): string {
   return parts.join('  ');
 }
 
-/** 走っていないサブエージェントの状態。終わりの行が無ければ行方不明 */
+/** 走っていないサブエージェントの状態。終わりの行がなければ行方不明 */
 function stateOf(record: RunRecord): string {
   return record.ended === undefined ? 'lost' : (record.state ?? 'done');
 }
 
 /**
- * 全行から行にする。印の集合は全行から作り、印だけの行は除いて `latest` で 1 体 1 行に畳む。
+ * 全行から行にする。印の集合は全行から作り、印だけの行は除いて `latest` で 1 体 1 行にまとめる。
  *
- * 生きているかは `check`（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）で決め、
- * 渡し待ちかは `deliveredKeys` と `isWaiting` で決める。記録を絞るのは呼び手の仕事（一覧は session で絞る）。
+ * 生きているかは `check`（既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`）で決め、
+ * 渡し待ちかは `deliveredKeys` と `isWaiting` で決める。記録を絞るのは呼び出し側の仕事（一覧は session で絞る）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
@@ -175,7 +175,7 @@ export function rowsOf(
   );
 }
 
-/** 一覧の本文。見せる行が無ければそう言う */
+/** 一覧の本文。見せる行がなければそう言う */
 export function listText(records: readonly RunRecord[], now: number, check?: CheckRecord): string {
   const rows = rowsOf(records, check, now);
   if (rows.length === 0) {
