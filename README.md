@@ -50,10 +50,10 @@ pnpm install
 
 The agent harness travels with `scripts/harness/`:
 
-- `pnpm harness:pull` brings the starter's harness into this project, `pnpm harness:push` sends it back. Without `--run` it only shows what would move (`copy` / `remove` / `legacy`).
-- The list is `scripts/harness/harness.json`. The starter's place is in `scripts/harness/starter.json` as `{ "starter": "~/..." }` (committed).
+- `pnpm harness:pull` brings the starter's harness into this project from `copy`, `pnpm harness:push` sends it back with `push`. Without `--run` it only shows what would move. It never deletes.
+- The list is `scripts/harness/harness.json` with 3 keys: `starter`, `copy`, `push`. `starter` is the other's path (e.g. `"~/..."`), `copy` is for pull, `push` is for push. Items are paths or globs (e.g. `scripts/harness/*.mjs`).
 - `package.json` is outside the list, so after a pull check its `scripts` and `devDependencies` by hand.
-- If your product was made before this layout, move the `starter` value in `scripts/harness.local.json` to `scripts/harness/starter.json`, then pull once with `--run`: the flat 6 files (`scripts/harness.mjs`, `scripts/harness-state.mjs`, `scripts/harness.json`, `scripts/harness.mode.json`, `scripts/harness.test.ts`, `scripts/harness-state.test.ts`) are listed as `legacy` and removed.
+- Paths in the list with no match in the source are shown in `missing (<n>):`, one per line, and the exit is 1 with or without `--run`. With `--run`, the paths that can be copied are still copied.
 
 ## Cycle
 

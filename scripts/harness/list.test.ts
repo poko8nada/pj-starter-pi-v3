@@ -1,7 +1,7 @@
 /**
  * `scripts/harness/list.mjs` の振る舞いを fake root で試す。
  *
- * fake root を `tempDir()` で作り、道を作ってから読む。
+ * fake root を `tempDir()` で作り、パスを作ってから読む。
  * `harnessExcludes` は純粋に一覧から glob を作る。
  * 期待はテストが渡した値から組み立てる。
  */
@@ -22,36 +22,57 @@ function writeJson(abs: string, data: unknown): void {
 }
 
 describe('readList', () => {
-  it('一覧を置いたツリー → 同じ物を返す', () => {
-    const copy = ['.pi', join('scripts', 'harness', 'list.mjs')];
-    const skip = ['logs'];
+  it('skip と legacy があっても返さない', () => {
+    const starter = '~/Desktop/main/_pj-starter-pi-v3';
+    const copy = ['.pi'];
+    const push: string[] = [];
     const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy, skip });
-    expect(readList(root)).toEqual({ copy, skip, legacy: [] });
+    writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
+      starter,
+      copy,
+      push,
+      skip: ['logs'],
+      legacy: ['old'],
+    });
+    expect(readList(root)).toEqual({ starter, copy, push });
   });
 
-  it('一覧の道が無い → 道を入れた誤りで投げる', () => {
+  it('copy と push を書かない → 空として返す', () => {
+    const starter = '~/Desktop/main/_pj-starter-pi-v3';
+    const root = tempDir();
+    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { starter });
+    expect(readList(root)).toEqual({ starter, copy: [], push: [] });
+  });
+
+  it('一覧のパスが無い → パスを入れた誤りで投げる', () => {
     const root = tempDir();
     const missing = join(root, 'scripts', 'harness', 'harness.json');
     expect(() => readList(root)).toThrow(missing);
   });
 
+  it('一覧の starter が無い → 投げる', () => {
+    const root = tempDir();
+    const file = join(root, 'scripts', 'harness', 'harness.json');
+    writeJson(file, { copy: [] });
+    expect(() => readList(root)).toThrow(file);
+  });
+
   it('一覧の copy が配列でない → 投げる', () => {
     const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy: 'x' });
-    expect(() => readList(root)).toThrow();
+    const file = join(root, 'scripts', 'harness', 'harness.json');
+    writeJson(file, {
+      starter: '~/x',
+      copy: 'x',
+    });
+    expect(() => readList(root)).toThrow(file);
   });
 });
 
 describe('harnessExcludes', () => {
-  it('copy の 1 件から 2 つの glob を作り、2 件は順に並ぶ', () => {
+  it('copy 1 件と push 1 件 → 4 つの glob が順に並ぶ', () => {
     const first = '.pi';
-    const second = join('scripts', 'harness', 'list.mjs');
-    expect(harnessExcludes({ copy: [first], skip: [], legacy: [] })).toEqual([
-      first,
-      `${first}/**`,
-    ]);
-    expect(harnessExcludes({ copy: [first, second], skip: [], legacy: [] })).toEqual([
+    const second = 'lib';
+    expect(harnessExcludes({ starter: '~/x', copy: [first], push: [second] })).toEqual([
       first,
       `${first}/**`,
       second,
@@ -61,9 +82,8 @@ describe('harnessExcludes', () => {
 
   it('末尾の / は落とし、空と . は飛ばす', () => {
     const base = '.pi';
-    expect(harnessExcludes({ copy: [`${base}/`, '', '.'], skip: [], legacy: [] })).toEqual([
-      base,
-      `${base}/**`,
-    ]);
+    expect(
+      harnessExcludes({ starter: '~/x', copy: [`${base}/`, '', '.'], push: ['', '.'] }),
+    ).toEqual([base, `${base}/**`]);
   });
 });

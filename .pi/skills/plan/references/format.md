@@ -107,7 +107,7 @@ Section and field names are English; the content is Japanese.
 - `test/` is shared, not the harness's own: a project may keep its own files there.
 - Name a fixture `<name>.fixture.ts`, wherever it sits.
 - A helper that is not a double keeps its own name.
-- A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy`.
+- A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy` (the pull list).
 - Say how a double or a fixture behaves when it is run outside its test: refuse, do not hang.
 
 ### Structure
