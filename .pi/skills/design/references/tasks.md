@@ -2,7 +2,7 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules.
 
-## Walk the paths the change affects (a `research` subagent)
+## Walk the change (a `research` subagent)
 
 ```
 Answer for one entry, and nothing else. The task names the entry and the files the entry rewrites — the subject.
@@ -15,26 +15,16 @@ Do not report the subject back.
 Do not report generated files, vendor files, build artifacts, what .gitignore covers, or anything under cycles/.
 Follow the dependencies one step, not transitively.
 Do not drop a repeat: the same path under two entries is a fact the cut reads.
-Report facts, and nothing else. Do not decide, and do not say what should change.
-If there is no path to report, answer なし.
-```
-
-- The agent hands one `accepted` entry and its subject files, in the task.
-- What comes back is written into design.md's `## Affected`, as it is.
-
-## Find what the change talks to outside (a `research` subagent)
-
-```
-Answer for one entry, and nothing else. The task names the entry and the files the entry rewrites — the subject.
 Report what the change talks to outside the repository: a service, a contract, an environment, data, a limit.
 For each: the name, and what the change does with it. Report the things that exist now; do not invent one.
 Report facts, and nothing else. Do not decide, and do not say what should change.
+If there is no path to report, answer なし.
 If the change talks to nothing outside, answer なし.
 ```
 
 - The agent hands one `accepted` entry and its subject files, in the task.
-- What comes back is written into design.md's `## External`, as it is. The plans' `Boundary.External` is taken from it.
-- It runs beside the paths' walk, one per entry.
+- What comes back is written into design.md's `## Affected` and `## External`, as it is. The plans' `Boundary.External` is taken from it.
+- One runs per entry.
 
 ## Review the design (a `review` subagent)
 
