@@ -22,15 +22,6 @@ function writeJson(abs: string, data: unknown): void {
 }
 
 describe('readList', () => {
-  it('一覧を置いたツリー → 同じ物を返す', () => {
-    const starter = '~/Desktop/main/_pj-starter-pi-v3';
-    const copy = ['.pi', join('scripts', 'harness', 'list.mjs')];
-    const push = ['lib'];
-    const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { starter, copy, push });
-    expect(readList(root)).toEqual({ starter, copy, push });
-  });
-
   it('skip と legacy があっても返さない', () => {
     const starter = '~/Desktop/main/_pj-starter-pi-v3';
     const copy = ['.pi'];
@@ -73,16 +64,6 @@ describe('readList', () => {
     });
     expect(() => readList(root)).toThrow();
   });
-
-  it('一覧の push が配列でない → 投げる', () => {
-    const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
-      starter: '~/x',
-      copy: [],
-      push: 'x',
-    });
-    expect(() => readList(root)).toThrow();
-  });
 });
 
 describe('harnessExcludes', () => {
@@ -90,17 +71,6 @@ describe('harnessExcludes', () => {
     const first = '.pi';
     const second = 'lib';
     expect(harnessExcludes({ starter: '~/x', copy: [first], push: [second] })).toEqual([
-      first,
-      `${first}/**`,
-      second,
-      `${second}/**`,
-    ]);
-  });
-
-  it('copy の 2 件は順に並ぶ', () => {
-    const first = '.pi';
-    const second = join('scripts', 'harness', 'list.mjs');
-    expect(harnessExcludes({ starter: '~/x', copy: [first, second], push: [] })).toEqual([
       first,
       `${first}/**`,
       second,

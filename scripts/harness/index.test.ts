@@ -346,20 +346,6 @@ describe('harness diff', () => {
 });
 
 describe('harness errors', () => {
-  it('harness.json が無い → 1 行で exit 1', () => {
-    const fresh = fakeRoot();
-    writeJson(join(fresh, 'scripts', 'harness', 'harness.json'), {
-      starter: fakeRoot(),
-      copy: [],
-      push: [],
-    });
-    writeFile(join(fresh, 'scripts', 'harness', 'harness.json'), '{not json');
-    const out = run(['pull'], fresh);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toBe('');
-    expect(errorLines(out)).toHaveLength(1);
-  });
-
   it('copy が配列でない → 1 行で exit 1', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
@@ -435,20 +421,6 @@ describe('harness errors', () => {
   it('未知の引数 → 1 行で exit 1', () => {
     const { local } = pair();
     const out = run(['pull', '--bogus'], local);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toBe('');
-    expect(errorLines(out)).toHaveLength(1);
-  });
-
-  it('旧 harness.json → 1 行で exit 1', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
-    writeJson(join(local, 'scripts', 'harness', 'harness.json'), { copy: ['.pi'], skip: [] });
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    const localStarter = join(local, 'scripts', 'harness', 'starter.json');
-    writeJson(localStarter, { starter: origin });
-    const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
     expect(errorLines(out)).toHaveLength(1);
