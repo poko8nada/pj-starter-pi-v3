@@ -69,7 +69,7 @@
 
 - The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
 - At the completion of `close.md` `## Verified` is empty, and that is normal. It is filled after the owner's judgement on the triage and the `ex-` merges.
-- `### <Unit>` — one section per Unit listed in `Users can do`. A Unit is a line under `Users can do`; a `####` heading is not a Unit. The name is copied as it is. `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
+- `### <Unit>` — one section per Unit this cycle touched, among the Units listed in `Users can do`. A Unit is a line under `Users can do`; a `####` heading is not a Unit. The name is copied as it is. `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
 - `Plans` — one bullet per plan that cuts an entry the Unit is named by, taken from the design's `No`.
 - `Result` — `OK` when the owner checked the Unit's function and it worked; what they found when it did not; `しない` with the reason on the same line when they will not check.
 - `Fixed` — written only when the function did not work: the `ex-` plan, and the commit it merged as, on one line. It takes the place of the `done <commit>` a `Triage` line carries, and the close resumes at its verification step for that Unit.
@@ -82,7 +82,7 @@
 - `close.md` is complete when `## Collected` holds the inventory, `## Triage` holds the proposal with its Fact / Why / Then, and `## Verified` is empty.
 - Then the proofread runs, and the owner reads the whole `close.md` and judges the triage.
 - Every `ex-` plan is merged, and its line carries `done <commit>`: the `Triage`'s line, or the Unit's `Fixed`.
-- Every Unit has a section in `## Verified`: what was checked, or the reason it was not, and the `ex-` that fixed a broken one.
+- Every Unit this cycle touched has a section in `## Verified`: what was checked, or the reason it was not, and the `ex-` that fixed a broken one.
 - Then the cycle is closed: `close.md` and `ROADMAP.md` go in one commit, and nothing about the cycle is edited afterwards. An `ex-` plan and its work are committed at its own merge.
 
 ## Writing
