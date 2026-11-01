@@ -11,7 +11,7 @@
 
 ### <plan id> (ADR <プランの No の値>)
 
-1. <line> / <place> / <穴>
+1. <line> / <place> / <出どころ>
 
 ## Triage
 
@@ -41,7 +41,7 @@
 ## Collected
 
 - The script writes this section: `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>`. It writes `close.md` itself, and creates the file when it is not there.
-- One leftover is one numbered line. The line is `<line> / <place> / <穴>`: the line in the plan md (the heading above names the plan), and where the hole came from (`Slice 1 (名前)`, `Cleanup: <what it cleaned>`, `Work Review Round 1`, `Acceptance`). It is the inventory only.
+- One leftover is one numbered line. The line is `<line> / <place> / <出どころ>`: the line in the plan md (the heading above names the plan), and where the hole came from (`Slice 1 (名前)`, `Cleanup: <what it cleaned>`, `Work Review Round 1`, `Acceptance`). It is the inventory only.
 - The agent excludes what the wording shows is already resolved, by hand, after every run of the script: the script rewrites the numbered lines, so re-filter every time.
 - A hole the script cannot see — a change an entry decided that no plan carries — is added by the agent as a numbered line, in the same shape, after every run of the script.
 - The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: ex-plan <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`. Fill it before showing the owner.

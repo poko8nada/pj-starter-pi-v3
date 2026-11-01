@@ -35,9 +35,9 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
-  - <採った形>
+  - <採用した形>
 - Options:
-  - <案>（採らなかった理由）
+  - <案>（採用しなかった理由）
 
 ### Definition
 
@@ -76,7 +76,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
   - `Product` / `What`
 - The operation is `(added)`, `(updated)`, `(dropped)` or `(kept)`.
 - The value is the new line for `(added)` and `(updated)`, the reason the line stands for `(kept)`, and nothing for `(dropped)`.
-- Every accepted entry names the parts it relates to. A rejected entry carries only `(kept)` for the parts that stand, or `なし（採らなかった）`.
+- Every accepted entry names the parts it relates to. A rejected entry carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
 ## Writing
 

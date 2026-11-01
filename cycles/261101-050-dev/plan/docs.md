@@ -135,24 +135,31 @@ scripts/product-ready/
 
 ### Slice 1: エージェント向け文書
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a24fcd2
 - Stopped:
+
+### Cleanup: 重複・廃止のテストなし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — `.pi/skills/adr/scripts/scaffold.mjs:43` と `.pi/skills/close/scripts/collect.mjs:22,25,32,37` は strings 側で新語になっており、`scripts/product-ready/*.test.ts` は `rules/` を動的に読むため、今回の置き換えで古くなる文書・コメント・テストは無い。
+- Unlisted: なし — 差分の 8 件は `cycles/261101-050-dev/plan/docs.md:5` の Files の `update` 印と一致し、`docs.md` 自体の Notes 更新は plan の記録である。
+- Gaps: なし — 対応表の旧語は差分で消え、Verify の 2 本の grep が 0 件になることと、Added の読みどころ (`ROADMAP.md:31,32` の引用と `0.x.x`/`cycles` の不変、`scaffold.mjs` との一致、`rules/readme.format.md` の 8 行対、`SKILL.md` 英語本文の不変) は差分で確かめられ、無変更の `update` 印ファイルに残る日本語は「なし」・引用・雛形の語だけで直す本文は無い。
+- Unproven: なし — `scripts/product-ready/readme-format.test.ts:108` の肯定例が雛形自体を直接検査するため、雛形が壊れれば赤になり、否定例だけが緑に残ることは無い。
+- Noise: なし — `EXPECTED_EN`・`EXPECTED_JA` の 8 行は ADR と design が決めた値であり、`1 行`・`exit 1` の断言は決めた契約の写しで、型や制約が決める前提の再現は無い。
 - Doubts:
+  - `ROADMAP.md:29` の「見るに堪えない」→「見るに耐えない」は、どちらも常用漢字で読みも同じため規則 1,2,6,7,8,9 のどれにも当たらず、元の慣用句を変えた根拠が読み取れない。
+  - `.pi/skills/design/references/format.md:22,52` の `<外の物>` は残り、`DEFINITION.md:31` の「作った物」は「作ったもの」になったため、物→ものの適用が揃っているか読み取れない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 787 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 8 changed files and the unchanged `Files` entries
+- Findings: なし
+- Doubts: なし

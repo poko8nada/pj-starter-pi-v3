@@ -34,7 +34,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
-- one leftover is one numbered line `<line> / <place> / <穴>`: the inventory only. `Doing` / `Left` / `Cost` are not written
+- one leftover is one numbered line `<line> / <place> / <出どころ>`: the inventory only. `Doing` / `Left` / `Cost` are not written
 - fill every `未特定` for a design plan from the design. An `ex-` plan's `No` is read from the Triage; the plan md has no `No`
 - add the holes you found in step 2 as lines by hand, in the same shape: the script does not know them
 - do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread
