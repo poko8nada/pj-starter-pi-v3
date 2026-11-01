@@ -63,7 +63,7 @@ The plan writes each `Goal` line's result as a test case, and no step that goes 
 - `Always` — the related tests, the typecheck, the lint, the format, and the case-insensitive `grep` for stale wording
 - `Added` — what the change adds: DB, front, auth, the base plan's look, or another check of the ADR's scope
 
-A `Verify` that cannot be run is a hole: fix it, or say why it does not apply. A check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution.
+A `Verify` that cannot be run, or that is red with the change in place, is a hole: fix it, or say why it does not apply. A check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution.
 
 ### 8. Write the record
 
@@ -77,7 +77,7 @@ Write one plan md, and send it to its review at once: a `review` subagent reads 
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
 - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
 - `Cases` — the test steps' cases against `## Test cases`
-- `Checks` — a `Verify` that does not run as written, and a check that stays green with the behavior removed
+- `Checks` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed
 
 The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round.
 

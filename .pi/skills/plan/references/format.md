@@ -163,7 +163,8 @@ Section and field names are English; the content is Japanese.
   - a `base` plan's look — the owner reads the slice's change; their OK closes it.
   - a proofread — the plan md and the skill's `references/format.md`, with the skill's proofread sentence
   - other — a check the ADR's scope names that the checks above do not cover, by a throwaway script or a shell command.
-- A `Verify` that cannot be run is a hole: fix it, or say why it does not apply.
+- A check that counts a string says what it compares: a string the file carried before the change is counted in the diff, not in the file.
+- A `Verify` that cannot be run, or that is red with the change in place, is a hole: fix it, or say why it does not apply.
 
 ## Test cases
 

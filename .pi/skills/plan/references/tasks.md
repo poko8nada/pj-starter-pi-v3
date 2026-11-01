@@ -11,7 +11,7 @@ Each slice closes when its check passes, so the check is the slice. Answer one q
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
 - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
 - `Cases` — the test steps' cases against `## Test cases`
-- `Checks` — a `Verify` that does not run as written, and a check that stays green with the behavior removed
+- `Checks` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed
 
 Answer in this shape, one section per slice:
 

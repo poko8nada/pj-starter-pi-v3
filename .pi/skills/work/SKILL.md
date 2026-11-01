@@ -66,13 +66,29 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 7. Acceptance
 
-- the agent runs the plan's checks that the agent can run: `Always`, and the executable `Added` (DB, auth, other). The `Added` checks that close by the owner's OK are shown and waited for: the front in cmux-browser, and a `base` plan's look after each slice — except a `yolo` plan: `yolo` passes the `Added` owner look, and the agent's check stays in `Acceptance`
+**What the agent runs**
+
+- the plan's checks that the agent can run: `Always`, and the executable `Added` (DB, auth, other)
 - the whole typecheck and test, in the worktree (or the base)
-- and for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's executable check, and confirm it goes red. Restore it. A check that stays green is a finding. An owner's look is not broken and restored; their OK is the check
-- a plan that adds no behavior (a document, a setting): the agent reads what it changed, and that is the check
-- write `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing). Merge's commit is not written there: the acceptance is committed before the merge
-- a `Findings` line is a fix instruction for a `code` subagent; when it is fixed, the acceptance runs again and is written again
-- commit it in the worktree: `consult(<plan id>): acceptance`. A `base` plan commits it in the base with `base(<plan id>): acceptance`; there is no worktree
+- for two or three behaviors this plan adds, break the code that carries them (flip a condition, drop a call), run the plan's executable check, and confirm it goes red, then restore it
+- a plan that adds no behavior (a document, a setting): the agent reads what it changed
+
+**What the owner closes**
+
+- the `Added` checks that close by the owner's OK: the front in cmux-browser, and a `base` plan's look after each slice
+- an owner's look is not broken and restored; their OK is the check
+- a `yolo` plan passes that look, and the agent's check stays in `Acceptance`
+
+**What counts as red**
+
+- a check that is red with the change in place is a `Findings` line, not a note
+- a check that stays green with the behavior removed is a finding
+
+**What is written**
+
+- `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing); the merge's commit is not written there, because the acceptance is committed before the merge
+- a `Findings` line is a fix instruction for a `code` subagent, and when it is fixed, the acceptance runs again and is written again
+- commit it in the worktree: `consult(<plan id>): acceptance`; a `base` plan commits it in the base with `base(<plan id>): acceptance`, and there is no worktree
 
 ### 8. Merge
 
