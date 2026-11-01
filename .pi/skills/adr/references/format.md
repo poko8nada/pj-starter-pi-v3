@@ -70,7 +70,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 - A line is `<name>(<operation>): <value>`.
 - The name is how `DEFINITION.md` calls it.
-  - `Unit.<name>` — a line under `Users can do`
+  - `Unit.<name>` — a line under `Users can do`; a `####` heading is not a Unit
   - `Who.<name>` — a role
   - `Stack.<group>` / `Stack.<group>.<role>`
   - `Product` / `What`

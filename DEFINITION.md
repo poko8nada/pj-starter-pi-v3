@@ -19,29 +19,43 @@
 
 ### Users can do
 
-- definition-file: owner またはエージェントが、プロダクトの絵を 1 枚で読める
-- definition-rules: エージェントが、絵の書き方の規則を読める
-- subagent-consult: エージェントが、サブエージェントのコンサルを走らせ、その作業場と結果を扱える
-- quality-gate: エージェントが、そのターンでの変更分に対し、検査結果を受け取れる
-- sound-notify: owner が、pi からの通知、commit が通ったことに気づける
-- lefthook-gate: エージェントが、検査を通した上で commit も push もできる
-- thinking-scrub: エージェントが、ループした thinking を取り除き、次のターンに持ち越さない
-- format-check: エージェントが、コードの形を揃えられる
-- lint-check: エージェントが、リンターの指摘を受け取れる
-- type-check: エージェントが、型に対する指摘を受け取れる
-- test-run: エージェントが、壊れた振る舞いの指摘を受け取れる
-- agent-rules: エージェントが、毎セッション同じ規則を読むことができる
-- usage-readme: owner が、このスターターの使い方を読むことができる
+#### サイクルを回す
+
 - adr-skill: owner が決め、エージェントが記録できる
 - design-skill: エージェントが、サイクルを plan に切る材料を調べ、切り方を決め、どこで走らせるかを提案できる（owner が決める）
 - plan-skill: エージェントが、1 plan 分の作業の形と順序を決めて書ける
 - work-skill: エージェントが、plan を 1 つずつ片付けられる
 - close-skill: エージェントが、サイクル終了後に、クロージングできる
 - yolo-skill: エージェントが、オーナーの確認を挟まずにクローズのトリアージまで進めることができる
+
+#### 作った物を検査する
+
+- quality-gate: エージェントが、そのターンでの変更分に対し、検査結果を受け取れる
+- lefthook-gate: エージェントが、検査を通した上で commit も push もできる
+- format-check: エージェントが、コードの形を揃えられる
+- lint-check: エージェントが、リンターの指摘を受け取れる
+- type-check: エージェントが、型に対する指摘を受け取れる
+- test-run: エージェントが、壊れた振る舞いの指摘を受け取れる
+
+#### 読んで知る
+
+- definition-file: owner またはエージェントが、プロダクトの絵を 1 枚で読める
+- definition-rules: エージェントが、絵の書き方の規則を読める
+- sound-notify: owner が、pi からの通知、commit が通ったことに気づける
+- agent-rules: エージェントが、毎セッション同じ規則を読むことができる
+- usage-readme: owner が、このスターターの使い方を読むことができる
+
+#### 文脈を整える
+
+- subagent-consult: エージェントが、サブエージェントのコンサルを走らせ、その作業場と結果を扱える
+- thinking-scrub: エージェントが、ループした thinking を取り除き、次のターンに持ち越さない
+- context-precompact: エージェントが、コンパクションを待たずに、コンテキストを空けられる
+
+#### ハーネスを保つ
+
 - upgrade-skill: エージェントが、依存パッケージをアップグレードし、監査まで終えられる
 - product-ready: owner が、ハーネスのテストを外した状態に切り替え、プロダクト開発を始められる
 - harness-copy: owner が、スターターのハーネスをプロジェクトへ取り込み、プロジェクトのハーネスをスターターへ戻せる
-- context-precompact: エージェントが、コンパクションを待たずに、コンテキストを空けられる
 
 ## Stack
 

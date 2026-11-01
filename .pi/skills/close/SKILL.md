@@ -87,7 +87,7 @@ Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<
 
 ### 10. Verify, by Unit
 
-- the Units are the ones listed in `Users can do` of the `accepted` entries' `Definition`. `Product` / `What` / `Who` / `Stack` are not Units and are not verified
+- the Units are the lines under `Users can do` of the `accepted` entries' `Definition`; a `####` heading is not a Unit. `Product` / `What` / `Who` / `Stack` are not Units and are not verified
 - ask the owner, per Unit, whether they will run the function or look at it
 - the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
 - their OK in the chat closes it; a Unit they will not check carries `しない` and the reason on the same line
