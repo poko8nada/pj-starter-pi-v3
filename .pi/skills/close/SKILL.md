@@ -1,6 +1,6 @@
 ---
 name: close
-description: Use when every plan of a cycle is done (done, or dropped by the owner). It collects what the plans left, proposes their triage in close.md, and after the owner's judgement asks the owner, Unit by Unit, whether they will verify the function.
+description: Use when every plan of a cycle is done (done, or dropped by the owner). It collects what the plans left, proposes their triage in close.md, and after the owner's judgement asks, Unit by Unit, whether they will verify the function.
 ---
 
 # close
