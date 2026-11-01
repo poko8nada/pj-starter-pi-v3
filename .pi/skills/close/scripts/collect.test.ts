@@ -56,6 +56,19 @@ describe('collectPlan with review', () => {
     const items = collectPlan(doc);
     expect(items.map((item) => item.finding)).toContain('work review hole');
     expect(items.map((item) => item.place)).toContain('Work Review Round 1');
+    const root = tempDir();
+    const cycle = join(root, '261024-001-dev');
+    const planDir = join(cycle, 'plan');
+    mkdirSync(planDir, { recursive: true });
+    writeFileSync(join(planDir, `${planId}.md`), doc);
+    writeFileSync(
+      join(cycle, 'close.md'),
+      '# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\nなし\n',
+    );
+    const text = readFileSync(writeClose(cycle), 'utf8');
+    expect(text).toContain(`### ${planId} (ADR ${adrNo})`);
+    expect(text).toContain('work review hole');
+    expect(text).toContain('Work Review Round 1');
   });
 
   it('(empty) planDoc に review で なし を渡す → ## Collected が なし になる', () => {
@@ -74,5 +87,31 @@ describe('collectPlan with review', () => {
     const closePath = writeClose(cycle);
     const text = readFileSync(closePath, 'utf8');
     expect(text).toContain('## Collected\n\nなし');
+  });
+
+  it('(rerun) 再実行で番号下の文脈を保ち番号を振り直す → 文脈が残り連番になる', () => {
+    const root = tempDir();
+    const cycle = join(root, '261024-001-dev');
+    const planDir = join(cycle, 'plan');
+    mkdirSync(planDir, { recursive: true });
+    writeFileSync(
+      join(planDir, `${planId}.md`),
+      planDoc({ no: adrNo, name: planId, notes: 'first hole' }),
+    );
+    const closePath = writeClose(cycle);
+    const first = readFileSync(closePath, 'utf8');
+    const numbered = first.split('\n').find((line) => /^\d+\. /.test(line));
+    expect(numbered).toBeDefined();
+    if (numbered === undefined) return;
+    writeFileSync(closePath, first.replace(`${numbered}\n`, `${numbered}\n  - kept context\n`));
+    writeFileSync(
+      join(planDir, 'beta.md'),
+      planDoc({ no: adrNo, name: 'beta', notes: 'second hole' }),
+    );
+    const again = readFileSync(writeClose(cycle), 'utf8');
+    expect(again).toContain('  - kept context');
+    expect(again).toMatch(/^1\. /m);
+    expect(again).toMatch(/^2\. /m);
+    expect(again).toContain('second hole');
   });
 });

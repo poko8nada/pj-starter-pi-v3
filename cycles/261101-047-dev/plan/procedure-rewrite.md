@@ -92,21 +92,37 @@ export type PlanDocOptions = {
 
 ### Slice 1: 手順文書とセクション名の書き換え
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e4edb5c
 - Stopped:
+
+### Cleanup: collect.test.ts
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/close/SKILL.md:3` — frontmatter の description が「triages it with the owner」のままで、手順の書き換え（agent が提案→校正→owner 判断、本文:10 更新済み）と矛盾するため stale。
+    - fixed: description を「proposes their triage in close.md, and after the owner's judgement asks the owner」に書き換えた。
+- Unlisted: なし — `e1a8515..HEAD` の変更 10 件は Files の update 印と一致し、無印の関連ファイルに変更なし。
 - Gaps:
-- Unproven:
-- Noise:
+  - `.pi/skills/close/SKILL.md:46` — 再実行のたびの再フィルタと `## Triage` 番号の振り直し（手順 3〜5 の rerun、手順:85・:94）を回す Added がなく、tests は writeClose 単発のみで checks が exercised しない。
+    - fixed: `collect.test.ts` に `(rerun)` を足し、番号行の下に文脈を置いて plan を増やした後の再実行で文脈が残り連番になることを確かめるようにした。
+  - `.pi/skills/close/SKILL.md:90`・`.pi/skills/close/references/format.md:70` — Units は `Users can do` に限り `Product`/`What`/`Who`/`Stack` を除く件を確かめる grep も test も Added になく、checks が exercised しない。
+    - left: 文言範囲の限定であり実行可能な振る舞いがなく test では担保できない。両ファイルの精読は Added の校正 2 件が担うため、grep の追加は plan Verify の改訂として残す。
+  - `.pi/skills/close/scripts/collect.test.ts:53` — happy が collectPlan 直呼びのみで、review 指摘が writeClose 経由で ADR 見出し付き番号行として `## Collected` に出る統合 path を checks が exercised しない（既存 writeClose test は review なし plan のみ）。
+    - fixed: happy を collectPlan の主張に加えて writeClose 経由でも `### <plan> (ADR <NN>)` の見出しと `Work Review Round 1` の指摘が `## Collected` に出ることを確かめるようにした。
+- Unproven: なし — happy は collect.mjs の `Work Review` 復帰破壊で赤になること、empty は `なし` フィルタ破壊で赤になることを確認。
+- Noise: なし — 2 件とも仕様トークン（`Work Review Round 1`・`なし`）の主張で、型や DB が保証する前提の再掲や magic number／hardcoded string の持ち込みなし。
 - Doubts:
+  - 未コミットの plan md 差分（`## Notes`・`### Cleanup` 記入）は `### Cleanup` の note 通りの想定内で close 対象外。
+  - `drop`（SKILL 手順:54・yolo:49）と `dropped`（format Shape・本文）の表記ゆれは改修前からの既存で今回作った stale ではないため finding にしない。
+  - 旧 `## Review` を残す過去 plan md を新 collect.mjs（:189・:195）が無視して落とす backward compat は、閉じた cycle のみのため影響軽微とみて finding にしない。
 
 ## Acceptance
 
