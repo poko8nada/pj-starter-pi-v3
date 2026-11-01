@@ -23,9 +23,9 @@ describe('formatLines', () => {
     const rel = '.pi/a.ts';
     const lines = formatLines('pull', starter, root, { copy: [rel], missing: [missing] });
     expect(lines[0]).toBe(pullLine(starter, root));
-    expect(lines[1]).toBe(countLine(MISSING, 1));
+    expect(lines[1]).toBe(countLine(MISSING, [missing].length));
     expect(lines[2]).toBe(indented(missing));
-    expect(lines[3]).toBe(countLine(COPY, 1));
+    expect(lines[3]).toBe(countLine(COPY, [rel].length));
     expect(lines[4]).toBe(indented(rel));
   });
 

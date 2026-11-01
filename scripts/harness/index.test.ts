@@ -213,13 +213,14 @@ describe('harness apply (--run)', () => {
   it('pull --run → 写す', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
-    writeList(local, origin, ['.pi/a.ts', '.pi/extra.ts'], ['.pi/a.ts', '.pi/extra.ts']);
+    const rels = ['.pi/a.ts', '.pi/extra.ts'];
+    writeList(local, origin, rels, rels);
     writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
     writeFile(join(origin, '.pi', 'extra.ts'), 'extra\n');
     writeFile(join(local, '.pi', 'a.ts'), 'A\n');
     const out = run(['pull', RUN_FLAG], local);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain(countLine(COPY, 2));
+    expect(out.stdout).toContain(countLine(COPY, rels.length));
     expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
     expect(readFileSync(join(local, '.pi', 'extra.ts'), 'utf8')).toBe('extra\n');
     expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
