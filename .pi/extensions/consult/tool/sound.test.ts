@@ -23,11 +23,6 @@ describe('sound', () => {
     setSoundEnabled(true);
   });
 
-  it('playSound → 差し替えた player が 1 回呼ばれる', () => {
-    playSound();
-    expect(played).toEqual(['tink']);
-  });
-
   it('enabled が off → 鳴らさない', () => {
     setSoundEnabled(false);
     expect(isSoundEnabled()).toBe(false);

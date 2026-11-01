@@ -390,15 +390,6 @@ describe('parseRun', () => {
     ).toMatchObject({ startToken });
   });
 
-  it('startToken なしの行 → undefined で読める', () => {
-    expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
-      { session: 's' },
-    );
-    expect(
-      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.startToken,
-    ).toBeUndefined();
-  });
-
   it('startToken が数値の行 → 捨てて、行は読める', () => {
     const run = parseRun(
       '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"startToken":123}',
@@ -522,10 +513,6 @@ describe('runKey / deliveredKeys / isWaiting', () => {
   it('印のない完了の行 → isWaiting が真', () => {
     const done = record({ ended: 2000, notice: 'できた' });
     expect(isWaiting(done, deliveredKeys([]))).toBe(true);
-  });
-
-  it('行が 0 本 → deliveredKeys が空', () => {
-    expect(deliveredKeys([]).size).toBe(0);
   });
 
   it('started が同じで session が違う 2 走行 → キーが別', () => {

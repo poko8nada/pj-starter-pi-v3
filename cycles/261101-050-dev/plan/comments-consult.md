@@ -211,9 +211,20 @@
 ### Slice 1: コメントとテスト名
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の grep に `作業場` が 2 件残る。`tool/worktree.ts:198` の実行時文字列 `'作業場は無い。'` と、`tool/worktree.test.ts:206` のその写しである。手順上、文字列リテラルとテストのデータは変えないため、ここでは直さない。
+    - left: エントリー 03（strings）が直す。Verify の `! grep` はその 2 件で終了コード 1 になる。
+- Unplanned: なし
+- Commit: d375d19 consult(comments-consult): Align consult comments and test names with glossary
 - Stopped:
+
+### Cleanup: 重複と自明なテストの削除
+
+- Findings:
+  - `tool/subagents.test.ts` の `latest` の空入力テストを落とした。`rowsOf([])` のテストが同じ経路（`latest([])`）を通るため。
+  - `run/log.test.ts` の `deliveredKeys([])` の空テストを落とした。分岐がなく、影響がわずかなため。
+  - `tool/sound.test.ts` の基本呼び出しテストを落とした。差し替えテストが呼び出し回数まで確かめるため。
+  - `run/log.test.ts` の `startToken` なし行の parse テストを落とした。`token` なし行のテストと同形・同装置で、欠落時の振る舞いは `isRunning` と `closeOrphans` のテストが担うため。
+- Unplanned: なし
 
 ## Work Review
 

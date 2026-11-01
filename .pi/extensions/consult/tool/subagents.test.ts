@@ -159,10 +159,6 @@ describe('latest', () => {
       [second, undefined],
     ]);
   });
-
-  it('記録が空 → 空のまま', () => {
-    expect(latest([])).toEqual([]);
-  });
 });
 
 describe('listText', () => {
