@@ -46,8 +46,8 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 ### close
 
 - check the trigger, read the cycle, collect the leftovers, and exclude what the wording shows is already resolved
-- give every leftover a proposed destination, in this order: the cycle's own concern → `ex-`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-`; one of the above too large for one `ex-`, or needing further outside or inside research → `proposed`; the rest → `drop`, each with its `Fact:` / `Why:` / `Then:`
-- complete `close.md`: `## Collected` holds the inventory, `## Triage` holds the proposal, and `## Verified` is left out (empty at completion, and that is normal)
+- give every leftover a proposed destination, in this order: the cycle's own concern → `ex-`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-`; one of the above too large for one `ex-`, or needing further outside or inside research → `proposed`; the rest → `dropped`, each with its `Fact:` / `Why:` / `Then:`
+- complete `close.md`: `## Collected` holds the inventory, `## Triage` holds the proposal, and `## Verified` stays empty at the completion (and that is normal)
 - run the proofread here, so the `close.md` at the stop is what the owner can read
 - skips: the owner's judgement on the triage, the `ex-` plans and their merges, and the verification of what the cycle delivered
 - it ends here: before the owner's judgement on the triage, with the proposal complete and proofread

@@ -86,7 +86,7 @@ export type PlanDocOptions = {
 - Added:
   - a proofread — the plan md と `.pi/skills/plan/references/format.md` を、`.pi/skills/plan/SKILL.md` の校正の文で回す
   - a proofread — the plan md と `.pi/skills/close/references/format.md` を、`.pi/skills/close/SKILL.md` の校正の文で回す
-  - other — `.pi/skills/close/SKILL.md` を `grep -n` して「現サイクルの関心ごと」「明らかなバグ」「`proposed`」「`drop`」がこの順に並び、「解決済み」「`Fact:`」「`Why:`」「`Then:`」「`## Verified`」が 1 件以上あることを確かめ、`.pi/skills/close/references/format.md` に `Doing` / `Left` / `Cost` が 0 件で `Fact:` / `Why:` / `Then:` が 1 件以上あることを確かめる。
+  - other — `.pi/skills/close/SKILL.md` を `grep -n` して「cycle's own concern」「obvious bug」「`proposed`」「`dropped`」がこの順に並び、「resolved」「`Fact:`」「`Why:`」「`Then:`」「`## Verified`」が 1 件以上あることを確かめ、`.pi/skills/close/references/format.md` に `Doing` / `Left` / `Cost` が 0 件で `Fact:` / `Why:` / `Then:` が 1 件以上あることを確かめる。
 
 ## Notes
 
@@ -124,8 +124,27 @@ export type PlanDocOptions = {
   - `drop`（SKILL 手順:54・yolo:49）と `dropped`（format Shape・本文）の表記ゆれは改修前からの既存で今回作った stale ではないため finding にしない。
   - 旧 `## Review` を残す過去 plan md を新 collect.mjs（:189・:195）が無視して落とす backward compat は、閉じた cycle のみのため影響軽微とみて finding にしない。
 
+### Round 2
+
+- Stale:
+  - なし — fixed 1件を確認。`.pi/skills/close/SKILL.md:3` が「proposes their triage in close.md, and after the owner's judgement asks the owner」に変わり、旧文言「triages it with the owner」は grep で0件。本文:10 と同じ順序（提案→校正→owner判断→Unit毎の確認）で矛盾なし。
+- Unlisted: なし — fixed 指定なしのため対象外。
+- Gaps:
+  - なし — fixed 2件を確認。`(rerun)`（`collect.test.ts:92`）は番号行下に文脈を置き plan 追加後の再実行で文脈残存と `1.`/`2.` 連番と `second hole` を主張し、手順:46 の再実行保存に対応。happy（`collect.test.ts:53`）は collectPlan 主張に加え writeClose 経由で `### alpha (ADR 02)` 見出しと `Work Review Round 1` 指摘の `## Collected` 出現を主張し、統合 path に対応。
+- Unproven: なし — fixed 3件はいずれも既存の赤確認済み仕様の拡張であり、新規の証明不要なし。
+- Noise: なし — 追加主張は `kept context`・`second hole`・`Work Review Round 1`・`ADR 02` の仕様トークンで、前提の再掲や magic number なし。
+- Doubts:
+  - description の「after the owner's judgement asks the owner」は冗長だが意味は本文と一致し finding にしない。
+  - `(rerun)` は `## Collected` の文脈保存と振り直しのみで `## Triage` 番号の手動付け替え（手順:85・:94）は対象外だが、fixed 文面の約束通りであり finding にしない。
+
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run` (58 files / 796 tests)、`pnpm test:related .pi/skills/close/scripts/collect.mjs` (7 tests)、`Added` の `other` (`grep -n` で `.pi/skills/close/SKILL.md` の軸 4 語が順に並び、`解決済み` / `Fact:` / `Why:` / `Then:` / `## Verified` が 1 件以上、`.pi/skills/close/references/format.md` に `Doing` / `Left` / `Cost` が 0 件で `Fact:` / `Why:` / `Then:` が 1 件以上)、振る舞いを壊す確かめ (`collect.mjs` の `'Work Review'` を `'Review'` に戻すと `(happy)` が赤、戻すと 7 件緑)、`Added` の校正 2 件 (plan と close)
 - Findings:
-- Doubts:
+  - `.pi/skills/close/SKILL.md:44` — 「a 解決済みの leftover」と日本語が英語の本文に混ざっている (ほかの skill 文書は英語で書かれている)。
+  - `.pi/skills/close/SKILL.md:51` から `:54` — 判断軸の 4 行が日本語のままである。
+  - `.pi/skills/close/SKILL.md:58` — 「`Then:` for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `drop` なし」が英語として読めない。
+  - `.pi/skills/close/SKILL.md:54`、`.pi/skills/close/references/format.md:58`、`.pi/skills/yolo/SKILL.md:49` — 行き先の語が `drop` と `dropped` で揺れ、worker が close.md にどちらを書くか分からない (形は format.md の `- <N>: dropped`)。
+  - `.pi/skills/close/references/format.md:62` — 「`dropped` — rare, and the fix weighs more.」が新しい軸 (それ以外 → `dropped`) と矛盾したまま残っている。
+  - `.pi/skills/yolo/SKILL.md:50` — 「`## Verified` is left out (empty at completion, and that is normal)」が「省く」と「空で残る」の両方を言っていて矛盾している。
+- Doubts: なし

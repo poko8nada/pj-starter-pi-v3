@@ -55,11 +55,11 @@
 - Each bullet carries its grounds underneath, in this shape:
   - Fact: what happened and how it stands now.
   - Why: why this proposal is recommended.
-  - Then: for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `drop` なし.
+  - Then: for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `dropped` nothing.
 - The proposal order is: the cycle's own concern → `ex-plan`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-plan`; one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `proposed`; the rest → `dropped`.
 - `ex-plan <plan id>` — the fix is code. The plan is named `ex-<what it fixes>`, and it has no design.
 - `proposed` — leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
-- `dropped` — rare, and the fix weighs more.
+- `dropped` — the rest: the fix weighs more than leaving it.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
 - `なし` when there is none.
 

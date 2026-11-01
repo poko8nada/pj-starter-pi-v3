@@ -41,21 +41,21 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ### 4. Exclude what is already resolved
 
-- a 解決済みの leftover is excluded by the agent's reading of the wording: the plan md, the diff and the close context show it is already closed
+- a resolved leftover is excluded by the agent's reading of the wording: the plan md, the diff and the close context show it is already closed
 - the script does not judge this: the agent deletes the resolved lines from `## Collected` by hand
 - every rerun of `collect.mjs` rewrites the numbered lines, so re-filter after every rerun before the close goes on
 
 ### 5. Propose the triage, in `close.md`
 
 - the agent writes one proposal destination per leftover, in `## Triage`, in this order:
-  1. 現サイクルの関心ごと → `ex-`
-  2. 現サイクルの関心ごとに関わらないが明らかなバグ / 脆弱性 / 古い実装や記述 → `ex-`
-  3. 上記のうち影響範囲や変更が大きく `ex-` 1つに収まらないもの、または追加の外部・内部調査が必要なもの → `proposed`
-  4. それ以外 → `drop`
+  1. the cycle's own concern → `ex-`
+  2. an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-`
+  3. one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `proposed`
+  4. the rest → `dropped`
 - each `## Triage` bullet carries its grounds underneath, in this shape:
   - `Fact:` what happened and how it stands now
   - `Why:` why this proposal is recommended
-  - `Then:` for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `drop` なし
+  - `Then:` what comes next — for an `ex-`, the policy its plan follows; for a `proposed`, the question the next cycle discusses; for a `dropped`, nothing.
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
 - the proposal is done when every leftover has a destination with its `Fact:` / `Why:` / `Then:`. The owner confirms it later, in step 8
 
