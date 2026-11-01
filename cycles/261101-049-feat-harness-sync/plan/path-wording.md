@@ -81,24 +81,30 @@ scripts/
 
 ### Slice 1: コメントとテスト名の語の置き換え
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 47270dd consult(path-wording): replace michi wording with path wording
+- Stopped: なし
+
+### Cleanup: 重複・不要テストの点検
+
+- Findings: なし
+- Unplanned: なし — Files の update のうちテスト7件を点検し、重複・消えた振る舞い・消えた分岐・Test cases 外れはいずれもなしと判断したため何も落とさなかった。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 差分はコメントとテスト名の語だけの置換で、振る舞い・文書引用を変えない（ADR 03 behaviour: out、引用なしの実測）。残存の「道」は除外語「道具」のみ（例 `.pi/extensions/consult/tool/commit.ts:24`）。
+- Unlisted: なし — 差分10件は Files の update 10件（例 `scripts/checks/typecheck.test.ts:6`、`scripts/product-ready/targets.mjs:47`）と一致し、計画外ファイルの変更はない。
+- Gaps: なし — Steps 指定の15か所（例 `scripts/checks/typecheck-staged.test.ts:123`、`.pi/extensions/consult/run/subagent.test.ts:37`）は過不足なく置換され、Added の grep は「道具」を除き0件になる。
+- Unproven: なし — 表明は一行も変わらず語の改名だけ（例 `scripts/product-ready/targets.test.ts:121`、`commit.test.ts:58` 近傍の expect 群は不変）のため green 条件は緩んでいない。
+- Noise: なし — 新規ケース・数値・固定文字列の追加はなく（例 `.pi/extensions/consult/run/place.test.ts:10` は語の改名のみ）、Cleanup 点検でも落とす物なしと記録済み。
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm test:run` (58 files / 796 tests)、`pnpm typecheck` (root と .pi が ok)、`pnpm lint`、対象 10 ファイルの `grep -rn "道"`（`道具` を除く → 0 件）。振る舞いを足さない plan なので、`git diff 59405d8..HEAD` を読んで確かめた (10 ファイル、15 行)。`pnpm format:check` は赤
 - Findings:
-- Doubts:
+  - `pnpm format:check` が `cycles/261101-049-feat-harness-sync/plan/path-wording.md` を赤にする。`## Work Review` の前に空行が 2 つある。
+- Doubts: なし
