@@ -67,17 +67,11 @@ A `Verify` that cannot be run is a hole: fix it, or say why it does not apply. A
 
 ### 8. Write the record
 
-`## Notes`, one `### Slice N` per slice, with the fields empty; a subagent fills its own slice's record as the work goes, and for a `base` plan the agent fills it. `## Review` and `## Acceptance` keep their names and stay empty: the reviewer writes `## Review`, and the agent writes `## Acceptance`, in the work stage.
+`## Notes`, one `### Slice N` per slice, with the fields empty; a subagent fills its own slice's record as the work goes, and for a `base` plan the agent fills it. `## Work Review` and `## Acceptance` keep their names and stay empty: the reviewer writes `## Work Review`, and the agent writes `## Acceptance`, in the work stage.
 
-### 9. Cycle's plans, together
+### 9. Review, one file at a time
 
-When every plan of the cycle is written, read them together — the `Types` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
-
-A pair found is a change to cut. The owner decides, the design's `Boundary.Plans` is updated to name the shared piece, and the plans are written again: one makes the shared piece, and the others use it, naming it where it bites in their `Files` and `Steps`.
-
-### 10. Review of each plan
-
-A `review` subagent reads one plan's slices — each `Verify` and the test steps' cases — and each line of the design's `Goal` and `Non-goal`, and answers on five viewpoints:
+Write one plan md, and send it to its review at once: a `review` subagent reads that plan's slices — each `Verify` and the test steps' cases — and each line of the design's `Goal` and `Non-goal`, and answers on five viewpoints:
 
 - `Goal` — the steps and the checks that do not carry each line of the design's `Goal`, and the `Non-goal`
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
@@ -85,11 +79,19 @@ A `review` subagent reads one plan's slices — each `Verify` and the test steps
 - `Cases` — the test steps' cases against `## Test cases`
 - `Checks` — a `Verify` that does not run as written, and a check that stays green with the behavior removed
 
-The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round; the plans do not wait for each other.
+The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan, one round.
+
+While that review runs, write the next plan file: the writing of one file and the review of the previous one overlap. A plan that is fixed from its review does not wait for the others.
+
+### 10. Cycle's plans, together
+
+When every plan of the cycle is written, read them together — the `Types` each one moves, its `Files`, and its slice names: two plans that would make the same thing under two names (a component, a helper, a type, a fixture, a double, a module). A shared path is a hint, not the test.
+
+A pair found is a change to cut. The owner decides, the design's `Boundary.Plans` is updated to name the shared piece, and the plans are written again: one makes the shared piece, and the others use it, naming it where it bites in their `Files` and `Steps`.
 
 ### 11. Proofread
 
-Before the owner reads the plan mds, run one `proofreader` subagent per file with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
+After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
 
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words

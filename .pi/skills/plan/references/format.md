@@ -66,7 +66,7 @@ Section and field names are English; the content is Japanese.
 - Findings:
 - Unplanned:
 
-## Review
+## Work Review
 
 ### Round 1
 
@@ -183,7 +183,7 @@ Section and field names are English; the content is Japanese.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - `Commit` is the slice's own commit, and it is not rewritten.
 
-## Review
+## Work Review
 
 - The reviewer writes here, and the fixing subagent answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from:

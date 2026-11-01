@@ -13,7 +13,7 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 
 ## File
 
-Work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and writes into it: slices' records under `## Notes`, `## Review`, `## Acceptance`.
+Work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and writes into it: slices' records under `## Notes`, `## Work Review`, `## Acceptance`.
 
 Texts handed to subagents are in `references/tasks.md`.
 
@@ -57,7 +57,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 6. Review
 
 - when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself
-- it writes `## Review`, `### Round 1`, under the five viewpoints and `Doubts`
+- it writes `## Work Review`, `### Round 1`, under the five viewpoints and `Doubts`
 - it reads the test steps' cases by the plan's `## Test cases`, and each `Verify` by what closes its slice
 - fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line, and what it leaves carries a `left:` line; a `base` plan commits with `base(<plan id>): round <N> fixes`
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review
