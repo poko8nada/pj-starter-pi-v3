@@ -97,7 +97,7 @@ function resolveStarter(root: string, starter: string): Starter;
 4. `scripts/harness/harness.json`:
    - `starter`、`copy`、`push` の 3 キーにする。
    - `starter` は `~/Desktop/main/_pj-starter-pi-v3` にする。
-   - `copy` は今の 16 件から `definition` を外し、`scripts/harness` の 1 件を `scripts/harness/*.mjs` と `scripts/harness/*.test.ts` に分けた 17 件にする。
+   - `copy` は今の 16 件のうち、存在しない `definition` を `rules` に直し、`scripts/harness` の 1 件を `scripts/harness/*.mjs` と `scripts/harness/*.test.ts` に分けた 17 件にする。
    - `push` は `lib`、`scripts/checks`、`scripts/harness/*.mjs`、`scripts/harness/*.test.ts`、`test/temp-dir.ts`、`test/pi.fixture.ts`、`test/scripts.fixture.ts` にする。
 5. `scripts/harness/starter.json`:
    - 消す。
@@ -160,7 +160,7 @@ function resolveStarter(root: string, starter: string): Starter;
 2. `README.ja.md`:
    - 同じ内容を日本語で書く。
 3. `.pi/skills/plan/references/format.md`:
-   - 106 行目を、`test/` の備品が `copy` に載ることを、2 つの一覧のどちらかが分かる形で書く。
+   - 110 行目を、`test/` の備品が `copy` に載ることを、2 つの一覧のどちらかが分かる形で書く。
 
 ### Verify
 
@@ -178,27 +178,49 @@ function resolveStarter(root: string, starter: string): Starter;
 ### Slice 1: 一覧と運搬の書き換え
 
 - Findings: なし
-- Unplanned: なし
+- Unplanned:
+  - `scripts/harness/harness.json` の `copy` に `rules` を入れ17件にした（`definition` は入れない）。
+    - 待てなかった理由: 手順4が`definition`を`rules`に直す更新に変わり、運搬対象が古いまま残るため。
 - Commit: e1b9e8c
 - Stopped:
 
 ### Slice 2: 説明の書き換え
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e43e7cb
 - Stopped:
+
+### Cleanup: 重複と廃止分岐のテスト整理
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 変更分の `grep` で `道`・`remove`・`legacy`・`skip`・`starter.json` は残っていない。`scripts/harness/list.test.ts:25` の `skip`・`legacy` と `scripts/harness/index.test.ts:216` の `starter.json` は計画の指定どおりのダミーであり陳腐化ではない。
+- Unlisted: なし — 差分の13件はすべて `## Files` の `update`・`drop` に載る。計画md自体の `Notes` 更新は対象外。
 - Gaps:
+  - push 方向の `missing`→終了コード1が検査されていない。`scripts/harness/index.mjs:311` は向きで `copy`/`push` を切り替え、`scripts/harness/index.mjs:317` は元側の `missing` で終了コードを決めるが、`missing` の検査は `pull` だけ (`scripts/harness/index.test.ts:146`、`scripts/harness/index.test.ts:158`、`scripts/harness/index.test.ts:226`) で、`push` で元側 (local) に無い項目の行と終了コード1を確かめていない。
+    - fixed: `harness direction` に `push で元に無いパス → missing に出て exit 1` を足し、local起点のpushでmissing行と終了コード1を確かめた。240行制限のため方向系2件を新describeに分けた。
 - Unproven:
+  - `starter` が無いときの投げがパスの入りを確かめていない。`scripts/harness/list.test.ts:53` は `toThrow()` だけで、実装 `scripts/harness/list.mjs:55` の `the list is not valid JSON: ${file}` からパスを抜いても緑のまま。計画はファイルのパスを入れたエラーを求める。
+    - fixed: `toThrow(file)` に変え、ファイルのパス入りを確かめるようにした。
+  - `copy` が配列でないときの投げがパスの入りを確かめていない。`scripts/harness/list.test.ts:59` は `toThrow()` だけで、実装 `scripts/harness/list.mjs:60` からパスを抜いても緑のまま。
+    - fixed: `toThrow(file)` に変え、ファイルのパス入りを確かめるようにした。
+  - 権限なし境界が空振りでも緑になる。`scripts/harness/index.test.ts:172` は `chmodSync` を `try` で囲み状態も見ず `not.toContain` だけなので、権限変更不可や root 実行では何も試さずに通り、読み取り可否の扱いを外しても緑のまま。
+    - fixed: 存在確認とcopy含有の断言を足し、chmod成否やrootでも空振りせず、照合がglob一致であることを確かめるようにした。
+  - `missing`→`copy` の順が確かめられていない。`scripts/harness/index.test.ts:146` は両区画を `toContain` だけで見るため、実装 `scripts/harness/index.mjs:243` の順を入れ替えても緑のまま。計画は見出しの次に `missing` を置くと決める。
+    - fixed: `indexOf` でmissing区画がcopy区画より前に出ることを確かめた。
 - Noise:
+  - 件数の直書きがある。`scripts/harness/index.test.ts:200` の `countLine(COPY, 2)` は作った2件からの導出ではなく魔数であり、`format.md` の `## Test cases` (魔数なし) に反する。
+    - fixed: `rels` 配列から件数を導き、行ごとの含有も配列から確かめる形に直した。
+  - 件数の直書きがある。`scripts/harness/index.test.ts:524` の `countLine(COPY, 5)` は `contents` の件数の導出ではなく魔数であり、同上。
+    - fixed: `Object.keys(contents).length` から件数を導く形に直した。
 - Doubts:
+  - `~foo` (斜線なし) は `scripts/harness/index.mjs:83` で `HOME/foo` に開き `scripts/harness/index.test.ts:568` がそれを確かめる。シェル的な `~user` と同じかは不明だが、計画は `~`→`HOME` だけを決めるので所見に留める。
 
 ## Acceptance
 

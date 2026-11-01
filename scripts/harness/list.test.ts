@@ -52,17 +52,19 @@ describe('readList', () => {
 
   it('一覧の starter が無い → 投げる', () => {
     const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), { copy: [] });
-    expect(() => readList(root)).toThrow();
+    const file = join(root, 'scripts', 'harness', 'harness.json');
+    writeJson(file, { copy: [] });
+    expect(() => readList(root)).toThrow(file);
   });
 
   it('一覧の copy が配列でない → 投げる', () => {
     const root = tempDir();
-    writeJson(join(root, 'scripts', 'harness', 'harness.json'), {
+    const file = join(root, 'scripts', 'harness', 'harness.json');
+    writeJson(file, {
       starter: '~/x',
       copy: 'x',
     });
-    expect(() => readList(root)).toThrow();
+    expect(() => readList(root)).toThrow(file);
   });
 });
 

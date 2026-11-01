@@ -153,6 +153,10 @@ describe('harness diff', () => {
     expect(out.stdout).toContain(countLine(MISSING, [rel].length));
     expect(out.stdout).toContain(indented(rel));
     expect(out.stdout).toContain('no files to copy');
+    const missingAt = out.stdout.indexOf(countLine(MISSING, [rel].length));
+    const copyAt = out.stdout.indexOf('no files to copy');
+    expect(missingAt).toBeGreaterThanOrEqual(0);
+    expect(copyAt).toBeGreaterThan(missingAt);
   });
 
   it('同じ一覧に --run を付ける → 写せるパスは写り、exit 1', () => {
@@ -174,13 +178,17 @@ describe('harness diff', () => {
     const local = fakeRoot();
     const rel = '.pi/a.ts';
     writeList(local, origin, [rel], [rel]);
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    const target = join(origin, '.pi', 'a.ts');
+    writeFile(target, 'B\n');
     try {
-      chmodSync(join(origin, '.pi', 'a.ts'), 0o000);
+      chmodSync(target, 0o000);
     } catch (_unused) {
       // 権限を変えられなくても、missing が出ないことは確かめる
     }
+    expect(existsSync(target)).toBe(true);
     const out = run(['pull'], local);
+    expect(out.stdout).toContain(countLine(COPY, [rel].length));
+    expect(out.stdout).toContain(indented(rel));
     expect(out.stdout).not.toContain(`${MISSING} (`);
     try {
       chmodSync(join(origin, '.pi', 'a.ts'), 0o644);
@@ -192,14 +200,16 @@ describe('harness diff', () => {
   it('copy に glob を書く → 一致したパスが copy に出る', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
+    const rels = ['.pi/a.ts', '.pi/b.ts'];
     writeList(local, origin, ['.pi/*.ts'], ['.pi/*.ts']);
     writeFile(join(origin, '.pi', 'a.ts'), 'a\n');
     writeFile(join(origin, '.pi', 'b.ts'), 'b\n');
     const out = run(['pull'], local);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain(countLine(COPY, 2));
-    expect(out.stdout).toContain(indented('.pi/a.ts'));
-    expect(out.stdout).toContain(indented('.pi/b.ts'));
+    expect(out.stdout).toContain(countLine(COPY, rels.length));
+    for (const rel of rels) {
+      expect(out.stdout).toContain(indented(rel));
+    }
   });
 
   it('copy に scripts/harness の glob を書く → harness.json の行が出ない', () => {
@@ -234,27 +244,6 @@ describe('harness diff', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toContain(countLine(MISSING, [pattern].length));
     expect(out.stdout).toContain(indented(pattern));
-  });
-
-  it('pull は copy を読み、push は push を読む', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
-    writeList(local, origin, ['.pi/a.ts'], ['.pi/b.ts']);
-    writeFile(join(origin, '.pi', 'a.ts'), 'a\n');
-    writeFile(join(origin, '.pi', 'b.ts'), 'b\n');
-    const pullOut = run(['pull'], local);
-    expect(pullOut.status).toBe(0);
-    expect(pullOut.stdout).toContain(indented('.pi/a.ts'));
-    expect(pullOut.stdout).not.toContain(indented('.pi/b.ts'));
-    const pushLocal = fakeRoot();
-    const pushOrigin = fakeRoot();
-    writeList(pushLocal, pushOrigin, ['.pi/a.ts'], ['.pi/b.ts']);
-    writeFile(join(pushLocal, '.pi', 'a.ts'), 'a\n');
-    writeFile(join(pushLocal, '.pi', 'b.ts'), 'b\n');
-    const pushOut = run(['push'], pushLocal);
-    expect(pushOut.status).toBe(0);
-    expect(pushOut.stdout).toContain(indented('.pi/b.ts'));
-    expect(pushOut.stdout).not.toContain(indented('.pi/a.ts'));
   });
 
   it('先にだけあるパスがある一覧に --run を付ける → そのパスは消えずに残る', () => {
@@ -342,6 +331,40 @@ describe('harness diff', () => {
     expect(out.status).toBe(0);
     expect(readFileSync(join(origin, '.pi', 'a.ts'), 'utf8')).toBe('B\n');
     expect(readFileSync(join(local, '.pi', 'a.ts'), 'utf8')).toBe('A\n');
+  });
+});
+
+describe('harness direction', () => {
+  it('pull は copy を読み、push は push を読む', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    writeList(local, origin, ['.pi/a.ts'], ['.pi/b.ts']);
+    writeFile(join(origin, '.pi', 'a.ts'), 'a\n');
+    writeFile(join(origin, '.pi', 'b.ts'), 'b\n');
+    const pullOut = run(['pull'], local);
+    expect(pullOut.status).toBe(0);
+    expect(pullOut.stdout).toContain(indented('.pi/a.ts'));
+    expect(pullOut.stdout).not.toContain(indented('.pi/b.ts'));
+    const pushLocal = fakeRoot();
+    const pushOrigin = fakeRoot();
+    writeList(pushLocal, pushOrigin, ['.pi/a.ts'], ['.pi/b.ts']);
+    writeFile(join(pushLocal, '.pi', 'a.ts'), 'a\n');
+    writeFile(join(pushLocal, '.pi', 'b.ts'), 'b\n');
+    const pushOut = run(['push'], pushLocal);
+    expect(pushOut.status).toBe(0);
+    expect(pushOut.stdout).toContain(indented('.pi/b.ts'));
+    expect(pushOut.stdout).not.toContain(indented('.pi/a.ts'));
+  });
+
+  it('push で元に無いパス → missing に出て exit 1', () => {
+    const origin = fakeRoot();
+    const local = fakeRoot();
+    const rel = '.pi/missing.ts';
+    writeList(local, origin, ['.pi/a.ts'], [rel]);
+    const out = run(['push'], local);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(countLine(MISSING, [rel].length));
+    expect(out.stdout).toContain(indented(rel));
   });
 });
 
@@ -521,7 +544,7 @@ describe('harness apply (--run)', () => {
     writeFile(join(local, '.pi', '2.ts'), 'DIFFERENT-2\n');
     const out = run(['pull', RUN_FLAG], local);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain(countLine(COPY, 5));
+    expect(out.stdout).toContain(countLine(COPY, Object.keys(contents).length));
     for (const [name, content] of Object.entries(contents)) {
       expect(readFileSync(join(local, '.pi', name), 'utf8')).toBe(content);
     }
