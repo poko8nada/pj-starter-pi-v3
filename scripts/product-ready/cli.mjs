@@ -4,7 +4,7 @@
  */
 
 /**
- * 引数を解釈する（純）。
+ * 引数を解釈する（副作用なし）。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {Args}
@@ -38,7 +38,7 @@ export function parseArgs(argv) {
 }
 
 /**
- * 切り替えの 2 行（純）。
+ * 切り替えの 2 行（副作用なし）。
  *
  * @param {{ readonly config: boolean, readonly scripts: readonly string[] }} plan 残る物
  * @returns {readonly string[]} 表示の行
@@ -60,7 +60,7 @@ export function switchLines(plan) {
 }
 
 /**
- * 表示の行を作る（純）。label ごとに、無ければ `no <label> to <verb>`、あれば見出しと中身を出す。
+ * 表示の行を作る（副作用なし）。label ごとに、無ければ `no <label> to <verb>`、あれば見出しと中身を出す。
  *
  * @param {readonly Label[]} labels 出す label（一覧の順）
  * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} plan 見つけた物

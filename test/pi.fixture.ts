@@ -1,5 +1,5 @@
 /**
- * pi の `usage` の工場。
+ * pi の `usage` のファクトリ。
  * `context-prune` と `thinking-scrub` のテストが読む共有の品。
  * 機能のフィクスチャに依存しない（`scrub.fixture.ts` がここを読む向き）。
  *

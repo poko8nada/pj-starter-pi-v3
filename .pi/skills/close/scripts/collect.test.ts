@@ -51,7 +51,7 @@ describe('writeClose', () => {
 });
 
 describe('collectPlan with review', () => {
-  it('(happy) planDoc に review で指摘を 1 つ渡す → ## Collected にその指摘が残り物として出る', () => {
+  it('(happy) planDoc に review で指摘を 1 つ渡す → ## Collected にその指摘が残りとして出る', () => {
     const doc = planDoc({ no: adrNo, name: planId, notes: 'なし', review: ['work review hole'] });
     const items = collectPlan(doc);
     expect(items.map((item) => item.finding)).toContain('work review hole');

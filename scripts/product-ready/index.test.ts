@@ -15,7 +15,7 @@ const CYCLES_LABEL = 'cycles';
 const REPLACE_LABEL = 'replace';
 const RULE_FILES = ['roadmap.md', 'definition.format.md', 'readme.format.md'];
 
-// 雛形は実物の `rules/` から写す。形が変わったらこのテストが落ちる。
+// テンプレートは実物の `rules/` から写す。形が変わったらこのテストが落ちる。
 const SKELETON_WITHOUT_PRODUCT = [
   '# Definition format',
   '',
@@ -153,7 +153,7 @@ describe('product-ready index', () => {
     expect(existsSync(join(tree.root, CONFIG_AT))).toBe(false);
   });
 
-  it('--run → ROADMAP.md が rules/roadmap.md の雛形に置き換わる', () => {
+  it('--run → ROADMAP.md が rules/roadmap.md のテンプレートに置き換わる', () => {
     const tree = makeTree();
     const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
@@ -178,7 +178,7 @@ describe('product-ready index', () => {
     expect(definition).toContain('- reader: x');
   });
 
-  it('--run → README.md と README.ja.md がそれぞれの雛形に置き換わる', () => {
+  it('--run → README.md と README.ja.md がそれぞれのテンプレートに置き換わる', () => {
     const tree = makeTree();
     const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
@@ -280,7 +280,7 @@ describe('product-ready index', () => {
     expect('test:related' in pkg.scripts).toBe(false);
   });
 
-  it('package.json が無い → 1行で exit 1、木は変わらない', () => {
+  it('package.json が無い → 1行で exit 1、ツリーは変わらない', () => {
     const root = tempDir();
     const cycleA = join(root, CYCLES_LABEL, '001-a');
     writeFile(join(cycleA, 'note.txt'));
@@ -292,7 +292,7 @@ describe('product-ready index', () => {
     expect(existsSync(cycleA)).toBe(true);
   });
 
-  it('package.json が JSON でない → 1行で exit 1、木は変わらない', () => {
+  it('package.json が JSON でない → 1行で exit 1、ツリーは変わらない', () => {
     const tree = makeTree();
     writeFileSync(join(tree.root, 'package.json'), '{not json');
     const beforeCycles = existsSync(tree.cycleA);
@@ -330,7 +330,7 @@ describe('product-ready index', () => {
     expect(result.output).toContain('no replace to replace');
   });
 
-  it('雛形のファイルが無い → 1行のエラーで exit 1、木は変わらない', () => {
+  it('テンプレートのファイルが無い → 1行のエラーで exit 1、ツリーは変わらない', () => {
     const tree = makeTree();
     const before = readTargets(tree.root);
     rmSync(join(tree.root, 'rules/roadmap.md'));
@@ -341,7 +341,7 @@ describe('product-ready index', () => {
     expect(readTargets(tree.root)).toEqual(before);
   });
 
-  it('雛形のブロックに ## Product が無い → 1行のエラーで exit 1、木は変わらない', () => {
+  it('テンプレートのブロックに ## Product が無い → 1行のエラーで exit 1、ツリーは変わらない', () => {
     const tree = makeTree();
     const before = readTargets(tree.root);
     writeText(tree.root, 'rules/definition.format.md', SKELETON_WITHOUT_PRODUCT);

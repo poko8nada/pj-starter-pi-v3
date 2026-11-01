@@ -12,7 +12,7 @@ import { readList } from './list/index.mjs';
 import { resolveStarter } from './path/index.mjs';
 
 /**
- * 引数（純）
+ * 引数（副作用なし）
  * @typedef {{ readonly direction: import('./display/index.mjs').Direction, readonly run: boolean }} Args
  */
 

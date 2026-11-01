@@ -5,7 +5,7 @@ const FENCE = /^(`{3,}|~{3,})/;
 const HEADING = /^#{1,6} /;
 
 /**
- * 見出しの後ろにある最初のフェンス付きブロックの中身を返す（純）。無ければ null。
+ * 見出しの後ろにある最初のフェンス付きブロックの中身を返す（副作用なし）。無ければ null。
  *
  * @param {string} text 読んだファイル
  * @param {string} heading 見出しの行
@@ -37,7 +37,7 @@ export function blockUnder(text, heading) {
 }
 
 /**
- * 見出しの直後の本文の範囲を返す（純）。見出しが無ければ null。
+ * 見出しの直後の本文の範囲を返す（副作用なし）。見出しが無ければ null。
  *
  * @param {readonly string[]} lines 行の並び
  * @param {string} heading 見出しの行

@@ -1,5 +1,5 @@
 /**
- * scaffold — 新 cycle のフォルダと `adr.md` の骨を出す。
+ * scaffold — 新 cycle のフォルダと `adr.md` の骨組みを出す。
  *
  *   node scaffold.mjs [--root <dir>] [<nnn>]
  */
@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
 
 /**
- * 1 エントリー分の骨。`references/format.md` のエントリーの形と合わせること。
+ * 1 エントリー分の骨組み。`references/format.md` のエントリーの形と合わせること。
  * @param {number} nnn
  * @returns {string}
  */
@@ -52,7 +52,7 @@ export function entrySkeleton(nnn) {
 }
 
 /**
- * `adr.md` の骨。`references/format.md` の形と合わせること。
+ * `adr.md` の骨組み。`references/format.md` の形と合わせること。
  * @param {number} nnn
  * @returns {string}
  */

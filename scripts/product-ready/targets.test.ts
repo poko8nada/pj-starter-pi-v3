@@ -78,7 +78,7 @@ describe('plan', () => {
 });
 
 describe('replace', () => {
-  it('ROADMAP.md がある → 差し替える 1 行と、その雛形', () => {
+  it('ROADMAP.md がある → 差し替える 1 行と、そのテンプレート', () => {
     const root = tempDir();
     writeAt(root, 'ROADMAP.md');
     writeAt(root, 'rules/roadmap.md');
@@ -118,7 +118,7 @@ describe('replace', () => {
     expect(plan(root, 'replace')).toEqual([]);
   });
 
-  it('雛形のファイルが無い → そのパスを入れて投げる', () => {
+  it('テンプレートのファイルが無い → そのパスを入れて投げる', () => {
     const root = tempDir();
     writeAt(root, 'ROADMAP.md');
     expect(() => skeletonFor(root, 'ROADMAP.md')).toThrow(/rules\/roadmap\.md/);
