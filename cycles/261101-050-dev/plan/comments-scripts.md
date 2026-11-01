@@ -243,8 +243,24 @@ vitest.config.ts             update
 - Doubts:
   - Verifyのgrepが `骨組み` の `骨` に当たる件はNotesのFindingsに記録済みであり、対応表の `骨→骨組み` のためfindingにしない。
 
+### Round 2
+
+- Stale:
+  - なし — 今回は `### Round 1` の `fixed:` のみを確認対象とするため、`Stale` には `fixed:` がなく確かめる修正はない（:228-:234）。
+- Unlisted:
+  - なし — 同上の理由により、`Unlisted` には `fixed:` がなく確かめる修正はない（:235-:236）。
+- Gaps:
+  - なし — 同上の理由により、`Gaps` には `fixed:` がなく確かめる修正はない（:237-:238）。
+- Unproven:
+  - なし — 同上の理由により、`Unproven` には `fixed:` がなく確かめる修正はない（:239-:240）。
+- Noise:
+  - なし — 同上の理由により、`Noise` には `fixed:` がなく確かめる修正はない（:241-:242）。
+- Doubts:
+  - なし — 同上の理由により、`Doubts` には `fixed:` がなく確かめる修正はない（:243-:244）。
+  - Doubts: なし — `fixed:` 以外を見ないため、新たな疑義は出さない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 789 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 22 changed files and the 13 unchanged
+- Findings: なし
+- Doubts: なし
