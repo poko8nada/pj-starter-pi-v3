@@ -19,7 +19,7 @@ type TestConf = {
 };
 
 /**
- * テストの設定を作る（純）。starter（`true`）は全てが対象、product（`false`）はハーネスの一覧を除外で外す。
+ * テストの設定を作る（副作用なし）。starter（`true`）は全てが対象、product（`false`）はハーネスの一覧を除外で外す。
  */
 export function testConfig(harness: boolean): TestConf {
   const base = {

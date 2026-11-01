@@ -9,7 +9,7 @@ import * as path from 'node:path';
  */
 
 /**
- * 相手のパスを、`~` と相対を解決する（純）。
+ * 相手のパスを、`~` と相対を解決する（副作用なし）。
  * @param {string} root こちら側のルート
  * @param {string} starter 一覧の `starter`
  * @returns {string} 解決した絶対のパス

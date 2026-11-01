@@ -28,7 +28,7 @@ function toPosixRel(sideRoot, full) {
 }
 
 /**
- * glob の一致から、重複を除いた `/` 区切りの相対パスを作る（純）。
+ * glob の一致から、重複を除いた `/` 区切りの相対パスを作る（副作用なし）。
  * @param {string} sideRoot 側のルート
  * @param {readonly string[]} matches 絶対パスの一致
  * @returns {readonly string[]} 辞書順

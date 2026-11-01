@@ -25,7 +25,7 @@ export function sameFile(fromRoot, toRoot, rel) {
 }
 
 /**
- * 写す物を作る（純）。`isSame` が中身の比較。
+ * 写す物を作る（副作用なし）。`isSame` が中身の比較。
  * @param {readonly string[]} fromPaths 元の側
  * @param {readonly string[]} toPaths 先の側
  * @param {(rel: string) => boolean} isSame 中身が同じか

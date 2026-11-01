@@ -1,11 +1,11 @@
-// 表示の行を作る（純）。
+// 表示の行を作る（副作用なし）。
 /**
  * どちらへ運ぶか
  * @typedef {'pull' | 'push'} Direction
  */
 
 /**
- * 表示の行を作る（純）。
+ * 表示の行を作る（副作用なし）。
  * @param {Direction} direction 向き
  * @param {string} starter 相手側のパス
  * @param {string} root こちら側のルート

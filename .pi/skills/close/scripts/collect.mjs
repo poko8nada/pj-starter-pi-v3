@@ -1,6 +1,6 @@
 // close.md の `## Collected` を書く。
 // 使い方: node .pi/skills/close/scripts/collect.mjs <cycle-dir>
-// 仕組み: <cycle-dir>/plan/*.md の残り物を集め、plan md の `No` を読んで、
+// 仕組み: <cycle-dir>/plan/*.md の残りを集め、plan md の `No` を読んで、
 // （`ex-` plan の `No` は close.md の `## Triage` から読んで、）
 // close.md の `## Collected` を書き直す。番号行より深い行（エージェントの文脈）と `## Triage` は残す。
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /**
- * 残り物の1件。
+ * 残りの1件。
  *
  * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
  */
@@ -19,22 +19,22 @@ import { pathToFileURL } from 'node:url';
  * @typedef {{ planId: string, adrNo: string }} TriageEntry
  */
 
-/** セクションや観点の見出し（穴ではない行） */
+/** セクションや観点の見出し（出どころではない行） */
 const LABELS =
   /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Noise|Doubts):\s*(.*)$/;
-/** 穴に対する対応 */
+/** 出どころに対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
 /** 読めなかった所の印。close はこれを探して埋める */
 const UNKNOWN = '未特定';
 /** 番号行。`1. <line> / …`。plan は上の `### ` の見出しから取る */
 const NUMBERED = /^\s*\d+\.\s+(\d+)\s+\//;
-/** 穴を並べる所（`Slice 2 (…)` / `Round 1`）の見分け */
+/** 出どころを並べる所（`Slice 2 (…)` / `Round 1`）の見分け */
 const SLICE_PLACE = /^Slice\s+(\d+):\s*(.*)$/;
 const ROUND_PLACE = /^Round\s+(\d+)/;
 
 const isBullet = (line) => /^\s*- /.test(line);
-/** `なし` は穴ではない。後ろに注記（`なし — 理由`）が続いても穴ではない */
+/** `なし` は出どころではない。後ろに注記（`なし — 理由`）が続いても出どころではない */
 const isNone = (text) => text.startsWith('なし');
 const indentOf = (line) => line.length - line.trimStart().length;
 const bulletText = (line) => line.replace(/^\s*- /, '').trim();
@@ -136,7 +136,7 @@ function readField(lines, at, field) {
 }
 
 /**
- * 1つのラウンドの指摘。観点の見出しは穴ではない。
+ * 1つのラウンドの指摘。観点の見出しは出どころではない。
  *
  * @param {string[]} lines
  * @param {number} at
@@ -173,11 +173,11 @@ function readRound(lines, at) {
 }
 
 /**
- * 1つの plan md の残り物。番号は付けない。
+ * 1つの plan md の残り。番号は付けない。
  *
  * `## Notes` は `Slice N` の所の `Findings:`、`## Work Review` は `Round N` の所の指摘、
  * `## Acceptance` は `Findings:` と `Doubts:`。
- * `fixed:` の付いた穴は閉じているので、残り物ではない。
+ * `fixed:` の付いた出どころは閉じているので、残りではない。
  *
  * @param {string} text
  * @returns {{ line: number, place: string, finding: string, handling: string | null }[]}
@@ -216,7 +216,7 @@ export function collectPlan(text) {
   return items.filter(isLeftover);
 }
 
-/** 残り物か。`fixed:` は閉じているので集めない。 */
+/** 残りか。`fixed:` は閉じているので集めない。 */
 const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 
 /** 設計の plan が先、`ex-` の plan が後。 */
@@ -265,7 +265,7 @@ export function noOf(planId, text, closeText) {
 const linkText = (no) => `ADR ${no ?? UNKNOWN}`;
 
 /**
- * 残り物を、plan ごとにまとめて 1 本のテキストにする。
+ * 残りを、plan ごとにまとめて 1 本のテキストにする。
  *
  * @param {Leftover[]} items
  * @param {Map<string, string[]>} contexts 番号行の下の文脈（`<plan id>:<line>` で引く）
@@ -350,7 +350,7 @@ function triagePart(text) {
 }
 
 /**
- * cycle の plan md を読み、`ADR` を付けて残り物を返す。
+ * cycle の plan md を読み、`ADR` を付けて残りを返す。
  * 通常planの`No`はplan md、`ex-` planの`No`はclose.mdの`## Triage`から読む。
  *
  * @param {string} planDir

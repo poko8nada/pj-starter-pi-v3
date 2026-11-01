@@ -6,13 +6,13 @@ import { join } from 'node:path';
 /** @typedef {{ readonly kind: 'sections', readonly headings: readonly string[] }} Sections */
 /** @typedef {Whole | Sections} Part */
 
-/** 雛形の出所 */
+/** テンプレートの出所 */
 /** @typedef {{ readonly file: string, readonly heading: string, readonly part: Part }} Skeleton */
 
 /** 消す対象の 1 行 */
 /** @typedef {{ readonly action: 'remove', readonly label: string, readonly at: string, readonly pick: 'dirs' | 'files' }} RemoveTarget */
 
-/** 雛形に差し替える対象の 1 行 */
+/** テンプレートに差し替える対象の 1 行 */
 /** @typedef {{ readonly action: 'replace', readonly label: string, readonly at: string }} ReplaceTarget */
 
 /** 見つけた 1 行 */
@@ -24,7 +24,7 @@ import { join } from 'node:path';
 /** スターターだけの物のうち、消す物 */
 export const REMOVE_TARGETS = [{ action: 'remove', label: 'cycles', at: 'cycles', pick: 'dirs' }];
 
-/** スターターだけの物のうち、雛形に差し替える物 */
+/** スターターだけの物のうち、テンプレートに差し替える物 */
 export const REPLACE_TARGETS = [
   { action: 'replace', label: 'replace', at: 'ROADMAP.md' },
   { action: 'replace', label: 'replace', at: 'DEFINITION.md' },
@@ -42,9 +42,9 @@ export const LABELS = [
 const FALLBACK_VERB = 'remove';
 
 /**
- * 雛形を組み立てる（純）。`file` か `heading` が空、または `sections` の見出しが空なら投げる。
+ * テンプレートを組み立てる（副作用なし）。`file` か `heading` が空、または `sections` の見出しが空なら投げる。
  *
- * @param {string} file 雛形を持つファイル（ルートからのパス）
+ * @param {string} file テンプレートを持つファイル（ルートからのパス）
  * @param {string} heading その中の見出し
  * @param {Part} part 全体か部分か
  * @returns {Skeleton}
@@ -59,7 +59,7 @@ export function skeleton(file, heading, part) {
   return { file, heading, part };
 }
 
-/** 差し替える対象ごとの雛形 */
+/** 差し替える対象ごとのテンプレート */
 const SKELETONS = new Map([
   ['ROADMAP.md', skeleton('rules/roadmap.md', '## Skeleton', { kind: 'whole' })],
   [
@@ -74,7 +74,7 @@ const SKELETONS = new Map([
 ]);
 
 /**
- * `at` の雛形を返す（純）。表に無ければ投げ、雛形のファイルが `root` の下に無ければそのパスを入れて投げる。
+ * `at` のテンプレートを返す（副作用なし）。表に無ければ投げ、テンプレートのファイルが `root` の下に無ければそのパスを入れて投げる。
  *
  * @param {string} root リポジトリのルート
  * @param {string} at 差し替える対象
@@ -93,7 +93,7 @@ export function skeletonFor(root, at) {
 }
 
 /**
- * 消す物と差し替える物を集める（純）。
+ * 消す物と差し替える物を集める（副作用なし）。
  *
  * @param {string} root リポジトリのルート
  * @param {string} [only] 絞る label（undefined なら全行）

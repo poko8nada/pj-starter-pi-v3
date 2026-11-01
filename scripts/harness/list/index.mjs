@@ -1,4 +1,4 @@
-// ハーネスの一覧を読む。置き場は `scripts/harness/harness.json`。
+// ハーネスの一覧を読む。保存場所は `scripts/harness/harness.json`。
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -8,7 +8,7 @@ import * as path from 'node:path';
  */
 
 /**
- * テストの除外を作る（純）。`copy` と `push` の両方の項目から `<項目>` と `<項目>/**` を作る。末の `/` は落とす。空と `.` は飛ばす。
+ * テストの除外を作る（副作用なし）。`copy` と `push` の両方の項目から `<項目>` と `<項目>/**` を作る。末の `/` は落とす。空と `.` は飛ばす。
  * @param {HarnessList} list 一覧
  * @returns {readonly string[]} 除外の glob（一覧の順）
  */

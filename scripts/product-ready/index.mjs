@@ -9,10 +9,10 @@ const STARTER_CONFIG_AT = 'vitest.starter.config.ts';
 const TARGET_SCRIPTS = ['test', 'test:run', 'test:related'];
 
 /**
- * 見出しごとに、本文だけを雛形の本文で置き換える（純）。見出しが無ければ投げる。
+ * 見出しごとに、本文だけをテンプレートの本文で置き換える（副作用なし）。見出しが無ければ投げる。
  *
  * @param {string} text 差し替えるファイル
- * @param {string} block 雛形のブロック
+ * @param {string} block テンプレートのブロック
  * @param {readonly string[]} headings 差し替える見出し
  * @returns {string}
  */
@@ -38,7 +38,7 @@ export function replaceSections(text, block, headings) {
 }
 
 /**
- * 差し替えの仕事を作る。雛形を読み、書く中身を決める。読めなければ投げる。
+ * 差し替えの仕事を作る。テンプレートを読み、書く中身を決める。読めなければ投げる。
  *
  * @param {string} root リポジトリのルート
  * @param {readonly import('./targets.mjs').FoundEntry[]} entries 見つけた物
@@ -87,7 +87,7 @@ export function applyJobs(jobs) {
 }
 
 /**
- * flag を持つ script の名を返す（純）。
+ * flag を持つ script の名を返す（副作用なし）。
  *
  * @param {Readonly<Record<string, unknown>> | undefined} scripts `package.json` の `scripts`
  * @returns {readonly string[]}
@@ -108,7 +108,7 @@ export function flaggedScripts(scripts) {
 }
 
 /**
- * スターターだけの物を消し、雛形に差し替え、`test*` の flag を外し、`vitest.starter.config.ts` を消す入口。引数なしは表示だけ、`--run` で実行する。
+ * スターターだけの物を消し、テンプレートに差し替え、`test*` の flag を外し、`vitest.starter.config.ts` を消す入口。引数なしは表示だけ、`--run` で実行する。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
