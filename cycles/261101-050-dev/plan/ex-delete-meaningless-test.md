@@ -50,15 +50,16 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — `stored types.json`・`根拠をつけてください`への言及はコードに残らず、plan mdの記載は削除対象の記録である（cycles/261101-050-dev/plan/ex-delete-meaningless-test.md:21）。
+- Unlisted: なし — 差分はFiles指定のtypes.test.tsとplan md自体の記録更新のみで、Files外のコード変更はない（.pi/extensions/consult/policy/types.test.ts:1）。
+- Gaps: なし — 削除は本番分岐を消さないためAddedなしが妥当で、Alwaysのgrepが削除を確認する（cycles/261101-050-dev/plan/ex-delete-meaningless-test.md:30）。
+- Unproven: なし — Stepsは削除のみで新規・変更の検証対象ケースがなく、残る16件は変更外のため対象外である（cycles/261101-050-dev/plan/ex-delete-meaningless-test.md:20）。
+- Noise: なし — 新規ケースがなく、削除された件こそハードコード文字列の断言であり、残る件はfactory入力で分岐を区別するため対象外である（.pi/extensions/consult/policy/types.test.ts:16）。
 - Doubts:
+  - Stepsの「importは変えない」とNotes Unplannedのdirname/fileURLToPath削除が矛盾するが、lint/formatを緑にするため必要で記録済みのためfindingとしない（cycles/261101-050-dev/plan/ex-delete-meaningless-test.md:38）。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 786 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the removed test and the unused imports
+- Findings: なし
+- Doubts: なし
