@@ -19,7 +19,7 @@ Section and field names are English; the content is Japanese.
 
 ### <NN>: <entry の問い>
 
-- `<外の物>` — <このエントリーがそこで何をするか>
+- `<外のもの>` — <このエントリーがそこで何をするか>
 
 ## `<plan id>`
 
@@ -49,7 +49,7 @@ Section and field names are English; the content is Japanese.
 
 - Plans: なし
 - External:
-  - `<外の物>`: <この変更がそこで何をするか>
+  - `<外のもの>`: <この変更がそこで何をするか>
     - Contract: <前提>
 ```
 
