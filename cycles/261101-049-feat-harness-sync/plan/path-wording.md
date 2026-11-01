@@ -104,7 +104,8 @@ scripts/
 
 ## Acceptance
 
-- Ran: `pnpm test:run` (58 files / 796 tests)、`pnpm typecheck` (root と .pi が ok)、`pnpm lint`、対象 10 ファイルの `grep -rn "道"`（`道具` を除く → 0 件）。振る舞いを足さない plan なので、`git diff 59405d8..HEAD` を読んで確かめた (10 ファイル、15 行)。`pnpm format:check` は赤
+- Ran: `pnpm test:run` (58 files / 796 tests)、`pnpm typecheck` (root と .pi が ok)、`pnpm lint`、対象 10 ファイルの `grep -rn "道"`（`道具` を除く → 0 件）。振る舞いを足さない plan なので、`git diff 59405d8..HEAD` を読んで確かめた (10 ファイル、15 行)。修正の後に、すべてやり直した
 - Findings:
-  - `pnpm format:check` が `cycles/261101-049-feat-harness-sync/plan/path-wording.md` を赤にする。`## Work Review` の前に空行が 2 つある。
+  - `pnpm format:check` が `cycles/261101-049-feat-harness-sync/plan/path-wording.md` を赤にした。`## Work Review` の前に空行が 2 つあった。
+    - fixed: 空行を 1 つに直した (`c7e56b8`)。
 - Doubts: なし
