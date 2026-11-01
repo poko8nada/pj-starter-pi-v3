@@ -11,7 +11,7 @@ import { spawnSync } from 'node:child_process';
 /** 生死の判定。分からないときは `unknown`（閉じる側が終わり行を書く） */
 export type Liveness = 'running' | 'ended' | 'unknown';
 
-/** `ps` 1 回分の出力。テストが差し替える口 */
+/** `ps` 1 回分の出力。テストが差し替える関数 */
 export type PsRun = (args: readonly string[]) => {
   readonly status: number | null;
   readonly stdout: string;
@@ -35,7 +35,7 @@ function defaultRun(args: readonly string[]): {
 /**
  * 子の起動時刻の文字列を読む。
  *
- * `ps -p <pid> -o lstart=` の出力を前後の空白を落として返す。pid が無い、stderr がある、status が 0 でないときは `undefined`。
+ * `ps -p <pid> -o lstart=` の出力を前後の空白を落として返す。pid がない、stderr がある、status が 0 でないときは `undefined`。
  */
 export function readStartToken(pid: number, run: PsRun = defaultRun): string | undefined {
   if (!Number.isInteger(pid) || pid <= 0) {
@@ -56,7 +56,7 @@ export function readStartToken(pid: number, run: PsRun = defaultRun): string | u
  * pid が生きていて、起動時刻が `startToken` と一致するか。
  *
  * status 0 で `lstart` が一致すれば `running`、違えば `ended`（pid の使い回し）。
- * status 1 で出力も stderr も無ければ `ended`（pid が無い）。
+ * status 1 で出力も stderr もなければ `ended`（pid がない）。
  * stderr があれば、status に依らず `unknown`。status が 0・1 以外、または null なら `unknown`。
  */
 export function checkPid(pid: number, startToken: string, run: PsRun = defaultRun): Liveness {

@@ -1,5 +1,5 @@
 /**
- * consult_worktree — unit ごとの作業場を作り、一覧し、消す道具。
+ * consult_worktree — unit ごとのワークツリーを作り、一覧し、消す道具。
  *
  * 作るのは明示的で、消すのも明示的。作った worktree は指定しない限り残る（サブエージェントの仕事はそこに残る）。
  * 判断と解釈は `../run/worktree.ts` が持ち、ここは道具の面だけ。
@@ -62,7 +62,7 @@ function result(
   return { content: [{ type: 'text', text }], details };
 }
 
-/** 使える action か。知らない物と欠けた引数は理由つきで断る */
+/** 使える action か。知らないものと欠けた引数は理由つきで断る */
 function parseAction(
   params: Params,
 ):
@@ -91,11 +91,11 @@ function parseAction(
 /**
  * その unit でサブエージェントが走っているか。
  *
- * 記録（置き場の日ごとのファイル）で見る: 同じ subagent に終わりの行があれば除き、無ければ
- * `check`（既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）に渡す。
+ * 記録（保存場所の日ごとのファイル）で見る: 同じ subagent に終わりの行があれば除き、なければ
+ * `check`（既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`）に渡す。
  * メインエージェントの記憶ではなく記録を見るので、reload をまたいだサブエージェントにも効く。
  *
- * session では絞らない。作業場を守る側なので、他のセッションのサブエージェントが走っている作業場も消してはいけない。
+ * session では絞らない。ワークツリーを守る側なので、他のセッションのサブエージェントが走っているワークツリーも消してはいけない。
  */
 export function runningIn(place: Place, id: string, check?: CheckRecord): boolean {
   const groups = new Map<string, RunRecord[]>();
@@ -163,7 +163,7 @@ export function removeText(id: string, removed: RemoveResult): string {
 }
 
 /**
- * 道具を作る。置き場は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
+ * 道具を作る。保存場所は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
  */
 export function createWorktreeTool(place: Place, check?: CheckRecord) {
   return async function execute(...args: ExecuteArgs) {

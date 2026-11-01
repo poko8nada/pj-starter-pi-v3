@@ -1,11 +1,11 @@
 /**
  * consult の音。5 秒ごとの tick で、走っているか渡していない完了があれば 1 音鳴らす。
  *
- * 合図は人に向けた物で、エージェントの関心ではない。鳴らなくても走行は止めない。
+ * 合図は人に向けたもので、エージェントの関心ではない。鳴らなくても走行は止めない。
  * `enabled` は既定 on で、`/consult-sound on|off` が `setSoundEnabled` を呼ぶ。
  * セッションの間だけ効く。
  *
- * 鳴らす所（`player`）は差し替えられる。テストは afplay を起動しない物を渡す。
+ * 鳴らす所（`player`）は差し替えられる。テストは afplay を起動しないものを渡す。
  * タイマーは `index.ts` が持つ。ここは 1 音鳴らすだけ。
  */
 
@@ -17,10 +17,10 @@ export const SOUND_INTERVAL_MS = 5000;
 /** 鳴らす音のファイル */
 const SOUND_FILE = '/System/Library/Sounds/Tink.aiff';
 
-/** 音を 1 つ鳴らす口 */
+/** 音を 1 つ鳴らす関数 */
 export type Player = () => void;
 
-/** afplay で Tink を 1 音鳴らす。鳴らない環境（afplay の無い OS、音の無い CI）でも走行は続ける */
+/** afplay で Tink を 1 音鳴らす。鳴らない環境（afplay のない OS、音のない CI）でも走行は続ける */
 function afplay(): void {
   try {
     spawn('afplay', [SOUND_FILE], { stdio: 'ignore', detached: true }).unref();

@@ -32,7 +32,7 @@ describe('reportBlock', () => {
     spend: '0.0123 usd',
   };
 
-  it('id を出し、無ければ consult とだけ書く（undefined と書かない）', () => {
+  it('id を出し、なければ consult とだけ書く（undefined と書かない）', () => {
     const id = 'consult-7';
     expect(reportBlock({ ...base, id })).toContain(`## ${id} — ${role} / done`);
     const noId = reportBlock(base);
@@ -40,7 +40,7 @@ describe('reportBlock', () => {
     expect(noId).not.toContain('undefined');
   });
 
-  it('素性・場所・回数・量・触った物を出す', () => {
+  it('素性・場所・回数・量・触ったものを出す', () => {
     const block = reportBlock(base);
     expect(block).toContain(`${role} / done`);
     expect(block).toContain('place: base');

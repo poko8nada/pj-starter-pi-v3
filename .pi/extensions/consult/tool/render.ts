@@ -17,14 +17,14 @@ export function result(
 }
 
 /**
- * メインエージェントに渡す塊。サブエージェント 1 体分の素性・場所・終わり方・触った物・使った量。
+ * メインエージェントに渡す塊。サブエージェント 1 体分の素性・場所・終わり方・触ったもの・使った量。
  *
- * diff は入れない（メインエージェントが見る物ではないし、行数だけでも意味がない）。重い物を運ばないのがこの塊の役目。
+ * diff は入れない（メインエージェントが見るものではないし、行数だけでも意味がない）。重いものを運ばないのがこの塊の役目。
  */
 export interface SubagentReport {
   readonly id?: string;
   readonly role: string;
-  /** worktree の id。ベースで走ったとき（読むだけ）は無い */
+  /** worktree の id。ベースで走ったとき（読むだけ）はない */
   readonly worktree?: string;
   readonly state: SubagentState;
   /** 終わり方が done でないときの理由。本文から拾った 1 行 */
@@ -39,7 +39,7 @@ export interface SubagentReport {
 /** 塊を 1 つのテキストにする。先頭に置いて、サブエージェントの本文が続く */
 export function reportBlock(report: SubagentReport): string {
   const where = report.worktree === undefined ? 'base' : `worktree ${report.worktree}`;
-  // id はメインエージェントが振る物で、無いこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
+  // id はメインエージェントが振るもので、ないこともある（テストや、id を持たない呼び方）。その時は consult とだけ書く
   const label = report.id ?? 'consult';
   const lines = [
     `## ${label} — ${report.role} / ${report.state}`,

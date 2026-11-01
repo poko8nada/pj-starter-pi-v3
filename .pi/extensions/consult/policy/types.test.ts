@@ -5,7 +5,7 @@ import { tempDir } from '../../../../test/temp-dir.ts';
 import { aTypePolicy, aTypesText } from '../consult.fixture.ts';
 import { CONFIG_FILE, loadTypes, parseTypes, resolveType } from './types.ts';
 
-// 設定の読み込みは毎回ファイルを触る。置き場は `test/temp-dir.ts` の helper（後始末も helper がする）。
+// 設定の読み込みは毎回ファイルを触る。保存場所は `test/temp-dir.ts` の helper（後始末も helper がする）。
 function writeConfig(text: string): string {
   const dir = tempDir();
   writeFileSync(join(dir, CONFIG_FILE), text);
@@ -57,7 +57,7 @@ describe('parseTypes', () => {
     expect(type?.bash).toEqual(policy.bash);
   });
 
-  it('`limits` が無い → 投げる', () => {
+  it('`limits` がない → 投げる', () => {
     expect(() => parseTypes(aTypesText({ ...aTypePolicy(), limits: undefined }))).toThrow(/limits/);
   });
 
@@ -93,7 +93,7 @@ describe('loadTypes', () => {
     expect(loadTypes(dir).map((type) => type.name)).toEqual([second.name]);
   });
 
-  it('types.json が無い → 理由の文面つきで投げる', () => {
+  it('types.json がない → 理由の文面つきで投げる', () => {
     const dir = tempDir();
     const file = join(dir, 'types.json');
     const attempt = () => loadTypes(dir);

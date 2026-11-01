@@ -15,7 +15,7 @@ import {
  * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
  * 存在しないパスでは判断の意味が変わる（それはそれで 1 つのケース）。
  *
- * 置き場は `test/temp-dir.ts` の helper。テストごとに作り直し、後始末は helper がする。
+ * 保存場所は `test/temp-dir.ts` の helper。テストごとに作り直し、後始末は helper がする。
  */
 let dir = '';
 
@@ -105,7 +105,7 @@ describe('judgeToolCall', () => {
     expect(judgeToolCall('bash', { command: 'echo $PATH' }, dir)).toEqual({});
   });
 
-  it('bash + コマンド内の代入（FOO=.env; cat $FOO）は見ない（残る穴）', () => {
+  it('bash + コマンド内の代入（FOO=.env; cat $FOO）は見ない（残る抜け）', () => {
     expect(judgeToolCall('bash', { command: 'FOO=.env; cat $FOO' }, dir)).toEqual({});
   });
 
@@ -241,7 +241,7 @@ describe('judgeToolCall + proofreader の許可', () => {
   });
 });
 
-describe('judgeToolCall: OPEN（許可の設定が無い）', () => {
+describe('judgeToolCall: OPEN（許可の設定がない）', () => {
   it('書く道具も bash も通す（fail-closed は壊れた設定の時だけ）', () => {
     expect(judgeToolCall('edit', { path: 'x.txt' }, dir)).toEqual({});
     expect(judgeToolCall('bash', { command: 'echo hi' }, dir)).toEqual({});

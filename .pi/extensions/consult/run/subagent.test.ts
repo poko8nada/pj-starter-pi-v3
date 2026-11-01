@@ -47,7 +47,7 @@ describe('prepare', () => {
     expect(prepared.cwd).toBe(WORKTREE.path);
   });
 
-  it('隔離するロールで worktree が無い → ベースで書かせずに投げる', () => {
+  it('隔離するロールで worktree がない → ベースで書かせずに投げる', () => {
     const options = aConsultOptions({ type: 'code', task: 'x', policy: policy(true) });
     expect(() => prepare(CONTEXT, options)).toThrow(/needs a worktree/);
   });
@@ -103,7 +103,7 @@ describe('sessionFile', () => {
     expect(sessionFile(WORKTREE, reviewRole)).toBe(`${WORKTREE.unitDir}/session-${reviewRole}`);
     // ロールが違えば別の会話になる（同じ worktree に別のロールを送っても混ざらない）
     expect(sessionFile(WORKTREE, codeRole)).not.toBe(sessionFile(WORKTREE, reviewRole));
-    // worktree の外（入れ物の中）に置く。リポジトリを汚さない
+    // worktree の外（入れものの中）に置く。リポジトリを汚さない
     expect(sessionFile(WORKTREE, codeRole).startsWith(WORKTREE.path)).toBe(false);
   });
 });

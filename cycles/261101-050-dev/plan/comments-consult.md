@@ -211,23 +211,49 @@
 ### Slice 1: コメントとテスト名
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の grep に `作業場` が 2 件残る。`tool/worktree.ts:198` の実行時文字列 `'作業場は無い。'` と、`tool/worktree.test.ts:206` のその写しである。手順上、文字列リテラルとテストのデータは変えないため、ここでは直さない。
+    - left: エントリー 03（strings）が直す。Verify の `! grep` はその 2 件で終了コード 1 になる。
+- Unplanned: なし
+- Commit: d375d19 consult(comments-consult): Align consult comments and test names with glossary
 - Stopped:
+
+### Cleanup: 重複と自明なテストの削除
+
+- Findings:
+  - `tool/subagents.test.ts` の `latest` の空入力テストを落とした。`rowsOf([])` のテストが同じ経路（`latest([])`）を通るため。
+  - `run/log.test.ts` の `deliveredKeys([])` の空テストを落とした。分岐がなく、影響がわずかなため。
+  - `tool/sound.test.ts` の基本呼び出しテストを落とした。差し替えテストが呼び出し回数まで確かめるため。
+  - `run/log.test.ts` の `startToken` なし行の parse テストを落とした。`token` なし行のテストと同形・同装置で、欠落時の振る舞いは `isRunning` と `closeOrphans` のテストが担うため。
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 禁止語の `grep` は `.pi/extensions/consult/tool/worktree.ts:198` と `.pi/extensions/consult/tool/worktree.test.ts:206` の 2 件だけが残り、いずれも文字列リテラルとその写しとして計画と ADR が残すと決めたものであること、ならびに `口`/`手`/`純`/`穴` の置換と JSDoc の欄構造が差分どおり保たれていることを確かめた。
+- Unlisted: なし — 差分の変更ファイルはすべて `## Files` が挙げる範囲に収まり、`cycles/261101-050-dev/plan/comments-consult.md` の差分は `## Notes` の記録であることを確かめた。
+- Gaps: `parseRun` の `startToken` 欠落時に `undefined` のまま読める振る舞いを直接確かめる検査がなくなり、数値混入の検査だけが残ったため、欠落を空文字などの既定値に変える回帰を検出できない (`.pi/extensions/consult/run/log.test.ts:354`、分岐は `.pi/extensions/consult/run/log.ts:139`)。
+  - fixed: `token` なし行の検査を `token` と `startToken` の両欠落を確かめる形に広げ、1 件で両欄を守るようにした。`startToken` を既定値に変える回帰はこの断言が失敗する。
+- Unproven: なし — 残った検査はいずれも名指す振る舞いを壊せば失敗すること (`token` なしと `startToken` 数値の落とし分け、差し替え後の `tink` 復帰、空入力の `listText` 経路など) を確かめた。
+- Noise: なし — 境界値の単独検査の削除は `## Test cases` の境界値規則に合い、残った断言はファクトリ由来の値から導いた結果を確かめ、型やスキーマが保証する前提だけを確かめる検査や誰も気づかない検査は残っていないことを確かめた。
 - Doubts:
+  - `Verify` の `! grep` は上記 2 件のため終了コード 1 のままであり、`## Notes` がエントリー 03 に引き継ぐと記録しているため所見にせず残す。
+    - left: 実行時文字列とその写しは手順上変えられず、エントリー 03 の仕事であるため。
+  - `## Files` が `update` とする `.pi/extensions/consult/tool/run.ts:1` に差分がなく、既に基準に合うと判断された形であるため所見にせず残す。
+    - left: 基準に合う行は残すと決めており、変える理由がないため。
+
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` の 1 件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: 修正を確認した — `.pi/extensions/consult/run/log.test.ts:354-364` の「`token` と `startToken` のない行（古い形）→ どちらも `undefined` で読める」が、同じ入力行について `token` が `undefined` であることと `startToken` が `undefined` であることの両方を断言しているため、修正済みである。根拠は、実装 `.pi/extensions/consult/run/log.ts:138-139` が両欄とも文字列のときだけ取り込む構造であり、欠落時に既定値（空文字など）を設ければこの断言が失敗し、回帰を検出できることである。
+- Unproven: なし — 同じ理由により、`Unproven` には `fixed:` がないため対象外である。
+- Noise: なし — 同じ理由により、`Noise` には `fixed:` がないため対象外である。
+- Doubts:
+  - Doubts: なし — `Doubts` には `fixed:` がなく、新たに所見に至らない疑義もない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 787 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 38 changed files and the unchanged `tool/run.ts`
+- Findings: the plan's grep stays red on the two `作業場` in `.pi/extensions/consult/tool/worktree.ts:198` and `tool/worktree.test.ts:206`; entry 03 fixes them (the Notes' `left:`)
+- Doubts: なし

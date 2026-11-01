@@ -23,11 +23,6 @@ describe('sound', () => {
     setSoundEnabled(true);
   });
 
-  it('playSound → 差し替えた player が 1 回呼ばれる', () => {
-    playSound();
-    expect(played).toEqual(['tink']);
-  });
-
   it('enabled が off → 鳴らさない', () => {
     setSoundEnabled(false);
     expect(isSoundEnabled()).toBe(false);
@@ -37,7 +32,7 @@ describe('sound', () => {
     expect(played).toHaveLength(0);
   });
 
-  it('鳴らす所を差し替えると、渡した物だけが呼ばれる', () => {
+  it('鳴らす所を差し替えると、渡したものだけが呼ばれる', () => {
     const restore = setPlayer(() => {
       played.push('swapped');
     });

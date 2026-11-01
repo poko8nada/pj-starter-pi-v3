@@ -182,7 +182,7 @@ describe('finalTextFrom', () => {
     expect(finalTextFrom([event])).toBe('');
   });
 
-  it('イベントが無ければ空文字', () => {
+  it('イベントがなければ空文字', () => {
     expect(finalTextFrom([])).toBe('');
   });
 });
@@ -201,7 +201,7 @@ describe('ranFrom', () => {
     expect(ranFrom([messageEnd()])).toBe(true);
   });
 
-  it('生成が 0 / イベント無しなら false（モデルが動いていない）', () => {
+  it('生成が 0 / イベントなしなら false（モデルが動いていない）', () => {
     expect(ranFrom([])).toBe(false);
     const failed = messageEnd({ usage: { input: 0, output: 0 } });
     expect(ranFrom([failed])).toBe(false);

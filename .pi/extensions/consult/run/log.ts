@@ -1,12 +1,12 @@
 /**
  * consult の実行記録。
  *
- * 1 回のサブエージェントの起動を 1 行の JSON として置き場（`Place`）の日ごとのファイルに足す。
+ * 1 回のサブエージェントの起動を 1 行の JSON として保存場所（`Place`）の日ごとのファイルに足す。
  * メインエージェントのセッションが reload で差し替わっても、新しいインスタンスはこれを読めば
- * 前のサブエージェントを思い出せる。置き場はリポジトリから決まる固定の場所なので、記憶を持たない。
+ * 前のサブエージェントを思い出せる。保存場所はリポジトリから決まる固定の場所なので、記憶を持たない。
  *
  * 追記は 1 行単位。途中で落ちても、その前の行は残る。読む側は壊れた行を飛ばす。
- * 読む幅は今日と昨日の 2 ファイル（`RECORD_DAYS`）。掃除は 30 日より古い物を消す。
+ * 読む幅は今日と昨日の 2 ファイル（`RECORD_DAYS`）。掃除は 30 日より古いものを消す。
  */
 
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
@@ -20,23 +20,23 @@ export const RECORD_DAYS = 2;
 /** 残す日数。起動の掃除がこれより古いファイルを消す */
 export const KEEP_DAYS = 30;
 
-/** サブエージェント 1 体の 1 回の記録。終わりの欄は、走っている間は無い */
+/** サブエージェント 1 体の 1 回の記録。終わりの欄は、走っている間はない */
 export interface RunRecord {
-  /** pi のセッション id。照合に使うだけ（人が読む物ではない） */
+  /** pi のセッション id。照合に使うだけ（人が読むものではない） */
   readonly session: string;
   /** メインエージェントが振った id（`consult-1` など） */
   readonly subagent: string;
   readonly role: string;
-  /** worktree の id。ベースで走ったサブエージェント（読むだけ）には無い */
+  /** worktree の id。ベースで走ったサブエージェント（読むだけ）にはない */
   readonly worktree?: string;
   readonly pid: number;
-  /** 子の pi に `--name` で渡した印。`ps` の argv に出る。古い行には無い */
+  /** 子の pi に `--name` で渡した印。`ps` の argv に出る。古い行にはない */
   readonly token?: string;
-  /** 子の起動時刻の文字列（`ps -p <pid> -o lstart=` の出力）。古い行には無い */
+  /** 子の起動時刻の文字列（`ps -p <pid> -o lstart=` の出力）。古い行にはない */
   readonly startToken?: string;
   /** 始まった時刻（ms） */
   readonly started: number;
-  /** 終わった時刻（ms）。走っている間は無い */
+  /** 終わった時刻（ms）。走っている間はない */
   readonly ended?: number;
   readonly state?: SubagentState;
   readonly reason?: string;
@@ -56,7 +56,7 @@ export interface ReadScope {
   readonly at?: Date;
 }
 
-/** 1 行足す。その日のファイルに書く。置き場のディレクトリが無ければ作る */
+/** 1 行足す。その日のファイルに書く。保存場所のディレクトリがなければ作る */
 export function appendRun(place: Place, record: RunRecord, at?: Date): void {
   const file = dayFile(place, at ?? new Date());
   mkdirSync(place.dir, { recursive: true });
@@ -66,7 +66,7 @@ export function appendRun(place: Place, record: RunRecord, at?: Date): void {
 /**
  * 生存確認。
  *
- * シグナル 0 は「送らずに送れるかだけ見る」。投げなければ生きている。権限が無い場合も投げるので、
+ * シグナル 0 は「送らずに送れるかだけ見る」。投げなければ生きている。権限がない場合も投げるので、
  * 別のユーザーのプロセスは「死んでいる」と見える（自分のサブエージェントしか見ないので、これで足りる）。
  */
 export function pidAlive(pid: number): boolean {
@@ -81,10 +81,10 @@ export function pidAlive(pid: number): boolean {
   }
 }
 
-/** 記録 1 行の生死。テストが差し替える口（`ps` を叩かない） */
+/** 記録 1 行の生死。テストが差し替える関数（`ps` を叩かない） */
 export type CheckRecord = (record: RunRecord) => Liveness;
 
-/** 既定の照合。startToken があれば `ps` の `lstart`、無ければ `pidAlive`（古い行の移行） */
+/** 既定の照合。startToken があれば `ps` の `lstart`、なければ `pidAlive`（古い行の移行） */
 export function defaultCheck(record: RunRecord, run?: PsRun): Liveness {
   if (record.startToken !== undefined) {
     return checkPid(record.pid, record.startToken, run);
@@ -95,14 +95,14 @@ export function defaultCheck(record: RunRecord, run?: PsRun): Liveness {
 /**
  * 走っているサブエージェントの行か。終わりの行があれば false。読めないときは走っている側（`ended` 以外は true）。
  *
- * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`check` はテストが差し替える口。
+ * メインエージェントの記憶ではなく記録で見るので、reload をまたいだサブエージェントにも効く。`check` はテストが差し替える関数。
  */
 export function isRunning(record: RunRecord, check: CheckRecord = defaultCheck): boolean {
   return record.ended === undefined && check(record) !== 'ended';
 }
 
 /**
- * 1 行を記録にする。壊れた行（JSON でない・形が違う・session が無い）は undefined。
+ * 1 行を記録にする。壊れた行（JSON でない・形が違う・session がない）は undefined。
  *
  * 型を書いた枠に 1 回だけ入れてから見る（`any` を各所に持ち回らない）。
  */
@@ -163,7 +163,7 @@ function isPaths(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((path) => typeof path === 'string');
 }
 
-/** 置き場の窓の中の記録を、始まった順に返す */
+/** 保存場所の窓の中の記録を、始まった順に返す */
 export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
   const files = windowFiles(place, scope.at ?? new Date(), scope.days ?? RECORD_DAYS);
   const records: RunRecord[] = [];
@@ -192,7 +192,7 @@ export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
  * その session の、走っているサブエージェントの行だけを返す。
  *
  * `readRuns` の窓を `scope` で切り、subagent ごとにまとめる。同じ subagent に `ended` の行が
- * 1 つでもあれば終わり（事故の形でも走っていない）。無ければ開始行を `check` に渡し、
+ * 1 つでもあれば終わり（事故の形でも走っていない）。なければ開始行を `check` に渡し、
  * `ended` 以外を返す。音の述語と、前のセッションのサブエージェントの告知が読む。
  */
 export function runningRuns(
@@ -223,10 +223,10 @@ export function runningRuns(
 }
 
 /**
- * 終わりの無い開始行を終了行で閉じる。
+ * 終わりのない開始行を終了行で閉じる。
  *
- * session の行を subagent ごとにまとめ、`ended` の無い subagent の開始行を `check`
- * （既定は startToken があれば `ps` の `lstart`、無ければ `pidAlive`）に渡す。`ended`
+ * session の行を subagent ごとにまとめ、`ended` のない subagent の開始行を `check`
+ * （既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`）に渡す。`ended`
  * なら、開始行を写して `ended: Date.now()`、`state: 'error'`、理由を足した行を
  * `appendRun` し、閉じた行を返す。`running` と `unknown` なら何もしない。`appendRun` が投げたら
  * そのまま投げる（呼ぶ側の `index.ts` が握る）。

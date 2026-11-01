@@ -30,7 +30,7 @@ describe('checkPid', () => {
     expect(checkPid(123, START, run)).toBe('ended');
   });
 
-  it('pid が無い（exit 1・出力なし・stderr なし）→ ended', () => {
+  it('pid がない（exit 1・出力なし・stderr なし）→ ended', () => {
     const run = ps({ status: 1, stdout: '', stderr: '' });
     expect(checkPid(999999, START, run)).toBe('ended');
   });

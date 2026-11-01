@@ -34,7 +34,7 @@ export interface SubagentJob {
   readonly continueSession?: boolean;
   /** メインエージェントが振った id。塊に載せて、メインエージェントがどのサブエージェントか見分けられるようにする */
   readonly id?: string;
-  /** サブエージェントのプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための口 */
+  /** サブエージェントのプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための関数 */
   readonly onStarted?: (pid: number) => void;
 }
 
@@ -101,7 +101,7 @@ export async function runOneSubagent(
 ): Promise<SubagentResult> {
   const { task, signal, worktree, continueSession } = job;
   const prepared = prepare(ctx, options, worktree);
-  // 依存を入れる。無いとサブエージェントもフックも何も確かめられない。
+  // 依存を入れる。ないとサブエージェントもフックも何も確かめられない。
   const install = prepared.worktree === undefined ? undefined : installDependencies(prepared.cwd);
   if (install?.kind === 'failed') {
     // 環境の失敗。setup の誤り（設定）とは区別して、このサブエージェントの状態にする。

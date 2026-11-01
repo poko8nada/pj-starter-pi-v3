@@ -3,7 +3,7 @@
  *
  * IO を持たない純粋な部分だけを置く。プロセスの起動は run.ts、道具としての入口は index.ts が持つ。
  *
- * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、選び直す口は無い。費用の歯止め（上限）も type が持つ。
+ * 走り方は type が決める（types.ts）。ここは policy を引数に変えるだけで、選び直す窓口はない。費用の歯止め（上限）も type が持つ。
  */
 
 import { fileURLToPath } from 'node:url';
@@ -12,7 +12,7 @@ import type { Limits, TypePolicy } from '../policy/types.ts';
 /**
  * サブエージェントに読ませる guard。`-e` でサブエージェントの起動に渡す。
  *
- * サブエージェントだけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`subagent-guard.ts` は自動では読まれない）。ホストの権限設定が無い環境でも、サブエージェントが秘密のパスに触れないようにする。
+ * サブエージェントだけがこれを読む（pi の拡張探索はディレクトリの `index.ts` なので、`subagent-guard.ts` は自動では読まれない）。ホストの権限設定がない環境でも、サブエージェントが秘密のパスに触れないようにする。
  */
 const SUBAGENT_GUARD = fileURLToPath(new URL('./guard.ts', import.meta.url));
 
