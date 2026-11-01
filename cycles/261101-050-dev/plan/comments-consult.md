@@ -230,12 +230,17 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 禁止語の `grep` は `.pi/extensions/consult/tool/worktree.ts:198` と `.pi/extensions/consult/tool/worktree.test.ts:206` の 2 件だけが残り、いずれも文字列リテラルとその写しとして計画と ADR が残すと決めたものであること、ならびに `口`/`手`/`純`/`穴` の置換と JSDoc の欄構造が差分どおり保たれていることを確かめた。
+- Unlisted: なし — 差分の変更ファイルはすべて `## Files` が挙げる範囲に収まり、`cycles/261101-050-dev/plan/comments-consult.md` の差分は `## Notes` の記録であることを確かめた。
+- Gaps: `parseRun` の `startToken` 欠落時に `undefined` のまま読める振る舞いを直接確かめる検査がなくなり、数値混入の検査だけが残ったため、欠落を空文字などの既定値に変える回帰を検出できない (`.pi/extensions/consult/run/log.test.ts:354`、分岐は `.pi/extensions/consult/run/log.ts:139`)。
+  - fixed: `token` なし行の検査を `token` と `startToken` の両欠落を確かめる形に広げ、1 件で両欄を守るようにした。`startToken` を既定値に変える回帰はこの断言が失敗する。
+- Unproven: なし — 残った検査はいずれも名指す振る舞いを壊せば失敗すること (`token` なしと `startToken` 数値の落とし分け、差し替え後の `tink` 復帰、空入力の `listText` 経路など) を確かめた。
+- Noise: なし — 境界値の単独検査の削除は `## Test cases` の境界値規則に合い、残った断言はファクトリ由来の値から導いた結果を確かめ、型やスキーマが保証する前提だけを確かめる検査や誰も気づかない検査は残っていないことを確かめた。
 - Doubts:
+  - `Verify` の `! grep` は上記 2 件のため終了コード 1 のままであり、`## Notes` がエントリー 03 に引き継ぐと記録しているため所見にせず残す。
+    - left: 実行時文字列とその写しは手順上変えられず、エントリー 03 の仕事であるため。
+  - `## Files` が `update` とする `.pi/extensions/consult/tool/run.ts:1` に差分がなく、既に基準に合うと判断された形であるため所見にせず残す。
+    - left: 基準に合う行は残すと決めており、変える理由がないため。
 
 ## Acceptance
 

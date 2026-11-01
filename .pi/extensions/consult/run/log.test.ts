@@ -351,12 +351,15 @@ describe('parseRun', () => {
     ).toMatchObject({ token });
   });
 
-  it('token なしの行（古い形）→ token は undefined で読める', () => {
+  it('token と startToken のない行（古い形）→ どちらも undefined で読める', () => {
     expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
       { session: 's' },
     );
     expect(
       parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.token,
+    ).toBeUndefined();
+    expect(
+      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.startToken,
     ).toBeUndefined();
   });
 
