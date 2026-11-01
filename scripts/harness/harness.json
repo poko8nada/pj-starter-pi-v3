@@ -2,6 +2,7 @@
   "starter": "~/Desktop/main/_pj-starter-pi-v3",
   "copy": [
     ".pi",
+    "rules",
     "lib",
     ".github/workflows",
     "test/temp-dir.ts",
