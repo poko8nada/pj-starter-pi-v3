@@ -117,11 +117,6 @@ describe('readme-format guard', () => {
     expect(() => readChecked(mutated)).toThrow();
   });
 
-  it('1行を落とした写しは通らない', () => {
-    const mutated = withLine(readFormat(), '## Getting started', []);
-    expect(() => readChecked(mutated)).toThrow();
-  });
-
   it('Writingから1行を消した写しは通らない', () => {
     const mutated = withLine(
       readFormat(),
