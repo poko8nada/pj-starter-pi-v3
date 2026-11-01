@@ -109,7 +109,7 @@ function messageEnd(message: AgentMessage): MessageEndEvent {
 
 function messageUpdate(message: AgentMessage): MessageUpdateEvent {
   if (message.role !== 'assistant') {
-    throw new Error('messageUpdate は assistant のメッセージだけを受ける。');
+    throw new Error('messageUpdate は assistant のメッセージだけを受ける');
   }
   return {
     type: 'message_update',
