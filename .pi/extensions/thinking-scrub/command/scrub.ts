@@ -75,6 +75,6 @@ export function runCommand(
   lines.push(enabled ? 'thinking-scrub: on' : 'thinking-scrub: off');
   lines.push(show ? 'show: on' : 'show: off');
   lines.push(`removed: ${status.removed}`);
-  lines.push(status.lastAt === null ? 'last: まだ無い' : `last: ${status.lastAt}`);
+  lines.push(status.lastAt === null ? 'last: まだない' : `last: ${status.lastAt}`);
   return lines;
 }

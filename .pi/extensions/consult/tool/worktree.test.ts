@@ -203,7 +203,7 @@ describe('consult_worktree', () => {
 
   it('list → 作ったものを出す。1 つもなければそう言う', async () => {
     const { dir } = repo();
-    expect(text(await call({ action: 'list' }, dir))).toContain('作業場は無い');
+    expect(text(await call({ action: 'list' }, dir))).toContain('ワークツリーは無い');
 
     await call({ action: 'new', id: '2-b' }, dir);
     expect(text(await call({}, dir))).toContain(branchFor('2-b'));

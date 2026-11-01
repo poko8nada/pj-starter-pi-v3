@@ -195,7 +195,7 @@ export function createWorktreeTool(place: Place, check?: CheckRecord) {
     }
     const rows = listWorktrees(cwd);
     if (rows.length === 0) {
-      return result('作業場は無い。', { action: 'list', rows });
+      return result('ワークツリーは無い。', { action: 'list', rows });
     }
     return result(rows.map((row) => rowLine(row, runningIn(place, row.id, check))).join('\n'), {
       action: 'list',

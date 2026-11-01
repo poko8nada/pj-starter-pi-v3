@@ -40,9 +40,9 @@ export function entrySkeleton(nnn) {
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
-  - <採った形>
+  - <採用した形>
 - Options:
-  - <案>（採らなかった理由）
+  - <案>（採用しなかった理由）
 
 ### Definition
 
