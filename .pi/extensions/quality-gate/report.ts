@@ -4,33 +4,33 @@ import {
   truncateHead,
 } from '@earendil-works/pi-coding-agent';
 
-/** 1 つのチェックの実行結果 */
+/** 1 つのチェックの実行結果である。 */
 export interface CheckOutcome {
   readonly label: string;
   readonly failed: boolean;
   readonly output: string;
 }
 
-/** チェック実行の結果と、実際に検査したファイル */
+/** チェック実行の結果と実際に検査したファイルである。 */
 export interface CheckRun {
   readonly outcomes: readonly CheckOutcome[];
-  /** 検査対象から外れたファイル（削除済み、または git 管理外） */
+  /** 検査対象から外れたファイルである（削除済み、または git 管理外）。 */
   readonly skipped: readonly string[];
 }
 
-/** 失敗レポートを組み立てるための入力 */
+/** 失敗レポートを組み立てるための入力である。 */
 export interface GateFailureReport {
   readonly outcomes: readonly CheckOutcome[];
   readonly attempt: number;
   readonly maxAttempts: number;
-  /** 編集されたファイル（相対パス） */
+  /** 編集されたファイルである（相対パス）。 */
   readonly relativePaths: readonly string[];
-  /** 検査対象から外れたファイル（相対パス） */
+  /** 検査対象から外れたファイルである（相対パス）。 */
   readonly skippedPaths: readonly string[];
   readonly isFinalAttempt: boolean;
 }
 
-/** 長すぎる出力を切り詰める（エラーは先頭に並ぶため head を残す） */
+/** 長すぎる出力を切り詰める。エラーは先頭に並ぶため先頭を残す。 */
 function clipOutput(text: string): string {
   const trimmed = text.trim();
   if (trimmed.length === 0) {
@@ -73,7 +73,7 @@ function formatTouched(report: GateFailureReport): string {
 
 /**
  * LLM に渡す修復指示メッセージを組み立てる。
- * エージェント向けの文面なので英語で書く（日本語コメントは人間向けの補足）。
+ * エージェント向けの文面のため英語で書く（日本語コメントは人間向けの補足である）。
  */
 export function buildGateMessage(report: GateFailureReport): string {
   const failedLabels = report.outcomes

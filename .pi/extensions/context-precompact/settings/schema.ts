@@ -1,7 +1,7 @@
 /**
- * context-precompact の設定。`settings.json` と 1 対 1。
+ * context-precompact の設定である。`settings.json` と 1 対 1 に対応する。
  *
- * 書いていない欄は既定のまま。書いてある欄が知らないキー・範囲外・別の型なら broken。
+ * 書いていない欄は既定のままにする。書いてある欄が知らないキー、範囲外、別の型の場合は broken を返す。
  */
 import {
   DEFAULT_KEEP_RECENT_TOKENS,
@@ -21,7 +21,7 @@ export type SettingsRead =
   | { readonly kind: 'ok'; readonly settings: Settings }
   | { readonly kind: 'broken'; readonly reason: string };
 
-/** 既定の設定 */
+/** 既定の設定を返す。 */
 export function defaultSettings(): Settings {
   return {
     enabled: true,
@@ -38,7 +38,7 @@ function broken(reason: string): SettingsRead {
   return { kind: 'broken', reason: `context-precompact settings: ${reason}` };
 }
 
-/** 読んだ文書を既定に重ねる。だめなら理由を返す */
+/** 読んだ文書を既定に重ねる。無効なら理由を返す。 */
 function overlaySettings(document: Record<string, unknown>, base: Settings): Settings | string {
   for (const key of Object.keys(document)) {
     if (key !== 'enabled' && key !== 'keepRecentTokens' && key !== 'thresholdRatio') {
@@ -72,7 +72,7 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
   return settings;
 }
 
-/** 読んだ文字列を設定にする。型が違えば broken */
+/** 読んだ文字列を設定にする。型が違えば broken を返す。 */
 export function parseSettings(text: string): SettingsRead {
   let document: unknown;
   try {

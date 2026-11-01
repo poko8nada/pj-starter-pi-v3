@@ -11,14 +11,14 @@ function reasonOf(): string {
 }
 
 describe('chatText', () => {
-  it('ready に前後の数 → 桁区切りの 2 値が文面に並ぶ', () => {
+  it('ready に前後の数を渡すと桁区切りの 2 値が文面に並ぶ', () => {
     const pair = pairOf();
     const text = chatText({ kind: 'ready', ...pair });
     expect(text).toContain(formatCount(pair.before));
     expect(text).toContain(formatCount(pair.after));
   });
 
-  it('applied に前後の数 → 桁区切りの 2 値が文面に並ぶ', () => {
+  it('applied に前後の数を渡すと桁区切りの 2 値が文面に並ぶ', () => {
     const pair = pairOf();
     const text = chatText({ kind: 'applied', ...pair });
     expect(text).toContain(formatCount(pair.before));
@@ -27,21 +27,21 @@ describe('chatText', () => {
 });
 
 describe('statusText', () => {
-  it('failed に理由 → 文面はあり、理由は入らない', () => {
+  it('failed に理由を渡すと文面はあり理由は入らない', () => {
     const reason = reasonOf();
     const footer = statusText({ kind: 'failed', reason });
     expect(footer).toBeDefined();
     expect(footer).not.toContain(reason);
   });
 
-  it('idle / discarded → undefined', () => {
+  it('idle と discarded なら undefined になる', () => {
     expect(statusText({ kind: 'idle' })).toBeUndefined();
     expect(statusText({ kind: 'discarded' })).toBeUndefined();
   });
 });
 
 describe('statusLine', () => {
-  it('ready / applied に前後の数 → 桁区切りの 2 値が入る', () => {
+  it('ready と applied に前後の数を渡すと桁区切りの 2 値が入る', () => {
     const pair = pairOf();
     for (const kind of ['ready', 'applied'] as const) {
       const line = statusLine({ kind, ...pair });
@@ -50,21 +50,21 @@ describe('statusLine', () => {
     }
   });
 
-  it('failed に理由 → 理由が入る', () => {
+  it('failed に理由を渡すと理由が入る', () => {
     const reason = reasonOf();
     expect(statusLine({ kind: 'failed', reason })).toContain(reason);
   });
 });
 
 describe('failureText', () => {
-  it('失敗の理由 → 理由が入る', () => {
+  it('失敗の理由を渡すと理由が入る', () => {
     const reason = reasonOf();
     expect(failureText(reason)).toContain(reason);
   });
 });
 
 describe('brokenText', () => {
-  it('設定が壊れている理由 → 理由が入る', () => {
+  it('設定が壊れている理由を渡すと理由が入る', () => {
     const reason = reasonOf();
     expect(brokenText(reason)).toContain(reason);
   });

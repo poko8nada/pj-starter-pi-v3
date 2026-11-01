@@ -3,7 +3,7 @@ import { cycleText } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { detectUnitRuns, sampleOf, splitUnits, type Unit, type UnitRun } from './units.ts';
 
-// 繰り返しの文は factory で組み立てる。各 case で直書きしない。
+// 繰り返しの文はファクトリで組み立てる。各 case で直接書かない。
 
 function sentenceUnit(index: number): string {
   return `analysis ${index} proceeds with steady reasoning about the task`;
@@ -26,7 +26,7 @@ function unitsFromText(text: string): readonly Unit[] {
 }
 
 describe('splitUnits', () => {
-  it('2 行の英語が factory から → 4 単位で元の offset を保つ', () => {
+  it('2 行の英語をファクトリから作れば 4 単位で元の offset を保つ', () => {
     const expected = [english(0), english(1, '!'), english(2, '?'), english(3)];
     const line1 = `${expected[0]} ${expected[1]}`;
     const line2 = `${expected[2]} ${expected[3]}`;
@@ -44,7 +44,7 @@ describe('splitUnits', () => {
     expect(units[2]?.start).toBeGreaterThanOrEqual(line1.length + 1);
   });
 
-  it('。と！の日本語 1 行が factory から → その印で分かれ offset を保つ', () => {
+  it('。と！の日本語 1 行をファクトリから作ればその印で分かれ offset を保つ', () => {
     const expected = [japanese(20), japanese(21, '！')];
     const text = expected.join('');
     const units = unitsFromText(text);
@@ -57,7 +57,7 @@ describe('splitUnits', () => {
     expect(units[1]?.start).toBe(units[0]?.end);
   });
 
-  it('フェンス囲み → 柵の行と中身が不透明', () => {
+  it('フェンス囲みなら柵の行と中身が不透明になる', () => {
     const fenceOpen = '```js';
     const fenceClose = '```';
     const lines = [english(0), fenceOpen, english(1), english(2), fenceClose, english(3)];
@@ -77,7 +77,7 @@ describe('splitUnits', () => {
     }
   });
 
-  it('表の行と diff --git の行 → 不透明', () => {
+  it('表の行と diff --git の行は不透明になる', () => {
     const table = '| a | b |';
     const diff = 'diff --git a/foo b/foo';
     const expectedOpaque = [table, diff];
@@ -93,7 +93,7 @@ describe('splitUnits', () => {
     }
   });
 
-  it('略語で終わる行 → 略語が 1 単位になり前後がずれない', () => {
+  it('略語で終わる行なら略語が 1 単位になり前後がずれない', () => {
     const abbrev = 'No.';
     const rest = english(5);
     const expected = [abbrev, rest];
@@ -109,7 +109,7 @@ describe('splitUnits', () => {
 });
 
 describe('detectUnitRuns', () => {
-  it('既定の sentence と 3 周期の並び → 1 つのラン', () => {
+  it('既定の sentence と 3 周期の並びなら 1 つのランになる', () => {
     const sentence = defaultSettings().sentence;
     const pattern = [english(0), english(1), english(2)];
     const text = cycleText(pattern, sentence.minCycles);
@@ -125,7 +125,7 @@ describe('detectUnitRuns', () => {
     });
   });
 
-  it('周期 6 と 12 が重なる factory の並び → 周期 6 の run が 1 つ', () => {
+  it('周期 6 と 12 が重なるファクトリの並びなら周期 6 のランが 1 つになる', () => {
     const sentence = defaultSettings().sentence;
     const base6 = [0, 1, 2, 3, 4, 5].map((index) => english(index));
     const base12 = [...base6, ...base6];
@@ -138,7 +138,7 @@ describe('detectUnitRuns', () => {
     expect(runs[0]?.length).toBe(base12.length * sentence.minCycles);
   });
 
-  it('minCycles - 1 周期 → run が無い', () => {
+  it('minCycles から 1 引いた周期ならランがない', () => {
     const sentence = defaultSettings().sentence;
     const pattern = [longEnglish(0), longEnglish(1), longEnglish(2)];
     const text = cycleText(pattern, sentence.minCycles - 1);
@@ -148,7 +148,7 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it('minRunChars - 1 文字 → run が無い', () => {
+  it('minRunChars から 1 引いた文字数ならランがない', () => {
     const sentence = defaultSettings().sentence;
     const one = `${sentenceUnit(0)} ${sentenceUnit(0)}.`;
     const text = cycleText([one], sentence.minCycles);
@@ -159,7 +159,7 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it('柵を含む繰り返し → run が無い', () => {
+  it('柵を含む繰り返しはランがない', () => {
     const sentence = defaultSettings().sentence;
     const pattern = [english(0), english(1), english(2)];
     const first = cycleText(pattern, 1);
@@ -179,7 +179,7 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it('普通の文章 → run が無い', () => {
+  it('普通の文章はランがない', () => {
     const sentence = defaultSettings().sentence;
     const sentences = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => english(index));
     const text = sentences.join(' ');
@@ -188,7 +188,7 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it('周期の上限を超える繰り返し → run が無い', () => {
+  it('周期の上限を超える繰り返しはランがない', () => {
     const sentence = defaultSettings().sentence;
     const pattern = Array.from({ length: sentence.maxPeriodUnits + 1 }, (_, index) =>
       english(index),
@@ -200,7 +200,7 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, sentence)).toHaveLength(0);
   });
 
-  it('sentence.minRunChars を 200 にした設定で、240 文字のラン → 1 つ', () => {
+  it('sentence.minRunChars を 200 にした設定で 240 文字のランは 1 つになる', () => {
     const sentence = { ...defaultSettings().sentence, minRunChars: 200 };
     const pattern = [english(0), english(1)];
     const text = cycleText(pattern, sentence.minCycles);
@@ -214,7 +214,7 @@ describe('detectUnitRuns', () => {
 });
 
 describe('sampleOf', () => {
-  it('12 単位の run → 最頻の 3 文で sampleChars 以下', () => {
+  it('12 単位のランなら最頻の 3 文で sampleChars 以下になる', () => {
     const tuning = defaultSettings();
     const pattern = [english(0), english(1), english(2)];
     const cycles = tuning.sentence.minCycles + 1;
@@ -227,7 +227,7 @@ describe('sampleOf', () => {
     expect(sample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
   });
 
-  it('3 文で sampleChars を超える → 切れる', () => {
+  it('3 文で sampleChars を超えれば切れる', () => {
     const tuning = defaultSettings();
     const pattern = [longEnglish(0), longEnglish(1), longEnglish(2), longEnglish(3)];
     const text = cycleText(pattern, tuning.sentence.minCycles);
@@ -244,7 +244,7 @@ describe('sampleOf', () => {
     expect(sample).toBe(expected.slice(0, tuning.live.sampleChars));
   });
 
-  it('1 単位の周期 → その 1 文だけ', () => {
+  it('1 単位の周期ならその 1 文だけになる', () => {
     const tuning = defaultSettings();
     const pattern = [longEnglish(0)];
     const one = pattern[0] ?? '';

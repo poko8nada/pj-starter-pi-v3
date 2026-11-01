@@ -1,5 +1,5 @@
 /**
- * `settings.json` の読み込み。無ければ既定、読めない・壊れていれば broken。
+ * `settings.json` を読み込む。なければ既定値を返し、読めない場合と壊れている場合は broken を返す。
  *
  * `readSettings` は呼ばれたときにその都度ファイルを読む。配線はスキャン時と `message_end` に読む。
  */
@@ -16,7 +16,7 @@ function errorCode(error: unknown): string | undefined {
   return undefined;
 }
 
-/** `<dir>/settings.json` を読む。無ければ既定 */
+/** `<dir>/settings.json` を読む。なければ既定値を返す。 */
 export function readSettings(dir: string): SettingsRead {
   const file = join(dir, SETTINGS_FILE);
   let text: string;

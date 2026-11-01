@@ -348,24 +348,47 @@
 
 ### Slice 1: コメントとテスト名
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e547165 consult(comments-extensions): align comments and test names with Japanese style rules
 - Stopped:
+
+### Cleanup: 重複・廃止のテストなし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — 対象63件に禁止語（畳む・作業場・置き場・目録・雛形・骨・番人・水位・残り物・工場・採る・木・穴）と旧語（純関数・受け口・使う口）が残らないこと、JSDocの欄構造とdescribeの入れ子が変わらないことを確かめた。
 - Unlisted:
+  - `.pi/extensions/thinking-scrub/index.test.ts:112` のエラーメッセージのリテラルに句点が足されている（`'messageUpdate は assistant のメッセージだけを受ける'` → `'messageUpdate は assistant のメッセージだけを受ける。'`）。planのStepsは文字列リテラルを変えないと定め、ADR 02はエラーメッセージを変えない（エントリー03が持つ）と定めているため、Filesが名指す変更に含まれず、この差分では計画を閉じられない。
+  - fixed: リテラルを元の句点なしに戻し、差分を計画の範囲内に戻した。
 - Gaps:
+  - なし — Verifyのgrep（禁止語なし）と既存テストの実行・typecheck・lint・formatで確かめる範囲に、Stepsが求める振る舞いの抜けはなかった。
 - Unproven:
+  - なし — 新しい振る舞いや分岐の追加はなく、it名の文言だけが変わり断言とデータは変わらないため、壊しても緑になる検査の追加はなかった。
 - Noise:
+  - なし — 新しい検査例の追加はなく、既存の数値や文字列はデータを変えない方針のため残るだけで、型や制約が済ませる重複や誰も気づかない例の追加はなかった。
 - Doubts:
+  - `.pi/extensions/thinking-scrub/index.test.ts:233` の `設定が enabled が false` は助詞の `が` が重なり不自然である。基準違反とまでは言えないため所見にせず残す。
+  - left: 規則違反と断定できる根拠がなく、直すと意味を変える危険があるため残す。
+
+### Round 2
+
+- Stale: なし — fixed 指定なしのため対象外
+- Unlisted:
+  - なし — fixed 1件を確認。`.pi/extensions/thinking-scrub/index.test.ts:112` が `'messageUpdate は assistant のメッセージだけを受ける'` で句点なしに戻り、文字列リテラルの変更は残っていない。Round 1 の指摘（句点追加はStepsの文字列リテラル不変とADR 02に反する計画外変更）は閉じている
+- Gaps: なし — fixed 指定なしのため対象外
+- Unproven: なし — fixed 指定なしのため対象外
+- Noise: なし — fixed 指定なしのため対象外
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run` (62 files, 791 tests), `pnpm typecheck`, `pnpm lint`, `pnpm format:check`; the diff read of the 63 changed files
+- Findings: なし
+- Doubts: なし

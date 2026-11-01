@@ -1,9 +1,9 @@
 /**
- * thinking-scrub の配線。`message_end` で畳み、実行の終わり（`agent_end`）に合計を 1 行で報告し、`/thinking-scrub` で scrub と表示を切り替える。
+ * thinking-scrub を配線する。`message_end` でまとめ、実行の終わり（`agent_end`）に合計を 1 行で報告し、`/thinking-scrub` で scrub と表示を切り替える。
  *
  * 生成中は `message_update` で文の周期を見て止め、`agent_settled` でフォローアップを送る。
- * 設定は生成中のスキャン時と `message_end` に読み直す。壊れていれば既定の有効で動く。例外は握りつぶさず、
- * 数えて `undefined` を返す。状態はセッションの間だけ持つ。
+ * 設定は生成中のスキャン時と `message_end` に読み直す。壊れていれば既定の有効で動く。例外は隠さずに数え、
+ * `undefined` を返す。状態はセッションの間だけ持つ。
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -44,7 +44,7 @@ import {
   type Tally,
 } from './state/cell.ts';
 
-/** この拡張が pi に求める口だけ。テストは on と registerCommand を記録する偽物を渡す */
+/** この拡張が pi に求める窓口だけである。テストは on と registerCommand を記録する偽物を渡す。 */
 export interface PiPort {
   readonly on: ExtensionAPI['on'];
   readonly registerCommand: ExtensionAPI['registerCommand'];
@@ -126,7 +126,7 @@ function readShow(settings: Settings): boolean {
   return settings.show;
 }
 
-/** thinking ブロックか。取得時の例外は呼び出し側の try で数える */
+/** thinking ブロックかどうかを返す。取得時の例外は呼び出し側の try で数える。 */
 function isThinkingBlock(
   block: unknown,
 ): block is { readonly type: 'thinking'; readonly thinking: string } {
@@ -136,7 +136,7 @@ function isThinkingBlock(
   return block['type'] === 'thinking' && typeof block['thinking'] === 'string';
 }
 
-/** 署名を求めずに thinking ブロックをつなげる。生成中の読みに使う */
+/** 署名を求めずに thinking ブロックをつなげる。生成中の読み取りに使う。 */
 function thinkingOf(message: MessageEndEvent['message']): string {
   if (!isRecord(message)) {
     return '';
@@ -298,7 +298,7 @@ export interface ScrubWiring {
   readonly getStatus: () => Status;
 }
 
-/** 配線の中身。`registerScrub` はこれを pi につなぐだけにする */
+/** 配線の中身を作る。`registerScrub` はこれを pi につなぐだけである。 */
 export function createScrubWiring(options: WiringOptions): ScrubWiring {
   const state: WiringState = {
     status: emptyStatus(),
@@ -327,7 +327,7 @@ export function createScrubWiring(options: WiringOptions): ScrubWiring {
   };
 }
 
-/** 拡張の配線。既定の export は自分のディレクトリと時計でこれを呼ぶ */
+/** 拡張を配線する。既定の export は自分のディレクトリと時計でこれを呼ぶ。 */
 export function registerScrub(pi: PiPort, options: WiringOptions): void {
   const wiring = createScrubWiring(options);
   pi.on('message_update', (event, ctx) => {

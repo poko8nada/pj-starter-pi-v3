@@ -1,7 +1,7 @@
 /**
- * 生成中の thinking を止める番人。純関数だけを置く。
+ * 生成中の thinking を止めるガードである。純粋関数だけを置く。
  *
- * `observe` は末尾の窓だけを見て、文の周期があれば止める。
+ * `observe` は末尾のウィンドウだけを見て、文の周期があれば止める。
  * `takeFollowUp` は止めた見本を 1 回だけ渡す。
  */
 
@@ -18,18 +18,18 @@ export type GuardStep =
   | { readonly kind: 'idle'; readonly guard: Guard }
   | { readonly kind: 'stop'; readonly guard: Guard; readonly sample: string };
 
-/** 何も見ていない番人 */
+/** 何も見ていないガードである。 */
 export function emptyGuard(): Guard {
   return { aborts: 0, scanned: 0, pending: null };
 }
 
-/** 新しい user の合図で論理 run をやり直す */
+/** 新しい user の合図で論理的なランをやり直す。 */
 export function resetOnUser(guard: Guard): Guard {
   void guard;
   return emptyGuard();
 }
 
-/** 止めた見本を 1 回だけ取り出す */
+/** 止めた見本を 1 回だけ取り出す。 */
 export function takeFollowUp(
   guard: Guard,
 ): { readonly guard: Guard; readonly sample: string } | undefined {
@@ -39,13 +39,13 @@ export function takeFollowUp(
   return { guard: { ...guard, pending: null }, sample: guard.pending };
 }
 
-/** フォローアップの文。見本は `sampleChars` で切る */
+/** フォローアップの文である。見本は `sampleChars` で切る。 */
 export function followUpText(sample: string, sampleChars: number): string {
   const cut = sample.length > sampleChars ? sample.slice(0, sampleChars) : sample;
   return `Your thinking is repeating the same sentences. Do not repeat them. Continue the task without repeating the loop.\n\nRepeating sample:\n${cut}`;
 }
 
-/** thinking を見て、止めるか素通りするか決める */
+/** thinking を見て、止めるかそのまま通すかを決める。 */
 export function observe(
   guard: Guard,
   thinking: string,

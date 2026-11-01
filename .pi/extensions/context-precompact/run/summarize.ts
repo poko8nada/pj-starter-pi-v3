@@ -1,5 +1,5 @@
 /**
- * 要約の実行。開始時刻を測り、成功は経過付き、失敗は理由付きで返す。
+ * 要約を実行する。開始時刻を測り、成功は経過時間付きで返し、失敗は理由付きで返す。
  */
 import type { CompactionResult } from '@earendil-works/pi-coding-agent';
 import type { PreparedCompaction } from '../prepare/types.ts';
@@ -9,7 +9,7 @@ export type SummaryOutcome =
   | { readonly kind: 'done'; readonly result: CompactionResult; readonly latencyMs: number }
   | { readonly kind: 'failed'; readonly reason: string };
 
-/** 準備を要約し、経過時間か失敗理由を返す。abort 済みは呼ばずに失敗 */
+/** 準備を要約し、経過時間または失敗理由を返す。abort 済みは呼ばずに失敗する。 */
 export async function summarize(
   ports: SummaryPorts,
   prepared: PreparedCompaction,

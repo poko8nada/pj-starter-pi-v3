@@ -1,7 +1,7 @@
 /**
- * 要約結果から境界の下書きと概算トークンを作る。純粋計算。
+ * 要約結果から境界の下書きと概算トークンを作る。副作用なしで計算する。
  *
- * 後ろは、残るメッセージの推定と要約の推定の和にする。実測から別の物差しを引かない。
+ * 適用後の数は、残るメッセージの推定と要約の推定の合計にする。実測値から別の基準を差し引かない。
  */
 import type { CompactionEntryDraft, CompactionResult } from '@earendil-works/pi-coding-agent';
 import type { PreparedCompaction, PrepareStamp } from '../prepare/types.ts';
@@ -20,12 +20,12 @@ export interface ReadyTokens {
   readonly kept: number;
 }
 
-/** 要約の文字数からトークンを見積もる */
+/** 要約の文字数からトークンを見積もる。 */
 export function summaryTokens(summary: string): number {
   return Math.ceil(summary.length / 4);
 }
 
-/** 結果と準備から適用可能な形を作る。`tokensAfter` は概算 */
+/** 結果と準備から適用できる形を作る。`tokensAfter` は概算値である。 */
 export function readyFrom(
   result: CompactionResult,
   prepared: PreparedCompaction,

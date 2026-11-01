@@ -14,7 +14,7 @@ function settingsOf(keepRecentTokens: number): CompactionSettings {
 }
 
 describe('prepareFromProjection', () => {
-  it('3 ターンと小さい keep → 最後から 2 番目が firstKept で要約対象が空でない', () => {
+  it('3 ターンと小さい keep なら最後から 2 番目が firstKept で要約対象が空でない', () => {
     const session = createSessionFixture();
     const pathEntries = session.turns(3);
     const prepared = prepareFromProjection({
@@ -27,7 +27,7 @@ describe('prepareFromProjection', () => {
     expect(prepared?.messagesToSummarize.length).toBeGreaterThan(0);
   });
 
-  it('最後が compaction → undefined', () => {
+  it('最後が compaction なら undefined になる', () => {
     const session = createSessionFixture();
     const pathEntries = [...session.turns(3), session.compaction('prev')];
     expect(
@@ -40,7 +40,7 @@ describe('prepareFromProjection', () => {
     ).toBeUndefined();
   });
 
-  it('メッセージが 1 件も無い → undefined', () => {
+  it('メッセージが 1 件もなければ undefined になる', () => {
     const session = createSessionFixture();
     const only = session.user('question');
     expect(
@@ -53,7 +53,7 @@ describe('prepareFromProjection', () => {
     ).toBeUndefined();
   });
 
-  it('1 つの user 区間が keep を超える → split で turnPrefix が空でない', () => {
+  it('1 つの user 区間が keep を超えれば split で turnPrefix が空でない', () => {
     const session = createSessionFixture();
     const pathEntries = session.turns(1);
     const prepared = prepareFromProjection({
@@ -66,7 +66,7 @@ describe('prepareFromProjection', () => {
     expect(prepared?.turnPrefixMessages.length).toBeGreaterThan(0);
   });
 
-  it('前回の compaction がある → previousSummary がその summary', () => {
+  it('前回の compaction があれば previousSummary がその summary になる', () => {
     const session = createSessionFixture();
     const prev = session.compaction(PREVIOUS_SUMMARY);
     const pathEntries = [prev, ...session.turns(3)];
@@ -79,7 +79,7 @@ describe('prepareFromProjection', () => {
     expect(prepared?.previousSummary).toBe(PREVIOUS_SUMMARY);
   });
 
-  it('read / edit / write の tool call → それぞれの集合に path', () => {
+  it('read と edit と write の tool call はそれぞれの集合に path が入る', () => {
     const session = createSessionFixture();
     const cases = [
       { name: 'read', path: 'r.ts', set: 'read' },
@@ -98,7 +98,7 @@ describe('prepareFromProjection', () => {
     }
   });
 
-  it('前回の Pi 生成 compaction の details.readFiles → fileOps.read に path', () => {
+  it('前回の Pi 生成 compaction の details.readFiles は fileOps.read に path が入る', () => {
     const session = createSessionFixture();
     const prev = session.compaction('prev', {
       details: { readFiles: ['prev.ts'], modifiedFiles: [] },

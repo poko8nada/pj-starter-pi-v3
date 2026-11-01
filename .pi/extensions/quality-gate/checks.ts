@@ -4,26 +4,26 @@ import type { ExecResult } from '@earendil-works/pi-coding-agent';
 import type { CheckOutcome, CheckRun } from './report.ts';
 import { filterByExtensions } from './targets.ts';
 
-/** 自動修正フェーズか検証フェーズか */
+/** 自動修正フェーズと検証フェーズのどちらである。 */
 type Phase = 'fix' | 'verify';
 
-/** 1 つのチェック定義（配列順に実行する） */
+/** 1 つのチェック定義である。配列順に実行する。 */
 interface CheckSpec {
   readonly phase: Phase;
   readonly label: string;
   readonly script: string;
-  /** スクリプトへ渡す固定フラグ。対象パスはこの後ろに連結される */
+  /** スクリプトへ渡す固定フラグである。対象パスはこの後に連結する。 */
   readonly flags: readonly string[];
   readonly kind: 'format' | 'lint' | 'typecheck';
 }
 
 /**
- * 2 フェーズ構成。配列順に実行する。
+ * 2 フェーズで構成し、配列順に実行する。
  *
  * フェーズ1（自動修正・失敗しても続行）:
- *   意味を変えないと証明できる変換のみ適用する。`curly` や `prefer-const` は直るが、
- *   `eqeqeq` や `no-unused-vars` のような意味判断が要るものは触られない。
- *   oxlint --fix は `{return 1;}` のように波括弧を崩すため、直後の format が必須。
+ *   意味を変えないと証明できる変換だけを適用する。`curly` や `prefer-const` は直るが、
+ *   `eqeqeq` や `no-unused-vars` のように意味判断が必要なものは変更されない。
+ *   oxlint --fix は `{return 1;}` のように波括弧を崩すため、直後の format が必須である。
  *
  * フェーズ2（検証・ここで失敗を報告）:
  *   自動修正で直りきらなかった分だけを検出して LLM に渡す。
@@ -60,12 +60,12 @@ export function toRelative(cwd: string, path: string): string {
   return rel === '' ? path : rel;
 }
 
-/** コマンドを打つ口。`ExtensionAPI` の `exec` だけで足りるので、据えた形で受ける */
+/** コマンドを実行する窓口である。`ExtensionAPI` の `exec` だけで足りるため、決まった形で受ける。 */
 export interface ExecPort {
   exec(command: string, args: string[], options?: { cwd?: string }): Promise<ExecResult>;
 }
 
-/** 作業の場所。`ExtensionContext` の `cwd` だけで足りる */
+/** 作業を行う場所である。`ExtensionContext` の `cwd` だけで足りる。 */
 export interface Workdir {
   readonly cwd: string;
 }
@@ -99,7 +99,7 @@ async function prepareTargets(
   };
 }
 
-/** 1 つのチェックを実行する。対象が無い場合は undefined を返す */
+/** 1 つのチェックを実行する。対象がない場合は undefined を返す。 */
 async function runCheck(
   pi: ExecPort,
   cwd: string,
@@ -108,7 +108,7 @@ async function runCheck(
 ): Promise<CheckOutcome | undefined> {
   const paths = spec.kind === 'typecheck' ? checked : filterByExtensions(checked, spec.kind);
   if (spec.kind !== 'typecheck' && paths.length === 0) {
-    // 対象拡張子なし。ツールが「対象なし」で異常終了するのを避けてスキップする
+    // 対象拡張子がない場合は、ツールが「対象なし」で異常終了するためスキップする。
     return undefined;
   }
 
@@ -123,8 +123,8 @@ async function runCheck(
 /**
  * 自動修正 → 検証の順に対象ファイルをチェックする。
  *
- * 自動修正フェーズの終了コードは無視する。修正しきれない違反が残ると非ゼロで終わるが、
- * それは想定内であり、直後に検証フェーズが同じ内容を報告する。
+ * 自動修正フェーズの終了コードは無視する。修正しきれない違反が残ると非ゼロで終わる。
+ * これは想定内であり、直後に検証フェーズが同じ内容を報告する。
  * ツール自体の異常（設定破損など）も検証フェーズで検出される。
  */
 export async function runChecks(

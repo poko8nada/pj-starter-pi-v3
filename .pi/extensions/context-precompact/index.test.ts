@@ -79,7 +79,7 @@ function registryFake(): ExtensionContext['modelRegistry'] {
   const registry = {
     getApiKeyAndHeaders: async () => ({ ok: true, apiKey: 'k', headers: {}, env: {} }),
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- modelRegistry の使う関数だけを持つ偽物
   return registry as unknown as ExtensionContext['modelRegistry'];
 }
 
@@ -147,7 +147,7 @@ function fakeCtx(options: {
     },
   };
   const ctx: PrecompactCtx = {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 枝の読みだけ持つ偽物
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- branch の読み取りだけを持つ偽物
     sessionManager: manager as unknown as ExtensionContext['sessionManager'],
     model: 'model' in options ? options.model : modelFake(),
     modelRegistry: registryFake(),
@@ -201,7 +201,7 @@ function fakePi(piEnabled = true): PiSetup {
       enabled = value;
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- on と命令を記録する偽物
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- on と命令を記録する偽物である
   const pi = impl as unknown as PiPort;
   return { pi, events, commands, setPiEnabled: impl.setPiEnabled };
 }
@@ -244,7 +244,7 @@ function compactEvent(
     willRetry: false,
     signal: new AbortController().signal,
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 判定に使う口だけ持つ偽物
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 判定に使う関数だけを持つ偽物
   return event as unknown as SessionBeforeCompactEvent;
 }
 
@@ -254,7 +254,7 @@ function appliedChat(before: number, after: number): string {
 }
 
 describe('precompact wiring', () => {
-  it('flush が実行中の pass を待つ → prepared が立ち、status が ready', async () => {
+  it('flush が実行中のパスを待つと prepared ができ、status が ready になる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const { ctx } = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -266,7 +266,7 @@ describe('precompact wiring', () => {
     expect(wiring.getState().status.kind).toBe('ready');
   });
 
-  it('次の turn_end で比率が閾値 → draft 1 件・chat に applied・lastApplied', async () => {
+  it('次の turn_end で比率がしきい値なら draft が 1 件でき、chat に applied が出て lastApplied が残る', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -287,7 +287,7 @@ describe('precompact wiring', () => {
     expect(wiring.getState().lastAppliedTokens).toBe(ready.tokensAfter);
   });
 
-  it('agent_before_settle で prepared があり比率が閾値 → draft 1 件', async () => {
+  it('agent_before_settle で prepared があり比率がしきい値なら draft が 1 件できる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -306,7 +306,7 @@ describe('precompact wiring', () => {
     expect(hot.statuses.at(-1)).toBe(applied);
   });
 
-  it('agent_before_settle で比率が閾値未満 → undefined', async () => {
+  it('agent_before_settle で比率がしきい値未満なら undefined になる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -317,7 +317,7 @@ describe('precompact wiring', () => {
     expect(wiring.onBeforeSettle(cold.ctx)).toBeUndefined();
   });
 
-  it('agent_before_settle で prepared が stale → draft 無し・フォールバック通知', async () => {
+  it('agent_before_settle で prepared が stale なら draft がなくフォールバックを通知する', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -334,7 +334,7 @@ describe('precompact wiring', () => {
     expect(stale.notified).toContainEqual({ message: FALLBACK_TEXT, type: 'warning' });
   });
 
-  it('turn_end の apply で stale → draft 無し・フォールバック通知', async () => {
+  it('turn_end の apply で stale なら draft がなくフォールバックを通知する', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const last = branch.at(-1);
@@ -386,7 +386,7 @@ describe('precompact wiring', () => {
     }
   });
 
-  it('session_before_compact で一致 → compaction を返し tokensBefore が現在値', async () => {
+  it('session_before_compact で一致すれば compaction を返し tokensBefore が現在値になる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -416,7 +416,7 @@ describe('precompact wiring', () => {
     expect(hot.statuses.at(-1)).toBe(appliedChat(THRESHOLD_TOKENS, ready.tokensAfter));
   });
 
-  it('session_before_compact で firstKept が違う → 照合の不一致でフォールバック通知', async () => {
+  it('session_before_compact で firstKept が違えば照合の不一致でフォールバックを通知する', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -435,7 +435,7 @@ describe('precompact wiring', () => {
 });
 
 describe('precompact wiring lifecycle', () => {
-  it('設定が壊れている → 1 度だけ notify', async () => {
+  it('設定が壊れていれば 1 回だけ通知する', async () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const broken = readSettings(dir);
@@ -463,7 +463,7 @@ describe('precompact wiring lifecycle', () => {
 });
 
 describe('precompact failure reason', () => {
-  it('1回目成功で prepared が立ち2回目の要約が boom で失敗 → preparing と warning の2通で理由入りで failed', async () => {
+  it('1 回目に成功して prepared ができ 2 回目の要約が boom で失敗すると preparing と warning の 2 通で理由入りの failed になる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const { pi } = fakePi();
@@ -487,7 +487,7 @@ describe('precompact failure reason', () => {
     ]);
   });
 
-  it('1回目に model ありで prepared が立ち2回目に model が undefined → 理由入りで failed', async () => {
+  it('1 回目に model があり prepared ができ 2 回目に model がなければ理由入りの failed になる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const { pi } = fakePi();
@@ -513,7 +513,7 @@ describe('precompact failure reason', () => {
 });
 
 describe('precompact now response', () => {
-  it('now で拡張か Pi が off → preparing と off、pass なし', async () => {
+  it('now で拡張か Pi が off なら preparing と off になりパスを作らない', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const wirings = [
@@ -542,7 +542,7 @@ describe('precompact now response', () => {
     }
   });
 
-  it('now で準備なし → preparing と nothing、status idle', async () => {
+  it('now で準備がなければ preparing と nothing になり status が idle になる', async () => {
     const session = createSessionFixture();
     const branch = [...session.turns(3), session.compaction('summary')];
     const { pi } = fakePi();
@@ -563,7 +563,7 @@ describe('precompact now response', () => {
 });
 
 describe('precompact commands', () => {
-  it('/precompact status と usage → statusLine と usage の通知', async () => {
+  it('/precompact の status と usage は statusLine と usage を通知する', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const wiring = wiringWith();
@@ -575,7 +575,7 @@ describe('precompact commands', () => {
     expect(usageSetup.notified[0]?.message).toBe(usageText());
   });
 
-  it('/precompact on / off / now → settings の書き換えと裏での準備開始', async () => {
+  it('/precompact の on と off と now は settings を書き換えバックグラウンドで準備を始める', async () => {
     const dir = defaultSettingsDir();
     const session = createSessionFixture();
     const branch = session.turns(3);
@@ -650,7 +650,7 @@ describe('precompact commands', () => {
     ]);
   });
 
-  it('/precompact が失敗の理由を status 行に出す', async () => {
+  it('/precompact が失敗の理由を status 行に出すことを確かめる', async () => {
     const session = createSessionFixture();
     const branch = session.turns(3);
     const { pi } = fakePi();
@@ -673,7 +673,7 @@ describe('precompact commands', () => {
 });
 
 describe('registerPrecompact', () => {
-  it('5 イベントと precompact 命令を登録する', () => {
+  it('5 イベントと precompact 命令を登録することを確かめる', () => {
     const { pi, events, commands } = fakePi();
     registerPrecompact(pi);
     for (const name of [
@@ -718,7 +718,7 @@ async function preparedNow(setup: ReturnType<typeof nowSetup>) {
 }
 
 describe('precompact now apply', () => {
-  it('now の draft は閾値未満の turn_end で適用される', async () => {
+  it('now の draft はしきい値未満の turn_end で適用される', async () => {
     const setup = nowSetup();
     const ready = await preparedNow(setup);
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -728,7 +728,7 @@ describe('precompact now apply', () => {
       type: 'info',
     });
   });
-  it('now の draft は閾値未満の agent_before_settle で適用される', async () => {
+  it('now の draft はしきい値未満の agent_before_settle で適用される', async () => {
     const setup = nowSetup();
     const ready = await preparedNow(setup);
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
@@ -738,7 +738,7 @@ describe('precompact now apply', () => {
       type: 'info',
     });
   });
-  it('実行中の now は旗を立て、次の turn_end で適用する', async () => {
+  it('実行中の now はフラグを立て、次の turn_end で適用する', async () => {
     let release!: () => void;
     const deferred: SummaryCtx['compactFn'] = async (prep) => {
       await new Promise<void>((resolve) => {
@@ -757,7 +757,7 @@ describe('precompact now apply', () => {
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
     expect((await setup.wiring.onTurnEnd(cold.ctx))?.entries).toHaveLength(1);
   });
-  it('now の失敗の後は旗が消え、自動の draft は適用されない', async () => {
+  it('now の失敗の後はフラグが消え、自動の draft は適用されない', async () => {
     let calls = 0;
     const onceFails: SummaryCtx['compactFn'] = async (prep) => {
       calls += 1;
@@ -775,7 +775,7 @@ describe('precompact now apply', () => {
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
     expect(await setup.wiring.onTurnEnd(cold.ctx)).toBeUndefined();
   });
-  it('now の後に拡張を off にすると適用しない', async () => {
+  it('now の後に拡張を off にすれば適用しない', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     writeFileSync(
@@ -785,14 +785,14 @@ describe('precompact now apply', () => {
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
     expect(await setup.wiring.onTurnEnd(cold.ctx)).toBeUndefined();
   });
-  it('now の後に Pi を off にすると適用しない', async () => {
+  it('now の後に Pi を off にすれば適用しない', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     setup.setPiEnabled(false);
     const cold = fakeCtx({ branch: setup.branch, usage: contextUsageOf(LEAD_TOKENS) });
     expect(await setup.wiring.onTurnEnd(cold.ctx)).toBeUndefined();
   });
-  it('now の後に leaf が変わると stale で捨てる', async () => {
+  it('now の後に leaf が変わると stale で捨てることを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     const stale = fakeCtx({
@@ -805,7 +805,7 @@ describe('precompact now apply', () => {
 });
 
 describe('precompact tokens after', () => {
-  it('usage が undefined なら前は準備時の値、後ろは推定のまま', async () => {
+  it('usage が undefined なら適用前は準備時の値で適用後は推定のままになる', async () => {
     const setup = nowSetup();
     const ready = await preparedNow(setup);
     const noUsage = fakeCtx({ branch: setup.branch, usage: undefined });
@@ -816,7 +816,7 @@ describe('precompact tokens after', () => {
       after: ready.tokensAfter,
     });
   });
-  it('session_before_compact で usage が undefined なら準備時の値を使う', async () => {
+  it('session_before_compact で usage が undefined なら準備時の値を使うことを確かめる', async () => {
     const setup = nowSetup();
     const ready = await preparedNow(setup);
     const noUsage = fakeCtx({ branch: setup.branch, usage: undefined });
@@ -834,7 +834,7 @@ describe('precompact tokens after', () => {
 });
 
 describe('precompact guards', () => {
-  it('拡張が off なら agent_before_settle は適用しない', async () => {
+  it('拡張が off なら agent_before_settle は適用しないことを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     writeFileSync(
@@ -844,14 +844,14 @@ describe('precompact guards', () => {
     const hot = fakeCtx({ branch: setup.branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
     expect(setup.wiring.onBeforeSettle(hot.ctx)).toBeUndefined();
   });
-  it('Pi が off なら agent_before_settle は適用しない', async () => {
+  it('Pi が off なら agent_before_settle は適用しないことを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     setup.setPiEnabled(false);
     const hot = fakeCtx({ branch: setup.branch, usage: contextUsageOf(THRESHOLD_TOKENS) });
     expect(setup.wiring.onBeforeSettle(hot.ctx)).toBeUndefined();
   });
-  it('拡張が off なら session_before_compact は渡さない', async () => {
+  it('拡張が off なら session_before_compact は渡さないことを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     writeFileSync(
@@ -866,7 +866,7 @@ describe('precompact guards', () => {
       ),
     ).toBeUndefined();
   });
-  it('Pi が off なら session_before_compact は渡さない', async () => {
+  it('Pi が off なら session_before_compact は渡さないことを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     setup.setPiEnabled(false);
@@ -881,7 +881,7 @@ describe('precompact guards', () => {
 });
 
 describe('precompact error path', () => {
-  it('buildSessionProjection / getBranch / getContextUsage の throw は failed になる', async () => {
+  it('buildSessionProjection と getBranch と getContextUsage の例外は failed になる', async () => {
     for (const thrown of ['projection', 'branch', 'usage'] as const) {
       const setup = nowSetup();
       const bad = fakeCtx({
@@ -896,7 +896,7 @@ describe('precompact error path', () => {
       expect(setup.wiring.getState().status.kind, thrown).toBe('failed');
     }
   });
-  it('notify が throw すると now は reject し、running が戻る', async () => {
+  it('notify が例外を投げると now は reject し running が戻る', async () => {
     const setup = nowSetup();
     const bad = fakeCtx({
       branch: setup.branch,
@@ -909,7 +909,7 @@ describe('precompact error path', () => {
 });
 
 describe('precompact session reset', () => {
-  it('session 切替の後、古い pass は状態を書かない', async () => {
+  it('session 切替の後は古いパスが状態を書かない', async () => {
     let release!: () => void;
     const deferred: SummaryCtx['compactFn'] = async (prep) => {
       await new Promise<void>((resolve) => {
@@ -926,7 +926,7 @@ describe('precompact session reset', () => {
     expect(setup.wiring.getState().prepared).toBeUndefined();
     expect(setup.wiring.getState().status).toEqual({ kind: 'idle' });
   });
-  it('古い pass の終了が、新しい pass の running を戻さない', async () => {
+  it('古いパスの終了が新しいパスの running を戻さない', async () => {
     const releases: (() => void)[] = [];
     const deferred: SummaryCtx['compactFn'] = async (prep) => {
       await new Promise<void>((resolve) => {
@@ -946,7 +946,7 @@ describe('precompact session reset', () => {
     releases[1]?.();
     await setup.wiring.flush();
   });
-  it('session 切替で forceApply を引き継がない', async () => {
+  it('session 切替で forceApply を引き継がないことを確かめる', async () => {
     const setup = nowSetup();
     await preparedNow(setup);
     setup.wiring.onSessionStart(
@@ -958,7 +958,7 @@ describe('precompact session reset', () => {
 });
 
 describe('precompact command edges', () => {
-  it('壊れた settings で on / off は warning', async () => {
+  it('壊れた settings で on と off は warning になる', async () => {
     for (const command of ['on', 'off'] as const) {
       const dir = tempDir();
       writeFileSync(join(dir, 'settings.json'), '{');

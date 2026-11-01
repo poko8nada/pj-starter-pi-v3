@@ -23,15 +23,15 @@ function makeInput(overrides: Partial<GateInput> = {}): GateInput {
 }
 
 describe('gate', () => {
-  it('比率が threshold、prepared でない → start', () => {
+  it('比率がしきい値で prepared でなければ start になる', () => {
     expect(gate(makeInput())).toEqual({ kind: 'start' });
   });
 
-  it('比率が threshold、prepared → apply', () => {
+  it('比率がしきい値で prepared なら apply になる', () => {
     expect(gate(makeInput({ prepared: true }))).toEqual({ kind: 'apply' });
   });
 
-  it('比率が threshold - LEAD/2、prepared → wait prepared-below-threshold', () => {
+  it('比率がしきい値から LEAD の半分だけ低く prepared なら wait の prepared-below-threshold になる', () => {
     const tokens = Math.floor((THRESHOLD_RATIO - LEAD_RATIO / 2) * CONTEXT_WINDOW);
     expect(gate(makeInput({ tokens, prepared: true }))).toEqual({
       kind: 'wait',
@@ -39,24 +39,24 @@ describe('gate', () => {
     });
   });
 
-  it('比率が threshold - LEAD 未満 → wait below-lead', () => {
+  it('比率がしきい値から LEAD を引いた値未満なら wait の below-lead になる', () => {
     const tokens = Math.floor((THRESHOLD_RATIO - LEAD_RATIO) * CONTEXT_WINDOW) - 1;
     expect(gate(makeInput({ tokens }))).toEqual({ kind: 'wait', reason: 'below-lead' });
   });
 
-  it('enabled が false → skip disabled', () => {
+  it('enabled が false なら skip の disabled になる', () => {
     expect(gate(makeInput({ enabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
   });
 
-  it('piEnabled が false → skip disabled', () => {
+  it('piEnabled が false なら skip の disabled になる', () => {
     expect(gate(makeInput({ piEnabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
   });
 
-  it('tokens が null → skip unknown', () => {
+  it('tokens が null なら skip の unknown になる', () => {
     expect(gate(makeInput({ tokens: null }))).toEqual({ kind: 'skip', reason: 'unknown' });
   });
 
-  it('contextWindow が 0 で tokens が非 null → skip unknown', () => {
+  it('contextWindow が 0 で tokens が null でなければ skip の unknown になる', () => {
     expect(gate(makeInput({ contextWindow: 0, tokens: THRESHOLD_RATIO * CONTEXT_WINDOW }))).toEqual(
       {
         kind: 'skip',
@@ -65,11 +65,11 @@ describe('gate', () => {
     );
   });
 
-  it('running が true → skip running', () => {
+  it('running が true なら skip の running になる', () => {
     expect(gate(makeInput({ running: true }))).toEqual({ kind: 'skip', reason: 'running' });
   });
 
-  it('古い領域が MIN_OLD_RATIO 未満 → wait old-region-too-small', () => {
+  it('古い領域が MIN_OLD_RATIO 未満なら wait の old-region-too-small になる', () => {
     const tokens = Math.floor(THRESHOLD_RATIO * SMALL_CONTEXT_WINDOW);
     expect(
       gate(
@@ -82,7 +82,7 @@ describe('gate', () => {
     ).toEqual({ kind: 'wait', reason: 'old-region-too-small' });
   });
 
-  it('lastAppliedTokens から REARM 未満 → wait cooling', () => {
+  it('lastAppliedTokens から REARM 未満の差なら wait の cooling になる', () => {
     const tokens = Math.floor(THRESHOLD_RATIO * CONTEXT_WINDOW);
     const lastAppliedTokens = tokens - Math.floor(REARM_RATIO * CONTEXT_WINDOW) + 1;
     expect(gate(makeInput({ tokens, lastAppliedTokens }))).toEqual({
@@ -91,7 +91,7 @@ describe('gate', () => {
     });
   });
 
-  it('lastAppliedTokens から REARM 以上 → start', () => {
+  it('lastAppliedTokens から REARM 以上の差なら start になる', () => {
     const tokens = Math.floor(THRESHOLD_RATIO * CONTEXT_WINDOW);
     const lastAppliedTokens = tokens - Math.floor(REARM_RATIO * CONTEXT_WINDOW);
     expect(gate(makeInput({ tokens, lastAppliedTokens }))).toEqual({ kind: 'start' });

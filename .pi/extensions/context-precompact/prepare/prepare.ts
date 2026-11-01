@@ -1,5 +1,5 @@
 /**
- * 準備の入口。設定の有効と Pi の有効を見て、下ごしらえと切れ目の印を作る。
+ * 準備の入口である。設定の有効と Pi の有効を見て、準備と切れ目の印を作る。
  */
 import { RESERVE_TOKENS } from '../settings/constants.ts';
 import { prepareFromProjection, compactionMessagesOf } from './copied.ts';
@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** `prepare` の本体。無効・下ごしらえ無しなら `undefined` */
+/** `prepare` の本体である。無効、または準備がなければ `undefined` を返す。 */
 export function prepare(input: PrepareInput): Prepared | undefined {
   if (!input.settings.enabled || !input.piEnabled) {
     return undefined;
@@ -60,7 +60,7 @@ export function prepare(input: PrepareInput): Prepared | undefined {
   };
 }
 
-/** 切れ目から後ろのメッセージを、要約と同じ物差しで見積もる */
+/** 切れ目から後のメッセージを、要約と同じ基準で見積もる。 */
 function keptTokensOf(
   projectedEntries: readonly ProjectedEntry[],
   firstKeptEntryId: string,
@@ -78,7 +78,7 @@ function keptTokensOf(
   return total;
 }
 
-/** 配列の中の文字列だけを集める。配列でなければ何もしない */
+/** 配列の中の文字列だけを集める。配列でなければ何もしない。 */
 function collectHookFiles(value: unknown, out: string[]): void {
   if (!Array.isArray(value)) {
     return;
@@ -90,7 +90,7 @@ function collectHookFiles(value: unknown, out: string[]): void {
   }
 }
 
-/** 前回の `fromHook` の一覧を今の `fileOps` に足した新しい物を作る */
+/** 前回の `fromHook` の一覧を今の `fileOps` に足した新しい物を作る。 */
 function mergeHookFileOps(
   base: FileOperations,
   readFiles: readonly string[],

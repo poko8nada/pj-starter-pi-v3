@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSettings, parseSettings, settingsOrDefault } from './schema.ts';
 
 describe('parseSettings', () => {
-  it('5 種類の sounds とフラグを持つ JSON → ok で、入力値がそのまま返る', () => {
+  it('5 種類の sounds とフラグを持つ JSON なら ok で入力値がそのまま返る', () => {
     const input = JSON.stringify({
       enabled: false,
       notifications: false,
@@ -33,25 +33,25 @@ describe('parseSettings', () => {
     });
   });
 
-  it('{} → ok で、defaultSettings() が返る', () => {
+  it('空の文書なら ok で defaultSettings() が返る', () => {
     expect(parseSettings('{}')).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('../settings.json の既定値が defaultSettings() と一致する', () => {
+  it('../settings.json の既定値は defaultSettings() と一致する', () => {
     const dir = dirname(fileURLToPath(import.meta.url));
     const text = readFileSync(join(dir, '..', 'settings.json'), 'utf8');
     expect(parseSettings(text)).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('enabled が文字列 → broken を返す', () => {
+  it('enabled が文字列なら broken を返す', () => {
     expect(parseSettings('{"enabled":"yes"}').kind).toBe('broken');
   });
 
-  it('sounds.permission が数値 → broken を返す', () => {
+  it('sounds.permission が数値なら broken を返す', () => {
     expect(parseSettings('{"sounds":{"permission":7}}').kind).toBe('broken');
   });
 
-  it('未知のキーを持つ JSON → ok で、未知のキーを無視して既定値と入力値を返す', () => {
+  it('未知のキーを持つ JSON なら ok で未知のキーを無視して既定値と入力値を返す', () => {
     const input = JSON.stringify({ enabled: false, unknown: 1, sounds: { commit: 'Basso' } });
     expect(parseSettings(input)).toEqual({
       kind: 'ok',
@@ -65,13 +65,13 @@ describe('parseSettings', () => {
 });
 
 describe('settingsOrDefault', () => {
-  it('broken → defaultSettings() を返す', () => {
+  it('broken なら defaultSettings() を返す', () => {
     expect(
       settingsOrDefault({ kind: 'broken', reason: 'sound-notify settings: must be an object' }),
     ).toEqual(defaultSettings());
   });
 
-  it('ok → その設定をそのまま返す', () => {
+  it('ok ならその設定をそのまま返す', () => {
     const settings = { ...defaultSettings(), enabled: false };
     expect(settingsOrDefault({ kind: 'ok', settings })).toBe(settings);
   });

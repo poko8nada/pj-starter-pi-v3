@@ -18,7 +18,7 @@ function report(overrides: Partial<GateFailureReport> = {}): GateFailureReport {
   };
 }
 
-/** 見出しは 1 行目だけを取り出して比べる */
+/** 見出しは 1 行目だけを取り出して比べる。 */
 function firstLine(text: string): string {
   return text.split('\n')[0] ?? '';
 }
@@ -37,7 +37,7 @@ describe('buildGateMessage', () => {
     expect(head).toContain(`${attempt}/${maxAttempts}`);
   });
 
-  it('失敗が複数 → 1 行目にその label が全部並ぶ', () => {
+  it('失敗が複数あれば 1 行目にその label が全部並ぶ', () => {
     const first = 'lint-fail';
     const second = 'format-fail';
     const passed = 'typecheck-pass';
@@ -102,19 +102,19 @@ describe('buildGateMessage', () => {
     expect(text).toContain(skipped);
   });
 
-  it('出力が空の失敗 → 空である旨の印が出る', () => {
+  it('出力が空の失敗は空である旨の印が出る', () => {
     const label = 'lint-fail';
     const output = '  ';
     const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
     expect(text).toContain('(no output)');
   });
 
-  it('触ったファイルが無ければ「(none)」と出す', () => {
+  it('変更したファイルがなければ「(none)」と出す', () => {
     const text = buildGateMessage(report({ relativePaths: [], skippedPaths: [] }));
     expect(text).toContain('Files touched in this turn: (none)');
   });
 
-  it('触ったファイルがあれば `(none)` は出さない', () => {
+  it('変更したファイルがあれば `(none)` は出さない', () => {
     const touched = 'touched-a.ts';
     const text = buildGateMessage(report({ relativePaths: [touched], skippedPaths: [] }));
     expect(text).toContain(touched);
@@ -122,9 +122,9 @@ describe('buildGateMessage', () => {
     expect(text).not.toContain('(none)');
   });
 
-  it('上限を超える出力は切り詰めて落とした行数を告げる', () => {
+  it('上限を超える出力は切り詰めて除外した行数を告げる', () => {
     const label = 'lint-fail';
-    // 行数で上限を超える（truncateHead と同じ上限を共有する）
+    // 行数で上限を超える（truncateHead と同じ上限を共有する）。
     const lineOutput = Array.from(
       { length: DEFAULT_MAX_LINES + 10 },
       (_, index) => `line ${index}`,
@@ -135,7 +135,7 @@ describe('buildGateMessage', () => {
     expect(lineText).toContain('[output truncated:');
     expect(lineText).toContain('more line(s) omitted]');
 
-    // 1 行でバイト数の上限を超える（行数ではなく大きさで落ちる）
+    // 1 行でバイト数の上限を超える（行数ではなく大きさで上限を超える）。
     const byteOutput = 'x'.repeat(DEFAULT_MAX_BYTES + 1000);
     const byteText = buildGateMessage(
       report({ outcomes: [{ label, failed: true, output: byteOutput }] }),
@@ -154,7 +154,7 @@ describe('buildGateMessage', () => {
     expect(text).toContain(last);
   });
 
-  it('check の 3 層は見出し→触ったファイル→本体→指示の順に並ぶ', () => {
+  it('チェックの 3 層は見出しと変更したファイルと本体と指示の順に並ぶ', () => {
     const label = 'lint-fail';
     const touched = 'touched-a.ts';
     const text = buildGateMessage(

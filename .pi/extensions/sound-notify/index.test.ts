@@ -1,9 +1,9 @@
 /**
- * commit・compact で鳴る音と拡張の入口の配線を、差し替えた鳴らす関数で確かめる。
+ * commit と compact で鳴る音と拡張の入口の配線を、差し替えた鳴らす関数で確かめる。
  *
- * afplay は起動しない。`setPlayer` に記録するだけの関数を渡し、実際に鳴る所をテストから外す。
- * イベントの判定は `handleToolExecutionEnd` / `handleSessionCompact` に直接渡し、
- * pi と ctx は必要な口だけの偽物で足りる。入口の配線は `registerSoundHandlers` に
+ * afplay は起動しない。`setPlayer` に記録するだけの関数を渡し、実際に鳴る処理をテストから外す。
+ * イベントの判定は `handleToolExecutionEnd` と `handleSessionCompact` に直接渡し、
+ * pi と ctx は必要な窓口だけの偽物で足りる。入口の配線は `registerSoundHandlers` に
  * 設定を直接渡し、実 FS の `settings.json` に依存させない。既定 export の結線だけは
  * 一時ディレクトリの実ファイルで確かめる。
  */
@@ -88,7 +88,7 @@ function createEntry(config: Settings = defaults): {
   return { handlers, calls };
 }
 
-/** 既定 export を一時ディレクトリの実ファイルで走らせる。dir も返す */
+/** 既定 export を一時ディレクトリの実ファイルで走らせる。dir も返す。 */
 function entryWithFile(document: unknown): {
   dir: string;
   handlers: Map<string, (...args: unknown[]) => unknown>;
@@ -133,7 +133,7 @@ describe('sound-notify.settings', () => {
     restorePlayer();
   });
 
-  it('defaultSettings() の 5 つの sounds をハンドラが鳴らす', async () => {
+  it('defaultSettings() の 5 つの sounds をハンドラが鳴らすことを確かめる', async () => {
     const { handlers } = createEntry(defaults);
     await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
     await handlers.get('ui_prompt_start')?.({ title: QUESTION_TITLE }, ctx);
@@ -149,7 +149,7 @@ describe('sound-notify.settings', () => {
     ]);
   });
 
-  it('enabled: false ではハンドラが鳴らさない', async () => {
+  it('enabled が false ではハンドラが鳴らない', async () => {
     const disabled: Settings = { ...defaults, enabled: false };
     const { handlers } = createEntry(disabled);
     await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
@@ -159,7 +159,7 @@ describe('sound-notify.settings', () => {
     expect(played).toEqual([]);
   });
 
-  it('notifications: false では cmux を呼ばないが音は鳴る', async () => {
+  it('notifications が false では cmux を呼ばないが音は鳴る', async () => {
     const silent: Settings = { ...defaults, notifications: false };
     const { handlers, calls } = createEntry(silent);
     await handlers.get('agent_settled')?.({}, ctx);
@@ -183,20 +183,20 @@ describe('sound-notify.default-export', () => {
     restorePlayer();
   });
 
-  it('非既定の設定ファイル → その音で鳴る（起動時に読む）', async () => {
+  it('非既定の設定ファイルならその音で鳴る（起動時に読む）', async () => {
     const { handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
     await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
     expect(played).toEqual([CUSTOM_SOUND]);
   });
 
-  it('壊れた設定ファイル → 既定で動き、余計な通知をしない', async () => {
+  it('壊れた設定ファイルなら既定で動き余計な通知をしない', async () => {
     const { handlers, calls } = entryWithFile('{"enabled":');
     await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
     expect(played).toEqual([defaults.sounds.commit]);
     expect(calls).toEqual([]);
   });
 
-  it('登録後の書き換え → 旧い音のまま（起動時の 1 回だけ読む）', async () => {
+  it('登録後の書き換えでも古い音のままである（起動時の 1 回だけ読む）', async () => {
     const { dir, handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
     writeFileSync(
       join(dir, 'settings.json'),
@@ -222,7 +222,7 @@ describe('sound-notify.commit', () => {
     restorePlayer();
   });
 
-  it('bash の結果にコミットの形 → commit の音が 1 回鳴り、6 桁では鳴らない', () => {
+  it('bash の結果にコミットの形があれば commit の音が 1 回鳴り 6 桁では鳴らない', () => {
     run(commitEvent());
     expect(played).toEqual([defaults.sounds.commit]);
     played.length = 0;
@@ -234,7 +234,7 @@ describe('sound-notify.commit', () => {
     expect(played).toEqual([]);
   });
 
-  it('bash の結果が普通の出力 → 鳴らない', () => {
+  it('bash の結果が普通の出力なら鳴らない', () => {
     run(
       commitEvent({
         result: { content: [{ type: 'text', text: 'ok\n3 passed' }] },
@@ -243,17 +243,17 @@ describe('sound-notify.commit', () => {
     expect(played).toEqual([]);
   });
 
-  it('toolName が bash 以外 → 鳴らない', () => {
+  it('toolName が bash 以外なら鳴らない', () => {
     run(commitEvent({ toolName: 'read' }));
     expect(played).toEqual([]);
   });
 
-  it('isError が真 → 鳴らない', () => {
+  it('isError が真なら鳴らない', () => {
     run(commitEvent({ isError: true }));
     expect(played).toEqual([]);
   });
 
-  it('sounds.commit を別名にする → その名前で鳴る', () => {
+  it('sounds.commit を別名にすればその名前で鳴る', () => {
     run(commitEvent(), withSounds({ commit: CUSTOM_SOUND }));
     expect(played).toEqual([CUSTOM_SOUND]);
   });
@@ -274,7 +274,7 @@ describe('sound-notify.compact', () => {
     restorePlayer();
   });
 
-  it('圧縮が終わる → cmux の exec は呼ばれない', async () => {
+  it('圧縮が終われば cmux の exec は呼ばれない', async () => {
     const calls: Array<{ command: string; args: string[] }> = [];
     const recordingPi: PiPort = {
       exec: async (command, args) => {
@@ -288,7 +288,7 @@ describe('sound-notify.compact', () => {
     expect(played).toEqual([defaults.sounds.compact]);
   });
 
-  it('sounds.compact を別名にする → その名前で鳴る', () => {
+  it('sounds.compact を別名にすればその名前で鳴る', () => {
     handleSessionCompact(pi, ctx, withSounds({ compact: CUSTOM_SOUND }));
     expect(played).toEqual([CUSTOM_SOUND]);
   });
@@ -309,7 +309,7 @@ describe('sound-notify.guard', () => {
     restorePlayer();
   });
 
-  it('hasUI が false → commit でも compact でも鳴らない', () => {
+  it('hasUI が false なら commit でも compact でも鳴らない', () => {
     const noUI: CtxPort = { hasUI: false };
     handleToolExecutionEnd(pi, noUI, commitEvent(), defaults);
     handleSessionCompact(pi, noUI, defaults);
@@ -332,19 +332,19 @@ describe('sound-notify.prompt', () => {
     restorePlayer();
   });
 
-  it('title が permission を含む → permission の音が鳴る', async () => {
+  it('title が permission を含めば permission の音が鳴る', async () => {
     const { handlers } = createEntry(defaults);
     await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
     expect(played).toEqual([defaults.sounds.permission]);
   });
 
-  it('普通の質問 → question の音が鳴る', async () => {
+  it('普通の質問なら question の音が鳴る', async () => {
     const { handlers } = createEntry(defaults);
     await handlers.get('ui_prompt_start')?.({ title: QUESTION_TITLE }, ctx);
     expect(played).toEqual([defaults.sounds.question]);
   });
 
-  it('agent_settled → done の音と cmux の通知', async () => {
+  it('agent_settled なら done の音と cmux の通知がある', async () => {
     const { handlers, calls } = createEntry(defaults);
     await handlers.get('agent_settled')?.({}, ctx);
     expect(played).toEqual([defaults.sounds.done]);
@@ -360,7 +360,7 @@ describe('sound-notify.prompt', () => {
     ).toBe(true);
   });
 
-  it('permission の合図と普通の質問 → 通知の文面が違う', async () => {
+  it('permission の合図と普通の質問は通知の文面が違う', async () => {
     const { handlers, calls } = createEntry(defaults);
     await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
     await handlers.get('ui_prompt_start')?.({ title: QUESTION_TITLE }, ctx);
@@ -385,7 +385,7 @@ describe('sound-notify.entry', () => {
     restorePlayer();
   });
 
-  it('session_compact を登録し、そのハンドラを呼ぶ → compact が 1 回鳴る', async () => {
+  it('session_compact を登録しそのハンドラを呼ぶと compact が 1 回鳴る', async () => {
     const { handlers } = createEntry(defaults);
     const handler = handlers.get('session_compact');
     expect(handler).toBeDefined();
@@ -395,16 +395,16 @@ describe('sound-notify.entry', () => {
 });
 
 describe('isCommitResult', () => {
-  it('文字列の result も見る', () => {
+  it('文字列の result も見ることを確かめる', () => {
     const text = '[main abc1234] Add feature';
     expect(isCommitResult(commitEvent({ result: text }).result)).toBe(true);
   });
 
-  it('content の text パートも見る', () => {
+  it('content の text パートも見ることを確かめる', () => {
     expect(isCommitResult(commitEvent().result)).toBe(true);
   });
 
-  it('record でなければ false（落ちない）', () => {
+  it('record でなければ false になる（例外を投げない）', () => {
     expect(isCommitResult(commitEvent({ result: undefined }).result)).toBe(false);
     expect(isCommitResult(commitEvent({ result: {} }).result)).toBe(false);
   });

@@ -1,8 +1,8 @@
 /**
- * 文単位の分割と周期検出。純関数だけを置く。
+ * 文単位に分割し周期を検出する。純粋関数だけを置く。
  *
- * 行に分けてから文に分ける。英語は `.` `!` `?` の後に空白か行末が来たら切り、
- * 日本語は `。` `！` `？` で切る。フェンス・表・diff の行は不透明な単位にする。
+ * 行に分けてから文に分ける。英語は `.` と `!` と `?` の後に空白か行末が来たら切り、
+ * 日本語は `。` と `！` と `？` で切る。フェンスと表と diff の行は不透明な単位にする。
  */
 
 export interface Unit {
@@ -48,7 +48,7 @@ function isDiffLine(trimmed: string): boolean {
   );
 }
 
-/** 文に分ける前の 1 行が不透明か */
+/** 文に分ける前の 1 行が不透明かどうかを返す。 */
 function isOpaqueLine(trimmed: string): boolean {
   return isFenceLine(trimmed) || isTableRow(trimmed) || isDiffLine(trimmed);
 }
@@ -64,7 +64,7 @@ function isJapaneseEnd(char: string): boolean {
   return char === '。' || char === '！' || char === '？';
 }
 
-/** 本文を行に分け、元の offset を付けて返す */
+/** 本文を行に分け、元の offset を付けて返す。 */
 function splitLines(text: string): { readonly start: number; readonly line: string }[] {
   const lines: { readonly start: number; readonly line: string }[] = [];
   let pos = 0;
@@ -80,7 +80,7 @@ function splitLines(text: string): { readonly start: number; readonly line: stri
   return lines;
 }
 
-/** 通常行を文に分けて単位にする */
+/** 通常行を文に分けて単位にする。 */
 function splitSentences(line: string, lineStart: number): Unit[] {
   const units: Unit[] = [];
   const length = line.length;
@@ -118,7 +118,7 @@ function splitSentences(line: string, lineStart: number): Unit[] {
   return units;
 }
 
-/** 本文を文単位に分ける。`text.slice(start, end) === text` が成り立つ */
+/** 本文を文単位に分ける。`text.slice(start, end) === text` が成り立つ。 */
 export function splitUnits(text: string): readonly Unit[] {
   if (text.length === 0) {
     return [];
@@ -149,7 +149,7 @@ export function splitUnits(text: string): readonly Unit[] {
   return units;
 }
 
-/** 単位の等しさで 1 つの周期の極大区間を集める */
+/** 単位の等しさで 1 つの周期の極大区間を集める。 */
 function runsForPeriod(
   units: readonly Unit[],
   period: number,
@@ -203,7 +203,7 @@ function overlaps(a: UnitRun, b: UnitRun): boolean {
   return a.at < b.at + b.length && b.at < a.at + a.length;
 }
 
-/** 単位の並びの周期区間を、重なりを小さい周期で残して昇順で返す */
+/** 単位の並びの周期区間を、重なりは小さい周期を残して昇順で返す。 */
 export function detectUnitRuns(
   units: readonly Unit[],
   sentence: SentenceTuning,
@@ -236,7 +236,7 @@ export function detectUnitRuns(
   return kept;
 }
 
-/** run の中で最も多い 3 文の連続を返す。周期が 3 以下なら周期そのもの */
+/** ランの中で最も多い 3 文の連続を返す。周期が 3 以下なら周期そのものを返す。 */
 export function sampleOf(units: readonly Unit[], run: UnitRun, sampleChars: number): string {
   const slice = units.slice(run.at, run.at + run.length);
   if (slice.length === 0) {

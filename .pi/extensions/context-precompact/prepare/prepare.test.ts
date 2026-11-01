@@ -27,7 +27,7 @@ function makeInput(session: SessionFixture, overrides: Partial<PrepareInput> = {
 }
 
 describe('prepare', () => {
-  it('前回の fromHook の details → read と edited に path が入る', () => {
+  it('前回の fromHook の details があれば read と edited に path が入る', () => {
     const session = createSessionFixture();
     const prev = session.compaction('prev', {
       fromHook: true,
@@ -38,7 +38,7 @@ describe('prepare', () => {
     expect(prepared?.compaction.fileOps.edited.has(EDITED_PATH)).toBe(true);
   });
 
-  it('fromHook が無い前回 → 追加の merge は無い', () => {
+  it('fromHook がない前回は追加の merge がない', () => {
     const session = createSessionFixture();
     const prev = session.compaction('prev');
     const prepared = prepare(makeInput(session, { branch: [prev, ...session.turns(3)] }));
@@ -48,7 +48,7 @@ describe('prepare', () => {
     expect(prepared?.compaction.fileOps.edited.size).toBe(0);
   });
 
-  it('details が配列でない → 投げずに無視する', () => {
+  it('details が配列でなければ例外を投げずに無視する', () => {
     const session = createSessionFixture();
     const prev = session.compaction('prev', {
       fromHook: true,
@@ -59,7 +59,7 @@ describe('prepare', () => {
     expect(prepare(input)?.compaction.fileOps.read.size).toBe(0);
   });
 
-  it('enabled が false → undefined', () => {
+  it('enabled が false なら undefined になる', () => {
     const session = createSessionFixture();
     const settings = {
       ...defaultSettings(),
@@ -69,7 +69,7 @@ describe('prepare', () => {
     expect(prepare(makeInput(session, { settings }))).toBeUndefined();
   });
 
-  it('piEnabled が false → undefined', () => {
+  it('piEnabled が false なら undefined になる', () => {
     const session = createSessionFixture();
     expect(prepare(makeInput(session, { piEnabled: false }))).toBeUndefined();
   });

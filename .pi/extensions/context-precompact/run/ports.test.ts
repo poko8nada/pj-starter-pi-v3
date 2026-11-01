@@ -46,13 +46,13 @@ function modelOf(): ExtensionContext['model'] {
 
 function registryOf(auth: unknown): ExtensionContext['modelRegistry'] {
   const registry = { getApiKeyAndHeaders: async () => auth };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- modelRegistry の使う口だけ持つ偽物
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- modelRegistry の使う関数だけを持つ偽物
   return registry as unknown as ExtensionContext['modelRegistry'];
 }
 
 function sessionManagerOf(sessionId: string): ExtensionContext['sessionManager'] {
   const manager = { getSessionId: () => sessionId };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- sessionManager の使う口だけ持つ偽物
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- sessionManager の使う関数だけを持つ偽物
   return manager as unknown as ExtensionContext['sessionManager'];
 }
 
@@ -68,7 +68,7 @@ function ctxOf(overrides: Partial<SummaryCtx>): SummaryCtx {
 }
 
 describe('createSummaryPorts', () => {
-  it('compactFn が結果を返す → その結果', async () => {
+  it('compactFn が結果を返せばその結果になる', async () => {
     const expected = resultOf();
     const ports = createSummaryPorts(ctxOf({ compactFn: async () => expected }));
     await expect(ports.compact({ preparation: preparedOf(), signal: signalOf() })).resolves.toEqual(
@@ -76,7 +76,7 @@ describe('createSummaryPorts', () => {
     );
   });
 
-  it('compactFn に 12 引数が渡り、null header は落ちる', async () => {
+  it('compactFn に 12 引数が渡り null ヘッダが取り除かれる', async () => {
     const captured: (readonly unknown[])[] = [];
     const prepared = preparedOf();
     const signal = signalOf();
@@ -112,7 +112,7 @@ describe('createSummaryPorts', () => {
     ]);
   });
 
-  it('getApiKeyAndHeaders が失敗 → throw', async () => {
+  it('getApiKeyAndHeaders が失敗すれば例外が投げられる', async () => {
     const ports = createSummaryPorts(
       ctxOf({ modelRegistry: registryOf({ ok: false, error: 'no key' }) }),
     );
@@ -121,7 +121,7 @@ describe('createSummaryPorts', () => {
     ).rejects.toThrow();
   });
 
-  it('model が undefined → throw', () => {
+  it('model が undefined なら例外が投げられる', () => {
     expect(() => createSummaryPorts(ctxOf({ model: undefined }))).toThrow(NO_MODEL_REASON);
   });
 });

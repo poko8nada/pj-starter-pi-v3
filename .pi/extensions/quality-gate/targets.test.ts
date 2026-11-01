@@ -26,7 +26,7 @@ const statusTable: ReadonlyArray<{ readonly raw: string; readonly expected: read
 ];
 
 describe('parseStatus', () => {
-  it('XY とパスを取り出し、未追跡も拾う', () => {
+  it('XY とパスを取り出し追跡されていないファイルも含める', () => {
     const row = statusTable[0];
     if (row === undefined) {
       throw new Error('statusTable[0] is missing');
@@ -50,7 +50,7 @@ describe('parseStatus', () => {
     expect(parseStatus(row.raw)).toEqual(row.expected);
   });
 
-  it('空の出力は空配列', () => {
+  it('空の出力は空配列になる', () => {
     const row = statusTable[3];
     if (row === undefined) {
       throw new Error('statusTable[3] is missing');
@@ -72,19 +72,19 @@ describe('changedSince', () => {
     [pathB, printB],
   ]);
 
-  it('新しく現れたパスを返す', () => {
+  it('新しく現れたパスを返すことを確かめる', () => {
     const after = new Map(before);
     after.set(pathC, printC);
     expect(changedSince(before, after)).toEqual([pathC]);
   });
 
-  it('既に dirty なファイルの再編集を拾う（状態の文字では分からない）', () => {
+  it('すでに変更済みのファイルの再編集を検出する（状態を示す文字では分からない）', () => {
     const after = new Map(before);
     after.set(pathA, printA2);
     expect(changedSince(before, after)).toEqual([pathA]);
   });
 
-  it('変わらなければ空', () => {
+  it('変わらなければ空配列になる', () => {
     expect(changedSince(before, new Map(before))).toEqual([]);
   });
 

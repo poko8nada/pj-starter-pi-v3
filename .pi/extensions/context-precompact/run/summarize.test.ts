@@ -31,7 +31,7 @@ function resultOf(): CompactionResult {
 }
 
 describe('summarize', () => {
-  it('fake port が結果を返す → done で結果をそのまま返す', async () => {
+  it('fake の port が結果を返せば done で結果をそのまま返す', async () => {
     const expected = resultOf();
     const ports: SummaryPorts = { compact: async () => expected };
     const outcome = await summarize(ports, preparedOf(), new AbortController().signal, Date.now);
@@ -41,7 +41,7 @@ describe('summarize', () => {
     expect(outcome.result).toEqual(expected);
   });
 
-  it('fake port が throw → failed', async () => {
+  it('fake の port が例外を投げれば failed になる', async () => {
     const ports: SummaryPorts = {
       compact: async () => {
         throw new Error(FAILURE);
@@ -51,7 +51,7 @@ describe('summarize', () => {
     expect(outcome).toEqual({ kind: 'failed', reason: FAILURE });
   });
 
-  it('signal が abort 済み → failed aborted', async () => {
+  it('signal が abort 済みなら failed の aborted になる', async () => {
     let called = false;
     const ports: SummaryPorts = {
       compact: async () => {

@@ -1,8 +1,8 @@
 /**
- * context-precompact の配線。閾値の手前で裏に準備し、境界で差し込む。
+ * context-precompact を配線する。しきい値に達する前にバックグラウンドで準備し、境界で差し込む。
  *
- * 設定は毎回読み直す。壊れていれば 1 度だけ知らせ、何もしない。
- * 標準コンパクションは置き換えない。失敗・stale・不一致では Pi の既定に任せる。
+ * 設定は毎回読み直す。壊れていれば 1 回だけ通知し、何もしない。
+ * 標準コンパクションは置き換えない。失敗、stale、不一致のときは Pi の既定の動作に任せる。
  */
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -109,7 +109,7 @@ interface Deps {
   readonly state: MutableState;
 }
 
-/** 設定を読む。壊れていれば 1 度だけ知らせて undefined */
+/** 設定を読む。壊れていれば 1 回だけ通知して undefined を返す。 */
 function readSettingsOrNotify(deps: Deps, ctx: PrecompactCtx): Settings | undefined {
   const read = readSettings(deps.options.settingsDir);
   if (read.kind === 'broken') {
@@ -123,28 +123,28 @@ function readSettingsOrNotify(deps: Deps, ctx: PrecompactCtx): Settings | undefi
   return read.settings;
 }
 
-/** Pi の自動コンパクションが有効か。無ければ有効とみなす */
+/** Pi の自動コンパクションが有効かどうかを返す。設定がなければ有効とみなす。 */
 function piEnabledOf(port: PiPort): boolean {
   return port.getSettings().compaction?.enabled ?? true;
 }
 
-/** 今の footer を状態に合わせる */
+/** 今の footer を状態に合わせて更新する。 */
 function refreshStatus(deps: Deps, ctx: PrecompactCtx): void {
   ctx.ui.setStatus('precompact', statusText(deps.state.status));
 }
 
-/** 状態を置いて footer も合わせる */
+/** 状態を保存し、footer も合わせる。 */
 function setStatusState(deps: Deps, ctx: PrecompactCtx, status: StatusState): void {
   deps.state.status = status;
   refreshStatus(deps, ctx);
 }
 
-/** チャットに状態を出す。preparing / ready / applied だけ */
+/** チャットに状態を出す。preparing、ready、applied の場合だけ出す。 */
 function notifyStatus(ctx: PrecompactCtx, status: NotifiableStatus): void {
   ctx.ui.notify(chatText(status), 'info');
 }
 
-/** branch の最新の compaction の id。無ければ undefined */
+/** branch の最新の compaction の id を返す。なければ undefined を返す。 */
 function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefined {
   for (let i = branch.length - 1; i >= 0; i--) {
     const entry = branch[i];
@@ -155,7 +155,7 @@ function latestCompactionIdOf(branch: readonly SessionEntry[]): string | undefin
   return undefined;
 }
 
-/** 準備を捨ててフォールバックを知らせる */
+/** 準備を捨て、フォールバックを通知する。 */
 function discardWithFallback(deps: Deps, ctx: PrecompactCtx): void {
   deps.state.prepared = undefined;
   deps.state.forceApply = false;
@@ -164,7 +164,7 @@ function discardWithFallback(deps: Deps, ctx: PrecompactCtx): void {
   ctx.ui.notify(FALLBACK_TEXT, 'warning');
 }
 
-/** 準備の stamp が今も使えるかを見る */
+/** 準備の stamp が今も使えるかどうかを確かめる。 */
 function guardOf(
   ready: ReadyCompaction,
   branch: readonly SessionEntry[],
@@ -179,7 +179,7 @@ function guardOf(
   });
 }
 
-/** 適用する。前は今の使用量にし、`lastAppliedTokens` を進める */
+/** 準備を適用する。適用前は今の使用量にし、`lastAppliedTokens` を更新する。 */
 function applyReady(deps: Deps, ctx: PrecompactCtx, ready: ReadyCompaction): BoundaryResult {
   const tokensNow = ctx.getContextUsage()?.tokens;
   const before = typeof tokensNow === 'number' ? tokensNow : ready.tokensBefore;
@@ -192,7 +192,7 @@ function applyReady(deps: Deps, ctx: PrecompactCtx, ready: ReadyCompaction): Bou
   return { entries: [{ ...ready.draft }] };
 }
 
-/** 準備を今の branch に照らして適用する。無効なら何もしない */
+/** 準備を今の branch に照らして適用する。無効な場合は何もしない。 */
 function applyPrepared(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefined {
   const ready = deps.state.prepared;
   if (ready === undefined) {
@@ -211,7 +211,7 @@ function applyPrepared(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefin
   return applyReady(deps, ctx, ready);
 }
 
-/** 下ごしらえから要約までの 1 パス。`running` の開閉は呼ぶ側が行う */
+/** 準備から要約までの 1 回の処理。`running` の管理は呼ぶ側が行う。 */
 async function doPass(deps: Deps, ctx: PrecompactCtx, generation: number): Promise<PassOutcome> {
   try {
     const settings = readSettingsOrNotify(deps, ctx);
@@ -279,7 +279,7 @@ async function doPass(deps: Deps, ctx: PrecompactCtx, generation: number): Promi
   }
 }
 
-/** 失敗の後始末。理由を通知して `failed` を返す */
+/** 失敗の後始末をする。理由を通知し、`failed` を返す。 */
 function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
   deps.state.prepared = undefined;
   deps.state.forceApply = false;
@@ -288,7 +288,7 @@ function failPass(deps: Deps, ctx: PrecompactCtx, reason: string): PassOutcome {
   return 'failed';
 }
 
-/** 裏で 1 パス走らせる。終わりは `flush` で待てる */
+/** バックグラウンドで 1 回の処理を実行する。終了は `flush` で待てる。 */
 function beginPass(
   deps: Deps,
   ctx: PrecompactCtx,
@@ -321,7 +321,7 @@ function beginPass(
   });
 }
 
-/** `turn_end` の受け口。適用か開始か見送りを決める */
+/** `turn_end` を受ける入口。適用するか開始するか見送るかを決める。 */
 async function onTurnEnd(deps: Deps, ctx: PrecompactCtx): Promise<BoundaryResult | undefined> {
   const settings = readSettingsOrNotify(deps, ctx);
   if (settings === undefined) {
@@ -351,7 +351,7 @@ async function onTurnEnd(deps: Deps, ctx: PrecompactCtx): Promise<BoundaryResult
   return undefined;
 }
 
-/** `agent_before_settle` の受け口。適用だけし、開始はしない */
+/** `agent_before_settle` を受ける入口。適用だけ行い、開始はしない。 */
 function onBeforeSettle(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefined {
   const ready = deps.state.prepared;
   if (ready === undefined) {
@@ -375,7 +375,7 @@ function onBeforeSettle(deps: Deps, ctx: PrecompactCtx): BoundaryResult | undefi
   return applyPrepared(deps, ctx);
 }
 
-/** `session_before_compact` の受け口。Pi の準備と照合して渡す */
+/** `session_before_compact` を受ける入口。Pi の準備と照合して渡す。 */
 function onSessionBeforeCompact(
   deps: Deps,
   event: SessionBeforeCompactEvent,
@@ -402,7 +402,7 @@ function onSessionBeforeCompact(
     discardWithFallback(deps, ctx);
     return undefined;
   }
-  // 前は今の使用量、後ろは準備時に見積もった残りと要約。
+  // 適用前は今の使用量、適用後は準備時に見積もった残りと要約。
   const tokensNow = ctx.getContextUsage()?.tokens;
   const tokensBefore = typeof tokensNow === 'number' ? tokensNow : ready.result.tokensBefore;
   const compaction: CompactionResult = { ...ready.result, tokensBefore };
@@ -420,7 +420,7 @@ function onSessionBeforeCompact(
   return { compaction };
 }
 
-/** `session_start` と `session_shutdown` の受け口。状態を戻す */
+/** `session_start` と `session_shutdown` を受ける入口。状態を戻す。 */
 function resetForSession(deps: Deps, ctx: PrecompactCtx): void {
   deps.state.prepared = undefined;
   deps.state.running = false;
@@ -432,7 +432,7 @@ function resetForSession(deps: Deps, ctx: PrecompactCtx): void {
   refreshStatus(deps, ctx);
 }
 
-/** `/precompact` の受け口 */
+/** `/precompact` を受ける入口。 */
 async function onCommand(deps: Deps, args: string, ctx: PrecompactCtx): Promise<void> {
   const command = parseCommand(args);
   if (command.kind === 'usage') {
@@ -474,7 +474,7 @@ async function onCommand(deps: Deps, args: string, ctx: PrecompactCtx): Promise<
   return;
 }
 
-/** 配線の中身。`registerPrecompact` はこれを pi につなぐだけにする */
+/** 配線の中身を作る。`registerPrecompact` はこれを pi につなぐだけである。 */
 export function createPrecompactWiring(port: PiPort, options: WiringOptions): PrecompactWiring {
   const deps: Deps = {
     port,
@@ -512,7 +512,7 @@ export function createPrecompactWiring(port: PiPort, options: WiringOptions): Pr
   };
 }
 
-/** 拡張の配線。5 つのイベントと 1 つのコマンドをつなぐ */
+/** 拡張を配線する。5 つのイベントと 1 つのコマンドをつなぐ。 */
 export function registerPrecompact(pi: PiPort): void {
   const settingsDir = dirname(fileURLToPath(import.meta.url));
   const wiring = createPrecompactWiring(pi, { settingsDir, now: Date.now });

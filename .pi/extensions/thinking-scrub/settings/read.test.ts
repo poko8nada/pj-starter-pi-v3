@@ -10,24 +10,24 @@ function truncatedJson(): string {
 }
 
 describe('readSettings', () => {
-  it('3 グループを持つファイル → ok', () => {
+  it('3 グループを持つファイルなら ok になる', () => {
     const dir = tempDir();
     const settings = defaultSettings();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify(settings));
     expect(readSettings(dir)).toEqual({ kind: 'ok', settings });
   });
 
-  it('ファイルが無い → ok で既定', () => {
+  it('ファイルがなければ ok で既定値になる', () => {
     expect(readSettings(tempDir())).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('ファイルがディレクトリ → broken', () => {
+  it('ファイルがディレクトリなら broken になる', () => {
     const dir = tempDir();
     mkdirSync(join(dir, 'settings.json'));
     expect(readSettings(dir).kind).toBe('broken');
   });
 
-  it('途中で切れた JSON を書いたファイル → broken', () => {
+  it('途中で切れた JSON を書いたファイルなら broken になる', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), truncatedJson());
     expect(readSettings(dir).kind).toBe('broken');

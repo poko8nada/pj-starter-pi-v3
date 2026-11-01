@@ -1,9 +1,9 @@
 /**
  * 品質ゲートの実行の分岐を、偽の `exec` で確かめる。
  *
- * pnpm と git は起動しない。`exec` に打たれた command と args を記録し、戻り値はテストが決める。
- * pnpm の戻り値はスクリプトごとに決められる。fix 相だけを赤にできる。
- * ファイルは `tempDir()` に本物を作る（`prepareTargets` は `existsSync` を見るので、存在の制御が要る）。
+ * pnpm と git は起動しない。`exec` に渡された command と args を記録し、戻り値はテストが決める。
+ * pnpm の戻り値はスクリプトごとに決められる。fix フェーズだけを失敗にできる。
+ * ファイルは `tempDir()` に実際に作る（`prepareTargets` は `existsSync` を見るため、存在の制御が必要である）。
  */
 
 import { writeFileSync } from 'node:fs';
@@ -37,7 +37,7 @@ interface FakePi {
   setAllPnpm: (result: ScriptResult) => void;
 }
 
-/** exec を記録するだけの偽。pnpm / git は起動しない */
+/** exec を記録するだけの偽である。pnpm と git は起動しない。 */
 function fakePi(): FakePi {
   const calls: ExecCall[] = [];
   let checkIgnoreCode = 1;
@@ -78,7 +78,7 @@ function fakePi(): FakePi {
   };
 }
 
-/** 1 つの ts ファイルを作り、絶対パスを返す */
+/** 1 つの ts ファイルを作り、絶対パスを返す。 */
 function tsFile(dir: string, name: string): string {
   const file = join(dir, name);
   writeFileSync(file, 'x\n');
@@ -106,21 +106,21 @@ async function assertNoExclusion(code: number): Promise<void> {
 }
 
 describe('toRelative', () => {
-  it('cwd からの相対を返す', () => {
+  it('cwd からの相対を返すことを確かめる', () => {
     const cwd = '/repo';
     const name = 'src/a.ts';
     const absolute = join(cwd, name);
     expect(toRelative(cwd, absolute)).toBe(name);
   });
 
-  it('空になる（path が cwd 自身）ときは元のパスを返す', () => {
+  it('空になる場合（path が cwd 自身）は元のパスを返す', () => {
     const cwd = '/repo';
     expect(toRelative(cwd, cwd)).toBe(cwd);
   });
 });
 
 describe('prepareTargets（runChecks 越しに見る）', () => {
-  it('削除済みのファイルは check に含めず skipped に入れる', async () => {
+  it('削除済みのファイルはチェックに含めず skipped に入れる', async () => {
     const dir = tempDir();
     const live = tsFile(dir, 'live.ts');
     const deadName = 'deleted.ts';
@@ -129,10 +129,10 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
 
     const run = await runChecks(fake.pi, { cwd: dir }, [live, dead]);
 
-    // git に渡るのは存在している分だけ
+    // git に渡るのは存在している分だけである。
     expect(fake.calls.map((call) => call.args)).toContainEqual(['check-ignore', '--', live]);
     expect(run.skipped).toEqual([dead]);
-    // pnpm に渡る対象にも deleted は入らない
+    // pnpm に渡る対象にも deleted は入らない。
     const scripts = fake.calls.filter((call) => call.command === 'pnpm').map((call) => call.args);
     expect(scripts.length).toBeGreaterThan(0);
     for (const args of scripts) {
@@ -140,7 +140,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     }
   });
 
-  it('全部削除済み → git を打たず、skipped に全部', async () => {
+  it('すべて削除済みなら git を実行せず skipped にすべて入る', async () => {
     const dir = tempDir();
     const first = join(dir, 'a.ts');
     const second = join(dir, 'b.ts');
@@ -153,7 +153,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     expect(run.skipped).toEqual(targets);
   });
 
-  it('.gitignore 対象は check に含めず skipped に入れる', async () => {
+  it('.gitignore 対象はチェックに含めず skipped に入れる', async () => {
     const dir = tempDir();
     const src = tsFile(dir, 'src.ts');
     const dist = tsFile(dir, 'dist.ts');
@@ -165,7 +165,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     const run = await runChecks(fake.pi, { cwd: dir }, [src, dist]);
 
     expect(run.skipped).toEqual([dist]);
-    // pnpm に渡る対象には src だけが残り、dist は入らない
+    // pnpm に渡る対象には src だけが残り、dist は入らない。
     const scripts = fake.calls.filter((call) => call.command === 'pnpm').map((call) => call.args);
     for (const args of scripts) {
       expect(args).toContain(src);
@@ -173,14 +173,14 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     }
   });
 
-  it('git check-ignore が非 0 でも無視されたパスの出力があれば除外なし', async () => {
+  it('git check-ignore が 0 以外でも無視されたパスの出力があれば除外しない', async () => {
     await assertNoExclusion(1);
     await assertNoExclusion(128);
   });
 });
 
 describe('runCheck（runChecks 越しに見る）', () => {
-  it('typecheck は拡張子で絞らない（md も渡る）', async () => {
+  it('typecheck は拡張子で絞らず md も渡す', async () => {
     const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
     const mdName = 'b.md';
@@ -190,13 +190,13 @@ describe('runCheck（runChecks 越しに見る）', () => {
 
     await runChecks(fake.pi, { cwd: dir }, [ts, md]);
 
-    // typecheck:staged は ts と md の両方を渡す
+    // typecheck:staged は ts と md の両方を渡す。
     const typecheck = fake.calls.find((call) => call.args.includes('typecheck:staged'));
     expect(typecheck?.args).toContain(ts);
     expect(typecheck?.args).toContain(md);
   });
 
-  it('format は md を渡し、lint は md を渡さない', async () => {
+  it('format は md を渡し lint は md を渡さない', async () => {
     const dir = tempDir();
     const ts = tsFile(dir, 'a.ts');
     const md = join(dir, 'b.md');
@@ -212,7 +212,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
     expect(lint?.args).not.toContain(md);
   });
 
-  it('対象拡張子が無い → そのチェックは打たれない（残る 1 件だけ）', async () => {
+  it('対象拡張子がない場合はそのチェックを実行せず 1 件だけ残る', async () => {
     const dir = tempDir();
     const png = join(dir, 'a.png');
     writeFileSync(png, 'x\n');
@@ -220,7 +220,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
 
     const run = await runChecks(fake.pi, { cwd: dir }, [png]);
 
-    // png は format にも lint にも通らない。打たれるのは typecheck だけ
+    // png は format にも lint にも通らない。実行されるのは typecheck だけである。
     const scripts = fake.calls
       .filter((call) => call.command === 'pnpm')
       .map((call) => call.args[1]);
@@ -230,7 +230,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
     expect(run.outcomes.map((outcome) => outcome.label)).toEqual(expectedLabels);
   });
 
-  it('pnpm が失敗 → failed で、stdout と stderr を改行でつなぐ', async () => {
+  it('pnpm が失敗すれば failed になり stdout と stderr を改行でつなぐ', async () => {
     const dir = tempDir();
     const file = tsFile(dir, 'a.ts');
     const fake = fakePi();
@@ -251,7 +251,7 @@ describe('runCheck（runChecks 越しに見る）', () => {
 });
 
 describe('runChecks（2フェーズ）', () => {
-  it('fix 相だけが失敗しても verify 相の結果はすべて成功', async () => {
+  it('fix フェーズだけが失敗しても verify フェーズの結果はすべて成功する', async () => {
     const dir = tempDir();
     const file = tsFile(dir, 'a.ts');
     const fake = fakePi();

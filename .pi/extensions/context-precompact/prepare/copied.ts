@@ -4,7 +4,7 @@
  * `prepareCompaction` の本体を、`buildSessionProjection(pathEntries)` を `projectedEntries` に、
  * `estimateProjectedContextTokens` を `tokensBefore` に置き換えて写した。
  * `estimateTokens` と `sessionEntryToContextMessages` は Pi の公開 API を使い、
- * それ以外の補助関数はこのファイルに閉じ込めた。
+ * それ以外の補助関数はこのファイルにまとめた。
  */
 import { estimateTokens, sessionEntryToContextMessages } from '@earendil-works/pi-coding-agent';
 import type { FileOperations, SessionEntry } from '@earendil-works/pi-coding-agent';
@@ -22,7 +22,7 @@ interface ProjectedCutPoint {
   readonly isSplitTurn: boolean;
 }
 
-/** `createFileOps` の写し。Pi のルートから export されていないためここで作る */
+/** `createFileOps` の写しである。Pi のルートから export されていないためここで作る。 */
 function createFileOps(): FileOperations {
   return { read: new Set(), written: new Set(), edited: new Set() };
 }
@@ -323,7 +323,7 @@ function extractFileOperations(
   return fileOps;
 }
 
-/** 投影と現在トークンから要約の下ごしらえを作る。無ければ `undefined` */
+/** 投影と現在トークンから要約の準備を作る。なければ `undefined` を返す。 */
 export function prepareFromProjection(
   input: ProjectedPrepareInput,
 ): PreparedCompaction | undefined {

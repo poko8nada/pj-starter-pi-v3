@@ -1,5 +1,5 @@
 /**
- * Pi の準備とこちらの準備の照合。5 項目が同じときだけ `match`。
+ * Pi の準備とこちらの準備を照合する。5 項目が同じときだけ `match` になる。
  */
 import type { CompareResult, CompareField, PreparedCompaction } from './types.ts';
 
@@ -15,7 +15,7 @@ function setsEqual(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
   return true;
 }
 
-/** 2 つの下ごしらえを比べ、不一致の field 名を返す */
+/** 2 つの準備を比べ、不一致の field 名を返す。 */
 export function compare(ours: PreparedCompaction, theirs: PreparedCompaction): CompareResult {
   const fields: CompareField[] = [];
   if (ours.firstKeptEntryId !== theirs.firstKeptEntryId) {

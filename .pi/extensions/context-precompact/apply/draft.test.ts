@@ -51,7 +51,7 @@ function stampOf(): PrepareStamp {
 }
 
 describe('readyFrom', () => {
-  it('result と prepared と前後の数 → draft が同じで、tokensAfter が kept と要約の和', () => {
+  it('result と prepared と前後のトークン数から draft を作ると tokensAfter が kept と要約の合計になる', () => {
     const tokens = tokensOf();
     const result = resultOf(summaryOf());
     const ready = readyFrom(result, preparedOf(), stampOf(), tokens);

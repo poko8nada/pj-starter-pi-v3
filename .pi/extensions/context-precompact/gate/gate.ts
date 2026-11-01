@@ -1,5 +1,5 @@
 /**
- * 準備を始めるか、適用するか、待つかの判定。純粋計算。
+ * 準備を始めるか適用するか待つかを判定する。副作用なしで計算する。
  */
 import { LEAD_RATIO, MIN_OLD_RATIO, REARM_RATIO } from '../settings/constants.ts';
 
@@ -28,7 +28,7 @@ export type GateDecision =
   | { readonly kind: 'start' }
   | { readonly kind: 'apply' };
 
-/** 入力の割合と状態から、開始・適用・待ち・見送りを決める */
+/** 入力の割合と状態から、開始するか適用するか待つか見送るかを決める。 */
 export function gate(input: GateInput): GateDecision {
   if (!input.enabled || !input.piEnabled) {
     return { kind: 'skip', reason: 'disabled' };

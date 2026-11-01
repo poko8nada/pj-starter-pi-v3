@@ -1,7 +1,7 @@
 /**
- * thinking-scrub の設定。`settings.json` と 1 対 1。
+ * thinking-scrub の設定である。`settings.json` と 1 対 1 に対応する。
  *
- * 壊れているときは投げずに broken で返す。入口が既定で動く旨と合わせて知らせる。
+ * 壊れているときは例外を投げずに broken で返す。入口が既定で動く旨と合わせて通知する。
  */
 
 export interface LiveTuning {
@@ -42,7 +42,7 @@ export type SettingsRead =
 
 export const SETTINGS_FILE = 'settings.json';
 
-/** 既定の設定 */
+/** 既定の設定を返す。 */
 export function defaultSettings(): Settings {
   return {
     enabled: true,
@@ -217,7 +217,7 @@ function parseFlags(
   return { enabled, show };
 }
 
-/** 読んだ文字列を設定にする。型が違えば broken */
+/** 読んだ文字列を設定にする。型が違えば broken を返す。 */
 export function parseSettings(text: string): SettingsRead {
   let document: unknown;
   try {
