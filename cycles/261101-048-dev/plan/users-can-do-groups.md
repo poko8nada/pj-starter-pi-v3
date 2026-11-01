@@ -123,6 +123,6 @@ scripts/
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（58 ファイル、796 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、いずれも緑。`Verify` の `Added`: `grep -c "^#### "` = 5、`grep -c "^#### .*: "` = 0、`grep -c "^- #### "` = 0、種類語の見出し = 0、`### Users can do` から `## Stack` の手前を読み、`####` の 5 行と Unit の 23 行だけで、文言は変更前のままで、6 / 6 / 5 / 3 / 3、`grep -c "How the list is grouped"` = 1、3 つの読む側に「見出しは Unit でない」、`git diff f457113 -- rules/definition.format.md` は `## Sections` の 1 hunk だけで Skeleton に hunk なし、`git diff --stat f457113 -- scripts/product-ready/` が 0 行、4 ファイルの vitest が 76 テスト緑。
+- Findings: なし
+- Doubts: なし
