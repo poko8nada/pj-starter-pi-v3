@@ -79,6 +79,9 @@ scripts/
   - other — `grep -n "heading" .pi/skills/adr/references/format.md .pi/skills/close/references/format.md .pi/skills/close/SKILL.md` が 3 ファイルそれぞれで 1 件以上あり、`####` の見出しを Unit と読まないと書いていることを読む
   - other — `pnpm exec vitest run --config vitest.starter.config.ts scripts/product-ready/targets.test.ts scripts/product-ready/index.test.ts .pi/skills/adr/scripts/scaffold.test.ts .pi/skills/close/scripts/collect.test.ts` を走らせ、4 件とも緑であることを見る
   - other — `git diff --stat` で `scripts/product-ready/targets.mjs` と `scripts/product-ready/index.mjs` に差分が無いことを見る
+  - other — `rules/definition.rules.md` の `## How the list is grouped` の節を読み、階層は最大 2、親は `Who` が何をするかの単位、親は Unit にしない（試験 04）、親の下は 1 行 1 Unit、種類の語を軸にしない、束ねない選択、の 6 点があることを見る
+  - other — `rules/definition.format.md` の `## Sections` の `Users can do` の項を読み、見出しで束ねてよいことと、見出しは Unit でないことが書かれていることを見る
+  - other — `git diff f457113 -- rules/definition.format.md` を読み、`## Skeleton` の `### Users can do` の下の 2 行に hunk が無いことを見る
 
 ## Notes
 
@@ -105,11 +108,11 @@ scripts/
   - なし — `git diff --stat` の変更は `DEFINITION.md`、`rules/definition.rules.md:22`、`rules/definition.format.md:68`、`.pi/skills/adr/references/format.md:73`、`.pi/skills/close/references/format.md:72`、`.pi/skills/close/SKILL.md:90` の6件だけで、Files の `update` 6件と一致し、計画外のファイル差分はない。
 - Gaps:
   - `rules/definition.rules.md:24-28` の新節の内容（最大2階層・親は `Who` の単位・親は Unit にしない・下は1行1Unit・種類語を軸にしない・束ねない選択）を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:72` の Always は節名の存在だけを見るため、内容の正しさは検査されない。
-    - fixed: `:24-28` を読み、最大2階層・親は `Who` の単位・親は Unit にしない（試験04）・下は1行1Unit・種類語なし・束ねない選択の6点があることを確かめた。
+    - fixed: `Verify` の `Added` に `## How the list is grouped` の6点読みの `other` を足し、`rules/definition.rules.md:24-28` を読んで6点があるのを見た。
   - `rules/definition.format.md:68` の Sections 追記（見出しで束ねてよい・見出しは Unit でない）を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:78` の Added は `:67` と `:75` の無差分だけを見るため、追記文の読みがない。
-    - fixed: `:68` を読み、見出しで束ねてよい・見出しは Unit でないの2点があり、`:67` の原文が残ることを確かめた。
+    - fixed: `Verify` の `Added` に `## Sections` の `Users can do` 項読みの `other` を足し、`rules/definition.format.md:68` に2点があり `:67` が残るのを見た。
   - `rules/definition.format.md:33-36` の Skeleton の `### Users can do` 下2行の無変更を確かめる Added がない。`cycles/261101-048-dev/plan/users-can-do-groups.md:78` の Added は `:67` と `:75` だけを見るため、雛形の同一性は検査されない。
-    - fixed: `f457113` との diff に Skeleton の hunk がなく、`:35-36` の2行が同一であることを確かめた。
+    - fixed: `Verify` の `Added` に `git diff f457113` の Skeleton hunk無しの `other` を足し、hunkが Sections の1件だけで雛形に無いことを見た。
 - Unproven:
   - なし — 新規テストの追加はなく、Verify が走らせる4件（`targets.test.ts`、`index.test.ts`、`scaffold.test.ts`、`collect.test.ts`）は旧来の互換性だけを守り、新しい束ね方を名指ししないため、壊れても緑になる振る舞いはない。
 - Noise:
