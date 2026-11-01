@@ -30,7 +30,11 @@
     },
     {
       "name": "proofreader",
-      "models": ["opencode-go/muse-spark-1.3-contributor:high", "opencode-go/mimo-v2.6-flash:high"],
+      "models": [
+        "opencode-go/beam-free:max",
+        "opencode-go/muse-spark-1.3-contributor:high",
+        "opencode-go/mimo-v2.6-flash:high"
+      ],
       "tools": ["read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write"],
       "isolated": false,
       "paths": ["**/*.md", "**/.*/**/*.md"],
