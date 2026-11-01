@@ -119,7 +119,7 @@ Plan is edited to match, and git holds the diff. The design's `Boundary.Plans` i
 ## How not to write this
 
 - Do not copy the design or the ADR: name them where they bite, and write what the reader has to do
-- Do not invent a check: `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
+- Do not invent a check: `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides
 - Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
 - Do not leave a hole: a boundary with no answer stops the plan
 - Do not write the plan from the agent's side while a worktree is live: the subagent writes its slice's record, and the agent writes at the acceptance
