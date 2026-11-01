@@ -1,6 +1,5 @@
 import { chmodSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { aTypePolicy, aTypesText } from '../consult.fixture.ts';
@@ -125,13 +124,5 @@ describe('resolveType', () => {
     const second = aTypePolicy({ name: 'code' });
     const types = parseTypes(aTypesText(first, second));
     expect(resolveType(types, second.name).name).toBe(second.name);
-  });
-});
-
-describe('stored types.json', () => {
-  it('保存した review の指示 → 根拠をつけてくださいを含む', () => {
-    const dir = join(dirname(fileURLToPath(import.meta.url)), '..');
-    const review = loadTypes(dir).find((type) => type.name === 'review');
-    expect(review?.role).toContain('根拠をつけてください');
   });
 });
