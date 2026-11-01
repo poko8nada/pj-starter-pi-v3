@@ -109,7 +109,7 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 - `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up
 - the parts are named, not summarised: a part left unnamed is a part the entry did not weigh
 - a Unit that `rules/definition.rules.md` does not allow is not a Unit
-- a rejected entry adopts nothing: its `Definition` carries only `(kept)` for the parts that stand, or `なし（採らなかった）`
+- a rejected entry adopts nothing: its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`
 
 ## Entries, together
 

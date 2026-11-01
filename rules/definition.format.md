@@ -32,8 +32,8 @@ The block is the state a product starts from. `Product` and `What` are the produ
 
 ### Users can do
 
-- definition-file: owner またはエージェントが、プロダクトの絵を 1 枚で読める
-- definition-rules: エージェントが、絵の書き方の規則を読める
+- definition-file: owner またはエージェントが、プロダクトの全体像を 1 枚で読める
+- definition-rules: エージェントが、全体像の書き方の規則を読める
 
 ## Stack
 

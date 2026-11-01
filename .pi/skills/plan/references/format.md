@@ -30,7 +30,7 @@ Section and field names are English; the content is Japanese.
 ### Types
 
 ```ts
-<型・スキーマ・署名・状態の宣言。無ければ なし>
+<型・スキーマ・署名・状態の宣言。なければ なし>
 ```
 
 ### Steps
@@ -47,12 +47,12 @@ Section and field names are English; the content is Japanese.
 ### Verify
 
 - Always:
-  - <関連テスト（`pnpm test:related <changed files>`。関連が無ければ `pnpm test:run`）>
+  - <関連テスト（`pnpm test:related <changed files>`。関連がなければ `pnpm test:run`）>
   - <`pnpm typecheck`>
   - <`pnpm lint`>
   - <`pnpm format:check`>
   - <このスライスが変えた名前と説明を大小文字を問わず `grep` する>
-- Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、無ければ なし>
+- Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
 ## 2.<スライス名>
 
