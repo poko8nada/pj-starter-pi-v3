@@ -47,7 +47,11 @@ Section and field names are English; the content is Japanese.
 ### Verify
 
 - Always:
-  - <緑にしたもの。既定の 5 つで足りるなら `既定の 5 つ`>
+  - <関連テスト（`pnpm test:related <changed files>`。関連が無ければ `pnpm test:run`）>
+  - <`pnpm typecheck`>
+  - <`pnpm lint`>
+  - <`pnpm format:check`>
+  - <このスライスが変えた名前と説明を大小文字を問わず `grep` する>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、無ければ なし>
 
 ## 2.<スライス名>
@@ -146,7 +150,7 @@ Section and field names are English; the content is Japanese.
 - `Verify` is what closes the slice: what has to pass, not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
 - Each `Goal` line's result is one of the related tests; a step that goes past the `Non-goal` is not written, and the review reads it.
-- `Always:` — these five, and nothing else.
+- `Always:` — the bullets below, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
   - `pnpm lint`
@@ -158,7 +162,7 @@ Section and field names are English; the content is Japanese.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.
   - a `base` plan's look — the owner reads the slice's change; their OK closes it.
   - a proofread — the plan md and the skill's `references/format.md`, with the skill's proofread sentence
-  - other — a check the ADR's scope names that the five above do not cover, by a throwaway script or a shell command.
+  - other — a check the ADR's scope names that the checks above do not cover, by a throwaway script or a shell command.
 - A `Verify` that cannot be run is a hole: fix it, or say why it does not apply.
 
 ## Test cases

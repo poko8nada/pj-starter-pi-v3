@@ -60,7 +60,7 @@ The plan writes each `Goal` line's result as a test case, and no step that goes 
 
 `Verify` is what closes the slice: what has to pass. It has two groups, the same in every plan:
 
-- `Always` — the five: the related tests, the typecheck, the lint, the format, and the case-insensitive `grep` for stale wording
+- `Always` — the related tests, the typecheck, the lint, the format, and the case-insensitive `grep` for stale wording
 - `Added` — what the change adds: DB, front, auth, the base plan's look, or another check of the ADR's scope
 
 A `Verify` that cannot be run is a hole: fix it, or say why it does not apply. A check that needs a consult subagent is run by the agent, and the agent reads it again at the acceptance as a precaution.
@@ -119,7 +119,7 @@ Plan is edited to match, and git holds the diff. The design's `Boundary.Plans` i
 ## How not to write this
 
 - Do not copy the design or the ADR: name them where they bite, and write what the reader has to do
-- Do not invent a check: `Always` is the five, and `Added` is the list `references/format.md` gives
+- Do not invent a check: `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides
 - Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
 - Do not leave a hole: a boundary with no answer stops the plan
 - Do not write the plan from the agent's side while a worktree is live: the subagent writes its slice's record, and the agent writes at the acceptance
