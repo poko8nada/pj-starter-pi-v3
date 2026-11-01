@@ -1,5 +1,5 @@
 /**
- * `scripts/harness/list.mjs` の振る舞いを fake root で試す。
+ * `scripts/harness/list/index.mjs` の振る舞いを fake root で試す。
  *
  * fake root を `tempDir()` で作り、パスを作ってから読む。
  * `harnessExcludes` は純粋に一覧から glob を作る。
@@ -9,8 +9,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tempDir } from '../../test/temp-dir.ts';
-import { harnessExcludes, readList } from './list.mjs';
+import { tempDir } from '../../../test/temp-dir.ts';
+import { harnessExcludes, readList } from './index.mjs';
 
 function writeFile(abs: string, content: string): void {
   mkdirSync(dirname(abs), { recursive: true });

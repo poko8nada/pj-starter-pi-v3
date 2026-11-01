@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { configDefaults } from 'vitest/config';
 import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../vitest.config.ts';
-import { readList } from './list.mjs';
+import { readList } from './list/index.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 

@@ -1,7 +1,7 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
-import { harnessExcludes, readList } from './scripts/harness/list.mjs';
+import { harnessExcludes, readList } from './scripts/harness/list/index.mjs';
 
 const verbose = process.env.TEST_VERBOSE === '1';
 
