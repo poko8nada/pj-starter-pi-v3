@@ -55,7 +55,7 @@ describe('commitInWorktree', () => {
     const rejected = fakeGit({ dirty: true, status: 1, output });
     const outcome = commitInWorktree(rejected.git, id);
     expect(outcome).toEqual({ kind: 'rejected', output });
-    // 戻す道（reset / checkout）を呼んでいないこと
+    // 戻す方法（reset / checkout）を呼んでいないこと
     expect(rejected.calls.map((args) => args[0])).toEqual(['status', 'add', 'commit']);
     expect(commitInWorktree(git, id).kind).toBe('committed');
     expect(calls.some((args) => args[0] === 'merge')).toBe(false);

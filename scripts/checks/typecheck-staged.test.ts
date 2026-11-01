@@ -4,7 +4,7 @@
  * fake root の `node_modules/.bin/tsc` にスタブを置く（渡された `-p` を出す）。
  * これで、どの `tsconfig` が使われたかを見る。スタブに渡るのは一時 tsconfig
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
- * だから `-p` の道に `.pi` が入るかで、`.pi` の group か root の group かが分かる。
+ * だから `-p` のパスに `.pi` が入るかで、`.pi` の group か root の group かが分かる。
  * tsc そのものが成功するかは pre-commit の時系列で担保されているので、ここでは見ない。
  * 理由行は `test/scripts.fixture.ts` から取る。`stub -p` は下のスタブが出す目印で、断言はそこから取る。
  */
@@ -105,7 +105,7 @@ describe('typecheck-staged', () => {
     writeScopes(root, [scope]);
     const out = run(root, [target]);
     expect(out.status).toBe(0);
-    // 一時 tsconfig は .pi の下に置かれる（`-p` の道に .pi が入る）
+    // 一時 tsconfig は .pi の下に置かれる（`-p` のパスに .pi が入る）
     expect(out.stdout).toContain(join(root, scope));
   });
 
@@ -120,7 +120,7 @@ describe('typecheck-staged', () => {
     writeScopes(root, [other]);
     const out = run(root, [target]);
     expect(out.status).toBe(0);
-    // 一時 tsconfig は root の下に置かれる（`-p` の道に .pi が入らない）
+    // 一時 tsconfig は root の下に置かれる（`-p` のパスに .pi が入らない）
     expect(out.stdout).toContain(STUB_MARK);
     expect(out.stdout).not.toContain(join(root, scope));
   });

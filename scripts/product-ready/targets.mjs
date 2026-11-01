@@ -44,7 +44,7 @@ const FALLBACK_VERB = 'remove';
 /**
  * 雛形を組み立てる（純）。`file` か `heading` が空、または `sections` の見出しが空なら投げる。
  *
- * @param {string} file 雛形を持つファイル（ルートからの道）
+ * @param {string} file 雛形を持つファイル（ルートからのパス）
  * @param {string} heading その中の見出し
  * @param {Part} part 全体か部分か
  * @returns {Skeleton}
@@ -74,7 +74,7 @@ const SKELETONS = new Map([
 ]);
 
 /**
- * `at` の雛形を返す（純）。表に無ければ投げ、雛形のファイルが `root` の下に無ければその道を入れて投げる。
+ * `at` の雛形を返す（純）。表に無ければ投げ、雛形のファイルが `root` の下に無ければそのパスを入れて投げる。
  *
  * @param {string} root リポジトリのルート
  * @param {string} at 差し替える対象

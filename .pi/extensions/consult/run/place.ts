@@ -3,7 +3,7 @@
  *
  * 置き場はリポジトリから決まる固定の場所（`<root>/records/<project>/`）で、
  * 記憶を持たず、reload をまたいでも同じ物になる。`<project>` は頂点の
- * 最後の成分に道の sha1 の先頭 8 文字を付けた物（同じ名前の repo が別の道にあっても分かれる）。
+ * 最後の成分にパスの sha1 の先頭 8 文字を付けた物（同じ名前の repo が別のパスにあっても分かれる）。
  *
  * 日割りは行を書いた瞬間の日で決める。時刻はプロセスのローカルを使う
  *（`toISOString` は UTC なので使わない）。
@@ -19,7 +19,7 @@ export interface Place {
   readonly toplevel: string;
 }
 
-/** 頂点の道から置き場の名前を作る。同じ名前でも道が違えば違う値になる */
+/** 頂点のパスから置き場の名前を作る。同じ名前でもパスが違えば違う値になる */
 export function projectKey(toplevel: string): string {
   const hash = createHash('sha1').update(toplevel).digest('hex').slice(0, 8);
   return `${basename(toplevel)}-${hash}`;

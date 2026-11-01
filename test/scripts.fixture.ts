@@ -2,8 +2,8 @@
  * `scripts/` のテストが使う表示の印と旗。
  *
  * 何をする物か
- * - 表示行の印（`ok`、`failed`）と区画の名（`copy`、`remove`、`same`、`legacy`）と旗（`--run`、`--only`）を 1 か所に集める。
- * - 断言はここから取り、`'root: ok'` のような行を各所に書かない。道と名と件数はテストが渡した値から取る。
+ * - 表示行の印（`ok`、`failed`）と区画の名（`copy`、`missing`、`same`）と旗（`--run`、`--only`）を 1 か所に集める。
+ * - 断言はここから取り、`'root: ok'` のような行を各所に書かない。パスと名と件数はテストが渡した値から取る。
  *
  * どう使うか
  * - `statusLine(name, OK)` で `root: ok` の形、`countLine(COPY, n)` で `copy (n):` の形、`indented(rel)` で `  <rel>` の形を作る。
@@ -22,14 +22,11 @@ export const FAILED = 'failed';
 /** 区画の名: 写す物 */
 export const COPY = 'copy';
 
-/** 区画の名: 消す物 */
-export const REMOVE = 'remove';
+/** 区画の名: 見つからなかった物 */
+export const MISSING = 'missing';
 
 /** 区画の名: 自分自身 */
 export const SAME = 'same';
-
-/** 区画の名: 古い道 */
-export const LEGACY = 'legacy';
 
 /** 旗: 実行する */
 export const RUN_FLAG = '--run';

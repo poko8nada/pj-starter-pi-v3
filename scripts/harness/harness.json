@@ -1,7 +1,8 @@
 {
+  "starter": "~/Desktop/main/_pj-starter-pi-v3",
   "copy": [
     ".pi",
-    "definition",
+    "rules",
     "lib",
     ".github/workflows",
     "test/temp-dir.ts",
@@ -15,15 +16,20 @@
     ".oxfmtrc.json",
     "scripts/checks",
     "scripts/product-ready",
-    "scripts/harness"
+    "scripts/harness/*.mjs",
+    "scripts/harness/*.test.ts",
+    "scripts/harness/*/*.mjs",
+    "scripts/harness/*/*.test.ts"
   ],
-  "skip": ["logs", "starter.json"],
-  "legacy": [
-    "scripts/harness.mjs",
-    "scripts/harness-state.mjs",
-    "scripts/harness.json",
-    "scripts/harness.mode.json",
-    "scripts/harness.test.ts",
-    "scripts/harness-state.test.ts"
+  "push": [
+    "lib",
+    "scripts/checks",
+    "scripts/harness/*.mjs",
+    "scripts/harness/*.test.ts",
+    "scripts/harness/*/*.mjs",
+    "scripts/harness/*/*.test.ts",
+    "test/temp-dir.ts",
+    "test/pi.fixture.ts",
+    "test/scripts.fixture.ts"
   ]
 }
