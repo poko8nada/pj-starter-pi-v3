@@ -45,14 +45,14 @@ The cycle's four stages, in their order. Each keeps its work, and loses only its
 
 ### close
 
-- check the trigger, read the cycle, and collect the leftovers
-- give every leftover a destination: a leftover that moves a part of `DEFINITION.md` goes to `proposed`; a leftover that does not move it, and is one of four — a contradiction, a hole, something broken, something left stale — is looked at as an `ex-` plan; what breaks nothing goes to `proposed`
-- `dropped` is not yolo's: when the fix weighs more, stop and ask the owner
-- skips: the proofread here (it runs once `yolo` stops, before the owner's judgement of the triage), the verification of what the cycle delivered, and the owner's judgement on the triage
-- `## Verified` is left out: the Unit's verification is the owner's, and it waits for their judgement
-- it ends here: the triage stands as a proposal, and the owner judges it
+- check the trigger, read the cycle, collect the leftovers, and exclude what the wording shows is already resolved
+- give every leftover a proposed destination, in this order: the cycle's own concern → `ex-`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-`; one of the above too large for one `ex-`, or needing further outside or inside research → `proposed`; the rest → `drop`, each with its `Fact:` / `Why:` / `Then:`
+- complete `close.md`: `## Collected` holds the inventory, `## Triage` holds the proposal, and `## Verified` is left out (empty at completion, and that is normal)
+- run the proofread here, so the `close.md` at the stop is what the owner can read
+- skips: the owner's judgement on the triage, the `ex-` plans and their merges, and the verification of what the cycle delivered
+- it ends here: before the owner's judgement on the triage, with the proposal complete and proofread
 
-What comes after that judgement — the confirmed triage, the `ex-` plans, the commit that closes the cycle — is not this skill's work.
+What comes after that judgement — the confirmed triage, the `ex-` plans, the verification, the commit that closes the cycle — is not this skill's work. The order from the completion of `close.md` to the verification is the same as the close skill's.
 
 ## When it stops early
 
@@ -60,7 +60,6 @@ Stopping is the main agent's task: when you judge that one of these holds, stop,
 
 - a plan's premise turns out false, and what closes it sits outside the plan
 - a merge leaves the base red, and the plan's fix does not bring it back green
-- dropping a leftover: the fix weighs more than leaving it
 - a pair of plans would make the same thing, and the owner has to decide the cut
 
 A hole the run finds and fixes in the plan's own files is not one of these: the slice's `Unplanned` holds it, and the run goes on.

@@ -7,7 +7,7 @@ description: Use when every plan of a cycle is done (done, or dropped by the own
 
 Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at.
 What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
-This skill collects the holes, triages them with the owner, and closes the cycle: after the triage and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
+This skill collects the holes, proposes their triage in `close.md`, and closes the cycle: after the owner's judgement on the proposal and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
 
 Texts handed to subagents are in `references/tasks.md`.
 
@@ -26,7 +26,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - the ADR: the `accepted` entries, and what each `Definition` decides
 - the design: the cut, and the `Boundary.Plans`
-- each plan md: its `## Acceptance`, its `## Review` and its `## Notes`
+- each plan md: its `## Acceptance`, its `## Work Review` and its `## Notes`
 - do not read the cut from memory: the files hold it, and the plan mds hold what they left
 - a change an entry decided that no plan's `Files` or `Paths` carries is a hole: find it here, and add it in step 3
 
@@ -34,32 +34,38 @@ Texts handed to subagents are in `references/tasks.md`.
 
 - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
-- read the plan md and the diff for each line, and write its `Doing` / `Left` / `Cost`
+- one leftover is one numbered line `<line> / <place> / <穴>`: the inventory only. `Doing` / `Left` / `Cost` are not written
 - fill every `未特定` for a design plan from the design. An `ex-` plan's `No` is read from the Triage; the plan md has no `No`
-- show the completed `## Collected` to the owner
 - add the holes you found in step 2 as lines by hand, in the same shape: the script does not know them
+- do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread
 
-### 4. Triage, with the owner
+### 4. Exclude what is already resolved
 
-- first, a leftover that moves a part of `DEFINITION.md` goes to `proposed`, even when it is a contradiction, a hole, something broken, or something left stale
-- a leftover that does not move `DEFINITION.md`, and is a contradiction, a hole, something broken, or something left stale, is looked at as `ex-`
-- one destination per leftover, and the owner confirms. The shape is in `references/format.md`
-  - `ex-plan`: it is one of those four, it does not move `DEFINITION.md`, and the fix is code. Explain the outline and the fix to the owner first, then write the plan md directly, named `ex-<what it fixes>` (no design, no `No` at the top); its `No` is read from the Triage. Run its work, and resume this close when it is merged: its line carries `done <commit>`. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
-  - `proposed`: it breaks nothing, or it moves a part of `DEFINITION.md`; either way, leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes
-  - `dropped`: rare, and the fix weighs more
+- a 解決済みの leftover is excluded by the agent's reading of the wording: the plan md, the diff and the close context show it is already closed
+- the script does not judge this: the agent deletes the resolved lines from `## Collected` by hand
+- every rerun of `collect.mjs` rewrites the numbered lines, so re-filter after every rerun before the close goes on
+
+### 5. Propose the triage, in `close.md`
+
+- the agent writes one proposal destination per leftover, in `## Triage`, in this order:
+  1. 現サイクルの関心ごと → `ex-`
+  2. 現サイクルの関心ごとに関わらないが明らかなバグ / 脆弱性 / 古い実装や記述 → `ex-`
+  3. 上記のうち影響範囲や変更が大きく `ex-` 1つに収まらないもの、または追加の外部・内部調査が必要なもの → `proposed`
+  4. それ以外 → `drop`
+- each `## Triage` bullet carries its grounds underneath, in this shape:
+  - `Fact:` what happened and how it stands now
+  - `Why:` why this proposal is recommended
+  - `Then:` for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `drop` なし
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
-- write the lines in `## Triage` as they are decided. The triage is done when every leftover has a destination and every `ex-` plan has merged
+- the proposal is done when every leftover has a destination with its `Fact:` / `Why:` / `Then:`. The owner confirms it later, in step 8
 
-### 5. Ask and verify, by Unit
+### 6. Complete `close.md`
 
-- the Units are the ones the `accepted` entries' `Definition` names, and the plans on each come from the design's `No`
-- ask the owner, per Unit, whether they will run the function or look at it
-- the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
-- their OK in the chat closes it; a Unit they will not check carries `しない` and the reason on the same line
-- a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design and no `No` at the top; its `No` is read from the Triage, its work run, and this step runs again for that Unit when it is merged. Run step 3 again for the merged `ex-` plan's leftovers, triage them here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
-- what they answered goes in `## Verified`, which sits after `## Triage`
+- at completion `## Triage` holds the proposal, `## Collected` holds the inventory, and `## Verified` is empty, and that is normal
+- the shape is in `references/format.md`
+- what completes here is the proposal the owner reads: the confirmed destinations, the `ex-` merges and the verification come after their judgement
 
-### 6. Proofread
+### 7. Proofread
 
 Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` and `.pi/skills/close/references/format.md`; the role's policy applies; edit only the named files.
 
@@ -68,29 +74,44 @@ Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
 - one round: the repaired file does not go through the subagent again
 
-### 7. Owner
+### 8. Owner
 
-- they read the whole `close.md` — the triage and the verification — and answer. A missing line comes back
-- a rejection sends you back to the step it came from: 3 for a collected line, 4 for a destination, 5 for a Unit
+- they read the whole `close.md` — the triage proposal, with its `Fact:` / `Why:` / `Then:`, and the empty `## Verified` as normal — and answer. A missing line comes back
+- a rejection sends you back to the step it came from: 3 for a collected line, 4 for a resolved judgement, 5 for a destination, 10 for a Unit
 
-### 8. Roadmap
+### 9. Run the `ex-` plans and merge
+
+- after the owner's judgement, write each confirmed `ex-` leftover's plan directly, named `ex-<what it fixes>` (no design, no `No` at the top); its `No` is read from the Triage. Run its work, and resume this close when it is merged: its line carries `done <commit>`
+- run steps 3 to 5 again for the merged `ex-` plan's leftovers, propose their destinations here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
+- go on when no `ex-` is left without its `done <commit>`
+
+### 10. Verify, by Unit
+
+- the Units are the ones listed in `Users can do` of the `accepted` entries' `Definition`. `Product` / `What` / `Who` / `Stack` are not Units and are not verified
+- ask the owner, per Unit, whether they will run the function or look at it
+- the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
+- their OK in the chat closes it; a Unit they will not check carries `しない` and the reason on the same line
+- a Unit whose function does not work gets an `ex-` plan, as the triage's: named `ex-<what it fixes>`, no design and no `No` at the top; its `No` is read from the Triage, its work run, and this step runs again for that Unit when it is merged. Run steps 3 to 5 again for the merged `ex-` plan's leftovers, propose their destinations here, and align the `Triage` numbers with the new `## Collected`, before the close goes on
+- what they answered goes in `## Verified`, which sits after `## Triage`
+
+### 11. Roadmap
 
 - after the owner's judgement, write the cycle into `ROADMAP.md`, with their word
 - append this cycle's number to the item's `cycles`; a number that is already there is kept
 - set the item's `status` to `done` when the owner says the item is finished, and leave it `wip` when it is not
 - the shape and the rules of the file are in `rules/roadmap.md`
 
-### 9. Leftovers
+### 12. Leftovers
 
 - before the commit: `consult_worktree list`, and remove what no plan and no line keeps
-- nothing is decided here: what this step finds that step 4 did not decide goes back to step 4, before the commit
+- nothing is decided here: what this step finds that step 5 did not propose goes back to step 5, before the commit
 
-### 10. Commit
+### 13. Commit
 
 - `close.md` and `ROADMAP.md`, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
 - an `ex-` plan and its work are committed at its merge, each on its own; this commit does not carry them
 
-### 11. Clean the workspace
+### 14. Clean the workspace
 
 - after the commit: delete the `memo-*` and temp files this cycle created. They are not part of the cycle's commit
 
@@ -99,5 +120,7 @@ Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<
 - Do not run the plan's checks again: the acceptance ran them, and the merge gate held. The owner's verification is of the Unit's function, and it goes in `## Verified`
 - Do not decide the verification for the owner: ask, and write the answer as it is
 - Do not fix a hole silently, and do not write the fix into `DEFINITION.md`, the design or a plan
-- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination
+- Do not triage with the owner line by line before `close.md` is complete: the agent proposes every destination with its `Fact:` / `Why:` / `Then:`, proofreads it, and only then the owner judges it
+- Do not skip the resolved exclusion: what the wording shows is already closed is excluded by the agent, and re-filtered after every rerun of the script
+- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination and every `ex-` plan has merged
 - Do not copy by hand what the script collects: a line left out is a hole nobody finds again

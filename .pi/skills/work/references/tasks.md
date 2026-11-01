@@ -42,7 +42,7 @@ Answer one question: can this diff close the plan? By five viewpoints:
 - Noise: a test the types, the schema or a DB constraint already settle, or one nobody would notice; a case written with a magic number or a hardcoded string
 Read the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.
 A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers in `Added`.
-Write your findings in the plan md's ## Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
+Write your findings in the plan md's ## Work Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
 This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`.
 Do not change the code.
 ```
@@ -59,7 +59,7 @@ This is the last look. Write your answer in ### Round 2, same viewpoints, and st
 ## Fixes (the `code` subagent, continued)
 
 ```
-Read the plan md's ## Review, ### Round 1. For each finding without a `fixed:` or `left:` line, adopt it and fix it, or leave it.
+Read the plan md's ## Work Review, ### Round 1. For each finding without a `fixed:` or `left:` line, adopt it and fix it, or leave it.
 When you adopt one, add a `fixed:` line under it, saying what you did. When you leave one, add a `left:` line under it, saying why.
 Run the plan's checks after fixing. Then commit: consult(<plan id>): round <N> fixes
 ```

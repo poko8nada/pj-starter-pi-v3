@@ -10,12 +10,16 @@ export type PlanDocOptions = {
   readonly name: string;
   readonly no?: string | null;
   readonly notes: string;
+  readonly review?: readonly string[];
 };
 
 /** plan md の雛形を作る。 */
-export function planDoc({ no = null, name, notes }: PlanDocOptions): string {
+export function planDoc({ no = null, name, notes, review }: PlanDocOptions): string {
   const noLine = no === null || no === undefined ? '' : `\n- No: ${no}\n`;
-  return `# PLAN \`${name}\`${noLine}\n## Notes\n\n### Slice 1: foo\n\n- Findings:\n  - ${notes}\n- Unplanned:\n  - なし\n- Commit: abc1234\n`;
+  const base = `# PLAN \`${name}\`${noLine}\n## Notes\n\n### Slice 1: foo\n\n- Findings:\n  - ${notes}\n- Unplanned:\n  - なし\n- Commit: abc1234\n`;
+  if (review === undefined) return base;
+  const bullets = review.map((item) => `- ${item}`).join('\n');
+  return `${base}\n## Work Review\n\n### Round 1\n\n${bullets}\n`;
 }
 
 /** close md の Triage 行の材料。 */

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { closeDoc, planDoc } from './collect.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { noOf, writeClose } from './collect.mjs';
+import { collectPlan, noOf, writeClose } from './collect.mjs';
 
 const planId = 'alpha';
 const exId = 'ex-fix';
@@ -47,5 +47,32 @@ describe('writeClose', () => {
     const text = readFileSync(closePath, 'utf8');
     expect(text).toContain(`### ${planId} (ADR ${adrNo})`);
     expect(text).toContain(`### ${exId} (ADR ${adrNo})`);
+  });
+});
+
+describe('collectPlan with review', () => {
+  it('(happy) planDoc に review で指摘を 1 つ渡す → ## Collected にその指摘が残り物として出る', () => {
+    const doc = planDoc({ no: adrNo, name: planId, notes: 'なし', review: ['work review hole'] });
+    const items = collectPlan(doc);
+    expect(items.map((item) => item.finding)).toContain('work review hole');
+    expect(items.map((item) => item.place)).toContain('Work Review Round 1');
+  });
+
+  it('(empty) planDoc に review で なし を渡す → ## Collected が なし になる', () => {
+    const root = tempDir();
+    const cycle = join(root, '261024-001-dev');
+    const planDir = join(cycle, 'plan');
+    mkdirSync(planDir, { recursive: true });
+    writeFileSync(
+      join(planDir, `${planId}.md`),
+      planDoc({ no: adrNo, name: planId, notes: 'なし', review: ['なし'] }),
+    );
+    writeFileSync(
+      join(cycle, 'close.md'),
+      '# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\nなし\n',
+    );
+    const closePath = writeClose(cycle);
+    const text = readFileSync(closePath, 'utf8');
+    expect(text).toContain('## Collected\n\nなし');
   });
 });

@@ -175,7 +175,7 @@ function readRound(lines, at) {
 /**
  * 1つの plan md の残り物。番号は付けない。
  *
- * `## Notes` は `Slice N` の所の `Findings:`、`## Review` は `Round N` の所の指摘、
+ * `## Notes` は `Slice N` の所の `Findings:`、`## Work Review` は `Round N` の所の指摘、
  * `## Acceptance` は `Findings:` と `Doubts:`。
  * `fixed:` の付いた穴は閉じているので、残り物ではない。
  *
@@ -186,13 +186,13 @@ export function collectPlan(text) {
   /** @type {{ line: number, place: string, finding: string, handling: string | null }[]} */
   const items = [];
   for (const section of splitSections(text)) {
-    if (section.name === 'Notes' || section.name === 'Review') {
+    if (section.name === 'Notes' || section.name === 'Work Review') {
       for (const place of splitPlaces(section.lines, section.at)) {
         const named =
           section.name === 'Notes' ? place.name.match(SLICE_PLACE) : place.name.match(ROUND_PLACE);
         let at = place.name;
         if (named && section.name === 'Notes') at = `Slice ${named[1]} (${named[2]})`;
-        else if (named) at = `Review Round ${named[1]}`;
+        else if (named) at = `Work Review Round ${named[1]}`;
         const found =
           section.name === 'Notes'
             ? readField(place.lines, place.at, 'Findings')
