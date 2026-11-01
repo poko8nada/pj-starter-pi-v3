@@ -3,7 +3,7 @@
  *
  * fake root にツリーを作り、`node_modules/.bin/tsc` にスタブを置く。
  * スタブは渡された `-p` を出して、`STUB_FAIL` に含まれる所だけ exit 1 で落とす。
- * これで、回した所の名前・渡された `-p` の道・exit を stdout で見る。
+ * これで、回した所の名前・渡された `-p` のパス・exit を stdout で見る。
  * 表示の行は `test/scripts.fixture.ts` から組み立てる。
  */
 
@@ -34,7 +34,7 @@ function run(root: string, env: Record<string, string> = {}): RunOut {
 /** node_modules を持たない代わりにスタブを置けるツリー */
 function fakeRoot(): string {
   // macOS では /var が /private/var への symlink。process.cwd() は実体に解けるので、
-  // 据えないと path.relative ではなく -p の道の比較が狂う
+  // 据えないと path.relative ではなく -p のパスの比較が狂う
   return realpathSync(tempDir());
 }
 

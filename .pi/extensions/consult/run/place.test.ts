@@ -7,7 +7,7 @@ import { dayFile, dayName, oldFiles, placeFor, projectKey, windowFiles } from '.
 // 置き場を偽物にするテストは、`tempDir()` と `placeFor` で作る。実物の /tmp/pi-consult を触らない。
 
 describe('projectKey', () => {
-  it('別の道で同じ名前の repo → 違う値になる（置き場が分かれる）', () => {
+  it('別のパスで同じ名前の repo → 違う値になる（置き場が分かれる）', () => {
     const left = join(tempDir(), 'repo');
     const right = join(tempDir(), 'repo');
     expect(projectKey(left)).not.toBe(projectKey(right));

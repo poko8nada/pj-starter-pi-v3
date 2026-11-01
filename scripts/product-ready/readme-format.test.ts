@@ -10,7 +10,7 @@ type SkeletonLines = {
   readonly writing: readonly string[];
 };
 
-// このファイルの道からルートを出す（起動位置に依存しない）。
+// このファイルのパスからルートを出す（起動位置に依存しない）。
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FORMAT_AT = join(HERE, '..', '..', 'rules', 'readme.format.md');
 
