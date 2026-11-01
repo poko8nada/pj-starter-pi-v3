@@ -222,8 +222,22 @@ function resolveStarter(root: string, starter: string): Starter;
 - Doubts:
   - `~foo` (斜線なし) は `scripts/harness/index.mjs:83` で `HOME/foo` に開き `scripts/harness/index.test.ts:568` がそれを確かめる。シェル的な `~user` と同じかは不明だが、計画は `~`→`HOME` だけを決めるので所見に留める。
 
+### Round 2
+
+- Stale: なし — fixed 指定なしのため対象外
+- Unlisted: なし — fixed 指定なしのため対象外
+- Gaps:
+  - なし — fixed 1件を確認。`scripts/harness/index.test.ts:359-368` が `writeList(local, origin, ['.pi/a.ts'], [rel])` で push のみ欠損にし `run(['push'], local)` で `missing (1):` 行と終了コード1を確かめるため、`scripts/harness/index.mjs:311-317` の向き切り替えに対応し、pull のみだった穴は閉じている
+- Unproven:
+  - なし — fixed 4件を確認。`scripts/harness/list.test.ts:53-57` と `:60-67` が `toThrow(file)` でパス入りを確かめ、実装 `scripts/harness/list.mjs:54-55,59-60` がパス入りで投げるためパスを抜けば赤になる。`scripts/harness/index.test.ts:176-198` が `existsSync` と `COPY` 含有と `MISSING (` 不在を見て空振りを防ぐため、chmod不可やrootでも何も試さず通ることはない。`scripts/harness/index.test.ts:146-159` が `indexOf` で missing区画が copy区画より前に出ることを確かめるため、順序入れ替えで赤になる
+- Noise:
+  - なし — fixed 2件を確認。`scripts/harness/index.test.ts:203,209-212` が `rels` 配列から `rels.length` で件数を導き行ごとに含有を見て、`529-551` が `Object.keys(contents).length` で件数を導き内容一致まで見るため、直書きの魔数は残っていない
+- Doubts: なし
+
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm test:run` (58 files / 796 tests)、`pnpm typecheck` (root と .pi が ok)、`pnpm lint`、`pnpm format:check`、`grep 道`（`scripts/harness`、`vitest.config.ts`、`test/scripts.fixture.ts`、`README.md`、`README.ja.md`。`道具` を除く）、Added の other（`mktemp -d` のツリーで `pull` → `missing (1):` と終了コード 1）、赤の確かめ 3 件（`missing` を空にすると `index.test.ts` の 4 件が赤、`--run` の終了コードを 0 に固定すると 1 件が赤、`harnessExcludes` を `copy` だけにすると `list.test.ts` と `config.test.ts` の 2 件が赤。いずれも戻した）。修正の後に、すべてやり直した
 - Findings:
-- Doubts:
+  - `README.ja.md:31` と `README.ja.md:47` に「道」が残っていた。
+    - fixed: 31 行目と 47 行目の「道」を「パス」に直した (`b8d4a30`)。
+- Doubts: なし
