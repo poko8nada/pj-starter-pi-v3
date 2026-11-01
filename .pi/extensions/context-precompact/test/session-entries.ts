@@ -1,5 +1,5 @@
 /**
- * セッション entry の工場。テストの前提データを 1 箇所に置く。
+ * セッション entry を作るファクトリ。テストの前提データを 1 箇所にまとめる。
  *
  * 実行しても外へ出ない。ファイルを直接動かしても何も走らない。
  */
@@ -115,7 +115,7 @@ export function projectEntries(entries: readonly SessionEntry[]): ProjectedEntry
   }));
 }
 
-/** entry を作る工場。id は作った順の連番 */
+/** entry を作るファクトリ。id は作った順の連番である。 */
 export function createSessionFixture(): SessionFixture {
   let seq = 0;
   let latest = '';

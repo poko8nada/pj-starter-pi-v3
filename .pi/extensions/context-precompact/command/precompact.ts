@@ -1,5 +1,5 @@
 /**
- * `/precompact` の引数と状態表示。設定の `enabled` だけを書き換える。
+ * `/precompact` の引数を受け付け、状態を表示する。設定の `enabled` だけを書き換える。
  */
 import type { Settings } from '../settings/schema.ts';
 import { formatCount } from '../ui/count.ts';
@@ -20,7 +20,7 @@ export interface StatusInput {
   readonly status: StatusState;
 }
 
-/** 引数なしと `status` は status、`on` / `off` / `now`、それ以外は usage */
+/** 引数なしと `status` は status を返し、`on`、`off`、`now` はそれぞれの種類を返し、それ以外は usage を返す。 */
 export function parseCommand(args: string): Command {
   const trimmed = args.trim();
   if (trimmed === '') {
@@ -41,7 +41,7 @@ export function parseCommand(args: string): Command {
   return { kind: 'usage' };
 }
 
-/** `/precompact` の使い方 */
+/** `/precompact` の使い方を返す。 */
 export function usageText(): string {
   return [
     'precompact usage: /precompact [status|on|off|now]',
@@ -52,7 +52,7 @@ export function usageText(): string {
   ].join('\n');
 }
 
-/** 状態の表示。設定・準備・実行中・最後の適用・status を並べる */
+/** 状態を表示する。設定、準備、実行中、最後の適用、status を並べる。 */
 export function statusLines(input: StatusInput): readonly string[] {
   const head = input.settings.enabled ? 'precompact: on' : 'precompact: off';
   const prepared = input.prepared ? 'prepared: yes' : 'prepared: none';

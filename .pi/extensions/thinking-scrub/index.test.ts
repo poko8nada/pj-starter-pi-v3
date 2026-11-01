@@ -67,7 +67,7 @@ function fakePi(): {
       sent.push({ message, options });
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物は使う口だけ持つ
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物は使う窓口だけを持つ
   return { events, handlers, commands, sent, pi: pi as unknown as PiPort };
 }
 
@@ -109,7 +109,7 @@ function messageEnd(message: AgentMessage): MessageEndEvent {
 
 function messageUpdate(message: AgentMessage): MessageUpdateEvent {
   if (message.role !== 'assistant') {
-    throw new Error('messageUpdate は assistant のメッセージだけを受ける');
+    throw new Error('messageUpdate は assistant のメッセージだけを受ける。');
   }
   return {
     type: 'message_update',
@@ -172,7 +172,7 @@ function removedLine(runs: number, chars: number): string {
 }
 
 describe('registerScrub', () => {
-  it("on が 5 件の順序で、registerCommand('thinking-scrub') が 1 回", () => {
+  it("on が 5 件の順序で registerCommand('thinking-scrub') が 1 回呼ばれる", () => {
     const fake = fakePi();
     registerScrub(fake.pi, {
       settingsDir: tempDir(),
@@ -192,7 +192,7 @@ describe('registerScrub', () => {
 });
 
 describe('onMessageEnd', () => {
-  it('退化の無い assistant → undefined', () => {
+  it('退化のない assistant なら undefined になる', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -211,7 +211,7 @@ describe('onMessageEnd', () => {
     expect(wiring.onMessageEnd(messageEnd(message))).toBeUndefined();
   });
 
-  it('role が assistant 以外、対象でない署名の assistant → どちらも undefined', () => {
+  it('role が assistant 以外と対象でない署名の assistant はどちらも undefined になる', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -230,7 +230,7 @@ describe('onMessageEnd', () => {
     expect(wiring.onMessageEnd(messageEnd(other))).toBeUndefined();
   });
 
-  it('設定が enabled: false → undefined', () => {
+  it('設定が enabled が false なら undefined になる', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
     const wiring = createScrubWiring({
@@ -243,7 +243,7 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().removed).toBe(0);
   });
 
-  it('設定が壊れている → 既定で差し替えが返り、状態の failures は増えない', () => {
+  it('設定が壊れていれば既定で差し替えが返り状態の failures は増えない', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const wiring = createScrubWiring({
@@ -258,7 +258,7 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().removed).toBe(1);
   });
 
-  it('2 回畳む → 状態の removed が 2 回分の合計', () => {
+  it('2 回まとめれば状態の removed が 2 回分の合計になる', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -271,7 +271,7 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().lastAt).toBe(7);
   });
 
-  it('1 回の message_end → 作成時の 1 回と message_end の 1 回で 2 回呼ぶ', () => {
+  it('1 回の message_end は作成時の 1 回と message_end の 1 回で 2 回呼ばれる', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -287,7 +287,7 @@ describe('onMessageEnd', () => {
     expect(calls).toBe(2);
   });
 
-  it('okSettings と message_end → 3 グループの既定値で差し替える', () => {
+  it('okSettings と message_end なら 3 グループの既定値で差し替える', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -306,7 +306,7 @@ describe('onMessageEnd', () => {
     expect(first.thinking).toBe(degenerateExpected());
   });
 
-  it('char.minLength を 100 にした設定と message_end → 66 文字の退化を差し替えない', () => {
+  it('char.minLength を 100 にした設定と message_end なら 66 文字の退化を差し替えない', () => {
     const strict: SettingsRead = {
       kind: 'ok',
       settings: {
@@ -327,7 +327,7 @@ describe('onMessageEnd', () => {
 });
 
 describe('onMessageUpdate', () => {
-  it('作成時に 1 回読み、minThinking 未満では読まない', () => {
+  it('作成時に 1 回読み minThinking 未満では読まない', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -352,7 +352,7 @@ describe('onMessageUpdate', () => {
     expect(fake.aborts()).toBe(0);
   });
 
-  it('差分が scanEvery 未満なら読まない', () => {
+  it('差分が scanEvery 未満なら読まないことを確かめる', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -379,7 +379,7 @@ describe('onMessageUpdate', () => {
     expect(second.aborts()).toBe(0);
   });
 
-  it('差分が scanEvery 以上なら 1 回読み、ランがあれば止まる', () => {
+  it('差分が scanEvery 以上なら 1 回読みランがあれば止まる', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -402,7 +402,7 @@ describe('onMessageUpdate', () => {
     expect(fake.aborts()).toBe(1);
   });
 
-  it('live.maxAborts に達したら読まず、scanned が進む', () => {
+  it('live.maxAborts に達したら読まず scanned が進む', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -446,7 +446,7 @@ describe('onMessageUpdate', () => {
     expect(fake.aborts()).toBe(0);
   });
 
-  it('無効のとき、間隔ごとに 1 回だけ読み、scanned が進む', () => {
+  it('無効のときは間隔ごとに 1 回だけ読み scanned が進む', () => {
     let calls = 0;
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -480,7 +480,7 @@ describe('onMessageUpdate', () => {
     expect(third.aborts()).toBe(0);
   });
 
-  it('command off の後、次の更新でキャッシュが効いて止まらない', () => {
+  it('command の off の後、次の更新でキャッシュが効いて止まらない', () => {
     const dir = tempDir();
     let calls = 0;
     const wiring = createScrubWiring({
@@ -518,7 +518,7 @@ describe('onMessageUpdate', () => {
     expect(second.aborts()).toBe(0);
   });
 
-  it('message_end の後、キャッシュが新しい設定になる', () => {
+  it('message_end の後はキャッシュが新しい設定になる', () => {
     const dir = tempDir();
     const custom = {
       ...defaultSettings(),
@@ -548,7 +548,7 @@ describe('onMessageUpdate', () => {
     expect(fake.aborts()).toBe(0);
   });
 
-  it('署名の無い thinking でも run → abort', () => {
+  it('署名のない thinking でもランがあれば中断する', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -565,7 +565,7 @@ describe('onMessageUpdate', () => {
 });
 
 describe('onAgentSettled', () => {
-  it('fake の sendMessage 経由 → customType と表示と triggerTurn が記録される', () => {
+  it('fake の sendMessage 経由なら customType と表示と triggerTurn が記録される', () => {
     const fake = fakePi();
     registerScrub(fake.pi, {
       settingsDir: tempDir(),
@@ -610,7 +610,7 @@ describe('onAgentSettled', () => {
     expect(first.options).toMatchObject({ triggerTurn: true });
   });
 
-  it('aborted: false → 何も送らない', () => {
+  it('aborted が false なら何も送らない', () => {
     const sent: string[] = [];
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -632,7 +632,7 @@ describe('onAgentSettled', () => {
     expect(sent).toHaveLength(0);
   });
 
-  it('aborted: true でも pending が無い → 何も送らない', () => {
+  it('aborted が true でも pending がなければ何も送らない', () => {
     const sent: string[] = [];
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -648,7 +648,7 @@ describe('onAgentSettled', () => {
 });
 
 describe('onBeforeAgentStart', () => {
-  it(`user で戻り、${defaultSettings().live.maxAborts} 回の後もまた止まれる。custom では戻らない`, () => {
+  it(`user で戻れば ${defaultSettings().live.maxAborts} 回の後もまた止まれる。custom では戻らない`, () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -715,7 +715,7 @@ describe('onBeforeAgentStart', () => {
 });
 
 describe('onAgentEnd', () => {
-  it('退化の message_end が 2 回、そのあと agent_end → notify が 1 回、文は回数から', () => {
+  it('退化の message_end が 2 回ありそのあと agent_end なら notify が 1 回呼ばれ文は回数から作る', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -733,7 +733,7 @@ describe('onAgentEnd', () => {
     expect(levels.at(0)).toBe('info');
   });
 
-  it('何も消していない状態で agent_end → notify が呼ばれない', () => {
+  it('何も消していない状態で agent_end なら notify が呼ばれない', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -745,7 +745,7 @@ describe('onAgentEnd', () => {
     expect(notified).toHaveLength(0);
   });
 
-  it('show が偽のとき message_end のあと agent_end → notify が呼ばれない', () => {
+  it('show が false のとき message_end のあと agent_end なら notify が呼ばれない', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
     const wiring = createScrubWiring({
@@ -760,7 +760,7 @@ describe('onAgentEnd', () => {
     expect(notified).toHaveLength(0);
   });
 
-  it('notify のあと再度 agent_end → 2 回目は呼ばれない', () => {
+  it('notify のあと再度 agent_end なら 2 回目は呼ばれない', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -775,7 +775,7 @@ describe('onAgentEnd', () => {
     expect(notified).toHaveLength(1);
   });
 
-  it('notify のあとに message_end → agent_end → もう一度 1 回呼ばれ、その実行の分だけになる', () => {
+  it('notify のあとに message_end と agent_end があればもう一度 1 回呼ばれその実行の分だけになる', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -794,7 +794,7 @@ describe('onAgentEnd', () => {
     expect(notified.at(1)).toBe(removedLine(1, degenerateChars()));
   });
 
-  it('message_end で例外 → failures が 1 増え、そのあとの agent_end は notify を呼ばない', () => {
+  it('message_end で例外があれば failures が 1 増えそのあとの agent_end は notify を呼ばない', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -807,7 +807,7 @@ describe('onAgentEnd', () => {
         throw new Error('boom');
       },
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 投げる偽物を作る
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 例外を投げる偽物を作る
     const message = evil as unknown as AgentMessage;
     expect(wiring.onMessageEnd(messageEnd(message))).toBeUndefined();
     expect(wiring.getStatus().failures).toBe(1);
@@ -818,7 +818,7 @@ describe('onAgentEnd', () => {
 });
 
 describe('integration', () => {
-  it('改行を含む細切れの退化 → message_end の thinking が詰まり、agent_end で 1 行に removed 1', () => {
+  it('改行を含む細切れの退化なら message_end の thinking が詰まり agent_end で 1 行に removed が 1 になる', () => {
     const prefix = 'foo';
     const suffix = 'bar';
     const doubleReturn = '\n\n';
@@ -853,7 +853,7 @@ describe('integration', () => {
     expect(levels.at(0)).toBe('info');
   });
 
-  it('短い繰り返し 2 回 → message_end が undefined、agent_end でも notify が呼ばれない', () => {
+  it('短い繰り返し 2 回なら message_end が undefined になり agent_end でも notify が呼ばれない', () => {
     const thinking = DEGENERATE_UNIT.repeat(2);
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
@@ -877,7 +877,7 @@ describe('integration', () => {
 });
 
 describe('onCommand', () => {
-  it('コマンド off → settings.json の enabled が偽になり、次の message_end は undefined', () => {
+  it('コマンドの off なら settings.json の enabled が false になり次の message_end は undefined になる', () => {
     const dir = tempDir();
     const wiring = createScrubWiring({
       settingsDir: dir,
@@ -893,7 +893,7 @@ describe('onCommand', () => {
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
   });
 
-  it('壊れたファイルに command on → 既定の 3 グループとパッチを持つ完全なファイルができる', () => {
+  it('壊れたファイルに command の on があれば既定の 3 グループとパッチを持つ完全なファイルができる', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     const wiring = createScrubWiring({
@@ -909,7 +909,7 @@ describe('onCommand', () => {
     });
   });
 
-  it('コマンド on → その後の message_end が差し替えを返す', () => {
+  it('コマンドの on ならその後の message_end が差し替えを返す', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
     const wiring = createScrubWiring({
@@ -923,7 +923,7 @@ describe('onCommand', () => {
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
   });
 
-  it('コマンドが引数無し → 通知が 1 回呼ばれ、runCommand の行が渡る', () => {
+  it('コマンドが引数なしなら通知が 1 回呼ばれ runCommand の行が渡る', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),
       now: () => 7,
@@ -937,7 +937,7 @@ describe('onCommand', () => {
     expect(notified.at(0)).toContain(SCRUB_REMOVED_LABEL);
   });
 
-  it('コマンド hide → settings.json の show が偽になり、enabled はそのまま', () => {
+  it('コマンドの hide なら settings.json の show が false になり enabled はそのままである', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: true }));
     const wiring = createScrubWiring({
@@ -954,7 +954,7 @@ describe('onCommand', () => {
     });
   });
 
-  it('コマンド off / on → 既存の show:false が保たれる', () => {
+  it('コマンドの off と on なら既存の show が false のまま保たれる', () => {
     for (const [command, enabled] of [
       ['off', false],
       ['on', true],
@@ -976,7 +976,7 @@ describe('onCommand', () => {
     }
   });
 
-  it('独自キーを持つ settings.json に command off/on → 独自キーが残り enabled が切り替わる', () => {
+  it('独自キーを持つ settings.json に command の off と on があれば独自キーが残り enabled が切り替わる', () => {
     for (const [command, enabled] of [
       ['off', false],
       ['on', true],

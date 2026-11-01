@@ -1,10 +1,10 @@
 /**
- * ループした thinking の検出と除去。純関数だけを置く。
+ * ループした thinking を検出して取り除く。純粋関数だけを置く。
  *
  * 同じ周期が続いた区間を取り除き、次のリクエストに壊れた reasoning を渡さない。
- * 周期の下限より短い繰り返し（1〜3 文字）は数えない。短い周期の繰り返しは
- * 大きい周期としても当たるため、残すと下限の意味が無くなる。
- * 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む。
+ * 周期の下限より短い繰り返し（1 から 3 文字）は数えない。短い周期の繰り返しは
+ * 大きい周期としても当たるため、残すと下限の意味がなくなる。
+ * 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先にまとめる。
  */
 
 import type { CharTuning, SentenceTuning, Tuning } from '../settings/schema.ts';
@@ -31,7 +31,7 @@ function isWhitespace(char: string): boolean {
   );
 }
 
-/** 区間が下限より短い周期でも当たるとき真。短い周期は数えない */
+/** 区間が下限より短い周期でも当たるとき真になる。短い周期は数えない。 */
 function isSmallPeriodic(text: string, at: number, end: number, minPeriod: number): boolean {
   for (let q = 1; q < minPeriod; q += 1) {
     let periodic = true;
@@ -48,7 +48,7 @@ function isSmallPeriodic(text: string, at: number, end: number, minPeriod: numbe
   return false;
 }
 
-/** 1 つの周期で極大区間を集める */
+/** 1 つの周期で極大区間を集める。 */
 function runsForPeriod(text: string, period: number, char: CharTuning): Run[] {
   const runs: Run[] = [];
   let start: number | undefined;
@@ -80,7 +80,7 @@ function runsForPeriod(text: string, period: number, char: CharTuning): Run[] {
   return runs;
 }
 
-/** 重なりをまとめて昇順にする。触れる区間も 1 つにする */
+/** 重なりをまとめて昇順にする。接する区間も 1 つにする。 */
 function mergeRuns(sorted: readonly Run[]): readonly Run[] {
   const merged: Run[] = [];
   for (const run of sorted) {
@@ -102,7 +102,7 @@ function mergeRuns(sorted: readonly Run[]): readonly Run[] {
   return merged;
 }
 
-/** 周期が続く区間を、重なりをまとめて昇順で返す */
+/** 周期が続く区間を、重なりをまとめて昇順で返す。 */
 export function detectRuns(text: string, char: CharTuning): readonly Run[] {
   if (text.length < char.minLength) {
     return [];
@@ -123,7 +123,7 @@ export function detectRuns(text: string, char: CharTuning): readonly Run[] {
   return mergeRuns(found);
 }
 
-/** 消した区間が含んでいた改行のうち、いちばん強いもの。含まなければ undefined */
+/** 消した区間が含んでいた改行のうちいちばん強いものである。含まない場合は undefined を返す。 */
 export function separatorFor(removed: string): string | undefined {
   if (removed.includes('\n\n')) {
     return '\n\n';
@@ -134,7 +134,7 @@ export function separatorFor(removed: string): string | undefined {
   return undefined;
 }
 
-/** 文字の区間を取り除いた本文を返す。区間が無ければ同じ文字列を返す */
+/** 文字の区間を取り除いた本文を返す。区間がない場合は同じ文字列を返す。 */
 function removeSpans(text: string, spans: readonly Run[]): Scrub {
   if (spans.length === 0) {
     return { text, removed: 0 };
@@ -192,7 +192,7 @@ function removeSpans(text: string, spans: readonly Run[]): Scrub {
   return { text: out, removed: merged.length };
 }
 
-/** 文の run を文字の区間に直す。最初の 1 周期を残し、2 周期目から消す */
+/** 文のランを文字の区間に直す。最初の 1 周期を残し、2 周期目から消す。 */
 function sentenceSpans(text: string, sentence: SentenceTuning): Run[] {
   const units = splitUnits(text);
   const runs = detectUnitRuns(units, sentence);
@@ -207,7 +207,7 @@ function sentenceSpans(text: string, sentence: SentenceTuning): Run[] {
   return spans;
 }
 
-/** 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先に畳む */
+/** 文の周期は最初の 1 周期を残し、文字の周期は全部消す。文を先にまとめる。 */
 export function scrubThinking(text: string, tuning: Tuning): Scrub {
   const afterSentence = removeSpans(text, sentenceSpans(text, tuning.sentence));
   const charRuns = detectRuns(afterSentence.text, tuning.char);

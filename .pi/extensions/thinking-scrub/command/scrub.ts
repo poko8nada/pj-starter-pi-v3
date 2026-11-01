@@ -1,7 +1,7 @@
 /**
- * `/thinking-scrub` の引数と実行。純関数だけを置く。
+ * `/thinking-scrub` の引数と実行である。純粋関数だけを置く。
  *
- * 引数無しは status。前後の空白を落として小文字に直し、`on` / `off` と `show` / `hide` を受ける。
+ * 引数なしは status になる。前後の空白を取り除き小文字に直し、`on` と `off` と `show` と `hide` を受ける。
  */
 
 import type { SettingsRead } from '../settings/schema.ts';
@@ -13,7 +13,7 @@ export type ScrubCommand =
   | { readonly kind: 'status' }
   | { readonly kind: 'invalid'; readonly raw: string };
 
-/** 引数無しは status。前後の空白を落として小文字に直し、`on` / `off` と `show` / `hide` を受け、他の語は invalid */
+/** 引数なしは status になる。前後の空白を取り除き小文字に直し、`on` と `off` と `show` と `hide` を受け、他の語は invalid になる。 */
 export function parseCommand(raw: string): ScrubCommand {
   const trimmed = raw.trim().toLowerCase();
   if (trimmed === '') {
@@ -38,7 +38,7 @@ function usageLine(): string {
   return 'thinking-scrub usage: /thinking-scrub [on|off|show|hide]';
 }
 
-/** コマンドが読む口 */
+/** コマンドが読む窓口である。 */
 export interface CommandPort {
   readonly settings: () => SettingsRead;
   readonly status: () => Status;
@@ -46,7 +46,7 @@ export interface CommandPort {
   readonly writeShow: (show: boolean) => void;
 }
 
-/** 引数を実行し、表示する行を返す */
+/** 引数を実行し、表示する行を返す。 */
 export function runCommand(
   port: CommandPort,
   command: ScrubCommand,

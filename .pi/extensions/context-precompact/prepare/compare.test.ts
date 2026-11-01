@@ -34,52 +34,52 @@ function base(): PreparedCompaction {
 }
 
 describe('compare', () => {
-  it('5 項目が同じ → match', () => {
+  it('5 項目が同じなら match になる', () => {
     expect(compare(base(), base())).toEqual({ kind: 'match' });
   });
 
-  it('firstKeptEntryId が違う → mismatch firstKeptEntryId', () => {
+  it('firstKeptEntryId が違えば mismatch の firstKeptEntryId になる', () => {
     expect(compare(base(), { ...base(), firstKeptEntryId: 'kept-2' })).toEqual({
       kind: 'mismatch',
       fields: ['firstKeptEntryId'],
     });
   });
 
-  it('メッセージ数が違う → mismatch messagesToSummarize', () => {
+  it('メッセージ数が違えば mismatch の messagesToSummarize になる', () => {
     expect(compare(base(), { ...base(), messagesToSummarize: [] })).toEqual({
       kind: 'mismatch',
       fields: ['messagesToSummarize'],
     });
   });
 
-  it('turnPrefix の数が違う → mismatch turnPrefixMessages', () => {
+  it('turnPrefix の数が違えば mismatch の turnPrefixMessages になる', () => {
     expect(compare(base(), { ...base(), turnPrefixMessages: [messageOf()] })).toEqual({
       kind: 'mismatch',
       fields: ['turnPrefixMessages'],
     });
   });
 
-  it('previousSummary が違う → mismatch previousSummary', () => {
+  it('previousSummary が違えば mismatch の previousSummary になる', () => {
     expect(compare(base(), { ...base(), previousSummary: 'other' })).toEqual({
       kind: 'mismatch',
       fields: ['previousSummary'],
     });
   });
 
-  it('fileOps.read だけ違う → mismatch fileOps', () => {
+  it('fileOps.read だけ違えば mismatch の fileOps になる', () => {
     expect(compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['b.ts'] }) })).toEqual({
       kind: 'mismatch',
       fields: ['fileOps'],
     });
   });
 
-  it('fileOps.written だけ違う → mismatch fileOps', () => {
+  it('fileOps.written だけ違えば mismatch の fileOps になる', () => {
     expect(
       compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], written: ['b.ts'] }) }),
     ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });
   });
 
-  it('fileOps.edited だけ違う → mismatch fileOps', () => {
+  it('fileOps.edited だけ違えば mismatch の fileOps になる', () => {
     expect(
       compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], edited: ['b.ts'] }) }),
     ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });

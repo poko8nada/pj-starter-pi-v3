@@ -9,7 +9,7 @@ import {
 import { defaultSettings } from '../settings/schema.ts';
 import { emptyGuard, followUpText, observe, resetOnUser, takeFollowUp } from './guard.ts';
 
-// 長い thinking は factory で組み立てる。既定値は defaultSettings から読む。
+// 長い thinking はファクトリで組み立てる。既定値は defaultSettings から読む。
 
 function plainSentence(index: number): string {
   return `plain note ${index} walks through a different idea about the task at hand.`;
@@ -33,7 +33,7 @@ function plainThinking(length: number): string {
 }
 
 describe('observe', () => {
-  it('既定の live と 20000 文字の run → stop で見本つき', () => {
+  it('既定の live と 20000 文字のランなら stop で見本つきになる', () => {
     const tuning = defaultSettings();
     const thinking = thinkingWithRun(20_000);
     expect(thinking).toHaveLength(20_000);
@@ -48,7 +48,7 @@ describe('observe', () => {
     expect(step.guard.scanned).toBe(20_000);
   });
 
-  it('19999 文字に run → idle', () => {
+  it('19999 文字のランなら idle になる', () => {
     const tuning = defaultSettings();
     const thinking = thinkingWithRun(20_000).slice(0, 19_999);
     expect(thinking).toHaveLength(19_999);
@@ -56,7 +56,7 @@ describe('observe', () => {
     expect(step.kind).toBe('idle');
   });
 
-  it('2 倍の tail 文字で run が末尾の窓の外 → idle', () => {
+  it('2 倍の tail 文字でランが末尾のウィンドウの外なら idle になる', () => {
     const tuning = defaultSettings();
     const firstHalf = thinkingWithRun(tuning.live.tail);
     const secondHalf = plainThinking(tuning.live.tail);
@@ -66,7 +66,7 @@ describe('observe', () => {
     expect(step.kind).toBe('idle');
   });
 
-  it('2 倍の minThinking 文字のあと短い thinking → scanned が戻り既定で止まる', () => {
+  it('2 倍の minThinking 文字のあと短い thinking なら scanned が戻り既定で止まる', () => {
     const tuning = defaultSettings();
     const long = plainThinking(tuning.live.minThinking * 2);
     const first = observe(emptyGuard(), long, tuning, () => true);
@@ -77,7 +77,7 @@ describe('observe', () => {
     expect(second.kind).toBe('stop');
   });
 
-  it('live.minThinking を 5000 にした設定で、5000 文字のラン → stop', () => {
+  it('live.minThinking を 5000 にした設定で 5000 文字のランなら stop になる', () => {
     const tuning = defaultSettings();
     const live = { ...tuning.live, minThinking: 5000 };
     const thinking = thinkingWithRun(5000);
@@ -86,7 +86,7 @@ describe('observe', () => {
     expect(step.kind).toBe('stop');
   });
 
-  it('live.maxAborts を 0 にした設定 → idle', () => {
+  it('live.maxAborts を 0 にした設定なら idle になる', () => {
     const tuning = defaultSettings();
     const live = { ...tuning.live, maxAborts: 0 };
     const step = observe(
@@ -98,7 +98,7 @@ describe('observe', () => {
     expect(step.kind).toBe('idle');
   });
 
-  it('sentence.minRunChars を大きくした設定では、既定で止まるラン → idle', () => {
+  it('sentence.minRunChars を大きくした設定では既定で止まるランが idle になる', () => {
     const tuning = defaultSettings();
     const sentence = { ...tuning.sentence, minRunChars: 100_000 };
     const step = observe(
@@ -110,7 +110,7 @@ describe('observe', () => {
     expect(step.kind).toBe('idle');
   });
 
-  it('無効のとき、間隔が来たスキャンで scanned が進む', () => {
+  it('無効のときは間隔が来たスキャンで scanned が進む', () => {
     const tuning = defaultSettings();
     const step = observe(
       emptyGuard(),
@@ -122,7 +122,7 @@ describe('observe', () => {
     expect(step.guard.scanned).toBe(tuning.live.minThinking);
   });
 
-  it('間隔が来ていないとき、enabled が呼ばれない', () => {
+  it('間隔が来ていないときは enabled が呼ばれない', () => {
     const tuning = defaultSettings();
     const base = thinkingWithRun(tuning.live.minThinking);
     const first = observe(emptyGuard(), base, tuning, () => true);
@@ -139,7 +139,7 @@ describe('observe', () => {
     expect(calls).toBe(0);
   });
 
-  it('live.maxAborts に達したら、scanned が進み、enabled が呼ばれない', () => {
+  it('live.maxAborts に達したら scanned が進み enabled が呼ばれない', () => {
     const tuning = defaultSettings();
     const first = observe(
       emptyGuard(),
@@ -173,7 +173,7 @@ describe('observe', () => {
 });
 
 describe('resetOnUser', () => {
-  it('空に戻り、また止まれる', () => {
+  it('空に戻ればまた止まれる', () => {
     const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
     const first = observe(emptyGuard(), firstThinking, tuning, () => true);
@@ -193,7 +193,7 @@ describe('resetOnUser', () => {
 });
 
 describe('takeFollowUp', () => {
-  it('2 回止める → 最新が見本で 1 回だけ取れる', () => {
+  it('2 回止めれば最新が見本で 1 回だけ取れる', () => {
     const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
     const first = observe(emptyGuard(), firstThinking, tuning, () => true);
@@ -216,7 +216,7 @@ describe('takeFollowUp', () => {
 });
 
 describe('followUpText', () => {
-  it('指示と見本を含み、長い見本は切れる', () => {
+  it('指示と見本を含み長い見本は切れる', () => {
     const live = defaultSettings().live;
     const sample = loopSentence(0);
     const text = followUpText(sample, live.sampleChars);
@@ -233,7 +233,7 @@ describe('followUpText', () => {
     expect(cut).not.toContain(longSample);
   });
 
-  it('followUpText(sample, 10) → 見本が 10 文字に切られる', () => {
+  it('followUpText(sample, 10) は見本が 10 文字に切られる', () => {
     const sample = loopSentence(0);
     expect(sample.length).toBeGreaterThan(10);
     const text = followUpText(sample, 10);

@@ -1,7 +1,7 @@
 /**
- * 要約の口。Pi の `compact()` 公開 API に準備と認証を渡す。
+ * 要約の窓口である。Pi の `compact()` 公開 API に準備と認証を渡す。
  *
- * `Outside: Pi の compact() 公開 API`。`Outside: モデルプロバイダの認証 / API`。
+ * `Outside` は Pi の `compact()` 公開 API である。`Outside` はモデルプロバイダの認証と API である。
  */
 import {
   type CompactionResult,
@@ -10,7 +10,7 @@ import {
 } from '@earendil-works/pi-coding-agent';
 import type { PreparedCompaction } from '../prepare/types.ts';
 
-/** モデルが無いときの理由 */
+/** モデルがないときの理由である。 */
 export const NO_MODEL_REASON = 'context-precompact: no model available';
 
 export interface CompactRequest {
@@ -30,7 +30,7 @@ export interface SummaryCtx {
   readonly compactFn: typeof compact;
 }
 
-/** null のヘッダを落として、`compact()` が受ける形にする */
+/** null のヘッダを取り除き、`compact()` が受ける形にする。 */
 function headersOf(
   headers: Readonly<Record<string, string | null>> | undefined,
 ): Record<string, string> | undefined {
@@ -46,7 +46,7 @@ function headersOf(
   return out;
 }
 
-/** 要約の口を作る。モデル無し・認証失敗は throw */
+/** 要約の窓口を作る。モデルなしと認証失敗は例外を投げる。 */
 export function createSummaryPorts(ctx: SummaryCtx): SummaryPorts {
   if (ctx.model === undefined) {
     throw new Error(NO_MODEL_REASON);

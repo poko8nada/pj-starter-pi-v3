@@ -1,7 +1,7 @@
 /**
- * `settings.json` の読み込み。無ければ既定、読めない・壊れていれば broken。
+ * `settings.json` を読み込む。なければ既定値を返し、読めない場合と壊れている場合は broken を返す。
  *
- * 呼ぶたびにファイルを読む。入口は毎回読み直す。
+ * 呼ぶたびにファイルを読み、入口も毎回読み直す。
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -25,7 +25,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** `<dir>/settings.json` を読む。無ければ既定 */
+/** `<dir>/settings.json` を読む。なければ既定値を返す。 */
 export function readSettings(dir: string): SettingsRead {
   const file = join(dir, SETTINGS_FILE);
   let text: string;
@@ -44,7 +44,7 @@ export function readSettings(dir: string): SettingsRead {
   return parseSettings(text);
 }
 
-/** `<dir>/settings.json` の enabled だけを書き換える。壊れていれば書かずに broken */
+/** `<dir>/settings.json` の enabled だけを書き換える。壊れていれば書かずに broken を返す。 */
 export function writeEnabled(dir: string, enabled: boolean): WriteEnabledResult {
   const file = join(dir, SETTINGS_FILE);
   let text: string;

@@ -1,7 +1,7 @@
 /**
- * sound-notify の設定。`settings.json` と 1 対 1。
+ * sound-notify の設定である。`settings.json` と 1 対 1 に対応する。
  *
- * 書いていない欄は既定のまま。書いてある欄の型が違えば broken。知らないキーは無視する。
+ * 書いていない欄は既定のままにする。書いてある欄の型が違えば broken を返す。知らないキーは無視する。
  */
 
 export interface Settings {
@@ -22,7 +22,7 @@ export type SettingsRead =
 
 export const SETTINGS_FILE = 'settings.json' as const;
 
-/** 既定の設定 */
+/** 既定の設定を返す。 */
 export function defaultSettings(): Settings {
   return {
     enabled: true,
@@ -39,7 +39,7 @@ function broken(reason: string): SettingsRead {
   return { kind: 'broken', reason: `sound-notify settings: ${reason}` };
 }
 
-/** 読んだ文書を既定に重ねる。だめなら理由を返す */
+/** 読んだ文書を既定に重ねる。無効なら理由を返す。 */
 function overlaySettings(document: Record<string, unknown>, base: Settings): Settings | string {
   let enabled = base.enabled;
   if (document['enabled'] !== undefined) {
@@ -76,7 +76,7 @@ function overlaySettings(document: Record<string, unknown>, base: Settings): Set
   return { enabled, notifications, sounds };
 }
 
-/** 読んだ文字列を設定にする。型が違えば broken */
+/** 読んだ文字列を設定にする。型が違えば broken を返す。 */
 export function parseSettings(text: string): SettingsRead {
   let document: unknown;
   try {
@@ -95,7 +95,7 @@ export function parseSettings(text: string): SettingsRead {
   return { kind: 'ok', settings: overlaid };
 }
 
-/** 読んだ結果を使う形にする。壊れていれば既定 */
+/** 読んだ結果を使う形にする。壊れていれば既定値を返す。 */
 export function settingsOrDefault(read: SettingsRead): Settings {
   return read.kind === 'ok' ? read.settings : defaultSettings();
 }

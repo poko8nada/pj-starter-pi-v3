@@ -1,8 +1,8 @@
 /**
- * thinking ブロックの書き換え。純関数だけを置く。
+ * thinking ブロックを書き換える。純粋関数だけを置く。
  *
- * replay 先が reasoning のフィールド名のブロックだけを畳む。
- * 署名が無い・JSON・redacted のブロックには触らない。
+ * 再送先が reasoning のフィールド名のブロックだけをまとめる。
+ * 署名がないブロックと JSON のブロックと redacted のブロックは変更しない。
  */
 
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
@@ -26,7 +26,7 @@ export interface Scrubbed {
   readonly chars: number;
 }
 
-/** 本文が次のリクエストに届くブロックか */
+/** 本文が次のリクエストに届くブロックかどうかを返す。 */
 export function isReplayable(block: ThinkingBlock): boolean {
   if (block.redacted === true) {
     return false;
@@ -53,7 +53,7 @@ function isThinkingBlock(block: unknown): block is ThinkingBlock {
   return block.type === 'thinking' && typeof block.thinking === 'string';
 }
 
-/** assistant の thinking を書き換える。変わらなければ undefined */
+/** assistant の thinking を書き換える。変わらなければ undefined を返す。 */
 export function scrubMessage(message: AgentMessage, tuning: Tuning): Scrubbed | undefined {
   if (message.role !== 'assistant') {
     return undefined;

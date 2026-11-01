@@ -1,5 +1,5 @@
 /**
- * フッター、チャット、`/precompact` の文言。数字は `formatCount` で整える。
+ * フッター、チャット、`/precompact` の文言である。数字は `formatCount` で整える。
  *
  * 文面の持ち主はこの 1 ファイルだけにする。`index.ts` はここから引く。
  */
@@ -15,13 +15,13 @@ export type StatusState =
 
 export type NotifiableStatus = Extract<StatusState, { kind: 'preparing' | 'ready' | 'applied' }>;
 
-/** チャットに出す短い通知の種類 */
+/** チャットに出す短い通知の種類である。 */
 export type NoticeKind = 'on' | 'off' | 'nothing' | 'running';
 
-/** 準備を捨てたときの警告。理由を持たない */
+/** 準備を捨てたときの警告である。理由を持たない。 */
 export const FALLBACK_TEXT = 'precompact: failed; default compaction will run';
 
-/** チャットに出す文言。`preparing` / `ready` / `applied` だけを受け取る */
+/** チャットに出す文言である。`preparing` と `ready` と `applied` だけを受け取る。 */
 export function chatText(status: NotifiableStatus): string {
   switch (status.kind) {
     case 'preparing':
@@ -35,7 +35,7 @@ export function chatText(status: NotifiableStatus): string {
   return exhaustive;
 }
 
-/** チャットに出す短い通知 */
+/** チャットに出す短い通知である。 */
 export function noticeText(notice: NoticeKind): string {
   switch (notice) {
     case 'on':
@@ -51,17 +51,17 @@ export function noticeText(notice: NoticeKind): string {
   return exhaustive;
 }
 
-/** 要約が失敗したときの警告。理由を入れる */
+/** 要約が失敗したときの警告である。理由を入れる。 */
 export function failureText(reason: string): string {
   return `precompact: failed (${reason}); default compaction will run`;
 }
 
-/** `settings.json` が壊れているときの警告 */
+/** `settings.json` が壊れているときの警告である。 */
 export function brokenText(reason: string): string {
   return `context-precompact: settings broken (${reason})`;
 }
 
-/** フッターに出す文言。無ければ `undefined` で clear */
+/** フッターに出す文言である。なければ `undefined` で clear する。 */
 export function statusText(state: StatusState): string | undefined {
   switch (state.kind) {
     case 'preparing':
@@ -78,7 +78,7 @@ export function statusText(state: StatusState): string | undefined {
   return exhaustive;
 }
 
-/** `/precompact` の status 行に出す文言 */
+/** `/precompact` の status 行に出す文言である。 */
 export function statusLine(state: StatusState): string {
   switch (state.kind) {
     case 'idle':

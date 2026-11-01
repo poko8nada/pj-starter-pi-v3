@@ -29,32 +29,32 @@ function inputOf(overrides: Partial<GuardInput> = {}): GuardInput {
 }
 
 describe('guard', () => {
-  it('session、leaf、firstKept、latest が同じ → ok', () => {
+  it('session と leaf と firstKept と latest が同じなら ok になる', () => {
     expect(guard(inputOf())).toEqual({ kind: 'ok' });
   });
 
-  it('session が違う → session-changed', () => {
+  it('session が違えば session-changed になる', () => {
     expect(guard(inputOf({ currentSessionId: 's2' }))).toEqual({
       kind: 'stale',
       reason: 'session-changed',
     });
   });
 
-  it('leaf が branch に無い → leaf-not-on-branch', () => {
+  it('leaf が branch になければ leaf-not-on-branch になる', () => {
     expect(guard(inputOf({ branch: [entryOf('other'), entryOf('kept')] }))).toEqual({
       kind: 'stale',
       reason: 'leaf-not-on-branch',
     });
   });
 
-  it('firstKept が branch に無い → first-kept-missing', () => {
+  it('firstKept が branch になければ first-kept-missing になる', () => {
     expect(guard(inputOf({ branch: [entryOf('leaf'), entryOf('other')] }))).toEqual({
       kind: 'stale',
       reason: 'first-kept-missing',
     });
   });
 
-  it('新しい compaction がある → new-compaction', () => {
+  it('新しい compaction があれば new-compaction になる', () => {
     expect(guard(inputOf({ latestCompactionId: 'c2' }))).toEqual({
       kind: 'stale',
       reason: 'new-compaction',

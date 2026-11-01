@@ -6,11 +6,11 @@ import { readSettings, writeEnabled } from './read.ts';
 import { defaultSettings } from './schema.ts';
 
 describe('readSettings', () => {
-  it('ファイルが無い → 既定', () => {
+  it('ファイルがなければ既定値になる', () => {
     expect(readSettings(tempDir())).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('有効な JSON → その値', () => {
+  it('有効な JSON ならその値になる', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{"enabled":false}');
     const read = readSettings(dir);
@@ -21,13 +21,13 @@ describe('readSettings', () => {
     expect(read.settings.enabled).toBe(false);
   });
 
-  it('壊れた JSON → broken', () => {
+  it('壊れた JSON なら broken になる', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'settings.json'), '{');
     expect(readSettings(dir).kind).toBe('broken');
   });
 
-  it('ファイル無しで writeEnabled(false) → enabled だけの文書ができ、読み直せる', () => {
+  it('ファイルなしで writeEnabled(false) を呼ぶと enabled だけの文書ができ読み直せる', () => {
     const dir = tempDir();
     expect(writeEnabled(dir, false).kind).toBe('ok');
     const raw = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8')) as unknown;

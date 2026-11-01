@@ -8,25 +8,25 @@ import type {
 import { readSettings } from './settings/read.ts';
 import { settingsOrDefault, type Settings } from './settings/schema.ts';
 
-/** 通知の種類。種類ごとに音を出し分ける（commit・compact を除いて文言も） */
+/** 通知の種類である。種類ごとに音を出し分ける（commit と compact を除き文言も変える）。 */
 type NotifyKind = 'permission' | 'question' | 'done' | 'commit' | 'compact';
 
-/** cmux へ文言を送る種類。commit と compact は音だけにする */
+/** cmux へ文言を送る種類である。commit と compact は音だけにする。 */
 type NotificationKind = Exclude<NotifyKind, 'commit' | 'compact'>;
 
-/** この拡張が pi に求める口だけ。テストは exec だけ持つ偽物を渡す */
+/** この拡張が pi に求める窓口だけである。テストは exec だけを持つ偽物を渡す。 */
 export interface PiPort {
   exec(command: string, args: string[]): Promise<unknown>;
 }
 
-/** この拡張が ctx に求める口だけ。テストは hasUI だけ持つ偽物を渡す */
+/** この拡張が ctx に求める窓口だけである。テストは hasUI だけを持つ偽物を渡す。 */
 export type CtxPort = Pick<ExtensionContext, 'hasUI'>;
 
 const SOUNDS_DIR = '/System/Library/Sounds';
 const NOTIFICATION_TITLE = 'pi';
 
 /**
- * cmux の通知文言。
+ * cmux の通知文言である。
  * subtitle で種類を出し分け、body は「何を待っているか」が分かる文にする。
  */
 const NOTIFICATION_COPY: Record<NotificationKind, { subtitle: string; body: string }> = {
@@ -35,7 +35,7 @@ const NOTIFICATION_COPY: Record<NotificationKind, { subtitle: string; body: stri
   done: { subtitle: 'Done', body: 'Turn complete' },
 };
 
-/** 設定ファイルは拡張と同じディレクトリに置く（ローカル/グローバルどちらでも解決できる） */
+/** 設定ファイルは拡張と同じディレクトリに置く（ローカルとグローバルのどちらでも解決できる）。 */
 const EXTENSION_DIR = dirname(fileURLToPath(import.meta.url));
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,23 +45,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * 入力待ちの種類を判定する。
  * permission 系のダイアログは title が "Permission Required\n..." で始まるため、
- * それ以外（通常の質問・確認ダイアログ）は question として扱う。
+ * それ以外（通常の質問と確認ダイアログ）は question として扱う。
  */
 function classify(title: string | undefined): NotifyKind {
   return title !== undefined && /permission/i.test(title) ? 'permission' : 'question';
 }
 
-/** 音を 1 つ鳴らす口。テストは afplay を起動しない物に差し替える */
+/** 音を 1 つ鳴らす窓口である。テストは afplay を起動しない物に差し替える。 */
 export type SoundPlayer = (pi: PiPort, soundName: string) => Promise<void>;
 
-/** 既定の鳴らす所。afplay に音のファイルを渡す */
+/** 既定の鳴らす処理である。afplay に音のファイルを渡す。 */
 const afplay: SoundPlayer = async (pi, soundName) => {
   await pi.exec('afplay', [`${SOUNDS_DIR}/${soundName}.aiff`]);
 };
 
 let player: SoundPlayer = afplay;
 
-/** 鳴らす所を差し替え、元に戻す関数を返す。テスト用 */
+/** 鳴らす処理を差し替え、元に戻す関数を返す。テスト用である。 */
 export function setPlayer(next: SoundPlayer): () => void {
   const previous = player;
   player = next;
@@ -84,23 +84,23 @@ async function sendNotification(pi: PiPort, kind: NotificationKind): Promise<voi
 }
 
 function dispatch(pi: PiPort, ctx: CtxPort, kind: NotifyKind, config: Settings): void {
-  // print / JSON モードには端末が無いため鳴らさない（CI やパイプ実行での誤爆を防ぐ）
+  // print と JSON モードには端末がないため鳴らさない（CI とパイプ実行での誤作動を防ぐ）。
   if (!config.enabled || !ctx.hasUI) {
     return;
   }
 
   const tasks: Promise<void>[] = [player(pi, config.sounds[kind])];
-  // commit と compact は音だけ。cmux 通知は入力待ち・ターン完了の合図に限る。
+  // commit と compact は音だけにする。cmux 通知は入力待ちとターン完了の合図に限る。
   if (config.notifications && kind !== 'commit' && kind !== 'compact') {
     tasks.push(sendNotification(pi, kind));
   }
 
-  // 通知の完了を待つと pi がアイドルに戻るタイミングが遅れるため投げっぱなしにする。
-  // afplay / cmux は失敗しても exec が reject しないが、念のため握りつぶす。
+  // 通知の完了を待つと pi がアイドルに戻るタイミングが遅れるため待ち合わせをしない。
+  // afplay と cmux は失敗しても exec が reject しないが、念のため例外を隠す。
   Promise.all(tasks).catch(() => undefined);
 }
 
-/** bash の結果からテキスト部分を取り出す */
+/** bash の結果からテキスト部分を取り出す。 */
 function resultText(result: unknown): string {
   if (typeof result === 'string') {
     return result;
@@ -115,12 +115,12 @@ function resultText(result: unknown): string {
     .join('\n');
 }
 
-/** git commit の出力（例: `[main abc1234] 件名`）が結果に含まれるか */
+/** git commit の出力（例: `[main abc1234] 件名`）が結果に含まれるかどうかを返す。 */
 export function isCommitResult(result: unknown): boolean {
   return /\[[^\]]* [0-9a-f]{7,40}\]/.test(resultText(result));
 }
 
-/** bash の git commit が成功したときだけ commit の音を鳴らす */
+/** bash の git commit が成功したときだけ commit の音を鳴らす。 */
 export function handleToolExecutionEnd(
   pi: PiPort,
   ctx: CtxPort,
@@ -132,42 +132,42 @@ export function handleToolExecutionEnd(
   }
 }
 
-/** 圧縮が終わったときだけ compact の音を鳴らす */
+/** 圧縮が終わったときだけ compact の音を鳴らす。 */
 export function handleSessionCompact(pi: PiPort, ctx: CtxPort, config: Settings): void {
   dispatch(pi, ctx, 'compact', config);
 }
 
-/** 拡張の入口が pi に求める口だけ。テストは on を記録する偽物を渡す */
+/** 拡張の入口が pi に求める窓口だけである。テストは on を記録する偽物を渡す。 */
 export type EntryPiPort = {
   on: ExtensionAPI['on'];
   exec: PiPort['exec'];
 };
 
-/** 拡張の入口の配線。既定の export は設定を読んでここに渡す。テストは設定を直接渡す */
+/** 拡張の入口を配線する。既定の export は設定を読んでここに渡す。テストは設定を直接渡す。 */
 export function registerSoundHandlers(pi: EntryPiPort, config: Settings): void {
-  // 入力待ち: エージェントが止まってユーザーの答えを待っている（緊急度が高い）
+  // 入力待ちである。エージェントが止まってユーザーの答えを待っている（緊急度が高い）。
   pi.on('ui_prompt_start', async (event, ctx) => {
     dispatch(pi, ctx, classify(event.title), config);
   });
 
-  // ターン完了: エージェントが仕事を終えた（報告）
+  // ターン完了である。エージェントが仕事を終えた（報告）。
   pi.on('agent_settled', async (_event, ctx) => {
     dispatch(pi, ctx, 'done', config);
   });
 
-  // コミット完了: bash が git commit の出力を返したときに 1 音
+  // コミット完了である。bash が git commit の出力を返したときに 1 音鳴らす。
   pi.on('tool_execution_end', async (event, ctx) => {
     handleToolExecutionEnd(pi, ctx, event, config);
   });
 
-  // 圧縮完了: 圧縮が終わったときに 1 音（失敗は鳴らさない）
+  // 圧縮完了である。圧縮が終わったときに 1 音鳴らす（失敗は鳴らさない）。
   pi.on('session_compact', async (_event, ctx) => {
     handleSessionCompact(pi, ctx, config);
   });
 }
 
-/** 既定の export。dir は検査が一時ディレクトリを渡すための口で、pi は渡さない */
+/** 既定の export である。dir は検査が一時ディレクトリを渡すための窓口であり、pi は渡さない。 */
 export default function (pi: EntryPiPort, dir: string = EXTENSION_DIR) {
-  // 起動時に 1 回だけ読む。壊れていれば既定で動き、知らせない。
+  // 起動時に 1 回だけ読む。壊れていれば既定で動き、通知しない。
   registerSoundHandlers(pi, settingsOrDefault(readSettings(dir)));
 }

@@ -1,42 +1,42 @@
 /**
- * thinking-scrub のテストが使う工場。
+ * thinking-scrub のテストが使うファクトリである。
  *
- * thinking の本文と印、assistant メッセージを作る。
- * 退化した thinking が既定の本文（形はホスト、中身は機能）。
- * pi の `usage` と型は `test/pi.fixture.ts` から読む。同じ物を作らない。
+ * thinking の本文と印と assistant メッセージを作る。
+ * 退化した thinking が既定の本文である（形はホスト、中身は機能）。
+ * pi の `usage` と型は `test/pi.fixture.ts` から読む。同じものを作らない。
  *
  * 値と文字列を組み立てるだけで、プロセスも FS も開かない。
  * テストの外から読まれても、何も起きずに止まらない。
  */
 import { piUsage, type PiAssistantMessage } from '../../../test/pi.fixture.ts';
 
-/** 退化の前後の印。`degenerate()` と期待値を同じ値から組む */
+/** 退化の前後の印である。`degenerate()` と期待値を同じ値から組む。 */
 export const DEGENERATE_PREFIX = 'foo';
 export const DEGENERATE_SUFFIX = 'bar';
 export const DEGENERATE_UNIT = 'the *';
 export const DEGENERATE_REPEATS = 12;
 
-/** 退化した thinking の本文。前後の印の間に短い周期が続く */
+/** 退化した thinking の本文である。前後の印の間に短い周期が続く。 */
 export function degenerate(): string {
   return `${DEGENERATE_PREFIX}${DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS)}${DEGENERATE_SUFFIX}`;
 }
 
-/** `degenerate()` が畳まれた後の本文。前後の印を空白 1 個でつなげる */
+/** `degenerate()` をまとめた後の本文である。前後の印を空白 1 個でつなげる。 */
 export function degenerateExpected(): string {
   return `${DEGENERATE_PREFIX} ${DEGENERATE_SUFFIX}`;
 }
 
-/** 文ループの 1 文。`index` で文面を変える */
+/** 文ループの 1 文である。`index` で文面を変える。 */
 export function loopSentence(index: number): string {
   return `scrub loop ${index} proceeds with steady reasoning about the task and its details.`;
 }
 
-/** 文の並びを `cycles` 回つなげる。区切りは既定で空白 1 個 */
+/** 文の並びを `cycles` 回つなげる。区切りは既定で空白 1 個である。 */
 export function cycleText(pattern: readonly string[], cycles: number, sep = ' '): string {
   return Array.from({ length: cycles }, () => pattern.join(' ')).join(sep);
 }
 
-/** `loopSentence` の 3 文周期で `length` 文字の thinking を作る。`base` は開始番号 */
+/** `loopSentence` の 3 文周期で `length` 文字の thinking を作る。`base` は開始番号である。 */
 export function thinkingWithRun(length: number, base = 0): string {
   const pattern = [loopSentence(base), loopSentence(base + 1), loopSentence(base + 2)];
   const cycle = pattern.join(' ');
@@ -47,7 +47,7 @@ export function thinkingWithRun(length: number, base = 0): string {
   return text.slice(0, length);
 }
 
-/** assistant メッセージを作る。既定は退化した thinking 1 件 */
+/** assistant メッセージを作る。既定は退化した thinking 1 件である。 */
 export function assistantMessage(overrides: Record<string, unknown> = {}): PiAssistantMessage {
   const base = {
     role: 'assistant',
@@ -63,7 +63,7 @@ export function assistantMessage(overrides: Record<string, unknown> = {}): PiAss
   return { ...base, ...overrides } as unknown as PiAssistantMessage;
 }
 
-/** 通知と指示の印を 1 か所に集める。製品の文言が変わればここだけ直す */
+/** 通知と指示の印を 1 か所に集める。製品の文言が変わればここだけ直す。 */
 export const SCRUB_PREFIX = 'thinking-scrub:';
 export const SCRUB_REMOVED_MARK = 'thinking-scrub: removed';
 export const SCRUB_OFF_LINE = 'thinking-scrub: off';

@@ -16,7 +16,7 @@ import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
 import { defaultSettings, type SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';
 
-// CommandPort は記録する偽物で渡す。出力の文は工場の印と回数から組む。
+// CommandPort は記録する偽物で渡す。出力の文はファクトリの印と回数から組む。
 
 function fakePort(
   overrides: {
@@ -52,7 +52,7 @@ function fakePort(
 }
 
 describe('runCommand', () => {
-  it('off → writeEnabled(false) が 1 回呼ばれ、off の行が返る', () => {
+  it('off なら writeEnabled(false) が 1 回呼ばれ off の行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('off'), 100);
     expect(written).toEqual([false]);
@@ -60,7 +60,7 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_OFF_LINE]);
   });
 
-  it('on → writeEnabled(true) が 1 回呼ばれ、on の行が返る', () => {
+  it('on なら writeEnabled(true) が 1 回呼ばれ on の行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('on'), 100);
     expect(written).toEqual([true]);
@@ -68,7 +68,7 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_ON_LINE]);
   });
 
-  it('show → writeShow(true) が 1 回、writeEnabled は呼ばれず、show の行が返る', () => {
+  it('show なら writeShow(true) が 1 回呼ばれ writeEnabled は呼ばれず show の行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('show'), 100);
     expect(shown).toEqual([true]);
@@ -76,7 +76,7 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_SHOW_LINE]);
   });
 
-  it('hide → writeShow(false) が 1 回、writeEnabled は呼ばれず、hide の行が返る', () => {
+  it('hide なら writeShow(false) が 1 回呼ばれ writeEnabled は呼ばれず hide の行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('hide'), 100);
     expect(shown).toEqual([false]);
@@ -84,7 +84,7 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_HIDE_LINE]);
   });
 
-  it('foo → どちらも呼ばれず、使い方の 1 行が返る', () => {
+  it('foo ならどちらも呼ばれず使い方の 1 行が返る', () => {
     const { port, written, shown } = fakePort();
     const lines = runCommand(port, parseCommand('foo'), 100);
     expect(written).toEqual([]);
@@ -92,13 +92,13 @@ describe('runCommand', () => {
     expect(lines).toEqual([SCRUB_USAGE_LINE]);
   });
 
-  it('" off " → set で偽、ON → set で真、SHOW → display で真', () => {
+  it('" off " は set で false になり ON は set で true になり SHOW は display で true になる', () => {
     expect(parseCommand(' off ')).toEqual({ kind: 'set', enabled: false });
     expect(parseCommand('ON')).toEqual({ kind: 'set', enabled: true });
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
   });
 
-  it('lastAt が数値の状態 → その時刻の行', () => {
+  it('lastAt が数値の状態ならその時刻の行になる', () => {
     const lastAt = 456;
     const removed = 2;
     const { port } = fakePort({ status: { removed, lastAt, failures: 0 } });
@@ -107,7 +107,7 @@ describe('runCommand', () => {
     expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
   });
 
-  it('3 グループの SettingsRead と status → on と show と removed と last の行', () => {
+  it('3 グループの SettingsRead と status なら on と show と removed と last の行になる', () => {
     const { port } = fakePort({
       settings: { kind: 'ok', settings: defaultSettings() },
       status: { removed: 0, lastAt: null, failures: 0 },
@@ -121,7 +121,7 @@ describe('runCommand', () => {
     ]);
   });
 
-  it('enabled:false の status → off と回数と時刻の行', () => {
+  it('enabled が false の status なら off と回数と時刻の行になる', () => {
     const removed = 3;
     const lastAt = 200;
     const { port, written, shown } = fakePort({
@@ -139,7 +139,7 @@ describe('runCommand', () => {
     ]);
   });
 
-  it('show:false の status → 行に off の印が入る', () => {
+  it('show が false の status なら行に off の印が入る', () => {
     const { port } = fakePort({
       settings: { kind: 'ok', settings: { ...defaultSettings(), show: false } },
       status: { removed: 1, lastAt: null, failures: 0 },
@@ -148,7 +148,7 @@ describe('runCommand', () => {
     expect(lines.join('\n')).toContain(SCRUB_SHOW_OFF);
   });
 
-  it('broken の status → 壊れている旨と既定で動いている旨', () => {
+  it('broken の status なら壊れている旨と既定で動いている旨になる', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
       status: { removed: 1, lastAt: null, failures: 0 },
@@ -162,7 +162,7 @@ describe('runCommand', () => {
     expect(lines).toContain(SCRUB_SHOW_ON);
   });
 
-  it('broken の off → writeEnabled(false) が 1 回、off の行が返る', () => {
+  it('broken の off なら writeEnabled(false) が 1 回呼ばれ off の行が返る', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
     });

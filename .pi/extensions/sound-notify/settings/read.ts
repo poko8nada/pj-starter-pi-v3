@@ -1,7 +1,7 @@
 /**
- * `settings.json` の読み込み。無ければ既定、読めない・壊れていれば broken。
+ * `settings.json` を読み込む。なければ既定値を返し、読めない場合と壊れている場合は broken を返す。
  *
- * 入口が起動時に 1 回だけ読む。壊れていれば既定で動き、知らせない。
+ * 入口が起動時に 1 回だけ読む。壊れていれば既定で動き、通知しない。
  */
 
 import { readFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ function errorCode(error: unknown): string | undefined {
   return undefined;
 }
 
-/** `<dir>/settings.json` を読む。無ければ既定 */
+/** `<dir>/settings.json` を読む。なければ既定値を返す。 */
 export function readSettings(dir: string): SettingsRead {
   const file = join(dir, SETTINGS_FILE);
   let text: string;

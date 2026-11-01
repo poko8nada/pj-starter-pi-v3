@@ -43,7 +43,7 @@ function statusOf(status: StatusState): string | undefined {
 }
 
 describe('parseCommand', () => {
-  it('空 → status、status / on / off / now → それぞれ', () => {
+  it('空文字と status、on、off、now を渡すとそれぞれの種類になる', () => {
     expect(parseCommand('')).toEqual({ kind: 'status' });
     expect(parseCommand('status')).toEqual({ kind: 'status' });
     expect(parseCommand('on')).toEqual({ kind: 'on' });
@@ -51,19 +51,19 @@ describe('parseCommand', () => {
     expect(parseCommand('now')).toEqual({ kind: 'now' });
   });
 
-  it('foo → usage', () => {
+  it('foo を渡すと usage になる', () => {
     expect(parseCommand('foo')).toEqual({ kind: 'usage' });
   });
 });
 
 describe('statusLines', () => {
-  it('最後の行は status と statusLine の文面', () => {
+  it('最後の行は status と statusLine の文面になる', () => {
     for (const status of statuses()) {
       expect(statusOf(status)).toBe(`status: ${statusLine(status)}`);
     }
   });
 
-  it('lastAppliedTokens → 桁区切りの値', () => {
+  it('lastAppliedTokens を渡すと桁区切りの値になる', () => {
     const value = lastAppliedOf();
     const lines = statusLines({
       settings: SETTINGS,

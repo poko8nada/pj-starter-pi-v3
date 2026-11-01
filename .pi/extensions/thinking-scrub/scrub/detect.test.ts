@@ -3,7 +3,7 @@ import { cycleText } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { detectRuns, scrubThinking } from './detect.ts';
 
-// 検出と除去。fixture は関数の中で組み立てる。
+// 検出と除去を行う。fixture は関数の中で組み立てる。
 
 function unit(): string {
   return 'the *';
@@ -22,7 +22,7 @@ function sentenceWithChar(index: number): string {
 }
 
 describe('detectRuns', () => {
-  it('離れた 2 か所に区間 → 2 区間で昇順', () => {
+  it('離れた 2 か所に区間があれば 2 区間で昇順になる', () => {
     const tuning = defaultSettings();
     const block = repeated(unit(), 12);
     const prefix = 'start';
@@ -35,21 +35,21 @@ describe('detectRuns', () => {
     expect(scrubThinking(text, tuning).removed).toBe(runs.length);
   });
 
-  it('既定の char と abcd × 5 回 → 1 区間', () => {
+  it('既定の char と abcd を 5 回重ねれば 1 区間になる', () => {
     const tuning = defaultSettings();
     expect(tuning.char.minPeriod).toBe(4);
     const text = repeated('abcd', 5);
     expect(detectRuns(text, tuning.char)).toHaveLength(1);
   });
 
-  it('abcd × 4 回 → 0 区間', () => {
+  it('abcd を 4 回重ねれば 0 区間になる', () => {
     const tuning = defaultSettings();
     const text = repeated('abcd', 4);
     expect(text.length).toBeLessThan(tuning.char.minLength);
     expect(detectRuns(text, tuning.char)).toHaveLength(0);
   });
 
-  it('minRepeats 未満の繰り返し → 0 区間、minRepeats 回 → 1 区間', () => {
+  it('minRepeats 未満の繰り返しは 0 区間になり minRepeats 回は 1 区間になる', () => {
     const tuning = defaultSettings();
     const block = `${'a'.repeat(9)}b`;
     expect(block.length).toBe(10);
@@ -60,7 +60,7 @@ describe('detectRuns', () => {
     expect(detectRuns(enough, tuning.char)).toHaveLength(1);
   });
 
-  it('周期 minPeriod - 1 文字 → 0 区間', () => {
+  it('周期が minPeriod から 1 文字短ければ 0 区間になる', () => {
     const tuning = defaultSettings();
     const tooShortPeriod = 'abc';
     expect(tooShortPeriod.length).toBe(tuning.char.minPeriod - 1);
@@ -69,7 +69,7 @@ describe('detectRuns', () => {
     expect(detectRuns(text, tuning.char)).toHaveLength(0);
   });
 
-  it('周期 maxPeriod 文字 → 1 区間、maxPeriod + 1 文字 → 0 区間', () => {
+  it('周期が maxPeriod 文字なら 1 区間になり maxPeriod に 1 文字足せば 0 区間になる', () => {
     const tuning = defaultSettings();
     const maxBlock = `${'a'.repeat(tuning.char.maxPeriod - 1)}b`;
     expect(maxBlock.length).toBe(tuning.char.maxPeriod);
@@ -81,7 +81,7 @@ describe('detectRuns', () => {
     expect(detectRuns(longText, tuning.char)).toHaveLength(0);
   });
 
-  it('char.minRepeats を 2 にした設定で、20 文字の周期 → 1 区間', () => {
+  it('char.minRepeats を 2 にした設定で 20 文字の周期なら 1 区間になる', () => {
     const tuning = defaultSettings();
     const char = { ...tuning.char, minRepeats: 2 };
     const block = `${'a'.repeat(19)}b`;
@@ -90,7 +90,7 @@ describe('detectRuns', () => {
     expect(detectRuns(text, char)).toHaveLength(1);
   });
 
-  it('char.maxPeriod を 20 にした設定で、周期 21 文字 → 0 区間', () => {
+  it('char.maxPeriod を 20 にした設定で周期 21 文字なら 0 区間になる', () => {
     const tuning = defaultSettings();
     const char = { ...tuning.char, maxPeriod: 20 };
     const block = `${'a'.repeat(20)}b`;
@@ -101,7 +101,7 @@ describe('detectRuns', () => {
 });
 
 describe('scrubThinking', () => {
-  it('"the *" を 12 回並べた本文 → 1 区間で removed が 1、並びが消える', () => {
+  it('"the *" を 12 回並べた本文なら 1 区間で removed が 1 になり並びが消える', () => {
     const tuning = defaultSettings();
     const text = repeated(unit(), 12);
     // 周期 5 と周期 10 のどちらも当たるが、重なりは 1 区間にまとまる。
@@ -112,7 +112,7 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).not.toContain(unit());
   });
 
-  it('foo + "the *" × 5 + bar → 区間 1、foo bar', () => {
+  it('foo と "the *" を 5 回と bar なら区間が 1 になり foo bar になる', () => {
     const tuning = defaultSettings();
     const prefix = 'foo';
     const suffix = 'bar';
@@ -123,7 +123,7 @@ describe('scrubThinking', () => {
     expect(scrubThinking(text, tuning)).toEqual({ text: expected, removed: runs.length });
   });
 
-  it('周期の長さと繰り返しの数は別々に効く', () => {
+  it('周期の長さと繰り返しの数は別々に効くことを確かめる', () => {
     const tuning = defaultSettings();
     const minBlock = 'abcd';
     expect(minBlock.length).toBe(tuning.char.minPeriod);
@@ -148,7 +148,7 @@ describe('scrubThinking', () => {
     expect(fewScrubbed.text).toBe(fewRepeats);
   });
 
-  it('周期の下限より短い周期は消さず、上限を超える周期は消さない', () => {
+  it('周期の下限より短い周期は消さず上限を超える周期は消さない', () => {
     const tuning = defaultSettings();
     const tooShortPeriod = 'abc';
     expect(tooShortPeriod.length).toBe(tuning.char.minPeriod - 1);
@@ -171,7 +171,7 @@ describe('scrubThinking', () => {
     expect(longScrubbed.text).toBe(longText);
   });
 
-  it('反復の無い文章 → removed が 0、本文が同一', () => {
+  it('反復のない文章なら removed が 0 になり本文が同一になる', () => {
     const tuning = defaultSettings();
     const text = 'hello world, this is a normal sentence without repeats.';
     const scrubbed = scrubThinking(text, tuning);
@@ -179,7 +179,7 @@ describe('scrubThinking', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('境目の前後がどちらも非空白 → 空白 1 個、片方が空白 → 足さない', () => {
+  it('境目の前後がどちらも非空白なら空白 1 個になり片方が空白なら足さない', () => {
     const tuning = defaultSettings();
     const prefix = 'foo';
     const suffix = 'bar';
@@ -192,7 +192,7 @@ describe('scrubThinking', () => {
     expect(scrubThinking(rightSpaced, tuning).text).toBe(`${prefix} ${suffix}`);
   });
 
-  it('区間が改行 2 つ / 1 つ / 無しを含む → 繋ぎ目にその改行を戻す', () => {
+  it('区間が改行 2 つと 1 つと なしを含む場合はつなぎ目にその改行を戻す', () => {
     const tuning = defaultSettings();
     const prefix = 'foo';
     const suffix = 'bar';
@@ -206,7 +206,7 @@ describe('scrubThinking', () => {
     expect(scrubThinking(noReturnText, tuning).text).toBe(`${prefix} ${suffix}`);
   });
 
-  it('区間が本文先頭 / 末尾にある → 詰めるだけで改行を足さない', () => {
+  it('区間が本文先頭と末尾にあれば詰めるだけで改行を足さない', () => {
     const tuning = defaultSettings();
     const suffix = 'bar';
     const prefix = 'foo';
@@ -216,7 +216,7 @@ describe('scrubThinking', () => {
     expect(scrubThinking(tailText, tuning).text).toBe(prefix);
   });
 
-  it('結果にもう一度かける → removed が 0、本文が同一', () => {
+  it('結果にもう一度かければ removed が 0 になり本文が同一になる', () => {
     const tuning = defaultSettings();
     const prefix = 'foo';
     const suffix = 'bar';
@@ -230,7 +230,7 @@ describe('scrubThinking', () => {
 });
 
 describe('scrubThinking sentence', () => {
-  it('文ループ 3 周期 → 最初の 1 周期だけ残り、残りが消える', () => {
+  it('文ループ 3 周期なら最初の 1 周期だけ残り残りが消える', () => {
     const tuning = defaultSettings();
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const text = cycleText(pattern, tuning.sentence.minCycles);
@@ -240,7 +240,7 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).toBe(pattern.join(' '));
   });
 
-  it('各周期が文字ループを持つ文ループ → 文が先で removed が 2', () => {
+  it('各周期が文字ループを持つ文ループなら文が先になり removed が 2 になる', () => {
     const tuning = defaultSettings();
     const pattern = [sentence(0), sentenceWithChar(1), sentence(2)];
     const text = cycleText(pattern, tuning.sentence.minCycles);
@@ -251,7 +251,7 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).not.toContain(repeated(unit(), 12));
   });
 
-  it('柵を含む文ループ → 消えない', () => {
+  it('柵を含む文ループは消えない', () => {
     const tuning = defaultSettings();
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const cycle = pattern.join(' ');
@@ -262,7 +262,7 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('3 周期でも文字数不足の文ループ → 消えない', () => {
+  it('3 周期でも文字数不足の文ループは消えない', () => {
     const tuning = defaultSettings();
     const one = sentence(0);
     const text = cycleText([one], tuning.sentence.minCycles);
@@ -272,7 +272,7 @@ describe('scrubThinking sentence', () => {
     expect(scrubbed.text).toBe(text);
   });
 
-  it('消える周期が改行を含む → 繋ぎ目に同じ改行を戻す', () => {
+  it('消える周期が改行を含めばつなぎ目に同じ改行を戻す', () => {
     const tuning = defaultSettings();
     const pattern = [sentence(0), sentence(1), sentence(2)];
     const cycle = pattern.join(' ');

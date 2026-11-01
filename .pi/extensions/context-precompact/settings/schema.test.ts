@@ -8,11 +8,11 @@ import {
 import { defaultSettings, parseSettings } from './schema.ts';
 
 describe('parseSettings', () => {
-  it('{} → 既定の 3 値', () => {
+  it('空の文書なら既定の 3 値になる', () => {
     expect(parseSettings('{}')).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('2 値を書く → その 2 値と既定の enabled', () => {
+  it('2 値を書けばその 2 値と既定の enabled になる', () => {
     const keep = DEFAULT_KEEP_RECENT_TOKENS * 2;
     const ratio = (MIN_THRESHOLD_RATIO + MAX_THRESHOLD_RATIO) / 2;
     const read = parseSettings(JSON.stringify({ keepRecentTokens: keep, thresholdRatio: ratio }));
@@ -22,29 +22,29 @@ describe('parseSettings', () => {
     });
   });
 
-  it('知らないキー → broken', () => {
+  it('知らないキーなら broken になる', () => {
     expect(parseSettings('{"unknown":1}').kind).toBe('broken');
   });
 
-  it('thresholdRatio が下限未満 → broken', () => {
+  it('thresholdRatio が下限未満なら broken になる', () => {
     expect(parseSettings(JSON.stringify({ thresholdRatio: MIN_THRESHOLD_RATIO - 0.01 })).kind).toBe(
       'broken',
     );
   });
 
-  it('thresholdRatio が上限超過 → broken', () => {
+  it('thresholdRatio が上限超過なら broken になる', () => {
     expect(
       parseSettings(JSON.stringify({ thresholdRatio: MAX_THRESHOLD_RATIO + Number.EPSILON })).kind,
     ).toBe('broken');
   });
 
-  it('keepRecentTokens が下限未満 → broken', () => {
+  it('keepRecentTokens が下限未満なら broken になる', () => {
     expect(
       parseSettings(JSON.stringify({ keepRecentTokens: MIN_KEEP_RECENT_TOKENS - 1 })).kind,
     ).toBe('broken');
   });
 
-  it('JSON でない → broken', () => {
+  it('JSON でなければ broken になる', () => {
     expect(parseSettings('{').kind).toBe('broken');
   });
 });
