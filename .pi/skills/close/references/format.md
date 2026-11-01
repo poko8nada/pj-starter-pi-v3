@@ -34,7 +34,7 @@
 
 - Plans:
   - `<plan id>`
-- Result: <OK / 見つかった物 / しない — 理由>
+- Result: <OK / 見つかったもの / しない — 理由>
 - Fixed: `ex-<what it fixes>` (<commit>)
 ```
 

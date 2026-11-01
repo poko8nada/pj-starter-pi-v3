@@ -31,30 +31,35 @@
 - Always:
   - 既定の 5 つ
 - Added:
-  - a proofread — the plan md と `.pi/skills/close/references/format.md` を、`.pi/skills/close/SKILL.md` の校正の文で回す
+  - a proofread — the plan md と `.pi/skills/close/references/format.md` を、`.pi/skills/close/SKILL.md` の校正の文で実行する
 
 ## Notes
 
 ### Slice 1: 二つの文言を直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1ae6ef0
 - Stopped:
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 旧文言の残存は close.md と plan md の引用のみで、現行の規範としては残らない。SKILL.md:10 の同型文言は plan 対象外として残すことが決まっている。
+- Unlisted: なし — コミット差分は Files の 2 件のみで、未コミット差分は plan md の Notes 記入だけで、成果物の変更はない。
+- Gaps: なし — 文言修正の振る舞いは Added の校正が担い、テストで確かめるべきコード振る舞いは存在しない。
+- Unproven: なし — テストファイルの追加や変更がなく、壊れても緑のままのテストは存在しない。
+- Noise: なし — テストケース自体がなく、型や制約が担保する重複やマジックナンバーの判定対象がない。
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run` (58 files / 796 tests)、`Added` の校正 1 件 (plan md と `close/references/format.md`)。振る舞いを加えない plan なので、壊して赤にする確かめの代わりに、変えた 2 文と校正の戻りを読んだ (description の重複が消え、`ex-plan` の行が判断軸と一致し、`見つかった物` が `見つかったもの` になった)。
+- Findings: なし
+- Doubts: なし
