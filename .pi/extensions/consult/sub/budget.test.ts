@@ -11,14 +11,9 @@ import budgetDefault, {
 // ここは「いつ促すか」だけを試す。サブエージェントを実際に走らせるのはメインエージェントの役目（consult の道具の検査が扱う）。
 
 describe('lastTurn', () => {
-  it('上限 40 → 38 番（促しの後に 1 ターン残る）', () => {
-    const turns = 40;
-    expect(lastTurn(turns)).toBe(turns - 2);
-  });
-
-  it('上限 2 → 0 番', () => {
-    const turns = 2;
-    expect(lastTurn(turns)).toBe(turns - 2);
+  it('有効な上限 → 上限-2 番（40→38、最小の2→0）', () => {
+    expect(lastTurn(40)).toBe(38);
+    expect(lastTurn(2)).toBe(0);
   });
 
   it('上限がない・1 以下・数でない → 何もしない', () => {

@@ -113,28 +113,42 @@
 ### Slice 1: policy と budget の削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `! grep -E ...`（バッククォート含み）を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が backtick を含むトークンを一律で止めるため。製品コードは変えられないので、grep ツールで不在を確認して代替した。
+- Unplanned: なし
+- Commit: c91c7cd
 - Stopped:
 
 ### Slice 2: guard の統合と削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `test "$(grep -c ...)" = 1` を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が `$(...)` を展開不能として一律で止めるため。製品コードは変えられないので、`grep -c` のみで件数 1 を確認して代替した。
+- Unplanned: なし
+- Commit: a3d47f2
 - Stopped:
 
 ### Slice 3: index と spec の削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `test "$(grep -c '音が off、印のない完了' ...)" = 1` を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が `$(...)` を展開不能として一律で止めるため。製品コードは変えられないので、`grep -c` のみで件数 1 を確認して代替した。
+  - Added の件数: `pnpm test:run .pi/extensions/consult/policy .pi/extensions/consult/sub .pi/extensions/consult/index.test.ts` は 84 件。105 から 21 件減った。
+- Unplanned: なし
+- Commit: 220bc61
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: 重複する振る舞いの確認を整理
 
 - Findings:
-- Unplanned:
+  - `budget.test.ts` の `lastTurn` 有効値 2 件（40→38 と 2→0）は同じ式を別値で確かめていた。1 本に統合し、境界の 2→0 を残した。
+    - left: 統合後は `pnpm test:run` 81 件で緑。製品コードは変えていない。
+  - `spec.test.ts` の guard パス絶対確認と `--tools` 空配列時の位置確認は、`-e` 位置と 2 回指定の包括テストと重なっていた。2 本を削除した。
+    - left: 残る 3 本で位置・回数・機械非依存を cover し、`pnpm test:run` 81 件で緑。製品コードは変えていない。
+  - Verify の `test "$(grep -c ...)"` は guard で止められるため、`grep -c` のみで件数確認に代替した（Slice 2・3 と同じ）。
+    - left: 製品コードは変えられないため代替を継続。`! grep -E` は文字どおり実行して緑。
+  - 整理後の件数: `pnpm test:run .pi/extensions/consult/policy .pi/extensions/consult/sub .pi/extensions/consult/index.test.ts` は 81 件。105 から 24 件減った。
+- Unplanned: なし
 
 ## Work Review
 

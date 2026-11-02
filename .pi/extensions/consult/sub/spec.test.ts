@@ -36,13 +36,6 @@ describe('buildPiArgs: subagent-guard', () => {
     expect(args[index + 1]?.endsWith('guard.ts')).toBe(true);
   });
 
-  it('subagent-guard のパスは空でない絶対パス', () => {
-    const args = buildPiArgs(options());
-    const path = args[args.indexOf('--extension') + 1] ?? '';
-    expect(path.startsWith('/')).toBe(true);
-    expect(path.length).toBeGreaterThan('/subagent-guard.ts'.length);
-  });
-
   it('-e は guard と budget の 2 回（順に guard・budget の絶対パス）', () => {
     const args = buildPiArgs(options());
     const indexes = args.flatMap((arg, i) => (arg === '--extension' ? [i] : []));
@@ -53,11 +46,6 @@ describe('buildPiArgs: subagent-guard', () => {
     expect(guardPath.endsWith('guard.ts')).toBe(true);
     expect(budgetPath.startsWith('/')).toBe(true);
     expect(budgetPath.endsWith('budget.ts')).toBe(true);
-  });
-
-  it('--tools が空配列でも -e の位置が崩れない', () => {
-    const args = buildPiArgs(options({ policy: policy({ tools: [] }) }));
-    expect(args.indexOf('--extension')).toBeGreaterThan(args.indexOf('--tools'));
   });
 
   it('パスは機械に依らない形で組まれる（このファイルの隣）', () => {
