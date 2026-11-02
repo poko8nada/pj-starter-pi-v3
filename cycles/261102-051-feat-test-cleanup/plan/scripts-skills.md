@@ -122,14 +122,21 @@ scripts/
 ### Round 1
 
 - Stale:
+  - なし — 先頭コメントの fixture 言及削除と `INVALID_LIST_LINE` import 削除は Steps 通りで、残る `test/scripts.fixture.ts:38` の定義は `scripts/checks/typecheck.test.ts:152` が使うため陳腐化しない（`scripts/checks/typecheck-staged.test.ts:9`、`scripts/checks/typecheck-staged.test.ts:16`）。統合後の 5 件の新名は旧名を残さず、旧名への言及は計画の Verify 除外行だけに残る（`.pi/skills/adr/scripts/scaffold.test.ts:112`、`.pi/skills/adr/scripts/scaffold.test.ts:125`、`.pi/skills/adr/scripts/scaffold.test.ts:197`、`.pi/skills/adr/scripts/scaffold.test.ts:216`、`.pi/skills/close/scripts/collect.test.ts:34`）。
 - Unlisted:
+  - なし — 差分は Files の `update` 4 件（`scripts/product-ready/targets.test.ts`、`scripts/checks/typecheck-staged.test.ts`、`.pi/skills/adr/scripts/scaffold.test.ts`、`.pi/skills/close/scripts/collect.test.ts`）だけを変え、`scripts/checks/typecheck.test.ts` は Steps 通り不変であり、`cycles/261102-051-feat-test-cleanup/plan/scripts-skills.md:89` と `cycles/261102-051-feat-test-cleanup/plan/scripts-skills.md:99` の記録追記は作業記録であって Files 対象外である。
 - Gaps:
+  - なし — 統合 5 件はいずれも両分岐の断言を 1 本に残す（空と既存、両ルートと空ルート、`## 01` と `## 02`、`## 02` 追加と `## 03` 追加、Triage ありと無し）。削除 3 件（到達不能な root・at、不正 JSON の重複）は ADR 06 の到達不能・重複の決定値のため所見にしない（`scripts/product-ready/targets.test.ts:53` は空 root の `[]` を残す、`scripts/checks/typecheck.test.ts:143` が文面と exit の照合先として残る）。
 - Unproven:
+  - なし — 統合後の各 `it` は片側を壊すと赤になる。`createLeafDir` は二回目が投げなければ落ちる、空ルートの `[]` は余分を返せば落ちる、`lastEntryNumber` の 1 と 2 は固定値を返せば片方が落ちる、`appendEntry` の loop は `next` 無視で片方が落ちる、`noOf` は常時値・常時 null のいずれも片方が落ちる（`.pi/skills/adr/scripts/scaffold.test.ts:112`、`.pi/skills/adr/scripts/scaffold.test.ts:125`、`.pi/skills/adr/scripts/scaffold.test.ts:197`、`.pi/skills/adr/scripts/scaffold.test.ts:216`、`.pi/skills/close/scripts/collect.test.ts:34`）。
 - Noise:
+  - なし — 残る 5 件はいずれも外から届く分岐（作成と衝突、両ルート収集と空扱い、最大値、次の番号追加、Triage 有無）にひもづき、型・スキーマが保証する前提の再現ではない。`## NN`・`<問い>`・`02` 等の字面は製品出力の契約および Steps の決定値のため所見にしない（`format.md` の `## Test cases` に照合、`.pi/skills/adr/scripts/scaffold.test.ts:216`、`scripts/checks/typecheck.test.ts:143`）。
 - Doubts:
+  - `scripts/checks/typecheck-staged.mjs:17` と `scripts/checks/typecheck.mjs:16` は別プロセスで同じ文面を出すため、将来 staged 側だけが壊れても `scripts/checks/typecheck.test.ts:143` は緑のままである。重複扱いは ADR 06 の決定なので所見にせず残す。
+  - 統合後の 1 本に 2 断言が入る形（例: `.pi/skills/adr/scripts/scaffold.test.ts:216` の loop）は、落ちたときにどちらの入力かを行番号でしか切り分けられない。計画の命名決定通りなので所見にせず残す。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、778 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` はなし。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: なし
