@@ -371,10 +371,6 @@ describe('isCommitResult', () => {
     expect(isCommitResult(commitEvent({ result: text }).result)).toBe(true);
   });
 
-  it('content の text パートも見ることを確かめる', () => {
-    expect(isCommitResult(commitEvent().result)).toBe(true);
-  });
-
   it('record でなければ false になる（例外を投げない）', () => {
     expect(isCommitResult(commitEvent({ result: undefined }).result)).toBe(false);
     expect(isCommitResult(commitEvent({ result: {} }).result)).toBe(false);

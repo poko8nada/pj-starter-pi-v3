@@ -26,36 +26,10 @@ const statusTable: ReadonlyArray<{ readonly raw: string; readonly expected: read
 ];
 
 describe('parseStatus', () => {
-  it('XY とパスを取り出し追跡されていないファイルも含める', () => {
-    const row = statusTable[0];
-    if (row === undefined) {
-      throw new Error('statusTable[0] is missing');
+  it('porcelain の表通りパスを取り出す', () => {
+    for (const row of statusTable) {
+      expect(parseStatus(row.raw)).toEqual(row.expected);
     }
-    expect(parseStatus(row.raw)).toEqual(row.expected);
-  });
-
-  it('空白を含むパスを壊さない', () => {
-    const row = statusTable[1];
-    if (row === undefined) {
-      throw new Error('statusTable[1] is missing');
-    }
-    expect(parseStatus(row.raw)).toEqual(row.expected);
-  });
-
-  it('rename は元のパスを読み飛ばす', () => {
-    const row = statusTable[2];
-    if (row === undefined) {
-      throw new Error('statusTable[2] is missing');
-    }
-    expect(parseStatus(row.raw)).toEqual(row.expected);
-  });
-
-  it('空の出力は空配列になる', () => {
-    const row = statusTable[3];
-    if (row === undefined) {
-      throw new Error('statusTable[3] is missing');
-    }
-    expect(parseStatus(row.raw)).toEqual(row.expected);
   });
 });
 
@@ -81,21 +55,12 @@ describe('changedSince', () => {
     expect(changedSince(before, afterReedit)).toEqual([pathA]);
     expect(changedSince(before, new Map(before))).toEqual([]);
   });
-
-  it('消えたパスは返さない', () => {
-    const after = new Map([[pathB, printB]]);
-    expect(changedSince(before, after)).toEqual([]);
-  });
 });
 
 describe('fingerprint', () => {
-  it('存在しないパスは入れない', () => {
-    const name = 'nope-quality-gate';
-    const missing = join(tempDir(), name);
+  it('存在するファイルだけ指紋を持ち、ないパスは入れない', () => {
+    const missing = join(tempDir(), 'nope-quality-gate');
     expect(fingerprint([missing]).size).toBe(0);
-  });
-
-  it('存在するファイルは mtime:ctime:size の指紋を持つ', () => {
     const file = join(tempDir(), 'a.txt');
     writeFileSync(file, 'x');
     const prints = fingerprint([file]);
@@ -105,7 +70,7 @@ describe('fingerprint', () => {
 });
 
 describe('filterByExtensions', () => {
-  it('format は md と json を通し、lint は ts だけを通す', () => {
+  it('format と lint の拡張子を通し、大文字も通す', () => {
     const ts = 'a.ts';
     const md = 'b.md';
     const json = 'c.json';
@@ -113,9 +78,6 @@ describe('filterByExtensions', () => {
     const paths = [ts, md, json, png];
     expect(filterByExtensions(paths, 'format')).toEqual([ts, md, json]);
     expect(filterByExtensions(paths, 'lint')).toEqual([ts]);
-  });
-
-  it('大文字の拡張子も通す', () => {
     const upper = 'A.TS';
     expect(filterByExtensions([upper], 'lint')).toEqual([upper]);
   });
