@@ -132,8 +132,18 @@
   - `pnpm test:run/typecheck/lint/format` は subagent-guard で拒否されて実行できず Verify の Always は grep による文字列確認のみで代替した。
   - 周期 2 は名称「3 以下」に含まれるが前後とも未検査であり、同一分岐のため Test cases に従い finding にしなかった。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` の 1 件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: 修正を確認した — `.pi/extensions/thinking-scrub/state/cell.test.ts:16-23` の「`addFailure は failures を 1 増やし removed と lastAt を保つ`」が、入力 `{ removed: 4, lastAt: 100, failures: 0 }` に対して `addFailure` の戻り全体を `{ removed: 4, lastAt: 100, failures: 1 }` と `toEqual` で断言しているため、Round 1 の指摘（:125 の `removed` を壊しても全緑）は閉じている。根拠は、実装 `.pi/extensions/thinking-scrub/state/cell.ts:39-41` が `{ ...status, failures: status.failures + 1 }` と `removed`/`lastAt` を引き継ぐ構造であり、`removed` を 0 化・加算したり `lastAt` を `null` 化・上書きしたりすればこの断言が失敗し、回帰を検出できることである。
+- Unproven: なし — 同じ理由により、`Unproven` には `fixed:` がないため対象外である。
+- Noise: なし — 同じ理由により、`Noise` には `fixed:` がないため対象外である。
+- Doubts:
+  - Doubts: なし — `fixed:` 以外を見ないため、新たな疑義は出さない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、778 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` はなし。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: なし
