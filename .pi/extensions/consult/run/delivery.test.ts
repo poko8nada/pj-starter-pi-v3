@@ -3,14 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { aRunRecord } from '../consult.fixture.ts';
-import {
-  appendDelivered,
-  CURSOR_FILE,
-  pendingReports,
-  pruneCursors,
-  readCursor,
-} from './delivery.ts';
-import { appendRun, KEEP_DAYS, type RunRecord } from './log.ts';
+import { appendDelivered, CURSOR_FILE, pendingReports, readCursor } from './delivery.ts';
+import { appendRun, type RunRecord } from './log.ts';
 import { placeFor, type Place } from './place.ts';
 
 // サブエージェントは起こさない。使い捨ての保存場所だけで試す。
@@ -126,19 +120,5 @@ describe('pendingReports', () => {
     appendRun(found, record({ subagent: 'consult-start', ended: undefined }), at);
     appendRun(found, record({ subagent: 'consult-plain', ended: 1500 }), at);
     expect(pendingReports(found, { at, session: 'session-a' })).toEqual([]);
-  });
-});
-
-describe('pruneCursors', () => {
-  it('古い ended の欄を消し、新しい欄を残す', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    const old = new Date(2026, 8, 1, 12, 0);
-    writeCursorFile(found, { 'session-old': old.getTime(), 'session-new': at.getTime() });
-
-    pruneCursors(found, at, KEEP_DAYS);
-
-    expect(readCursor(found, 'session-old')).toBeUndefined();
-    expect(readCursor(found, 'session-new')).toEqual({ ended: at.getTime() });
   });
 });

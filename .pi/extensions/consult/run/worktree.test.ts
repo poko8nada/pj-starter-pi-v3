@@ -348,13 +348,6 @@ describe('listWorktrees / findWorktree', () => {
     makeDirty(made.path);
     expect(findWorktree(dir, '1-a')?.dirty).toBe(true);
   });
-
-  it('台帳ファイルを持たない → 一覧は git から作る', () => {
-    const dir = tempDir();
-    createWorktree(dir, '1-a');
-    const root = ensureRoot(dir);
-    expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
-  });
 });
 
 describe('removeWorktree', () => {
