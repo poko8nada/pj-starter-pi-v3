@@ -141,17 +141,22 @@
 
 - Findings: なし
 - Unplanned: なし
+- Commit: cced330 consult(consult-run-tool): cleanup tests
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 削った名の grep は consult 配下に残らず、輸入と助子 (writeCursorFile、CheckRecord、PsRun、ensureRoot) の残用も確認した。
+- Unlisted: なし — name-only の 7 件は Files の 7 件と一致する (plan md の Notes 記入を除く)。
 - Gaps:
-- Unproven:
-- Noise:
+  - `.pi/extensions/consult/tool/run.test.ts:14` — `continue: false` の透過を確かめる検査がなく、`it('worktree と continue を渡せる')` は `continue: true` のみを通し、下流 `.pi/extensions/consult/tool/consult.ts:409` の `??` が false と未指定を区別するため、false を落とす壊れが緑のまま残る。
+    - fixed: `it('worktree と continue を渡せる')` に `continue: false` の場合を足し、`false` が欄ごと落ちず未指定（欄なし）と区別されることを断言した。
+- Unproven: なし — 統合後の各 it が両行動を断言し (ps 引数の両関数、windowFiles と oldFiles、startToken と delivered の破棄)、壊せば赤になることを目視した。
+- Noise: なし — 統合後の値は変数から取り (pid、at、window、keep、startToken、delivered)、残る文字列は Steps が決めた ps 引数と製品の出力文である。
 - Doubts:
+  - cced330 が Steps にない 5 件 (delivery の `行が 0 本 → 空`、log の runningRuns の `行がない → 空`、worktree の `ワークツリーが 1 つもない → 空`、run の `continue: false も渡せる`、commit の非オブジェクト断言の除去) を削り、Notes の Cleanup 表題と Findings/Unplanned なしのみで記録され Commit 行がないため、表題がこれらを覆うかは close の判断に残る。
+  - Gaps の 1 件を除き、Steps 外の削除は空入力・ホスト保証済みと同種で Test cases の規則に沿うため、所見にしなかった。
 
 ## Acceptance
 

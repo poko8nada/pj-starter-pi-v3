@@ -21,6 +21,14 @@ describe('parseRunRequest', () => {
       worktree,
       continue: true,
     });
+    // false は落とさず、未指定（欄なし）と区別して下流に届く。consult.ts の ?? がこの区別に頼る
+    expect(parseRunRequest({ role, task, worktree, continue: false })).toEqual({
+      role,
+      task,
+      worktree,
+      continue: false,
+    });
+    expect(parseRunRequest({ role, task, worktree })).toEqual({ role, task, worktree });
   });
 
   it('task が空 → 投げる', () => {
