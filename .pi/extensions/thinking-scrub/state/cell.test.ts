@@ -13,6 +13,15 @@ describe('cell', () => {
     });
   });
 
+  it('addFailure は failures を 1 増やし removed と lastAt を保つ', () => {
+    const status = { removed: 4, lastAt: 100, failures: 0 };
+    expect(addFailure(status)).toEqual({
+      removed: status.removed,
+      lastAt: status.lastAt,
+      failures: status.failures + 1,
+    });
+  });
+
   it('emptyStatus() は removed が 0 で lastAt が null で failures が 0 になる', () => {
     expect(emptyStatus()).toEqual({ removed: 0, lastAt: null, failures: 0 });
   });

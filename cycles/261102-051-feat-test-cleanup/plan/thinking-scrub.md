@@ -118,11 +118,19 @@
 ### Round 1
 
 - Stale:
+  - なし — 削除後の未使用 import・旧テスト名の残存・README の記述矛盾を確かめたが stale はなかった。
 - Unlisted:
+  - なし — diff は Files の更新 6 件のみで settings/schema.test.ts は不変であり Files 外の変更は計画 md の Notes 記入以外になかった。
 - Gaps:
+  - `.pi/extensions/thinking-scrub/state/cell.test.ts:24` は `addFailure` の戻り値を捨てて入力不変のみを見て `.pi/extensions/thinking-scrub/index.test.ts:781` は `failures==1` のみを見て `removed/lastAt` の保持を見ないため、削除された `addFailure すれば failures が 1 増え他が変わらない` のうち `他が変わらない` がどの検査にも運動せず `removed` を壊しても全緑になる。
+    fixed: `state/cell.test.ts` に `addFailure は failures を 1 増やし removed と lastAt を保つ` を追加し、`removed`/`lastAt` の保持を検査した。
 - Unproven:
+  - なし — `.pi/extensions/thinking-scrub/command/scrub.test.ts:55` と `.pi/extensions/thinking-scrub/scrub/units.test.ts:217` は片方の分岐を壊せば失敗するため proven であることを確かめた。
 - Noise:
+  - なし — 統合後の表明は工場関数と印定数だけを使い魔数や硬直文字列の表明はなく、削除された `followUpText(sample,10)` の人工値も残っていないことを確かめた。
 - Doubts:
+  - `pnpm test:run/typecheck/lint/format` は subagent-guard で拒否されて実行できず Verify の Always は grep による文字列確認のみで代替した。
+  - 周期 2 は名称「3 以下」に含まれるが前後とも未検査であり、同一分岐のため Test cases に従い finding にしなかった。
 
 ## Acceptance
 
