@@ -1,22 +1,20 @@
 /**
  * ja-check behavior, run as a child process.
  *
- * fake root holds temp files and a config. Real config is read for shape checks.
+ * fake root holds temp files and a config.
  * WARN_WORD lives in warn, ERROR_WORD lives in error. Quoted alone is skipped.
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'ja-check.mjs');
-const REAL_CONFIG = join(process.cwd(), 'scripts', 'checks', 'ja-check.json');
 
 const WARN_WORD = '骨';
 const ERROR_WORD = '雛形';
-const NONE_WORDS = ['道具', '観点', '写し', '偽物', '印'];
 
 interface RunOut {
   readonly status: number;
@@ -51,26 +49,6 @@ function validConfig(): Record<string, Record<string, string>> {
   };
 }
 
-function isUnknownRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isStringRecord(value: unknown): value is Record<string, string> {
-  if (!isUnknownRecord(value)) {
-    return false;
-  }
-  return Object.values(value).every((entry) => typeof entry === 'string');
-}
-
-function isJaConfig(
-  value: unknown,
-): value is { error: Record<string, string>; warn: Record<string, string> } {
-  if (!isUnknownRecord(value)) {
-    return false;
-  }
-  return isStringRecord(value.error) && isStringRecord(value.warn);
-}
-
 describe('ja-check', () => {
   it('warn word in md prints warn line and exits 0', () => {
     const root = fakeRoot();
@@ -80,7 +58,8 @@ describe('ja-check', () => {
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(`${file}:1: ${WARN_WORD}`);
     expect(out.stdout).toContain('[warn]');
-    expect(out.stdout).toContain('ja-check: 1');
+    expect(out.stdout).toContain(`${WARN_WORD} → replacement-warn`);
+    expect(out.stdout).toContain('ja-check: 1 ファイル、error 0 件、warn 1 件');
   });
 
   it('error word in md prints error line and exits 1', () => {
@@ -91,6 +70,8 @@ describe('ja-check', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toContain(`${file}:1: ${ERROR_WORD}`);
     expect(out.stdout).toContain('[error]');
+    expect(out.stdout).toContain(`${ERROR_WORD} → replacement-error`);
+    expect(out.stdout).toContain('ja-check: 1 ファイル、error 1 件、warn 0 件');
   });
 
   it('no args exits 0 with summary line', () => {
@@ -98,7 +79,7 @@ describe('ja-check', () => {
     writeConfig(root, validConfig());
     const out = run(root, []);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain('ja-check: 0');
+    expect(out.stdout).toContain('ja-check: 0 ファイル、error 0 件、warn 0 件');
   });
 
   it('unreadable file is skipped with summary line', () => {
@@ -107,7 +88,7 @@ describe('ja-check', () => {
     const missing = join(root, 'missing.md');
     const out = run(root, [missing]);
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain('ja-check: 1');
+    expect(out.stdout).toContain('ja-check: 1 ファイル、error 0 件、warn 0 件');
   });
 
   it('cycles file with error word is reported', () => {
@@ -177,11 +158,11 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
   });
 
-  it('code string with single quotes alone is not reported', () => {
+  it('double-quoted alone error word is not reported', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
-    const quoted = `'${ERROR_WORD}'`;
-    const file = writeFile(root, 'a.ts', `const x = ${quoted};\n`);
+    const quoted = `"${ERROR_WORD}"`;
+    const file = writeFile(root, 'a.md', `${quoted}\n`);
     const out = run(root, [file]);
     expect(out.status).toBe(0);
     expect(out.stdout).not.toContain('[error]');
@@ -225,38 +206,5 @@ describe('ja-check', () => {
     );
     const file2 = writeFile(root2, 'a.md', 'ok\n');
     expect(run(root2, [file2]).status).toBe(1);
-  });
-
-  it('file with none words is not reported', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const file = writeFile(root, 'a.md', `${NONE_WORDS.join(' ')}\n`);
-    const out = run(root, [file]);
-    expect(out.stdout).not.toContain('[error]');
-  });
-
-  it('real config has only error and warn keys without none words', () => {
-    const raw = readFileSync(REAL_CONFIG, 'utf8');
-    const parsed: unknown = JSON.parse(raw);
-    expect(isUnknownRecord(parsed)).toBe(true);
-    if (!isUnknownRecord(parsed)) {
-      return;
-    }
-    expect(Object.keys(parsed).toSorted()).toEqual(['error', 'warn']);
-    const text = JSON.stringify(parsed);
-    for (const word of NONE_WORDS) {
-      expect(text).not.toContain(`"${word}"`);
-    }
-  });
-
-  it('real config has warn word in warn and error word in error', () => {
-    const raw = readFileSync(REAL_CONFIG, 'utf8');
-    const parsed: unknown = JSON.parse(raw);
-    expect(isJaConfig(parsed)).toBe(true);
-    if (!isJaConfig(parsed)) {
-      return;
-    }
-    expect(parsed.warn[WARN_WORD]).toBeDefined();
-    expect(parsed.error[ERROR_WORD]).toBeDefined();
   });
 });

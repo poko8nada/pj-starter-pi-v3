@@ -1,7 +1,7 @@
 // ja-check: report banned Japanese words in staged files.
 // Usage: node scripts/checks/ja-check.mjs <file1> <file2> ...
 // Mechanism: reads scripts/checks/ja-check.json with fs.readFileSync and JSON.parse,
-// prints <file>:<line>: <word> -> <replacement> [error|warn] and a summary line.
+// prints <file>:<line>: <word> → <replacement> [error|warn] and a summary line.
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
