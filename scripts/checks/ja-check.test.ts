@@ -50,7 +50,7 @@ function validConfig(): Record<string, Record<string, string>> {
 }
 
 describe('ja-check', () => {
-  it('warn word in md prints warn line and exits 0', () => {
+  it('md内のwarn語 → warn行を出してexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const file = writeFile(root, 'a.md', `${WARN_WORD}\n`);
@@ -62,7 +62,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 ファイル、error 0 件、warn 1 件');
   });
 
-  it('error word in md prints error line and exits 1', () => {
+  it('md内のerror語 → error行を出してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const file = writeFile(root, 'a.md', `${ERROR_WORD}\n`);
@@ -74,7 +74,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 ファイル、error 1 件、warn 0 件');
   });
 
-  it('no args exits 0 with summary line', () => {
+  it('引数なし → サマリー行を出してexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const out = run(root, []);
@@ -82,7 +82,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 0 ファイル、error 0 件、warn 0 件');
   });
 
-  it('unreadable file is skipped with summary line', () => {
+  it('読めないファイル → スキップしてサマリー行を出す', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const missing = join(root, 'missing.md');
@@ -91,7 +91,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 ファイル、error 0 件、warn 0 件');
   });
 
-  it('cycles file with error word is reported', () => {
+  it('cycles配下のerror語 → 報告する', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const file = writeFile(root, join('cycles', '999-test', 'a.md'), `${ERROR_WORD}\n`);
@@ -100,7 +100,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('[error]');
   });
 
-  it('ROADMAP 0.x.x section with error word is not reported', () => {
+  it('ROADMAPの0.x.x節内のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const file = writeFile(root, 'ROADMAP.md', `## 1.x.x\nok\n## 0.x.x\n${ERROR_WORD}\n`);
@@ -110,7 +110,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check:');
   });
 
-  it('ROADMAP 1.x.x section with error word is reported', () => {
+  it('ROADMAPの1.x.x節内のerror語 → 報告する', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const file = writeFile(root, 'ROADMAP.md', `## 1.x.x\n${ERROR_WORD}\n## 0.x.x\nok\n`);
@@ -119,7 +119,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('[error]');
   });
 
-  it('ja-check.json itself with error word is not reported', () => {
+  it('ja-check.json自体のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const self = join(root, 'scripts', 'checks', 'ja-check.json');
@@ -128,7 +128,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
   });
 
-  it('quoted alone error word is not reported', () => {
+  it('単独引用のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const quoted = `'${ERROR_WORD}'`;
@@ -138,7 +138,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
   });
 
-  it('quoted word with extra chars is reported', () => {
+  it('余分な文字付きの引用語 → 報告する', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const content = `it('${WARN_WORD}extra')\n`;
@@ -148,7 +148,7 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('[warn]');
   });
 
-  it('code comment with backtick alone is not reported', () => {
+  it('バッククォート単独のコードコメント → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const quoted = `\`${ERROR_WORD}\``;
@@ -158,7 +158,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
   });
 
-  it('double-quoted alone error word is not reported', () => {
+  it('ダブルクォート単独のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
     const quoted = `"${ERROR_WORD}"`;
@@ -168,7 +168,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
   });
 
-  it('missing config prints no-setting line before summary and exits 0', () => {
+  it('設定なし → 設定なし行をサマリーより前に出してexit 0', () => {
     const root = fakeRoot();
     const file = writeFile(root, 'a.md', `${ERROR_WORD}\n`);
     const out = run(root, [file]);
@@ -181,7 +181,7 @@ describe('ja-check', () => {
     expect(summaryAt).toBeGreaterThan(noSettingAt);
   });
 
-  it('broken config exits 1', () => {
+  it('壊れた設定 → exit 1', () => {
     const root = fakeRoot();
     writeFile(root, join('scripts', 'checks', 'ja-check.json'), '{not json');
     const file = writeFile(root, 'a.md', 'ok\n');
@@ -189,7 +189,7 @@ describe('ja-check', () => {
     expect(out.status).toBe(1);
   });
 
-  it('config with wrong key or value types exits 1', () => {
+  it('キーや値の型が誤った設定 → exit 1', () => {
     const root = fakeRoot();
     writeFile(
       root,
