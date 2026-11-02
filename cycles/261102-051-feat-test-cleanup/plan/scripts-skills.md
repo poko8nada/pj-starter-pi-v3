@@ -8,7 +8,7 @@
 scripts/
   checks/
     typecheck-staged.test.ts  update
-    typecheck.test.ts         update
+    typecheck.test.ts
   product-ready/
     targets.test.ts           update
 .pi/skills/
@@ -34,18 +34,20 @@ scripts/
    - `it('無い root → 投げる')` を削除する。`root` は `process.cwd()` から来るため、CLI から届かない。
    - `it('表に無い at → 投げる')` を削除する。`at` は固定の一覧から来るため、CLI から届かない。
 2. `scripts/checks/typecheck-staged.test.ts`:
-   - `it('scopes.json が JSON でない → exit 1 と理由の行')` を削除する。`scripts/checks/typecheck.test.ts` の同じ名前のテストが、同じ文面と exit を確かめている。
+   - `it('scopes.json が JSON でない → exit 1 と理由の行')` を削除する。統合先は `scripts/checks/typecheck.test.ts` の同じ名前のテストであり、同じ文面と exit を確かめる。
+   - 未使用になった `INVALID_LIST_LINE` の import と、先頭コメントの「理由行は `test/scripts.fixture.ts` から取る」の記述を直す。
+3. `scripts/checks/typecheck.test.ts` は変えない。統合先としてそのまま残す。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related scripts/product-ready/targets.test.ts scripts/checks/typecheck-staged.test.ts`
+  - `pnpm test:related scripts/product-ready/targets.test.ts scripts/checks/typecheck-staged.test.ts scripts/checks/typecheck.test.ts`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `! grep -n '無い root → 投げる\|表に無い at → 投げる' scripts/product-ready/targets.test.ts`
-  - `! grep -n 'scopes.json が JSON でない' scripts/checks/typecheck-staged.test.ts`
-  - `grep -c 'scopes.json が JSON でない' scripts/checks/typecheck.test.ts` が 1 である
+  - `! grep -E '無い root → 投げる|表に無い at → 投げる' scripts/product-ready/targets.test.ts`
+  - `! grep -E 'scopes.json が JSON でない' scripts/checks/typecheck-staged.test.ts`
+  - `test "$(grep -c 'scopes.json が JSON でない' scripts/checks/typecheck.test.ts)" = 1`
 - Added: なし
 
 ## 2.skills の統合
@@ -57,12 +59,22 @@ scripts/
 ### Steps
 
 1. `.pi/skills/adr/scripts/scaffold.test.ts`:
-   - `it('## 01: を持つ markdown → 1 を返す')` と `it('## 02: を持つ markdown → 2 を返す')` を1本に統合する。統合したテストは、`## NN:` を持つ markdown から、その最大値を返すことを2つの入力で確かめる。
-   - `it('## 01: を持つ markdown → ## 02: を足し # ADR は1つのまま')` と `it('## 02: を持つ markdown → ## 03: を足す')` を1本に統合する。統合したテストは、次の番号のエントリーを足し、`# ADR` が1つのままであることを2つの入力で確かめる。
-   - `it('空 tmp に作る → path が返り dir ができる')` と `it('既存 dir には作らず投げる')` を1本に統合する。統合したテストは、空の tmp に作り、既存の dir には作らず投げることを確かめる。
-   - `it('両ルートの dir 名を集める（`archive` も入る）')` と `it('無いルートは空として扱う')` を1本に統合する。統合したテストは、両ルートの dir 名を集め、無いルートは空として扱うことを確かめる。
+   - (happy) `## 01:` を持つ markdown → 1 を返す。
+   - (happy) `## 02:` を持つ markdown → 2 を返す。
+   - 上の2本を、`it('## NN: を持つ markdown から、その最大値を返す')` の1本に統合する。
+   - (happy) `## 01:` を持つ markdown に `## 02:` を足し、`# ADR` は1つのまま。
+   - (happy) `## 02:` を持つ markdown に `## 03:` を足す。
+   - 上の2本を、`it('次の番号のエントリーを足し、# ADR は1つのまま')` の1本に統合する。
+   - (happy) 空の tmp に作る → path が返り、dir ができる。
+   - (error) 既存の dir には作らず投げる。
+   - 上の2本を、`it('空の tmp に作り、既存の dir には作らず投げる')` の1本に統合する。
+   - (happy) 両ルートの dir 名を集める（`archive` も入る）。
+   - (empty) 無いルートは空として扱う。
+   - 上の2本を、`it('両ルートの dir 名を集め、無いルートは空として扱う')` の1本に統合する。
 2. `.pi/skills/close/scripts/collect.test.ts`:
-   - `it('`ex-` planは`- No:`が無くてもTriage行の`ADR <NN>`を読む')` と `it('Triage行が無い`ex-` planはnull（`未特定`）')` を1本に統合する。統合したテストは、`ex-` plan が Triage 行の `ADR <NN>` を読み、行が無ければ null になることを確かめる。
+   - (happy) `ex-` plan は Triage 行の `ADR <NN>` を読む。
+   - (empty) Triage 行が無い `ex-` plan は null（`未特定`）になる。
+   - 上の2本を、`it('`ex-`plan は Triage 行の`ADR <NN>` を読み、行が無ければ null になる')` の1本に統合する。
 
 ### Verify
 
@@ -71,14 +83,17 @@ scripts/
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -c '## 01: を持つ markdown → 1 を返す\|## 02: を持つ markdown → 2 を返す' .pi/skills/adr/scripts/scaffold.test.ts` が 0 である
-  - `grep -c '## NN: を持つ markdown から、その最大値を返す' .pi/skills/adr/scripts/scaffold.test.ts` が 1 である
-  - `grep -c '## 01: を持つ markdown → ## 02: を足し\|## 02: を持つ markdown → ## 03: を足す' .pi/skills/adr/scripts/scaffold.test.ts` が 0 である
-  - `grep -c '次の番号のエントリーを足し' .pi/skills/adr/scripts/scaffold.test.ts` が 1 である
-  - `grep -c '空 tmp に作る → path が返り\|既存 dir には作らず投げる' .pi/skills/adr/scripts/scaffold.test.ts` が 0 である
-  - `grep -c '両ルートの dir 名を集める（`archive` も入る）\|無いルートは空として扱う' .pi/skills/adr/scripts/scaffold.test.ts` が 0 である
-  - `grep -c '`ex-` planは`- No:`が無くても\|Triage行が無い`ex-` plan' .pi/skills/close/scripts/collect.test.ts` が 0 である
-- Added: なし
+  - `! grep -E '## 01: を持つ markdown → 1 を返す|## 02: を持つ markdown → 2 を返す' .pi/skills/adr/scripts/scaffold.test.ts`
+  - `test "$(grep -c '## NN: を持つ markdown から、その最大値を返す' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
+  - `! grep -E '## 01: を持つ markdown → ## 02: を足し|## 02: を持つ markdown → ## 03: を足す' .pi/skills/adr/scripts/scaffold.test.ts`
+  - `test "$(grep -c '次の番号のエントリーを足し' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
+  - `! grep -E '空 tmp に作る → path が返り|既存 dir には作らず投げる' .pi/skills/adr/scripts/scaffold.test.ts`
+  - `test "$(grep -c '空の tmp に作り、既存の dir には作らず投げる' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
+  - `! grep -E '両ルートの dir 名を集める（`archive` も入る）|無いルートは空として扱う' .pi/skills/adr/scripts/scaffold.test.ts`
+  - `test "$(grep -c '両ルートの dir 名を集め、無いルートは空として扱う' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
+  - `! grep -E '`ex-` planは`- No:`が無くても|Triage行が無い`ex-` plan' .pi/skills/close/scripts/collect.test.ts`
+  - `test "$(grep -c '`ex-`plan は Triage 行の`ADR <NN>` を読み' .pi/skills/close/scripts/collect.test.ts)" = 1`
+- Added: other — `pnpm test:run scripts .pi/skills` で件数を数え、144 から減った件数を ## Notes に書く
 
 ## Notes
 

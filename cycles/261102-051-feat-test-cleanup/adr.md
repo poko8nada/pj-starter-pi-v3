@@ -348,7 +348,7 @@
 - `.pi/skills/close/scripts/collect.test.ts:34` と `:38` は、`ex-` の同じ分岐の両側を確かめる（実測）。
 - `scripts/product-ready/targets.test.ts:58`（root がない）と `:127`（表にない at）が確かめる分岐は、CLI から届かない。`root` の値は `process.cwd()` から来て、`at` の値は固定の一覧から来る（実測）。
 - `scripts/harness/diff/index.test.ts` の4件は、4通りの分岐を確かめる（実測）。`scripts/harness/index.test.ts` の pull と push の `--run` は、対称な分岐を確かめる（実測）。
-- テスト名が途中で切れていた3件（`plan(root, 'cycles')`、`plan(root, 'harness')`、`plan(root, 'replace')`）の正式な名前を確認した（実測）。
+- テスト名は途中で切れていない（`grep` が複数行の `it(` を取りこぼしていた。実測）。
 
 ### Decision
 

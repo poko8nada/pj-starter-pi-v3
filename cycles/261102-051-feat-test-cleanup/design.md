@@ -243,7 +243,7 @@
 - `settings/read.test.ts:24` と `settings/schema.test.ts:47` が1本に統合されている。
 - `prepare/prepare.test.ts:30` と `:41` が1本に統合されている。
 - `command/precompact.test.ts:60` と `ui/status.test.ts` の `statusLine` の組が1本に統合されている。
-- `gate/gate.test.ts:26` と `index.test.ts:257`、`:30` と `:269` の2組が、`gate` の側を削除して `index` の側に1本化されている。
+- `gate/gate.test.ts:30` と `index.test.ts:269` の組が、`gate` の側を削除して `index` の側に1本化されている。`:26` は、ちょうどしきい値で prepared でない境界を確かめる唯一のテストのため残す。
 - `index.test.ts:578` は分割されていない（2つの振る舞いを1本で持つ）。
 - 統合したテストが、残す振る舞いを表す名前を持つ（`grep` で旧名が消え、新名が1つある）。
 - 統合したテストのケースが、`## Test cases` の形に合っている（レビューが読む）。
@@ -392,7 +392,6 @@
 - `scaffold.test.ts` の4組（`lastEntryNumber` の `:208`/`:213`、`appendEntry` の `:232`/`:242`、`createLeafDir` の `:112`/`:122`、`dirNames` の `:132`/`:144`）が1本ずつに統合されている。
 - `scripts/checks/typecheck.test.ts:143` と `typecheck-staged.test.ts:128` が1本に統合されている。
 - `.pi/skills/close/scripts/collect.test.ts:34` と `:38` が1本に統合されている。
-- テスト名が途中で切れていた3件（`plan(root, 'cycles')`、`plan(root, 'harness')`、`plan(root, 'replace')`）の名前が、正式な名前になっている（`grep` で `plan(root, ` で切れた名前が見つからない）。
 - 統合したテストが、残す振る舞いを表す名前を持つ（`grep` で旧名が消え、新名が1つある）。
 - 統合したテストのケースが、`## Test cases` の形に合っている（レビューが読む）。
 - 削除と統合で意味が通らなくなる説明が直っている（`grep` で古い名前が見つからない）。

@@ -14,6 +14,7 @@
     index.test.ts      update
     settings/
       schema.test.ts   update
+      read.test.ts
 ```
 
 ## Slices
@@ -27,15 +28,32 @@
 ### Steps
 
 1. `.pi/extensions/quality-gate/report.test.ts`:
-   - `it('失敗したチェックの label と試行回数が 1 行目に出る')`、`it('失敗が複数あれば 1 行目にその label が全部並ぶ')`、`it('成功したチェックの label は 1 行目に出ない')` を1本に統合する。統合したテストは、失敗した `label` だけが1行目に並ぶことを確かめる。
-   - `it('成功したチェックは空でない output を渡してもその節に output は出ない')` と `it('失敗したチェックの節にその output が出る')` を1本に統合する。統合したテストは、失敗したチェックの節にだけ `output` が出ることを確かめる。
-   - `it('変更したファイルがなければ「(none)」と出す')` と `it('変更したファイルがあれば `(none)` は出さない')` を1本に統合する。統合したテストは、変更したファイルの有無で `(none)` を出すか決めることを確かめる。
-   - `it('上限を超える出力は切り詰めて除外した行数を告げる')` と `it('上限以内の出力はそのまま出す（切り詰めの記号を付けない）')` を1本に統合する。統合したテストは、上限を超えるときだけ切り詰めて除外した行数を告げることを確かめる。
+   - (happy) 失敗したチェックの `label` と試行回数（`attempt/maxAttempts`）が1行目に出る。
+   - (happy) 失敗が複数あれば、その `label` が全部1行目に並ぶ。
+   - (error) 成功したチェックの `label` は1行目に出ない。
+   - 上の3本を、`it('失敗したチェックの label と試行回数だけが 1 行目に出る')` の1本に統合する。
+   - (happy) 失敗したチェックの節に `output` が出る。
+   - (empty) 成功したチェックの節には `output` が出ない。
+   - 上の2本を、`it('失敗したチェックの節にだけ output が出る')` の1本に統合する。
+   - (empty) 変更したファイルがなければ `(none)` と出す。
+   - (happy) 変更したファイルがあれば `(none)` は出さない。
+   - 上の2本を、`it('変更したファイルの有無で (none) を出すか決める')` の1本に統合する。
+   - (boundary) 上限を超える出力は切り詰めて、除外した行数を告げる。
+   - (boundary) 上限以内の出力はそのまま出す。
+   - 上の2本を、`it('上限を超えるときだけ切り詰めて、除外した行数を告げる')` の1本に統合する。
+   - ダミーは `report()` のファクトリから取り、リテラルの直書きを減らす。
 2. `.pi/extensions/quality-gate/checks.test.ts`:
-   - `it('cwd からの相対を返すことを確かめる')` と `it('空になる場合（path が cwd 自身）は元のパスを返す')` を1本に統合する。統合したテストは、`cwd` からの相対を返し、空なら元のパスを返すことを確かめる。
-   - `it('.gitignore 対象はチェックに含めず skipped に入れる')` と `it('git check-ignore が 0 以外でも無視されたパスの出力があれば除外しない')` を1本に統合する。統合したテストは、`.gitignore` の対象だけを `skipped` に入れ、`git check-ignore` が 0 以外でも出力があれば除外しないことを確かめる。
+   - (happy) `cwd` からの相対を返す。
+   - (empty) 空になる場合（`path` が `cwd` 自身）は元のパスを返す。
+   - 上の2本を、`it('cwd からの相対を返し、空なら元のパスを返す')` の1本に統合する。
+   - (boundary) `.gitignore` 対象は `skipped` に入れる。
+   - (boundary) `git check-ignore` が 0 以外でも、出力があれば除外しない。
+   - 上の2本を、`it('.gitignore の対象だけを skipped に入れ、check-ignore が 0 以外でも出力があれば除外しない')` の1本に統合する。
 3. `.pi/extensions/quality-gate/targets.test.ts`:
-   - `it('新しく現れたパスを返すことを確かめる')`、`it('すでに変更済みのファイルの再編集を検出する（状態を示す文字では分からない）')`、`it('変わらなければ空配列になる')` を1本に統合する。統合したテストは、新しく現れたパスと再編集されたパスだけを返し、変わらなければ空になることを確かめる。
+   - (happy) 新しく現れたパスを返す。
+   - (boundary) すでに変更済みのファイルの再編集を検出する。
+   - (empty) 変わらなければ空配列になる。
+   - 上の3本を、`it('新しく現れたパスと、再編集されたパスだけを返し、変わらなければ空になる')` の1本に統合する。
 
 ### Verify
 
@@ -44,10 +62,20 @@
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep -c '失敗したチェックの label と試行回数\|失敗が複数あれば\|成功したチェックの label は 1 行目に出ない' .pi/extensions/quality-gate/report.test.ts` が 0 である
-  - `grep -c '失敗したチェックの label だけが 1 行目に並び' .pi/extensions/quality-gate/report.test.ts` が 1 である
-  - `grep -c '新しく現れたパスを返すことを確かめる\|すでに変更済みのファイルの再編集を検出する\|変わらなければ空配列になる' .pi/extensions/quality-gate/targets.test.ts` が 0 である
-  - `grep -c '新しく現れたパスと、再編集されたパスだけを返し' .pi/extensions/quality-gate/targets.test.ts` が 1 である
+  - `! grep -E '失敗したチェックの label と試行回数が 1 行目に出る|失敗が複数あれば 1 行目にその label が全部並ぶ|成功したチェックの label は 1 行目に出ない' .pi/extensions/quality-gate/report.test.ts`
+  - `test "$(grep -c '失敗したチェックの label と試行回数だけが 1 行目に出る' .pi/extensions/quality-gate/report.test.ts)" = 1`
+  - `! grep -E '成功したチェックは空でない output|失敗したチェックの節にその output が出る' .pi/extensions/quality-gate/report.test.ts`
+  - `test "$(grep -c '失敗したチェックの節にだけ output が出る' .pi/extensions/quality-gate/report.test.ts)" = 1`
+  - `! grep -E '変更したファイルがなければ「\(none\)」と出す|変更したファイルがあれば `\(none\)` は出さない' .pi/extensions/quality-gate/report.test.ts`
+  - `test "$(grep -c '変更したファイルの有無で (none) を出すか決める' .pi/extensions/quality-gate/report.test.ts)" = 1`
+  - `! grep -E '上限を超える出力は切り詰めて除外した行数を告げる|上限以内の出力はそのまま出す' .pi/extensions/quality-gate/report.test.ts`
+  - `test "$(grep -c '上限を超えるときだけ切り詰めて、除外した行数を告げる' .pi/extensions/quality-gate/report.test.ts)" = 1`
+  - `! grep -E 'cwd からの相対を返すことを確かめる|空になる場合（path が cwd 自身）は元のパスを返す' .pi/extensions/quality-gate/checks.test.ts`
+  - `test "$(grep -c 'cwd からの相対を返し、空なら元のパスを返す' .pi/extensions/quality-gate/checks.test.ts)" = 1`
+  - `! grep -E '.gitignore 対象はチェックに含めず|git check-ignore が 0 以外でも' .pi/extensions/quality-gate/checks.test.ts`
+  - `test "$(grep -c '.gitignore の対象だけを skipped に入れ' .pi/extensions/quality-gate/checks.test.ts)" = 1`
+  - `! grep -E '新しく現れたパスを返すことを確かめる|すでに変更済みのファイルの再編集を検出する|変わらなければ空配列になる' .pi/extensions/quality-gate/targets.test.ts`
+  - `test "$(grep -c '新しく現れたパスと、再編集されたパスだけを返し、変わらなければ空になる' .pi/extensions/quality-gate/targets.test.ts)" = 1`
 - Added: なし
 
 ## 2.sound-notify の削除と統合
@@ -60,23 +88,31 @@
 
 1. `.pi/extensions/sound-notify/index.test.ts`:
    - `it('defaultSettings() の 5 つの sounds をハンドラが鳴らすことを確かめる')` を削除する。合図ごとのテストが同じ分岐を確かめている。
-   - `it('hasUI が false なら commit でも compact でも鳴らない')` を削除する。端末のない環境では、壊れても誰も気づかない。
-   - `it('非既定の設定ファイルならその音で鳴る（起動時に読む）')` を削除する。`settings/read.test.ts` の `it('正常な設定ファイルがあれば ok を返す')` が同じ分岐を確かめている。
-   - `it('壊れた設定ファイルなら既定で動き余計な通知をしない')` を削除する。`settings/read.test.ts` の `it('壊れた設定ファイルの JSON なら broken を返す')` が同じ分岐を確かめている。
+   - `it('hasUI が false なら commit でも compact でも鳴らない')` は残す。`index.ts:88` の `!ctx.hasUI` を確かめる唯一のテストである。
+   - `it('非既定の設定ファイルならその音で鳴る（起動時に読む）')` を削除する。統合先は `settings/read.test.ts` の `it('正常な設定ファイルがあれば ok を返す')` である。
+   - `it('壊れた設定ファイルなら既定で動き余計な通知をしない')` を削除する。統合先は `settings/read.test.ts` の `it('壊れた設定ファイルの JSON なら broken を返す')` である。
 2. `.pi/extensions/sound-notify/settings/schema.test.ts`:
    - `it('../settings.json の既定値は defaultSettings() と一致する')` を削除する。実ファイルとコードの既定値の一致は、テストではなく、`settings.json` を読む起動時の経路で保つ。
-   - `it('broken なら defaultSettings() を返す')` と `it('ok ならその設定をそのまま返す')` を1本に統合する。統合したテストは、`broken` なら `defaultSettings()` を返し、`ok` ならその設定をそのまま返すことを確かめる。
+   - (error) `broken` なら `defaultSettings()` を返す。
+   - (happy) `ok` ならその設定をそのまま返す。
+   - 上の2本を、`it('broken なら defaultSettings() を返し、ok ならその設定をそのまま返す')` の1本に統合する。
+3. `.pi/extensions/sound-notify/settings/read.test.ts` は変えない。統合先としてそのまま残す。
 
 ### Verify
 
 - Always:
-  - `pnpm test:related .pi/extensions/sound-notify/index.test.ts .pi/extensions/sound-notify/settings/schema.test.ts`
+  - `pnpm test:related .pi/extensions/sound-notify/index.test.ts .pi/extensions/sound-notify/settings/schema.test.ts .pi/extensions/sound-notify/settings/read.test.ts`
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `! grep -n '5 つの sounds をハンドラが鳴らす\|hasUI が false なら\|非既定の設定ファイルなら\|壊れた設定ファイルなら既定で動き\|../settings.json の既定値' .pi/extensions/sound-notify/index.test.ts .pi/extensions/sound-notify/settings/schema.test.ts`
-  - `grep -c 'broken なら defaultSettings() を返し、ok ならその設定をそのまま返す' .pi/extensions/sound-notify/settings/schema.test.ts` が 1 である
-- Added: other — 使い捨てのテストを `test/tmp-settings-consistency.test.ts` に置き、`.pi/extensions/sound-notify/settings.json` を `readSettings` で読み、`defaultSettings()` と一致することを確かめてから削除する（`pnpm exec vitest run --config vitest.starter.config.ts test/tmp-settings-consistency.test.ts`）。CI では見張らない。
+  - `! grep -E '5 つの sounds をハンドラが鳴らす|非既定の設定ファイルなら|壊れた設定ファイルなら既定で動き|../settings.json の既定値' .pi/extensions/sound-notify/index.test.ts .pi/extensions/sound-notify/settings/schema.test.ts`
+  - `test "$(grep -c 'hasUI が false なら' .pi/extensions/sound-notify/index.test.ts)" = 1`
+  - `! grep -E 'broken なら defaultSettings\(\) を返す|ok ならその設定をそのまま返す' .pi/extensions/sound-notify/settings/schema.test.ts`
+  - `test "$(grep -c 'broken なら defaultSettings() を返し、ok ならその設定をそのまま返す' .pi/extensions/sound-notify/settings/schema.test.ts)" = 1`
+  - `test "$(grep -c '正常な設定ファイルがあれば ok を返す' .pi/extensions/sound-notify/settings/read.test.ts)" = 1`
+  - `test "$(grep -c '壊れた設定ファイルの JSON なら broken を返す' .pi/extensions/sound-notify/settings/read.test.ts)" = 1`
+- Added: other — 使い捨てのテスト `test/tmp-settings-consistency.test.ts` を次の内容で作り、`pnpm exec vitest run --config vitest.starter.config.ts test/tmp-settings-consistency.test.ts` で走らせ、`rm` で削除する。内容は `readSettings` で `.pi/extensions/sound-notify/settings.json` を読み、`defaultSettings()` と一致することを確かめるものである。CI では見張らない。
+- Added: other — `pnpm test:run .pi/extensions/quality-gate .pi/extensions/sound-notify` で件数を数え、68 から減った件数を ## Notes に書く
 
 ## Notes
 
