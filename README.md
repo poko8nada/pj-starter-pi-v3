@@ -74,7 +74,7 @@ The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/
 
 ## Contributing
 
-`lefthook` gates every commit and push. On commit it runs format, lint, `typecheck:staged` and `test:related` on what changed; on push it runs typecheck (the root and the harness) and test.
+`lefthook` gates every commit and push. On commit it runs format, lint, `typecheck:staged`, `test:related` and `ja-check` on what changed; on push it runs typecheck (the root and the harness) and test. `ja-check`'s banned words live in `scripts/checks/ja-check.json` (`error` and `warn`).
 
 Before committing, keep these green:
 

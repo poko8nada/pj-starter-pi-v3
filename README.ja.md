@@ -41,9 +41,10 @@ pnpm install
 | `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
 | `pnpm format` / `pnpm format:check` | 整形する / 確かめる                 |
 
-- **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related`
+- **commit 時** — 変えた分に format / lint / `typecheck:staged` / `test:related` / `ja-check`
+- **日本語の禁止語** — `ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` で変える
 - **push 時** — typecheck（ルートとハーネス）/ test
-- **エージェントのターンごと** — そのターンで変えたものがあるときだけである。修正の段は `lint:fix` → `format`、検証の段は `lint` → `typecheck:staged` を、変えたものに適用する。
+- **エージェントのターンごと** — そのターンで変えたものがあるときだけである。修正のステージは `lint:fix` → `format`、検証のステージは `lint` → `typecheck:staged` を、変えたものに適用する。
 - **ハーネスのテスト** — starter config で回り（`pnpm test:run` は `vitest.starter.config.ts` を使う）、product config（`vitest.config.ts` がハーネスのパスを外す）では外れる
 
 ## ハーネス
@@ -57,7 +58,7 @@ pnpm install
 
 ## サイクル
 
-1 サイクル = ADR → 設計 → プラン → その実行 → 閉じる。各段はスキルが担う。**次の段を呼ぶのはスキルの `description`** で、前の段が次の段を呼ぶことはない。次の段は `description` で見つかる。
+1 サイクル = ADR → 設計 → プラン → その実行 → 閉じる。各ステージはスキルが担う。**次のステージを呼ぶのはスキルの `description`** で、前のステージが次のステージを呼ぶことはない。次のステージは `description` で見つかる。
 
 ```
 adr          オーナーがサイクルを始めるときや定義・サイクルへの指摘を上げたとき、意図・ロードマップの項目・エントリーを詰め、`cycles/<YYMMDD>-<NNN>-<slug>/adr.md` を書き、サイクルが `DEFINITION.md` に何をするかのオーナーの決定を残す
@@ -65,16 +66,16 @@ design       サイクルのエントリーが決まり作業の切り分けが�
 plan         設計が合意されそのプランの1つを作業にするとき — 切り分けが定まりプランをサブエージェントに渡せる状態になった後、`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` を書く。ファイル・スライス・型・手順・検証を持つ
 work         プランが合意されその作業を実行するとき — プランの md が書かれオーナーが読んだ後、スライス・レビュー・受け入れ・マージを走らせ、記録をプランの md に残す
 close        サイクルのすべてのプランが終わったとき（完了またはオーナーが落とした）、プランが残したものを集め、オーナーとトリアージし、Unit ごとに関数を確認するかをオーナーに聞く
-yolo         オーナーが確認なしでサイクルを通すよう指示したとき、ADR のすべてのエントリーが受け入れられた後いつでも、立っている場所からサイクルの段をオーナーの確認なしに歩き、close のトリアージで止まり、`Added` のオーナー確認を通過させる
+yolo         オーナーが確認なしでサイクルを通すよう指示したとき、ADR のすべてのエントリーが受け入れられた後いつでも、立っている場所からサイクルのステージをオーナーの確認なしに歩き、close のトリアージで止まり、`Added` のオーナー確認を通過させる
 ```
 
 記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。状態は git が持つ。ADR の `Status` は決定の状態で、plan の `Commit` / `Stopped` は作業の記録であり、サイクルの状態欄ではない。
 
-製品を持つのは `DEFINITION.md` である。その裏の議論を持つのは ADR で、ADR はどの段からでも開ける。サイクルは `adr` から始まり、owner が点を上げたときはどの段からでも ADR の entry を追加できる。変更はどのサイクルでも ADR の entry を開き、その entry が `DEFINITION.md` のどの部分に関わるかと、それぞれが変わるかそのままかを書く。
+製品を持つのは `DEFINITION.md` である。その裏の議論を持つのは ADR で、ADR はどのステージからでも開ける。サイクルは `adr` から始まり、owner が点を上げたときはどのステージからでも ADR の entry を追加できる。変更はどのサイクルでも ADR の entry を開き、その entry が `DEFINITION.md` のどの部分に関わるかと、それぞれが変わるかそのままかを書く。
 
 ## コントリビュート
 
-commit と push は `lefthook` が検査する。commit 時は変えた分に format・lint・`typecheck:staged`・`test:related`、push 時は typecheck（ルートとハーネス）と test が走る。
+commit と push は `lefthook` が検査する。commit 時は変えた分に format・lint・`typecheck:staged`・`test:related`・`ja-check`、push 時は typecheck（ルートとハーネス）と test が走る。`ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` で変える。
 
 commit の前に、次を通しておく:
 
