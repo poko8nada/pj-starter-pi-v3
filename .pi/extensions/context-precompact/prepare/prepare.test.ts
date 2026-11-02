@@ -59,7 +59,7 @@ describe('prepare', () => {
     expect(prepare(input)?.compaction.fileOps.read.size).toBe(0);
   });
 
-  it('enabled が false なら undefined になる', () => {
+  it('いずれかが無効なら undefined になる', () => {
     const session = createSessionFixture();
     const settings = {
       ...defaultSettings(),
@@ -67,10 +67,8 @@ describe('prepare', () => {
       enabled: false,
     };
     expect(prepare(makeInput(session, { settings }))).toBeUndefined();
-  });
 
-  it('piEnabled が false なら undefined になる', () => {
-    const session = createSessionFixture();
-    expect(prepare(makeInput(session, { piEnabled: false }))).toBeUndefined();
+    const piSession = createSessionFixture();
+    expect(prepare(makeInput(piSession, { piEnabled: false }))).toBeUndefined();
   });
 });

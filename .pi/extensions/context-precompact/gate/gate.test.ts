@@ -40,19 +40,13 @@ describe('gate', () => {
     expect(gate(makeInput({ tokens }))).toEqual({ kind: 'wait', reason: 'below-lead' });
   });
 
-  it('enabled が false なら skip の disabled になる', () => {
+  it('いずれかが無効なら skip の disabled になる', () => {
     expect(gate(makeInput({ enabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
-  });
-
-  it('piEnabled が false なら skip の disabled になる', () => {
     expect(gate(makeInput({ piEnabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
   });
 
-  it('tokens が null なら skip の unknown になる', () => {
+  it('tokens が不明か contextWindow が 0 なら skip の unknown になる', () => {
     expect(gate(makeInput({ tokens: null }))).toEqual({ kind: 'skip', reason: 'unknown' });
-  });
-
-  it('contextWindow が 0 で tokens が null でなければ skip の unknown になる', () => {
     expect(gate(makeInput({ contextWindow: 0, tokens: THRESHOLD_RATIO * CONTEXT_WINDOW }))).toEqual(
       {
         kind: 'skip',

@@ -136,36 +136,37 @@
 
 ### Slice 1: settings の削除と統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: adba68d
 - Stopped:
 
 ### Slice 2: prepare の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 71b21ff
 - Stopped:
 
 ### Slice 3: command の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 18ce9eb
 - Stopped:
 
 ### Slice 4: gate と index の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 819d347
+- Tests: 97件（106から9減）
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: 無効・不明の早期リターンの統合
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: 同じ早期リターンの両側を確かめる3組を1本ずつに統合した（prepare の enabled と piEnabled、gate の enabled と piEnabled、gate の tokens null と contextWindow 0）。94件（97から3減）で緑。
 
 ## Work Review
 
