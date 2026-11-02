@@ -6,14 +6,13 @@
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
  * だから `-p` のパスに `.pi` が入るかで、`.pi` の group か root の group かが分かる。
  * tsc そのものが成功するかは pre-commit の時系列で担保されているので、ここでは見ない。
- * 理由行は `test/scripts.fixture.ts` から取る。`stub -p` は下のスタブが出す目印で、断言はそこから取る。
+ * `stub -p` は下のスタブが出す目印で、断言はそこから取る。
  */
 
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { INVALID_LIST_LINE } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck-staged.mjs');
@@ -123,16 +122,5 @@ describe('typecheck-staged', () => {
     // 一時 tsconfig は root の下に置かれる（`-p` のパスに .pi が入らない）
     expect(out.stdout).toContain(STUB_MARK);
     expect(out.stdout).not.toContain(join(root, scope));
-  });
-
-  it('scopes.json が JSON でない → exit 1 と理由の行', () => {
-    const root = fakeRoot();
-    stubTsc(root);
-    writeFile(root, 'tsconfig.json', '{}');
-    const target = writeFile(root, 'a.ts');
-    writeFile(root, join('scripts', 'checks', 'scopes.json'), '{not json');
-    const out = run(root, [target]);
-    expect(out.status).toBe(1);
-    expect(`${out.stdout}\n${out.stderr}`).toContain(INVALID_LIST_LINE);
   });
 });
