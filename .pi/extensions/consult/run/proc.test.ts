@@ -53,32 +53,6 @@ describe('checkPid', () => {
     expect(checkPid(123, START, run)).toBe('ended');
   });
 
-  it('ps に渡る引数 → -p、<pid>、-o、lstart= を含み、-ww を含まない', () => {
-    const seen: string[][] = [];
-    const run: PsRun = (args) => {
-      seen.push([...args]);
-      return { status: 1, stdout: '', stderr: '' };
-    };
-    expect(checkPid(123, START, run)).toBe('ended');
-    expect(seen[0]).toContain('-p');
-    expect(seen[0]).toContain('123');
-    expect(seen[0]).toContain('-o');
-    expect(seen[0]).toContain('lstart=');
-    expect(seen[0]).not.toContain('-ww');
-  });
-
-  it('0 以下・非整数の pid → ended（ps を叩かない）', () => {
-    let called = 0;
-    const run: PsRun = () => {
-      called += 1;
-      return { status: 0, stdout: '', stderr: '' };
-    };
-    expect(checkPid(0, START, run)).toBe('ended');
-    expect(checkPid(-5, START, run)).toBe('ended');
-    expect(checkPid(3.5, START, run)).toBe('ended');
-    expect(called).toBe(0);
-  });
-
   it('status 2 → unknown', () => {
     const run = ps({ status: 2, stdout: '', stderr: '' });
     expect(checkPid(123, START, run)).toBe('unknown');
@@ -120,33 +94,44 @@ describe('readStartToken', () => {
     expect(readStartToken(123, run)).toBeUndefined();
   });
 
-  it('ps に渡る引数 → -p、<pid>、-o、lstart= を含む', () => {
+  it('status 0 で出力が空・空白だけ → undefined', () => {
+    expect(readStartToken(123, ps({ status: 0, stdout: '', stderr: '' }))).toBeUndefined();
+    expect(readStartToken(123, ps({ status: 0, stdout: '   \n  ', stderr: '' }))).toBeUndefined();
+  });
+});
+
+describe('ps の引数', () => {
+  it('checkPid と readStartToken は同じ引数で ps を叩き、-ww を付けない', () => {
+    const pid = 123;
     const seen: string[][] = [];
     const run: PsRun = (args) => {
       seen.push([...args]);
       return { status: 0, stdout: `${START}\n`, stderr: '' };
     };
-    expect(readStartToken(123, run)).toBe(START);
-    expect(seen[0]).toContain('-p');
-    expect(seen[0]).toContain('123');
-    expect(seen[0]).toContain('-o');
-    expect(seen[0]).toContain('lstart=');
+    expect(checkPid(pid, START, run)).toBe('running');
+    expect(readStartToken(pid, run)).toBe(START);
+    expect(seen).toHaveLength(2);
+    for (const args of seen) {
+      expect(args).toContain('-p');
+      expect(args).toContain(String(pid));
+      expect(args).toContain('-o');
+      expect(args).toContain('lstart=');
+      expect(args).not.toContain('-ww');
+    }
   });
 
-  it('0 以下・非整数の pid → undefined（ps を叩かない）', () => {
+  it('0 以下・非整数の pid → ps を叩かず、checkPid は ended、readStartToken は undefined', () => {
     let called = 0;
     const run: PsRun = () => {
       called += 1;
       return { status: 0, stdout: `${START}\n`, stderr: '' };
     };
+    expect(checkPid(0, START, run)).toBe('ended');
+    expect(checkPid(-5, START, run)).toBe('ended');
+    expect(checkPid(3.5, START, run)).toBe('ended');
     expect(readStartToken(0, run)).toBeUndefined();
     expect(readStartToken(-5, run)).toBeUndefined();
     expect(readStartToken(3.5, run)).toBeUndefined();
     expect(called).toBe(0);
-  });
-
-  it('status 0 で出力が空・空白だけ → undefined', () => {
-    expect(readStartToken(123, ps({ status: 0, stdout: '', stderr: '' }))).toBeUndefined();
-    expect(readStartToken(123, ps({ status: 0, stdout: '   \n  ', stderr: '' }))).toBeUndefined();
   });
 });
