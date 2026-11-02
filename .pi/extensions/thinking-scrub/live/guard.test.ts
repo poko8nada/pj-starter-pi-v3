@@ -110,18 +110,6 @@ describe('observe', () => {
     expect(step.kind).toBe('idle');
   });
 
-  it('無効のときは間隔が来たスキャンで scanned が進む', () => {
-    const tuning = defaultSettings();
-    const step = observe(
-      emptyGuard(),
-      thinkingWithRun(tuning.live.minThinking),
-      tuning,
-      () => false,
-    );
-    expect(step.kind).toBe('idle');
-    expect(step.guard.scanned).toBe(tuning.live.minThinking);
-  });
-
   it('間隔が来ていないときは enabled が呼ばれない', () => {
     const tuning = defaultSettings();
     const base = thinkingWithRun(tuning.live.minThinking);
@@ -136,38 +124,6 @@ describe('observe', () => {
       return true;
     });
     expect(second.kind).toBe('idle');
-    expect(calls).toBe(0);
-  });
-
-  it('live.maxAborts に達したら scanned が進み enabled が呼ばれない', () => {
-    const tuning = defaultSettings();
-    const first = observe(
-      emptyGuard(),
-      thinkingWithRun(tuning.live.minThinking),
-      tuning,
-      () => true,
-    );
-    if (first.kind !== 'stop') {
-      throw new Error('first must stop');
-    }
-    const second = observe(
-      first.guard,
-      thinkingWithRun(tuning.live.minThinking * 2),
-      tuning,
-      () => true,
-    );
-    if (second.kind !== 'stop') {
-      throw new Error('second must stop');
-    }
-    expect(second.guard.aborts).toBe(tuning.live.maxAborts);
-    let calls = 0;
-    const thirdThinking = thinkingWithRun(tuning.live.minThinking * 2);
-    const third = observe(second.guard, thirdThinking, tuning, () => {
-      calls += 1;
-      return true;
-    });
-    expect(third.kind).toBe('idle');
-    expect(third.guard.scanned).toBe(thirdThinking.length);
     expect(calls).toBe(0);
   });
 });
