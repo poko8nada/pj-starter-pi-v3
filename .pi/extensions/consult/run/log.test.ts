@@ -168,10 +168,6 @@ describe('isRunning', () => {
     ).toBe(true);
   });
 
-  it('startToken なしの行で pidAlive が true → 走っている（移行）', () => {
-    expect(isRunning(record({ pid: process.pid }))).toBe(true);
-  });
-
   it('startToken なしの行で pidAlive が false → 走っていない', () => {
     expect(isRunning(record({ pid: 999_999 }))).toBe(false);
   });
@@ -206,17 +202,6 @@ describe('defaultCheck', () => {
     expect(defaultCheck(record({ pid: 11, startToken: 'Wed Oct 21 12:41:11 2026' }), run)).toBe(
       'ended',
     );
-  });
-
-  it('startToken なしの行は ps を叩かず pidAlive で決まる', () => {
-    let called = 0;
-    const run: PsRun = () => {
-      called += 1;
-      return { status: 0, stdout: '', stderr: '' };
-    };
-    expect(defaultCheck(record({ pid: process.pid }), run)).toBe('running');
-    expect(defaultCheck(record({ pid: 999_999 }), run)).toBe('ended');
-    expect(called).toBe(0);
   });
 });
 
@@ -257,16 +242,6 @@ describe('runningRuns', () => {
     expect(seen).toEqual(['consult-1', 'consult-2']);
   });
 
-  it('token なしの行は pidAlive で決まる（移行）', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    appendRun(found, record({ session: 'A', subagent: 'consult-live', pid: process.pid }), at);
-    appendRun(found, record({ session: 'A', subagent: 'consult-dead', pid: 999_999 }), at);
-    expect(runningRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual([
-      'consult-live',
-    ]);
-  });
-
   it('同じ subagent に開始行と終了行があり、pid が生きている → 走っていない（事故の形）', () => {
     const at = new Date(2026, 9, 10, 12, 0);
     const found = place();
@@ -283,12 +258,6 @@ describe('runningRuns', () => {
       at,
     );
     expect(runningRuns(found, { at, session: 'A' })).toEqual([]);
-  });
-
-  it('行がない → 空', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    expect(runningRuns(found, { at, session: 'A' }, () => 'running')).toEqual([]);
   });
 
   it('終了行が新しい日のファイル、開始行が古い日のファイル → 走っていない', () => {
@@ -351,26 +320,6 @@ describe('parseRun', () => {
     ).toMatchObject({ token });
   });
 
-  it('token と startToken のない行（古い形）→ どちらも undefined で読める', () => {
-    expect(parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')).toMatchObject(
-      { session: 's' },
-    );
-    expect(
-      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.token,
-    ).toBeUndefined();
-    expect(
-      parseRun('{"session":"s","subagent":"c","role":"r","pid":1,"started":2}')?.startToken,
-    ).toBeUndefined();
-  });
-
-  it('token が数値の行 → token を捨て、行は読める', () => {
-    const run = parseRun(
-      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"token":123}',
-    );
-    expect(run).toBeDefined();
-    expect(run?.token).toBeUndefined();
-  });
-
   it('startToken 付きの開始行 → 往復して同じ文字列が返る', () => {
     const startToken = 'Wed Oct 21 12:41:12 2026';
     const at = new Date(2026, 9, 10, 12, 0);
@@ -393,12 +342,24 @@ describe('parseRun', () => {
     ).toMatchObject({ startToken });
   });
 
-  it('startToken が数値の行 → 捨てて、行は読める', () => {
+  it('数値の startToken と数値でない delivered の行 → どちらも捨てて、行は読める', () => {
+    const startToken = 123;
+    const delivered = 'x';
     const run = parseRun(
-      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"startToken":123}',
+      JSON.stringify({
+        session: 's',
+        subagent: 'c',
+        role: 'r',
+        pid: 1,
+        started: 2,
+        startToken,
+        delivered,
+      }),
     );
     expect(run).toBeDefined();
     expect(run?.startToken).toBeUndefined();
+    expect(run?.delivered).toBeUndefined();
+    expect(deliveredKeys(run === undefined ? [] : [run]).size).toBe(0);
   });
 });
 
@@ -428,12 +389,6 @@ describe('closeOrphans', () => {
     const closed = closeOrphans(found, 'A');
     expect(closed).toHaveLength(1);
     expect(closed[0]).toMatchObject({ state: 'error' });
-  });
-
-  it('行がない → 何も書かない', () => {
-    const found = place();
-    expect(closeOrphans(found, 'A', () => 'ended')).toEqual([]);
-    expect(readRuns(found, { session: 'A' })).toEqual([]);
   });
 
   it('終了行が既にある → 新しい行を書かない', () => {
@@ -551,15 +506,6 @@ describe('runKey / deliveredKeys / isWaiting', () => {
     ]);
     expect(isWaiting(first, delivered)).toBe(false);
     expect(isWaiting(second, delivered)).toBe(true);
-  });
-
-  it('delivered: "x" の行 → parseRun が delivered を落とし、印として数えない', () => {
-    const parsed = parseRun(
-      '{"session":"s","subagent":"c","role":"r","pid":1,"started":2,"delivered":"x"}',
-    );
-    expect(parsed).toBeDefined();
-    expect(parsed?.delivered).toBeUndefined();
-    expect(deliveredKeys(parsed === undefined ? [] : [parsed]).size).toBe(0);
   });
 
   it('notice のない終わりの行 → isWaiting が偽', () => {

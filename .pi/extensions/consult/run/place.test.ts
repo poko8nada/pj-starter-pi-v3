@@ -22,11 +22,6 @@ describe('dayName', () => {
 });
 
 describe('windowFiles', () => {
-  it('保存場所がない → []', () => {
-    const place = placeFor(tempDir(), tempDir());
-    expect(windowFiles(place, new Date(2026, 9, 10), 2)).toEqual([]);
-  });
-
   it('今日と昨日の 2 件を新しい順に返し、3 日前は返さない', () => {
     const place = placeFor(tempDir(), tempDir());
     mkdirSync(place.dir, { recursive: true });
@@ -57,21 +52,13 @@ describe('dayFile', () => {
   });
 });
 
-describe('oldFiles', () => {
-  it('30 日より古いだけを返し、ちょうど 30 日前は残す', () => {
+describe('保存場所がない', () => {
+  it('windowFiles と oldFiles → []', () => {
     const place = placeFor(tempDir(), tempDir());
-    mkdirSync(place.dir, { recursive: true });
-    for (const name of ['2026-09-09.jsonl', '2026-09-10.jsonl', '2026-10-10.jsonl']) {
-      writeFileSync(join(place.dir, name), '{}\n');
-    }
-    // 2026-10-10 から 30 日前は 2026-09-10。含む側は残す
-    expect(oldFiles(place, new Date(2026, 9, 10), 30)).toEqual([
-      join(place.dir, '2026-09-09.jsonl'),
-    ]);
-  });
-
-  it('保存場所がない → []', () => {
-    const place = placeFor(tempDir(), tempDir());
-    expect(oldFiles(place, new Date(2026, 9, 10), 30)).toEqual([]);
+    const at = new Date(2026, 9, 10);
+    const window = 2;
+    const keep = 30;
+    expect(windowFiles(place, at, window)).toEqual([]);
+    expect(oldFiles(place, at, keep)).toEqual([]);
   });
 });

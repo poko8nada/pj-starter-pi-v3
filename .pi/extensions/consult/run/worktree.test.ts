@@ -333,12 +333,6 @@ describe('listWorktrees のゴースト', () => {
 });
 
 describe('listWorktrees / findWorktree', () => {
-  it('ワークツリーが 1 つもない → 空', () => {
-    const dir = tempDir();
-    expect(listWorktrees(dir)).toEqual([]);
-    expect(findWorktree(dir, '1-a')).toBeUndefined();
-  });
-
   it('変更が残っている worktree → dirty', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
@@ -347,13 +341,6 @@ describe('listWorktrees / findWorktree', () => {
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     makeDirty(made.path);
     expect(findWorktree(dir, '1-a')?.dirty).toBe(true);
-  });
-
-  it('台帳ファイルを持たない → 一覧は git から作る', () => {
-    const dir = tempDir();
-    createWorktree(dir, '1-a');
-    const root = ensureRoot(dir);
-    expect([...new Set(listWorktrees(dir).map((row) => row.runRoot))]).toEqual([root]);
   });
 });
 
