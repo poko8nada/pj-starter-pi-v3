@@ -2,23 +2,23 @@
 
 [![Pullfrog](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml/badge.svg)](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml) [![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)](https://www.typescriptlang.org/)
 
-A starter where a project and its **agent harness** come up together. Clone it, and the checks, the commit gates, the agent rules and the cycle mechanism are already in place.
+A starter where a project and its **agent harness** are in place from the start. This starter already has the checks, the commit gates, the agent rules and the cycle mechanism at the moment you clone it.
 
 日本語: [README.ja.md](README.ja.md)
 
 ## What is in it
 
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
-- **Gates** — `lefthook` on commit and push, and `quality-gate`, which checks whatever a turn changed
+- **Gates** — `lefthook`, which checks on commit and on push, and `quality-gate`, which checks only what was changed in each turn
 - **Agent rules** — `AGENTS.md`, read in every session
-- **Cycle mechanism** — six skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close` / `yolo`)
-- **Packages** — `upgrade` in `.pi/skills/`, which runs on its own, outside a cycle
-- **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks whatever a turn changed), `sound-notify` (a sound and a cmux notification when pi needs you), [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md) (stops looped thinking while it is generated and removes it, so it is not carried into the next turn), `context-precompact` (prepares the standard compaction in the background before it is due and applies it at the boundary instead of waiting for it; `/precompact`, `/precompact now`, `/precompact on|off`, a status line, and settings) (`.pi/extensions/`)
-  - `consult_run` — runs one subagent `pi` with a role and a place, without showing it this conversation
-  - `consult_subagents` — lists the subagents of this session and stops one; it reads a record, so the list still shows this session's subagents across a reload
-  - `consult_worktree` — makes, lists, or removes a unit worktree; a worktree stays until it is removed, and `remove` takes its branch too when it is merged (an unmerged branch is kept)
-  - `consult_commit` — commits the work a subagent left in its worktree; you merge it yourself with `git merge --no-ff consult/<unit-id>`
-  - the storage locations: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, on the branch `consult/<unit-id>`, cut from the base `HEAD`
+- **Cycle mechanism** — the six skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close` / `yolo`)
+- **Packages** — `upgrade` in `.pi/skills/`, which runs on its own, separately from a cycle
+- **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks what was changed in each turn), `sound-notify` (a sound and a cmux notification when pi is waiting for the user), [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md) (stops looped thinking while it is generated and removes it, so that it is not carried into the next turn), `context-precompact` (without waiting for the standard compaction, prepares in the background before the threshold is reached and applies it at the boundary; `/precompact`, `/precompact now`, `/precompact on|off`, a status line, and settings) (location: `.pi/extensions/`)
+  - `consult_run` — starts exactly one subagent `pi` with a role and a place; the subagent is not shown this conversation
+  - `consult_subagents` — lists this session's subagents and stops one. Because it reads a record, this session's subagents are shown even across a reload
+  - `consult_worktree` — creates, lists and removes unit worktrees. A worktree remains unless it is explicitly removed. `remove` also deletes the branch when it is merged (an unmerged branch is kept)
+  - `consult_commit` — commits the work a subagent left in the worktree. To bring it into the main agent's branch, run `git merge --no-ff consult/<unit-id>` yourself
+  - Storage location: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`, branch `consult/<unit-id>`, base default `HEAD`
 - **CI** — `.github/workflows/pullfrog.yml`, which runs an agent on a dispatch
 - **Cycle records** — `cycles/`
 
@@ -28,36 +28,37 @@ A starter where a project and its **agent harness** come up together. Clone it, 
 pnpm install
 ```
 
-1. Run `pnpm product:ready` once to make the clone yours — it deletes `cycles/`, replaces `ROADMAP.md`, `DEFINITION.md`'s `Product` and `What`, `README.md` and `README.ja.md` with their templates, removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. The product `test` scripts use `vitest.config.ts`, which excludes the harness paths; the starter `test` scripts use `vitest.starter.config.ts`, which covers all tests. Without `--run` it only shows what would change. Add `--only <label>` to target one kind
-2. `.pi/extensions/consult/types.json` is in the repository. Put your own models in it
+1. Make the clone yours with `pnpm product:ready` (once) — it deletes `cycles/` and replaces `ROADMAP.md`, `DEFINITION.md`'s `Product` and `What`, and the two READMEs with their templates. It removes ` --config vitest.starter.config.ts` from `test`, `test:run` and `test:related`, and deletes `vitest.starter.config.ts`. The product `test` uses `vitest.config.ts`, which excludes the harness paths; the starter `test` uses `vitest.starter.config.ts`, which covers all tests. Without `--run` it only shows the changes. To target only one kind, add `--only <label>`
+2. `.pi/extensions/consult/types.json` is in the repository, so change it to your own models and use it
 3. Start `pi`. The skills are found in `.pi/skills/`
 
 ## Checks
 
-| Command                             | What it does                        |
-| ----------------------------------- | ----------------------------------- |
-| `pnpm test:run`                     | Run the tests once                  |
-| `pnpm lint`                         | `oxlint`, warnings included         |
-| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
-| `pnpm format` / `pnpm format:check` | Format, or verify the format        |
+| Command                             | Content                                |
+| ----------------------------------- | -------------------------------------- |
+| `pnpm test:run`                     | Run the tests once                     |
+| `pnpm lint`                         | `oxlint` (fails if there are warnings) |
+| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs`    |
+| `pnpm format` / `pnpm format:check` | Format / verify                        |
 
-- **On commit** — format, lint, `typecheck:staged` and `test:related`, on what changed
-- **On push** — typecheck (the root and the harness) and test
-- **On every agent turn** — when the turn changed something: the fix pass runs `lint:fix` then `format`, and the check pass runs `lint` and `typecheck:staged` on what changed
-- **Harness tests** — they run with the starter config (`pnpm test:run` uses `vitest.starter.config.ts`), and are excluded by the product config (`vitest.config.ts` excludes the harness paths)
+- **On commit** — runs format / lint / `typecheck:staged` / `test:related` / `ja-check` on the changed parts
+- **Banned Japanese words** — change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error` and `warn`)
+- **On push** — runs typecheck (the root and the harness) / test
+- **On every agent turn** — only when there was a change. The fix stage applies `lint:fix` → `format`, and the check stage applies `lint` → `typecheck:staged`, to the changed parts.
+- **Harness tests** — they run under the starter config (`pnpm test:run` uses `vitest.starter.config.ts`), and are excluded by the product config (`vitest.config.ts` excludes the harness paths)
 
 ## Harness
 
-The agent harness travels with `scripts/harness/`:
+The agent harness is handed over with `scripts/harness/`:
 
-- `pnpm harness:pull` brings the starter's harness into this project from `copy`, `pnpm harness:push` sends it back with `push`. Without `--run` it only shows what would move. It never deletes.
-- The list is `scripts/harness/harness.json` with 3 keys: `starter`, `copy`, `push`. `starter` is the other's path (e.g. `"~/..."`), `copy` is for pull, `push` is for push. Items are paths or globs (e.g. `scripts/harness/*.mjs`).
-- `package.json` is outside the list, so after a pull check its `scripts` and `devDependencies` by hand.
-- Paths in the list with no match in the source are shown in `missing (<n>):`, one per line, and the exit is 1 with or without `--run`. With `--run`, the paths that can be copied are still copied.
+- `pnpm harness:pull` brings in what is listed in `copy` from the starter, and `pnpm harness:push` returns what is listed in `push`. Without `--run` it only shows the changes. It never deletes files.
+- The list is in `scripts/harness/harness.json`, which has 3 keys: `starter`, `copy`, `push`. `starter` is the other side's (the starter's) path (e.g. `"~/..."`), `copy` is the list for pull, and `push` is the list for push. Items can be written as paths or globs (e.g. `scripts/harness/*.mjs`).
+- `package.json` is outside the list, so after a pull, visually check `scripts` and `devDependencies`.
+- Items that are not in the source are output as `missing (<count>):`, one per line, and the exit code is 1 whether or not `--run` is given. With `--run`, what can be copied is copied.
 
 ## Cycle
 
-One cycle is an ADR, a design, the plans, the work of carrying them out, then a close. A skill holds each stage, and **the next stage is called by that skill's `description`**. No stage calls the next stage; the next stage is found by its `description`.
+One cycle = ADR → design → plan → plan execution → close. A skill is in charge of each stage. **What calls the next stage is the skill's `description`**, and the previous stage does not call the next stage. The next stage is found from the `description`.
 
 ```
 adr          when the owner starts a cycle or raises a point about the definition or the cycle, settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
@@ -68,15 +69,15 @@ close        when every plan of a cycle is done (done, or dropped by the owner),
 yolo         when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted, walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
 ```
 
-The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md`, `design.md`, `plan/<plan id>.md`, `close.md`. Git holds the cycle's state. The ADR's `Status` is the decision, and the plan's `Commit`/`Stopped` are the work record; none of them is a cycle status field.
+The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`. Git holds the cycle's state. The ADR's `Status` is the state of the decision, and the plan's `Commit` / `Stopped` are the work record; they do not represent the cycle's state.
 
-`DEFINITION.md` holds the product. The ADR holds the argument behind it, and it can be opened at any stage. A cycle starts with the `adr`; an ADR entry can be added at any stage for a point the owner raises. Every change opens an ADR entry, and the entry names the parts of `DEFINITION.md` it relates to and whether each changes or stands.
+`DEFINITION.md` holds the product's definition. The ADR carries the discussion behind it, and the ADR can be opened at any stage. A cycle starts with the `adr`, and when the owner raises a point, an ADR entry can be added at any stage. On a change, every cycle opens an ADR entry, and the entry writes which parts of `DEFINITION.md` it relates to and whether each part is changed or stays as it is.
 
 ## Contributing
 
-`lefthook` gates every commit and push. On commit it runs format, lint, `typecheck:staged`, `test:related` and `ja-check` on what changed; on push it runs typecheck (the root and the harness) and test. `ja-check`'s banned words live in `scripts/checks/ja-check.json` (`error` and `warn`).
+`lefthook` checks on commit and on push. On commit it runs format, lint, `typecheck:staged`, `test:related` and `ja-check` on the changed parts, and on push it runs typecheck (the root and the harness) and test. Change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error` and `warn`).
 
-Before committing, keep these green:
+Before committing, run the following commands:
 
 ```bash
 pnpm lint
