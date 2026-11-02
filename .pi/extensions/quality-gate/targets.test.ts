@@ -54,6 +54,8 @@ describe('changedSince', () => {
     afterReedit.set(pathA, printA2);
     expect(changedSince(before, afterReedit)).toEqual([pathA]);
     expect(changedSince(before, new Map(before))).toEqual([]);
+    const afterDeleted = new Map([[pathB, printB]]);
+    expect(changedSince(before, afterDeleted)).toEqual([]);
   });
 });
 
