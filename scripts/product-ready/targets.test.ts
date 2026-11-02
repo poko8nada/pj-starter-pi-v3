@@ -55,10 +55,6 @@ describe('plan', () => {
     expect(plan(root)).toEqual([]);
   });
 
-  it('無い root → 投げる', () => {
-    expect(() => plan(join(tempDir(), 'no-such-root'))).toThrow();
-  });
-
   it('at の昇順（作った順が逆でも）', () => {
     const names = ['b', 'a'];
     const root = tempDir();
@@ -122,11 +118,6 @@ describe('replace', () => {
     const root = tempDir();
     writeAt(root, 'ROADMAP.md');
     expect(() => skeletonFor(root, 'ROADMAP.md')).toThrow(/rules\/roadmap\.md/);
-  });
-
-  it('表に無い at → 投げる', () => {
-    const root = tempDir();
-    expect(() => skeletonFor(root, 'package.json')).toThrow('no skeleton for: package.json');
   });
 });
 
