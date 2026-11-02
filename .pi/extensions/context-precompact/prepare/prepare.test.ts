@@ -46,6 +46,20 @@ describe('prepare', () => {
     expect(emptyPrepared?.compaction.fileOps.read.size).toBe(0);
     expect(emptyPrepared?.compaction.fileOps.written.size).toBe(0);
     expect(emptyPrepared?.compaction.fileOps.edited.size).toBe(0);
+
+    const hookFalseSession = createSessionFixture();
+    const hookFalseOld = hookFalseSession.compaction('old');
+    const hookFalsePrev = hookFalseSession.compaction('prev', {
+      fromHook: false,
+      details: { readFiles: [READ_PATH], modifiedFiles: [EDITED_PATH] },
+    });
+    const hookFalsePrepared = prepare(
+      makeInput(hookFalseSession, {
+        branch: [hookFalseOld, hookFalsePrev, ...hookFalseSession.turns(3)],
+      }),
+    );
+    expect(hookFalsePrepared?.compaction.fileOps.read.size).toBe(0);
+    expect(hookFalsePrepared?.compaction.fileOps.edited.size).toBe(0);
   });
 
   it('details が配列でなければ例外を投げずに無視する', () => {

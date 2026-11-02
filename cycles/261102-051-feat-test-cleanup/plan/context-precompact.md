@@ -172,12 +172,18 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 削除した文言の grep が空で、未使用の import と helper の残りがないことを確かめた。
+- Unlisted: なし — 差分の 5 件は Files の update と一致し、残りの追随ファイルに変更がないことを確かめた。
 - Gaps:
+  - `.pi/extensions/context-precompact/command/precompact.ts:64` の `status: ` 合成と `.pi/extensions/context-precompact/ui/status.ts:84` 以降の idle・preparing・discarded 分岐は、残った `.pi/extensions/context-precompact/ui/status.test.ts:44`（ready・applied のみ）と `.pi/extensions/context-precompact/command/precompact.test.ts:31`（lastApplied のみ）のいずれも確かめない。
+    fixed: `command/precompact.test.ts` に `最後の行は status: で始まり idle・preparing・discarded の文面になる` を足し、合成と3分岐を確かめた。
 - Unproven:
-- Noise:
+  - `.pi/extensions/context-precompact/prepare/prepare.test.ts:30` の `fromHook の details があるときだけ〜` は `.pi/extensions/context-precompact/prepare/prepare.ts:38` の `fromHook === true` を外しても緑のままである（空側の前回に details がなく `isRecord` で弾かれるため）。
+    fixed: 同テストに旧前回つき2件構成で `fromHook: false` の details 持ち最新前回は merge されないケースを足し、`fromHook === true` を外すと赤になることを一時変異で確かめて復元した。製品コードの差分なし。
+- Noise: なし — 残った検証は定数追従でも自明な表示でもなく、値は工場・定数経由であることを確かめた。
 - Doubts:
+  - `.pi/extensions/context-precompact/settings/schema.ts:57` と `:67` の範囲検査は中間値の happy のみになり壊れても緑だが、plan が定数のなぞりとして削除を決めたため所見にしない。
+  - Verify の実行（test:related・typecheck・lint・format:check と件数確認）はこの review では行わず、close が確かめる。
 
 ## Acceptance
 

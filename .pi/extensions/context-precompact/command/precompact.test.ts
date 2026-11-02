@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCommand, statusLines } from './precompact.ts';
 import type { Settings } from '../settings/schema.ts';
 import { formatCount } from '../ui/count.ts';
+import type { StatusState } from '../ui/status.ts';
 
 const SETTINGS: Settings = {
   enabled: true,
@@ -28,6 +29,24 @@ describe('parseCommand', () => {
 });
 
 describe('statusLines', () => {
+  it('最後の行は status: で始まり idle・preparing・discarded の文面になる', () => {
+    const states: readonly StatusState[] = [
+      { kind: 'idle' },
+      { kind: 'preparing' },
+      { kind: 'discarded' },
+    ];
+    for (const status of states) {
+      const lines = statusLines({
+        settings: SETTINGS,
+        prepared: false,
+        running: false,
+        lastAppliedTokens: undefined,
+        status,
+      });
+      expect(lines.at(-1)).toBe(`status: ${status.kind}`);
+    }
+  });
+
   it('lastAppliedTokens を渡すと桁区切りの値になる', () => {
     const value = lastAppliedOf();
     const lines = statusLines({
