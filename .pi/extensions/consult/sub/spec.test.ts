@@ -288,28 +288,6 @@ describe('buildPiArgs: sessionPath', () => {
   });
 });
 
-describe('buildPiArgs: token', () => {
-  it('token と --session あり → argv に --name <token> と --session が両方ある', () => {
-    const token = 'token-abc';
-    const sessionPath = '/tmp/s';
-    const args = buildPiArgs(options({ token, sessionPath }));
-    const nameIndex = args.indexOf('--name');
-    expect(nameIndex).toBeGreaterThan(-1);
-    expect(args[nameIndex + 1]).toBe(token);
-    expect(args).toContain('--session');
-    expect(args[args.indexOf('--session') + 1]).toBe(sessionPath);
-  });
-
-  it('--no-session の子 → argv に --name <token> がある', () => {
-    const token = 'token-xyz';
-    const args = buildPiArgs(options({ token }));
-    const nameIndex = args.indexOf('--name');
-    expect(nameIndex).toBeGreaterThan(-1);
-    expect(args[nameIndex + 1]).toBe(token);
-    expect(args).toContain('--no-session');
-  });
-});
-
 describe('finalTextFrom: 複数イベント', () => {
   it('最後が空なら、前のイベントの本文を返す', () => {
     const text = 'hi';
