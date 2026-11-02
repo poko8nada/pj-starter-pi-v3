@@ -5,7 +5,7 @@ import { tempDir } from '../../../../test/temp-dir.ts';
 import { commandAllowed, judgeToolCall, parseLimits, pathAllowed, type Limits } from './guard.ts';
 
 /**
- * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
+ * 実ファイルで確かめる。`judgeToolCall` は解決後の絶対パスで秘密を判定するので、
  * 存在しないパスでは判断の意味が変わる（それはそれで 1 つのケース）。
  *
  * 保存場所は `test/temp-dir.ts` の helper。テストごとに作り直し、後始末は helper がする。
@@ -36,6 +36,15 @@ describe('judgeToolCall', () => {
       block: true,
       reason: expect.stringContaining('読めない'),
     });
+  });
+
+  it('秘密でない名前は通す（大文字・末尾違い・node_modules）', () => {
+    expect(judgeToolCall('read', { path: join(dir, '.ENV') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, 'foo.env') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, '.env.bak') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, 'node_modules/react/index.js') }, dir)).toEqual(
+      {},
+    );
   });
 
   it('bash のコマンド名（cat）では止めない', () => {
@@ -147,6 +156,7 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(commandAllowed('git status', ['git'])).toBe(true);
     expect(commandAllowed('git', ['git'])).toBe(true);
     expect(commandAllowed('gitfoo', ['git'])).toBe(false);
+    expect(commandAllowed('pnpm run test:run', ['pnpm run test:run'])).toBe(true);
     expect(commandAllowed('pnpm install', ['pnpm run test:run'])).toBe(false);
     expect(judgeToolCall('bash', { command: 'git status' }, dir, limits)).toEqual({});
     expect(judgeToolCall('bash', { command: 'rm -rf src' }, dir, limits).block).toBe(true);
@@ -166,6 +176,9 @@ describe('judgeToolCall + proofreader の許可', () => {
   it('許可されていないパターンの下では、書く道具を止める', () => {
     expect(pathAllowed('src/a.ts', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(false);
     expect(judgeToolCall('write', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('quick_edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('target_edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
   });
 });
 

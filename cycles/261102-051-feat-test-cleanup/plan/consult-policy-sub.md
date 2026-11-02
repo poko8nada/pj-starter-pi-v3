@@ -155,11 +155,23 @@
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/sub/guard.test.ts:8` の `isSecretPath` 言及コメントは直接の `describe('isSecretPath')` 削除後に残り、かつ `beforeEach` の `.ENV`/`foo.env`/`.env.bak`/`node_modules` 準備（`.pi/extensions/consult/sub/guard.test.ts:18`）を読むテストがなく stale である。
+    - fixed: 冒頭コメントを `judgeToolCall` の解決後判定に直し、未使用だった 4 準備を読む偽例テストを追加した。
 - Unlisted:
+  - なし — 差分の変更は Files の 5 件と plan md 自体のみである。
 - Gaps:
+  - `.pi/extensions/consult/sub/guard.test.ts:29` の統合後は真例のみで、旧表の偽例（`.ENV`/`foo.env`/`.env.bak` など非秘密名を通すこと）を確かめず、過剰拒否でも緑のままである。
+    - fixed: `秘密でない名前は通す（大文字・末尾違い・node_modules）` を追加し、4 準備を通すことを確かめた。
+  - `.pi/extensions/consult/sub/guard.test.ts:166` の拒否側は `write` のみで、`edit`/`quick_edit`/`target_edit` の拒否を確かめず、旧「書く道具は許可された所だけ」の偽例が消えたままである。
+    - fixed: 拒否側に `edit`・`quick_edit`・`target_edit` の 3 断言を足した。
+  - `.pi/extensions/consult/sub/guard.test.ts:146` は複合接頭辞の許可例（`pnpm run test:run` を通す）を落とし、許可側が単語単体のみで、多語許可の破損でも緑のままである。
+    - fixed: 許可側に `commandAllowed('pnpm run test:run', ['pnpm run test:run'])` の真例を足した。
 - Unproven:
+  - なし — 残る統合後の各テストは命名する分岐を壊せば赤になることを目視で確かめた。
 - Noise:
+  - なし — 残る有効値・境界・位置の各ケースはスキーマの反復でも誰も気づかないものでもなく、数値・文字列は仕様の域値または識別子である。
 - Doubts:
+  - Cleanup の `lastTurn` 統合と `spec` 2 件削除は Steps にないが Notes に記録され Files 範囲内であり、close が許容するかに委ねる。
 
 ## Acceptance
 
