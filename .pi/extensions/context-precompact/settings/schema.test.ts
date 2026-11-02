@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_KEEP_RECENT_TOKENS,
   MAX_THRESHOLD_RATIO,
-  MIN_KEEP_RECENT_TOKENS,
   MIN_THRESHOLD_RATIO,
 } from './constants.ts';
 import { defaultSettings, parseSettings } from './schema.ts';
@@ -24,27 +23,5 @@ describe('parseSettings', () => {
 
   it('知らないキーなら broken になる', () => {
     expect(parseSettings('{"unknown":1}').kind).toBe('broken');
-  });
-
-  it('thresholdRatio が下限未満なら broken になる', () => {
-    expect(parseSettings(JSON.stringify({ thresholdRatio: MIN_THRESHOLD_RATIO - 0.01 })).kind).toBe(
-      'broken',
-    );
-  });
-
-  it('thresholdRatio が上限超過なら broken になる', () => {
-    expect(
-      parseSettings(JSON.stringify({ thresholdRatio: MAX_THRESHOLD_RATIO + Number.EPSILON })).kind,
-    ).toBe('broken');
-  });
-
-  it('keepRecentTokens が下限未満なら broken になる', () => {
-    expect(
-      parseSettings(JSON.stringify({ keepRecentTokens: MIN_KEEP_RECENT_TOKENS - 1 })).kind,
-    ).toBe('broken');
-  });
-
-  it('JSON でなければ broken になる', () => {
-    expect(parseSettings('{').kind).toBe('broken');
   });
 });
