@@ -107,7 +107,7 @@
   - `pnpm format:check`
   - `! grep -E '5 つの sounds をハンドラが鳴らす|非既定の設定ファイルなら|壊れた設定ファイルなら既定で動き|../settings.json の既定値' .pi/extensions/sound-notify/index.test.ts .pi/extensions/sound-notify/settings/schema.test.ts`
   - `test "$(grep -c 'hasUI が false なら' .pi/extensions/sound-notify/index.test.ts)" = 1`
-  - `! grep -E 'broken なら defaultSettings\(\) を返す|ok ならその設定をそのまま返す' .pi/extensions/sound-notify/settings/schema.test.ts`
+  - `! grep -E "it\('broken なら defaultSettings\(\) を返す'\)|it\('ok ならその設定をそのまま返す'\)" .pi/extensions/sound-notify/settings/schema.test.ts`
   - `test "$(grep -c 'broken なら defaultSettings() を返し、ok ならその設定をそのまま返す' .pi/extensions/sound-notify/settings/schema.test.ts)" = 1`
   - `test "$(grep -c '正常な設定ファイルがあれば ok を返す' .pi/extensions/sound-notify/settings/read.test.ts)" = 1`
   - `test "$(grep -c '壊れた設定ファイルの JSON なら broken を返す' .pi/extensions/sound-notify/settings/read.test.ts)" = 1`
@@ -118,36 +118,43 @@
 
 ### Slice 1: quality-gate の統合
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: e3762d0 consult(quality-gate-sound): merge quality-gate tests
+- Stopped: なし
 
 ### Slice 2: sound-notify の削除と統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6e7a207 consult(quality-gate-sound): remove and merge sound-notify tests
 - Stopped:
+- Count: 54（68→54、-14）。使い捨てテスト `test/tmp-settings-consistency.test.ts` は作成・実行（緑）・削除済み。plan の Verify 誤り（`! grep` が新題に当たる）は `it('...')` 限定に修正して解消。
 
-### Cleanup: <what it cleaned>
+### Cleanup: targets の表・指紋・拡張子の統合と重複2件の削除
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
+- Count: 47（54→47、-7）。`pnpm test:run .pi/extensions/quality-gate .pi/extensions/sound-notify` が緑。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 旧題名が変わった5ファイルに残らないこと、未使用の import や説明コメントが残らないことを grep と目視で確かめた。
+- Unlisted: なし — diff の5ファイルは Files の update と一致し、`read.test.ts` は無変更、使い捨てテストは diff に残らない。
 - Gaps:
-- Unproven:
-- Noise:
+  - `changedSince` の統合テストが「消えたパスは返さない」を落とし、削除だけの差分を確かめなくなった（.pi/extensions/quality-gate/targets.test.ts:49）。`changedSince` は `after` だけを走査するため（.pi/extensions/quality-gate/targets.ts:86）、`before` を走査する壊し方を今の3断言（新規・再編集・不変）は捉えない。
+    - fixed: 統合テストに `before` にあって `after` にないパスが返らない断言を追加し、`before` を走査する壊し方を捉えられるようにした。
+- Unproven: なし — 統合後の各 `it` が逆向き（成功の表示・除外・切り詰め・既定値）を落とせば赤になることを実装と照合した。
+- Noise: なし — 残った文字列は `label`・`output`・文面など振る舞い自体で、境界値（上限の上下・大文字拡張子）は単独の `it` になっていない。
 - Doubts:
+  - plan の Steps が命じない統合・削除（`parseStatus`・`fingerprint`・`filterByExtensions` の統合、`isCommitResult` の content 直断言の削除、`changedSince` の消滅断言の削除）が diff に含まれ、Notes の Cleanup が引き受けている。close 時に Steps へ追記するか決めるとよい。
+  - `isCommitResult` の content 経路は `sound-notify.commit` の結合テスト（.pi/extensions/sound-notify/index.test.ts:196）が行使し続けるため、Gap の finding にしない。
+  - Notes にある Verify の `it('...')` 限定修正が plan md の Verify に反映されていない。close 時に実際に走らせた形を Acceptance の Ran に残すとよい。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、765 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` の使い捨てテストは Slice 2 で作成・実行・削除済み。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: `### Round 2` の記録が plan md にない。`review`（consult-66）は走って終了しており、その報告に Round 2 の判断が入る。
