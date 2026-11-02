@@ -40,7 +40,7 @@ scripts/
   - `pnpm format:check`
   - `grep -n 'and a summary line' scripts/checks/ja-check.mjs` が何も返さないことを確かめる。
 - Added:
-  - `pnpm test:related scripts/checks/ja-check.test.ts` が 16 件すべて通過する。
+  - `pnpm test:related scripts/checks/ja-check.test.ts` が 18 件すべて通過する。
   - `mktemp -d` で作った一時ルートに `scripts/checks/ja-check.json`（`WARN_WORD` は `warn`、`ERROR_WORD` は `error`）と 3 個の `.md`（`WARN_WORD` を含む行、該当なしの行、空行）を置き、3 個の `.md` を引数に `node scripts/checks/ja-check.mjs` を実行する → 冒頭 2 行と語を `[` と `]` で挟んだ前後 10 文字と集計行が出て、`exit 0` で終わる。
   - 同じ一時ルートで該当なしの `.md` 1 個だけを引数にして実行する → `ja-check: No findings.` が出て、`exit 0` で終わる。
   - `ja-check.json` を置かずにコマンドを実行する → `ja-check: No config.` が集計行より前に出て、`ja-check: No findings.` は出ず、`exit 0` で終わる。
@@ -106,8 +106,30 @@ scripts/
   - cycles/261102-051-dev/plan/ex-ja-output.md:70 の Ran に Verify Added の手動 (`mktemp` での3-md実走・該当なし実走・設定なし実走・100件1秒) の記録がなく自動テストのみのため、手動が済んだか確認できず finding にしなかった。
   - fixed: Addedの手動4件（3-md実走・該当なし実走・設定なし実走・100件1秒）を実行し、結果を ## Notes に記録した。
 
+### Round 2
+
+- Stale: なし — fixed 1件を確認。`scripts/checks/ja-check.test.ts:250` の題名が `設定なし → No config行をサマリーより前に出してexit 0` で本文の `ja-check: No config.`（同:257）とそろい旧 `設定なし行` が残らないため、指摘の食い違いは閉じている。
+- Unlisted: なし — Round 1 の `fixed:` は Stale・Gaps・Unproven・Doubts にあり、`Unlisted` には `fixed:` がないため対象外である（:89-:90）。
+- Gaps: なし — fixed 2件を確認。`scripts/checks/ja-check.test.ts:192-207` が前後15文字の行で前後10文字だけの `(…[骨]…)` と15文字全体の不在と集計行を断言し実装 `scripts/checks/ja-check.mjs:89-93` の切り詰めに対応するため、長行の穴は閉じている。`scripts/checks/ja-check.test.ts:311-321` が `null`・配列・文字列の3種で冒頭2行と `exit 1` を確かめ実装 `scripts/checks/ja-check.mjs:43-49` の `isRecord`→`failConfig` に対応するため、頂点非レコードの穴は閉じている。
+- Unproven: なし — fixed 2件を確認。`scripts/checks/ja-check.test.ts:72-75` が `indexOf(HEADER_1)` が `0` で `indexOf(HEADER_2)` がそれより大きいことを断言し実装 `scripts/checks/ja-check.mjs:15-18,107` の先頭順序出力に対応するため、入れ替え・後出しで赤になる。`scripts/checks/ja-check.test.ts:267-278,280-309` の3実行が `stderr` の `is not valid JSON` と集計行（`files, error`）と `No findings.` の不在を断言し実装 `scripts/checks/ja-check.mjs:20-24` の `failConfig` に対応するため、stderr消去・集計行追加で赤になる。
+- Noise: なし — Round 1 の `fixed:` は上記の5件とDoubtsの1件であり、`Noise` には `fixed:` がないため対象外である（:101-:102）。
+- Doubts: なし — fixed 1件を確認。`## Notes:72-77` にAdded手動4件（3-md実走・該当なし実走・設定なし実走・100件26ms）の結果が記録され `Verify Added`（:44-:47）の確認不能は閉じている。`left:` の1件（:104-:105）は対象外であり、新たに所見に至る疑義もない。
+
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related scripts/checks/ja-check.test.ts` — 18 件すべて通過。
+  - `pnpm test:run` — 63 ファイル、804 件、すべて通過。
+  - `pnpm typecheck` — root ok、.pi ok。
+  - `pnpm lint` — 通過。
+  - `pnpm format:check` — 334 ファイル、通過。
+  - `grep -n 'and a summary line' scripts/checks/ja-check.mjs` — 何も返さない。
+  - 一時ルートの 3 個の `.md` で実行 — 冒頭 2 行と `[WWORD]` の前後と `ja-check: 3 files, error 0, warn 1.` が出て、`exit 0`。
+  - 該当なしの 1 個で実行 — `ja-check: No findings.` が出て、`exit 0`。
+  - 設定なしで実行 — `ja-check: No config.` が集計行より前に出て、`ja-check: No findings.` は出ず、`exit 0`。
+  - 100 個の `.md` で実行 — real 0.027 秒（1 秒未満）。
+  - 破壊確認 1 — 冒頭 1 行目の文言を変えると 18 件が赤になり、復元した。
+  - 破壊確認 2 — 該当語の `[` と `]` を外すと該当行の 6 件が赤になり、復元した。
 - Findings:
-- Doubts:
+  - `Verify` の `Added` の「16 件」を「18 件」に直す（切り詰めと頂点非レコードの 2 件が増えたため）。
+- Doubts: なし
