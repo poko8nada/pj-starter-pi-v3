@@ -14,3 +14,87 @@
   - Then: なし
 
 ## Verified
+
+### test-run
+
+- Plans:
+  - `consult-run-tool`
+  - `consult-policy-sub`
+  - `context-precompact`
+  - `thinking-scrub`
+  - `quality-gate-sound`
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### subagent-consult
+
+- Plans:
+  - `consult-run-tool`
+  - `consult-policy-sub`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### sound-notify
+
+- Plans:
+  - `consult-run-tool`
+  - `consult-policy-sub`
+  - `quality-gate-sound`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### quality-gate
+
+- Plans:
+  - `consult-run-tool`
+  - `consult-policy-sub`
+  - `context-precompact`
+  - `thinking-scrub`
+  - `quality-gate-sound`
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### lefthook-gate
+
+- Plans:
+  - `consult-run-tool`
+  - `consult-policy-sub`
+  - `context-precompact`
+  - `thinking-scrub`
+  - `quality-gate-sound`
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### context-precompact
+
+- Plans:
+  - `context-precompact`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### thinking-scrub
+
+- Plans:
+  - `thinking-scrub`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### adr-skill
+
+- Plans:
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### close-skill
+
+- Plans:
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### product-ready
+
+- Plans:
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
+
+### harness-copy
+
+- Plans:
+  - `scripts-skills`
+- Result: しない — テストの削除と統合だけであり、製品の機能は変わらないため
