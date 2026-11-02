@@ -150,5 +150,13 @@ package.json
 ## Acceptance
 
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run` — 63 ファイル、801 件、すべて通過。
+  - `pnpm typecheck` — root ok、.pi ok。
+  - `pnpm lint` — oxlint --deny-warnings、通過。
+  - `pnpm format:check` — oxfmt --check、332 ファイル、通過。
+  - `grep -rniE 'ja-check' --exclude-dir=node_modules --exclude-dir=cycles .` → `scripts/checks/ja-check.mjs`、`scripts/checks/ja-check.test.ts`、`scripts/checks/ja-check.json` の 3 ファイルのみ。
+  - `mktemp -d` で 100 個の `.md` を作り `time node scripts/checks/ja-check.mjs <100 files>` → real 0m0.032s（1 秒未満）。
+  - `node -e` で `scripts/harness/harness.json` の `copy` と `push` に `scripts/checks` があり、`ja-check.mjs`、`ja-check.test.ts`、`ja-check.json` の 3 ファイルが存在することを確認。
+  - `DEFINITION.md` の `Unit.japanese-check` の行が `Steps` の 4 番目の文と一致することを確認。
+- Findings: なし
+- Doubts: なし
