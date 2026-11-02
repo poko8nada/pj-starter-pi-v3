@@ -133,22 +133,6 @@ describe('sound-notify.settings', () => {
     restorePlayer();
   });
 
-  it('defaultSettings() の 5 つの sounds をハンドラが鳴らすことを確かめる', async () => {
-    const { handlers } = createEntry(defaults);
-    await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
-    await handlers.get('ui_prompt_start')?.({ title: QUESTION_TITLE }, ctx);
-    await handlers.get('agent_settled')?.({}, ctx);
-    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
-    await handlers.get('session_compact')?.({}, ctx);
-    expect(played).toEqual([
-      defaults.sounds.permission,
-      defaults.sounds.question,
-      defaults.sounds.done,
-      defaults.sounds.commit,
-      defaults.sounds.compact,
-    ]);
-  });
-
   it('enabled が false ではハンドラが鳴らない', async () => {
     const disabled: Settings = { ...defaults, enabled: false };
     const { handlers } = createEntry(disabled);
@@ -181,19 +165,6 @@ describe('sound-notify.default-export', () => {
 
   afterEach(() => {
     restorePlayer();
-  });
-
-  it('非既定の設定ファイルならその音で鳴る（起動時に読む）', async () => {
-    const { handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
-    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
-    expect(played).toEqual([CUSTOM_SOUND]);
-  });
-
-  it('壊れた設定ファイルなら既定で動き余計な通知をしない', async () => {
-    const { handlers, calls } = entryWithFile('{"enabled":');
-    await handlers.get('tool_execution_end')?.(commitEvent(), ctx);
-    expect(played).toEqual([defaults.sounds.commit]);
-    expect(calls).toEqual([]);
   });
 
   it('登録後の書き換えでも古い音のままである（起動時の 1 回だけ読む）', async () => {

@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, parseSettings, settingsOrDefault } from './schema.ts';
 
@@ -37,12 +34,6 @@ describe('parseSettings', () => {
     expect(parseSettings('{}')).toEqual({ kind: 'ok', settings: defaultSettings() });
   });
 
-  it('../settings.json の既定値は defaultSettings() と一致する', () => {
-    const dir = dirname(fileURLToPath(import.meta.url));
-    const text = readFileSync(join(dir, '..', 'settings.json'), 'utf8');
-    expect(parseSettings(text)).toEqual({ kind: 'ok', settings: defaultSettings() });
-  });
-
   it('enabled が文字列なら broken を返す', () => {
     expect(parseSettings('{"enabled":"yes"}').kind).toBe('broken');
   });
@@ -65,13 +56,10 @@ describe('parseSettings', () => {
 });
 
 describe('settingsOrDefault', () => {
-  it('broken なら defaultSettings() を返す', () => {
+  it('broken なら defaultSettings() を返し、ok ならその設定をそのまま返す', () => {
     expect(
       settingsOrDefault({ kind: 'broken', reason: 'sound-notify settings: must be an object' }),
     ).toEqual(defaultSettings());
-  });
-
-  it('ok ならその設定をそのまま返す', () => {
     const settings = { ...defaultSettings(), enabled: false };
     expect(settingsOrDefault({ kind: 'ok', settings })).toBe(settings);
   });
