@@ -153,6 +153,16 @@
   - `isCommitResult` の content 経路は `sound-notify.commit` の結合テスト（.pi/extensions/sound-notify/index.test.ts:196）が行使し続けるため、Gap の finding にしない。
   - Notes にある Verify の `it('...')` 限定修正が plan md の Verify に反映されていない。close 時に実際に走らせた形を Acceptance の Ran に残すとよい。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` の 1 件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: 修正を確認した — `.pi/extensions/quality-gate/targets.test.ts:49-59` の統合テストが、`before` にあって `after` にないパスが返らない断言（`:57-58`）を持ち、新規・再編集・不変の断言と合わせているため、Round 1 の指摘は閉じている。根拠は、実装 `.pi/extensions/quality-gate/targets.ts:92` が `after` だけを走査する構造であり、`before` を走査する壊し方をすればこの断言が失敗することである。
+- Unproven: なし — 同じ理由により、`Unproven` には `fixed:` がないため対象外である。
+- Noise: なし — 同じ理由により、`Noise` には `fixed:` がないため対象外である。
+- Doubts:
+  - Doubts: なし — `fixed:` 以外を見ないため、新たな疑義は出さない。
+
 ## Acceptance
 
 - Ran: `pnpm test:run`（62 本、765 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` の使い捨てテストは Slice 2 で作成・実行・削除済み。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
