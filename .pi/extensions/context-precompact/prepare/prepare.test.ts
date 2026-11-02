@@ -27,7 +27,7 @@ function makeInput(session: SessionFixture, overrides: Partial<PrepareInput> = {
 }
 
 describe('prepare', () => {
-  it('前回の fromHook の details があれば read と edited に path が入る', () => {
+  it('fromHook の details があるときだけ read と edited に path が入る', () => {
     const session = createSessionFixture();
     const prev = session.compaction('prev', {
       fromHook: true,
@@ -36,16 +36,30 @@ describe('prepare', () => {
     const prepared = prepare(makeInput(session, { branch: [prev, ...session.turns(3)] }));
     expect(prepared?.compaction.fileOps.read.has(READ_PATH)).toBe(true);
     expect(prepared?.compaction.fileOps.edited.has(EDITED_PATH)).toBe(true);
-  });
 
-  it('fromHook がない前回は追加の merge がない', () => {
-    const session = createSessionFixture();
-    const prev = session.compaction('prev');
-    const prepared = prepare(makeInput(session, { branch: [prev, ...session.turns(3)] }));
-    expect(prepared).toBeDefined();
-    expect(prepared?.compaction.fileOps.read.size).toBe(0);
-    expect(prepared?.compaction.fileOps.written.size).toBe(0);
-    expect(prepared?.compaction.fileOps.edited.size).toBe(0);
+    const emptySession = createSessionFixture();
+    const emptyPrev = emptySession.compaction('prev');
+    const emptyPrepared = prepare(
+      makeInput(emptySession, { branch: [emptyPrev, ...emptySession.turns(3)] }),
+    );
+    expect(emptyPrepared).toBeDefined();
+    expect(emptyPrepared?.compaction.fileOps.read.size).toBe(0);
+    expect(emptyPrepared?.compaction.fileOps.written.size).toBe(0);
+    expect(emptyPrepared?.compaction.fileOps.edited.size).toBe(0);
+
+    const hookFalseSession = createSessionFixture();
+    const hookFalseOld = hookFalseSession.compaction('old');
+    const hookFalsePrev = hookFalseSession.compaction('prev', {
+      fromHook: false,
+      details: { readFiles: [READ_PATH], modifiedFiles: [EDITED_PATH] },
+    });
+    const hookFalsePrepared = prepare(
+      makeInput(hookFalseSession, {
+        branch: [hookFalseOld, hookFalsePrev, ...hookFalseSession.turns(3)],
+      }),
+    );
+    expect(hookFalsePrepared?.compaction.fileOps.read.size).toBe(0);
+    expect(hookFalsePrepared?.compaction.fileOps.edited.size).toBe(0);
   });
 
   it('details が配列でなければ例外を投げずに無視する', () => {
@@ -59,7 +73,7 @@ describe('prepare', () => {
     expect(prepare(input)?.compaction.fileOps.read.size).toBe(0);
   });
 
-  it('enabled が false なら undefined になる', () => {
+  it('いずれかが無効なら undefined になる', () => {
     const session = createSessionFixture();
     const settings = {
       ...defaultSettings(),
@@ -67,10 +81,8 @@ describe('prepare', () => {
       enabled: false,
     };
     expect(prepare(makeInput(session, { settings }))).toBeUndefined();
-  });
 
-  it('piEnabled が false なら undefined になる', () => {
-    const session = createSessionFixture();
-    expect(prepare(makeInput(session, { piEnabled: false }))).toBeUndefined();
+    const piSession = createSessionFixture();
+    expect(prepare(makeInput(piSession, { piEnabled: false }))).toBeUndefined();
   });
 });

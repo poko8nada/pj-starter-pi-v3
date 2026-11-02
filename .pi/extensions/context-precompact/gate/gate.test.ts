@@ -27,10 +27,6 @@ describe('gate', () => {
     expect(gate(makeInput())).toEqual({ kind: 'start' });
   });
 
-  it('比率がしきい値で prepared なら apply になる', () => {
-    expect(gate(makeInput({ prepared: true }))).toEqual({ kind: 'apply' });
-  });
-
   it('比率がしきい値から LEAD の半分だけ低く prepared なら wait の prepared-below-threshold になる', () => {
     const tokens = Math.floor((THRESHOLD_RATIO - LEAD_RATIO / 2) * CONTEXT_WINDOW);
     expect(gate(makeInput({ tokens, prepared: true }))).toEqual({
@@ -44,19 +40,13 @@ describe('gate', () => {
     expect(gate(makeInput({ tokens }))).toEqual({ kind: 'wait', reason: 'below-lead' });
   });
 
-  it('enabled が false なら skip の disabled になる', () => {
+  it('いずれかが無効なら skip の disabled になる', () => {
     expect(gate(makeInput({ enabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
-  });
-
-  it('piEnabled が false なら skip の disabled になる', () => {
     expect(gate(makeInput({ piEnabled: false }))).toEqual({ kind: 'skip', reason: 'disabled' });
   });
 
-  it('tokens が null なら skip の unknown になる', () => {
+  it('tokens が不明か contextWindow が 0 なら skip の unknown になる', () => {
     expect(gate(makeInput({ tokens: null }))).toEqual({ kind: 'skip', reason: 'unknown' });
-  });
-
-  it('contextWindow が 0 で tokens が null でなければ skip の unknown になる', () => {
     expect(gate(makeInput({ contextWindow: 0, tokens: THRESHOLD_RATIO * CONTEXT_WINDOW }))).toEqual(
       {
         kind: 'skip',

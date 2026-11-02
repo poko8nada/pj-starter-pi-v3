@@ -136,50 +136,67 @@
 
 ### Slice 1: settings の削除と統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: adba68d
 - Stopped:
 
 ### Slice 2: prepare の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 71b21ff
 - Stopped:
 
 ### Slice 3: command の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 18ce9eb
 - Stopped:
 
 ### Slice 4: gate と index の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 819d347
+- Tests: 97件（106から9減）
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: 無効・不明の早期リターンの統合
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: 同じ早期リターンの両側を確かめる3組を1本ずつに統合した（prepare の enabled と piEnabled、gate の enabled と piEnabled、gate の tokens null と contextWindow 0）。94件（97から3減）で緑。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 削除した文言の grep が空で、未使用の import と helper の残りがないことを確かめた。
+- Unlisted: なし — 差分の 5 件は Files の update と一致し、残りの追随ファイルに変更がないことを確かめた。
 - Gaps:
+  - `.pi/extensions/context-precompact/command/precompact.ts:64` の `status: ` 合成と `.pi/extensions/context-precompact/ui/status.ts:84` 以降の idle・preparing・discarded 分岐は、残った `.pi/extensions/context-precompact/ui/status.test.ts:44`（ready・applied のみ）と `.pi/extensions/context-precompact/command/precompact.test.ts:31`（lastApplied のみ）のいずれも確かめない。
+    fixed: `command/precompact.test.ts` に `最後の行は status: で始まり idle・preparing・discarded の文面になる` を足し、合成と3分岐を確かめた。
 - Unproven:
-- Noise:
+  - `.pi/extensions/context-precompact/prepare/prepare.test.ts:30` の `fromHook の details があるときだけ〜` は `.pi/extensions/context-precompact/prepare/prepare.ts:38` の `fromHook === true` を外しても緑のままである（空側の前回に details がなく `isRecord` で弾かれるため）。
+    fixed: 同テストに旧前回つき2件構成で `fromHook: false` の details 持ち最新前回は merge されないケースを足し、`fromHook === true` を外すと赤になることを一時変異で確かめて復元した。製品コードの差分なし。
+- Noise: なし — 残った検証は定数追従でも自明な表示でもなく、値は工場・定数経由であることを確かめた。
 - Doubts:
+  - `.pi/extensions/context-precompact/settings/schema.ts:57` と `:67` の範囲検査は中間値の happy のみになり壊れても緑だが、plan が定数のなぞりとして削除を決めたため所見にしない。
+  - Verify の実行（test:related・typecheck・lint・format:check と件数確認）はこの review では行わず、close が確かめる。
+
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` と `Unproven` の 2 件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: 修正を確認した — `.pi/extensions/context-precompact/command/precompact.test.ts:32-48` の「最後の行は status: で始まり idle・preparing・discarded の文面になる」が、`statusLines` 経由で `statusLine` の 3 分岐を確かめ、合成の `status: ` 接頭辞も断言しているため、Round 1 の指摘は閉じている。根拠は、実装 `.pi/extensions/context-precompact/command/precompact.ts:64` が最終行を `status: ${statusLine(...)}` と合成し、実装 `.pi/extensions/context-precompact/ui/status.ts:82-95` が idle・preparing・discarded で各字句を返す構造であり、この断言を外せば合成と3分岐の回帰を検出できなくなり、字句を変えれば失敗することである。
+- Unproven: 修正を確認した — `.pi/extensions/context-precompact/prepare/prepare.test.ts:50-62` に `fromHook: false` の details 持ち最新前回は merge されない検査が足され、空側と合わせて両側を確かめているため、Round 1 の指摘は閉じている。根拠は、実装 `.pi/extensions/context-precompact/prepare/prepare.ts:38` が `fromHook === true` を求める構造のままであり、この条件を外せば当該 2 断言が `size` 0 でなくなり赤になること、ならびに製品コードに差分がないことである。
+- Noise: なし — 同じ理由により、`Noise` には `fixed:` がないため対象外である。
+- Doubts:
+  - Doubts: なし — `Doubts` には `fixed:` がなく、新たに所見に至らない疑義もない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、775 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` はなし。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: なし
