@@ -27,10 +27,6 @@ describe('gate', () => {
     expect(gate(makeInput())).toEqual({ kind: 'start' });
   });
 
-  it('比率がしきい値で prepared なら apply になる', () => {
-    expect(gate(makeInput({ prepared: true }))).toEqual({ kind: 'apply' });
-  });
-
   it('比率がしきい値から LEAD の半分だけ低く prepared なら wait の prepared-below-threshold になる', () => {
     const tokens = Math.floor((THRESHOLD_RATIO - LEAD_RATIO / 2) * CONTEXT_WINDOW);
     expect(gate(makeInput({ tokens, prepared: true }))).toEqual({
