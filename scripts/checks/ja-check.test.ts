@@ -69,6 +69,10 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
     expect(out.stdout).not.toContain('ja-check: No findings.');
     expect(out.stdout).not.toContain('ja-check: No config.');
+    const h1At = out.stdout.indexOf(HEADER_1);
+    const h2At = out.stdout.indexOf(HEADER_2);
+    expect(h1At).toBe(0);
+    expect(h2At).toBeGreaterThan(h1At);
   });
 
   it('md内のerror語 → error行を出してexit 1', () => {
@@ -185,6 +189,23 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
   });
 
+  it('前後が長い行 → 前後10文字に切り詰めて報告する', () => {
+    const root = fakeRoot();
+    writeConfig(root, validConfig());
+    const prefix = 'x'.repeat(15);
+    const suffix = 'y'.repeat(15);
+    const file = writeFile(root, 'a.md', `${prefix}${WARN_WORD}${suffix}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain('[warn]');
+    expect(out.stdout).toContain(`(…${'x'.repeat(10)}[${WARN_WORD}]${'y'.repeat(10)}…)`);
+    expect(out.stdout).not.toContain(prefix);
+    expect(out.stdout).not.toContain(suffix);
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
+
   it('バッククォート単独のコードコメント → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
@@ -208,7 +229,9 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('[error]');
     expect(out.stdout).toContain('ja-check: No findings.');
   });
+});
 
+describe('ja-check', () => {
   it('該当なしのmd → No findings行を出してexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
@@ -224,7 +247,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('ja-check: No config.');
   });
 
-  it('設定なし → 設定なし行をサマリーより前に出してexit 0', () => {
+  it('設定なし → No config行をサマリーより前に出してexit 0', () => {
     const root = fakeRoot();
     const file = writeFile(root, 'a.md', `${ERROR_WORD}\n`);
     const out = run(root, [file]);
@@ -249,6 +272,9 @@ describe('ja-check', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toContain(HEADER_1);
     expect(out.stdout).toContain(HEADER_2);
+    expect(out.stderr).toContain('is not valid JSON');
+    expect(out.stdout).not.toContain('files, error');
+    expect(out.stdout).not.toContain('ja-check: No findings.');
   });
 
   it('キーや値の型が誤った設定 → exit 1', () => {
@@ -263,6 +289,9 @@ describe('ja-check', () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toContain(HEADER_1);
     expect(out.stdout).toContain(HEADER_2);
+    expect(out.stderr).toContain('is not valid JSON');
+    expect(out.stdout).not.toContain('files, error');
+    expect(out.stdout).not.toContain('ja-check: No findings.');
     const root2 = fakeRoot();
     writeFile(
       root2,
@@ -274,5 +303,20 @@ describe('ja-check', () => {
     expect(out2.status).toBe(1);
     expect(out2.stdout).toContain(HEADER_1);
     expect(out2.stdout).toContain(HEADER_2);
+    expect(out2.stderr).toContain('is not valid JSON');
+    expect(out2.stdout).not.toContain('files, error');
+    expect(out2.stdout).not.toContain('ja-check: No findings.');
+  });
+
+  it('頂点が非レコードの設定 → 冒頭2行を出してexit 1', () => {
+    for (const bad of [null, [], 'x'] as const) {
+      const root = fakeRoot();
+      writeFile(root, join('scripts', 'checks', 'ja-check.json'), JSON.stringify(bad));
+      const file = writeFile(root, 'a.md', 'ok\n');
+      const out = run(root, [file]);
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain(HEADER_1);
+      expect(out.stdout).toContain(HEADER_2);
+    }
   });
 });
