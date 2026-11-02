@@ -106,17 +106,16 @@ scripts/
 
 ### Slice 2: skills の統合
 
-- Findings:
-  - Verify の `! grep -E '両ルートの dir 名を集める（`archive` も入る）|無いルートは空として扱う'` が新テスト名にも一致し、緑にできない。
-    left: 新テスト名 `両ルートの dir 名を集め、無いルートは空として扱う` は `test "$(grep -c '両ルートの dir 名を集め、無いルートは空として扱う')" = 1` を満たすために必須だが、その末尾 `無いルートは空として扱う` が `! grep` の後半に一致するため、両立しない。plan の Verify 修正が必要。
-- Unplanned: なし
-- Commit:
-- Stopped: Slice 2 の Steps まで実施し、Verify で停止（上記1行のみ赤）。コミットせず、作業ツリーに未コミットのまま残す。`pnpm test:run scripts .pi/skills` は 136 件（144 から 8 減）。
-
-### Cleanup: <what it cleaned>
-
-- Findings:
+- Findings: なし
 - Unplanned:
+  - plan の Slice 2 `Verify` の dirNames 除外行を `it\('` 付きに修正（統合後名との両立不能を解消）。
+- Commit: 9a53179 consult(scripts-skills): merge skills tests into combined cases（`pnpm test:run scripts .pi/skills` 136 件、144 から 8 減）
+- Stopped:
+
+### Cleanup: 追加の削除なし（4分類で点検、136件維持）
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
