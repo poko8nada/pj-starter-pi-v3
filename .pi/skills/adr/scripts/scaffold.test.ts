@@ -109,7 +109,7 @@ describe('cycleDirName', () => {
 });
 
 describe('createLeafDir', () => {
-  it('空 tmp に作る → path が返り dir ができる', () => {
+  it('空の tmp に作り、既存の dir には作らず投げる', () => {
     const root = tempDir();
     const parent = join(root, 'cycles');
     mkdirSync(parent, { recursive: true });
@@ -117,19 +117,12 @@ describe('createLeafDir', () => {
     const leaf = createLeafDir(parent, leafName);
     expect(leaf).toBe(join(parent, leafName));
     expect(existsSync(leaf)).toBe(true);
-  });
-
-  it('既存 dir には作らず投げる', () => {
-    const root = tempDir();
-    const parent = join(root, 'cycles');
-    const leafName = cycleDirName(16, '261010', 'main');
-    mkdirSync(join(parent, leafName), { recursive: true });
     expect(() => createLeafDir(parent, leafName)).toThrow();
   });
 });
 
 describe('dirNames', () => {
-  it('両ルートの dir 名を集める（`archive` も入る）', () => {
+  it('両ルートの dir 名を集め、無いルートは空として扱う', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const archiveDir = join(cyclesDir, 'archive');
@@ -139,12 +132,8 @@ describe('dirNames', () => {
     mkdirSync(join(archiveDir, oldName), { recursive: true });
     const expected = [oldName, cycleName, 'archive'].toSorted();
     expect(dirNames(cyclesDir, archiveDir).toSorted()).toEqual(expected);
-  });
-
-  it('無いルートは空として扱う', () => {
-    const root = tempDir();
-    const expected: readonly string[] = [];
-    expect(dirNames(join(root, 'cycles'), join(root, 'cycles', 'archive'))).toEqual(expected);
+    const emptyRoot = tempDir();
+    expect(dirNames(join(emptyRoot, 'cycles'), join(emptyRoot, 'cycles', 'archive'))).toEqual([]);
   });
 });
 
@@ -205,14 +194,9 @@ describe('entrySkeleton', () => {
 });
 
 describe('lastEntryNumber', () => {
-  it('## 01: を持つ markdown → 1 を返す', () => {
-    const markdown = adrSkeleton(7);
-    expect(lastEntryNumber(markdown)).toBe(1);
-  });
-
-  it('## 02: を持つ markdown → 2 を返す', () => {
-    const markdown = appendEntry(adrSkeleton(7), 2);
-    expect(lastEntryNumber(markdown)).toBe(2);
+  it('## NN: を持つ markdown から、その最大値を返す', () => {
+    expect(lastEntryNumber(adrSkeleton(7))).toBe(1);
+    expect(lastEntryNumber(appendEntry(adrSkeleton(7), 2))).toBe(2);
   });
 
   it('エントリーのない markdown → null を返す', () => {
@@ -229,24 +213,20 @@ describe('lastEntryNumber', () => {
 });
 
 describe('appendEntry', () => {
-  it('## 01: を持つ markdown → ## 02: を足し # ADR は1つのまま', () => {
-    const markdown = adrSkeleton(7);
-    const next = appendEntry(markdown, 2);
-    expect(next).toContain('## 02: <問い>');
-    expect(next).toContain('\n\n## 02: <問い>');
-    expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
-    const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
-    expect(lastSharp).toBe('## 02: <問い>');
-  });
-
-  it('## 02: を持つ markdown → ## 03: を足す', () => {
-    const markdown = appendEntry(adrSkeleton(7), 2);
-    const next = appendEntry(markdown, 3);
-    expect(next).toContain('## 03: <問い>');
-    expect(next).toContain('\n\n## 03: <問い>');
-    expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
-    const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
-    expect(lastSharp).toBe('## 03: <問い>');
+  it('次の番号のエントリーを足し、# ADR は1つのまま', () => {
+    const cases = [
+      { base: adrSkeleton(7), next: 2 },
+      { base: appendEntry(adrSkeleton(7), 2), next: 3 },
+    ];
+    for (const { base, next: nextNo } of cases) {
+      const nn = String(nextNo).padStart(2, '0');
+      const next = appendEntry(base, nextNo);
+      expect(next).toContain(`## ${nn}: <問い>`);
+      expect(next).toContain(`\n\n## ${nn}: <問い>`);
+      expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
+      const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
+      expect(lastSharp).toBe(`## ${nn}: <問い>`);
+    }
   });
 
   it('エントリーのない markdown → ## 01: を足す', () => {

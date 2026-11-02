@@ -31,11 +31,8 @@ describe('noOf', () => {
     expect(noOf(planId, normalPlan, closeWithTriage)).toBe(adrNo);
   });
 
-  it('`ex-` planは`- No:`が無くてもTriage行の`ADR <NN>`を読む', () => {
+  it('`ex-`plan は Triage 行の`ADR <NN>` を読み、行が無ければ null になる', () => {
     expect(noOf(exId, exPlan, closeWithTriage)).toBe(adrNo);
-  });
-
-  it('Triage行が無い`ex-` planはnull（`未特定`）', () => {
     expect(noOf(missingId, exMissingPlan, closeWithTriage)).toBeNull();
   });
 });

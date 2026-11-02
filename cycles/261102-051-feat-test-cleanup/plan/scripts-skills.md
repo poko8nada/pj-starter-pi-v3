@@ -89,7 +89,7 @@ scripts/
   - `test "$(grep -c '次の番号のエントリーを足し' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
   - `! grep -E '空 tmp に作る → path が返り|既存 dir には作らず投げる' .pi/skills/adr/scripts/scaffold.test.ts`
   - `test "$(grep -c '空の tmp に作り、既存の dir には作らず投げる' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
-  - `! grep -E '両ルートの dir 名を集める（`archive` も入る）|無いルートは空として扱う' .pi/skills/adr/scripts/scaffold.test.ts`
+  - `! grep -E "it\('両ルートの dir 名を集める|it\('無いルートは空として扱う" .pi/skills/adr/scripts/scaffold.test.ts`
   - `test "$(grep -c '両ルートの dir 名を集め、無いルートは空として扱う' .pi/skills/adr/scripts/scaffold.test.ts)" = 1`
   - `! grep -E '`ex-` planは`- No:`が無くても|Triage行が無い`ex-` plan' .pi/skills/close/scripts/collect.test.ts`
   - `test "$(grep -c '`ex-`plan は Triage 行の`ADR <NN>` を読み' .pi/skills/close/scripts/collect.test.ts)" = 1`
@@ -99,17 +99,19 @@ scripts/
 
 ### Slice 1: scripts の削除と統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 606bdc1 consult(scripts-skills): prune unreachable scripts tests
 - Stopped:
 
 ### Slice 2: skills の統合
 
 - Findings:
-- Unplanned:
+  - Verify の `! grep -E '両ルートの dir 名を集める（`archive` も入る）|無いルートは空として扱う'` が新テスト名にも一致し、緑にできない。
+    left: 新テスト名 `両ルートの dir 名を集め、無いルートは空として扱う` は `test "$(grep -c '両ルートの dir 名を集め、無いルートは空として扱う')" = 1` を満たすために必須だが、その末尾 `無いルートは空として扱う` が `! grep` の後半に一致するため、両立しない。plan の Verify 修正が必要。
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: Slice 2 の Steps まで実施し、Verify で停止（上記1行のみ赤）。コミットせず、作業ツリーに未コミットのまま残す。`pnpm test:run scripts .pi/skills` は 136 件（144 から 8 減）。
 
 ### Cleanup: <what it cleaned>
 
