@@ -94,22 +94,24 @@
 
 ### Slice 1: 本当に気づかれないテストの削除
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2d1c154 consult(thinking-scrub): remove unnoticeable tests
 - Stopped:
 
 ### Slice 2: 同じ分岐を確かめる組の統合
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: broken の off テスト名が Verify の除外パターンに触れたため、意味を変えずに `broken 設定でも off は writeEnabled(false) を 1 回呼び〜` へ改名した
+- Commit: f2ea1b4 consult(thinking-scrub): merge same-branch tests
 - Stopped:
+- Count: pnpm test:run .pi/extensions/thinking-scrub は 132 件で、140 から 8 件減（Slice 1 で 5 件減、Slice 2 で 3 件減）
 
-### Cleanup: <what it cleaned>
+### Cleanup: followUpText の人工的な切り詰めテストの削除
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
+- Count: pnpm test:run .pi/extensions/thinking-scrub は 131 件で、140 から 9 件減（Slice 1 で 5 件減、Slice 2 で 3 件減、Cleanup で 1 件減）
 
 ## Work Review
 

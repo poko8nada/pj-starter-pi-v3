@@ -188,12 +188,4 @@ describe('followUpText', () => {
     expect(cut).toContain(longSample.slice(0, live.sampleChars));
     expect(cut).not.toContain(longSample);
   });
-
-  it('followUpText(sample, 10) は見本が 10 文字に切られる', () => {
-    const sample = loopSentence(0);
-    expect(sample.length).toBeGreaterThan(10);
-    const text = followUpText(sample, 10);
-    expect(text).toContain(sample.slice(0, 10));
-    expect(text).not.toContain(sample);
-  });
 });
