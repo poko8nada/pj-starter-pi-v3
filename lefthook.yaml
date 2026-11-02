@@ -21,6 +21,10 @@ pre-commit:
             glob: '*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'
             run: pnpm test:related {staged_files}
             fail_text: 'Test failed. Run: pnpm test:run for details.'
+          - name: ja-check
+            glob: '*'
+            run: node scripts/checks/ja-check.mjs {staged_files}
+            stage_fixed: false
 
 pre-push:
   commands:
