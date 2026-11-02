@@ -72,19 +72,13 @@ describe('changedSince', () => {
     [pathB, printB],
   ]);
 
-  it('新しく現れたパスを返すことを確かめる', () => {
-    const after = new Map(before);
-    after.set(pathC, printC);
-    expect(changedSince(before, after)).toEqual([pathC]);
-  });
-
-  it('すでに変更済みのファイルの再編集を検出する（状態を示す文字では分からない）', () => {
-    const after = new Map(before);
-    after.set(pathA, printA2);
-    expect(changedSince(before, after)).toEqual([pathA]);
-  });
-
-  it('変わらなければ空配列になる', () => {
+  it('新しく現れたパスと、再編集されたパスだけを返し、変わらなければ空になる', () => {
+    const afterNew = new Map(before);
+    afterNew.set(pathC, printC);
+    expect(changedSince(before, afterNew)).toEqual([pathC]);
+    const afterReedit = new Map(before);
+    afterReedit.set(pathA, printA2);
+    expect(changedSince(before, afterReedit)).toEqual([pathA]);
     expect(changedSince(before, new Map(before))).toEqual([]);
   });
 

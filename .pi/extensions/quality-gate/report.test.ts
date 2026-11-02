@@ -24,23 +24,12 @@ function firstLine(text: string): string {
 }
 
 describe('buildGateMessage', () => {
-  it('失敗したチェックの label と試行回数が 1 行目に出る', () => {
-    const label = 'lint-fail';
-    const output = 'boom';
-    const attempt = 1;
-    const maxAttempts = 3;
-    const text = buildGateMessage(
-      report({ outcomes: [{ label, failed: true, output }], attempt, maxAttempts }),
-    );
-    const head = firstLine(text);
-    expect(head).toContain(label);
-    expect(head).toContain(`${attempt}/${maxAttempts}`);
-  });
-
-  it('失敗が複数あれば 1 行目にその label が全部並ぶ', () => {
+  it('失敗したチェックの label と試行回数だけが 1 行目に出る', () => {
     const first = 'lint-fail';
     const second = 'format-fail';
     const passed = 'typecheck-pass';
+    const attempt = 1;
+    const maxAttempts = 3;
     const text = buildGateMessage(
       report({
         outcomes: [
@@ -48,30 +37,18 @@ describe('buildGateMessage', () => {
           { label: second, failed: true, output: 'b' },
           { label: passed, failed: false, output: '' },
         ],
+        attempt,
+        maxAttempts,
       }),
     );
     const head = firstLine(text);
     expect(head).toContain(first);
     expect(head).toContain(second);
-  });
-
-  it('成功したチェックの label は 1 行目に出ない', () => {
-    const passed = 'lint-pass';
-    const failed = 'typecheck-fail';
-    const text = buildGateMessage(
-      report({
-        outcomes: [
-          { label: passed, failed: false, output: '' },
-          { label: failed, failed: true, output: 'boom' },
-        ],
-      }),
-    );
-    const head = firstLine(text);
-    expect(head).toContain(failed);
+    expect(head).toContain(`${attempt}/${maxAttempts}`);
     expect(head).not.toContain(passed);
   });
 
-  it('成功したチェックは空でない output を渡してもその節に output は出ない', () => {
+  it('失敗したチェックの節にだけ output が出る', () => {
     const passed = 'lint-pass';
     const failed = 'typecheck-fail';
     const hidden = 'should-be-hidden';
@@ -88,13 +65,6 @@ describe('buildGateMessage', () => {
     expect(text).toContain(shown);
   });
 
-  it('失敗したチェックの節にその output が出る', () => {
-    const label = 'lint-fail';
-    const output = 'visible-boom';
-    const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
-    expect(text).toContain(output);
-  });
-
   it('検査から外れた skippedPaths のパスが出る', () => {
     const skipped = 'gone.ts';
     const touched = 'a.ts';
@@ -109,20 +79,17 @@ describe('buildGateMessage', () => {
     expect(text).toContain('(no output)');
   });
 
-  it('変更したファイルがなければ「(none)」と出す', () => {
-    const text = buildGateMessage(report({ relativePaths: [], skippedPaths: [] }));
-    expect(text).toContain('Files touched in this turn: (none)');
-  });
-
-  it('変更したファイルがあれば `(none)` は出さない', () => {
+  it('変更したファイルの有無で (none) を出すか決める', () => {
+    const empty = buildGateMessage(report({ relativePaths: [], skippedPaths: [] }));
+    expect(empty).toContain('Files touched in this turn: (none)');
     const touched = 'touched-a.ts';
-    const text = buildGateMessage(report({ relativePaths: [touched], skippedPaths: [] }));
-    expect(text).toContain(touched);
-    expect(text).toContain('Files touched in this turn:');
-    expect(text).not.toContain('(none)');
+    const filled = buildGateMessage(report({ relativePaths: [touched], skippedPaths: [] }));
+    expect(filled).toContain(touched);
+    expect(filled).toContain('Files touched in this turn:');
+    expect(filled).not.toContain('(none)');
   });
 
-  it('上限を超える出力は切り詰めて除外した行数を告げる', () => {
+  it('上限を超えるときだけ切り詰めて、除外した行数を告げる', () => {
     const label = 'lint-fail';
     // 行数で上限を超える（truncateHead と同じ上限を共有する）。
     const lineOutput = Array.from(
@@ -142,10 +109,7 @@ describe('buildGateMessage', () => {
     );
     expect(byteText).toContain('[output truncated:');
     expect(byteText).toContain('more line(s) omitted]');
-  });
 
-  it('上限以内の出力はそのまま出す（切り詰めの記号を付けない）', () => {
-    const label = 'lint-fail';
     const lines = Array.from({ length: DEFAULT_MAX_LINES - 1 }, (_, index) => `line ${index}`);
     const output = lines.join('\n');
     const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
