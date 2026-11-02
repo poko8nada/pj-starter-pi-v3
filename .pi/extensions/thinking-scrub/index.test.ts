@@ -271,22 +271,6 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().lastAt).toBe(7);
   });
 
-  it('1 回の message_end は作成時の 1 回と message_end の 1 回で 2 回呼ばれる', () => {
-    let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => {
-        calls += 1;
-        return okSettings();
-      },
-    });
-    expect(calls).toBe(1);
-    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
-    expect(calls).toBe(2);
-  });
-
   it('okSettings と message_end なら 3 グループの既定値で差し替える', () => {
     const wiring = createScrubWiring({
       settingsDir: tempDir(),

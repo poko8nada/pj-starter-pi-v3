@@ -52,36 +52,26 @@ function fakePort(
 }
 
 describe('runCommand', () => {
-  it('off なら writeEnabled(false) が 1 回呼ばれ off の行が返る', () => {
-    const { port, written, shown } = fakePort();
-    const lines = runCommand(port, parseCommand('off'), 100);
-    expect(written).toEqual([false]);
-    expect(shown).toEqual([]);
-    expect(lines).toEqual([SCRUB_OFF_LINE]);
+  it('on と off は writeEnabled を 1 回呼び、その行を返す', () => {
+    const offPort = fakePort();
+    expect(runCommand(offPort.port, parseCommand('off'), 100)).toEqual([SCRUB_OFF_LINE]);
+    expect(offPort.written).toEqual([false]);
+    expect(offPort.shown).toEqual([]);
+    const onPort = fakePort();
+    expect(runCommand(onPort.port, parseCommand('on'), 100)).toEqual([SCRUB_ON_LINE]);
+    expect(onPort.written).toEqual([true]);
+    expect(onPort.shown).toEqual([]);
   });
 
-  it('on なら writeEnabled(true) が 1 回呼ばれ on の行が返る', () => {
-    const { port, written, shown } = fakePort();
-    const lines = runCommand(port, parseCommand('on'), 100);
-    expect(written).toEqual([true]);
-    expect(shown).toEqual([]);
-    expect(lines).toEqual([SCRUB_ON_LINE]);
-  });
-
-  it('show なら writeShow(true) が 1 回呼ばれ writeEnabled は呼ばれず show の行が返る', () => {
-    const { port, written, shown } = fakePort();
-    const lines = runCommand(port, parseCommand('show'), 100);
-    expect(shown).toEqual([true]);
-    expect(written).toEqual([]);
-    expect(lines).toEqual([SCRUB_SHOW_LINE]);
-  });
-
-  it('hide なら writeShow(false) が 1 回呼ばれ writeEnabled は呼ばれず hide の行が返る', () => {
-    const { port, written, shown } = fakePort();
-    const lines = runCommand(port, parseCommand('hide'), 100);
-    expect(shown).toEqual([false]);
-    expect(written).toEqual([]);
-    expect(lines).toEqual([SCRUB_HIDE_LINE]);
+  it('show と hide は writeShow を 1 回呼び、writeEnabled を呼ばない', () => {
+    const showPort = fakePort();
+    expect(runCommand(showPort.port, parseCommand('show'), 100)).toEqual([SCRUB_SHOW_LINE]);
+    expect(showPort.shown).toEqual([true]);
+    expect(showPort.written).toEqual([]);
+    const hidePort = fakePort();
+    expect(runCommand(hidePort.port, parseCommand('hide'), 100)).toEqual([SCRUB_HIDE_LINE]);
+    expect(hidePort.shown).toEqual([false]);
+    expect(hidePort.written).toEqual([]);
   });
 
   it('foo ならどちらも呼ばれず使い方の 1 行が返る', () => {
@@ -162,7 +152,7 @@ describe('runCommand', () => {
     expect(lines).toContain(SCRUB_SHOW_ON);
   });
 
-  it('broken の off なら writeEnabled(false) が 1 回呼ばれ off の行が返る', () => {
+  it('broken 設定でも off は writeEnabled(false) を 1 回呼び off の行が返る', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
     });
