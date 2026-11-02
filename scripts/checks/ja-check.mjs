@@ -1,12 +1,27 @@
 // ja-check: report banned Japanese words in staged files.
 // Usage: node scripts/checks/ja-check.mjs <file1> <file2> ...
 // Mechanism: reads scripts/checks/ja-check.json with fs.readFileSync and JSON.parse,
-// prints <file>:<line>: <word> → <replacement> [error|warn] and a summary line.
+// outputs header, per-hit context lines, No findings or No config lines, closing counts.
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const root = process.cwd();
 const configPath = path.join(root, 'scripts', 'checks', 'ja-check.json');
+
+const HEADER_1 =
+  'ja-check: Report to the owner. warn needs judgement (commit continues); error must be fixed (commit stops).';
+const HEADER_2 = 'ja-check: Replacements are ideas; judge by context and content.';
+
+function printHeader() {
+  console.log(HEADER_1);
+  console.log(HEADER_2);
+}
+
+function failConfig() {
+  printHeader();
+  console.error('ja-check.json is not valid JSON');
+  process.exit(1);
+}
 
 let config;
 try {
@@ -14,10 +29,12 @@ try {
 } catch (error) {
   if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
     const total = process.argv.slice(2).length;
-    console.log('設定なし');
-    console.log(`ja-check: ${total} ファイル、error 0 件、warn 0 件`);
+    printHeader();
+    console.log('ja-check: No config.');
+    console.log(`ja-check: ${total} files, error 0, warn 0.`);
     process.exit(0);
   } else {
+    printHeader();
     console.error('ja-check.json is not valid JSON');
     process.exit(1);
   }
@@ -28,26 +45,22 @@ function isRecord(value) {
 }
 
 if (!isRecord(config)) {
-  console.error('ja-check.json is not valid JSON');
-  process.exit(1);
+  failConfig();
 }
 
 const keys = Object.keys(config);
 if (keys.length !== 2 || !keys.includes('error') || !keys.includes('warn')) {
-  console.error('ja-check.json is not valid JSON');
-  process.exit(1);
+  failConfig();
 }
 
 if (!isRecord(config.error) || !isRecord(config.warn)) {
-  console.error('ja-check.json is not valid JSON');
-  process.exit(1);
+  failConfig();
 }
 
 for (const group of [config.error, config.warn]) {
   for (const [word, replacement] of Object.entries(group)) {
     if (typeof word !== 'string' || typeof replacement !== 'string') {
-      console.error('ja-check.json is not valid JSON');
-      process.exit(1);
+      failConfig();
     }
   }
 }
@@ -55,22 +68,28 @@ for (const group of [config.error, config.warn]) {
 const errorEntries = Object.entries(config.error);
 const warnEntries = Object.entries(config.warn);
 
-// True when word occurs in line outside matching quotes that hold only the word.
-function hasUnquoted(line, word) {
+// Index of word in line outside matching quotes that hold only the word, -1 when absent.
+function findUnquoted(line, word) {
   let from = 0;
   while (true) {
     const at = line.indexOf(word, from);
     if (at === -1) {
-      return false;
+      return -1;
     }
     const before = line[at - 1];
     const after = line[at + word.length];
     const quoted = (before === "'" || before === '"' || before === '`') && before === after;
     if (!quoted) {
-      return true;
+      return at;
     }
     from = at + word.length;
   }
+}
+
+function contextSnippet(line, word, at) {
+  const before = line.slice(Math.max(0, at - 10), at);
+  const after = line.slice(at + word.length, at + word.length + 10);
+  return `(…${before}[${word}]${after}…)`;
 }
 
 function isZeroHeading(line) {
@@ -84,6 +103,8 @@ function isHeading(line) {
 const files = process.argv.slice(2);
 let errors = 0;
 let warns = 0;
+
+printHeader();
 
 for (const file of files) {
   const abs = path.isAbsolute(file) ? file : path.join(root, file);
@@ -114,19 +135,28 @@ for (const file of files) {
       }
     }
     for (const [word, replacement] of errorEntries) {
-      if (hasUnquoted(line, word)) {
-        console.log(`${file}:${index + 1}: ${word} → ${replacement} [error]`);
+      const at = findUnquoted(line, word);
+      if (at !== -1) {
+        console.log(
+          `${file}:${index + 1}: ${word} → ${replacement} [error] ${contextSnippet(line, word, at)}`,
+        );
         errors += 1;
       }
     }
     for (const [word, replacement] of warnEntries) {
-      if (hasUnquoted(line, word)) {
-        console.log(`${file}:${index + 1}: ${word} → ${replacement} [warn]`);
+      const at = findUnquoted(line, word);
+      if (at !== -1) {
+        console.log(
+          `${file}:${index + 1}: ${word} → ${replacement} [warn] ${contextSnippet(line, word, at)}`,
+        );
         warns += 1;
       }
     }
   }
 }
 
-console.log(`ja-check: ${files.length} ファイル、error ${errors} 件、warn ${warns} 件`);
+if (errors + warns === 0) {
+  console.log('ja-check: No findings.');
+}
+console.log(`ja-check: ${files.length} files, error ${errors}, warn ${warns}.`);
 process.exit(errors > 0 ? 1 : 0);
