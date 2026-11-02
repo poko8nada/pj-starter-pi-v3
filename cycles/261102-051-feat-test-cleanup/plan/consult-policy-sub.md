@@ -113,42 +113,83 @@
 ### Slice 1: policy と budget の削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `! grep -E ...`（バッククォート含み）を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が backtick を含むトークンを一律で止めるため。製品コードは変えられないので、grep ツールで不在を確認して代替した。
+- Unplanned: なし
+- Commit: c91c7cd
 - Stopped:
 
 ### Slice 2: guard の統合と削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `test "$(grep -c ...)" = 1` を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が `$(...)` を展開不能として一律で止めるため。製品コードは変えられないので、`grep -c` のみで件数 1 を確認して代替した。
+- Unplanned: なし
+- Commit: a3d47f2
 - Stopped:
 
 ### Slice 3: index と spec の削除
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の `test "$(grep -c '音が off、印のない完了' ...)" = 1` を bash のまま実行すると subagent-guard に止められる。
+    - left: guard が `$(...)` を展開不能として一律で止めるため。製品コードは変えられないので、`grep -c` のみで件数 1 を確認して代替した。
+  - Added の件数: `pnpm test:run .pi/extensions/consult/policy .pi/extensions/consult/sub .pi/extensions/consult/index.test.ts` は 84 件。105 から 21 件減った。
+- Unplanned: なし
+- Commit: 220bc61
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: 重複する振る舞いの確認を整理
 
 - Findings:
-- Unplanned:
+  - `budget.test.ts` の `lastTurn` 有効値 2 件（40→38 と 2→0）は同じ式を別値で確かめていた。1 本に統合し、境界の 2→0 を残した。
+    - left: 統合後は `pnpm test:run` 81 件で緑。製品コードは変えていない。
+  - `spec.test.ts` の guard パス絶対確認と `--tools` 空配列時の位置確認は、`-e` 位置と 2 回指定の包括テストと重なっていた。2 本を削除した。
+    - left: 残る 3 本で位置・回数・機械非依存を cover し、`pnpm test:run` 81 件で緑。製品コードは変えていない。
+  - Verify の `test "$(grep -c ...)"` は guard で止められるため、`grep -c` のみで件数確認に代替した（Slice 2・3 と同じ）。
+    - left: 製品コードは変えられないため代替を継続。`! grep -E` は文字どおり実行して緑。
+  - 整理後の件数: `pnpm test:run .pi/extensions/consult/policy .pi/extensions/consult/sub .pi/extensions/consult/index.test.ts` は 81 件。105 から 24 件減った。
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/sub/guard.test.ts:8` の `isSecretPath` 言及コメントは直接の `describe('isSecretPath')` 削除後に残り、かつ `beforeEach` の `.ENV`/`foo.env`/`.env.bak`/`node_modules` 準備（`.pi/extensions/consult/sub/guard.test.ts:18`）を読むテストがなく stale である。
+    - fixed: 冒頭コメントを `judgeToolCall` の解決後判定に直し、未使用だった 4 準備を読む偽例テストを追加した。
 - Unlisted:
+  - なし — 差分の変更は Files の 5 件と plan md 自体のみである。
 - Gaps:
+  - `.pi/extensions/consult/sub/guard.test.ts:29` の統合後は真例のみで、旧表の偽例（`.ENV`/`foo.env`/`.env.bak` など非秘密名を通すこと）を確かめず、過剰拒否でも緑のままである。
+    - fixed: `秘密でない名前は通す（大文字・末尾違い・node_modules）` を追加し、4 準備を通すことを確かめた。
+  - `.pi/extensions/consult/sub/guard.test.ts:166` の拒否側は `write` のみで、`edit`/`quick_edit`/`target_edit` の拒否を確かめず、旧「書く道具は許可された所だけ」の偽例が消えたままである。
+    - fixed: 拒否側に `edit`・`quick_edit`・`target_edit` の 3 断言を足した。
+  - `.pi/extensions/consult/sub/guard.test.ts:146` は複合接頭辞の許可例（`pnpm run test:run` を通す）を落とし、許可側が単語単体のみで、多語許可の破損でも緑のままである。
+    - fixed: 許可側に `commandAllowed('pnpm run test:run', ['pnpm run test:run'])` の真例を足した。
 - Unproven:
+  - なし — 残る統合後の各テストは命名する分岐を壊せば赤になることを目視で確かめた。
 - Noise:
+  - なし — 残る有効値・境界・位置の各ケースはスキーマの反復でも誰も気づかないものでもなく、数値・文字列は仕様の域値または識別子である。
 - Doubts:
+  - Cleanup の `lastTurn` 統合と `spec` 2 件削除は Steps にないが Notes に記録され Files 範囲内であり、close が許容するかに委ねる。
+
+### Round 2
+
+- Stale:
+  - なし — fixed 1件を確認。`.pi/extensions/consult/sub/guard.test.ts:7-12` が `judgeToolCall` の解決後判定に直っており `isSecretPath` への言及はなく、`.pi/extensions/consult/sub/guard.test.ts:41-48` が `.ENV`・`foo.env`・`.env.bak`・`node_modules/react/index.js` の4準備を通すことを確かめるため、`beforeEach`（:15-26）の準備を読むテストがない穴は閉じている
+- Unlisted:
+  - なし — fixed指定なしのため対象外
+- Gaps:
+  - なし — fixed 3件を確認。`guard.test.ts:41-48` が秘密でない4名を通すことを確かめるため過剰拒否では赤になる。`guard.test.ts:176-182` が `write`・`edit`・`quick_edit`・`target_edit` の4断言で拒むことを確かめるため、`guard.ts:219` の `WRITE_TOOLS` から1つ抜ければ赤になる。`guard.test.ts:155-160` が `commandAllowed('pnpm run test:run', ['pnpm run test:run'])` の真例と `pnpm install` の偽例を確かめるため多語許可の破損では赤になる
+- Unproven:
+  - なし — fixed指定なしのため対象外
+- Noise:
+  - なし — fixed指定なしのため対象外
+- Doubts:
+  - なし — fixed:以外を見ないため、新たな疑義は出さない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、763 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` はなし。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: なし

@@ -2,17 +2,10 @@ import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import {
-  commandAllowed,
-  isSecretPath,
-  judgeToolCall,
-  parseLimits,
-  pathAllowed,
-  type Limits,
-} from './guard.ts';
+import { commandAllowed, judgeToolCall, parseLimits, pathAllowed, type Limits } from './guard.ts';
 
 /**
- * 実ファイルで確かめる。`isSecretPath` は realpath を使うので、
+ * 実ファイルで確かめる。`judgeToolCall` は解決後の絶対パスで秘密を判定するので、
  * 存在しないパスでは判断の意味が変わる（それはそれで 1 つのケース）。
  *
  * 保存場所は `test/temp-dir.ts` の helper。テストごとに作り直し、後始末は helper がする。
@@ -32,47 +25,26 @@ beforeEach(() => {
   symlinkSync(join(dir, '.env'), join(dir, 'link-to-env'));
 });
 
-describe('isSecretPath', () => {
-  it('名前で決める（入力と真偽の表から取る）', () => {
-    const cases: Array<{ path: string; cwd: string; expected: boolean }> = [
-      { path: join(dir, '.env'), cwd: dir, expected: true },
-      { path: join(dir, 'sub/dir/.envrc'), cwd: dir, expected: true },
-      { path: '../../.env', cwd: join(dir, 'sub/dir'), expected: true },
-      { path: join(dir, 'link-to-env'), cwd: dir, expected: true },
-      { path: join(dir, 'sub/not-yet/.env'), cwd: dir, expected: true },
-      { path: join(dir, 'README.md'), cwd: dir, expected: false },
-      { path: join(dir, '.ENV'), cwd: dir, expected: false },
-      { path: join(dir, 'foo.env'), cwd: dir, expected: false },
-      { path: join(dir, 'id.key.bak'), cwd: dir, expected: false },
-      { path: join(dir, '.env.bak'), cwd: dir, expected: false },
-      { path: '', cwd: dir, expected: false },
-      { path: join(dir, 'does-not-exist'), cwd: dir, expected: false },
-      { path: join(dir, 'node_modules/react/index.js'), cwd: dir, expected: false },
-    ];
-    for (const entry of cases) {
-      expect(isSecretPath(entry.path, entry.cwd)).toBe(entry.expected);
-    }
-  });
-});
-
 describe('judgeToolCall', () => {
-  it('読む道具と秘密の名前を拒む', () => {
-    const cases: Array<{ name: string; input: Record<string, string>; expected: true }> = [
-      { name: 'read', input: { path: join(dir, '.env') }, expected: true },
-      { name: 'read', input: { path: join(dir, 'sub/dir/.envrc') }, expected: true },
-      { name: 'grep', input: { path: join(dir, 'keys/server.pem') }, expected: true },
-    ];
-    for (const entry of cases) {
-      expect(judgeToolCall(entry.name, entry.input, dir).block).toBe(entry.expected);
-    }
+  it('秘密の名前は、読む道具でも bash でも拒む', () => {
+    expect(judgeToolCall('read', { path: join(dir, '.env') }, dir).block).toBe(true);
+    expect(judgeToolCall('read', { path: join(dir, 'sub/dir/.envrc') }, dir).block).toBe(true);
+    expect(judgeToolCall('grep', { path: join(dir, 'keys/server.pem') }, dir).block).toBe(true);
+    expect(judgeToolCall('read', { path: join(dir, 'link-to-env') }, dir).block).toBe(true);
+    expect(judgeToolCall('bash', { command: `cat ${join(dir, '.env')}` }, dir).block).toBe(true);
     expect(judgeToolCall('read', { path: join(dir, '.env') }, dir)).toEqual({
       block: true,
       reason: expect.stringContaining('読めない'),
     });
   });
 
-  it('bash + cat /dir/.env を拒む', () => {
-    expect(judgeToolCall('bash', { command: `cat ${join(dir, '.env')}` }, dir).block).toBe(true);
+  it('秘密でない名前は通す（大文字・末尾違い・node_modules）', () => {
+    expect(judgeToolCall('read', { path: join(dir, '.ENV') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, 'foo.env') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, '.env.bak') }, dir)).toEqual({});
+    expect(judgeToolCall('read', { path: join(dir, 'node_modules/react/index.js') }, dir)).toEqual(
+      {},
+    );
   });
 
   it('bash のコマンド名（cat）では止めない', () => {
@@ -103,10 +75,6 @@ describe('judgeToolCall', () => {
 
   it('bash + echo $PATH は通す（展開後も秘密の名前ではない）', () => {
     expect(judgeToolCall('bash', { command: 'echo $PATH' }, dir)).toEqual({});
-  });
-
-  it('bash + コマンド内の代入（FOO=.env; cat $FOO）は見ない（残る抜け）', () => {
-    expect(judgeToolCall('bash', { command: 'FOO=.env; cat $FOO' }, dir)).toEqual({});
   });
 
   it('read + README.md は通す', () => {
@@ -146,22 +114,9 @@ describe('parseLimits', () => {
 });
 
 describe('pathAllowed', () => {
-  it('空の一覧 → どこでも書ける', () => {
+  it('空の一覧なら、どこへでも書け、何でも打てる', () => {
     expect(pathAllowed('src/a.ts', '/w', [])).toBe(true);
-  });
-
-  it('ファイルはそのまま、ディレクトリは下の全部', () => {
-    expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
-    expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
-    expect(pathAllowed('src/b.ts', '/w', ['src/a.ts'])).toBe(false);
-    expect(pathAllowed('other/a.ts', '/w', ['src'])).toBe(false);
-  });
-
-  it('glob が効く（review は plan md だけ書ける）', () => {
-    expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
-    expect(pathAllowed('cycles/010-2026-09-29/design.md', '/w', ['cycles/*/plan/*.md'])).toBe(
-      false,
-    );
+    expect(commandAllowed('rm -rf /', [])).toBe(true);
   });
 
   it('worktree の外に出るパスは通さない', () => {
@@ -170,31 +125,26 @@ describe('pathAllowed', () => {
   });
 });
 
-describe('commandAllowed', () => {
-  it('空の一覧 → 何でも打てる', () => {
-    expect(commandAllowed('rm -rf /', [])).toBe(true);
-  });
-
-  it('接頭辞は語として一致する（git は git status を通す）', () => {
-    expect(commandAllowed('git status', ['git'])).toBe(true);
-    expect(commandAllowed('git', ['git'])).toBe(true);
-    expect(commandAllowed('gitfoo', ['git'])).toBe(false);
-    expect(commandAllowed('pnpm run test:run', ['pnpm run test:run'])).toBe(true);
-    expect(commandAllowed('pnpm install', ['pnpm run test:run'])).toBe(false);
-  });
-});
-
 describe('judgeToolCall + 役割の許可', () => {
   const limits: Limits = { state: 'set', paths: ['cycles/*/plan/*.md'], bash: ['git'] };
 
-  it('書く道具は許可された所だけ', () => {
+  it('許可されたパターンの下なら、書く道具を通す', () => {
+    expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
+    expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
+    expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
-    expect(judgeToolCall('edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
-    expect(judgeToolCall('write', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
-    // ホストの編集道具も書く道具として扱う（この環境の `edit` はこれらに置き換わっている）
-    expect(judgeToolCall('quick_edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
-    expect(judgeToolCall('target_edit', { path: 'src/a.ts' }, dir, limits).block).toBe(true);
     expect(judgeToolCall('quick_edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
+    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(
+      true,
+    );
+    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(true);
+    expect(
+      judgeToolCall('write', { path: 'cycles/261026-042-dev/design.md' }, '/w', {
+        state: 'set',
+        paths: ['**/*.md', '**/.*/**/*.md'],
+        bash: [],
+      }),
+    ).toEqual({});
   });
 
   it('読むのは縛らない', () => {
@@ -202,7 +152,12 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(judgeToolCall('grep', { path: 'src' }, dir, limits)).toEqual({});
   });
 
-  it('bash は許可された接頭辞だけ', () => {
+  it('接頭辞が語として一致するときだけ bash を通す', () => {
+    expect(commandAllowed('git status', ['git'])).toBe(true);
+    expect(commandAllowed('git', ['git'])).toBe(true);
+    expect(commandAllowed('gitfoo', ['git'])).toBe(false);
+    expect(commandAllowed('pnpm run test:run', ['pnpm run test:run'])).toBe(true);
+    expect(commandAllowed('pnpm install', ['pnpm run test:run'])).toBe(false);
     expect(judgeToolCall('bash', { command: 'git status' }, dir, limits)).toEqual({});
     expect(judgeToolCall('bash', { command: 'rm -rf src' }, dir, limits).block).toBe(true);
   });
@@ -215,29 +170,15 @@ describe('judgeToolCall + 役割の許可', () => {
   });
 });
 
-describe('pathAllowed + proofreader（md だけ）', () => {
-  it('md は通す（通常とドットディレクトリ）', () => {
-    const patterns = ['**/*.md', '**/.*/**/*.md'];
-    expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', patterns)).toBe(true);
-    expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', patterns)).toBe(true);
-  });
-
-  it('src の ts は止める', () => {
-    expect(pathAllowed('src/a.ts', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(false);
-  });
-});
-
 describe('judgeToolCall + proofreader の許可', () => {
   const proofreader: Limits = { state: 'set', paths: ['**/*.md', '**/.*/**/*.md'], bash: [] };
 
-  it('md への write は通す', () => {
-    expect(
-      judgeToolCall('write', { path: 'cycles/261026-042-dev/design.md' }, '/w', proofreader),
-    ).toEqual({});
-  });
-
-  it('md 以外への write は止める', () => {
+  it('許可されていないパターンの下では、書く道具を止める', () => {
+    expect(pathAllowed('src/a.ts', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(false);
     expect(judgeToolCall('write', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('quick_edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
+    expect(judgeToolCall('target_edit', { path: 'src/a.ts' }, '/w', proofreader).block).toBe(true);
   });
 });
 

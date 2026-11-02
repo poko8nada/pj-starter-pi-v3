@@ -71,23 +71,6 @@ afterEach(() => {
 });
 
 describe('flushPending', () => {
-  it('印のない完了を 1 件渡す → 1 を返す。印の行が 1 本増える', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    const notice = 'できた';
-    pending(found, at, { notice });
-    const { pi, sent } = fakePi();
-
-    expect(flushPending(portFor(found, pi))).toBe(1);
-
-    expect(sent).toHaveLength(1);
-    expect(sent[0]?.content).toBe(notice);
-    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
-    expect(runs).toHaveLength(2);
-    expect(deliveredKeys(runs).size).toBe(1);
-    expect(pendingReports(found, { session: 'session-a', days: KEEP_DAYS })).toEqual([]);
-  });
-
   it('0 件 → 0 を返す。送らない', () => {
     const found = place();
     const { pi, sent } = fakePi();
@@ -212,22 +195,6 @@ describe('startTick / stopTick', () => {
 });
 
 describe('reload', () => {
-  it('古いインスタンスの完了 → 新しい tick が 1 回渡し、印を書く。次は渡さない', () => {
-    const found = place();
-    const subagent = 'consult-9';
-    // old instance wrote the completion row and is gone
-    appendRun(found, record({ subagent }), new Date());
-    const { pi, sent } = fakePi();
-    startTick(portFor(found, pi, 'session-a'));
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(sent).toHaveLength(1);
-    expect(flushPending(portFor(found, pi))).toBe(0);
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-    expect(sent).toHaveLength(1);
-  });
-
   it('同じ印で一覧は running から done へ、音は鳴る状態から鳴らない状態へ', () => {
     const found = place();
     const subagent = 'consult-9';
