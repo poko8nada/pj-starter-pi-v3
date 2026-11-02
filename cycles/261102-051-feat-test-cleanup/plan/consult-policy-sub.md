@@ -173,8 +173,23 @@
 - Doubts:
   - Cleanup の `lastTurn` 統合と `spec` 2 件削除は Steps にないが Notes に記録され Files 範囲内であり、close が許容するかに委ねる。
 
+### Round 2
+
+- Stale:
+  - なし — fixed 1件を確認。`.pi/extensions/consult/sub/guard.test.ts:7-12` が `judgeToolCall` の解決後判定に直っており `isSecretPath` への言及はなく、`.pi/extensions/consult/sub/guard.test.ts:41-48` が `.ENV`・`foo.env`・`.env.bak`・`node_modules/react/index.js` の4準備を通すことを確かめるため、`beforeEach`（:15-26）の準備を読むテストがない穴は閉じている
+- Unlisted:
+  - なし — fixed指定なしのため対象外
+- Gaps:
+  - なし — fixed 3件を確認。`guard.test.ts:41-48` が秘密でない4名を通すことを確かめるため過剰拒否では赤になる。`guard.test.ts:176-182` が `write`・`edit`・`quick_edit`・`target_edit` の4断言で拒むことを確かめるため、`guard.ts:219` の `WRITE_TOOLS` から1つ抜ければ赤になる。`guard.test.ts:155-160` が `commandAllowed('pnpm run test:run', ['pnpm run test:run'])` の真例と `pnpm install` の偽例を確かめるため多語許可の破損では赤になる
+- Unproven:
+  - なし — fixed指定なしのため対象外
+- Noise:
+  - なし — fixed指定なしのため対象外
+- Doubts:
+  - なし — fixed:以外を見ないため、新たな疑義は出さない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（62 本、763 件）と `pnpm typecheck` をワークツリーで実行し、緑。plan の `Always` は各スライスの `Verify` で実行済み。`Added` はなし。この plan は振る舞いを足さずテストを削るため、壊して赤を確かめる対象はない。差分を読み、テストの削除と統合だけであることを確かめた。
+- Findings: なし
+- Doubts: なし
