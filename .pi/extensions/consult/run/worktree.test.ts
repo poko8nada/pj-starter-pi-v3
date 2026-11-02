@@ -333,12 +333,6 @@ describe('listWorktrees のゴースト', () => {
 });
 
 describe('listWorktrees / findWorktree', () => {
-  it('ワークツリーが 1 つもない → 空', () => {
-    const dir = tempDir();
-    expect(listWorktrees(dir)).toEqual([]);
-    expect(findWorktree(dir, '1-a')).toBeUndefined();
-  });
-
   it('変更が残っている worktree → dirty', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');

@@ -23,16 +23,6 @@ describe('parseRunRequest', () => {
     });
   });
 
-  it('continue: false も渡せる（続きを使わない）', () => {
-    const role = 'code';
-    const task = 'x';
-    expect(parseRunRequest({ role, task, continue: false })).toEqual({
-      role,
-      task,
-      continue: false,
-    });
-  });
-
   it('task が空 → 投げる', () => {
     expect(() => parseRunRequest({ role: 'review', task: '  ' })).toThrow(/task/);
   });

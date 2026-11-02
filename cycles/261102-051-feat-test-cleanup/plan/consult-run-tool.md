@@ -117,29 +117,30 @@
 
 ### Slice 1: proc と place の統合と削除
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5ffe2de consult(consult-run-tool): merge ps args and empty place tests
+- Stopped: なし
 
 ### Slice 2: log の統合と削除
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d543d92 consult(consult-run-tool): merge boundary parse tests and drop migration tests
+- Stopped: なし
 
 ### Slice 3: run の残りの削除と tool の削除
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d5e600f consult(consult-run-tool): drop prune and unused tool input tests
+- Stopped: なし
+- 件数: run + tool で 205 件（223 から 18 件減）
 
-### Cleanup: <what it cleaned>
+### Cleanup: 空入力テスト・重複テスト・ホスト保証済み断言の削除
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 

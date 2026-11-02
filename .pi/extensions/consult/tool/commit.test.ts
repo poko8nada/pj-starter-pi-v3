@@ -89,6 +89,5 @@ describe('parseCommitRequest', () => {
   it('worktree がない・空 → 使い方つきで投げる', () => {
     expect(() => parseCommitRequest({})).toThrow(/worktree is required/);
     expect(() => parseCommitRequest({ worktree: '  ' })).toThrow(/worktree is required/);
-    expect(() => parseCommitRequest('2-a')).toThrow(/not an object/);
   });
 });

@@ -85,10 +85,6 @@ describe('pendingReports', () => {
     ]);
   });
 
-  it('行が 0 本 → 空', () => {
-    expect(pendingReports(place(), { session: 'session-a' })).toEqual([]);
-  });
-
   it('印のない完了が 2 行（started: 1000、2000）→ 古い順に 2 行返す', () => {
     const found = place();
     const at = new Date(2026, 9, 10, 12, 0);

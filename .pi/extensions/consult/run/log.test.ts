@@ -260,12 +260,6 @@ describe('runningRuns', () => {
     expect(runningRuns(found, { at, session: 'A' })).toEqual([]);
   });
 
-  it('行がない → 空', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
-    expect(runningRuns(found, { at, session: 'A' }, () => 'running')).toEqual([]);
-  });
-
   it('終了行が新しい日のファイル、開始行が古い日のファイル → 走っていない', () => {
     const found = place();
     appendRun(
