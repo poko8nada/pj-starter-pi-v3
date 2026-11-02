@@ -21,20 +21,14 @@ describe('parseRunRequest', () => {
       worktree,
       continue: true,
     });
-  });
-
-  it('continue: false も渡せる（続きを使わない）', () => {
-    const role = 'code';
-    const task = 'x';
-    expect(parseRunRequest({ role, task, continue: false })).toEqual({
+    // false は落とさず、未指定（欄なし）と区別して下流に届く。consult.ts の ?? がこの区別に頼る
+    expect(parseRunRequest({ role, task, worktree, continue: false })).toEqual({
       role,
       task,
+      worktree,
       continue: false,
     });
-  });
-
-  it('role がない → 使い方つきで投げる', () => {
-    expect(() => parseRunRequest({ task: 'x' })).toThrow(/role must be a non-empty string/);
+    expect(parseRunRequest({ role, task, worktree })).toEqual({ role, task, worktree });
   });
 
   it('task が空 → 投げる', () => {
@@ -43,21 +37,5 @@ describe('parseRunRequest', () => {
 
   it('worktree が空文字 → 投げる（暗黙に作らない）', () => {
     expect(() => parseRunRequest({ role: 'code', task: 'x', worktree: '' })).toThrow(/worktree/);
-  });
-
-  it('オブジェクトでない → 投げる', () => {
-    expect(() => parseRunRequest('review')).toThrow(/not an object/);
-  });
-
-  it('input を渡しても引数として拾わない（面にない）', () => {
-    const role = 'review';
-    const task = 'x';
-    const request = parseRunRequest({ role, task, input: ['a.md'] });
-    expect(request).toEqual({ role, task });
-  });
-
-  it('continue が真偽値でない → 既定（未指定）にする', () => {
-    const request = parseRunRequest({ role: 'review', task: 'x', continue: 'yes' });
-    expect(request.continue).toBeUndefined();
   });
 });

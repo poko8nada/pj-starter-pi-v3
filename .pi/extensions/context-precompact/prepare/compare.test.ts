@@ -66,20 +66,14 @@ describe('compare', () => {
     });
   });
 
-  it('fileOps.read だけ違えば mismatch の fileOps になる', () => {
+  it('fileOps のどれかが違えば mismatch の fileOps になる', () => {
     expect(compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['b.ts'] }) })).toEqual({
       kind: 'mismatch',
       fields: ['fileOps'],
     });
-  });
-
-  it('fileOps.written だけ違えば mismatch の fileOps になる', () => {
     expect(
       compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], written: ['b.ts'] }) }),
     ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });
-  });
-
-  it('fileOps.edited だけ違えば mismatch の fileOps になる', () => {
     expect(
       compare(base(), { ...base(), fileOps: fileOpsOf({ read: ['a.ts'], edited: ['b.ts'] }) }),
     ).toEqual({ kind: 'mismatch', fields: ['fileOps'] });

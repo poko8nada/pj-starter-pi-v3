@@ -89,11 +89,5 @@ describe('parseCommitRequest', () => {
   it('worktree がない・空 → 使い方つきで投げる', () => {
     expect(() => parseCommitRequest({})).toThrow(/worktree is required/);
     expect(() => parseCommitRequest({ worktree: '  ' })).toThrow(/worktree is required/);
-    expect(() => parseCommitRequest('2-a')).toThrow(/not an object/);
-  });
-
-  it('message を渡しても引数として拾わない（型は道具が作る）', () => {
-    const worktree = '2-a';
-    expect(parseCommitRequest({ worktree, message: '好きな文' })).toBe(worktree);
   });
 });

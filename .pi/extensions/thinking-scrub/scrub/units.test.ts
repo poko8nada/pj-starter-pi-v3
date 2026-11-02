@@ -214,17 +214,24 @@ describe('detectUnitRuns', () => {
 });
 
 describe('sampleOf', () => {
-  it('12 単位のランなら最頻の 3 文で sampleChars 以下になる', () => {
+  it('周期が 3 以下なら、その周期の文だけを返す', () => {
     const tuning = defaultSettings();
-    const pattern = [english(0), english(1), english(2)];
+    const three = [english(0), english(1), english(2)];
     const cycles = tuning.sentence.minCycles + 1;
-    const text = cycleText(pattern, cycles);
-    const units = unitsFromText(text);
-    expect(units).toHaveLength(pattern.length * cycles);
-    const run: UnitRun = { at: 0, length: units.length, period: pattern.length };
-    const sample = sampleOf(units, run, tuning.live.sampleChars);
-    expect(sample).toBe(pattern.join(' '));
-    expect(sample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
+    const threeText = cycleText(three, cycles);
+    const threeUnits = unitsFromText(threeText);
+    expect(threeUnits).toHaveLength(three.length * cycles);
+    const threeRun: UnitRun = { at: 0, length: threeUnits.length, period: three.length };
+    const threeSample = sampleOf(threeUnits, threeRun, tuning.live.sampleChars);
+    expect(threeSample).toBe(three.join(' '));
+    expect(threeSample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
+    const one = [longEnglish(0)];
+    const oneText = cycleText(one, tuning.sentence.minCycles);
+    expect(oneText.length).toBeGreaterThanOrEqual(tuning.sentence.minRunChars);
+    const oneUnits = unitsFromText(oneText);
+    expect(oneUnits).toHaveLength(tuning.sentence.minCycles);
+    const oneRun: UnitRun = { at: 0, length: tuning.sentence.minCycles, period: one.length };
+    expect(sampleOf(oneUnits, oneRun, tuning.live.sampleChars)).toBe(one[0] ?? '');
   });
 
   it('3 文で sampleChars を超えれば切れる', () => {
@@ -242,17 +249,5 @@ describe('sampleOf', () => {
     const expected = [longEnglish(0), longEnglish(1), longEnglish(2)].join(' ');
     expect(expected.length).toBeGreaterThan(tuning.live.sampleChars);
     expect(sample).toBe(expected.slice(0, tuning.live.sampleChars));
-  });
-
-  it('1 単位の周期ならその 1 文だけになる', () => {
-    const tuning = defaultSettings();
-    const pattern = [longEnglish(0)];
-    const one = pattern[0] ?? '';
-    const text = cycleText(pattern, tuning.sentence.minCycles);
-    expect(text.length).toBeGreaterThanOrEqual(tuning.sentence.minRunChars);
-    const units = unitsFromText(text);
-    expect(units).toHaveLength(tuning.sentence.minCycles);
-    const run: UnitRun = { at: 0, length: tuning.sentence.minCycles, period: pattern.length };
-    expect(sampleOf(units, run, tuning.live.sampleChars)).toBe(one);
   });
 });

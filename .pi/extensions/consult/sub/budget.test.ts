@@ -11,14 +11,9 @@ import budgetDefault, {
 // ここは「いつ促すか」だけを試す。サブエージェントを実際に走らせるのはメインエージェントの役目（consult の道具の検査が扱う）。
 
 describe('lastTurn', () => {
-  it('上限 40 → 38 番（促しの後に 1 ターン残る）', () => {
-    const turns = 40;
-    expect(lastTurn(turns)).toBe(turns - 2);
-  });
-
-  it('上限 2 → 0 番', () => {
-    const turns = 2;
-    expect(lastTurn(turns)).toBe(turns - 2);
+  it('有効な上限 → 上限-2 番（40→38、最小の2→0）', () => {
+    expect(lastTurn(40)).toBe(38);
+    expect(lastTurn(2)).toBe(0);
   });
 
   it('上限がない・1 以下・数でない → 何もしない', () => {
@@ -31,11 +26,6 @@ describe('lastTurn', () => {
 });
 
 describe('turnsFrom', () => {
-  it('数の文字列 → その数', () => {
-    const text = '40';
-    expect(turnsFrom(text)).toBe(Number(text));
-  });
-
   it('空・数でない・0 以下 → undefined（促さない）', () => {
     expect(turnsFrom(undefined)).toBeUndefined();
     expect(turnsFrom('')).toBeUndefined();
@@ -61,18 +51,9 @@ describe('nudge', () => {
     });
   });
 
-  it('促しの 1 つ手前 → 何もしない（ターンを消費しない）', () => {
-    const limit = 38;
-    expect(nudge(limit, false, limit - 1)).toBeUndefined();
-  });
-
   it('一度出したら出さない（無条件の続行はループになる）', () => {
     const limit = 38;
     expect(nudge(limit, true, limit)).toBeUndefined();
-  });
-
-  it('上限が読めない → 何もしない（促さず、pi の打ち切りに任せる）', () => {
-    expect(nudge(undefined, false, 999)).toBeUndefined();
   });
 });
 

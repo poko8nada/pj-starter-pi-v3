@@ -13,7 +13,7 @@ describe('cell', () => {
     });
   });
 
-  it('addFailure すれば failures が 1 増え他が変わらない', () => {
+  it('addFailure は failures を 1 増やし removed と lastAt を保つ', () => {
     const status = { removed: 4, lastAt: 100, failures: 0 };
     expect(addFailure(status)).toEqual({
       removed: status.removed,

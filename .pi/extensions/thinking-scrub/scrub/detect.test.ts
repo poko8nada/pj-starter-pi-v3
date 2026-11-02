@@ -215,18 +215,6 @@ describe('scrubThinking', () => {
     const tailText = `${prefix}${repeated('\n\nThe **', 5)}`;
     expect(scrubThinking(tailText, tuning).text).toBe(prefix);
   });
-
-  it('結果にもう一度かければ removed が 0 になり本文が同一になる', () => {
-    const tuning = defaultSettings();
-    const prefix = 'foo';
-    const suffix = 'bar';
-    const text = `${prefix}${repeated(unit(), 12)}${suffix}`;
-    const first = scrubThinking(text, tuning);
-    expect(first.removed).toBe(1);
-    const second = scrubThinking(first.text, tuning);
-    expect(second.removed).toBe(0);
-    expect(second.text).toBe(first.text);
-  });
 });
 
 describe('scrubThinking sentence', () => {

@@ -106,15 +106,11 @@ async function assertNoExclusion(code: number): Promise<void> {
 }
 
 describe('toRelative', () => {
-  it('cwd からの相対を返すことを確かめる', () => {
+  it('cwd からの相対を返し、空なら元のパスを返す', () => {
     const cwd = '/repo';
     const name = 'src/a.ts';
     const absolute = join(cwd, name);
     expect(toRelative(cwd, absolute)).toBe(name);
-  });
-
-  it('空になる場合（path が cwd 自身）は元のパスを返す', () => {
-    const cwd = '/repo';
     expect(toRelative(cwd, cwd)).toBe(cwd);
   });
 });
@@ -153,7 +149,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     expect(run.skipped).toEqual(targets);
   });
 
-  it('.gitignore 対象はチェックに含めず skipped に入れる', async () => {
+  it('.gitignore の対象だけを skipped に入れ、check-ignore が 0 以外でも出力があれば除外しない', async () => {
     const dir = tempDir();
     const src = tsFile(dir, 'src.ts');
     const dist = tsFile(dir, 'dist.ts');
@@ -171,9 +167,7 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
       expect(args).toContain(src);
       expect(args).not.toContain(dist);
     }
-  });
 
-  it('git check-ignore が 0 以外でも無視されたパスの出力があれば除外しない', async () => {
     await assertNoExclusion(1);
     await assertNoExclusion(128);
   });
