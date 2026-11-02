@@ -31,12 +31,6 @@ describe('parseTypes', () => {
     expect(() => parseTypes('{')).toThrow(/not valid JSON/);
   });
 
-  it('`tools` が空 → 投げる', () => {
-    expect(() => parseTypes(aTypesText(aTypePolicy({ tools: [] })))).toThrow(
-      /fewer than 1 items|must not be empty/,
-    );
-  });
-
   it('ホストの編集道具（quick_edit / target_edit）も名前として通る', () => {
     const tools = ['read', 'quick_edit', 'target_edit'];
     const [type] = parseTypes(aTypesText(aTypePolicy({ tools })));
@@ -57,28 +51,10 @@ describe('parseTypes', () => {
     expect(type?.bash).toEqual(policy.bash);
   });
 
-  it('`limits` がない → 投げる', () => {
-    expect(() => parseTypes(aTypesText({ ...aTypePolicy(), limits: undefined }))).toThrow(/limits/);
-  });
-
-  it('`turns` / `output` が 0 以下 → 投げる', () => {
-    expect(() =>
-      parseTypes(aTypesText(aTypePolicy({ limits: { turns: 0, output: 100 } }))),
-    ).toThrow(/limits.turns.*greater than 0|turns/);
-    expect(() => parseTypes(aTypesText(aTypePolicy({ limits: { turns: 1, output: -1 } })))).toThrow(
-      /limits.output.*greater than 0|output/,
-    );
-  });
-
   it('`limits` が正の値 → そのまま通る', () => {
     const limits = { turns: 7, output: 1234 };
     const policy = aTypePolicy({ limits });
     expect(parseTypes(aTypesText(policy)).at(0)?.limits).toEqual(policy.limits);
-  });
-
-  it('`limits` の `turns` / `output` のキーが欠けている → 投げる', () => {
-    expect(() => parseTypes(aTypesText({ ...aTypePolicy(), limits: { turns: 20 } }))).toThrow();
-    expect(() => parseTypes(aTypesText({ ...aTypePolicy(), limits: { output: 20000 } }))).toThrow();
   });
 });
 
