@@ -101,15 +101,17 @@
 
 - Findings: なし
 - Unplanned: 通読で6件を直した。`format.md` の `## Files` の `Walk the relations` を `affected` 基準に直した。`tasks.md` の回答形に `Integration` と `Flow` を足した。`plan-cut.md` の `Verify` の `design` の `grep` を `-w` にし、`通読` を `read through` の `-i` に直した。`format.md` の `## Work Review` の `Integration` と `Flow` は `work` の任務文と合わないため戻した。`plan-cut.md` の `Steps` の手順番号を手順7から手順4に直した。通読の観点を5つ（矛盾、循環、重複、不足、不自然な流れ）にした。`format.md` の `## Notes` の `Stopped` の長い2行を短い文に区切った。`cut.md` に提示のフェンス（`## Present`）を足し、重複する1行を消した。
-- Commit:
-- Stopped:
+- Commit: a8c05e4
+- Stopped: なし
+- Deviation: スライス1と2を別々のコミットに分けず、`acdc508` と `a8c05e4` の2つにまとめて入れた。1スライス1コミットの規則に反する。
 
 ### Slice 2: ステップの接頭辞と書く前の読み直し
 
 - Findings: なし
 - Unplanned: 通読で3件を直した。`SKILL.md` と `tasks.md` の英語に合わせ、`Verify` の `改めて読む` を `read the file` に直した。`tasks.md` の `Cases` に接頭辞の見本（`add:`、`update:`、`drop:`）を足した。`format.md` の `## Shape` の見本の `Verify` を実際の `Always` の6行に直した。
-- Commit:
-- Stopped:
+- Commit: a8c05e4
+- Stopped: なし
+- Deviation: スライス2も `a8c05e4` にまとめて入れた。スライス1の記録に理由を書いた。
 
 ## Work Review
 
