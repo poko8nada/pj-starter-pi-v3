@@ -284,13 +284,21 @@ describe('openCycleDir', () => {
 });
 
 describe('affectedEntrySkeleton', () => {
-  it('affected.format.md の見出しと接頭辞を持つ', () => {
+  it('affected.format.md の見出しとバレットを持つ', () => {
     const skeleton = affectedEntrySkeleton(1);
     const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
-    expect(headings).toEqual(['## 01: <問い>', '### Code', '### External']);
-    expect(skeleton).toContain('Read: <path>');
-    expect(skeleton).toContain('Check: <path>');
-    expect(skeleton).toContain('Generate: <path>');
+    expect(headings).toEqual([
+      '## 01: <問い>',
+      '### Code',
+      '#### <パス>',
+      '### External',
+      '#### <外のもの>',
+    ]);
+    expect(skeleton).toContain('- Search:');
+    expect(skeleton).toContain('- Adr:');
+    expect(skeleton).toContain('- Direction: _Read_ | _Read by_ | _Check_ | _Generate_');
+    expect(skeleton).toContain('- Role change: **Change** | Not change');
+    expect(skeleton).toContain('- Adjustment: **YES** | No');
   });
 
   it('affected.md の骨組みは # Affected で始まる', () => {

@@ -44,9 +44,9 @@ cycles/261103-053-dev/
 2. `.pi/skills/adr/references/format.md`:
    - drop: このファイルを削除する（内容は `adr.format.md` に移した）。
 3. `.pi/skills/adr/references/affected.format.md`:
-   - add: `affected.md` の書式を定める。見出しはエントリーごとの `## <NN>: <問い>`、その下に `### Code` と `### External`、`### Code` の行は `Read:`、`Check:`、`Generate:` の接頭辞を持つ `<path> — <何をするか>`、`### External` の行は `<外のもの> — <何をするか>`。
+   - add: `affected.md` の書式を定める。エントリーごとの `## <NN>: <問い>`、その下の `### Code` と `### External`、path ごとの見出しと6つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）の形にする。`Search` は1検索1行の `NN: <検索名> - <ヒット数/対象ファイル数>: <見えていないもの>` とし、各見出しがその path の検索を記録し「同上」と書かないこと、`Direction` は選んだ1つをイタリックにすること、`Role change` は `**Change**` か `Not change` で変わる場合だけ子のバレットを置くこと、`Adjustment` は `**YES**` か `No` で必要な場合だけ子のバレットを置くこと、`Generate` はビルド生成物に限り、変更が作る・変える・消すソースファイルは `Read by` にすること、`<>` の中の説明は日本語で書くことを定める。
 4. `.pi/skills/adr/references/tasks.md`:
-   - update: 影響範囲の調査の任務文を加える。対象は1エントリーとし、報告は `### Code` の `Read:`、`Check:`、`Generate:` と `### External` の外のものとし、`subject` と生成物・vendor・ビルド成果物・`.gitignore` 対象・`cycles/` 配下は報告せず、依存は1段階までとし、同じパスを2つのエントリーで重ねても落とさず、事実のみを書く。
+   - update: 影響範囲の調査の任務文を加える。入力はエントリーの変更とし、調べ方の11の手順（名前の検索、前方向と後方向、検索の記録、役割、前後の比較、調整、検査、生成）と、答える9つの問いを書く。場所の列挙やフォルダの名前の指示は入れない。
 5. `.pi/skills/adr/SKILL.md`:
    - update: `## Files` に `affected.md`、`references/adr.format.md`、`references/affected.format.md` を加える。
    - update: 手順に、エントリーの選択肢が決まった後、校正と同時に影響範囲の調査を行わせ、`affected.md` に書く段階を加える。
@@ -166,7 +166,7 @@ export function affectedSkeleton(nnn: number): string;
 ### Steps
 
 1. `cycles/261103-053-dev/affected.md`:
-   - add: エントリー 01 から 06 までの `## <NN>: <問い>` と、その下の `### Code` と `### External` を書く。エントリーごとに影響範囲の調査を行わせ、`Read:`、`Check:`、`Generate:` の接頭辞を持つ行と、外のものの行を書く。
+   - add: エントリー 01 から 06 までの `## <NN>: <問い>` と、その下の `### Code` と `### External` を書く。エントリーごとに影響範囲の調査を行わせ、path ごとの見出しと6つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）で書く。`Search` は1検索1行、`Direction` はイタリック、`Role change` と `Adjustment` は2値で、必要な場合だけ子のバレットを置く。入力はエントリーの変更とし、plan md の `Files` は使わない。
 
 ### Verify
 
@@ -177,9 +177,10 @@ export function affectedSkeleton(nnn: number): string;
   - `test "$(grep -c '^## 0[1-6]:' cycles/261103-053-dev/affected.md)" = 6`
   - `test "$(grep -c '^### Code' cycles/261103-053-dev/affected.md)" = 6`
   - `test "$(grep -c '^### External' cycles/261103-053-dev/affected.md)" = 6`
-  - `test "$(grep -c 'Read:' cycles/261103-053-dev/affected.md)" -ge 1`
-  - `test "$(grep -c 'Check:' cycles/261103-053-dev/affected.md)" -ge 1`
-  - `test "$(grep -c 'Generate:' cycles/261103-053-dev/affected.md)" -ge 1`
+  - `test "$(grep -c 'Search:' cycles/261103-053-dev/affected.md)" -ge 6`
+  - `test "$(grep -c 'Direction:' cycles/261103-053-dev/affected.md)" -ge 6`
+  - `test "$(grep -c 'Role change:' cycles/261103-053-dev/affected.md)" -ge 6`
+  - `test "$(grep -c 'Adjustment:' cycles/261103-053-dev/affected.md)" -ge 6`
 - Added: base の外観: オーナーが `affected.md` を読み、エントリーごとの影響範囲が意図どおりであることを確かめる。オーナーの OK をもって閉じる。
 
 ## Notes
@@ -187,23 +188,23 @@ export function affectedSkeleton(nnn: number): string;
 ### Slice 1: adr の書式の分割と affected.md の書式
 
 - Findings: なし
-- Unplanned: 手順の一覧に「the affected」を足した（`adr/SKILL.md` の 12 行目）。手順7を足したため、一覧の「the scope, the research, the options, the decision and the write」に「the affected」が必要だった。
+- Unplanned: 手順の一覧に「the affected」を足した（`adr/SKILL.md` の 12 行目）。手順7を足したため、一覧の「the scope, the research, the options, the decision and the write」に「the affected」が必要だった。オーナーのトリアージで、書式と任務文を3群から4方向（`Read:`、`Read by:`、`Check:`、`Generate:`）と役割の変化に直した。具体例を固定値にせず、変更が変える関係と役割を一般形で書く形にした。
 - Commit: 75f3d99
 - Stopped: なし
 
 ### Slice 2: スクリプトの分割
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `index.test.ts` で、`entrySkeleton` の1件は `format.md` から `adr.format.md` に名前を変えた。`affectedEntrySkeleton` と `affectedSkeleton` の2件、両方への追記と両方の作成の2件を足した。
+- Commit: 7091c0e
+- Stopped: なし
 
 ### Slice 3: 053 の affected.md
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: 6つのエントリーを6体の `research` で書き、`Verify` を通した。`affected.md` の語を ja-check の error に合わせて、テンプレート、バージョン、作業ツリー、理由、残り、セクション、一覧に置き換えた。
+- Unplanned: オーナーのトリアージで、`affected.format.md` の `<>` の中の説明を日本語に直し、`Search` を `Names`、`Ranges`、`Hits`、`Blind`、`Adr` の入れ子に直した。さらに、`Search` を検索ごとの番号付きのバレットに直し、`Adr` を `Search` の外の path ごとのバレットに出した。053 の `affected.md` は、このサイクルの最後に6体で作り直す。
+- Commit: 38c691f
+- Stopped: なし
 
 ## Work Review
 
