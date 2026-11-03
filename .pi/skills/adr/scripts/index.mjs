@@ -4,7 +4,7 @@
  *   node index.mjs [--root <dir>] [<nnn>]
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
 import { adrSkeleton } from './adr.mjs';
@@ -14,6 +14,7 @@ import {
   appendEntry,
   createLeafDir,
   cycleDirName,
+  cycleNumberOf,
   dirNames,
   lastEntryNumber,
   nextNNN,
@@ -46,6 +47,8 @@ if (isMain) {
     const adrPath = join(openDir, 'adr.md');
     const current = readFileSync(adrPath, 'utf8');
     const next = (lastEntryNumber(current) ?? 0) + 1;
+    const cycle = cycleNumberOf(basename(openDir));
+    if (cycle === null) throw new Error(`broken cycle dir name: ${openDir}`);
     writeFileSync(adrPath, appendEntry(current, next));
     console.log(`appended: ${adrPath}`);
     const affectedPath = join(openDir, 'affected.md');
@@ -53,7 +56,7 @@ if (isMain) {
       const affectedCurrent = readFileSync(affectedPath, 'utf8');
       writeFileSync(affectedPath, appendAffectedEntry(affectedCurrent, next));
     } else {
-      writeFileSync(affectedPath, affectedSkeleton(next));
+      writeFileSync(affectedPath, affectedSkeleton(cycle, next));
     }
     console.log(`appended: ${affectedPath}`);
   } else {
@@ -78,7 +81,7 @@ if (isMain) {
       throw err;
     }
     writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn));
-    writeFileSync(join(leaf, 'affected.md'), affectedSkeleton(nnn));
+    writeFileSync(join(leaf, 'affected.md'), affectedSkeleton(nnn, 1));
     console.log(`created: ${leaf}`);
   }
 }
