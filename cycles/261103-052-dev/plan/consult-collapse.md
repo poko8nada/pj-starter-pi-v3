@@ -184,6 +184,21 @@ export function isLeftClick(event: TuiMouseEvent): boolean;
 - Doubts:
   - Added の base 目視 (fullscreen 再読込での1行表示と `ctrl+o`/クリックの開閉) の所有者 OK が `## Acceptance` に未記録で、close には所有者確認が残る。
 
+### Round 2
+
+- Stale:
+  - なし — `fixed:` の3件はいずれも実体と一致した（`index.ts:2` の頭注、`README.md:202` の説明、`README.md:207` の `view/` の行）。
+- Unlisted:
+  - なし — 対象は `fixed:` の行だけで、対象外の変更は見当たらなかった。
+- Gaps:
+  - なし — `fixed:` の4つのテストはいずれも該当する分岐を直接踏んでいる（空の案内、配列の本文、詳細の欠け、`files: (none)`）。
+- Unproven:
+  - なし — `keyText` をモックで固定し、折りたたみの1行を案内込みで確かめているため、案内の欠落は赤になる。
+- Noise:
+  - なし — 追加された固定文字列と数値は、案内文と fixture の値の範囲にある。
+- Doubts:
+  - レビューでは検査を実行できなかった（`pnpm test:run` が subagent-guard で拒否された）ため、読了による照合だけを行った。close には実行の確認が残る。
+
 ## Acceptance
 
 - Ran:
