@@ -62,7 +62,7 @@ One cycle = ADR → plan → plan execution → close. A skill is in charge of e
 
 ```
 adr          when the owner starts a cycle or raises a point about the definition or the cycle, settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
-plan         when the split is agreed and one of its plans has to become work — after the split is settled and a plan is ready to be handed to a subagent, write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify
+plan         when the ADR is settled and one of its plans has to become work — after the cut is presented and agreed, and a plan is ready to be handed to a subagent, write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify
 work         when a plan is agreed and its work has to be carried out — after the plan md is written and the owner has read it, run the slices, the review, the acceptance and the merge, and leave the record in the plan md
 close        when every plan of a cycle is done (done, or dropped by the owner), collect what the plans left, triage it with the owner, then ask the owner, Unit by Unit, whether they will verify the function
 yolo         when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted, walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
