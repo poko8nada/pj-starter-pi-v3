@@ -133,10 +133,13 @@ export function isLeftClick(event: TuiMouseEvent): boolean;
 
 ### Slice 1: 折りたたみの1行と展開
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `view/notice.ts:19` — `CustomMessage` がパッケージから公開されていないため、`Parameters<MessageRenderer>[0]` で同じ型を取り、`NoticeMessage` と名付けた。
+  - `view/notice.ts:22` — テストで `Theme` を組み立てられないため、描画関数は `fg` と `bg` だけを受ける `NoticePaint` にした。`Theme` はそのまま渡せる。
+  - `view/notice.ts:63` — `keyText('app.tools.expand')` はキーが未設定のとき空文字を返すため、案内の名前が空のときは案内を添えないようにした。
+- Commit: 27c59eb base(consult-collapse): 折りたたみの1行と展開
+- Stopped: なし
 
 ### Slice 2: クリックで開閉する
 
