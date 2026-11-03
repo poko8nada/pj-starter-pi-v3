@@ -1,4 +1,4 @@
-import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
@@ -22,6 +22,8 @@ beforeEach(() => {
   writeFileSync(join(dir, '.env.bak'), 'x\n');
   writeFileSync(join(dir, '.ENV'), 'x\n');
   writeFileSync(join(dir, 'foo.env'), 'x\n');
+  mkdirSync(join(dir, 'cycles/010'), { recursive: true });
+  writeFileSync(join(dir, 'cycles/010/affected.md'), 'x\n');
   symlinkSync(join(dir, '.env'), join(dir, 'link-to-env'));
 });
 
@@ -132,11 +134,12 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
     expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
     expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
-    expect(pathAllowed('cycles/010/affected.md', '/w', ['cycles/*/affected.md'])).toBe(true);
+    expect(existsSync(join(dir, 'cycles/010/affected.md'))).toBe(true);
+    expect(pathAllowed('cycles/010/affected.md', dir, ['cycles/*/affected.md'])).toBe(true);
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
     expect(judgeToolCall('quick_edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
     expect(
-      judgeToolCall('write', { path: 'cycles/010/affected.md' }, '/w', {
+      judgeToolCall('write', { path: 'cycles/010/affected.md' }, dir, {
         state: 'set',
         paths: ['cycles/*/affected.md'],
         bash: [],
