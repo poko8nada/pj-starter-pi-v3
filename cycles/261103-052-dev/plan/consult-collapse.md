@@ -187,5 +187,16 @@ export function isLeftClick(event: TuiMouseEvent): boolean;
 ## Acceptance
 
 - Ran:
+  - `pnpm typecheck` — `root: ok`、`.pi: ok`。
+  - `pnpm test:run` — 64ファイル、726件すべて通過。
+  - 振る舞いを壊して赤になるかの確認:
+    - `noticeParts` の `state` を落とす → 2件が赤。
+    - 表示の論理和（`expanded || isOpened`）を `expanded` に変える → 3件が赤。
+    - `registerNotice` の `customType` を `consult` から `archive` に変える → 1件が赤。
+  - 壊したファイルは `git checkout` で戻し、作業ツリーが元に戻ったことを確かめた。
+  - base の見た目（`Added`）: オーナーが `fullscreen` で再読み込みし、1行表示、`ctrl+o`、クリックでの開閉を確かめ、OK を返した。
 - Findings:
+  - `.pi/extensions/consult/index.ts:212` — `registerNotice(pi)` を消しても自動の検査は緑のままである（`index.test.ts` は default export を呼ばない）。
+    - left: `ExtensionAPI` の偽物を作ると型の断言が必要になり、lint の `no-unsafe-type-assertion` が許さない。配線は1行であり、`registerNotice` 自体はテストで確かめている。
 - Doubts:
+  - なし — レビューの Doubt（検査を実行できなかった）は、受け入れで実行して確かめた。
