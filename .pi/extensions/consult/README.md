@@ -128,10 +128,10 @@ The branch may then be removed with `consult_worktree{action: "remove", id: ...}
 A finished subagent arrives as one message. By default the message is one line:
 
 ```
-[consult] consult-1 — code / done (ctrl+o で展開)
+[consult] consult-1 — code / done (ctrl+o かクリックで展開)
 ```
 
-`ctrl+o` opens it and shows `turns`, `spend`, `files` and the subagent's last text.
+`ctrl+o` opens it and shows `turns`, `spend`, `files` and the subagent's last text. A left click on the message opens and closes it too.
 
 - `state` is one of `done`, `turn-limit`, `error`, `aborted`. `reason` is there when it is not `done`
 - `files` are the paths the subagent changed (`git status --porcelain` in its worktree), so a read-only subagent has none

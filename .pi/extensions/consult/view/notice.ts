@@ -6,7 +6,14 @@
  * `turns`・`spend`・`files` と本文を表示する。
  */
 
-import { Box, Markdown, Text, type Component } from '@earendil-works/pi-tui';
+import {
+  Box,
+  Markdown,
+  MouseRegion,
+  Text,
+  type Component,
+  type TuiMouseEvent,
+} from '@earendil-works/pi-tui';
 import {
   getMarkdownTheme,
   keyText,
@@ -24,6 +31,9 @@ export type NoticePaint = Pick<Theme, 'fg' | 'bg'>;
 /** 1行に並べる部分（`consult-1`、`code`、`done`）。details から読み取れた部分だけを順に保持し、空の場合は `[consult]` だけになる */
 export type NoticeParts = readonly string[];
 
+/** クリックで開いた報告の時刻（ms）。コンポーネントの再作成をまたいで保持し、プロセス内でのみ持つ */
+const opened = new Set<number>();
+
 /** 素の object を、欄だけを持つ枠として見る（`run/log.ts` の `asFields` と同じ形） */
 function asFields(raw: unknown): Record<string, unknown> {
   return typeof raw === 'object' && raw !== null ? { ...raw } : {};
@@ -32,6 +42,25 @@ function asFields(raw: unknown): Record<string, unknown> {
 /** 空でない文字列だけを値として読む */
 function asText(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+/** 報告の時刻が、クリックで開いた状態か。見つからない場合は折りたたみとして扱う */
+export function isOpened(timestamp: number): boolean {
+  return opened.has(timestamp);
+}
+
+/** クリックで開閉状態を反転し、反転後の状態を返す。見つからない時刻は折りたたみ状態から始める */
+export function toggleOpened(timestamp: number): boolean {
+  if (opened.delete(timestamp)) {
+    return false;
+  }
+  opened.add(timestamp);
+  return true;
+}
+
+/** マウスイベントが左クリックかどうかを判定する。左クリック以外は false */
+export function isLeftClick(event: TuiMouseEvent): boolean {
+  return event.type === 'click' && event.button === 'left';
 }
 
 /**
@@ -63,7 +92,7 @@ export function noticeParts(details: unknown): NoticeParts {
  */
 export function noticeLine(parts: NoticeParts, expandLabel: string): string {
   const head = parts.length === 0 ? '[consult]' : `[consult] ${parts.join(' — ')}`;
-  return expandLabel === '' ? head : `${head} (${expandLabel} で展開)`;
+  return expandLabel === '' ? head : `${head} (${expandLabel} かクリックで展開)`;
 }
 
 /** 展開したときに並べる行（`turns`、`spend`、`files`）。読み取れたものだけを含む */
@@ -100,23 +129,45 @@ export function renderNotice(
   message: NoticeMessage,
   options: MessageRenderOptions,
   paint: NoticePaint,
+): MouseRegion {
+  return new MouseRegion(noticeView(message, options, paint), (event) => {
+    if (!isLeftClick(event)) {
+      return undefined;
+    }
+    toggleOpened(message.timestamp);
+    return { handled: true };
+  });
+}
+
+/** 1つの報告の部品。描画のたびに開閉の状態を読み直し、クリックのあとの再描画で表示が変わる */
+function noticeView(
+  message: NoticeMessage,
+  options: MessageRenderOptions,
+  paint: NoticePaint,
 ): Component {
-  const line = noticeLine(noticeParts(message.details), keyText('app.tools.expand'));
-  const box = new Box(options.outputPad, 1, (text) => paint.bg('customMessageBg', text));
-  box.addChild(new Text(paint.fg('customMessageText', line), 0, 0));
-  if (!options.expanded) {
-    return box;
-  }
-  const details = noticeDetailLines(message.details);
-  if (details.length > 0) {
-    box.addChild(new Text(paint.fg('customMessageText', details.join('\n')), 0, 0));
-  }
-  box.addChild(
-    new Markdown(bodyOf(message), 0, 0, getMarkdownTheme(), {
-      color: (text) => paint.fg('customMessageText', text),
-    }),
-  );
-  return box;
+  return {
+    render(width: number): string[] {
+      const expanded = options.expanded || isOpened(message.timestamp);
+      const line = noticeLine(noticeParts(message.details), keyText('app.tools.expand'));
+      const box = new Box(options.outputPad, 1, (text) => paint.bg('customMessageBg', text));
+      box.addChild(new Text(paint.fg('customMessageText', line), 0, 0));
+      if (expanded) {
+        const details = noticeDetailLines(message.details);
+        if (details.length > 0) {
+          box.addChild(new Text(paint.fg('customMessageText', details.join('\n')), 0, 0));
+        }
+        box.addChild(
+          new Markdown(bodyOf(message), 0, 0, getMarkdownTheme(), {
+            color: (text) => paint.fg('customMessageText', text),
+          }),
+        );
+      }
+      return box.render(width);
+    },
+    invalidate(): void {
+      // 描画のたびに組み直すため、保持するものはない
+    },
+  };
 }
 
 /** レンダラーを登録する側のインターフェース。pi の `ExtensionAPI` が満たす */
