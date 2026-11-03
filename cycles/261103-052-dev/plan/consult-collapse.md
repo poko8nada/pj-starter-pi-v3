@@ -143,10 +143,18 @@ export function isLeftClick(event: TuiMouseEvent): boolean;
 
 ### Slice 2: クリックで開閉する
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `view/notice.ts:148` — クリックのあとの再描画で表示を変えるため、部品は `render` のたびに `Box` と `Text` を組み直す形にした（1回だけ作ると表示が変わらない）。
+  - `view/notice.ts:132` — テストが `handleMouse` を呼べるように、`renderNotice` の戻り値を `Component` から `MouseRegion` に変えた。
+  - `view/notice.ts:95` — 案内を `(ctrl+o かクリックで展開)` に変え、`noticeLine` のテスト3件の期待値を更新した。
+- Commit: 76c1029 base(consult-collapse): クリックで開閉する
+- Stopped: なし
+
+### Cleanup: 表示のテスト
+
+- Findings: なし（`view/notice.test.ts` と `index.test.ts` を読み、重なるケース、消えた振る舞いのケース、型が決める前提のケースは見つからなかった）
+- Unplanned: なし
 
 ## Work Review
 
