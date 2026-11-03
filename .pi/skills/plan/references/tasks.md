@@ -5,23 +5,27 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ## Review of a plan (a `review` subagent)
 
 ```
-Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` and its `### Steps` — the design's `Goal` and `Non-goal`, and the code, the test files and the documents those checks name. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
+Read through cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md — each slice's `### Verify` and its `### Steps`, and every file it names — and the ADR's `Adopted` and `Scope`. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
 Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify`, and these `Steps`, close the slice?
-- `Goal` — each line of the design's `Goal` and the `Non-goal` that no step and no check carries, and a step that goes past the `Non-goal`
+- `Goal` — each line of the ADR's `Adopted` and the `Scope` that no step and no check carries, and a step that goes past the `Scope`
+- `Integration` — how the update is built into the existing, and how the whole is redesigned; a plan that only replaces words
 - `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
 - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
-- `Cases` — the test steps' cases against `## Test cases`
+- `Cases` — the test steps' cases and their prefixes (`add:`, `update:`, `drop:`) against `## Test cases`
 - `Checks` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed
+- `Flow` — a contradiction, a circular flow, a duplication, an omission, an unnatural flow inside a file the change made
 
 Answer in this shape, one section per slice:
 
 ### <slice name>
 
 - Goal: なし, or `<file>:<line>` — what is wrong
+- Integration: ...
 - Files: ...
 - Types: ...
 - Cases: ...
 - Checks: ...
+- Flow: ...
 
 One finding is one bullet. Write なし for a name that found nothing.
 This is the only round: the findings come back once.
@@ -34,7 +38,7 @@ Do not change the code or the plan.
 ## Research the unwritable lines (a `research` subagent)
 
 ```
-Answer for one line the plan cannot write, and nothing else. The task names the line, the design's `Goal` and `Non-goal`, and what the plan holds so far.
+Answer for one line the plan cannot write, and nothing else. The task names the line, the ADR's `Adopted` and `Scope`, and what the plan holds so far. Before writing, read the file the line belongs to again.
 
 Ask one question within these four kinds:
 - the code's present shape

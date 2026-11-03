@@ -10,6 +10,8 @@ Section and field names are English; the content is Japanese.
 # PLAN `<plan id>`
 
 - No: <NN>
+- Place: <worktree|base>
+- Boundary Plans: <the plans this one stands on, and the order>
 
 ## Files
 
@@ -36,13 +38,13 @@ Section and field names are English; the content is Japanese.
 ### Steps
 
 1. `<コードのファイル>`:
-   - <何をどうするか。1 文>
+   - add: <何をどうするか。1 文>
      - Outside: `<この plan の Boundary.External の項目>`。<そこでどうするか>
 2. `<テストのファイル>`:
-   - (happy) <given> → <result>
-   - (error) <given> → <result>
+   - update: (happy) <given> → <result>
+   - update: (error) <given> → <result>
 3. `<文書>`:
-   - <何をどうするか。1 文>
+   - update: <何をどうするか。1 文>
 
 ### Verify
 
@@ -52,6 +54,7 @@ Section and field names are English; the content is Japanese.
   - <`pnpm lint`>
   - <`pnpm format:check`>
   - <このスライスが変えた名前と説明を大小文字を問わず `grep` する>
+  - <変更した全ファイルを通読し、矛盾、循環、重複、不足、不自然な流れがないか確かめる>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
 ## 2.<スライス名>
@@ -90,18 +93,18 @@ Section and field names are English; the content is Japanese.
 
 ## One plan is one worktree
 
-- The plan is one worktree, one branch and one merge — unless the design says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the name the design gave it.
-- A subagent reads the plan, and nothing else, to do the work. What the design and the ADR decided is named where it bites, never restated.
+- The plan is one worktree, one branch and one merge — unless the plan md's `Place` says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the plan's name.
+- A subagent reads the plan, and nothing else, to do the work. What the ADR decided is named where it bites, never restated.
 
 ## No
 
-- `No` is the design's plan section's `No`, copied as it is. A normal plan keeps `- No: <NN>` at the top.
+- `No` is the ADR's entry number, copied as it is. A normal plan keeps `- No: <NN>` at the top.
 - An `ex-` plan does not write `No`; the close reads the `ADR <NN>` of the Triage line. The Triage line is the only source.
 
 ## Files
 
 - The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
-- Walk the relations before writing it: what imports the thing that changes, calls it, renders it, migrates with it, seeds with it, documents it, checks it. A follower that is not written is a follower that gets missed.
+- Read the affected before writing it: the affected's `Code` paths and their directions are the `Files` lines. Do not walk the relations again.
 - A new double or fixture is a file: it sits at the root of the feature whose shape it holds.
 - A fixture that holds a shape the feature does not own — the host, the OS, a format several units share — goes in `test/`.
 - `test/` is shared, not the harness's own: a project may keep its own files there.
@@ -124,12 +127,13 @@ Section and field names are English; the content is Japanese.
 - The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
 - A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
 - One step is one file: what to do in it. The shape follows the file:
-  - a code file — what to do, in one sentence; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
-  - a test file — one `<given> → <result>` per case, each marked `(happy)`, `(error)`, `(empty)` or `(boundary)`; each `Goal` line's result is one of those cases
-  - a document — what to do, in one sentence
+  - a code file — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
+  - a test file — one `<prefix>: (happy|error|empty|boundary) <given> → <result>` per case, with the same prefix as the `Files` tree's marker; each `Adopted` line's result is one of those cases
+  - a document — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`
 - The cases of a test file follow `## Test cases`.
 - A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
 - The steps are numbered; the order is the order of the work.
+- A plan whose `Files` has neither `add` nor `drop` says in the `Steps` and the `Why` how the update is built into the existing, and how the whole is redesigned. A plan that only replaces words is not a plan.
 
 ## Types
 
@@ -149,13 +153,14 @@ Section and field names are English; the content is Japanese.
 
 - `Verify` is what closes the slice: what has to pass, not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
-- Each `Goal` line's result is one of the related tests; a step that goes past the `Non-goal` is not written, and the review reads it.
+- Each `Adopted` line's result is one of the related tests; a step that goes past the `Scope` is not written, and the review reads it.
 - `Always:` — the bullets below, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
   - the comments and the documents hold no stale wording: a case-insensitive `grep` for the names and the descriptions this slice changed
+  - every changed file is read through: no contradiction, no circular flow, no duplication, no omission, no unnatural flow; a file that fails is fixed, and the fix is written in `Unplanned`
 - `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
@@ -168,7 +173,7 @@ Section and field names are English; the content is Japanese.
 
 ## Test cases
 
-- The rules are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one.
+- The cases are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one. A case keeps its step's prefix.
 - A premise the types, the spec, the schema or a DB constraint already guarantees is not reproduced in a test.
 - An assertion carries neither a magic number nor a hardcoded string.
 - A boundary value is not a test of its own: the test says the spec it belongs to is met.
@@ -183,8 +188,18 @@ Section and field names are English; the content is Japanese.
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it. Under it, `left: <why>` says why it could not be closed here. `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
-- `Stopped`: only for a slice that stopped — the output of the check that failed, the files changed, the subagent's last text, how many times it ran, the time, and the id of the worktree it left. For a `base` plan, the worktree id is `なし`, because there is no worktree. A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line: the line, the question, and the reason; the review reads it.
-- **The subagent writes its own slice's record**, in the worktree's plan md — `Stopped` too, since the subagent runs the check and sees it fail. For a `base` plan, the agent writes the slice's record in the base's plan md — `Stopped` too, since the agent runs the check and sees it fail. The agent does not author a worktree plan's plan md before the acceptance; it writes it at the acceptance, from the worktree. When a worktree plan is dropped, the agent copies the subagent's plan md to the base as it is.
+- `Stopped`: only for a slice that stopped. It holds what the stop left:
+  - the output of the check that failed
+  - the files changed
+  - the subagent's last text
+  - how many times it ran, and the time
+  - the id of the worktree it left
+  - for a `base` plan, the worktree id is `なし`, because there is no worktree
+- A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line. It holds the line, the question, and the reason. The review reads it.
+- **The subagent writes its own slice's record** in the worktree's plan md. `Stopped` too, since the subagent runs the check and sees it fail.
+- For a `base` plan, the agent writes the slice's record in the base's plan md. `Stopped` too, since the agent runs the check and sees it fail.
+- The agent does not author a worktree plan's plan md before the acceptance. The agent writes it at the acceptance, from the worktree.
+- When a worktree plan is dropped, the agent copies the subagent's plan md to the base as it is.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - `Commit` is the slice's own commit, and it is not rewritten.
 
@@ -215,4 +230,4 @@ Section and field names are English; the content is Japanese.
 - Do not write what the reader can look up.
 - Keep a table short: a wide one breaks with long text.
 - A field whose content cannot be written yet keeps its name and stays empty.
-- Do not copy the design or the ADR. Name them where they bite.
+- Do not copy the ADR. Name it where it bites.
