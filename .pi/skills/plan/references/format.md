@@ -39,7 +39,7 @@ Section and field names are English; the content is Japanese.
 
 1. `<コードのファイル>`:
    - add: <何をどうするか。1 文>
-     - Outside: `<この plan の Boundary.External の項目>`。<そこでどうするか>
+     - Outside: `<affected.md の ### External の項目>`。<そこでどうするか>
 2. `<テストのファイル>`:
    - update: (happy) <given> → <result>
    - update: (error) <given> → <result>
@@ -127,7 +127,7 @@ Section and field names are English; the content is Japanese.
 - The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
 - A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
 - One step is one file: what to do in it. The shape follows the file:
-  - a code file — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`; a step that meets the outside carries `- Outside: <the Boundary.External item>.<what to do there>`
+  - a code file — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`; a step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`
   - a test file — one `<prefix>: (happy|error|empty|boundary) <given> → <result>` per case, with the same prefix as the `Files` tree's marker; each `Adopted` line's result is one of those cases
   - a document — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`
 - The cases of a test file follow `## Test cases`.
