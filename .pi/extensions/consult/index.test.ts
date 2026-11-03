@@ -4,10 +4,22 @@ import { aRunRecord } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
-import { flushPending, startTick, stopTick, type TickPort } from './index.ts';
+import entry, { flushPending, startTick, stopTick, type TickPort } from './index.ts';
+import { renderNotice } from './view/notice.ts';
+import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { rowsOf } from './tool/subagents.ts';
 import type { ConsultMessage, PiFace } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
+
+vi.mock('./run/worktree.ts', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    topLevel: (cwd: string) => cwd,
+    consultRoot: () => '/tmp/consult-wiring-test',
+    cleanWorktrees: () => ({ pruned: [], branches: [] }),
+  };
+});
 
 function place(): Place {
   return placeFor(tempDir(), tempDir());
@@ -219,5 +231,24 @@ describe('reload', () => {
     vi.advanceTimersByTime(SOUND_INTERVAL_MS);
     expect(sent).toHaveLength(1);
     expect(played).toHaveLength(1);
+  });
+});
+
+describe('entry wiring', () => {
+  it('入口を呼ぶ → consult のレンダラーとして renderNotice が登録される', () => {
+    const received: Array<[string, unknown]> = [];
+    const fake = {
+      on: () => () => {},
+      registerTool: () => {},
+      registerCommand: () => {},
+      registerMessageRenderer: (customType: string, renderer: unknown) => {
+        received.push([customType, renderer]);
+      },
+    };
+    // ExtensionAPI は 30 以上のメンバーを持つため、すべてを偽物で用意する価値がない。このテストが確かめるのは配線だけなので、使う 4 つの入口だけを持つ偽物を渡す。
+    // oxlint-disable-next-line typescript(no-unsafe-type-assertion)
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    entry(fake as unknown as ExtensionAPI);
+    expect(received).toEqual([['consult', renderNotice]]);
   });
 });
