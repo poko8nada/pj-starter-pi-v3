@@ -23,6 +23,7 @@ import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
+import { registerNotice } from './view/notice.ts';
 
 /** いまの pi のセッション id である。`session_start` で読み直す（照合に使うだけ） */
 let session = '';
@@ -206,6 +207,9 @@ function closeQuietly(place: Place, current: string): void {
 export default function (pi: ExtensionAPI) {
   const place = placeOf(process.cwd());
   const consult = createRuntime(pi, place, undefined, () => session);
+
+  // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
+  registerNotice(pi);
 
   // reload をまたいだサブエージェントがまだ走っていれば知らせ、tick で記録を読み直す
   pi.on('session_start', (_event, ctx) => {

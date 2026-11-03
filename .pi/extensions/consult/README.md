@@ -125,24 +125,13 @@ The branch may then be removed with `consult_worktree{action: "remove", id: ...}
 
 ## What comes back
 
-A finished subagent arrives as a message that starts with one line:
+A finished subagent arrives as one message. By default the message is one line:
 
 ```
-consult consult-1 (code) finished
+[consult] consult-1 — code / done (ctrl+o で展開)
 ```
 
-then the block:
-
-```
-## consult-1 — code / done
-
-- place: worktree 8-consult.docs
-- turns: 12 / 80
-- spend: 0.0123 usd
-- files: run/log.ts, tool/subagents.ts
-```
-
-then `---` and the subagent's last text, then one `[consult]` line with the model that ran and the spend.
+`ctrl+o` opens it and shows `turns`, `spend`, `files` and the subagent's last text.
 
 - `state` is one of `done`, `turn-limit`, `error`, `aborted`. `reason` is there when it is not `done`
 - `files` are the paths the subagent changed (`git status --porcelain` in its worktree), so a read-only subagent has none
@@ -241,6 +230,7 @@ pnpm test:run .pi/extensions/consult
 | `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block                                  |
 | `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                    |
 | `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                            |
+| `view/notice.test.ts`    | the message view: the collapsed line and the expanded details                                                |
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 
