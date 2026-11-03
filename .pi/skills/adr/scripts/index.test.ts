@@ -406,6 +406,9 @@ describe('CLI open cycle', () => {
     const leaf = join(cyclesDir, names[0]);
     expect(existsSync(join(leaf, 'adr.md'))).toBe(true);
     expect(existsSync(join(leaf, 'affected.md'))).toBe(true);
+    const affected = readFileSync(join(leaf, 'affected.md'), 'utf8');
+    expect(affected.startsWith('# Affected 001\n')).toBe(true);
+    expect(affected).toContain('## 01: <問い>');
   });
 
   it('開いたサイクルで affected.md がない → サイクル番号の見出しと ## 03: が書かれる', () => {

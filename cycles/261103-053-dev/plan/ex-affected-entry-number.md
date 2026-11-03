@@ -57,10 +57,10 @@ export function cycleNumberOf(name: string): number | null;
 
 ### Slice 1: 骨組みにエントリーの番号を渡す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: d908c99
+- Stopped: なし
 
 ## Work Review
 
@@ -69,6 +69,8 @@ export function cycleNumberOf(name: string): number | null;
 - Stale:
 - Unlisted:
 - Gaps:
+  - 新しいサイクルの作成 `affectedSkeleton(nnn, 1)` を確かめる検査がない。
+    - fixed: 新しいサイクルの `affected.md` が `# Affected 001` で始まり `## 01:` を持つ断言を足した。
 - Unproven:
 - Noise:
 - Doubts:
