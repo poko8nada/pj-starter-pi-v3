@@ -127,10 +127,10 @@ DEFINITION.md             update
 
 ### Slice 1: design の削除とスキルの参照
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `.pi/skills/work/SKILL.md` の「An `ex-` plan has no design」は、ステップ4が名指していなかった。design が消えるため「An `ex-` plan takes the default (a worktree)」に直した。
+- Commit: 3392aef
+- Stopped: なし
 
 ### Slice 2: 利用者向け文書とエージェントの規則
 

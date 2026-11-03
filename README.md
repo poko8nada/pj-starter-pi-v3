@@ -11,7 +11,7 @@ A starter where a project and its **agent harness** are in place from the start.
 - **Checks** — `oxlint` / `oxfmt` / `tsc` / `vitest`, and the `pnpm` scripts that run them
 - **Gates** — `lefthook`, which checks on commit and on push, and `quality-gate`, which checks only what was changed in each turn
 - **Agent rules** — `AGENTS.md`, read in every session
-- **Cycle mechanism** — the six skills in `.pi/skills/` (`adr` / `design` / `plan` / `work` / `close` / `yolo`)
+- **Cycle mechanism** — the five skills in `.pi/skills/` (`adr` / `plan` / `work` / `close` / `yolo`)
 - **Packages** — `upgrade` in `.pi/skills/`, which runs on its own, separately from a cycle
 - **Extensions** — `consult` (one extension with four tools), `quality-gate` (checks what was changed in each turn), `sound-notify` (a sound and a cmux notification when pi is waiting for the user), [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md) (stops looped thinking while it is generated and removes it, so that it is not carried into the next turn), `context-precompact` (without waiting for the standard compaction, prepares in the background before the threshold is reached and applies it at the boundary; `/precompact`, `/precompact now`, `/precompact on|off`, a status line, and settings) (location: `.pi/extensions/`)
   - `consult_run` — starts exactly one subagent `pi` with a role and a place; the subagent is not shown this conversation
@@ -58,18 +58,17 @@ The agent harness is handed over with `scripts/harness/`:
 
 ## Cycle
 
-One cycle = ADR → design → plan → plan execution → close. A skill is in charge of each stage. **What calls the next stage is the skill's `description`**, and the previous stage does not call the next stage. The next stage is found from the `description`.
+One cycle = ADR → plan → plan execution → close. A skill is in charge of each stage. **What calls the next stage is the skill's `description`**, and the previous stage does not call the next stage. The next stage is found from the `description`.
 
 ```
 adr          when the owner starts a cycle or raises a point about the definition or the cycle, settle the intent, the roadmap item and the entries, and write `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`
-design       when the cycle's entries are decided and the work has to be cut, walk what each entry touches, decide the cut and the order, propose where each plan runs, and write `cycles/<YYMMDD>-<NNN>-<slug>/design.md`; the owner answers
-plan         when design is agreed and one of its plans has to become work — after cut is settled and a plan is ready to be handed to a subagent, write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify
+plan         when the split is agreed and one of its plans has to become work — after the split is settled and a plan is ready to be handed to a subagent, write `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify
 work         when a plan is agreed and its work has to be carried out — after the plan md is written and the owner has read it, run the slices, the review, the acceptance and the merge, and leave the record in the plan md
 close        when every plan of a cycle is done (done, or dropped by the owner), collect what the plans left, triage it with the owner, then ask the owner, Unit by Unit, whether they will verify the function
 yolo         when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted, walk the cycle's stages from where it stands without the owner's confirmations, stop at the close's triage, and pass the `Added` owner check
 ```
 
-The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`. Git holds the cycle's state. The ADR's `Status` is the state of the decision, and the plan's `Commit` / `Stopped` are the work record; they do not represent the cycle's state.
+The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md` / `affected.md` / `plan/<plan id>.md` / `close.md`. Git holds the cycle's state. The ADR's `Status` is the state of the decision, and the plan's `Commit` / `Stopped` are the work record; they do not represent the cycle's state.
 
 `DEFINITION.md` holds the product's definition. The ADR carries the discussion behind it, and the ADR can be opened at any stage. A cycle starts with the `adr`, and when the owner raises a point, an ADR entry can be added at any stage. On a change, every cycle opens an ADR entry, and the entry writes which parts of `DEFINITION.md` it relates to and whether each part is changed or stays as it is.
 

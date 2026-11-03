@@ -11,7 +11,7 @@ English: [README.md](README.md)
 - **検査** — `oxlint` / `oxfmt` / `tsc` / `vitest` と、それらを実行する `pnpm` スクリプト
 - **ゲート** — commit時とpush時に検査する `lefthook` と、各ターンで変更した分だけを検査する `quality-gate`
 - **エージェントの規則** — `AGENTS.md`（毎セッションで読み込まれる）
-- **サイクルの仕組み** — `.pi/skills/` にある6つのスキル（`adr` / `design` / `plan` / `work` / `close` / `yolo`）
+- **サイクルの仕組み** — `.pi/skills/` にある5つのスキル（`adr` / `plan` / `work` / `close` / `yolo`）
 - **パッケージ** — `.pi/skills/` の `upgrade`。サイクルとは別に単独で動作する
 - **拡張** — `consult`（4つのツールを持つ1つの拡張）、`quality-gate`（各ターンでの変更分を検査する）、`sound-notify`（piがユーザー待ちのときに音とcmux通知で知らせる）、[`thinking-scrub`](.pi/extensions/thinking-scrub/README.ja.md)（ループするthinkingを生成中に止めて取り除き、次のターンに持ち越さないようにする）、`context-precompact`（標準コンパクションを待たず、閾値に達する前に裏で準備し、境界で適用する。`/precompact`、`/precompact now`、`/precompact on|off`、status line、設定）（場所: `.pi/extensions/`）
   - `consult_run` — ロールと行き先を指定して、サブエージェントの `pi` を1体だけ起動する。サブエージェントにはこの会話を見せない
@@ -58,18 +58,17 @@ pnpm install
 
 ## サイクル
 
-1サイクル = ADR → 設計 → プラン → プランの実行 → 閉じる。各ステージはスキルが担当する。**次のステージを呼ぶのはスキルの `description`** であり、前のステージが次のステージを呼ぶことはない。次のステージは `description` から探す。
+1サイクル = ADR → プラン → プランの実行 → 閉じる。各ステージはスキルが担当する。**次のステージを呼ぶのはスキルの `description`** であり、前のステージが次のステージを呼ぶことはない。次のステージは `description` から探す。
 
 ```
 adr          オーナーがサイクルを始めるときや定義・サイクルへの指摘を上げたとき、意図・ロードマップの項目・エントリーを詰め、`cycles/<YYMMDD>-<NNN>-<slug>/adr.md` を書き、サイクルが `DEFINITION.md` に何をするかのオーナーの決定を残す
-design       サイクルのエントリーが決まり作業の切り分けが必要なとき、各エントリーが触るものを調べ、切り方と順序を決め、各プランをどこで走らせるか提案し、`cycles/<YYMMDD>-<NNN>-<slug>/design.md` を書く。オーナーが答える
-plan         設計が合意されそのプランの1つを作業にするとき — 切り分けが定まりプランをサブエージェントに渡せる状態になった後、`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` を書く。ファイル・スライス・型・手順・検証を持つ
+plan         分割が合意されそのプランの1つを作業にするとき — 分割が定まりプランをサブエージェントに渡せる状態になった後、`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` を書く。ファイル・スライス・型・手順・検証を持つ
 work         プランが合意されその作業を実行するとき — プランの md が書かれオーナーが読んだ後、スライス・レビュー・受け入れ・マージを走らせ、記録をプランの md に残す
 close        サイクルのすべてのプランが終わったとき（完了またはオーナーが落とした）、プランが残したものを集め、オーナーとトリアージし、Unit ごとに関数を確認するかをオーナーに聞く
 yolo         オーナーが確認なしでサイクルを通すよう指示したとき、ADR のすべてのエントリーが受け入れられた後いつでも、立っている場所からサイクルのステージをオーナーの確認なしに歩き、close のトリアージで止まり、`Added` のオーナー確認を通過させる
 ```
 
-記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `design.md` / `plan/<plan id>.md` / `close.md`。サイクルの状態は git が持つ。ADRの `Status` は決定の状態であり、planの `Commit` / `Stopped` は作業の記録であって、サイクルの状態を表すものではない。
+記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `affected.md` / `plan/<plan id>.md` / `close.md`。サイクルの状態は git が持つ。ADRの `Status` は決定の状態であり、planの `Commit` / `Stopped` は作業の記録であって、サイクルの状態を表すものではない。
 
 製品の定義を持つのは `DEFINITION.md` である。その背景にある議論を担うのはADRであり、ADRはどのステージからでも開くことができる。サイクルは `adr` から始まり、オーナーが論点を挙げたときはどのステージからでもADRのentryを追加できる。変更時はどのサイクルでもADRのentryを開き、そのentryが `DEFINITION.md` のどの部分に関わるかと、各部分が変更されるかそのまま残るかを書く。
 
