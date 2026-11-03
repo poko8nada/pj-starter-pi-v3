@@ -9,11 +9,14 @@ One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cy
 
 The ADR records the owner's decision on what the picture becomes, and a plan writes it. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
-The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the research, the options, the decision and the write.
+The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the research, the options, the decision, the write and the affected.
 
 ## Files
 
-- `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/format.md` gives. Read that file before writing.
+- `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/adr.format.md` gives. Read that file before writing.
+- `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` — the entry's affected, in the shape `references/affected.format.md` gives. Read that file before writing.
+- `references/adr.format.md` — the shape of `adr.md`.
+- `references/affected.format.md` — the shape of `affected.md`.
 - `DEFINITION.md` — the product's picture. The entry names the parts of it it relates to, and what happens to each; a plan writes them.
 - `rules/definition.rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `rules/definition.format.md` — the shape of the picture.
@@ -111,6 +114,13 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 - a Unit that `rules/definition.rules.md` does not allow is not a Unit
 - a rejected entry adopts nothing: its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`
 
+### 7. Affected
+
+- after the decision, with the proofread, a `research` subagent reads the entry and reports the files and the outside
+- the agent writes it to `affected.md`, in the shape `references/affected.format.md` gives
+- the affected is the entry's: one section per entry, `### Code` and `### External`
+- the scaffold makes the `affected.md`'s bones with the entry's, and appends the next entry's bones to both
+
 ## Entries, together
 
 - when every entry is decided, read them together: the names they write, and the lines they move
@@ -118,14 +128,15 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 
 ## Proofread
 
-After the write of an entry, run one `proofreader` subagent with `adr.md` and `adr/references/format.md`; the role's policy applies; edit only the named files, and only this entry's lines.
+After the write of an entry, run one `proofreader` subagent with `adr.md` and `adr/references/adr.format.md`; the role's policy applies; edit only the named files, and only this entry's lines.
 
 - read its report and `git diff` of the file
-- if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/adr.format.md`'s shape, in your own words
 - if the report changed the meaning of a decision, settle it with the owner again
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
 - one round: the repaired file does not go through the subagent again
 - the next entry's stage goes ahead while the proofread runs; the next entry is written to `adr.md` after the report is read
+- the affected research (step 7) runs at the same time
 
 ## What comes after an entry
 

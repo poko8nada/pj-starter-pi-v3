@@ -17,6 +17,21 @@ Report the facts. A question you could not answer is a fact too: say what it is 
 - The agent puts the question and the approved type in the task.
 - What is looked up is not carried into the ADR. Only the fact the decision rests on goes, and the ADR writes it.
 
+## Look at the affected (a `research` subagent)
+
+```
+Answer the question the task carries for one entry, and nothing else.
+The entry is one of the cycle's entries.
+Report the files the change reads, checks and generates, and what is outside the repository.
+- `### Code`: one line per file, `<prefix>: <path> — <何をするか>`. The prefix is `Read:`, `Check:` or `Generate:`.
+- `### External`: one line per outside thing, `<外のもの> — <何をするか>`.
+Do not report the subject, the generated files, `vendor`, the build output, the `.gitignore` targets, or the `cycles/` directory.
+Follow a dependency one step only. Keep the same path when two entries both touch it. Report the facts only.
+```
+
+- The agent puts the entry and the question in the task.
+- The affected is written to `affected.md`, not to the ADR.
+
 ## Try it (a `trial` subagent)
 
 ```
