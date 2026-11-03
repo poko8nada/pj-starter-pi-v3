@@ -199,11 +199,12 @@ The sound is **on by default, and the setting lasts for this session only** (it 
 ## The code
 
 ```
-index.ts   the entry: registers the tools and the commands, and nothing else
+index.ts   the entry: registers the tools, the commands and the message renderer
 policy/    what a role is: reading types.json, validating it, resolving a role
 sub/     the subagent pi: assembling its arguments, parsing its JSONL, the secret guard, the budget nudge
 run/       running a subagent: the worktree, the install, the spawn, the record, the delivery, and the report
 tool/      the tool faces and the running subagents: parameters, background and control, formatting, and the sound
+view/      the finished message: the collapsed line, the expanded details, and the click
 ```
 
 ## Tests

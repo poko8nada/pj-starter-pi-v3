@@ -161,11 +161,28 @@ export function isLeftClick(event: TuiMouseEvent): boolean;
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/index.ts:2` — 頭注の「道具とスラッシュコマンドの登録だけ」が `registerNotice(pi)` (`.pi/extensions/consult/index.ts:212`) と矛盾し stale である。
+    - fixed: 頭注を「道具、スラッシュコマンド、完了報告のレンダラーの登録を行う」に直した。
+  - `.pi/extensions/consult/README.md:202` — `index.ts` の説明「registers the tools and the commands, and nothing else」がレンダラー登録と矛盾し stale である。
+    - fixed: 「the entry: registers the tools, the commands and the message renderer」に直した。
+  - `.pi/extensions/consult/README.md:201` — `## The code` のツリーに新設の `view/` がなく構成を載せておらず stale である。
+    - fixed: ツリーに `view/  the finished message: the collapsed line, the expanded details, and the click` の行を足した。
 - Unlisted:
+  - なし — 差分の対象は Files の4件のみで、plan md 自体の更新は対象外である。
 - Gaps:
+  - `.pi/extensions/consult/view/notice.ts:95` — `expandLabel` が空のとき案内を添えない分岐を確かめるテストがなく、キー未設定時が未検証である。
+    - fixed: 「案内の名前が空 → 案内を添えない」を足した。
+  - `.pi/extensions/consult/view/notice.ts:117` — `bodyOf` の配列 `content` (blocks) 経路を描画テストが通らず、文字列のみで未検証である。
+    - fixed: 「本文が文字の塊の配列 → 本文を描画する」を足した。
+  - `.pi/extensions/consult/view/notice.ts:99` — `noticeDetailLines` の欠け (`files` なしの読み取り専用など) や空 (`(none)`) の展開表示が未検証で、全件ありのみである。
+    - fixed: 「turns・spend・files がない → 詳細の行を描画しない」と「files が空 → files: (none) を描画する」を足した。
 - Unproven:
+  - `.pi/extensions/consult/view/notice.test.ts:110` — 折りたたみ描画が `toContain` の前方一致のみで、`keyText` の配線が壊れても緑のままである。
+    - fixed: `keyText` を `ctrl+o` に固定するモックを置き、折りたたみの1行を案内込みで確かめるようにした。
 - Noise:
+  - なし — 固定文字列と数値は ADR・plan の決定値 (1行形、案内文、幅78) か共有 fixture の値で、型が決める前提の重複はない。
 - Doubts:
+  - Added の base 目視 (fullscreen 再読込での1行表示と `ctrl+o`/クリックの開閉) の所有者 OK が `## Acceptance` に未記録で、close には所有者確認が残る。
 
 ## Acceptance
 

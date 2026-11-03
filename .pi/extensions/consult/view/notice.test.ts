@@ -4,7 +4,7 @@
  * 折りたたみの1行（`noticeParts` と `noticeLine`）、展開とクリックでの開閉、レンダラーの登録を確かめる。
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initTheme } from '@earendil-works/pi-coding-agent';
 import type { MouseRegion, TuiMouseButton, TuiMouseEvent } from '@earendil-works/pi-tui';
 import {
@@ -17,6 +17,12 @@ import {
   type NoticePaint,
   type NoticeRegistry,
 } from './notice.ts';
+
+// キーが未設定の環境では `keyText` が空文字を返すため、案内の配線を確かめられるよう固定する
+vi.mock('@earendil-works/pi-coding-agent', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return { ...actual, keyText: () => 'ctrl+o' };
+});
 
 /** 色を付けないテーマ。表示は `fg` と `bg` だけを使う */
 const plainTheme: NoticePaint = {
@@ -92,6 +98,11 @@ describe('noticeLine', () => {
     const parts = noticeParts(undefined);
     expect(noticeLine(parts, 'ctrl+o')).toBe('[consult] (ctrl+o かクリックで展開)');
   });
+
+  it('案内の名前が空 → 案内を添えない', () => {
+    const parts = noticeParts({ id: 'consult-1', type: 'code' });
+    expect(noticeLine(parts, '')).toBe('[consult] consult-1 — code');
+  });
 });
 
 describe('renderNotice', () => {
@@ -107,9 +118,40 @@ describe('renderNotice', () => {
   it('折りたたんでいる → 1行だけを描画し、turns・spend・files と本文を描画しない', () => {
     const view = renderNotice(aMessage(details, 2), { expanded: false, outputPad: 1 }, plainTheme);
     const text = drawn(view);
-    expect(text).toContain('[consult] consult-1 — code / done');
+    expect(text).toContain('[consult] consult-1 — code / done (ctrl+o かクリックで展開)');
     expect(text).not.toContain('turns: 21');
     expect(text).not.toContain('本文です');
+  });
+
+  it('本文が文字の塊の配列 → 本文を描画する', () => {
+    const message = aMessage(details, 21);
+    const view = renderNotice(
+      { ...message, content: [{ type: 'text', text: '本文です' }] },
+      { expanded: true, outputPad: 1 },
+      plainTheme,
+    );
+    expect(drawn(view)).toContain('本文です');
+  });
+
+  it('turns・spend・files がない → 詳細の行を描画しない', () => {
+    const view = renderNotice(
+      aMessage({ id: 'consult-1', type: 'code', state: 'done' }, 22),
+      { expanded: true, outputPad: 1 },
+      plainTheme,
+    );
+    const text = drawn(view);
+    expect(text).not.toContain('turns:');
+    expect(text).not.toContain('files:');
+    expect(text).toContain('本文です');
+  });
+
+  it('files が空 → files: (none) を描画する', () => {
+    const view = renderNotice(
+      aMessage({ turns: 3, spend: '0.0001 usd', files: [] }, 23),
+      { expanded: true, outputPad: 1 },
+      plainTheme,
+    );
+    expect(drawn(view)).toContain('files: (none)');
   });
 
   it('閉じた報告を左クリックする → 開いた表示になる', () => {
