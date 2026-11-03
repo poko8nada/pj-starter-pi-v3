@@ -79,11 +79,11 @@ export function toYYMMDD(date) {
 }
 
 /**
- * 名前から NNN を抜く。新形 `YYMMDD-NNN-slug` を先に、旧形 `NNN-YYYY-MM-DD` を後に見る。
+ * dir 名からサイクルの番号を抜く。合わなければ null。新形 `YYMMDD-NNN-slug` を先に、旧形 `NNN-YYYY-MM-DD` を後に見る。
  * @param {string} name
  * @returns {number | null}
  */
-function extractNNN(name) {
+export function cycleNumberOf(name) {
   const next = /^\d{6}-(\d{3})-/.exec(name);
   if (next) return Number(next[1]);
   const prev = /^(\d{3})-/.exec(name);
@@ -99,7 +99,7 @@ function extractNNN(name) {
 export function nextNNN(names) {
   let max = 0;
   for (const name of names) {
-    const n = extractNNN(name);
+    const n = cycleNumberOf(name);
     if (n !== null && n > max) max = n;
   }
   return max + 1;
@@ -196,7 +196,7 @@ export function openCycleDir(cyclesDir) {
   let bestNNN = -1;
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const nnn = extractNNN(entry.name);
+    const nnn = cycleNumberOf(entry.name);
     if (nnn === null) continue;
     if (!existsSync(join(cyclesDir, entry.name, 'adr.md'))) continue;
     if (existsSync(join(cyclesDir, entry.name, 'close.md'))) continue;

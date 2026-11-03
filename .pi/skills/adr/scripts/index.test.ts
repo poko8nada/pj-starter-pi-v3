@@ -301,8 +301,11 @@ describe('affectedEntrySkeleton', () => {
     expect(skeleton).toContain('- Adjustment: **YES** | No');
   });
 
-  it('affected.md の骨組みは # Affected で始まる', () => {
-    expect(affectedSkeleton(15).startsWith('# Affected 015\n')).toBe(true);
+  it('affected.md の骨組みは # Affected で始まり、渡したエントリー番号を持つ', () => {
+    expect(affectedSkeleton(15, 1).startsWith('# Affected 015\n')).toBe(true);
+    expect(affectedSkeleton(15, 1)).toContain('## 01: <問い>');
+    expect(affectedSkeleton(15, 3).startsWith('# Affected 015\n')).toBe(true);
+    expect(affectedSkeleton(15, 3)).toContain('## 03: <問い>');
   });
 });
 
@@ -384,7 +387,7 @@ describe('CLI open cycle', () => {
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
     writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
-    writeFileSync(join(cyclesDir, name, 'affected.md'), affectedSkeleton(15));
+    writeFileSync(join(cyclesDir, name, 'affected.md'), affectedSkeleton(15, 1));
     const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
     expect(done.status).toBe(0);
     const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
@@ -403,5 +406,21 @@ describe('CLI open cycle', () => {
     const leaf = join(cyclesDir, names[0]);
     expect(existsSync(join(leaf, 'adr.md'))).toBe(true);
     expect(existsSync(join(leaf, 'affected.md'))).toBe(true);
+    const affected = readFileSync(join(leaf, 'affected.md'), 'utf8');
+    expect(affected.startsWith('# Affected 001\n')).toBe(true);
+    expect(affected).toContain('## 01: <問い>');
+  });
+
+  it('開いたサイクルで affected.md がない → サイクル番号の見出しと ## 03: が書かれる', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), appendEntry(adrSkeleton(15), 2));
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    const affectedAfter = readFileSync(join(cyclesDir, name, 'affected.md'), 'utf8');
+    expect(affectedAfter.startsWith('# Affected 015\n')).toBe(true);
+    expect(affectedAfter).toContain('## 03: <問い>');
   });
 });

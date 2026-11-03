@@ -38,12 +38,13 @@ export function affectedEntrySkeleton(nnn) {
 }
 
 /**
- * `affected.md` の骨組み。`references/affected.format.md` の形と合わせること。
- * @param {number} nnn
+ * `affected.md` の骨組み。`references/affected.format.md` の形と合わせること。`cycle` はサイクルの番号、`entry` は最初のエントリーの番号。
+ * @param {number} cycle
+ * @param {number} entry
  * @returns {string}
  */
-export function affectedSkeleton(nnn) {
-  return `# Affected ${String(nnn).padStart(3, '0')}
+export function affectedSkeleton(cycle, entry) {
+  return `# Affected ${String(cycle).padStart(3, '0')}
 
-${affectedEntrySkeleton(1)}`;
+${affectedEntrySkeleton(entry)}`;
 }
