@@ -134,24 +134,29 @@ DEFINITION.md             update
 
 ### Slice 2: 利用者向け文書とエージェントの規則
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 3340dd3
+- Stopped: なし
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64ファイル、727テスト）、`pnpm typecheck`（root と .pi）、`pnpm lint`、`pnpm format:check`、`! grep -rni 'design\|設計' .pi/skills/adr .pi/skills/work .pi/skills/close .pi/skills/yolo .pi/skills/upgrade --exclude=tasks.md`、`! grep -n '設計の plan が先' .pi/skills/close/scripts/collect.mjs`、オーナーの base の確認（スライス1と2）。
+- Findings: なし
+- Doubts: なし
