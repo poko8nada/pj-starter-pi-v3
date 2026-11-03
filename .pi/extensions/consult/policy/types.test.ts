@@ -1,5 +1,6 @@
 import { chmodSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { aTypePolicy, aTypesText } from '../consult.fixture.ts';
@@ -100,5 +101,16 @@ describe('resolveType', () => {
     const second = aTypePolicy({ name: 'code' });
     const types = parseTypes(aTypesText(first, second));
     expect(resolveType(types, second.name).name).toBe(second.name);
+  });
+});
+
+describe('research の実物', () => {
+  it('research は affected.md だけに書ける', () => {
+    const extensionDir = dirname(dirname(fileURLToPath(import.meta.url)));
+    const research = resolveType(loadTypes(extensionDir), 'research');
+    expect(research.tools).toEqual(
+      expect.arrayContaining(['edit', 'quick_edit', 'target_edit', 'write']),
+    );
+    expect(research.paths).toEqual(['cycles/*/affected.md']);
   });
 });
