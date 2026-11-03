@@ -28,7 +28,7 @@ Texts handed to subagents are in `references/tasks.md`.
 - the plan mds: the `No` and the `Boundary Plans`
 - each plan md: its `## Acceptance`, its `## Work Review` and its `## Notes`
 - do not read the cut from memory: the files hold it, and the plan mds hold what they left
-- a change an entry decided that no plan's `Files` or `Paths` carries is a hole: find it here, and add it in step 3
+- a change an entry decided that no plan's `Files` carries is a hole: find it here, and add it in step 3
 
 ### 3. Collect
 

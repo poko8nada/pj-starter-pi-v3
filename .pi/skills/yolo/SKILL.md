@@ -23,7 +23,7 @@ The cycle's three stages, in their order. Each keeps its work, and loses only it
 
 - write every plan md: its files, its slices, the types, the steps, the verify and the record
 - run the research for the lines the plan cannot write, and write a `Stopped` line for what the four kinds do not cover
-- read the plans together, and review each plan on the five viewpoints: `Goal`, `Files`, `Types`, `Cases`, `Checks`
+- read the plans together, and review each plan on the seven viewpoints: `Goal`, `Integration`, `Files`, `Types`, `Cases`, `Checks`, `Flow`
 - skips: the proofread (the owner does not read the plan mds under `yolo`, so it does not run later either), and the owner's look at the plan mds
 - go on to the work
 

@@ -9,7 +9,7 @@ One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cy
 
 The ADR records the owner's decision on what the picture becomes, and a plan writes it. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
-The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the research, the options, the decision, the write and the affected.
+The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the research, the options, the discussion, the decision, the write and the affected.
 
 ## Files
 
