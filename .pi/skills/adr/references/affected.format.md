@@ -46,7 +46,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 - `## <NN>: <問い>` — one entry is one question, and the number is the ADR's.
 - The entries are the cycle's split, and the order is the split's.
 - `### Code` — the paths the change relates to, one heading per path.
-- `### External` — what the change talks to outside the repository, one heading per thing: an `Env`, a `Contract`, `Data`, a `Path`, a `Limit`. A person, a chat or a process is not one.
+- `### External` — what the change talks to outside the repository, one heading per thing: an `Env`, a `Contract`, `Data`, a `Path`, a `Limit`. A person, a chat or a process is not one. When there is nothing outside, the heading is `#### なし`, with the same bullets and no `Direction`.
 
 ## The heading
 

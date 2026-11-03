@@ -44,7 +44,7 @@ cycles/261103-053-dev/
 2. `.pi/skills/adr/references/format.md`:
    - drop: このファイルを削除する（内容は `adr.format.md` に移した）。
 3. `.pi/skills/adr/references/affected.format.md`:
-   - add: `affected.md` の書式を定める。エントリーごとの `## <NN>: <問い>`、その下の `### Code` と `### External`、path ごとの見出しと6つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）の形にする。`Search` は1検索1行の `NN: <検索名> - <ヒット数/対象ファイル数>: <見えていないもの>` とし、各見出しがその path の検索を記録し「同上」と書かないこと、`Direction` は選んだ1つをイタリックにすること、`Role change` は `**Change**` か `Not change` で変わる場合だけ子のバレットを置くこと、`Adjustment` は `**YES**` か `No` で必要な場合だけ子のバレットを置くこと、`Generate` はビルド生成物に限り、変更が作る・変える・消すソースファイルは `Read by` にすること、`<>` の中の説明は日本語で書くことを定める。
+   - add: `affected.md` の書式を定める。エントリーごとの `## <NN>: <問い>`、その下の `### Code` と `### External`、path ごとの見出しと7つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）の形にする。`Search` は1検索1行の `NN: <検索名> - <ヒット数/対象ファイル数>: <見えていないもの>` とし、各見出しがその path の検索を記録し「同上」と書かないこと、`Direction` は選んだ1つをイタリックにすること、`Role change` は `**Change**` か `Not change` で変わる場合だけ子のバレットを置くこと、`Adjustment` は `**YES**` か `No` で必要な場合だけ子のバレットを置くこと、`Generate` はビルド生成物に限り、変更が作る・変える・消すソースファイルは `Read by` にすること、`<>` の中の説明は日本語で書くことを定める。
 4. `.pi/skills/adr/references/tasks.md`:
    - update: 影響範囲の調査の任務文を加える。入力はエントリーの変更とし、調べ方の11の手順（名前の検索、前方向と後方向、検索の記録、役割、前後の比較、調整、検査、生成）と、答える9つの問いを書く。場所の列挙やフォルダの名前の指示は入れない。
 5. `.pi/skills/adr/SKILL.md`:
@@ -62,9 +62,10 @@ cycles/261103-053-dev/
   - `! grep -rn 'references/format.md' .pi/skills/adr/SKILL.md .pi/skills/adr/references`
   - `grep -n '### Code' .pi/skills/adr/references/affected.format.md`
   - `grep -n '### External' .pi/skills/adr/references/affected.format.md`
-  - `grep -n 'Read:' .pi/skills/adr/references/affected.format.md`
-  - `grep -n 'Check:' .pi/skills/adr/references/affected.format.md`
-  - `grep -n 'Generate:' .pi/skills/adr/references/affected.format.md`
+  - `grep -F -n 'Direction: _Read_ | _Read by_ | _Check_ | _Generate_' .pi/skills/adr/references/affected.format.md`
+  - `grep -F -n 'Role change: **Change** | Not change' .pi/skills/adr/references/affected.format.md`
+  - `grep -F -n 'Adjustment: **YES** | No' .pi/skills/adr/references/affected.format.md`
+  - `grep -F -n 'Search:' .pi/skills/adr/references/affected.format.md`
 - Added: base の外観: オーナーが `adr.format.md`、`affected.format.md`、`adr/SKILL.md` の差分を読み、書式と手順が意図どおりであることを確かめる。オーナーの OK をもって閉じる。
 
 ## 2.スクリプトの分割
@@ -166,7 +167,7 @@ export function affectedSkeleton(nnn: number): string;
 ### Steps
 
 1. `cycles/261103-053-dev/affected.md`:
-   - add: エントリー 01 から 06 までの `## <NN>: <問い>` と、その下の `### Code` と `### External` を書く。エントリーごとに影響範囲の調査を行わせ、path ごとの見出しと6つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）で書く。`Search` は1検索1行、`Direction` はイタリック、`Role change` と `Adjustment` は2値で、必要な場合だけ子のバレットを置く。入力はエントリーの変更とし、plan md の `Files` は使わない。
+   - add: エントリー 01 から 06 までの `## <NN>: <問い>` と、その下の `### Code` と `### External` を書く。エントリーごとに影響範囲の調査を行わせ、path ごとの見出しと7つのバレット（`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment`）で書く。`Search` は1検索1行、`Direction` はイタリック、`Role change` と `Adjustment` は2値で、必要な場合だけ子のバレットを置く。入力はエントリーの変更とし、plan md の `Files` は使わない。
 
 ### Verify
 
@@ -210,12 +211,19 @@ export function affectedSkeleton(nnn: number): string;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: `lib/git-env.mjs` は `Files` に行だけあり、動詞も `Steps` も差分もない。`left:` 関係ファイルはマーカーを持たず、`Steps` の1ファイル1ステップの対象外である。
+- Stale: スライス2の `Steps` 8 は `SKILL.md` の `## Files` の `scaffold.mjs` の置換を求めるが、`## Files` に scripts の項目がなく、置換は確認できない。`fixed:` `## Files` に `scripts/index.mjs`、`scripts/cycle.mjs`、`scripts/adr.mjs`、`scripts/affected.mjs` を足した。
+- Stale: スライス1の `Verify` の `grep -n 'Read:'`、`'Check:'`、`'Generate:'` は新書式に当たらない。`fixed:` `Direction`、`Role change`、`Adjustment`、`Search` の行を `grep -F` で確かめる形に直した。
+- Unlisted: plan md 自身の変更が `Files` にない。`left:` plan md は記録であり、`Files` は作業の対象ファイルを並べる。
+- Unlisted: `index.mjs` の `appendAffectedEntry` が `cycle.mjs` の `appendEntry` と改行調整を重複していた。`fixed:` `cycle.mjs` に `append(markdown, entry)` を出し、`appendEntry` と `appendAffectedEntry` がそれを呼ぶ形にした。
+- Gaps: `Steps` と `tasks.md` の「6つ」「six bullets」は列挙が7つで数が合わない。`fixed:` 「7つ」「seven bullets」に直した。
+- Gaps: スライス1の `Verify` が旧接頭辞を確かめ、新書式の検査がない。`fixed:` Stale の3と同じ。
+- Unproven: `Verify` の実行記録が差分にない。`left:` 38テスト、typecheck、lint、format、4つの grep は通した。出力はチャットにあり、差分には残らない。
+- Unproven: `affected.md` の検索件数と `Adr` の一致主張は差分だけでは確かめられない。`left:` `affected.md` は research の記録であり、件数はその証拠である。
+- Noise: なし
+- Doubts: `appendAffectedEntry` の重複は DRY に触れる。`fixed:` Unlisted の5と同じ。
+- Doubts: `### External` の `#### なし` の書き方が書式にない。`fixed:` `affected.format.md` に、外に何もないときは `#### なし` とし、同じバレットで `Direction` を置かないと書いた。
+- Doubts: `SKILL.md` 12行目の手順一覧への「the affected」追加が `Steps` にない。`left:` `Notes` の Unplanned に記録した。
 
 ## Acceptance
 

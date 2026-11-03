@@ -23,17 +23,26 @@ export function lastEntryNumber(markdown) {
 }
 
 /**
+ * 末尾の改行を調整して `entry` を追記する。
+ * @param {string} markdown
+ * @param {string} entry
+ * @returns {string}
+ */
+export function append(markdown, entry) {
+  if (markdown === '') return entry;
+  const withNewline = markdown.endsWith('\n') ? markdown : `${markdown}\n`;
+  const sep = withNewline.endsWith('\n\n') ? '' : '\n';
+  return `${withNewline}${sep}${entry}`;
+}
+
+/**
  * 末尾の改行を調整して `entrySkeleton(nnn)` を追記する。`# ADR NNN` は重複させない。
  * @param {string} markdown
  * @param {number} nnn
  * @returns {string}
  */
 export function appendEntry(markdown, nnn) {
-  const entry = entrySkeleton(nnn);
-  if (markdown === '') return entry;
-  const withNewline = markdown.endsWith('\n') ? markdown : `${markdown}\n`;
-  const sep = withNewline.endsWith('\n\n') ? '' : '\n';
-  return `${withNewline}${sep}${entry}`;
+  return append(markdown, entrySkeleton(nnn));
 }
 
 /**

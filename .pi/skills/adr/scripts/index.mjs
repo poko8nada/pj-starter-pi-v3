@@ -10,6 +10,7 @@ import { git } from '../../../../lib/git-env.mjs';
 import { adrSkeleton } from './adr.mjs';
 import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
 import {
+  append,
   appendEntry,
   createLeafDir,
   cycleDirName,
@@ -23,17 +24,13 @@ import {
 } from './cycle.mjs';
 
 /**
- * `affected.md` の本文に `affectedEntrySkeleton(nnn)` を追記する。改行の扱いは `appendEntry` と同じ。
+ * `affected.md` の本文に `affectedEntrySkeleton(nnn)` を追記する。
  * @param {string} markdown
  * @param {number} nnn
  * @returns {string}
  */
 function appendAffectedEntry(markdown, nnn) {
-  const entry = affectedEntrySkeleton(nnn);
-  if (markdown === '') return entry;
-  const withNewline = markdown.endsWith('\n') ? markdown : `${markdown}\n`;
-  const sep = withNewline.endsWith('\n\n') ? '' : '\n';
-  return `${withNewline}${sep}${entry}`;
+  return append(markdown, affectedEntrySkeleton(nnn));
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

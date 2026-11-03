@@ -48,7 +48,7 @@ What to answer:
 9. Do not report the subject, the generated files, the vendor, the build output, the .gitignore targets, or the cycle's records, except a thing whose role the change alters.
 
 Report the facts only.
-Write the affected to `affected.md` in the shape `references/affected.format.md` gives: one heading per path, and the six bullets.
+Write the affected to `affected.md` in the shape `references/affected.format.md` gives: one heading per path, and the seven bullets.
 ```
 
 - The agent puts the entry and the change in the task.

@@ -17,6 +17,10 @@ The procedure has two stages. The cycle stage settles the intent, the roadmap it
 - `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` — the entry's affected, in the shape `references/affected.format.md` gives. Read that file before writing.
 - `references/adr.format.md` — the shape of `adr.md`.
 - `references/affected.format.md` — the shape of `affected.md`.
+- `scripts/index.mjs` — the way in: it writes `adr.md` and `affected.md`, and appends the next entry to both.
+- `scripts/cycle.mjs` — the cycle's detection, the next number, the append and the leaf.
+- `scripts/adr.mjs` — the `adr.md` skeleton.
+- `scripts/affected.mjs` — the `affected.md` skeleton.
 - `DEFINITION.md` — the product's picture. The entry names the parts of it it relates to, and what happens to each; a plan writes them.
 - `rules/definition.rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
 - `rules/definition.format.md` — the shape of the picture.
