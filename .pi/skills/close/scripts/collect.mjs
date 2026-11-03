@@ -219,7 +219,7 @@ export function collectPlan(text) {
 /** 残りか。`fixed:` は閉じているので集めない。 */
 const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 
-/** 設計の plan が先、`ex-` の plan が後。 */
+/** 通常の plan が先、`ex-` の plan が後。 */
 const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 
 /**

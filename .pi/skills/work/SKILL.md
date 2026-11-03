@@ -5,7 +5,7 @@ description: Use when a plan is agreed and its work has to be carried out — af
 
 # work
 
-One plan is one worktree: a branch and a merge — or the base, when the design's `Where` says so. Work is done from the plan md, and the record goes back into it.
+One plan is one worktree: a branch and a merge — or the base, when the plan md's `Place` says so. Work is done from the plan md, and the record goes back into it.
 
 **Judgment is the agent's, and the owner's.** A subagent runs its own slice's check and reports; the review and the acceptance are not its business. A premise the run disproves is triaged here with the owner first — within tolerance, or a change the work absorbs.
 
@@ -22,13 +22,13 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 1. Read the plan and its record
 
 - Plan md: `Files`, each slice's `Types`, `Steps` and `Verify`, and `## Notes`
-- Design's `Where`: worktree, or base. An `ex-` plan has no design: it takes the default (a worktree)
+- Plan md's `Place`: worktree, or base. An `ex-` plan takes the default (a worktree)
 - State: `Commit` filled is done, `Stopped` is interrupted, neither is not started
 
 ### 2. Commit the documents
 
-- Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `design.md` and `plan/*.md`.
-- Commit message: `update: NNN's ADR, design and plan`
+- Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `affected.md` and `plan/*.md`.
+- Commit message: `update: NNN's ADR, affected and plan`
 
 ### 3. Set the place
 
@@ -93,7 +93,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 8. Merge
 
 - in the agent's tree: `git merge --no-ff consult/<plan id>`; resolve a conflict there
-- one constraint rules the order: a plan that waits for another (the design's `Why`) has not merged yet. Nothing else fixes the order: a done plan merges when it is done
+- one constraint rules the order: a plan that waits for another (the plan md's `Boundary Plans`) has not merged yet. Nothing else fixes the order: a done plan merges when it is done
 - then, in the base, set the dependencies again; the command follows the lockfile — a `pnpm-lock.yaml` means `pnpm install`
 - then run the whole typecheck and test on the base: the merge counts as done only when they are green
 - red means the combination is broken: undo the merge (`git reset --hard ORIG_HEAD`), keep the worktree, and fix it in the plan (its subagent continues); merge again when it is green

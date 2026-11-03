@@ -47,7 +47,7 @@
 - The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: ex-plan <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
-- The order is the design's plans first (by file name), the `ex-` plans after (by file name), so adding an `ex-` plan does not move the numbers above it.
+- The order is the normal plans first (by file name), the `ex-` plans after (by file name), so adding an `ex-` plan does not move the numbers above it.
 
 ## Triage
 
@@ -57,7 +57,7 @@
   - Why: why this proposal is recommended.
   - Then: for an `ex-` what policy the plan follows, for a `proposed` what to discuss next, for a `dropped` nothing.
 - The proposal order is: the cycle's own concern → `ex-plan`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-plan`; one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `proposed`; the rest → `dropped`.
-- `ex-plan <plan id>` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>`, and it has no design.
+- `ex-plan <plan id>` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>`, and it has no `No`.
 - `proposed` — leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
 - `dropped` — the rest: the fix weighs more than leaving it.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
@@ -70,7 +70,7 @@
 - The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
 - At the completion of `close.md` `## Verified` is empty, and that is normal. It is filled after the owner's judgement on the triage and the `ex-` merges.
 - `### <Unit>` — one section per Unit this cycle touched, among the Units listed in `Users can do`. A Unit is a line under `Users can do`; a `####` heading is not a Unit. The name is copied as it is. `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
-- `Plans` — one bullet per plan that cuts an entry the Unit is named by, taken from the design's `No`.
+- `Plans` — one bullet per plan that cuts an entry the Unit is named by, taken from the plan md's `No`.
 - `Result` — `OK` when the owner checked the Unit's function and it worked; what they found when it did not; `しない` with the reason on the same line when they will not check.
 - `Fixed` — written only when the function did not work: the `ex-` plan, and the commit it merged as, on one line. It takes the place of the `done <commit>` a `Triage` line carries, and the close resumes at its verification step for that Unit.
 - The check is of the Unit's function, not of the change: the change is what the work looked at.

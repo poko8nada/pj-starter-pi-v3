@@ -17,15 +17,7 @@ One cycle, walked without the owner's confirmations. The owner starts it; the ag
 
 ## The flow
 
-The cycle's four stages, in their order. Each keeps its work, and loses only its look at the owner.
-
-### design
-
-- read the definition and the ADR, and walk what each accepted entry touches
-- write the paths at the top of design.md, cut them into plans, name each plan, and write its section
-- skips: the owner's answer to `Where` (the proposal stands), the proofread (the owner does not read the design under `yolo`, so it does not run later either), and the owner's look at the cut
-- runs the design's review: the review is a subagent's, not the owner's look
-- go on to the plan
+The cycle's three stages, in their order. Each keeps its work, and loses only its look at the owner.
 
 ### plan
 

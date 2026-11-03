@@ -11,7 +11,7 @@ The work has two stops, and the owner answers at both: the report, where they pi
 
 ## Not a cycle
 
-- This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no design and no plan.
+- This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no affected and no plan.
 - Its record is the commits: one package, one commit, with the checks that passed.
 - When an update forces a decision the product owns — a behavior, a line of `DEFINITION.md`, a choice between two ways — stop the upgrade, and open a cycle for that part.
 

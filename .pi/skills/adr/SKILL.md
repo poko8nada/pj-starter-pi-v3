@@ -7,7 +7,7 @@ description: Use when the owner starts a cycle or raises a point about the defin
 
 One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cycle's decisions about `DEFINITION.md` are recorded and left.
 
-The ADR records the owner's decision on what the picture becomes, and a plan writes it. The design, the plan and the work are written from `DEFINITION.md`, and none of them argues.
+The ADR records the owner's decision on what the picture becomes, and a plan writes it. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
 The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the research, the options, the decision and the write.
 
@@ -129,7 +129,7 @@ After the write of an entry, run one `proofreader` subagent with `adr.md` and `a
 
 ## What comes after an entry
 
-An entry decided here is not work done: the design cuts it, the plan writes it, and the work carries it out.
+An entry decided here is not work done: the plan cuts it, the plan writes it, and the work carries it out.
 
 This skill keeps its own business — the entry and the decision — and does not do theirs.
 
