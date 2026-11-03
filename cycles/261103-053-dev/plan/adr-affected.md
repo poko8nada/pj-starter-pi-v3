@@ -202,8 +202,8 @@ export function affectedSkeleton(nnn: number): string;
 ### Slice 3: 053 の affected.md
 
 - Findings: 6つのエントリーを6体の `research` で書き、`Verify` を通した。`affected.md` の語を ja-check の error に合わせて、テンプレート、バージョン、作業ツリー、理由、残り、セクション、一覧に置き換えた。
-- Unplanned: オーナーのトリアージで、`affected.format.md` の `<>` の中の説明を日本語に直し、`Search` を `Names`、`Ranges`、`Hits`、`Blind`、`Adr` の入れ子に直した。さらに、`Search` を検索ごとの番号付きのバレットに直し、`Adr` を `Search` の外の path ごとのバレットに出した。053 の `affected.md` は、このサイクルの最後に6体で作り直す。
-- Commit: 38c691f
+- Unplanned: オーナーのトリアージで、`affected.format.md` を直した。`Search` は1検索1行の `NN: <検索名> - <ヒット数/対象ファイル数>: <見えていないもの>` とし、`Direction` はイタリック、`Role change` と `Adjustment` は2値で必要な場合だけ子のバレットを置き、`### External` は「変更がリポジトリの外でやり取りする相手」に限った。骨組みと `index.test.ts` を新しい書式に合わせ、053 の `affected.md` を6体で作り直した。
+- Commit: 7915108
 - Stopped: なし
 
 ## Work Review
