@@ -126,8 +126,19 @@
   - スライス1の `Verify` の `grep -n 'add'` は弱かった。`grep -n 'add:'` に直した。
   - `Added` のオーナーの目視確認は未了で、`Acceptance` で閉じる。
 
+### Round 2
+
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
+- Doubts:
+  - `format.md` の `Outside` と `Boundary.External` の残存は未修正のまま残る。本 plan の範囲外のため残す。
+  - 厳密な文言の差異3点は実質が満たされているため `Gaps` としない。手順4の通読は `format.md` に委譲され辿れば到達する。マーカーの残存は見本で示されている。レビューは書かない役割のため「書く前に」は該当しない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64ファイル、731テスト）、`pnpm typecheck`（root と .pi）、`pnpm lint`、`pnpm format:check`、スライス1の `grep` 5種、スライス2の `grep` 6種、変更した全ファイルの通読、レビュー consult-70 と consult-71、オーナーの base の確認。
+- Findings: なし
+- Doubts: `format.md` の `Outside` と `Boundary.External` は変更前からの残存で本 plan の範囲外のため残す。
