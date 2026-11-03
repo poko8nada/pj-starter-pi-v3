@@ -227,6 +227,6 @@ export function affectedSkeleton(nnn: number): string;
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run .pi/skills/adr`（38テスト）、`pnpm typecheck`（root と .pi）、`pnpm lint`、`pnpm format:check`、`grep -F` の4つ（`Direction`、`Role change`、`Adjustment`、`Search`）、`affected.md` のセクション6件と `### Code` 6件と `### External` 6件とバレット各6件以上、レビュー consult-69、指摘の反映 `2c12a2d`、オーナーの base の確認（`b195181..2c12a2d`）。
+- Findings: 13の指摘は `## Work Review` の `### Round 1` のとおり、すべて `fixed:` か `left:` で閉じた。
+- Doubts: なし
