@@ -48,7 +48,7 @@ The entry's question, the intent and the split are the owner's. The procedure wr
 - split the cycle into entries: one entry is one question
 - show the owner the split and each entry's intent before any entry's scope is written
 - the owner's answer is the split; a rejected split is rewritten and shown again. A new entry found while an entry runs is shown to the owner first, and added after their answer.
-- run the scaffold: `node .pi/skills/adr/scripts/scaffold.mjs`. It writes a new cycle's `adr.md` with one entry's bones; on an open cycle it appends the next entry's bones. It prints the path it wrote
+- run the scaffold: `node .pi/skills/adr/scripts/index.mjs`. It writes a new cycle's `adr.md` and `affected.md` with one entry's bones; on an open cycle it appends the next entry's bones to both. It prints the path it wrote
 - when every entry is decided, the entries are read together, and the change to the picture is settled
 
 ## One entry

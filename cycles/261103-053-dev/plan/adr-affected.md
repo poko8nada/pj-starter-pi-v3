@@ -186,10 +186,10 @@ export function affectedSkeleton(nnn: number): string;
 
 ### Slice 1: adr の書式の分割と affected.md の書式
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: 手順の一覧に「the affected」を足した（`adr/SKILL.md` の 12 行目）。手順7を足したため、一覧の「the scope, the research, the options, the decision and the write」に「the affected」が必要だった。
+- Commit: 75f3d99
+- Stopped: なし
 
 ### Slice 2: スクリプトの分割
 

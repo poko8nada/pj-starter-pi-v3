@@ -4,20 +4,20 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { adrSkeleton, entrySkeleton } from './adr.mjs';
+import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
 import {
-  adrSkeleton,
   appendEntry,
   createLeafDir,
   cycleDirName,
   dirNames,
-  entrySkeleton,
   lastEntryNumber,
   nextNNN,
   openCycleDir,
   parseArgs,
   slugBranch,
   toYYMMDD,
-} from './scaffold.mjs';
+} from './cycle.mjs';
 
 describe('adrSkeleton', () => {
   it('番号を 0 埋めした見出しで始まる', () => {
@@ -177,7 +177,7 @@ describe('entrySkeleton', () => {
     expect(skeleton).toContain('（採用しなかった理由）');
   });
 
-  it('format.md のエントリーの見出しと一致する', () => {
+  it('adr.format.md のエントリーの見出しと一致する', () => {
     const headings = entrySkeleton(1)
       .split('\n')
       .filter((line) => line.startsWith('#'));
@@ -283,8 +283,23 @@ describe('openCycleDir', () => {
   });
 });
 
+describe('affectedEntrySkeleton', () => {
+  it('affected.format.md の見出しと接頭辞を持つ', () => {
+    const skeleton = affectedEntrySkeleton(1);
+    const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
+    expect(headings).toEqual(['## 01: <問い>', '### Code', '### External']);
+    expect(skeleton).toContain('Read: <path>');
+    expect(skeleton).toContain('Check: <path>');
+    expect(skeleton).toContain('Generate: <path>');
+  });
+
+  it('affected.md の骨組みは # Affected で始まる', () => {
+    expect(affectedSkeleton(15).startsWith('# Affected 015\n')).toBe(true);
+  });
+});
+
 describe('CLI open cycle', () => {
-  const script = fileURLToPath(new URL('./scaffold.mjs', import.meta.url));
+  const script = fileURLToPath(new URL('./index.mjs', import.meta.url));
 
   it('開いたサイクルでは adr.md に ## NN: が1つ増える', () => {
     const root = tempDir();
@@ -353,5 +368,32 @@ describe('CLI open cycle', () => {
     expect(done.status).not.toBe(0);
     expect(`${done.stderr}${done.stdout}`).toMatch(/open cycle exists/);
     expect(readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8')).toBe(beforeAdr);
+  });
+
+  it('開いたサイクルで adr.md と affected.md の両方に次のエントリーが追記される → 両ファイルに ## 02: が増える', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15));
+    writeFileSync(join(cyclesDir, name, 'affected.md'), affectedSkeleton(15));
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    const affectedAfter = readFileSync(join(cyclesDir, name, 'affected.md'), 'utf8');
+    expect(adrAfter).toContain('## 02: <問い>');
+    expect(affectedAfter).toContain('## 02: <問い>');
+  });
+
+  it('開いたサイクルがなければ adr.md と affected.md が作られる → 両ファイルができる', () => {
+    const root = tempDir();
+    const done = spawnSync(process.execPath, [script, '--root', root], { encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    const cyclesDir = join(root, 'cycles');
+    const names = readdirSync(cyclesDir);
+    expect(names).toHaveLength(1);
+    const leaf = join(cyclesDir, names[0]);
+    expect(existsSync(join(leaf, 'adr.md'))).toBe(true);
+    expect(existsSync(join(leaf, 'affected.md'))).toBe(true);
   });
 });
