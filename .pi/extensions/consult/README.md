@@ -19,13 +19,13 @@ The extension registers four tools.
 
 The caller picks a role, and the role holds the whole policy: model candidates, tools, whether the subagent writes, spend limits, and the words it works under. There is no way to override any of it per call — to change the policy, edit `types.json`.
 
-| Role          | Tools                                                      | Place                 | Turns | Output tokens | `continue` by default |
-| ------------- | ---------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
-| `research`    | read, ls, find, grep, web_search, fetch_content            | the base              | 40    | 60,000        | no                    |
-| `review`      | read, ls, find, grep, web_search, quick_edit, target_edit  | the base              | 40    | 60,000        | no                    |
-| `proofreader` | read, ls, find, grep, edit, quick_edit, target_edit, write | the base              | 80    | 120,000       | no                    |
-| `trial`       | plus bash, and writing                                     | a worktree (required) | 60    | 120,000       | yes                   |
-| `code`        | plus bash, and writing                                     | a worktree (required) | 80    | 120,000       | yes                   |
+| Role          | Tools                                                                                 | Place                 | Turns | Output tokens | `continue` by default |
+| ------------- | ------------------------------------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
+| `research`    | read, ls, find, grep, web_search, fetch_content, edit, quick_edit, target_edit, write | the base              | 40    | 60,000        | no                    |
+| `review`      | bash, read, ls, find, grep, web_search, quick_edit, target_edit                       | the base              | 40    | 60,000        | no                    |
+| `proofreader` | read, ls, find, grep, edit, quick_edit, target_edit, write                            | the base              | 60    | 100,000       | no                    |
+| `trial`       | plus bash, and writing                                                                | a worktree (required) | 80    | 120,000       | yes                   |
+| `code`        | plus bash, and writing                                                                | a worktree (required) | 80    | 120,000       | yes                   |
 
 `isolated` decides the place: a role that is not isolated may be given a worktree, and runs in the base when it is not. An isolated role has no such choice — without a worktree the call is refused, and consult never makes one on its own.
 

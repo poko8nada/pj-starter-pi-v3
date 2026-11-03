@@ -74,10 +74,10 @@
 
 ### Slice 1: research ロールの書き込みの許可
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `pnpm format:check` が `types.json` の整形を求めたため、`pnpm format` で `tools` の配列を複数行に整形した。`types.json` の既存の `role` の文が ja-check の `error` に当たりコミットが止まったため、`review` の語を「理由」に、`proofreader` の例をカタカナの推奨形に直した。
+- Commit: 0d90638
+- Stopped: なし
 
 ### Slice 2: README の Roles の表とテスト
 

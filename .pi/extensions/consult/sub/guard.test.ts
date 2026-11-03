@@ -132,14 +132,22 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
     expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
     expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
+    expect(pathAllowed('cycles/010/affected.md', '/w', ['cycles/*/affected.md'])).toBe(true);
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
     expect(judgeToolCall('quick_edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
+    expect(
+      judgeToolCall('write', { path: 'cycles/010/affected.md' }, '/w', {
+        state: 'set',
+        paths: ['cycles/*/affected.md'],
+        bash: [],
+      }),
+    ).toEqual({});
     expect(pathAllowed('cycles/261026-042-dev/adr.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(
       true,
     );
     expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(true);
     expect(
-      judgeToolCall('write', { path: 'cycles/261026-042-dev/design.md' }, '/w', {
+      judgeToolCall('write', { path: 'cycles/261026-042-dev/affected.md' }, '/w', {
         state: 'set',
         paths: ['**/*.md', '**/.*/**/*.md'],
         bash: [],
