@@ -11,7 +11,25 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
   3. do the two touch the same path? then keep them together — the paths are in the affected's `### Code` — or order them. Whether a file exists, and its shape, is the plan's
   4. does a piece depend on more than one plan? then it is its own plan, after all of them
 - A description never merges before the behaviour it describes.
-- Present the split to the owner: `ADR`, `Place`, `Summary`, `Why`, `Order`. The `Why` says which `Role change` and which `Adjustment` each plan takes. The owner agrees before the plan md is written.
+
+## Present
+
+Present one block per plan, in a fence. Then write the order last, numbered, for all plans. The owner agrees before the plan md is written.
+
+```text
+## <plan id>
+- ADR: <NN>
+- Place: <worktree|base>
+- Summary: <what this plan does, in one sentence>
+- Why: <which `Role change` and which `Adjustment` this plan takes>
+
+## Order:
+1. <plan-a>
+2. <plan-b> + <plan-c> (parallel)
+3. <plan-d>
+```
+
+The `## Order:` is one trailing list, not one per plan. Plans that can run at once share one number with `+` and `(parallel)`.
 
 ## Where
 

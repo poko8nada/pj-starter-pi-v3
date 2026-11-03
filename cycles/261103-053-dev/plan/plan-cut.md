@@ -55,7 +55,7 @@
   - `! grep -rni -w 'design' .pi/skills/plan`
   - `grep -n 'affected' .pi/skills/plan/SKILL.md`
   - `grep -in 'read through' .pi/skills/plan/SKILL.md .pi/skills/plan/references/format.md .pi/skills/plan/references/tasks.md`
-  - `grep -n 'add' .pi/skills/plan/SKILL.md`
+  - `grep -n 'add:' .pi/skills/plan/SKILL.md`
   - 変更した全ファイルを通読し、今回の変更によるファイル内の矛盾、循環した流れ、重複、不足、不自然な流れがないか確かめる。ダメなら直し、`Unplanned` に書く。
 - Added: base の見た目: オーナーが `plan/SKILL.md`、`references/format.md`、`references/tasks.md`、`references/cut.md` の差分を読み、手順の流れ、既存への組み入れ、通読の検査が意図どおりであることを確かめる。オーナーの OK をもって閉じる。
 
@@ -100,7 +100,7 @@
 ### Slice 1: plan の手順を ADR と affected から組み直す
 
 - Findings: なし
-- Unplanned: 通読で6件を直した。`format.md` の `## Files` の `Walk the relations` を `affected` 基準に直した。`tasks.md` の回答形に `Integration` と `Flow` を足した。`plan-cut.md` の `Verify` の `design` の `grep` を `-w` にし、`通読` を `read through` の `-i` に直した。`format.md` の `## Work Review` の `Integration` と `Flow` は `work` の任務文と合わないため戻した。`plan-cut.md` の `Steps` の手順番号を手順7から手順4に直した。
+- Unplanned: 通読で6件を直した。`format.md` の `## Files` の `Walk the relations` を `affected` 基準に直した。`tasks.md` の回答形に `Integration` と `Flow` を足した。`plan-cut.md` の `Verify` の `design` の `grep` を `-w` にし、`通読` を `read through` の `-i` に直した。`format.md` の `## Work Review` の `Integration` と `Flow` は `work` の任務文と合わないため戻した。`plan-cut.md` の `Steps` の手順番号を手順7から手順4に直した。通読の観点を5つ（矛盾、循環、重複、不足、不自然な流れ）にした。`format.md` の `## Notes` の `Stopped` の長い2行を短い文に区切った。`cut.md` に提示のフェンス（`## Present`）を足し、重複する1行を消した。
 - Commit:
 - Stopped:
 
@@ -115,12 +115,16 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Unproven: なし
+- Noise: なし
 - Doubts:
+  - `format.md` の `Outside` と `Boundary.External` は変更前からの残存で本 plan の範囲外だが、読者が出所を特定できない。
+  - `format.md` の `Stopped` の箇条書き分割は意味不変の整形で、`Steps` にも `Unplanned` にも記載がなかった。`Notes` の `Unplanned` に追記した。
+  - スライス1の `Verify` の `grep -n 'add'` は弱かった。`grep -n 'add:'` に直した。
+  - `Added` のオーナーの目視確認は未了で、`Acceptance` で閉じる。
 
 ## Acceptance
 
