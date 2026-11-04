@@ -73,3 +73,35 @@ README.ja.md           update
 - Unplanned: なし
 - Commit: 7854a36 base(exception-words): add exception words
 - Stopped:
+
+### Slice 2: 文書
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 7094cda base(exception-words): document exception examples
+- Stopped:
+
+## Work Review
+
+### Round 1
+
+- Stale: なし — 差分が触れた語の説明は README.md:45 と README.ja.md:45 で更新済みであり、scripts/checks/ja-check.test.ts:6 のコメントと scripts/checks/ja-check.mjs:90 の判定説明は判定 logic が不変のため古くなっていない。テストの仮設定（scripts/checks/ja-check.test.ts:62）は実設定を読まないため実語の追加で古くならない。
+- Unlisted: なし — git diff 477a597..HEAD の変更は scripts/checks/ja-check.json と README.md と README.ja.md と plan md の記録だけであり、前者 3 件は cycles/261104-054-feat-ja-check-update/plan/exception-words.md:7 の Files がすべて名指ししている。
+- Gaps: なし — 語の選定と抑止効果は cycles/261104-054-feat-ja-check-update/plan/exception-words.md:39 の Added が担い、例の選定は cycles/261104-054-feat-ja-check-update/plan/exception-words.md:63 の grep 照合と cycles/261104-054-feat-ja-check-update/plan/exception-words.md:66 のオーナー確認が担うため発見にしない。具体語・五十音順・3 語は plan が決めた値であり、実設定の語は cycles/261104-054-feat-ja-check-update/plan/exception-words.md:33 が対象外と定める。
+- Unproven: なし — この plan はテストの Steps を持たず、既存の scripts/checks/ja-check.test.ts:88 などの検証は仮設定で logic を見るため、実語（scripts/checks/ja-check.json:35）を壊しても緑のままなのは cycles/261104-054-feat-ja-check-update/plan/exception-words.md:41 の前後比較に委ねた範囲であり発見にしない。
+- Noise: なし — この差分はテストを追加せず Types は cycles/261104-054-feat-ja-check-update/plan/exception-words.md:21 のとおりなしであるため、型や制約が決める重複検査や魔法の数値の事例は生じない。既存テストの直書き語（scripts/checks/ja-check.test.ts:17）は plan が決めた値の再掲であり発見にしない。
+- Doubts:
+  - cycles/261104-054-feat-ja-check-update/plan/exception-words.md:70 の Notes に Slice 1 の記録しかなく Slice 2 の Commit 7094cda に対応する記録がないため、Slice 2 のオーナー確認の証跡を差分だけでは確かめられなかった。
+  - Slice 1 の Added（cycles/261104-054-feat-ja-check-update/plan/exception-words.md:41 の前後比較）の実行出力が Notes に残っていないため、効果の数値を差分だけでは確かめられなかった。
+
+## Acceptance
+
+- Ran:
+  - `pnpm test:run` — 64 ファイル、742 件がすべて通過。
+  - `pnpm typecheck` — `root: ok`、`.pi: ok`。
+  - `pnpm lint` と `pnpm format:check` — 通過。
+  - `node scripts/checks/ja-check.mjs $(git ls-files)` を語の書き込み前と後に実行 — 合計 2,069 件（error 750、warn 1,319）から 1,141 件（error 658、warn 483）へ減った。
+  - 振る舞いを壊して赤になるかの確認: `exception` から `手順` を外す → warn が 483 件から 797 件へ増え、戻すと 483 件に戻った。
+  - 壊したファイルは `git checkout` で戻し、`git status` が plan md の追記だけであることを確かめた。
+- Findings: なし
+- Doubts: なし
