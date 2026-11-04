@@ -144,24 +144,29 @@ type Leftover = {
 
 ### Slice 1: トリアージの表記
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 47f6561 consult(close-names): unify triage terms to _ex-plan_ and _proposed_
+- Stopped: なし
 
 ### Slice 2: プランのファイル名の `NN-` の文書
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 001e07a consult(close-names): name plans with the NN prefix
+- Stopped: なし
 
 ### Slice 3: `NN-` の収集
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: afa3821 consult(close-names): collect NN-prefixed plans in order
+- Stopped: なし
+
+### Cleanup: collect.test.ts の重複・廃止の点検（落とすものなし）
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
