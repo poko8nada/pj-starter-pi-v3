@@ -129,10 +129,10 @@ export function collectCycle(planDir: string, closeText?: string): readonly Left
 
 ### Slice 1: `ex-` のプランの名前と事例の前提
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `Leftover` の `plan` が plan id を兼ねているので、`Types` の `{ plan, link } & (Normal | Ex)` の `id` は足さず、`nn` の有無だけを交差で表した。
+- Commit: `79172f6`
+- Stopped: なし
 
 ### Slice 2: `ex-` のプランを通常のプランと同じ扱いに戻す
 

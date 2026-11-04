@@ -59,12 +59,12 @@
   - Why: why this proposal is recommended.
   - Then: for an `ex-` what policy the plan follows, for a `_proposed_` what to discuss next, for a `dropped` nothing.
 - The proposal order is: the cycle's own concern → `_ex-plan_`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `_ex-plan_`; one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `_proposed_`; the rest → `dropped`.
-- `_ex-plan_ <plan id>` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>`, and it has no `No`. The Triage line's plan id stays `ex-<what it fixes>` with no `NN-`.
+- `_ex-plan_` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>` at the grouping, and it has no `No`. Until the grouping the line is `- <N>: _ex-plan_ (ADR <NN>, <定義の部分>)`; after it, the plan id follows `_ex-plan_` with no `NN-`.
 - `_proposed_` — leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
 - `dropped` — the rest: the fix weighs more than leaving it.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
 - `done <commit>` sits at the end of that line: `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>): done <commit>`.
-- `_ex-plan_` keeps the plan id right after it, with no backticks: `collect.mjs` reads it there.
+- After the grouping, `_ex-plan_` keeps the plan id right after it, with no backticks: `collect.mjs` reads it there.
 - `なし` when there is none.
 
 ## Verified
