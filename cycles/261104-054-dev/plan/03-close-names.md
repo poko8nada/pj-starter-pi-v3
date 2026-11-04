@@ -172,12 +172,19 @@ type Leftover = {
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `\bex-plan\b`・`\bproposed\b` を `.pi/skills/close` に、`plan/<plan id>.md` を `.pi/skills` に検索し0件、`plan/<NN>-<plan id>.md` と `ex-<what it fixes>` が1件以上あることを確かめた。変更した10ファイルの注釈・見出しも新表記と一致している。
+- Unlisted: なし — diff の技能ファイル10件は ## Files の10件と一致し、残りは計画 md 自体の ## Notes 追記（作業記録）である。
 - Gaps:
-- Unproven:
+  - 通常 plan を先・`ex-` を後にする順序が `NN` の大小と切り分けられていない。`.pi/skills/close/scripts/collect.mjs:376` の整列は rank 優先だが、`.pi/skills/close/scripts/collect.test.ts:64` の happy は `01`（通常）・`02,03`（`ex-`）と rank と数値順が一致する配置だけを確かめるため、rank を外して純粋な `NN` 数値順にしても緑のままである。理由：`05-alpha`（通常）と `02-ex-fix`（`ex-`）のように rank と数値順が逆になる配置の検査がなく、仕様（通常が先）が検査に運動していない。
+    - fixed: `01-ex-fix.md` と `02-alpha.md` の配置を足し、通常が先・`ex-` が後になることを断言して閉じた。
+- Unproven: なし — 旧形（`_` 無し行）の無視は `noOf`（`.pi/skills/close/scripts/collect.test.ts:52`）と見出し（`:75`）の両方で逆向きに確かめられ（旧正規表現に戻すと赤になる）、`NN` 付き見出し・順序・文脈保持も外すと赤になることを読みで確かめた。
 - Noise:
+  - 旧形 Triage の組み立てが2か所で文字面を重複し定数を使っていない。`.pi/skills/close/scripts/collect.test.ts:54` と `:77` の `(ADR 02, xxx)`・`ex-fix` は直上の `adrNo`・`exId` と同じ値の文字面であり、`exId` を改名すると当該 plan の行が存在しないという別理由で null／未特定になり、旧形を無視することの検査が空洞化したまま緑になる。理由：`oldKind` の難読化（grep 0件の維持）は必要だが、`ADR ${adrNo}`・`${exId}` の補間は grep に当たらず安全である。
+    - fixed: 旧形 Triage の組み立てを `oldTriageBody` にまとめ、`ADR 02` と `ex-fix` の文字面を `${adrNo}`・`${exId}` の補間にして重複を外した。
 - Doubts:
+  - 旧 `### <plan id>` 見出しの close.md を新 script で再実行すると、`readContexts`（`.pi/skills/close/scripts/collect.mjs:330`）が `### <NN> <plan id>` だけを読むため番号下の文脈が落ちる。理由：計画は移行を扱わず、閉じた cycle の再実行は通常ないため finding にしない。
+  - `plan/` に `NN-` 無し `.md` が1件でもあると `collectCycle` 全体が投げる（`.pi/skills/close/scripts/collect.mjs:373`）。理由：`planName` の投げ自体は仕様だが全件失敗への言及は計画になく、実務上 `plan/` には plan md しか置かないため finding にしない。
+  - `.pi/skills/close/scripts/collect.test.ts:83` の題は「Triage 行が無い close.md」だが実際は他 plan の行を持つ `closeWithTriage` で当該行の欠落を確かめている。理由：計画の Step と同文であり、空 `## Triage` も同一経路（空 map）を通るため finding にしない。
 
 ## Acceptance
 

@@ -29,6 +29,12 @@ function setupCycle(triageBody: string) {
   return { cycle, planDir };
 }
 
+/** 旧形 Triage 行の組み立て。1か所にまとめる。grep 0件のため旧称は分割して作る。 */
+function oldTriageBody(): string {
+  const oldKind = ['ex-', 'plan'].join('');
+  return `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n- 1: ${oldKind} ${exId} (ADR ${adrNo}, xxx): why\n`;
+}
+
 describe('planName', () => {
   it('(happy) NN付きのファイル名から番号とidを出す', () => {
     expect(planName(planFile)).toEqual({ nn: '01', id: planId });
@@ -50,9 +56,7 @@ describe('noOf', () => {
   });
 
   it('(error) 旧い形の行だけを持つ close.md で `ex-` の plan の `No` を読む → null になる', () => {
-    const oldKind = ['ex-', 'plan'].join('');
-    const oldTriage = `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n- 1: ${oldKind} ex-fix (ADR 02, xxx): why\n`;
-    expect(noOf(exId, exPlan, oldTriage)).toBeNull();
+    expect(noOf(exId, exPlan, oldTriageBody())).toBeNull();
   });
 
   it('(error) Triage 行が無い close.md で `ex-` の plan の `No` を読む → null になる', () => {
@@ -72,10 +76,22 @@ describe('writeClose', () => {
     expect(text.indexOf(`### 02 ${exId}`)).toBeLessThan(text.indexOf(`### 03 ${missingId}`));
   });
 
+  it('(happy) `ex-` の `NN` が小さくても通常が先になる → rank 優先で `NN` 数値順より先に並ぶ', () => {
+    const root = tempDir();
+    const cycle = join(root, '261024-001-dev');
+    const planDir = join(cycle, 'plan');
+    mkdirSync(planDir, { recursive: true });
+    writeFileSync(join(planDir, `02-${planId}.md`), normalPlan);
+    writeFileSync(join(planDir, `01-${exId}.md`), exPlan);
+    writeFileSync(join(cycle, 'close.md'), closeWithTriage);
+    const text = readFileSync(writeClose(cycle), 'utf8');
+    expect(text).toContain(`### 02 ${planId} (ADR ${adrNo})`);
+    expect(text).toContain(`### 01 ${exId} (ADR ${adrNo})`);
+    expect(text.indexOf(`### 02 ${planId}`)).toBeLessThan(text.indexOf(`### 01 ${exId}`));
+  });
+
   it('(error) 旧い形の行だけを持つ close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
-    const oldKind = ['ex-', 'plan'].join('');
-    const oldTriage = `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n- 1: ${oldKind} ex-fix (ADR 02, xxx): why\n`;
-    const { cycle } = setupCycle(oldTriage);
+    const { cycle } = setupCycle(oldTriageBody());
     const text = readFileSync(writeClose(cycle), 'utf8');
     expect(text).toContain(`### 02 ${exId} (ADR 未特定)`);
   });
