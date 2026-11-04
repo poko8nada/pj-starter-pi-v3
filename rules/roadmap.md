@@ -8,8 +8,8 @@ It is the layer outside `DEFINITION.md`: the picture says what the product is, a
 
 - `No` — the item's number, from `001`, in each version.
 - `Ver` — the version the item belongs to. The person writes it; it is not tied to a `git tag` or to `package.json`'s `version`.
-- `status` — `todo`, `wip` or `done`. `todo` is not started, `wip` is under way, `done` is finished.
-- `cycles` — the cycle numbers that handled the item, separated by `,`. More than one is allowed.
+- `status` — `_todo_`, `wip` or `done`. `_todo_` is not started, `wip` is under way, `done` is finished. Only `_todo_` is wrapped in underscores so it renders in italics and the not-started rows stand out in the table.
+- `cycles` — the cycle's number that handled the item, which `close` appends, written as `NNN-m`, `NNN-d` or `NNN-f` and separated by `,` when more than one is present. More than one is allowed. `m` is a `main` cycle, `d` is a `dev` cycle, `f` is a `feat` cycle. The last letter is the first letter of the first word of the cycle folder name's suffix (`main`, `dev`, `feat`).
 - A number in `cycles` does not mean the item is done: several cycles may handle one item. `done` is `status`'s word, and nothing else's.
 - `priority` — `high`, `mid` or `low`.
 - `title` — one line.

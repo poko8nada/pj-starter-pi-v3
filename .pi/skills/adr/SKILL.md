@@ -42,10 +42,9 @@ The entry's question, the intent and the split are the owner's. The procedure wr
 ### 2. Roadmap
 
 - after the intent is settled, ask which item of `ROADMAP.md` the cycle fits
-- an item whose `status` is `todo` or `wip` is a candidate; a `done` item is not
+- an item whose `status` is `_todo_` or `wip` is a candidate; a `done` item is not. The shape and the rules of the table are in `rules/roadmap.md`
 - when one fits, set its `status` to `wip`, with the owner's agreement first
 - when none fits, show the owner the item as you would write it, and add it to `ROADMAP.md` when they agree
-- the shape and the rules of the file are in `rules/roadmap.md`
 
 ### 3. Entries
 
