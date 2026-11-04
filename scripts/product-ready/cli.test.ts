@@ -96,6 +96,15 @@ describe('planLines', () => {
       indented(secondAt),
     ]);
   });
+
+  it('見出し付き → headings の行を出す', () => {
+    const label = 'tests';
+    const at = 'a';
+    const headings = ['Roadmap & Cycle', 'Agent'];
+    expect(
+      planLines([{ label, verb: 'remove' }], [{ label, at, path: `/${at}` }], headings),
+    ).toEqual([countLine(label, 1), indented(at), `headings: ${headings.join(', ')}`]);
+  });
 });
 
 describe('parseArgs', () => {

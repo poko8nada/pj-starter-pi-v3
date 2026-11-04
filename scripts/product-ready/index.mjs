@@ -37,6 +37,266 @@ export function replaceSections(text, block, headings) {
   return lines.join('\n');
 }
 
+/** 置き換える前の README の `###` 1つ分の行 */
+/** @typedef {{ readonly heading: string, readonly paragraph: string }} DefaultLine */
+
+/**
+ * `##` 範囲の中にある `###` の行位置を返す（副作用なし）。
+ *
+ * @param {readonly string[]} lines 行の並び
+ * @param {number} from 範囲の先頭
+ * @param {number} to 範囲の末尾
+ * @returns {readonly number[]} `### ` で始まる行の位置
+ */
+function h3Indices(lines, from, to) {
+  const found = [];
+  for (let i = from; i < to; i += 1) {
+    if (lines[i].startsWith('### ')) {
+      found.push(i);
+    }
+  }
+  return found;
+}
+
+/** `##` までの見出し（`#` と `##`）に一致する */
+const H2 = /^#{1,2} /;
+
+/**
+ * `##` 見出しの直後の本文の範囲を返す（副作用なし）。`###` では切らず、次の `##` までを含む。見出しが無ければ null。
+ *
+ * @param {readonly string[]} lines 行の並び
+ * @param {string} heading `##` 見出しの行
+ * @returns {{ readonly from: number, readonly to: number } | null } 範囲
+ */
+function h2Range(lines, heading) {
+  const start = lines.findIndex((line) => line.trim() === heading);
+  if (start === -1) {
+    return null;
+  }
+  let to = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (H2.test(lines[i])) {
+      to = i;
+      break;
+    }
+  }
+  return { from: start + 1, to };
+}
+
+/**
+ * `###` の直後の段落を返す（副作用なし）。段落が無ければ null。
+ *
+ * @param {readonly string[]} lines 行の並び
+ * @param {number} index `###` の行位置
+ * @param {number} end 範囲の末尾
+ * @returns {string | null} 空行までの本文を空白でつないだ物
+ */
+function paragraphAfter(lines, index, end) {
+  const parts = [];
+  for (let i = index + 1; i < end; i += 1) {
+    const line = lines[i];
+    if (line.trim() === '') {
+      if (parts.length > 0) {
+        break;
+      }
+      continue;
+    }
+    if (line.startsWith('#')) {
+      break;
+    }
+    parts.push(line.trim());
+  }
+  if (parts.length === 0) {
+    return null;
+  }
+  return parts.join(' ');
+}
+
+/**
+ * 置き換える前の README の同じ `##` 見出しから各 `###` の段落を集める（副作用なし）。見出しや段落がなければ投げる。
+ *
+ * @param {readonly string[]} sourceLines 置き換える前の README の行
+ * @param {string} heading `##` 見出しの行
+ * @returns {readonly DefaultLine[]} `###` の並び
+ */
+function collectUnder(sourceLines, heading) {
+  const range = h2Range(sourceLines, heading);
+  if (range === null) {
+    throw new Error(`no such heading: ${heading}`);
+  }
+  const targets = h3Indices(sourceLines, range.from, range.to);
+  if (targets.length < 2) {
+    throw new Error(`not enough headings under ${heading}`);
+  }
+  return targets.map((at) => {
+    const name = sourceLines[at].slice('### '.length).trim();
+    if (name === '') {
+      throw new Error(`no heading name under ${heading}`);
+    }
+    const paragraph = paragraphAfter(sourceLines, at, range.to);
+    if (paragraph === null || paragraph === '') {
+      throw new Error(`no paragraph under ### ${name}`);
+    }
+    return { heading: name, paragraph };
+  });
+}
+
+/**
+ * テンプレートの `block` のうち `##` の下に `###` を2つ以上持つ見出しがあるか（副作用なし）。
+ *
+ * @param {string} block テンプレートのブロック
+ * @returns {boolean} 対象の `##` があるか
+ */
+function hasTarget(block) {
+  const lines = block.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      const range = h2Range(lines, line);
+      if (range !== null && h3Indices(lines, range.from, range.to).length >= 2) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * テンプレートの `block` と置き換える前の README から、同じ `##` 見出しの各 `###` の段落を集める。見出しや段落がなければ例外を投げる（検証はこの関数の中で行う）
+ *
+ * @param {string} block テンプレートのブロック
+ * @param {string} source 置き換える前の README
+ * @returns {readonly DefaultLine[]} `###` の並び
+ */
+export function defaultLines(block, source) {
+  const blockLines = block.split('\n');
+  const sourceLines = source.split('\n');
+  const targets = [];
+  for (const line of blockLines) {
+    if (line.startsWith('## ')) {
+      const range = h2Range(blockLines, line);
+      if (range !== null && h3Indices(blockLines, range.from, range.to).length >= 2) {
+        targets.push(line);
+      }
+    }
+  }
+  if (targets.length === 0) {
+    throw new Error('no target heading');
+  }
+  return targets.flatMap((heading) => collectUnder(sourceLines, heading));
+}
+
+/**
+ * `##` 見出しの下の `###` が2つ以上あるとき、後ろの `###` の本文を `- <見出しの名前>: <段落>` の箇条書きで置き換える。`###` が2つ未満なら `block` をそのまま返す
+ *
+ * @param {string} block テンプレートのブロック
+ * @param {string} source 置き換える前の README
+ * @returns {string} 置き換えたブロック
+ */
+export function fillDefaults(block, source) {
+  const sourceLines = source.split('\n');
+  let out = block.split('\n');
+  const headings = [];
+  for (const line of out) {
+    if (line.startsWith('## ') && !headings.includes(line)) {
+      headings.push(line);
+    }
+  }
+  for (let h = headings.length - 1; h >= 0; h -= 1) {
+    const heading = headings[h];
+    const range = h2Range(out, heading);
+    if (range === null) {
+      continue;
+    }
+    const h3 = h3Indices(out, range.from, range.to);
+    if (h3.length < 2) {
+      continue;
+    }
+    const blockNames = h3.map((at) => out[at].slice('### '.length).trim());
+    const sourceRange = h2Range(sourceLines, heading);
+    if (sourceRange !== null) {
+      const sourceNames = h3Indices(sourceLines, sourceRange.from, sourceRange.to).map((at) =>
+        sourceLines[at].slice('### '.length).trim(),
+      );
+      if (
+        blockNames.length === sourceNames.length &&
+        blockNames.every((name, index) => name === sourceNames[index])
+      ) {
+        continue;
+      }
+    }
+    const lines = collectUnder(sourceLines, heading);
+    const bullets = lines.map((entry) => `- ${entry.heading}: ${entry.paragraph}`);
+    out = [...out.slice(0, h3[1] + 1), '', ...bullets, '', ...out.slice(range.to)];
+  }
+  return out.join('\n');
+}
+
+/**
+ * 置き換える前の README から並べた見出しを集める（副作用なしに近い。読めなければ投げる）。
+ *
+ * @param {string} root リポジトリのルート
+ * @param {readonly import('./targets.mjs').FoundEntry[]} entries 見つけた物
+ * @returns {readonly string[]} 見出しの並び（重複なし）
+ */
+function headingsFor(root, entries) {
+  const seen = new Set();
+  const headings = [];
+  for (const entry of entries) {
+    if (entry.action !== 'replace') {
+      continue;
+    }
+    const skeleton = skeletonFor(root, entry.at);
+    if (skeleton.part.kind !== 'whole') {
+      continue;
+    }
+    const templateText = fs.readFileSync(path.join(root, skeleton.file), 'utf8');
+    const block = blockUnder(templateText, skeleton.heading);
+    if (block === null) {
+      throw new Error(`no block under ${skeleton.heading}: ${skeleton.file}`);
+    }
+    if (!hasTarget(block)) {
+      continue;
+    }
+    const current = fs.readFileSync(entry.path, 'utf8');
+    const blockLines = block.split('\n');
+    const sourceLines = current.split('\n');
+    const firstTarget = blockLines.find((line) => {
+      if (!line.startsWith('## ')) {
+        return false;
+      }
+      const range = h2Range(blockLines, line);
+      return range !== null && h3Indices(blockLines, range.from, range.to).length >= 2;
+    });
+    if (firstTarget !== undefined) {
+      const sourceRange = h2Range(sourceLines, firstTarget);
+      if (sourceRange !== null) {
+        const blockRange = h2Range(blockLines, firstTarget);
+        if (blockRange !== null) {
+          const blockNames = h3Indices(blockLines, blockRange.from, blockRange.to).map((at) =>
+            blockLines[at].slice('### '.length).trim(),
+          );
+          const sourceNames = h3Indices(sourceLines, sourceRange.from, sourceRange.to).map((at) =>
+            sourceLines[at].slice('### '.length).trim(),
+          );
+          if (
+            blockNames.length === sourceNames.length &&
+            blockNames.every((name, index) => name === sourceNames[index])
+          ) {
+            continue;
+          }
+        }
+      }
+    }
+    for (const line of defaultLines(block, current)) {
+      if (!seen.has(line.heading)) {
+        seen.add(line.heading);
+        headings.push(line.heading);
+      }
+    }
+  }
+  return headings;
+}
+
 /**
  * 差し替えの仕事を作る。テンプレートを読み、書く中身を決める。読めなければ投げる。
  *
@@ -58,7 +318,8 @@ export function jobsFor(root, entries) {
       throw new Error(`no block under ${skeleton.heading}: ${skeleton.file}`);
     }
     if (skeleton.part.kind === 'whole') {
-      jobs.push({ at: entry.at, path: entry.path, text: `${block}\n` });
+      const current = fs.readFileSync(entry.path, 'utf8');
+      jobs.push({ at: entry.at, path: entry.path, text: `${fillDefaults(block, current)}\n` });
       continue;
     }
     const current = fs.readFileSync(entry.path, 'utf8');
@@ -146,9 +407,16 @@ export function main(argv) {
   }
   const flagged = flaggedScripts(packageData?.scripts);
   const configExists = fs.existsSync(path.join(root, STARTER_CONFIG_AT));
+  let headings;
+  try {
+    headings = headingsFor(root, entries);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
   for (const line of [
     ...switchLines({ config: configExists, scripts: flagged }),
-    ...planLines(labels(args.only), entries),
+    ...planLines(labels(args.only), entries, headings),
   ]) {
     console.log(line);
   }

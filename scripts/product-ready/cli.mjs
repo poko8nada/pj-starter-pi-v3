@@ -60,13 +60,14 @@ export function switchLines(plan) {
 }
 
 /**
- * 表示の行を作る（副作用なし）。label ごとに、無ければ `no <label> to <verb>`、あれば見出しと中身を出す。
+ * 表示の行を作る（副作用なし）。label ごとに、無ければ `no <label> to <verb>`、あれば見出しと中身を出す。見出しがあれば末尾に足す。
  *
  * @param {readonly Label[]} labels 出す label（一覧の順）
  * @param {readonly { readonly label: string, readonly at: string, readonly path: string }[]} plan 見つけた物
+ * @param {readonly string[]} [headings] 並べた見出し（空なら行を足さない）
  * @returns {readonly string[]} 表示の行
  */
-export function planLines(labels, plan) {
+export function planLines(labels, plan, headings = []) {
   const lines = [];
   for (const item of labels) {
     const targets = plan.filter((entry) => entry.label === item.label);
@@ -78,6 +79,9 @@ export function planLines(labels, plan) {
         lines.push(`  ${target.at}`);
       }
     }
+  }
+  if (headings.length > 0) {
+    lines.push(`headings: ${headings.join(', ')}`);
   }
   return lines;
 }
