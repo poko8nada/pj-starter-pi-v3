@@ -223,7 +223,7 @@ const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
 
 /**
- * close.mdの`## Triage`から`ex-` planの`No`を読む。`ex-plan <plan id> (ADR <NN>, ...)`の対応。
+ * close.mdの`## Triage`から`ex-` planの`No`を読む。`_ex-plan_ <plan id> (ADR <NN>, ...)`の対応。
  *
  * @param {string} closeText
  * @returns {Map<string, string>}
@@ -232,7 +232,7 @@ function readTriageNos(closeText) {
   /** @type {Map<string, string>} */
   const map = new Map();
   for (const line of triagePart(closeText).split('\n')) {
-    const found = line.match(/^-\s*\d+:\s*ex-plan\s+(\S+)\s*\(ADR\s+([^,\s)]+)/);
+    const found = line.match(/^-\s*\d+:\s*_ex-plan_\s+(\S+)\s*\(ADR\s+([^,\s)]+)/);
     if (found) map.set(found[1], found[2].trim());
   }
   return map;

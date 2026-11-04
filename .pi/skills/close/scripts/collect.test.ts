@@ -31,19 +31,42 @@ describe('noOf', () => {
     expect(noOf(planId, normalPlan, closeWithTriage)).toBe(adrNo);
   });
 
-  it('`ex-`plan は Triage 行の`ADR <NN>` を読み、行が無ければ null になる', () => {
+  it('(happy) `_ex-plan_` 行を持つ close.md で `ex-` の plan の `No` を読む → `ADR <NN>` の値になる', () => {
     expect(noOf(exId, exPlan, closeWithTriage)).toBe(adrNo);
+  });
+
+  it('(error) 旧い形の行だけを持つ close.md で `ex-` の plan の `No` を読む → null になる', () => {
+    const oldKind = ['ex-', 'plan'].join('');
+    const oldTriage = `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n- 1: ${oldKind} ex-fix (ADR 02, xxx): why\n`;
+    expect(noOf(exId, exPlan, oldTriage)).toBeNull();
+  });
+
+  it('(error) Triage 行が無い close.md で `ex-` の plan の `No` を読む → null になる', () => {
     expect(noOf(missingId, exMissingPlan, closeWithTriage)).toBeNull();
   });
 });
 
 describe('writeClose', () => {
-  it('`## Collected`の見出しにTriageのNoを付ける', () => {
+  it('(happy) `_ex-plan_` 行を持つ close.md で収集する → `ex-` の plan の見出しが `ADR <NN>` になる', () => {
     const { cycle } = setupCycle(closeWithTriage);
     const closePath = writeClose(cycle);
     const text = readFileSync(closePath, 'utf8');
     expect(text).toContain(`### ${planId} (ADR ${adrNo})`);
     expect(text).toContain(`### ${exId} (ADR ${adrNo})`);
+  });
+
+  it('(error) 旧い形の行だけを持つ close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
+    const oldKind = ['ex-', 'plan'].join('');
+    const oldTriage = `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n- 1: ${oldKind} ex-fix (ADR 02, xxx): why\n`;
+    const { cycle } = setupCycle(oldTriage);
+    const text = readFileSync(writeClose(cycle), 'utf8');
+    expect(text).toContain(`### ${exId} (ADR 未特定)`);
+  });
+
+  it('(error) Triage 行が無い close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
+    const { cycle } = setupCycle(closeWithTriage);
+    const text = readFileSync(writeClose(cycle), 'utf8');
+    expect(text).toContain(`### ${missingId} (ADR 未特定)`);
   });
 });
 
