@@ -199,7 +199,8 @@ type Leftover = {
 
 ## Acceptance
 
-- Ran: `pnpm test:run`（64ファイル、749テスト）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`、`pnpm format:check`、grep ツールで `\bex-plan\b` と `\bproposed\b` と `plan/<plan id>.md` を `.pi/skills` から検索し、`yolo/SKILL.md:41` を除いて 0 件、`plan/<NN>-<plan id>.md` が 9 件、`ex-<what it fixes>` が 2 件、`01-alpha` が 2 件、並びの順位を外すと 1 件が赤、見出しの `NN` を外すと 6 件が赤（いずれも戻して緑）、レビュー consult-41（Round 1 の 2 件は `fixed:`、Round 2 は五点とも `なし`）。
+- Ran: `pnpm test:run`（64ファイル、749テスト）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`、`pnpm format:check`、grep ツールで `\bex-plan\b` と `\bproposed\b` と `plan/<plan id>.md` が `.pi/skills` 全体で 0 件、`plan/<NN>-<plan id>.md` が 9 件、`ex-<what it fixes>` が 2 件、`01-alpha` が 2 件、並びの順位を外すと 1 件が赤、見出しの `NN` を外すと 6 件が赤（いずれも戻して緑）、レビュー consult-41（Round 1 の 2 件は `fixed:`、Round 2 は五点とも `なし`）。
 - Findings:
   - `.pi/skills/yolo/SKILL.md:41` が `ex-` と `proposed` のままである。この plan の表記（`_ex-plan_`・`_proposed_`）と食い違い、`## Files` にも無い。`ex-` を `_ex-plan_` に、`proposed` を `_proposed_` に直し、`## Files` に `.pi/skills/yolo/SKILL.md update` を足す。
+    - fixed: yolo の提案順を `_ex-plan_`・`_proposed_` にそろえ、`## Files` に `.pi/skills/yolo/SKILL.md update` を足した（`17e2f52`）。
 - Doubts: なし
