@@ -42,7 +42,7 @@ pnpm install
 | `pnpm format` / `pnpm format:check` | Format / verify                        |
 
 - **On commit** — runs format / lint / `typecheck:staged` / `test:related` / `ja-check` on the changed parts
-- **Banned Japanese words** — change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error`, `warn`, and `exception`). `exception` is an array of allowed words. A hit covered by an `exception` word is not reported for `error` or `warn`. The check decides the cover by looking only around the hit.
+- **Banned Japanese words** — change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error`, `warn`, and `exception`). `exception` is an array of allowed words. A hit covered by an `exception` word is not reported for `error` or `warn`. The check decides the cover by looking only around the hit. Examples: `手順`, `相手`, `道具`.
 - **On push** — runs typecheck (the root and the harness) / test
 - **On every agent turn** — only when there was a change. The fix stage applies `lint:fix` → `format`, and the check stage applies `lint` → `typecheck:staged`, to the changed parts.
 - **Harness tests** — they run under the starter config (`pnpm test:run` uses `vitest.starter.config.ts`), and are excluded by the product config (`vitest.config.ts` excludes the harness paths)
@@ -74,7 +74,7 @@ The records stay in `cycles/<YYMMDD-NNN-<slug>>/`: `adr.md` / `affected.md` / `p
 
 ## Contributing
 
-`lefthook` checks on commit and on push. On commit it runs format, lint, `typecheck:staged`, `test:related` and `ja-check` on the changed parts, and on push it runs typecheck (the root and the harness) and test. Change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error`, `warn`, and `exception`). `exception` is an array of allowed words. A hit covered by an `exception` word is not reported for `error` or `warn`. The check decides the cover by looking only around the hit.
+`lefthook` checks on commit and on push. On commit it runs format, lint, `typecheck:staged`, `test:related` and `ja-check` on the changed parts, and on push it runs typecheck (the root and the harness) and test. Change `ja-check`'s banned words in `scripts/checks/ja-check.json` (`error`, `warn`, and `exception`). `exception` is an array of allowed words. A hit covered by an `exception` word is not reported for `error` or `warn`. The check decides the cover by looking only around the hit. Examples: `手順`, `相手`, `道具`.
 
 Before committing, run the following commands:
 

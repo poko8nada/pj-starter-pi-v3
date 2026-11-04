@@ -64,3 +64,12 @@ README.ja.md           update
   - 変更した全ファイルを通読し、矛盾、循環、重複、不足、不自然な流れがないか確かめる。
 - Added:
   - base: オーナーが、`exception` に載った語と `README.md` と `README.ja.md` の例を読み、例が `exception` に設定した語から選ばれていることと文面を確かめ、OK を返す。
+
+## Notes
+
+### Slice 1: 語の選定と記入
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 7854a36 base(exception-words): add exception words
+- Stopped:
