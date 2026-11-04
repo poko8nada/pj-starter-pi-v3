@@ -149,7 +149,6 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 - does:
   - the Units are as `references/format.md` says: the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
   - ask the owner, per Unit, whether they will run the function or look at it
-  - say how to check it: the command to run and what to see, or the place to open and what to read
   - the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
   - a Unit whose function does not work gets an `ex-` plan, with the same steps as the `ex-` plans' — the grouping, the plan, the work, the merge; say in the chat which Unit is still open, and this step runs again for that Unit when it is merged
   - what they answered goes in `## Verified`, which sits after `## Triage`; a Unit they will not check carries `しない` and the reason on the same line
