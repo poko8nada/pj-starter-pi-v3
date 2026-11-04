@@ -61,8 +61,17 @@
 - Doubts: `.pi/skills/plan/SKILL.md:28` の旧 Why 説明を直すか・別の ex-plan にするかはオーナーの判断が要る — 理由: このプランの `Files` は `cut.md` のみで範囲外のためこの場で直せず、放置すれば旧式 Why の再発の恐れがあるため、対応要否の判断が要る。
   - fixed: `.pi/skills/plan/SKILL.md:28` を直した。別のプランにはしない。
 
+### Round 2
+
+- Stale: なし — 理由: fixed 行の直しが SKILL.md の 28 行で確認できたため。現行 28 行後段は Role change と Adjustment が何を意味し、なぜ 1 プランかを書くという趣旨であり、cut.md の Present の Why と同旨である。旧文面の系統は grep で 0 件であり、旧式 Why の再発の恐れは解消している。
+- Unlisted: なし — 理由: fixed 行を持たないため今回の照合対象外であり、対象の fixed 2 行はいずれも Stale と Doubts で扱う同一箇所の直しだからである。
+- Gaps: なし — 理由: fixed 行を持たないため今回の照合対象外であり、cut.md 側の再確認は指示の範囲外だからである。
+- Unproven: なし — 理由: left 行は回答済みで再開しないという指示のため、再検証しないからである。
+- Noise: なし — 理由: fixed 行を持たないため今回の照合対象外であり、直した 1 行に重複・新設名・不要分岐は見られないからである。
+- Doubts: なし — 理由: fixed 行の対応（SKILL.md の 28 行を直し、別の ex-plan にしない）が確認できたため。plan 配下に当該直しのための新規プラン md はなく、28 行の直し自体は Stale のとおり済んでいる。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（63 ファイル、756 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、grep で `then they are one plan` を `cut.md` から 1 件、`then keep them together` と `which `Role change` and which` を 0 件、2 ファイルの読み、`git diff 89e447c..HEAD` の通読。
+- Findings: なし
+- Doubts: なし
