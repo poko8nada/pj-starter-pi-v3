@@ -117,3 +117,12 @@ type TestConfig = JaCheckConfig;
   - `exception` を大小文字を問わず `grep` し、`README.md`、`README.ja.md`、`scripts/checks/ja-check.json`、`scripts/checks/ja-check.mjs` の記述が食い違っていないことを確かめる。
   - 変更したすべてのファイルを通読し、矛盾、循環、重複、不足、不自然な流れがないか確かめる。
 - Added: なし
+
+## Notes
+
+### Slice 1: 設定の形と照合
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 899a177 consult(exception-shape): add exception config and suppression
+- Stopped:

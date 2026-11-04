@@ -3,6 +3,7 @@
  *
  * fake root holds temp files and a config.
  * WARN_WORD lives in warn, ERROR_WORD lives in error. Quoted alone is skipped.
+ * 例外の語に一致するヒットを報告しない。
  */
 
 import { spawnSync } from 'node:child_process';
@@ -96,6 +97,71 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('[warn]');
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
   });
+  it('(happy) exceptionが骨組みで行が骨組み → 報告せずにexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: ['骨組み'] });
+    const file = writeFile(root, 'a.md', '骨組み\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[warn]');
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(happy) exceptionがerror語の頭に1文字を加えた語で行がその語 → error語を報告せずにexit 0', () => {
+    const root = fakeRoot();
+    const extended = `x${ERROR_WORD}`;
+    writeConfig(root, { ...validConfig(), exception: [extended] });
+    const file = writeFile(root, 'a.md', `${extended}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(happy) exceptionが骨組みで行が骨 → 例外に一致しないためwarn行を出してexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: ['骨組み'] });
+    const file = writeFile(root, 'a.md', `${WARN_WORD}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain('[warn]');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
+
+  it('(happy) exceptionが入口で行が入り口 → 例外に一致しないためwarn語口の行を出してexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), warn: { 口: 'replacement-warn' }, exception: ['入口'] });
+    const file = writeFile(root, 'a.md', '入り口\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain('[warn]');
+    expect(out.stdout).toContain('口 → replacement-warn');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
+
+  it('(happy) exceptionが骨組みで行が骨組みと骨 → 2つ目の骨を見落とさずにwarn行を1つ出してexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: ['骨組み'] });
+    const file = writeFile(root, 'a.md', '骨組みと骨\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain('[warn]');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
+
   it('md内のerror語 → error行を出してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
@@ -341,6 +407,26 @@ describe('ja-check', () => {
     expect(out.stdout).toContain(HEADER_1);
     expect(out.stdout).toContain(HEADER_2);
   });
+  it('(error) exceptionが配列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: 'x' });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) exceptionの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: [1] });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
   it('頂点が非レコードの設定 → 冒頭2行を出してexit 1', () => {
     for (const bad of [null, [], 'x'] as const) {
       const root = fakeRoot();
