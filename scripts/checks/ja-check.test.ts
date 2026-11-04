@@ -85,18 +85,6 @@ describe('ja-check', () => {
     expect(h2At).toBeGreaterThan(h1At);
   });
 
-  it('(empty) exceptionが空の配列でwarn語骨を含む行 → warn行を出してexit 0', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exception: [] });
-    const file = writeFile(root, 'a.md', `${WARN_WORD}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).toContain(`${file}:1: ${WARN_WORD}`);
-    expect(out.stdout).toContain('[warn]');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
-  });
   it('(happy) exceptionが骨組みで行が骨組み → 報告せずにexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exception: ['骨組み'] });

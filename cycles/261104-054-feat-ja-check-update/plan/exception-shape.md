@@ -140,3 +140,10 @@ type TestConfig = JaCheckConfig;
 - Unplanned: なし
 - Commit: 0e2c9bb consult(exception-shape): document exception array
 - Stopped:
+
+### Cleanup: 空の例外での warn 報告の重ねたテストを落とした
+
+- Dropped: `(empty) exceptionが空の配列でwarn語骨を含む行 → warn行を出してexit 0`。`md内のwarn語 → warn行を出してexit 0` が `validConfig()` (例外は空) で同じ振る舞い (warn 1件、exit 0) を確かめるため。
+- Kept: 上記以外の 26件。`happy` 5件と `error` 3件は例外あり・なし・型違いの別々の分岐を見るため。消えた振る舞い・作られなくなった分岐・型前提のテストは見当たらないため。
+- Findings: なし
+- Unplanned: なし
