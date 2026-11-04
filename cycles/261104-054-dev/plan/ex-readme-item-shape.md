@@ -169,22 +169,23 @@ _Under construction_
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: `8c1b195`
 - Stopped: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。理由: 旧項目形（リンク括弧・`.pi/`への直リンク・見出しの説明）を指す文書・コメント・テストは残っていない。`rules/readme.format.md` の `## Writing` は既に新形の規則（説明文1文・`### Product` を置かない理由）を持ち、`scripts/product-ready/index.test.ts` は実 README ではなく合成 fixture で形を確かめるため、今回の置換で古くなる対象がない。
+- Unlisted: なし。理由: `a4236b9..HEAD` の製品変更は `README.md` と `README.ja.md` の `## What is in it` 内だけであり、Steps 1・2 の全文置換の範囲に収まり、題名・バッジ・言語リンク・`## Getting started` に触れていない。同 diff 内の plan md 6行（Notes の `なし` 化）は作業記録であり、Files の製品変更ではないため対象外とする。
+- Gaps: なし。理由: ADR 01 の `Adopted` のうち本プラン所掌の項目形（5見出し構成・リンク3つのみで文字にバッククォートなし・`skills` 等5見出しに説明なし・`localhook: `lefthook`` は値のみ・ほかは `ラベル: コード - 説明`・見出し下は入れ子・`### CI` は `_Under construction_`）は英日とも新 README にあり、leftover 3 の `Then`（英日全文をプランに書き写す）も plan 全文と README が一致するため運び残しがない。
+- Unproven: grep の2行確認だけでは項目形の要を証明できない。理由: `Verify` の「grep ツールで `rules: `rules/_` -` と `harness-sync: `scripts/harness/_` -` を各1件」は2行だけを固定し、`skills`・`extensions`・`typecheck`・`test` の入れ子や `lint`・`format`・`japanese-check` の形を保持しない。例えば `consult` の1行を消しても当該 grep・`ja-check`・`typecheck`・`lint`・`format:check`・`test:run scripts/product-ready`（合成 fixture のため実 README を読まない）はいずれも緑のままであり、欠落を検出する検査がない。
+  - left: 全文を計画から写しており、検証は形の読み合わせ（リンク 3 つ・見出し 5 つ・入れ子・`localhook` の値）と受理の通読が担う。文書の見出しを 1 行ずつテストで固定すると、文書の言い回しを変えるたびにテストを書き換えることになる。
+- Noise: なし。理由: 重複・役割不明な名前・不要になった分岐はない。新形は `skills:` 等の見出し無説明と `ラベル: コード - 説明`＋入れ子に統一され、旧形のラベル側バッククォート・括弧パス・見出しの重複説明は消えており、付け足しの重複文もない。
+- Doubts: なし。理由: 全文を写す作業であり形の判断余地がなく、オーナー承認は `Added: base` の `Verify` で扱うため、修正や所有者判断を求める疑いはない。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run scripts/product-ready`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node scripts/checks/ja-check.mjs README.ja.md`（error 0、warn 0）、`test -e` で 3 つのリンク先の存在、`README.md` と `README.ja.md` の `## What is in it` の読み合わせ、`a4236b9..HEAD` の差分の通読。
+- Findings: なし
+- Doubts: なし
