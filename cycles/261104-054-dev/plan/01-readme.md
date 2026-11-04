@@ -192,8 +192,17 @@ export function planLines(
   - cycles/261104-054-dev/adr.md:118らの旧見出しの記述は変更前の実測であり歴史的記録であるため、staleとは扱わない。
     - left: 記録は当時の事実であり、書き換えない。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は Unlisted・Gaps・Unproven・Noise にあり、`Stale` には `fixed:` がないため対象外である（:173-:174）。
+- Unlisted: なし — fixed 1件を確認。`## Files` に `pnpm-lock.yaml update` があり（:16）、差分の生成物が追跡できるため、指摘の追跡不能は閉じている。
+- Gaps: なし — fixed 2件を確認。`scripts/product-ready/index.test.ts:478-498` が `###` が1つだけの README で `--run` → 1行エラー・exit 1・ツリー不変を断言し実装 `scripts/product-ready/index.mjs:128-129` の `not enough headings` に対応するため、3条件目の穴は閉じている。`## Verify` に4バッジと `package.json` の突き合わせ行があり（:61）、`README.md:3` と `package.json:29-40` の値の取り違えを確かめるため、バッジの穴は閉じている。
+- Unproven: なし — fixed 1件を確認。`scripts/product-ready/index.test.ts:400-407` が `### Default` 配下の `- ` 行だけを抜き出して期待の5行と `toEqual` で突き合わせ、実装の箇条書きに対応するため、逆順・重複で赤になる。
+- Noise: なし — fixed 1件を確認。`scripts/product-ready/index.test.ts:405-406` が共通の定数による5行の突き合わせだけを残し、ハードコードの1行が残らないため、重複の穴は閉じている。
+- Doubts: なし — `left:` の2件（:190-:193）は対象外であり、新たに所見に至る疑義もない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（63ファイル、746テスト）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`、`pnpm format:check`、grep ツールで `^### (Roadmap & Cycle|Agent|Checks|Handover|CI)$` が各5件・`^## (Checks|Harness|Cycle|Contributing)$` が0件・`^## [^A-Za-z]` が0件・`_Under construction_` が各1件・`Node-24` が各1件・`pullfrog` が0件、`test -e .github/workflows/pullfrog.yml` が失敗、相対リンクの `test -e` がすべて 0、`node scripts/checks/ja-check.mjs README.ja.md` が `error 0` `warn 0`、`fillDefaults` の呼び出しを外すと Product/Default の 2 件が赤、`planLines` の見出し行を外すと表示と cli の 2 件が赤（いずれも戻して緑）、レビュー consult-36（Round 1 の指摘はすべて `fixed:` か `left:`、Round 2 は五点とも `なし`）。
+- Findings: なし
+- Doubts: なし
