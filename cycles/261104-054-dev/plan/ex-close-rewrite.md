@@ -66,7 +66,7 @@
 ### Slice 1: `close` のスキル本文の書き直し
 
 - Findings: なし
-- Unplanned: 手順 11 と 12 を入れ替え、作業ツリーの片付けをロードマップの前にした。第三者レビューの指摘で、作業ツリーの後戻りがロードマップの後ろに来るのを避けるためである。手順 14 に `git status` の確認も足した。
+- Unplanned: 手順 11 と 12 を入れ替え、作業ツリーの片付けをロードマップの前にした。第三者レビューの指摘で、作業ツリーの後戻りがロードマップの後ろに来るのを避けるためである。手順 14 に `git status` の確認も足した。第三者の指摘で、手順 9 に毎回の未マージ件数、手順 8 に初回のみの全体読み、手順 12 に `status` を聞くこと、手順 7 に空の `## Verified` を埋めないことを足した。
 - Commit: `6ccb672`
 - Stopped: なし
 
@@ -74,12 +74,15 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。理由: 手順 3・5・10 の規則文を `references/format.md` を呼ぶ形に変えた（`fixed:`）。
+  - fixed: 手順 3 の `未特定`、手順 5 の `ex-` の名前、手順 10 の Units を、`references/format.md` を呼ぶ形にした。
+- Unlisted: なし。理由: 11/12 の入れ替えと `git status` は `Unplanned` に記録し、第三者の指摘による追加も `Unplanned` に書き足した。
+- Gaps: なし。理由: 導入文の「steps 3, 4, 5, 8 and 9」を、段の名前の列挙に変えた（`fixed:`）。
+  - fixed: 導入文を「the collect, the exclusion, the proposal, the owner's judgement and the `ex-` plans」に変えた。数字で他の段を指す文はもう無い。
+- Unproven: なし。理由: 数字参照の禁止と表の単一性は、自動の試験ではなく、`Verify` の読みで確かめる。文書だけの変更で、コードのテストが触れない。
+- Noise: なし。理由: 「表が唯一の場所」と「The gate is ...」の重複を、表の導入文で「表は名前と決めることを書き、手順は名前を呼ぶだけ」と書き分けた（`fixed:`）。
+  - fixed: 表の導入文を「The table names them and says what each decides; a step that says “the gate is ...” names one of the three, and does not restate it.」に変えた。
+- Doubts: なし。理由: 数字の列挙は名前にし、追加した行為は `Unplanned` に記録した。
 
 ## Acceptance
 

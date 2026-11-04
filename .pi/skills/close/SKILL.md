@@ -17,7 +17,7 @@ Texts handed to subagents are in `references/tasks.md`.
 
 ## Who decides
 
-Three gates. This table is the only place they are written; every step and every section of `close.md` refers to it.
+Three gates. The table names them and says what each decides; a step that says "the gate is ..." names one of the three, and does not restate it.
 
 | gate                | what it decides                                     | where      |
 | ------------------- | --------------------------------------------------- | ---------- |
@@ -42,7 +42,7 @@ An `ex-` plan's merge puts its plan md's leftovers back to `collected`, and the 
 
 ## Procedure
 
-The steps run in this order. The leftover's path is steps 3, 4, 5, 8 and 9; the rest are the cycle's.
+The steps run in this order. The leftover's path is the collect, the exclusion, the proposal, the owner's judgement and the `ex-` plans; the rest are the cycle's.
 
 ### 1. Check the trigger
 
@@ -69,7 +69,7 @@ The steps run in this order. The leftover's path is steps 3, 4, 5, 8 and 9; the 
 - does:
   - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`, and creates the file
   - the heading, the plan id and the line's shape are in `references/format.md`
-  - fill every `未特定` from the plan md's `No`; an `ex-` plan's `No` comes from the Triage
+  - fill every `未特定` as `references/format.md` says; an `ex-` plan's `No` comes from the Triage
   - add the holes from the read as lines by hand: the script does not know them
   - do not copy by hand what the script collects: a line left out is a hole nobody finds again
 - gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread
@@ -90,7 +90,7 @@ The steps run in this order. The leftover's path is steps 3, 4, 5, 8 and 9; the 
   - write one destination per leftover in `## Triage`, in the order and the shape `references/format.md` gives
   - each bullet carries its `Fact:` / `Why:` / `Then:`
   - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
-  - an `ex-` destination has no plan name yet: the grouping in the `ex-` plans' step names it
+  - an `ex-` destination has no plan name yet: the grouping in the `ex-` plans' step names it, as `references/format.md` says
   - do not triage with the owner line by line before every destination is in `## Triage`
 - gives: `proposed` for every leftover
 
@@ -147,7 +147,7 @@ The steps run in this order. The leftover's path is steps 3, 4, 5, 8 and 9; the 
 
 - takes: the merged base
 - does:
-  - the Units are the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
+  - the Units are as `references/format.md` says: the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
   - ask the owner, per Unit, whether they will run the function or look at it
   - the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
   - a Unit whose function does not work gets an `ex-` plan, with the same steps as the `ex-` plans' — the grouping, the plan, the work, the merge; say in the chat which Unit is still open, and this step runs again for that Unit when it is merged
