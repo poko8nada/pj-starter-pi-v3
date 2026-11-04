@@ -1,89 +1,78 @@
-# ハーネス付きスターター
+# Harness-included starter（ハーネス付きスターター）
 
-[![Pullfrog](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml/badge.svg)](https://github.com/poko8nada/pj-starter-pi-v3/actions/workflows/pullfrog.yml) [![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)](https://www.typescriptlang.org/) [![Node](https://img.shields.io/badge/Node-24-339933)](https://nodejs.org/) [![pnpm](https://img.shields.io/badge/pnpm-12.15.0-F69220)](https://pnpm.io/) [![pi](https://img.shields.io/badge/pi-1.4.0-7C3AED)](https://www.npmjs.com/package/@earendil-works/pi-coding-agent)
 
 プロジェクトと、その**エージェント用ハーネス**が最初から揃っているスターターである。このスターターには、cloneした時点で、検査・commitゲート・エージェントの規則・サイクルの仕組みが入っている。
 
 English: [README.md](README.md)
 
-## 入っているもの
+## What is in it
 
-- **検査** — `oxlint` / `oxfmt` / `tsc` / `vitest` と、それらを実行する `pnpm` スクリプト
-- **ゲート** — commit時とpush時に検査する `lefthook` と、各ターンで変更した分だけを検査する `quality-gate`
-- **エージェントの規則** — `AGENTS.md`（毎セッションで読み込まれる）
-- **サイクルの仕組み** — `.pi/skills/` にある5つのスキル（`adr` / `plan` / `work` / `close` / `yolo`）
-- **パッケージ** — `.pi/skills/` の `upgrade`。サイクルとは別に単独で動作する
-- **拡張** — `consult`（4つのツールを持つ1つの拡張）、`quality-gate`（各ターンでの変更分を検査する）、`sound-notify`（piがユーザー待ちのときに音とcmux通知で知らせる）、[`thinking-scrub`](.pi/extensions/thinking-scrub/README.ja.md)（ループするthinkingを生成中に止めて取り除き、次のターンに持ち越さないようにする）、`context-precompact`（標準コンパクションを待たず、閾値に達する前に裏で準備し、境界で適用する。`/precompact`、`/precompact now`、`/precompact on|off`、status line、設定）（場所: `.pi/extensions/`）
-  - `consult_run` — ロールと行き先を指定して、サブエージェントの `pi` を1体だけ起動する。サブエージェントにはこの会話を見せない
-  - `consult_subagents` — このセッションのサブエージェントを一覧表示し、1体を停止する。記録を読み込むため、reloadをまたいでもこのセッションのサブエージェントが表示される
-  - `consult_worktree` — unitのワークツリーを作成・一覧表示・削除する。明示的に削除しない限り残る。`remove` はマージ済みのブランチも一緒に削除する（未マージのブランチは残す）
-  - `consult_commit` — サブエージェントがワークツリーに残した仕事をコミットする。メインエージェントのブランチに取り込むには `git merge --no-ff consult/<unit-id>` を自分で実行する
-  - 保存場所: `/tmp/pi-consult/<project>-<stamp>/<unit-id>/wt`、ブランチ `consult/<unit-id>`、baseの既定値は `HEAD`
-- **CI** — `.github/workflows/pullfrog.yml`（dispatchでエージェントを実行する）
-- **サイクルの記録** — `cycles/`
+### Roadmap & Cycle
 
-## 使い始める
+製品の方向と循環の判断は、意図から記録まで追跡できる形で残る。
 
-```bash
-pnpm install
-```
+- [`DEFINITION.md`](DEFINITION.md): 製品像を保ち、循環の判断をその項目と対応付けて残す。
+- [`ROADMAP.md`](ROADMAP.md): バージョンごとの項目を持ち、循環が選んだ番号を所有者の合意で追記する。
+- [`rules/`](rules/): 定義と roadmap と readme の形と言葉の規則を集める。
 
-1. `pnpm product:ready` で cloneを自分のものにする（一度きり） — `cycles/` を削除し、`ROADMAP.md`、`DEFINITION.md` の `Product` と `What`、2つのREADMEをテンプレートに差し替える。`test`・`test:run`・`test:related` から ` --config vitest.starter.config.ts` を外し、`vitest.starter.config.ts` を削除する。プロダクトの `test` は `vitest.config.ts` を使い、ハーネスのパスを `exclude` で除外する。スターターの `test` は `vitest.starter.config.ts` を使うため、すべてのテストが対象になる。`--run` がなければ変更内容の表示だけになる。1種類だけを対象にするなら `--only <label>` を追加する
-2. `.pi/extensions/consult/types.json` がリポジトリにあるため、自分のモデルに変更して使う
-3. `pi` を起動する。スキルは `.pi/skills/` で見つかる
+### Agent
 
-## 検査
+日常の作業は、役割を定めた pi の harness 上で進む。
 
-| コマンド                            | 内容                                |
-| ----------------------------------- | ----------------------------------- |
-| `pnpm test:run`                     | テストを1回実行する                 |
-| `pnpm lint`                         | `oxlint`（警告があれば失敗する）    |
-| `pnpm typecheck`                    | `node scripts/checks/typecheck.mjs` |
-| `pnpm format` / `pnpm format:check` | 整形する / 確認する                 |
+- [`AGENTS.md`](AGENTS.md): 毎回読む規則を示し、課題は roadmap で管理し、循環は adr から close まで進める。
+- [`.pi/skills/`](.pi/skills/): 循環と保守の単位を集める。
+  - [`adr`](.pi/skills/adr/SKILL.md): 意図と対象項目と細目を定め、定義への判断を記録に残す。
+  - [`plan`](.pi/skills/plan/SKILL.md): 合意済みの項目を順序付きの作業単位に切り分け、対象と確認を添える。
+  - [`work`](.pi/skills/work/SKILL.md): 作業単位を順に実行し、記録を plan の覚書に残す。
+  - [`close`](.pi/skills/close/SKILL.md): 作業の成果を集め、所有者と選別し、roadmap を更新する。
+  - [`yolo`](.pi/skills/yolo/SKILL.md): 所有者の確認を挟まずに循環の工程を進め、選別で止まる。
+  - [`upgrade`](.pi/skills/upgrade/SKILL.md): 依存を循環から離れて単独で更新し、監査まで終える。
+- [`.pi/extensions/`](.pi/extensions/): pi に付く補助を集める。
+  - [`consult`](.pi/extensions/consult/README.md): 役割と場所を指定して子 agent の pi を1体起動し、worktree と commit の補助も持つ。
+  - [`quality-gate`](.pi/extensions/quality-gate/README.md): 各回の変更分だけを検査し、修正と確認を分けて進める。
+  - [`context-precompact`](.pi/extensions/context-precompact/README.md): 基準位置に達する前に裏で準備し、境界で適用する。
+  - [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md): 繰り返す思考を生成中に止めて取り除き、次の回に持ち越さない。
+  - [`sound-notify`](.pi/extensions/sound-notify/README.md): pi が利用者を待つ間に音と cmux の通知で知らせる。
 
-- **commit時** — 変更分に format / lint / `typecheck:staged` / `test:related` / `ja-check` を実行する
-- **日本語の禁止語** — `ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` と `exception` の 3欄で変更する。`exception` は認める語の配列である。例外に当たるヒットは `error` でも `warn` でも報告しない。例外の判定はヒットした語の前後だけを見る。例として `手順`、`相手`、`道具` がある。
-- **push時** — typecheck（ルートとハーネス）/ test を実行する
-- **エージェントのターンごと** — 変更があった場合だけである。修正ステージでは `lint:fix` → `format` を、検証ステージでは `lint` → `typecheck:staged` を、変更分に適用する。
-- **ハーネスのテスト** — starter configでは実行され（`pnpm test:run` は `vitest.starter.config.ts` を使う）、product config（`vitest.config.ts` がハーネスのパスを除外する）では除外される
+### Checks
 
-## ハーネス
+自動の検査が、書式と正確さと振る舞いと表現を、変更のたびにそろえる。
 
-エージェント用ハーネスは `scripts/harness/` で受け渡す:
+- `lint` (oxlint): 変更した JavaScript と TypeScript に対し、警告があれば失敗とする。
+- `format` (oxfmt): JavaScript と TypeScript と Markdown と JSON の書式をそろえる。
+- `typecheck`: commit 時と push 時の型の確認をまとめる。
+  - [`scripts/checks/typecheck.mjs`](scripts/checks/typecheck.mjs): push 時に全体と harness の型を確認する。
+  - [`scripts/checks/typecheck-staged.mjs`](scripts/checks/typecheck-staged.mjs): commit 時に変更分だけの型を確認する。
+- `test`: プロダクト用とスターター用の検査の使い分けをまとめる。
+  - [`vitest.config.ts`](vitest.config.ts): プロダクト用の設定で、harness の経路を除外する。
+  - [`vitest.starter.config.ts`](vitest.starter.config.ts): スターター用の設定で、すべての検査を対象にする。
+- `japanese-check` ([`scripts/checks/ja-check.mjs`](scripts/checks/ja-check.mjs)): 禁止語の出現を数え、error と warn で報告する。
+- `localhook`: commit 時と push 時の連動をまとめる。
+  - [`lefthook.yaml`](lefthook.yaml) pre-commit: 変更分に書式と lint と型と関連検査と日本語検査を走らせる。
+  - [`lefthook.yaml`](lefthook.yaml) pre-push: 全体の型と検査を実行する。
 
-- `pnpm harness:pull` で `copy` にあげたものをスターターから取り込み、`pnpm harness:push` で `push` にあげたものを戻す。`--run` がなければ変更内容の表示だけになる。ファイルを削除することはない。
-- 一覧は `scripts/harness/harness.json` にあり、同ファイルは `starter`、`copy`、`push` の3キーを持つ。`starter` は相手方（スターター）のパス（例 `"~/..."`）、`copy` はpull用の一覧、`push` はpush用の一覧である。項目にはパスとglobを記述できる（例 `scripts/harness/*.mjs`）。
-- `package.json` は一覧の外にあるので、pull後に `scripts` と `devDependencies` を目視で確認する。
-- コピー元にない項目は `missing (<件数>):` として1件1行で出力し、`--run` の有無にかかわらず終了コードは1になる。`--run` ではコピーできるものはコピーする。
+### Handover
 
-## サイクル
+スターターとプロダクトの間の移動は、明示的で再現可能な形で進む。
 
-1サイクル = ADR → プラン → プランの実行 → 閉じる。各ステージはスキルが担当する。**次のステージを呼ぶのはスキルの `description`** であり、前のステージが次のステージを呼ぶことはない。次のステージは `description` から探す。
+- `harness-sync` ([`scripts/harness/`](scripts/harness/)): スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルを消さない。
+- `product-ready` ([`scripts/product-ready/`](scripts/product-ready/)): roadmap と定義と readme をテンプレートに置き換え、スターター用の検査配線を外す。
 
-```
-adr          オーナーがサイクルを始めるときや定義・サイクルへの指摘を上げたとき、意図・ロードマップの項目・エントリーを詰め、`cycles/<YYMMDD>-<NNN>-<slug>/adr.md` を書き、サイクルが `DEFINITION.md` に何をするかのオーナーの決定を残す
-plan         ADRが定まりそのプランの1つを作業にするとき — カットを提示して合意しプランをサブエージェントに渡せる状態になった後、`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` を書く。ファイル・スライス・型・手順・検証を持つ
-work         プランが合意されその作業を実行するとき — プランの md が書かれオーナーが読んだ後、スライス・レビュー・受け入れ・マージを走らせ、記録をプランの md に残す
-close        サイクルのすべてのプランが終わったとき（完了またはオーナーが落とした）、プランが残したものを集め、オーナーとトリアージし、Unit ごとに関数を確認するかをオーナーに聞く
-yolo         オーナーが確認なしでサイクルを通すよう指示したとき、ADR のすべてのエントリーが受け入れられた後いつでも、立っている場所からサイクルのステージをオーナーの確認なしに歩き、close のトリアージで止まり、`Added` のオーナー確認を通過させる
-```
+### CI
 
-記録は `cycles/<YYMMDD-NNN-<slug>>/` に残る: `adr.md` / `affected.md` / `plan/<plan id>.md` / `close.md`。サイクルの状態は git が持つ。ADRの `Status` は決定の状態であり、planの `Commit` / `Stopped` は作業の記録であって、サイクルの状態を表すものではない。
+_Under construction_
 
-製品の定義を持つのは `DEFINITION.md` である。その背景にある議論を担うのはADRであり、ADRはどのステージからでも開くことができる。サイクルは `adr` から始まり、オーナーが論点を挙げたときはどのステージからでもADRのentryを追加できる。変更時はどのサイクルでもADRのentryを開き、そのentryが `DEFINITION.md` のどの部分に関わるかと、各部分が変更されるかそのまま残るかを書く。
+- [`.github/workflows/pullfrog.yml`](.github/workflows/pullfrog.yml): 手動の dispatch で agent を実行する定義を保つ。
 
-## コントリビュート
+## Getting started
 
-commit時とpush時は `lefthook` が検査する。commit時は変更分に format・lint・`typecheck:staged`・`test:related`・`ja-check` を実行し、push時は typecheck（ルートとハーネス）と test を実行する。`ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` と `exception` の 3欄で変更する。`exception` は認める語の配列である。例外に当たるヒットは `error` でも `warn` でも報告しない。例外の判定はヒットした語の前後だけを見る。例として `手順`、`相手`、`道具` がある。
+Node 24 以上と pnpm が必要である。
 
-commitの前に、次のコマンドを実行しておく:
+1. `pnpm install` で依存を取得する。
+2. `pnpm product:ready` を一度だけ実行し、複製を自分のものにする。
+3. リポジトリの直下で `pi` を起動する。
 
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test:run
-```
-
-## ライセンス
+## License
 
 UNLICENSED
