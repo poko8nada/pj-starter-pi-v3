@@ -84,8 +84,17 @@
   - fixed: 表の導入文を「The table names them and says what each decides; a step that says “the gate is ...” names one of the three, and does not restate it.」に変えた。
 - Doubts: なし。理由: 数字の列挙は名前にし、追加した行為は `Unplanned` に記録した。
 
+### Round 2
+
+- Stale: なし。理由: `fixed:` の3件を `.pi/skills/close/SKILL.md` で確認した。手順3は71〜72行目が `references/format.md` を呼ぶ形（見出し・ plan id・行の形、未特定の埋め方、`ex-` の `No` の読み方）になっている。手順5は90行目と93行目が順番・形と `ex-` の命名を `references/format.md` を呼ぶ形になっている。手順10は150行目が Units の定義を `references/format.md` を呼ぶ形になっている。
+- Unlisted: なし。理由: Round 1 に `fixed:` がなく、今回の対象外のため見ない。
+- Gaps: なし。理由: `fixed:` を `.pi/skills/close/SKILL.md` の45行目で確認した。導入文は「the collect, the exclusion, the proposal, the owner's judgement and the `ex-` plans」という名前の列挙になっている。内部の数字参照はなく、残る数字は `work` step 8（51行目）と `work` step 2（181行目）の別スキルの参照だけで、残してよいもののため問題ない。
+- Unproven: なし。理由: Round 1 に `fixed:` がなく、今回の対象外のため見ない。
+- Noise: なし。理由: `fixed:` を `.pi/skills/close/SKILL.md` の20行目で確認した。表の導入文が「The table names them and says what each decides; a step that says “the gate is ...” names one of the three, and does not restate it.」になっており、表が名前と決めることを書き、手順は名前を呼ぶだけという書き分けになっている。
+- Doubts: なし。理由: Round 1 の `fixed:` 3件はいずれも本文に反映されており、開き直す点がない。`left:` はなく、開き直さない。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（63 ファイル、756 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`ja-check`（2 ファイル、error 0、warn 0）、`steps 3 to 5` の grep が 0 件、`SKILL.md` の読み（決める人の表が 1 か所、14 の手順が 2 つの並びにすべて入る、`ex-` のあとの 4 つが表の行から読める、`close.md` の 3 つのセクションが状態の置き場所を名指ししている）、`git diff ca86538..HEAD` の通読。
+- Findings: なし
+- Doubts: なし
