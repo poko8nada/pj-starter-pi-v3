@@ -186,9 +186,24 @@ describe('product-ready index', () => {
     const readmeJa = readFileSync(join(tree.root, 'README.ja.md'), 'utf8');
     expect(readme).toContain('## What is in it');
     expect(readme).not.toContain('old');
-    expect(readmeJa).toContain('## 入っているもの');
+    expect(readmeJa).toContain('## What is in it');
     expect(readmeJa).not.toContain('old');
-    expect(readmeJa).not.toContain('## What is in it');
+    expect(readmeJa).not.toContain('## 入っているもの');
+  });
+
+  it('--run → README.md と README.ja.md の ## What is in it の下に ### Product と ### Default がこの順で並ぶ', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    for (const name of ['README.md', 'README.ja.md']) {
+      const text = readFileSync(join(tree.root, name), 'utf8');
+      const what = text.indexOf('## What is in it');
+      const product = text.indexOf('### Product');
+      const fallback = text.indexOf('### Default');
+      expect(what).toBeGreaterThanOrEqual(0);
+      expect(product).toBeGreaterThan(what);
+      expect(fallback).toBeGreaterThan(product);
+    }
   });
 
   it('--run なし → 表示だけで、ツリーは変わらない', () => {
