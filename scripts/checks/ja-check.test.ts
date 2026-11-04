@@ -415,6 +415,16 @@ describe('ja-check', () => {
     expect(out.stdout).toContain(HEADER_2);
   });
 
+  it('(error) 余分な欄がある設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), extra: {} });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
   it('頂点が非レコードの設定 → 冒頭2行を出してexit 1', () => {
     for (const bad of [null, [], 'x'] as const) {
       const root = fakeRoot();

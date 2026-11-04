@@ -172,4 +172,5 @@ type TestConfig = JaCheckConfig;
   - 壊したファイルは `git checkout` で戻し、`git status` が plan md の追記だけであることを確かめた。
 - Findings:
   - `scripts/checks/ja-check.test.ts:395` — 余分な欄（`error`、`warn`、`exception` 以外）を持つ設定を拒否する振る舞いにテストがない（`keys.length !== 3` を外しても 26 件が緑のまま）。
+    - fixed: 余分な欄がある設定の (error) ケースを1件足し、header 2行と exit 1 を確かめた。keys.length を外すと赤になり、戻すと緑になることを確かめた。
 - Doubts: なし
