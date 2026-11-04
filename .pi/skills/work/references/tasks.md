@@ -35,7 +35,7 @@ Write it in the plan md's ## Notes, as a section that is not a slice.
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md (## Files, the slices' `### Verify` and `### Steps`, ## Notes).
 Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git status`, `git log` are allowed for this role).
 Answer one question: can this diff close the plan? By five viewpoints:
-- Stale: a document, a comment or a test this change makes stale
+- Stale: a document, a comment or a test this change makes stale, or a sentence the change makes redundant
 - Unlisted: a change the plan's Files does not name
 - Gaps: a behavior the checks do not exercise
 - Unproven: a test that stays green when the behavior it names is broken
@@ -43,7 +43,7 @@ Answer one question: can this diff close the plan? By five viewpoints:
 Read the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.
 A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers in `Added`.
 Write your findings in the plan md's ## Work Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
-This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`.
+This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`. A doubt you resolved yourself is not written: write only a doubt that needs a fix or the owner's judgement.
 Do not change the code.
 ```
 
@@ -60,7 +60,7 @@ This is the last look. Write your answer in ### Round 2, same viewpoints, and st
 
 ```
 Read the plan md's ## Work Review, ### Round 1. For each finding without a `fixed:` or `left:` line, adopt it and fix it, or leave it.
-When you adopt one, add a `fixed:` line under it, saying what you did. When you leave one, add a `left:` line under it, saying why.
+When you adopt one, add a `fixed:` line under it, saying what you did. When you leave one, add a `left:` line under it, saying why. A `left:` goes on a finding, not on a doubt.
 Run the plan's checks after fixing. Then commit: consult(<plan id>): round <N> fixes
 ```
 

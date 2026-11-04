@@ -53,8 +53,8 @@ Section and field names are English; the content is Japanese.
   - <`pnpm typecheck`>
   - <`pnpm lint`>
   - <`pnpm format:check`>
-  - <このスライスが変えた名前と説明を大小文字を問わず `grep` する>
-  - <変更した全ファイルを通読し、矛盾、循環、重複、不足、不自然な流れがないか確かめる>
+  - <このスライスが変えた名前と説明を大小文字を問わず grep ツールで検索する>
+  - <変更した全ファイルを、変える前と並べて読み、矛盾、循環、重複、不足、不自然な流れがないか確かめる>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
 ## 2.<スライス名>
@@ -159,8 +159,8 @@ Section and field names are English; the content is Japanese.
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - the comments and the documents hold no stale wording: a case-insensitive `grep` for the names and the descriptions this slice changed
-  - every changed file is read through: no contradiction, no circular flow, no duplication, no omission, no unnatural flow; a file that fails is fixed, and the fix is written in `Unplanned`
+  - the comments and the documents hold no stale wording: a case-insensitive grep tool search for the names and the descriptions this slice changed
+  - every changed file is read against the file before the change: no contradiction, no circular flow, no duplication, no omission, no unnatural flow; a file that fails is fixed, and the fix is written in `Unplanned`
 - `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
@@ -173,7 +173,7 @@ Section and field names are English; the content is Japanese.
 
 ## Test cases
 
-- The cases are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one. A case keeps its step's prefix.
+- The cases are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one. A case keeps its step's prefix. A `<given>` names a premise that can be built one way, and keeps the ADR's subject when the ADR names one.
 - A premise the types, the spec, the schema or a DB constraint already guarantees is not reproduced in a test.
 - An assertion carries neither a magic number nor a hardcoded string.
 - A boundary value is not a test of its own: the test says the spec it belongs to is met.

@@ -50,10 +50,10 @@
 
 ### Slice 1: レビュー・通読・事例の書き方
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 
