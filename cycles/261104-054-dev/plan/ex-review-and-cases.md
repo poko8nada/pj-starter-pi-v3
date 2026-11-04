@@ -71,8 +71,17 @@
 - Doubts: `.pi/skills/plan/references/format.md:56` を残り 15 の Then・Steps 通りの `grep ツールで（大小文字を問わず）検索する` に直すか、現行の `大小文字を問わず grep ツールで検索する` を保って Verify（`cycles/261104-054-dev/plan/ex-review-and-cases.md:43` の期待文字列）を直すかは、オーナーの判断が要る。理由：Steps 通りに置換すると `大小文字を問わず` が二重になり、現行は重複を避けた代わりに Then・Verify と字面がずれており、自力ではどちらを正とするか決められないため。
   - fixed: 残り 15 の `Then` と Steps の形に合わせ、`grep ツールで（大小文字を問わず）検索する` に直した。二重にならない。
 
+### Round 2
+
+- Stale: なし（`fixed:` 1 件を確認済み）。理由：`.pi/skills/plan/references/format.md:210` が `a doc, a comment, a test, or a sentence the change makes redundant` となり、Round 1 の `fixed:` 申告どおりに直っているため。
+- Unlisted: なし。理由：`fixed:` がなく、`left:` は回答済みとして再開しないため。
+- Gaps: なし（`fixed:` 1 件を確認済み）。理由：`.pi/skills/plan/references/format.md:56` が `grep ツールで（大小文字を問わず）検索する` となり、Round 1 の `fixed:` 申告どおり括弧付きの形を持つため。
+- Unproven: なし。理由：`fixed:` がなく、`left:` は回答済みとして再開しないため。
+- Noise: なし。理由：`fixed:` がなく、Round 1 が `なし` のままのため。
+- Doubts: なし（`fixed:` 1 件を確認済み）。理由：`.pi/skills/plan/references/format.md:56` が残り 15 の `Then`・Steps 通りの `grep ツールで（大小文字を問わず）検索する` となり、`大小文字を問わず` の二重もないため。Round 1 の選択肢のうち採用された形で決着している。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（63 ファイル、756 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、grep で `goes on a finding, not on a doubt` を `tasks.md` から 1 件、`names a premise that can be built one way` を `format.md` から 1 件、2 ファイルの読み、`git diff 97ed552..HEAD` の通読。
+- Findings: なし
+- Doubts: なし
