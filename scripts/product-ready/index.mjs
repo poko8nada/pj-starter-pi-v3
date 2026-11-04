@@ -146,7 +146,7 @@ function collectUnder(sourceLines, heading) {
  *
  * @param {string} block テンプレートのブロック
  * @param {string} source 置き換え前の README
- * @returns {{ readonly text: string, readonly filled: readonly string[] }} 置き換えた本文と、箇条書きを入れた `###` の見出し名
+ * @returns {{ readonly text: string, readonly filled: readonly string[] }} 置き換えた本文と、箇条書きで埋めた `###` の見出し名（材料の名。文書の順）
  */
 export function fillDefaults(block, source) {
   const sourceLines = source.split('\n');
@@ -157,8 +157,8 @@ export function fillDefaults(block, source) {
       headings.push(line);
     }
   }
-  /** @type {string[]} */
-  const filled = [];
+  /** @type {readonly string[][]} */
+  const groups = [];
   for (let h = headings.length - 1; h >= 0; h -= 1) {
     const heading = headings[h];
     const range = h2Range(out, heading);
@@ -171,10 +171,10 @@ export function fillDefaults(block, source) {
     }
     const lines = collectUnder(sourceLines, heading);
     const bullets = lines.map((entry) => `- ${entry.heading}: ${entry.paragraph}`);
-    filled.push(...lines.map((entry) => entry.heading));
+    groups.push(lines.map((entry) => entry.heading));
     out = [...out.slice(0, h3[1] + 1), '', ...bullets, '', ...out.slice(range.to)];
   }
-  return { text: out.join('\n'), filled };
+  return { text: out.join('\n'), filled: groups.toReversed().flat() };
 }
 
 /**
