@@ -109,38 +109,42 @@ rules/
 
 ### Slice 1: ロードマップの記法の統一
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 371496e consult(cycle-rules): unify roadmap notations
+- Stopped: なし
 
 ### Slice 2: `ex-` のプランの手順
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: a36cc28 consult(cycle-rules): define ex-plan review and base run
+- Stopped: なし
 
 ### Slice 3: コミットメッセージの形
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: ff9a7c5 consult(cycle-rules): qualify commit messages with suffix
+- Stopped: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — `rules/roadmap.md:11`・`.pi/skills/adr/SKILL.md:45`・`.pi/skills/close/SKILL.md:101` の status と cycles の語は一致し、残る旧形は履歴（`cycles/261103-053-dev/adr.md:24`、`ROADMAP.md:88,238` の ideas 記録）で書換対象外のため。
+- Unlisted: なし — 差分の4ファイルは `## Files` の4ファイル（`rules/roadmap.md`、`.pi/skills/adr/SKILL.md`、`.pi/skills/close/SKILL.md`、`.pi/skills/work/SKILL.md`）と一致するため。
+- Gaps: なし — スライス1から3の各行為（記法統一、`ex-` の分岐、suffix 付与）に対応する grep・読み通し・`ja-check` の弾があり、漏れがないため。
+- Unproven: なし — テスト手順がなく、grep 計数は行為を戻すと赤になる（旧形が再発すれば 0件要求が崩れ、新行を消せば 1件以上要求が崩れる）ため。
+- Noise: なし — テスト手順がなく、grep の文字列はプランと ADR の決定値で `## Test cases` の判定対象がないため。
 - Doubts:
+  - `.pi/skills/work/SKILL.md:78` の `base` plan の look の行は `ex-` の例外を書かず新設の第4手順（`.pi/skills/work/SKILL.md:46`）と見かけ上ずれて見えるが、見方が無い場合は適用外と読めるため所掌外として残す。
+  - `.pi/skills/close/SKILL.md:102` の file と `.pi/skills/adr/SKILL.md:45` の table の語の違いは status と cycles の語の一致を崩さず、プランが変えないと決めた範囲のため残す。
+  - `rules/roadmap.md:12` の when more than one is present と More than one is allowed は重複に見えるが、新文自体の文体で五視点のいずれにも属さないため残す。
+  - `ROADMAP.md:238` の 044などの記述と直近ログの旧形メッセージは suffix 規則以前の履歴で、過去を書き換えない決定のため残す。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run`（64ファイル、742テスト）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`、`pnpm format:check`、grep ツールで `todo` が0件・`NNN-m` が1件以上・`done` と `wip` が各1件以上・`NNN-<suffix>` が各1件以上・`NNN's` が0件、3スキルの読み合わせ、`node scripts/checks/ja-check.mjs` が0件、レビュー consult-32（指摘なし、疑義4件）。
+- Findings: なし
+- Doubts: なし

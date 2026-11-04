@@ -28,7 +28,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 2. Commit the documents
 
 - Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `affected.md` and `plan/*.md`.
-- Commit message: `update: NNN's ADR, affected and plan`
+- Commit message: `update: NNN-<suffix>'s ADR, affected and plan`. `<suffix>` is the part right of the number in the cycle folder name (`261104-054-dev` gives `dev`).
 
 ### 3. Set the place
 
@@ -43,7 +43,7 @@ Texts handed to subagents are in `references/tasks.md`.
   - it only ran out (work is sound): continue it (`continue: true`), without calling the owner
   - a premise the run disproves is triaged here with the owner: within tolerance, or a change the work absorbs. Plan is not rewritten to keep going
   - what work cannot absorb: the owner decides. Drop the plan: for a worktree plan, the subagent writes `Stopped` and the reason in the worktree's plan md; if it did not, continue it to write it. The agent copies that plan md into the base's plan md, commits it in the base, removes the worktree, and merges nothing. For a `base` plan, the agent writes `Stopped` and the reason in the base's plan md, and commits it in the base. A dropped plan is not carried to the close; the close reads its record as a dropped plan.
-- a `base` plan: the agent does the slices. Show the owner after each one, and wait for their OK before committing with `base(<plan id>): <subject>`
+- a `base` plan: the agent does the slices. An `ex-` `base` plan runs without the owner's OK and commits with `base(<plan id>): <subject>`. A `base` plan that is not an `ex-` plan shows the owner after each slice and waits for their OK before committing with the same message. An `ex-` plan takes the default `Place` (a worktree) in step 3, so a `base` `ex-` plan is the exception that runs alone.
 
 ### 5. Clean the tests
 
