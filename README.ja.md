@@ -42,7 +42,7 @@ pnpm install
 | `pnpm format` / `pnpm format:check` | 整形する / 確認する                 |
 
 - **commit時** — 変更分に format / lint / `typecheck:staged` / `test:related` / `ja-check` を実行する
-- **日本語の禁止語** — `ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` で変更する
+- **日本語の禁止語** — `ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` と `exception` の 3欄で変更する。`exception` は認める語の配列である。例外に当たるヒットは `error` でも `warn` でも報告しない。例外の判定はヒットした語の前後だけを見る。
 - **push時** — typecheck（ルートとハーネス）/ test を実行する
 - **エージェントのターンごと** — 変更があった場合だけである。修正ステージでは `lint:fix` → `format` を、検証ステージでは `lint` → `typecheck:staged` を、変更分に適用する。
 - **ハーネスのテスト** — starter configでは実行され（`pnpm test:run` は `vitest.starter.config.ts` を使う）、product config（`vitest.config.ts` がハーネスのパスを除外する）では除外される
@@ -74,7 +74,7 @@ yolo         オーナーが確認なしでサイクルを通すよう指示し�
 
 ## コントリビュート
 
-commit時とpush時は `lefthook` が検査する。commit時は変更分に format・lint・`typecheck:staged`・`test:related`・`ja-check` を実行し、push時は typecheck（ルートとハーネス）と test を実行する。`ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` で変更する。
+commit時とpush時は `lefthook` が検査する。commit時は変更分に format・lint・`typecheck:staged`・`test:related`・`ja-check` を実行し、push時は typecheck（ルートとハーネス）と test を実行する。`ja-check` の禁止語は `scripts/checks/ja-check.json` の `error` と `warn` と `exception` の 3欄で変更する。`exception` は認める語の配列である。例外に当たるヒットは `error` でも `warn` でも報告しない。例外の判定はヒットした語の前後だけを見る。
 
 commitの前に、次のコマンドを実行しておく:
 

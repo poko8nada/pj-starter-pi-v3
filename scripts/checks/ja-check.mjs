@@ -49,12 +49,27 @@ if (!isRecord(config)) {
 }
 
 const keys = Object.keys(config);
-if (keys.length !== 2 || !keys.includes('error') || !keys.includes('warn')) {
+if (
+  keys.length !== 3 ||
+  !keys.includes('error') ||
+  !keys.includes('warn') ||
+  !keys.includes('exception')
+) {
   failConfig();
 }
 
 if (!isRecord(config.error) || !isRecord(config.warn)) {
   failConfig();
+}
+
+if (!Array.isArray(config.exception)) {
+  failConfig();
+}
+
+for (const word of config.exception) {
+  if (typeof word !== 'string') {
+    failConfig();
+  }
 }
 
 for (const group of [config.error, config.warn]) {
@@ -67,8 +82,33 @@ for (const group of [config.error, config.warn]) {
 
 const errorEntries = Object.entries(config.error);
 const warnEntries = Object.entries(config.warn);
+const exceptionWords = config.exception;
 
-// Index of word in line outside matching quotes that hold only the word, -1 when absent.
+// True when the hit at `at` with length `word.length` lies inside an exception word.
+// L is the exception length, N is the hit length; check each k in 0..L-N
+// whether line.slice(at - k, at - k + L) equals the exception word.
+function isCovered(line, at, word) {
+  const hitLen = word.length;
+  for (const exception of exceptionWords) {
+    const len = exception.length;
+    if (len < hitLen) {
+      continue;
+    }
+    for (let k = 0; k <= len - hitLen; k += 1) {
+      const start = at - k;
+      if (start < 0 || start + len > line.length) {
+        continue;
+      }
+      if (line.slice(start, start + len) === exception) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Index of word in line outside matching quotes that hold only the word
+// and outside exception words, -1 when absent.
 function findUnquoted(line, word) {
   let from = 0;
   while (true) {
@@ -79,7 +119,7 @@ function findUnquoted(line, word) {
     const before = line[at - 1];
     const after = line[at + word.length];
     const quoted = (before === "'" || before === '"' || before === '`') && before === after;
-    if (!quoted) {
+    if (!quoted && !isCovered(line, at, word)) {
       return at;
     }
     from = at + word.length;
