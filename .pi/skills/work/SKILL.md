@@ -28,7 +28,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 2. Commit the documents
 
 - Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `affected.md` and `plan/*.md`.
-- Commit message: `update: NNN's ADR, affected and plan`
+- Commit message: `update: NNN-<suffix>'s ADR, affected and plan`. `<suffix>` is the part right of the number in the cycle folder name (`261104-054-dev` gives `dev`).
 
 ### 3. Set the place
 

@@ -108,6 +108,7 @@ Before the owner reads `close.md`, run one `proofreader` subagent with `cycles/<
 
 ### 13. Commit
 
+- Commit message: `close: NNN-<suffix>'s close and roadmap`. `<suffix>` is the part right of the number in the cycle folder name, as in `work` step 2 (`261104-054-dev` gives `dev`).
 - `close.md` and `ROADMAP.md`, in one commit. That commit closes the cycle, and nothing about that cycle is edited afterwards
 - an `ex-` plan and its work are committed at its merge, each on its own; this commit does not carry them
 
