@@ -16,7 +16,7 @@
   - format: in — `## What is in it` を `### Roadmap & Cycle`、`### Agent`、`### Checks`、`### Handover`、`### CI` の5つで構成し、各見出しの直後にファイルの一覧に先立つ説明文を1つ置いて一覧の項目ごとに説明を持たせ、サイクルの説明のコードフェンスとトップレベルの `## Checks`、`## Harness`、`## Cycle`、`## Contributing` を廃止して5つの見出しに集める。
   - prose: in — 見出しの直後の一覧と説明文、題名、言語リンク、`## Getting started` を書き直し、題名の下の説明の文は現行を継承し、粒度をそろえ、重複と抜けを解消する。
   - naming: in — 見出しの名前を `Roadmap & Cycle`、`Agent`、`Checks`、`Handover`、`CI` にそろえ、日本語の README でも同じ名前を使う。
-  - dependency: in — バッジを TypeScript、Node 24、pnpm、pi の4つにしてプルフロッグのバッジを外し、値の出所を示すため `package.json` に `engines: ">=24"` と `packageManager: "pnpm@12.15.0"` を書く。
+  - dependency: in — バッジを TypeScript、Node 24、pnpm、pi の4つにしてプルフロッグのバッジを外し、`.github/workflows/pullfrog.yml` を削除し（CI の整備はロードマップの `1.0.0 002` が扱う）、値の出所を示すため `package.json` に `engines: ">=24"` と `packageManager: "pnpm@12.15.0"` を書く。
   - behaviour: in — `engines` と `packageManager` の追加により、pnpm のインストール時の判定が変わる。
   - compatibility: in — 本エントリーでは、Node 24 未満ではインストールが停止し、宣言と異なる pnpm は宣言したバージョンに切り替わることを許容範囲とする。
   - refactor: out — テンプレートと生成の仕組みは変えない（理由: `rules/readme.format.md` と `scripts/product-ready` による生成はエントリー 02 が扱う）。
@@ -59,7 +59,7 @@
   - `### CI` の説明文は、英語の README と日本語の README のどちらも `_Under construction_` にする。
   - `product:ready` のあとの `## What is in it` は `### Product` と `### Default` となり、`### Default` には各見出しの説明文を並べた箇条書きを置く。
   - トップレベルの `## Contributing`、`## Checks`、`## Harness`、`## Cycle` は外し、その内容は5つの見出しの一覧の項目の説明に集める（コマンドの走らせ方、`harness.json` の鍵、`product:ready` の削除対象は残さない）。
-  - バッジは TypeScript、Node 24、pnpm、pi の4つとし、`Stack` の `Ground` の順（Language、Runtime、Package manager）に `Agent` の `Host` を続け、プルフロッグのバッジを外す。
+  - バッジは TypeScript、Node 24、pnpm、pi の4つとし、`Stack` の `Ground` の順（Language、Runtime、Package manager）に `Agent` の `Host` を続け、プルフロッグのバッジを外す。`.github/workflows/pullfrog.yml` は削除する（CI の整備はロードマップの `1.0.0 002` が扱う）。
   - 値の出所は、TypeScript が `devDependencies`、Node が `engines: ">=24"`、pnpm が `packageManager: "pnpm@12.15.0"`、pi が `devDependencies` の `@earendil-works/pi-coding-agent` である。
   - `### Roadmap & Cycle` の一覧は `DEFINITION.md`、`ROADMAP.md`、`rules`（`rules/*`）とし、`rules` はファイルごとではなく1つの説明にする。
   - `### Agent` の一覧は `AGENTS.md`、`skills`（`adr`、`plan`、`work`、`close`、`yolo`、`upgrade`）、`extensions`（`consult`、`quality-gate`、`context-precompact`、`thinking-scrub`、`sound-notify`）とし、`skills` と `extensions` は入れ子にして項目ごとに説明を置き、説明文にはハーネスが `pi` であることを含める。

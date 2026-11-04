@@ -144,13 +144,14 @@
 - Search:
   - 04: `pullfrog` の参照（README.md・README.ja.md・.github配下） - 10件/3ファイル: ワークフローの実行状態は見えない
   - 15: ファイル直読（README.md:1-89・README.ja.md:1-89・package.json:1-37・ROADMAP.md:31-56・rules/readme.format.md:1-56・scripts/product-ready/index.mjs:7-9・:132-177・targets.mjs:25-33・:72-73・lefthook.yaml:1-36・.github/workflows/pullfrog.yml:1-12・scripts/checks/ja-check.mjs:1-13） - 存在と現状の確認: 実行時の動的挙動は見えない
-- Adr: ADRの事実と一致する。プルフロッグのバッジを外すことは Scope の dependency in（adr.md:19）と Decision（adr.md:62）のとおりであり、ワークフローが手動実行だけであることは Research（adr.md:39：`pullfrog.yml:4-12`）のとおりである。ワークフロー自体は消さない。
-- Direction: _Read_
-- Relation: 外していたバッジが指していた先であり、外した後はREADMEの一覧（`### CI` は `_Under construction_`）から読まれなくなる。実行の定義自体には触れない。
+- Adr: ADRの事実と一致する。プルフロッグのバッジを外すことと `.github/workflows/pullfrog.yml` を削除することは Scope の dependency in（adr.md:19）と Decision（adr.md:62）のとおりであり、ワークフローが手動実行だけであることは Research（adr.md:39：`pullfrog.yml:4-12`）のとおりである。CI の整備はロードマップの `1.0.0 002` が扱う。
+- Direction: _Read by_
+- Relation: 外していたバッジが指していた先であり、外した後は README の一覧（`### CI` は `_Under construction_`）から読まれなくなり、ファイル自体が消える。
 - Role: dispatchでエージェントを走らせる実行の定義で、手動起動の外部実行の入口である。
 - Role change: **Change**
-  - 読む側の数が減る（READMEのバッジと `### CI` の一覧が指さなくなる）。可視性が変わる（READMEから状態が見えなくなる）。境界・主体・規則・流れ（dispatch起動の仕組み）は変わらない。
-- Adjustment: No
+  - 読む側の数が減る（READMEのバッジと `### CI` の一覧が指さなくなる）。主体と境界が変わる（dispatchでエージェントを走らせる定義がリポジトリから消える）。可視性が変わる（READMEから状態が見えなくなる）。規則と流れ（dispatch起動の仕組み）は、消えることで対象がなくなる。
+- Adjustment: **YES**
+  - `.github/workflows/pullfrog.yml` を削除する。CI の整備はロードマップの `1.0.0 002` が扱う。詳細はplanが決める。
 
 #### scripts/product-ready/index.test.ts
 
