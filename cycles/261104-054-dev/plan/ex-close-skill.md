@@ -150,12 +150,18 @@ export function collectCycle(planDir: string, closeText?: string): readonly Left
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: `.pi/skills/close/references/format.md:49` の Collected の No 説明と `:20` の Shape 例が Triage 行を `- <N>: _ex-plan_ <plan id> ...` のみで示し、Slice 2 で正規になった名前なし形 `- <N>: _ex-plan_ (ADR ...)` を反映していない。理由: 手順 5・Triage 章は grouping 前は名前なしと書くのに、Collected 章と Shape は名前ありを前提に No の出所を説明するため、grouping 前の行を不正と誤読させる。
+  - fixed: `format.md` の `## Triage` の形に名前なしの行を並べ、`## Collected` の `No` の説明に、まとめの前の行は `未特定` で、名前が先だと書いた。
+- Unlisted: `.pi/skills/close/scripts/collect.test.ts:88-92` の「旧い形の行だけを持つ close.md で収集する」の期待値更新（`### 02 ex-fix` → `### ex-fix`）は Slice 1 の Steps が挙げる 6 件（2+2 見出し、投げる、文脈保持、空 Triage の noOf null、空 Triage の未特定、題名変更）のいずれにも名がない。理由: Steps は空 Triage の追加のみを指示し旧形テストの見出し直しに触れていないのに、差分は NN なし見出しに変えている。
+  - left: 旧形の事例の期待値は、見出しが `### <plan id>` に変わったことの結果である。計画の事例のうち見出しの事例が同じ形を見ており、別の事例としては足さない。
+- Gaps: 残り 16 の Then「オーナーが認めてから `## Triage` の行にプラン名を書く」に対し、grouping 前の名前なし行から `No` を読む道がない。理由: `collect.mjs:250` の `readTriageNos` は `_ex-plan_ <plan id>` を要求し、名前なし行 `- <N>: _ex-plan_ (ADR <NN>, ...)` からは null→`未特定` になる。Steps もテストも grouping 前の `未特定` の扱いを定めず、format も名前なし形の No 扱いを書いていない。
+  - fixed: 名前なしの行は `No` が `未特定` になり、まとめで名前が入ってから `ADR <NN>` が読める。`format.md` の `## Collected` の `No` の説明に書いた。
+- Unproven: `.pi/skills/work/SKILL.md:16` の File 行の ex- 分岐（`plan/<plan id>.md` for ex-）を消しても Slice 1 の Always Verify は緑のまま。理由: grep は `no NN prefix` を close 配下のみ、`### <NN> <plan id>` を close SKILL/format のみ等で work File 行を指さず、`pnpm test:run` も collect の見出し・並び・文脈のみで work 文言を検証しないため、手動通読以外に検出手段がない。
+  - left: `work/SKILL.md` の 1 行の変更であり、検証は変えた 5 ファイルの通読が担う。文を grep で数えると、言い換えで緑のままになる。
+- Noise: `Leftover` が plan id を `plan` と `Normal|Ex` の `id` の二名で持つ重複。理由: 計画 `Types:36` は `{ plan, link } & (Normal|Ex)` で `plan` と `id` が常に同値になり、`collect.mjs:304-306` は `current.id !== item.plan` と二名を比べ、`collectCycle:392` は `{ plan: id, ... }` と写す。一方に寄せれば済む二名併存は読み替えの手間と不一致の種を残す。
+  - left: コードの `Leftover` は `plan` と `nn` だけを持ち、`id` は足していない。`render` の `current.id` はまとめた組のローカルの名である。計画の `Types` の `id` は `plan` と同じで、`Unplanned` に記録した。
+- Doubts: `01-ex-fix.md` のような `NN-` 付き `ex-` 名をどう扱うか。要修正/オーナー判断が必要。理由: 現状 `planName` は `{ nn:'01', id:'ex-fix' }` を返し `planRank` は ex- 欄に置き `render` は `### 01 ex-fix` と NN 付き見出しを ex- 欄に出すが、Types の `Ex` は NN なしを定義し Then は「見出しは NN のあるプランだけ `### <NN> <plan id>`」とする。`NN-` 付き `ex-` を投げるか NN なしに直させるか決めておらず、自分では解決できないため残す。
+  - left: `NN-` の付いた `ex-` の名前も受け付け、見出しにはその `NN` が付く。このサイクルの `ex-` のプランはどれも `NN-` を持たず、受け付けをやめるかは ADR の判断になる。
 
 ## Acceptance
 
