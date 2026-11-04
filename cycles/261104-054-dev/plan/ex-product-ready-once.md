@@ -64,10 +64,10 @@ export function headingsOf(jobs: readonly Job[]): readonly string[];
 
 ### Slice 1: 「何が変わるか」を 1 回だけ計算する
 
-- Findings:
-- Unplanned:
+- Findings: 2 回目の `--run` のエラーは「材料が無い」で、`not enough headings` ではなく `no paragraph under ### Product` だった。`### Default` の下が箇条書きだけになり、段落が無くなるためである。事例の文をそちらに合わせた。
+- Unplanned: `--only readme` の事例は書けない。`REPLACE_TARGETS` のラベルはすべて `replace` で、「readme」のラベルは無い。代わりに `--only cycles` の dry-run で `headings:` 行が出ないことを見る事例にした。
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 

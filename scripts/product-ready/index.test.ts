@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ONLY_FLAG, RUN_FLAG, countLine, indented } from '../../test/scripts.fixture.ts';
+import { ONLY_FLAG, RUN_FLAG, countLine } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
@@ -262,18 +262,42 @@ describe('product-ready index', () => {
     expect(readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8')).toContain('old');
   });
 
-  it('もう一度 --run → 無い旨の表示', () => {
+  it('(error) 一度 --run した後の同じツリーでもう一度 --run する → 終了コード 1、エラー 1 行のみ、README は変わらない', () => {
     const tree = makeTree();
-    const names = makeCycleNames();
     expect(run(INDEX, [RUN_FLAG], tree.root).status).toBe(0);
+    const before = readTargets(tree.root);
     const second = run(INDEX, [RUN_FLAG], tree.root);
-    expect(second.status).toBe(0);
-    expect(second.output).toContain('no scripts to change');
-    expect(second.output).toContain('no config to remove');
-    expect(second.output).not.toContain(countLine(CYCLES_LABEL, names.length));
-    for (const name of names) {
-      expect(second.output).not.toContain(indented(join(CYCLES_LABEL, name)));
-    }
+    expect(second.status).toBe(1);
+    expect(second.errors).toContain('no paragraph under');
+    expect(second.errors.trim().split('\n')).toHaveLength(1);
+    expect(second.output).not.toContain('headings:');
+    expect(readTargets(tree.root)).toEqual(before);
+  });
+
+  it('(happy) 1 回目の --run で、表示の `headings:` 行と `### Default` の下の箇条書きの見出しが同じ順で並ぶ', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    const line = result.output.split('\n').find((entry) => entry.startsWith('headings: '));
+    expect(line).toBeDefined();
+    if (line === undefined) return;
+    const shown = line.slice('headings: '.length).split(', ');
+    const text = readFileSync(join(tree.root, 'README.md'), 'utf8');
+    const defaultAt = text.indexOf('### Default');
+    expect(defaultAt).toBeGreaterThanOrEqual(0);
+    const bullets = text
+      .slice(defaultAt)
+      .split('\n')
+      .filter((entry) => entry.startsWith('- '))
+      .map((entry) => entry.slice(2).split(': ')[0]);
+    expect(shown).toEqual(bullets);
+  });
+
+  it('(empty) `--only cycles` の dry-run → 差し替えの仕事が無いので`headings:` 行が出ない', () => {
+    const tree = makeTree();
+    const result = run(INDEX, [ONLY_FLAG, CYCLES_LABEL], tree.root);
+    expect(result.status).toBe(0);
+    expect(result.output).not.toContain('headings:');
   });
 
   it('flag の無い混在 → ある物だけ変わり、無い物は同じまま', () => {

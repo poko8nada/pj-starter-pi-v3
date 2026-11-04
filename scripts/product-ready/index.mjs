@@ -142,55 +142,11 @@ function collectUnder(sourceLines, heading) {
 }
 
 /**
- * テンプレートの `block` のうち `##` の下に `###` を2つ以上持つ見出しがあるか（副作用なし）。
- *
- * @param {string} block テンプレートのブロック
- * @returns {boolean} 対象の `##` があるか
- */
-function hasTarget(block) {
-  const lines = block.split('\n');
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      const range = h2Range(lines, line);
-      if (range !== null && h3Indices(lines, range.from, range.to).length >= 2) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/**
- * テンプレートの `block` と置き換える前の README から、同じ `##` 見出しの各 `###` の段落を集める。見出しや段落がなければ例外を投げる（検証はこの関数の中で行う）
- *
- * @param {string} block テンプレートのブロック
- * @param {string} source 置き換える前の README
- * @returns {readonly DefaultLine[]} `###` の並び
- */
-export function defaultLines(block, source) {
-  const blockLines = block.split('\n');
-  const sourceLines = source.split('\n');
-  const targets = [];
-  for (const line of blockLines) {
-    if (line.startsWith('## ')) {
-      const range = h2Range(blockLines, line);
-      if (range !== null && h3Indices(blockLines, range.from, range.to).length >= 2) {
-        targets.push(line);
-      }
-    }
-  }
-  if (targets.length === 0) {
-    throw new Error('no target heading');
-  }
-  return targets.flatMap((heading) => collectUnder(sourceLines, heading));
-}
-
-/**
  * `##` 見出しの下の `###` が2つ以上あるとき、後ろの `###` の本文を `- <見出しの名前>: <段落>` の箇条書きで置き換える。`###` が2つ未満なら `block` をそのまま返す
  *
  * @param {string} block テンプレートのブロック
- * @param {string} source 置き換える前の README
- * @returns {string} 置き換えたブロック
+ * @param {string} source 置き換え前の README
+ * @returns {{ readonly text: string, readonly filled: readonly string[] }} 置き換えた本文と、箇条書きを入れた `###` の見出し名
  */
 export function fillDefaults(block, source) {
   const sourceLines = source.split('\n');
@@ -201,6 +157,8 @@ export function fillDefaults(block, source) {
       headings.push(line);
     }
   }
+  /** @type {string[]} */
+  const filled = [];
   for (let h = headings.length - 1; h >= 0; h -= 1) {
     const heading = headings[h];
     const range = h2Range(out, heading);
@@ -211,86 +169,28 @@ export function fillDefaults(block, source) {
     if (h3.length < 2) {
       continue;
     }
-    const blockNames = h3.map((at) => out[at].slice('### '.length).trim());
-    const sourceRange = h2Range(sourceLines, heading);
-    if (sourceRange !== null) {
-      const sourceNames = h3Indices(sourceLines, sourceRange.from, sourceRange.to).map((at) =>
-        sourceLines[at].slice('### '.length).trim(),
-      );
-      if (
-        blockNames.length === sourceNames.length &&
-        blockNames.every((name, index) => name === sourceNames[index])
-      ) {
-        continue;
-      }
-    }
     const lines = collectUnder(sourceLines, heading);
     const bullets = lines.map((entry) => `- ${entry.heading}: ${entry.paragraph}`);
+    filled.push(...lines.map((entry) => entry.heading));
     out = [...out.slice(0, h3[1] + 1), '', ...bullets, '', ...out.slice(range.to)];
   }
-  return out.join('\n');
+  return { text: out.join('\n'), filled };
 }
 
 /**
- * 置き換える前の README から並べた見出しを集める（副作用なしに近い。読めなければ投げる）。
+ * 表示の見出し。仕事の `filled` を順につなげ、重複を取り除く（副作用なし）。
  *
- * @param {string} root リポジトリのルート
- * @param {readonly import('./targets.mjs').FoundEntry[]} entries 見つけた物
- * @returns {readonly string[]} 見出しの並び（重複なし）
+ * @param {readonly Job[]} jobs 仕事
+ * @returns {readonly string[]} 見出しの並び
  */
-function headingsFor(root, entries) {
+function headingsOf(jobs) {
   const seen = new Set();
   const headings = [];
-  for (const entry of entries) {
-    if (entry.action !== 'replace') {
-      continue;
-    }
-    const skeleton = skeletonFor(root, entry.at);
-    if (skeleton.part.kind !== 'whole') {
-      continue;
-    }
-    const templateText = fs.readFileSync(path.join(root, skeleton.file), 'utf8');
-    const block = blockUnder(templateText, skeleton.heading);
-    if (block === null) {
-      throw new Error(`no block under ${skeleton.heading}: ${skeleton.file}`);
-    }
-    if (!hasTarget(block)) {
-      continue;
-    }
-    const current = fs.readFileSync(entry.path, 'utf8');
-    const blockLines = block.split('\n');
-    const sourceLines = current.split('\n');
-    const firstTarget = blockLines.find((line) => {
-      if (!line.startsWith('## ')) {
-        return false;
-      }
-      const range = h2Range(blockLines, line);
-      return range !== null && h3Indices(blockLines, range.from, range.to).length >= 2;
-    });
-    if (firstTarget !== undefined) {
-      const sourceRange = h2Range(sourceLines, firstTarget);
-      if (sourceRange !== null) {
-        const blockRange = h2Range(blockLines, firstTarget);
-        if (blockRange !== null) {
-          const blockNames = h3Indices(blockLines, blockRange.from, blockRange.to).map((at) =>
-            blockLines[at].slice('### '.length).trim(),
-          );
-          const sourceNames = h3Indices(sourceLines, sourceRange.from, sourceRange.to).map((at) =>
-            sourceLines[at].slice('### '.length).trim(),
-          );
-          if (
-            blockNames.length === sourceNames.length &&
-            blockNames.every((name, index) => name === sourceNames[index])
-          ) {
-            continue;
-          }
-        }
-      }
-    }
-    for (const line of defaultLines(block, current)) {
-      if (!seen.has(line.heading)) {
-        seen.add(line.heading);
-        headings.push(line.heading);
+  for (const job of jobs) {
+    for (const name of job.filled) {
+      if (!seen.has(name)) {
+        seen.add(name);
+        headings.push(name);
       }
     }
   }
@@ -298,14 +198,20 @@ function headingsFor(root, entries) {
 }
 
 /**
+ * 差し替えの仕事。
+ *
+ * @typedef {{ at: string, path: string, text: string, filled: readonly string[] }} Job
+ */
+
+/**
  * 差し替えの仕事を作る。テンプレートを読み、書く中身を決める。読めなければ投げる。
  *
  * @param {string} root リポジトリのルート
  * @param {readonly import('./targets.mjs').FoundEntry[]} entries 見つけた物
- * @returns {readonly { readonly at: string, readonly path: string, readonly text: string }[]}
+ * @returns {readonly Job[]}
  */
 export function jobsFor(root, entries) {
-  /** @type {{ readonly at: string, readonly path: string, readonly text: string }[]} */
+  /** @type {Job[]} */
   const jobs = [];
   for (const entry of entries) {
     if (entry.action !== 'replace') {
@@ -319,7 +225,8 @@ export function jobsFor(root, entries) {
     }
     if (skeleton.part.kind === 'whole') {
       const current = fs.readFileSync(entry.path, 'utf8');
-      jobs.push({ at: entry.at, path: entry.path, text: `${fillDefaults(block, current)}\n` });
+      const { text, filled } = fillDefaults(block, current);
+      jobs.push({ at: entry.at, path: entry.path, text: `${text}\n`, filled });
       continue;
     }
     const current = fs.readFileSync(entry.path, 'utf8');
@@ -327,6 +234,7 @@ export function jobsFor(root, entries) {
       at: entry.at,
       path: entry.path,
       text: replaceSections(current, block, skeleton.part.headings),
+      filled: [],
     });
   }
   return jobs;
@@ -335,7 +243,7 @@ export function jobsFor(root, entries) {
 /**
  * 差し替えを書く（副作用）。
  *
- * @param {readonly { readonly at: string, readonly path: string, readonly text: string }[]} jobs 仕事
+ * @param {readonly Job[]} jobs 仕事
  * @returns {readonly string[]} 書いた物の `at`
  */
 export function applyJobs(jobs) {
@@ -407,13 +315,14 @@ export function main(argv) {
   }
   const flagged = flaggedScripts(packageData?.scripts);
   const configExists = fs.existsSync(path.join(root, STARTER_CONFIG_AT));
-  let headings;
+  let jobs;
   try {
-    headings = headingsFor(root, entries);
+    jobs = jobsFor(root, entries);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
+  const headings = headingsOf(jobs);
   for (const line of [
     ...switchLines({ config: configExists, scripts: flagged }),
     ...planLines(labels(args.only), entries, headings),
@@ -424,7 +333,6 @@ export function main(argv) {
     return 0;
   }
   try {
-    const jobs = jobsFor(root, entries);
     remove(entries.filter((entry) => entry.action === 'remove'));
     if (typeof packageData === 'object' && packageData !== null) {
       const nextScripts =
