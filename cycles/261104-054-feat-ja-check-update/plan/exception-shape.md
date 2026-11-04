@@ -126,3 +126,10 @@ type TestConfig = JaCheckConfig;
 - Unplanned: なし
 - Commit: 899a177 consult(exception-shape): add exception config and suppression
 - Stopped:
+
+### Slice 2: 振る舞いのテスト
+
+- Findings: なし
+- Unplanned: scripts/checks/ja-check.test.ts の入り口の件で warn に口を足した。validConfig() には骨しかなく口の報告が出ず No findings になったため、ここで直さないと Steps の期待 (warn 1件) を満たせないから。
+- Commit: 21b4579 consult(exception-shape): cover exception hits with tests
+- Stopped:
