@@ -31,7 +31,7 @@ export type TriageOptions = {
 /** Triage 行を持つ close md のテンプレートを作る。 */
 export function closeDoc({ triages }: { readonly triages: readonly TriageOptions[] }): string {
   const lines = triages.map(
-    (triage, index) => `- ${index + 1}: ex-plan ${triage.name} (ADR ${triage.no}, xxx): why`,
+    (triage, index) => `- ${index + 1}: _ex-plan_ ${triage.name} (ADR ${triage.no}, xxx): why`,
   );
   return `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n${lines.join('\n')}\n`;
 }

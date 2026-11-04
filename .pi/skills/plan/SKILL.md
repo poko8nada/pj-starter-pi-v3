@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when the ADR is settled and one of its plans has to become work — after the cut is presented and agreed, and a plan is ready to be handed to a subagent. It writes `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, holding files, slices, types, steps and verify.
+description: Use when the ADR is settled and one of its plans has to become work — after the cut is presented and agreed, and a plan is ready to be handed to a subagent. It writes `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`, holding files, slices, types, steps and verify. The `NN-` is the file's order prefix and is not part of the plan id.
 ---
 
 # plan
@@ -9,7 +9,7 @@ One plan is one worktree: a branch and a merge. It is written from the ADR and t
 
 ## File
 
-`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`, in the shape `references/format.md` gives.
+`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`, in the shape `references/format.md` gives. The `NN-` is the file's order prefix and is not part of the plan id.
 
 Read that file before writing. It holds the shape, the files and their structure, the slices, the type rules, the verify, the rules of a test case, and the record.
 
@@ -71,7 +71,7 @@ While that review runs, write the next plan file: the writing of one file and th
 
 ### 7. Proofread
 
-After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
+After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
 
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words

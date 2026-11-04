@@ -33,6 +33,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 3. Collect
 
 - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
+- the plan id is the plan md's file name without the `NN-` prefix and without `.md`; the `## Collected` heading prefixes it with the `NN` (`### <NN> <plan id> (ADR ...)`); a Triage line's plan id stays `ex-<what it fixes>` with no `NN-`
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
 - one leftover is one numbered line `<line> / <place> / <出どころ>`: the inventory only. `Doing` / `Left` / `Cost` are not written
 - fill every `未特定` from the plan md's `No`. An `ex-` plan's `No` is read from the Triage; the plan md has no `No`
@@ -50,12 +51,12 @@ Texts handed to subagents are in `references/tasks.md`.
 - the agent writes one proposal destination per leftover, in `## Triage`, in this order:
   1. the cycle's own concern → `ex-`
   2. an obvious bug, vulnerability, or stale implementation or wording outside that concern → `ex-`
-  3. one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `proposed`
+  3. one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `_proposed_`
   4. the rest → `dropped`
 - each `## Triage` bullet carries its grounds underneath, in this shape:
   - `Fact:` what happened and how it stands now
   - `Why:` why this proposal is recommended
-  - `Then:` what comes next — for an `ex-`, the policy its plan follows; for a `proposed`, the question the next cycle discusses; for a `dropped`, nothing.
+  - `Then:` what comes next — for an `ex-`, the policy its plan follows; for a `_proposed_`, the question the next cycle discusses; for a `dropped`, nothing.
 - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
 - the proposal is done when every leftover has a destination with its `Fact:` / `Why:` / `Then:`. The owner confirms it later, in step 8
 

@@ -1,6 +1,6 @@
 # Plan format
 
-`cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md`.
+`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`. The `NN-` is the file's order prefix and is not part of the plan id.
 
 Section and field names are English; the content is Japanese.
 

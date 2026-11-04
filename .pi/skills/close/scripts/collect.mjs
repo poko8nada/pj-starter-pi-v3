@@ -8,9 +8,9 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /**
- * 残りの1件。
+ * 残りの1件。番号付き。
  *
- * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
+ * @typedef {{ plan: string, nn: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
  */
 
 /**
@@ -219,11 +219,24 @@ export function collectPlan(text) {
 /** 残りか。`fixed:` は閉じているので集めない。 */
 const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 
+/**
+ * ファイル名から plan の番号と id を出す。番号が無ければ投げる（検証はこの関数の中）
+ *
+ * @param {string} file
+ * @returns {{ nn: string, id: string }}
+ */
+export function planName(file) {
+  const base = file.replace(/\.md$/, '');
+  const found = base.match(/^(\d+)-(.+)$/);
+  if (!found) throw new Error(`no NN prefix: ${file}`);
+  return { nn: found[1], id: found[2] };
+}
+
 /** 通常の plan が先、`ex-` の plan が後。 */
-const planRank = (file) => (file.startsWith('ex-') ? 1 : 0);
+const planRank = (id) => (id.startsWith('ex-') ? 1 : 0);
 
 /**
- * close.mdの`## Triage`から`ex-` planの`No`を読む。`ex-plan <plan id> (ADR <NN>, ...)`の対応。
+ * close.mdの`## Triage`から`ex-` planの`No`を読む。`_ex-plan_ <plan id> (ADR <NN>, ...)`の対応。
  *
  * @param {string} closeText
  * @returns {Map<string, string>}
@@ -232,7 +245,7 @@ function readTriageNos(closeText) {
   /** @type {Map<string, string>} */
   const map = new Map();
   for (const line of triagePart(closeText).split('\n')) {
-    const found = line.match(/^-\s*\d+:\s*ex-plan\s+(\S+)\s*\(ADR\s+([^,\s)]+)/);
+    const found = line.match(/^-\s*\d+:\s*_ex-plan_\s+(\S+)\s*\(ADR\s+([^,\s)]+)/);
     if (found) map.set(found[1], found[2].trim());
   }
   return map;
@@ -281,13 +294,13 @@ function render(items, contexts) {
   let n = 0;
   const flush = () => {
     if (!current) return;
-    blocks.push(`### ${current.id} (${current.link})\n\n${lines.join('\n')}`);
+    blocks.push(`### ${current.nn} ${current.id} (${current.link})\n\n${lines.join('\n')}`);
     lines.length = 0;
   };
   for (const item of items) {
-    if (!current || current.id !== item.plan) {
+    if (!current || current.id !== item.plan || current.nn !== item.nn) {
       flush();
-      current = { id: item.plan, link: item.link };
+      current = { id: item.plan, nn: item.nn, link: item.link };
     }
     n += 1;
     const handling = item.handling ? ` / ${item.handling}` : '';
@@ -314,9 +327,9 @@ function readContexts(text) {
   /** @type {string | null} */
   let current = null;
   for (const line of text.split('\n')) {
-    const head = line.match(/^### (\S+)/);
+    const head = line.match(/^### (\d+) (\S+)/);
     if (head) {
-      plan = head[1];
+      plan = head[2];
       current = null;
       continue;
     }
@@ -360,15 +373,21 @@ function triagePart(text) {
 export function collectCycle(planDir, closeText = '') {
   const files = readdirSync(planDir)
     .filter((file) => file.endsWith('.md'))
-    .toSorted((a, b) => planRank(a) - planRank(b) || a.localeCompare(b));
+    .toSorted((a, b) => {
+      const pa = planName(a);
+      const pb = planName(b);
+      return (
+        planRank(pa.id) - planRank(pb.id) || Number(pa.nn) - Number(pb.nn) || a.localeCompare(b)
+      );
+    });
   /** @type {Leftover[]} */
   const items = [];
   for (const file of files) {
-    const id = file.replace(/\.md$/, '');
+    const { nn, id } = planName(file);
     const text = readFileSync(join(planDir, file), 'utf8');
     const link = linkText(noOf(id, text, closeText));
     for (const item of collectPlan(text)) {
-      items.push({ plan: id, link, ...item });
+      items.push({ plan: id, nn, link, ...item });
     }
   }
   return items;
