@@ -163,8 +163,17 @@ export function collectCycle(planDir: string, closeText?: string): readonly Left
 - Doubts: `01-ex-fix.md` のような `NN-` 付き `ex-` 名をどう扱うか。要修正/オーナー判断が必要。理由: 現状 `planName` は `{ nn:'01', id:'ex-fix' }` を返し `planRank` は ex- 欄に置き `render` は `### 01 ex-fix` と NN 付き見出しを ex- 欄に出すが、Types の `Ex` は NN なしを定義し Then は「見出しは NN のあるプランだけ `### <NN> <plan id>`」とする。`NN-` 付き `ex-` を投げるか NN なしに直させるか決めておらず、自分では解決できないため残す。
   - left: `NN-` の付いた `ex-` の名前も受け付け、見出しにはその `NN` が付く。このサイクルの `ex-` のプランはどれも `NN-` を持たず、受け付けをやめるかは ADR の判断になる。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:`（`## Triage` の形に名前なし行を並べ、`## Collected` の `No` 説明に未特定・名前が先を書いた）を `format.md:20,24,50` に確認した。理由: `## Shape` に `- <N>: _ex-plan_ (ADR <NN>, ...)`（grouping 前）と `- <N>: _ex-plan_ <plan id> (ADR <NN>, ...)`（grouping 後）が並び、`## Collected` が「missing も grouping 未命名の行も `未特定`、名前が先」と書くため、grouping 前の行を不正と誤読させる stale は解消している。
+- Unlisted: なし — Round 1 の `Unlisted` には `fixed:` がなく `left:` のみであり、対象外のため再判定しない。
+- Gaps: なし — Round 1 の `fixed:`（名前なし行は `No` が `未特定`、まとめで名前が入ってから `ADR <NN>` が読める旨を `## Collected` に書いた）を `format.md:50` に確認した。理由: 当該行が `ex-` の `No` は名前あり Triage 行の `ADR <NN>` から来ること、missing と grouping 未命名の行は `未特定` であること、名前が先で所有者に見せる前に埋めることを一文で定めるため、grouping 前の `未特定` の扱いと命名後の読み替えの両方が書かれており、gap は塞がっている。
+- Unproven: なし — Round 1 の `Unproven` には `fixed:` がなく `left:` のみであり、対象外のため再判定しない。
+- Noise: なし — Round 1 の `Noise` には `fixed:` がなく `left:` のみであり、対象外のため再判定しない。
+- Doubts: なし — `fixed:` 2 件（Stale・Gaps）がいずれも `format.md` で閉じていることを確認し、新たな疑いはない。理由: 指示により `left:` は再判定せず、Round 1 の `Doubts` は `left:` のみで対象外である。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run .pi/skills/close`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（63 ファイル、756 件）、5 ファイルの読み、`git diff 0c42cce..HEAD` の通読。振る舞いを 3 つ壊して赤を確かめた。(1) `render` の `nn` が `null` の分岐を消すと 4 件が赤。(2) `planName` の `ex-` の分岐を消すと 5 件が赤。(3) `readContexts` の `(\d+)?` を `(\d+)` に戻すと文脈保持の 1 件が赤。いずれも戻すと 14 件が緑。
+- Findings: なし
+- Doubts: なし
