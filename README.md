@@ -12,52 +12,52 @@ A starter where a project and its **agent harness** are in place from the start.
 
 Product direction and cycle decisions stay traceable from intent to record.
 
-- [`DEFINITION.md`](DEFINITION.md): Holds the product picture; cycle decisions record intent against its parts and keep the picture current.
-- [`ROADMAP.md`](ROADMAP.md): Holds versioned items; cycles pick items with owner agreement and append cycle numbers on close.
-- [`rules/`](rules/): Holds shapes and wording rules for definition, roadmap, and readme.
+- [DEFINITION.md](DEFINITION.md): Holds the product picture; cycle decisions record intent against its parts and keep the picture current.
+- [ROADMAP.md](ROADMAP.md): Holds versioned items; cycles pick items with owner agreement and append cycle numbers on close.
+- rules: `rules/*` - Holds shapes and wording rules for definition, roadmap, and readme.
 
 ### Agent
 
 Daily work runs through a pi harness with settled roles and bounded duties.
 
-- [`AGENTS.md`](AGENTS.md): Project rules read every session; issues live on the roadmap and work runs in cycles from adr to close.
-- [`.pi/skills/`](.pi/skills/): Cycle and maintenance units.
-  - [`adr`](.pi/skills/adr/SKILL.md): Settles intent, roadmap item, and entries, recording decisions on the definition.
-  - [`plan`](.pi/skills/plan/SKILL.md): Cuts agreed entries into ordered work units with files and checks.
-  - [`work`](.pi/skills/work/SKILL.md): Runs plan slices in order and leaves records in plan notes.
-  - [`close`](.pi/skills/close/SKILL.md): Collects plan outputs, triages with the owner, and updates the roadmap.
-  - [`yolo`](.pi/skills/yolo/SKILL.md): Walks cycle stages without owner confirmations and stops at triage.
-  - [`upgrade`](.pi/skills/upgrade/SKILL.md): Upgrades dependencies on its own, apart from cycles.
-- [`.pi/extensions/`](.pi/extensions/): Helpers attached to pi.
-  - [`consult`](.pi/extensions/consult/README.md): Runs one subagent pi with a role and a place, plus worktree and commit helpers.
-  - [`quality-gate`](.pi/extensions/quality-gate/README.md): Checks only changed parts on each turn, with fix and check stages.
-  - [`context-precompact`](.pi/extensions/context-precompact/README.md): Prepares context in the background before the threshold and applies it at the boundary.
-  - [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md): Stops looped thinking during generation and keeps it out of the next turn.
-  - [`sound-notify`](.pi/extensions/sound-notify/README.md): Plays a sound and sends a cmux notice while pi waits for the user.
+- [AGENTS.md](AGENTS.md): Project rules read every session; issues live on the roadmap and work runs in cycles from adr to close.
+- skills:
+  - `adr`: Settles intent, roadmap item, and entries, recording decisions on the definition.
+  - `plan`: Cuts agreed entries into ordered work units with files and checks.
+  - `work`: Runs plan slices in order and leaves records in plan notes.
+  - `close`: Collects plan outputs, triages with the owner, and updates the roadmap.
+  - `yolo`: Walks cycle stages without owner confirmations and stops at triage.
+  - `upgrade`: Upgrades dependencies on its own, apart from cycles.
+- extensions:
+  - `consult`: Runs one subagent pi with a role and a place, plus worktree and commit helpers.
+  - `quality-gate`: Checks only changed parts on each turn, with fix and check stages.
+  - `context-precompact`: Prepares context in the background before the threshold and applies it at the boundary.
+  - `thinking-scrub`: Stops looped thinking during generation and keeps it out of the next turn.
+  - `sound-notify`: Plays a sound and sends a cmux notice while pi waits for the user.
 
 ### Checks
 
 Automated gates keep style, correctness, behavior, and wording consistent on every change.
 
-- `lint` (oxlint): Fails on warnings for changed JavaScript and TypeScript.
-- `format` (oxfmt): Formats and verifies JavaScript, TypeScript, Markdown, and JSON.
-- `typecheck`: Covers staged files on commit and the full tree on push.
-  - [`scripts/checks/typecheck.mjs`](scripts/checks/typecheck.mjs): Checks root and harness types on push.
-  - [`scripts/checks/typecheck-staged.mjs`](scripts/checks/typecheck-staged.mjs): Checks only staged files on commit.
-- `test`: Covers product exclusion and starter inclusion.
-  - [`vitest.config.ts`](vitest.config.ts): Product config excluding harness paths.
-  - [`vitest.starter.config.ts`](vitest.starter.config.ts): Starter config covering all tests.
-- `japanese-check` ([`scripts/checks/ja-check.mjs`](scripts/checks/ja-check.mjs)): Reports banned Japanese words with error and warn counts.
-- `localhook`: Binds commit and push gates.
-  - [`lefthook.yaml`](lefthook.yaml) pre-commit: Runs format, lint, staged typecheck, related tests, and japanese-check on changed parts.
-  - [`lefthook.yaml`](lefthook.yaml) pre-push: Runs full typecheck and tests.
+- lint: `oxlint` - Fails on warnings for changed JavaScript and TypeScript.
+- format: `oxfmt` - Formats and verifies JavaScript, TypeScript, Markdown, and JSON.
+- typecheck:
+  - `scripts/checks/typecheck.mjs` - Checks root and harness types on push.
+  - `scripts/checks/typecheck-staged.mjs` - Checks only staged files on commit.
+- test:
+  - `vitest.config.ts` - Product config excluding harness paths.
+  - `vitest.starter.config.ts` - Starter config covering all tests.
+- japanese-check: `scripts/checks/ja-check.mjs` - Reports banned Japanese words with error and warn counts.
+- localhook: `lefthook`
+  - pre-commit: Runs format, lint, staged typecheck, related tests, and japanese-check on changed parts.
+  - pre-push: Runs full typecheck and tests.
 
 ### Handover
 
 Moving work between starter and product stays explicit and repeatable.
 
-- `harness-sync` ([`scripts/harness/`](scripts/harness/)): Brings starter parts in and returns project parts back without deleting files.
-- `product-ready` ([`scripts/product-ready/`](scripts/product-ready/)): Replaces roadmap, definition, and readmes with templates and drops starter-only test wiring on first run.
+- harness-sync: `scripts/harness/*` - Brings starter parts in and returns project parts back without deleting files.
+- product-ready: `scripts/product-ready/*` - Replaces roadmap, definition, and readmes with templates and drops starter-only test wiring on first run.
 
 ### CI
 

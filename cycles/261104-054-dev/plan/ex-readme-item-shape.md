@@ -167,10 +167,10 @@ _Under construction_
 
 ### Slice 1: 一覧の項目の形
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 

@@ -10,54 +10,54 @@ English: [README.md](README.md)
 
 ### Roadmap & Cycle
 
-プロダクトの方向とサイクルの判断は、意図から記録まで追跡できる形で残る。
+プロダクトの方向とサイクルの判断は、意図から記録まで追跡できるように残る。
 
-- [`DEFINITION.md`](DEFINITION.md): プロダクト像を保ち、サイクルの判断をその項目と対応付けて残す。
-- [`ROADMAP.md`](ROADMAP.md): バージョンごとの項目を持ち、サイクルが選んだ番号をオーナーの合意で追記する。
-- [`rules/`](rules/): 定義と roadmap と readme の形と言葉の規則を集める。
+- [DEFINITION.md](DEFINITION.md): プロダクト像を保ち、サイクルの判断をその中の項目と対応付けて残す。
+- [ROADMAP.md](ROADMAP.md): バージョンごとの項目を持ち、サイクルが選んだ番号をオーナーの合意のもとで追記する。
+- rules: `rules/*` - 定義と roadmap と readme の形と言葉の規則をまとめる。
 
 ### Agent
 
 日常の作業は、役割を定めた pi の harness 上で進む。
 
-- [`AGENTS.md`](AGENTS.md): 毎回読む規則を示し、項目は roadmap で管理し、サイクルは adr から close まで進める。
-- [`.pi/skills/`](.pi/skills/): サイクルと保守の単位を集める。
-  - [`adr`](.pi/skills/adr/SKILL.md): 意図と対象項目とエントリーを定め、定義への判断を記録に残す。
-  - [`plan`](.pi/skills/plan/SKILL.md): 合意済みの項目を順序付きの作業単位に切り分け、対象と確認を添える。
-  - [`work`](.pi/skills/work/SKILL.md): 作業単位を順に実行し、記録を plan のノートに残す。
-  - [`close`](.pi/skills/close/SKILL.md): 作業の成果を集め、オーナーとトリアージし、roadmap を更新する。
-  - [`yolo`](.pi/skills/yolo/SKILL.md): オーナーの確認を挟まずにサイクルのステージを進め、トリアージで止まる。
-  - [`upgrade`](.pi/skills/upgrade/SKILL.md): 依存をサイクルから離れて単独で更新し、監査まで終える。
-- [`.pi/extensions/`](.pi/extensions/): pi に付く補助を集める。
-  - [`consult`](.pi/extensions/consult/README.md): 役割と場所を指定して子 agent の pi を1体起動し、worktree と commit の補助も持つ。
-  - [`quality-gate`](.pi/extensions/quality-gate/README.md): ターンの変更分だけを検査し、修正と確認を分けて進める。
-  - [`context-precompact`](.pi/extensions/context-precompact/README.md): 基準位置に達する前にバックグラウンドで準備し、境界で適用する。
-  - [`thinking-scrub`](.pi/extensions/thinking-scrub/README.md): 繰り返す思考を生成中に止めて取り除き、次のターンに持ち越さない。
-  - [`sound-notify`](.pi/extensions/sound-notify/README.md): pi がユーザーを待つ間に音と cmux の通知で知らせる。
+- [AGENTS.md](AGENTS.md): 毎回読むべき規則を示し、項目は roadmap で管理し、サイクルは adr から close まで進む。
+- skills:
+  - `adr`: 意図と対象項目とエントリーを定め、定義に関する判断を記録に残す。
+  - `plan`: 合意済みの項目を順序付きの作業単位に切り分け、対象ファイルと確認方法を添える。
+  - `work`: 作業単位を順に実行し、記録を plan のノートに残す。
+  - `close`: 作業の成果を集め、オーナーとともにトリアージし、roadmap を更新する。
+  - `yolo`: オーナーの確認を挟まずにサイクルのステージを進め、トリアージで止まる。
+  - `upgrade`: 依存をサイクルとは別に単独で更新し、監査まで行う。
+- extensions:
+  - `consult`: 役割と場所を指定して pi の子エージェントを1体起動し、worktree と commit の補助も持つ。
+  - `quality-gate`: ターンの変更分だけを検査し、修正と確認を分けて進める。
+  - `context-precompact`: しきい値に達する前にバックグラウンドで準備し、境界で適用する。
+  - `thinking-scrub`: 同じ思考の繰り返しを生成中に止めて取り除き、次のターンに持ち越さない。
+  - `sound-notify`: pi がユーザーを待つ間に、音と cmux の通知でユーザーに知らせる。
 
 ### Checks
 
-自動の検査が、書式と正確さと振る舞いと表現を、変更のたびにそろえる。
+自動の検査が、変更のたびに書式と正確さと振る舞いと表現をそろえる。
 
-- `lint` (oxlint): 変更した JavaScript と TypeScript に対し、警告があれば失敗とする。
-- `format` (oxfmt): JavaScript と TypeScript と Markdown と JSON の書式をそろえる。
-- `typecheck`: commit 時と push 時の型の確認をまとめる。
-  - [`scripts/checks/typecheck.mjs`](scripts/checks/typecheck.mjs): push 時に全体と harness の型を確認する。
-  - [`scripts/checks/typecheck-staged.mjs`](scripts/checks/typecheck-staged.mjs): commit 時に変更分だけの型を確認する。
-- `test`: プロダクト用とスターター用の検査の使い分けをまとめる。
-  - [`vitest.config.ts`](vitest.config.ts): プロダクト用の設定で、harness の経路を除外する。
-  - [`vitest.starter.config.ts`](vitest.starter.config.ts): スターター用の設定で、すべての検査を対象にする。
-- `japanese-check` ([`scripts/checks/ja-check.mjs`](scripts/checks/ja-check.mjs)): 禁止語の出現を数え、error と warn で報告する。
-- `localhook`: commit 時と push 時のフックをまとめる。
-  - [`lefthook.yaml`](lefthook.yaml) pre-commit: 変更分に書式と lint と型と関連検査と日本語検査を走らせる。
-  - [`lefthook.yaml`](lefthook.yaml) pre-push: 全体の型と検査を実行する。
+- lint: `oxlint` - 変更した JavaScript と TypeScript に対し、警告があれば失敗とする。
+- format: `oxfmt` - JavaScript、TypeScript、Markdown、JSON の書式をそろえる。
+- typecheck:
+  - `scripts/checks/typecheck.mjs` - push 時にルートと harness の型を確認する。
+  - `scripts/checks/typecheck-staged.mjs` - commit 時に変更分だけの型を確認する。
+- test:
+  - `vitest.config.ts` - プロダクト用の設定で、harness のパスを除外する。
+  - `vitest.starter.config.ts` - スターター用の設定で、すべてのテストを対象にする。
+- japanese-check: `scripts/checks/ja-check.mjs` - 禁止語の出現を数え、error と warn で報告する。
+- localhook: `lefthook`
+  - pre-commit: 変更分に書式と lint と型と関連テストと日本語検査を実行する。
+  - pre-push: 全体の型とテストを実行する。
 
 ### Handover
 
-スターターとプロダクトの間の移動は、明示的で再現可能な形で進む。
+スターターとプロダクトの間の移動は、明示的で再現可能な形で行う。
 
-- `harness-sync` ([`scripts/harness/`](scripts/harness/)): スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルを消さない。
-- `product-ready` ([`scripts/product-ready/`](scripts/product-ready/)): roadmap と定義と readme をテンプレートに置き換え、スターター用の検査配線を外す。
+- harness-sync: `scripts/harness/*` - スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルは削除しない。
+- product-ready: `scripts/product-ready/*` - roadmap と定義と readme をテンプレートに置き換え、スターター用のテスト配線を外す。
 
 ### CI
 
