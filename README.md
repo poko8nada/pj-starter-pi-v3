@@ -63,8 +63,6 @@ Moving work between starter and product stays explicit and repeatable.
 
 _Under construction_
 
-- [`.github/workflows/pullfrog.yml`](.github/workflows/pullfrog.yml): Dispatch entry running an agent on manual trigger.
-
 ## Getting started
 
 Requires Node 24 or later and pnpm.
