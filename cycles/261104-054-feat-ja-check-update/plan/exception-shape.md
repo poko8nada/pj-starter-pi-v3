@@ -147,3 +147,29 @@ type TestConfig = JaCheckConfig;
 - Kept: 上記以外の 26件。`happy` 5件と `error` 3件は例外あり・なし・型違いの別々の分岐を見るため。消えた振る舞い・作られなくなった分岐・型前提のテストは見当たらないため。
 - Findings: なし
 - Unplanned: なし
+
+## Work Review
+
+### Round 1
+
+- Stale: なし — `README.md:45` と `README.ja.md:45` が 3 欄に更新され `scripts/checks/ja-check.mjs:110` と `scripts/checks/ja-check.test.ts:6` のコメントも例外に触れて旧 2 欄の記述が残っていないため。
+- Unlisted: なし — `cycles/261104-054-feat-ja-check-update/plan/exception-shape.md:7` の Files が指名する 5 件以外の製品変更が `git diff b0b48cc..HEAD` に現れず plan md への Notes 追記のみのため。
+- Gaps: なし — 検証の 3 分岐と抑止の warn・error と非一致の 2 件と 2 つ目のヒットを `scripts/checks/ja-check.test.ts:88`、`scripts/checks/ja-check.test.ts:102`、`scripts/checks/ja-check.test.ts:116`、`scripts/checks/ja-check.test.ts:128`、`scripts/checks/ja-check.test.ts:141`、`scripts/checks/ja-check.test.ts:386`、`scripts/checks/ja-check.test.ts:398`、`scripts/checks/ja-check.test.ts:408` が踏みサマリーと終了符号も同時に確かめるため。
+- Unproven: なし — `scripts/checks/ja-check.mjs:122` の `!isCovered` を外すと `scripts/checks/ja-check.test.ts:88` と `scripts/checks/ja-check.test.ts:102` が報告ありになって赤になり検証の分岐を外すと `scripts/checks/ja-check.test.ts:386` と `scripts/checks/ja-check.test.ts:398` と `scripts/checks/ja-check.test.ts:408` が exit 0 になって赤になるため。
+- Noise: なし — `scripts/checks/ja-check.test.ts:90` の `骨組み` 等は Steps が指定した値であり件数やサマリー行も Steps の結果であって型や制約が既に決める前提ではないため。
+- Doubts: なし
+
+## Acceptance
+
+- Ran:
+  - `pnpm typecheck` — `root: ok`、`.pi: ok`。
+  - `pnpm test:run` — 64 ファイル、741 件がすべて通過。
+  - `pnpm lint` と `pnpm format:check` — 通過。
+  - 振る舞いを壊して赤になるかの確認:
+    - `findUnquoted` の `!isCovered` を外す → 例外の抑止の 2 件が赤になり、戻した。
+    - `isCovered` の `k` の範囲を `0` だけに狭める → 頭に 1 文字を加えた語の 1 件が赤になり、戻した。
+    - 検証の `keys.length !== 3` を外す → 26 件が緑のままであり、余分な欄を拒否する振る舞いにテストがないことを見つけた。
+  - 壊したファイルは `git checkout` で戻し、`git status` が plan md の追記だけであることを確かめた。
+- Findings:
+  - `scripts/checks/ja-check.test.ts:395` — 余分な欄（`error`、`warn`、`exception` 以外）を持つ設定を拒否する振る舞いにテストがない（`keys.length !== 3` を外しても 26 件が緑のまま）。
+- Doubts: なし
