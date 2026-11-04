@@ -16,14 +16,16 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 Present one block per plan, in a fence. Then write the order last, numbered, for all plans. The owner agrees before the plan md is written.
 
-```text
+```markdown
 ## <plan id>
+
 - ADR: <NN>
 - Place: <worktree|base>
 - Summary: <what this plan does, in one sentence>
 - Why: <read the `Role change` and the `Adjustment` in the affected, and write what those say and why they make these entries one plan; do not list the field names alone>
 
 ## Order:
+
 1. <plan-a>
 2. <plan-b> + <plan-c> (parallel)
 3. <plan-d>
