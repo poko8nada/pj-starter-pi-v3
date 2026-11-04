@@ -43,6 +43,8 @@
 
 ## Collected
 
+- The collect step writes this section; the gate is the agent's reading, as `SKILL.md`'s table says.
+
 - The script writes this section: `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>`. It writes `close.md` itself, and creates the file when it is not there.
 - One leftover is one numbered line. The line is `<line> / <place> / <出どころ>`: the line in the plan md (the heading above names the plan), and where the hole came from (`Slice 1 (名前)`, `Cleanup: <what it cleaned>`, `Work Review Round 1`, `Acceptance`). It is the inventory only.
 - The agent excludes what the wording shows is already resolved, by hand, after every run of the script: the script rewrites the numbered lines, so re-filter every time.
@@ -53,6 +55,8 @@
 - The order is the `NN` numeric order for the plans that have an `NN`, and the `ex-` plans after them in name order, so adding an `ex-` plan does not move the numbers above it.
 
 ## Triage
+
+- The proposal step writes it, and the owner's word closes it, as `SKILL.md`'s table says.
 
 - One line per leftover: its number, where it goes, and the part of the definition it belongs to. The part is the `ADR` entry and the part of `DEFINITION.md` the leftover lands on.
 - Each bullet carries its grounds underneath, in this shape:
@@ -69,6 +73,8 @@
 - `なし` when there is none.
 
 ## Verified
+
+- The verification step writes it, and the owner's word closes it, as `SKILL.md`'s table says.
 
 - The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
 - At the completion of `close.md` `## Verified` is empty, and that is normal. It is filled after the owner's judgement on the triage and the `ex-` merges.

@@ -97,7 +97,7 @@ describe('writeClose', () => {
     expect(text).toContain(`### ${missingId} (ADR 未特定)`);
   });
 
-  it('(happy) `ex-` の見出しを持つ close.md で手順 9 を再実行する → 番号行の下の文脈が `ex-` の見出しの下にも残る', () => {
+  it('(happy) `ex-` の見出しを持つ close.md を集め直す → 番号行の下の文脈が `ex-` の見出しの下にも残る', () => {
     const { cycle } = setupCycle(closeWithTriage);
     const closePath = writeClose(cycle);
     const first = readFileSync(closePath, 'utf8');
