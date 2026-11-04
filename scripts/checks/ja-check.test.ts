@@ -20,6 +20,14 @@ const HEADER_1 =
   'ja-check: Report to the owner. warn needs judgement (commit continues); error must be fixed (commit stops).';
 const HEADER_2 = 'ja-check: Replacements are ideas; judge by context and content.';
 
+interface JaCheckConfig {
+  readonly error: Readonly<Record<string, string>>;
+  readonly warn: Readonly<Record<string, string>>;
+  readonly exception: readonly string[];
+}
+
+type TestConfig = JaCheckConfig;
+
 interface RunOut {
   readonly status: number;
   readonly stdout: string;
@@ -46,10 +54,11 @@ function writeConfig(root: string, value: unknown): void {
   writeFile(root, join('scripts', 'checks', 'ja-check.json'), JSON.stringify(value));
 }
 
-function validConfig(): Record<string, Record<string, string>> {
+function validConfig(): TestConfig {
   return {
     error: { [ERROR_WORD]: 'replacement-error' },
     warn: { [WARN_WORD]: 'replacement-warn' },
+    exception: [],
   };
 }
 
@@ -75,6 +84,18 @@ describe('ja-check', () => {
     expect(h2At).toBeGreaterThan(h1At);
   });
 
+  it('(empty) exceptionが空の配列でwarn語骨を含む行 → warn行を出してexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exception: [] });
+    const file = writeFile(root, 'a.md', `${WARN_WORD}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain(`${file}:1: ${WARN_WORD}`);
+    expect(out.stdout).toContain('[warn]');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
   it('md内のerror語 → error行を出してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
@@ -308,6 +329,18 @@ describe('ja-check', () => {
     expect(out2.stdout).not.toContain('ja-check: No findings.');
   });
 
+  it('(error) exceptionのない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, {
+      error: { [ERROR_WORD]: 'replacement-error' },
+      warn: { [WARN_WORD]: 'replacement-warn' },
+    });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
   it('頂点が非レコードの設定 → 冒頭2行を出してexit 1', () => {
     for (const bad of [null, [], 'x'] as const) {
       const root = fakeRoot();
