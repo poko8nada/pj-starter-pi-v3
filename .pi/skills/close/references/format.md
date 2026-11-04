@@ -9,7 +9,7 @@
 
 ## Collected
 
-### <plan id> (ADR <プランの No の値>)
+### <NN> <plan id> (ADR <プランの No の値>)
 
 1. <line> / <place> / <出どころ>
 
@@ -47,7 +47,7 @@
 - The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
-- The order is the normal plans first (by file name), the `ex-` plans after (by file name), so adding an `ex-` plan does not move the numbers above it.
+- The order is the `NN` numeric order, the normal plans first and the `ex-` plans after, so adding an `ex-` plan does not move the numbers above it.
 
 ## Triage
 
@@ -57,7 +57,7 @@
   - Why: why this proposal is recommended.
   - Then: for an `ex-` what policy the plan follows, for a `_proposed_` what to discuss next, for a `dropped` nothing.
 - The proposal order is: the cycle's own concern → `_ex-plan_`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `_ex-plan_`; one of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `_proposed_`; the rest → `dropped`.
-- `_ex-plan_ <plan id>` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>`, and it has no `No`.
+- `_ex-plan_ <plan id>` — the cycle fixes it now, whatever files it changes: it is the cycle's own concern, or an obvious defect, and it fits one plan. The plan is named `ex-<what it fixes>`, and it has no `No`. The Triage line's plan id stays `ex-<what it fixes>` with no `NN-`.
 - `_proposed_` — leaving it makes things worse. The next cycle carries it: its ADR decides, and a plan writes.
 - `dropped` — the rest: the fix weighs more than leaving it.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
