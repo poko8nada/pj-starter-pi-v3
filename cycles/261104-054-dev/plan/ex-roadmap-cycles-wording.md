@@ -39,10 +39,10 @@ rules/roadmap.md              update
 
 ### Slice 1: cycles の行にある重複した句
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 
