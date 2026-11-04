@@ -10,9 +10,12 @@ const exId = 'ex-fix';
 const missingId = 'ex-missing';
 const adrNo = '02';
 const planFile = '01-alpha.md';
-const exFile = '02-ex-fix.md';
-const missingFile = '03-ex-missing.md';
+const betaId = 'beta';
+const betaFile = '02-beta.md';
+const exFile = 'ex-fix.md';
+const missingFile = 'ex-missing.md';
 const normalPlan = planDoc({ no: adrNo, name: planId, notes: `${planId} hole` });
+const betaPlan = planDoc({ no: adrNo, name: betaId, notes: `${betaId} hole` });
 const exPlan = planDoc({ name: exId, notes: `${exId} hole` });
 const exMissingPlan = planDoc({ name: missingId, notes: `${missingId} hole` });
 const closeWithTriage = closeDoc({ triages: [{ name: exId, no: adrNo }] });
@@ -23,6 +26,7 @@ function setupCycle(triageBody: string) {
   const planDir = join(cycle, 'plan');
   mkdirSync(planDir, { recursive: true });
   writeFileSync(join(planDir, planFile), normalPlan);
+  writeFileSync(join(planDir, betaFile), betaPlan);
   writeFileSync(join(planDir, exFile), exPlan);
   writeFileSync(join(planDir, missingFile), exMissingPlan);
   writeFileSync(join(cycle, 'close.md'), triageBody);
@@ -38,7 +42,10 @@ function oldTriageBody(): string {
 describe('planName', () => {
   it('(happy) NN付きのファイル名から番号とidを出す', () => {
     expect(planName(planFile)).toEqual({ nn: '01', id: planId });
-    expect(planName(exFile)).toEqual({ nn: '02', id: exId });
+  });
+
+  it('(happy) `NN-` の無い `ex-` のファイル名は番号を持たない', () => {
+    expect(planName(exFile)).toEqual({ nn: null, id: exId });
   });
 
   it('(error) 番号の無いファイル名では投げる', () => {
@@ -59,21 +66,23 @@ describe('noOf', () => {
     expect(noOf(exId, exPlan, oldTriageBody())).toBeNull();
   });
 
-  it('(error) Triage 行が無い close.md で `ex-` の plan の `No` を読む → null になる', () => {
-    expect(noOf(missingId, exMissingPlan, closeWithTriage)).toBeNull();
+  it('(error) 空の `## Triage` を持つ close.md で `ex-` の plan の `No` を読む → null になる', () => {
+    expect(noOf(missingId, exMissingPlan, closeDoc({ triages: [] }))).toBeNull();
   });
 });
 
 describe('writeClose', () => {
-  it('(happy) 01-alpha.md、02-ex-fix.md、03-ex-missing.md の一時ツリーで収集する → NN付き見出しがNN順に並ぶ', () => {
+  it('(happy) 通常 2 件と `ex-` 2 件の一時ツリーで収集する → 通常が `NN` の数値の順、そのあとに `ex-` が名前の順で並ぶ', () => {
     const { cycle } = setupCycle(closeWithTriage);
     const closePath = writeClose(cycle);
     const text = readFileSync(closePath, 'utf8');
     expect(text).toContain(`### 01 ${planId} (ADR ${adrNo})`);
-    expect(text).toContain(`### 02 ${exId} (ADR ${adrNo})`);
-    expect(text).toContain(`### 03 ${missingId} (ADR 未特定)`);
-    expect(text.indexOf(`### 01 ${planId}`)).toBeLessThan(text.indexOf(`### 02 ${exId}`));
-    expect(text.indexOf(`### 02 ${exId}`)).toBeLessThan(text.indexOf(`### 03 ${missingId}`));
+    expect(text).toContain(`### 02 ${betaId} (ADR ${adrNo})`);
+    expect(text).toContain(`### ${exId} (ADR ${adrNo})`);
+    expect(text).toContain(`### ${missingId} (ADR 未特定)`);
+    expect(text.indexOf(`### 01 ${planId}`)).toBeLessThan(text.indexOf(`### 02 ${betaId}`));
+    expect(text.indexOf(`### 02 ${betaId}`)).toBeLessThan(text.indexOf(`### ${exId}`));
+    expect(text.indexOf(`### ${exId}`)).toBeLessThan(text.indexOf(`### ${missingId}`));
   });
 
   it('(happy) `ex-` の `NN` が小さくても通常が先になる → rank 優先で `NN` 数値順より先に並ぶ', () => {
@@ -82,24 +91,41 @@ describe('writeClose', () => {
     const planDir = join(cycle, 'plan');
     mkdirSync(planDir, { recursive: true });
     writeFileSync(join(planDir, `02-${planId}.md`), normalPlan);
-    writeFileSync(join(planDir, `01-${exId}.md`), exPlan);
+    writeFileSync(join(planDir, exFile), exPlan);
     writeFileSync(join(cycle, 'close.md'), closeWithTriage);
     const text = readFileSync(writeClose(cycle), 'utf8');
     expect(text).toContain(`### 02 ${planId} (ADR ${adrNo})`);
-    expect(text).toContain(`### 01 ${exId} (ADR ${adrNo})`);
-    expect(text.indexOf(`### 02 ${planId}`)).toBeLessThan(text.indexOf(`### 01 ${exId}`));
+    expect(text).toContain(`### ${exId} (ADR ${adrNo})`);
+    expect(text.indexOf(`### 02 ${planId}`)).toBeLessThan(text.indexOf(`### ${exId}`));
   });
 
   it('(error) 旧い形の行だけを持つ close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
     const { cycle } = setupCycle(oldTriageBody());
     const text = readFileSync(writeClose(cycle), 'utf8');
-    expect(text).toContain(`### 02 ${exId} (ADR 未特定)`);
+    expect(text).toContain(`### ${exId} (ADR 未特定)`);
   });
 
-  it('(error) Triage 行が無い close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
-    const { cycle } = setupCycle(closeWithTriage);
+  it('(error) 空の `## Triage` を持つ close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
+    const { cycle } = setupCycle(closeDoc({ triages: [] }));
     const text = readFileSync(writeClose(cycle), 'utf8');
-    expect(text).toContain(`### 03 ${missingId} (ADR 未特定)`);
+    expect(text).toContain(`### ${missingId} (ADR 未特定)`);
+  });
+
+  it('(happy) `ex-` の見出しを持つ close.md で手順 9 を再実行する → 番号行の下の文脈が `ex-` の見出しの下にも残る', () => {
+    const { cycle } = setupCycle(closeWithTriage);
+    const closePath = writeClose(cycle);
+    const first = readFileSync(closePath, 'utf8');
+    const head = first.indexOf(`### ${exId}`);
+    expect(head).toBeGreaterThan(-1);
+    const numbered = first
+      .slice(head)
+      .split('\n')
+      .find((line) => /^\d+\. /.test(line));
+    expect(numbered).toBeDefined();
+    if (numbered === undefined) return;
+    writeFileSync(closePath, first.replace(`${numbered}\n`, `${numbered}\n  - kept ex context\n`));
+    const second = readFileSync(writeClose(cycle), 'utf8');
+    expect(second).toContain('kept ex context');
   });
 });
 

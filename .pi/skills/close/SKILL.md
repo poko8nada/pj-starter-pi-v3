@@ -33,7 +33,7 @@ Texts handed to subagents are in `references/tasks.md`.
 ### 3. Collect
 
 - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`. It creates the file
-- the plan id is the plan md's file name without the `NN-` prefix and without `.md`; the `## Collected` heading prefixes it with the `NN` (`### <NN> <plan id> (ADR ...)`); a Triage line's plan id stays `ex-<what it fixes>` with no `NN-`
+- the plan id is the plan md's file name without the `NN-` prefix and without `.md`; the `## Collected` heading prefixes it with the `NN` for the plans that have one (`### <NN> <plan id> (ADR ...)`), and an `ex-` plan's heading is `### <plan id> (ADR ...)`; a Triage line's plan id stays `ex-<what it fixes>` with no `NN-`
 - the script lists the leftovers of every plan md with their plan and line; it does not judge
 - one leftover is one numbered line `<line> / <place> / <出どころ>`: the inventory only. `Doing` / `Left` / `Cost` are not written
 - fill every `未特定` from the plan md's `No`. An `ex-` plan's `No` is read from the Triage; the plan md has no `No`

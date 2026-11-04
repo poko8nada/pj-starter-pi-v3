@@ -9,7 +9,9 @@
 
 ## Collected
 
-### <NN> <plan id> (ADR <プランの No の値>)
+### <NN> <plan id> (ADR <プランの No の値>) — `NN` のあるプラン
+
+### <plan id> (ADR <プランの No の値>) — `NN` を持たない `ex-` のプラン
 
 1. <line> / <place> / <出どころ>
 
@@ -47,7 +49,7 @@
 - The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
-- The order is the `NN` numeric order, the normal plans first and the `ex-` plans after, so adding an `ex-` plan does not move the numbers above it.
+- The order is the `NN` numeric order for the plans that have an `NN`, and the `ex-` plans after them in name order, so adding an `ex-` plan does not move the numbers above it.
 
 ## Triage
 

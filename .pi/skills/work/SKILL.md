@@ -13,7 +13,7 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 
 ## File
 
-Work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` and writes into it: slices' records under `## Notes`, `## Work Review`, `## Acceptance`.
+Work writes no file of its own. It reads `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` for a plan that has an `NN`, and `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` for an `ex-` plan, and writes into it: slices' records under `## Notes`, `## Work Review`, `## Acceptance`.
 
 Texts handed to subagents are in `references/tasks.md`.
 

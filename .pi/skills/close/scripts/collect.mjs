@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 /**
  * 残りの1件。番号付き。
  *
- * @typedef {{ plan: string, nn: string, link: string, line: number, place: string, finding: string, handling: string | null }} Leftover
+ * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null } & ({ nn: string } | { nn: null })} Leftover
  */
 
 /**
@@ -220,19 +220,21 @@ export function collectPlan(text) {
 const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 
 /**
- * ファイル名から plan の番号と id を出す。番号が無ければ投げる（検証はこの関数の中）
+ * ファイル名から plan の番号と id を出す。`NN-` の無い `ex-` の名前は番号を持たない。
+ * どちらでもない名前は投げる（検証はこの関数の中）。
  *
  * @param {string} file
- * @returns {{ nn: string, id: string }}
+ * @returns {{ nn: string, id: string } | { nn: null, id: string }}
  */
 export function planName(file) {
   const base = file.replace(/\.md$/, '');
   const found = base.match(/^(\d+)-(.+)$/);
-  if (!found) throw new Error(`no NN prefix: ${file}`);
-  return { nn: found[1], id: found[2] };
+  if (found) return { nn: found[1], id: found[2] };
+  if (base.startsWith('ex-')) return { nn: null, id: base };
+  throw new Error(`no NN prefix: ${file}`);
 }
 
-/** 通常の plan が先、`ex-` の plan が後。 */
+/** 通常の plan が先、`ex-` の plan が後。`id` は `NN-` を除いた名前。 */
 const planRank = (id) => (id.startsWith('ex-') ? 1 : 0);
 
 /**
@@ -294,7 +296,8 @@ function render(items, contexts) {
   let n = 0;
   const flush = () => {
     if (!current) return;
-    blocks.push(`### ${current.nn} ${current.id} (${current.link})\n\n${lines.join('\n')}`);
+    const head = current.nn === null ? `### ${current.id}` : `### ${current.nn} ${current.id}`;
+    blocks.push(`${head} (${current.link})\n\n${lines.join('\n')}`);
     lines.length = 0;
   };
   for (const item of items) {
@@ -327,7 +330,7 @@ function readContexts(text) {
   /** @type {string | null} */
   let current = null;
   for (const line of text.split('\n')) {
-    const head = line.match(/^### (\d+) (\S+)/);
+    const head = line.match(/^### (\d+)? ?(\S+)/);
     if (head) {
       plan = head[2];
       current = null;
@@ -376,9 +379,8 @@ export function collectCycle(planDir, closeText = '') {
     .toSorted((a, b) => {
       const pa = planName(a);
       const pb = planName(b);
-      return (
-        planRank(pa.id) - planRank(pb.id) || Number(pa.nn) - Number(pb.nn) || a.localeCompare(b)
-      );
+      const numeric = pa.nn !== null && pb.nn !== null ? Number(pa.nn) - Number(pb.nn) : 0;
+      return planRank(pa.id) - planRank(pb.id) || numeric || a.localeCompare(b);
     });
   /** @type {Leftover[]} */
   const items = [];
