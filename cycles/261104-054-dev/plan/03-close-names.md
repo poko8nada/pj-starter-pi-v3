@@ -24,6 +24,8 @@
   SKILL.md                    update
   references/
     tasks.md                  update
+.pi/skills/yolo/
+  SKILL.md                    update
 ```
 
 ## Slices
@@ -186,8 +188,18 @@ type Leftover = {
   - `plan/` に `NN-` 無し `.md` が1件でもあると `collectCycle` 全体が投げる（`.pi/skills/close/scripts/collect.mjs:373`）。理由：`planName` の投げ自体は仕様だが全件失敗への言及は計画になく、実務上 `plan/` には plan md しか置かないため finding にしない。
   - `.pi/skills/close/scripts/collect.test.ts:83` の題は「Triage 行が無い close.md」だが実際は他 plan の行を持つ `closeWithTriage` で当該行の欠落を確かめている。理由：計画の Step と同文であり、空 `## Triage` も同一経路（空 map）を通るため finding にしない。
 
+### Round 2
+
+- Stale: なし — Round 1 の `fixed:` は `Gaps` と `Noise` の各1件だけであり、`Stale` には `fixed:` がないため対象外である。
+- Unlisted: なし — 同じ理由により、`Unlisted` には `fixed:` がないため対象外である。
+- Gaps: なし — `fixed:` の配置追加（`01-ex-fix.md` と `02-alpha.md` で通常が先）を `.pi/skills/close/scripts/collect.test.ts:79-91` に確認し、`02 alpha` が `01 ex-fix` より先になる断言がある。実装 `.pi/skills/close/scripts/collect.mjs:376-381` は rank 優先・次に `NN` 数値順であり、rank を外して純粋な `NN` 順にすると `01 ex-fix` が先になって当該断言が赤になるため、仕様（通常が先）は検査に運動しており閉じている。
+- Unproven: なし — `Unproven` には `fixed:` がないため対象外である。
+- Noise: なし — `fixed:` の集約を `.pi/skills/close/scripts/collect.test.ts:32-36` の `oldTriageBody` に確認し、`ADR 02` と `ex-fix` の文字面はなく `${adrNo}`・`${exId}` の補間になっており、2か所（`:59`・`:94`）で共有されている。`exId` を改名しても組み立てと照会が同じ変数で連動するため別理由の緑にならず、旧形無視の検査は空洞化していない。`oldKind` の分割は grep 0件維持のためであり、`ADR ${adrNo}`・`${exId}` は grep に当たらない。
+- Doubts: なし — `fixed:` 2件はいずれも閉じていることを確認し、finding にならない疑いは新たにない。Round 1 の `Doubts` 3件には `fixed:` がなく対象外であるため再判定しない。
+
 ## Acceptance
 
-- Ran:
+- Ran: `pnpm test:run`（64ファイル、749テスト）、`pnpm typecheck`（root と .pi が ok）、`pnpm lint`、`pnpm format:check`、grep ツールで `\bex-plan\b` と `\bproposed\b` と `plan/<plan id>.md` を `.pi/skills` から検索し、`yolo/SKILL.md:41` を除いて 0 件、`plan/<NN>-<plan id>.md` が 9 件、`ex-<what it fixes>` が 2 件、`01-alpha` が 2 件、並びの順位を外すと 1 件が赤、見出しの `NN` を外すと 6 件が赤（いずれも戻して緑）、レビュー consult-41（Round 1 の 2 件は `fixed:`、Round 2 は五点とも `なし`）。
 - Findings:
-- Doubts:
+  - `.pi/skills/yolo/SKILL.md:41` が `ex-` と `proposed` のままである。この plan の表記（`_ex-plan_`・`_proposed_`）と食い違い、`## Files` にも無い。`ex-` を `_ex-plan_` に、`proposed` を `_proposed_` に直し、`## Files` に `.pi/skills/yolo/SKILL.md update` を足す。
+- Doubts: なし
