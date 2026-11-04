@@ -44,19 +44,22 @@
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: `221193a`
 - Stopped: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: `.pi/skills/plan/SKILL.md:28` が古くなった — 理由: `cut.md` の Why を「欄の名前だけを並べない」形に変えたのに、同行は依然として「The `Why` says which `Role change` and which `Adjustment` each plan takes.」と旧来の欄名列挙で説明しており、Verify が 0 件を求める旧文面と同文だからである。読む人が旧式の Why を書く恐れがある。
+  - fixed: `.pi/skills/plan/SKILL.md:28` の `Why` の説明を、`Role change` と `Adjustment` が何を言っているかと、なぜ 1 つのプランかを書く形に直した。計画の `Files` は `cut.md` だけだったが、同じ説明を持つ 1 行なのでこの作業で吸収した。
+- Unlisted: なし — 理由: 差分は `cut.md` の 2 行と計画 md 自身の Notes 記入（`Findings`・`Unplanned`・`Stopped` の「なし」埋め）のみで、後者は作業記録であり製品変更ではない。製品変更の 2 行はいずれも Steps が命名どおりである。
+- Gaps: なし — 理由: 残件 14 の `Then`（同じパスは 1 プラン、順番は片方がもう片方の出力を読む場合だけ）と残件 17 の `Then`（`Role change`・`Adjustment` が何を言っているかと、なぜ 1 プランかを書く。欄名だけを並べない）はいずれも Steps どおり英文で運ばれている。ADR 07 の `Adopted`・`Scope` は `NN-` ファイル名の件で `close-names` の所掌であり、このプランの `Files`（`cut.md` のみ）の範囲外のため、運ばれないのは欠落ではない。
+- Unproven: Verify に新 Why 文の肯定確認がなく、Why 行を消しても緑のままである — 理由: 「which `Role change` and which `Adjustment`」0 件だけでは、Why 行の削除や無関係文への置換でも通る。Steps の新文（例: `do not list the field names alone` の 1 件確認）がないため、後半の変更が除去されても検出できない。前半は `then they are one plan` の 1 件確認があり検出できるのと対照的である。
+  - left: 文書だけの変更で、検証は `git diff` を読んで変えた行を変える前と並べることと、受理の通読が担う。新しい文を grep で数えると、言い換えで緑のままになる。
+- Noise: なし — 理由: 新しい 3 番文と Why 文に重複・新設名・不要分岐はなく、em ダッシュ挿入や `those` の指示も文意を崩さない。`## Where` 末文との見かけの重なりは役割が異なり重複ではない。
+- Doubts: `.pi/skills/plan/SKILL.md:28` の旧 Why 説明を直すか・別の ex-plan にするかはオーナーの判断が要る — 理由: このプランの `Files` は `cut.md` のみで範囲外のためこの場で直せず、放置すれば旧式 Why の再発の恐れがあるため、対応要否の判断が要る。
+  - fixed: `.pi/skills/plan/SKILL.md:28` を直した。別のプランにはしない。
 
 ## Acceptance
 

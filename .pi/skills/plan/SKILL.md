@@ -25,7 +25,7 @@ Read `affected.md` for those entries. It is the impact map: one heading per path
 
 ### 3. Cut, and present
 
-Cut the work into plans by what it reads, not by where it lives: the rules are in `references/cut.md`. Decide the split, the order, the boundary and the place. Present them to the owner in the fence `references/cut.md` gives: one block per plan (`ADR`, `Place`, `Summary`, `Why`), then the `Order` last, numbered, for all plans. The `Why` says which `Role change` and which `Adjustment` each plan takes. The owner agrees.
+Cut the work into plans by what it reads, not by where it lives: the rules are in `references/cut.md`. Decide the split, the order, the boundary and the place. Present them to the owner in the fence `references/cut.md` gives: one block per plan (`ADR`, `Place`, `Summary`, `Why`), then the `Order` last, numbered, for all plans. The `Why` reads the `Role change` and the `Adjustment` and says what those mean and why the entries make one plan; the field names alone are not enough. The owner agrees.
 
 ### 4. Write the plan md from the affected
 
