@@ -52,19 +52,24 @@
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: `89e447c`
 - Stopped: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: `.pi/skills/plan/references/format.md:210` の Work Review の `Stale` 説明が `a doc, a comment, a test` のままで、今回 `.pi/skills/work/references/tasks.md:38` に足した `or a sentence the change makes redundant` を含んでいない。理由：任務文の定義を広げたのに、同じ五視点を説明する文書側を Steps が名指ししておらず、読む人が古い狭い定義のまま残ると判断したため。
+  - fixed: `.pi/skills/plan/references/format.md:210` の `Stale` の説明を `a doc, a comment, a test, or a sentence the change makes redundant` に変えた。
+- Unlisted: `.pi/skills/plan/references/cut.md:11,24` の cut 規則 3 番と Present の `Why` の変更、および `cycles/261104-054-dev/plan/ex-plan-cut.md` と `cycles/261104-054-dev/plan/ex-review-and-cases.md` の Notes（`Findings: なし` 等）の変更は、このプランのどの Step も名指ししていない。理由：Files は tasks.md と format.md の 2 件だけを挙げ、Steps もそのセクションだけを書くため、差分（`97ed552..HEAD`）に含まれる別プランの変更と記録用の書き込みが Steps の外に残ると判断したため。
+  - left: `cut.md` の 2 行は `ex-plan-cut` のプランの変更で、このプランの `Files` の外である。`97ed552..HEAD` に別のプランのコミットが並ぶのは、6 つの `ex-` を下から順に実装しているためで、このプランのコミットは `89e447c` だけである。
+- Gaps: `cycles/261104-054-dev/close.md:92` の残り 15 の `Then`（`format.md` の 56 行を「grep ツールで（大小文字を問わず）…を検索する」に）が運ばれていない。`.pi/skills/plan/references/format.md:56` は `大小文字を問わず grep ツールで検索する` で、括弧付きの `grep ツールで（大小文字を問わず）` を持たない。理由：重複を避けて語順を入れ替えた結果、Then と Steps（`cycles/261104-054-dev/plan/ex-review-and-cases.md:32`）が求めた形のままではなく、Verify が求める部分文字列も差分に現れないため。
+  - fixed: `.pi/skills/plan/references/format.md:56` を `grep ツールで（大小文字を問わず）検索する` に直した。
+- Unproven: `cycles/261104-054-dev/plan/ex-review-and-cases.md:43-45` の Verify のうち、自動で件数を数えるのは `goes on a finding, not on a doubt` と `names a premise that can be built one way` の 2 件だけで、`.pi/skills/work/references/tasks.md:38` の `or a sentence the change makes redundant` を消しても `pnpm test:run`・`typecheck`・`lint`・`format:check` と 2 件の grep 数えは緑のままである。理由：文書だけの変更でコードのテストが触れず、残りの文言は人の目による `git diff` 読みだけが頼りのため、外しても自動確認が赤にならないと判断したため。
+  - left: 文書だけの変更で、コードのテストが触れない。`git diff` を読み、変えた行を変える前と並べて確かめている。
+- Noise: なし。理由：`grep ツールで検索する` と `grep tool search` は日英の対応で重複ではなく、名前は道具と操作を示し、今回の差分が分岐をなくす箇所もないことを `git diff 97ed552..HEAD` で確かめたため。
+- Doubts: `.pi/skills/plan/references/format.md:56` を残り 15 の Then・Steps 通りの `grep ツールで（大小文字を問わず）検索する` に直すか、現行の `大小文字を問わず grep ツールで検索する` を保って Verify（`cycles/261104-054-dev/plan/ex-review-and-cases.md:43` の期待文字列）を直すかは、オーナーの判断が要る。理由：Steps 通りに置換すると `大小文字を問わず` が二重になり、現行は重複を避けた代わりに Then・Verify と字面がずれており、自力ではどちらを正とするか決められないため。
+  - fixed: 残り 15 の `Then` と Steps の形に合わせ、`grep ツールで（大小文字を問わず）検索する` に直した。二重にならない。
 
 ## Acceptance
 

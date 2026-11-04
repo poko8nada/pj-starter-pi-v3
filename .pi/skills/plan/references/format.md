@@ -53,7 +53,7 @@ Section and field names are English; the content is Japanese.
   - <`pnpm typecheck`>
   - <`pnpm lint`>
   - <`pnpm format:check`>
-  - <このスライスが変えた名前と説明を大小文字を問わず grep ツールで検索する>
+  - <このスライスが変えた名前と説明を、grep ツールで（大小文字を問わず）検索する>
   - <変更した全ファイルを、変える前と並べて読み、矛盾、循環、重複、不足、不自然な流れがないか確かめる>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
@@ -207,7 +207,7 @@ Section and field names are English; the content is Japanese.
 
 - The reviewer writes here, and the fixing subagent answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from:
-  - `Stale` — what this change made stale: a doc, a comment, a test
+  - `Stale` — what this change made stale: a doc, a comment, a test, or a sentence the change makes redundant
   - `Unlisted` — a change the plan's `Files` does not name
   - `Gaps` — a hole the slices passed over, a behavior the checks do not exercise; a decided value is not a gap
   - `Unproven` — a test that would stay green if the behavior it names were removed
