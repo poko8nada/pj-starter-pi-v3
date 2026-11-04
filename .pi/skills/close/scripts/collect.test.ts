@@ -85,20 +85,6 @@ describe('writeClose', () => {
     expect(text.indexOf(`### ${exId}`)).toBeLessThan(text.indexOf(`### ${missingId}`));
   });
 
-  it('(happy) `ex-` の `NN` が小さくても通常が先になる → rank 優先で `NN` 数値順より先に並ぶ', () => {
-    const root = tempDir();
-    const cycle = join(root, '261024-001-dev');
-    const planDir = join(cycle, 'plan');
-    mkdirSync(planDir, { recursive: true });
-    writeFileSync(join(planDir, `02-${planId}.md`), normalPlan);
-    writeFileSync(join(planDir, exFile), exPlan);
-    writeFileSync(join(cycle, 'close.md'), closeWithTriage);
-    const text = readFileSync(writeClose(cycle), 'utf8');
-    expect(text).toContain(`### 02 ${planId} (ADR ${adrNo})`);
-    expect(text).toContain(`### ${exId} (ADR ${adrNo})`);
-    expect(text.indexOf(`### 02 ${planId}`)).toBeLessThan(text.indexOf(`### ${exId}`));
-  });
-
   it('(error) 旧い形の行だけを持つ close.md で収集する → `ex-` の plan の見出しが `ADR 未特定` になる', () => {
     const { cycle } = setupCycle(oldTriageBody());
     const text = readFileSync(writeClose(cycle), 'utf8');

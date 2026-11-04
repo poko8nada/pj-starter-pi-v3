@@ -136,10 +136,15 @@ export function collectCycle(planDir: string, closeText?: string): readonly Left
 
 ### Slice 2: `ex-` のプランを通常のプランと同じ扱いに戻す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: `69f1b81`
+- Stopped: なし
+
+### Cleanup: `ex-` の `NN` が小さい場合の事例
+
+- Findings: 「`ex-` の `NN` が小さくても通常が先になる」の事例は、見出しと並びの事例（`01`、`02`、`ex-fix`、`ex-missing`）と同じ並びを見ており、`ex-` が `NN` を持たなくなったので前提も成り立たない。落とした。
+- Unplanned: なし
 
 ## Work Review
 
