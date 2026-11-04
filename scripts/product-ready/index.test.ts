@@ -396,27 +396,30 @@ describe('product-ready defaults', () => {
     const tree = makeTree();
     const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
-    const text = readFileSync(join(tree.root, 'README.md'), 'utf8');
-    const fallback = text.indexOf('### Default');
+    const lines = readFileSync(join(tree.root, 'README.md'), 'utf8').split('\n');
+    const fallback = lines.findIndex((line) => line === '### Default');
     expect(fallback).toBeGreaterThanOrEqual(0);
-    const after = text.slice(fallback);
-    for (let index = 0; index < SOURCE_HEADINGS.length; index += 1) {
-      expect(after).toContain(`- ${SOURCE_HEADINGS[index]}: ${SOURCE_PARAGRAPHS_EN[index]}`);
-    }
-    expect(after).toContain('- Roadmap & Cycle:');
+    const rest = lines.slice(fallback + 1);
+    const next = rest.findIndex((line) => line.startsWith('## '));
+    const section = next === -1 ? rest : rest.slice(0, next);
+    expect(section.filter((line) => line.startsWith('- '))).toEqual(
+      SOURCE_HEADINGS.map((heading, index) => `- ${heading}: ${SOURCE_PARAGRAPHS_EN[index]}`),
+    );
   });
 
   it('--run → 日本語の README.ja.md でも --run → 同じ5行が並び、見出し名は英語で説明文は日本語', () => {
     const tree = makeTree();
     const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
-    const text = readFileSync(join(tree.root, 'README.ja.md'), 'utf8');
-    const fallback = text.indexOf('### Default');
+    const lines = readFileSync(join(tree.root, 'README.ja.md'), 'utf8').split('\n');
+    const fallback = lines.findIndex((line) => line === '### Default');
     expect(fallback).toBeGreaterThanOrEqual(0);
-    const after = text.slice(fallback);
-    for (let index = 0; index < SOURCE_HEADINGS.length; index += 1) {
-      expect(after).toContain(`- ${SOURCE_HEADINGS[index]}: ${SOURCE_PARAGRAPHS_JA[index]}`);
-    }
+    const rest = lines.slice(fallback + 1);
+    const next = rest.findIndex((line) => line.startsWith('## '));
+    const section = next === -1 ? rest : rest.slice(0, next);
+    expect(section.filter((line) => line.startsWith('- '))).toEqual(
+      SOURCE_HEADINGS.map((heading, index) => `- ${heading}: ${SOURCE_PARAGRAPHS_JA[index]}`),
+    );
   });
 
   it('## What is in it を持たない README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
@@ -461,6 +464,28 @@ describe('product-ready defaults', () => {
       '### CI',
       '',
       'CI paragraph.',
+      '',
+    ].join('\n');
+    writeText(tree.root, 'README.md', broken);
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readTargets(tree.root)).toEqual([before[0], before[1], broken, before[3]]);
+  });
+
+  it('### が1つだけの README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
+    const tree = makeTree();
+    const before = readTargets(tree.root);
+    const broken = [
+      '# old',
+      '',
+      '## What is in it',
+      '',
+      '### Roadmap & Cycle',
+      '',
+      'Direction stays traceable.',
       '',
     ].join('\n');
     writeText(tree.root, 'README.md', broken);
