@@ -163,13 +163,13 @@ type TestConfig = JaCheckConfig;
 
 - Ran:
   - `pnpm typecheck` — `root: ok`、`.pi: ok`。
-  - `pnpm test:run` — 64 ファイル、741 件がすべて通過。
+  - `pnpm test:run` — 64 ファイル、742 件がすべて通過。
   - `pnpm lint` と `pnpm format:check` — 通過。
-  - 振る舞いを壊して赤になるかの確認:
+  - 振る舞いを壊して赤になるかの確認（修正の後の再実行）:
     - `findUnquoted` の `!isCovered` を外す → 例外の抑止の 2 件が赤になり、戻した。
     - `isCovered` の `k` の範囲を `0` だけに狭める → 頭に 1 文字を加えた語の 1 件が赤になり、戻した。
-    - 検証の `keys.length !== 3` を外す → 26 件が緑のままであり、余分な欄を拒否する振る舞いにテストがないことを見つけた。
-  - 壊したファイルは `git checkout` で戻し、`git status` が plan md の追記だけであることを確かめた。
+    - 検証の `keys.length !== 3` を外す → 余分な欄のケース 1 件が赤になり、戻した。
+  - 壊したファイルは元の文字列に戻し、`git status` が clean であることを確かめた。
 - Findings:
   - `scripts/checks/ja-check.test.ts:395` — 余分な欄（`error`、`warn`、`exception` 以外）を持つ設定を拒否する振る舞いにテストがない（`keys.length !== 3` を外しても 26 件が緑のまま）。
     - fixed: 余分な欄がある設定の (error) ケースを1件足し、header 2行と exit 1 を確かめた。keys.length を外すと赤になり、戻すと緑になることを確かめた。
