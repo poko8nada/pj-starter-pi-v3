@@ -42,10 +42,10 @@
 
 ### Slice 1: Cut と Present の Why
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 

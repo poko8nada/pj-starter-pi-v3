@@ -8,7 +8,7 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 - Split only when the inputs differ and the halves can run at once. Ask of a split:
   1. does a half leave the branch failing lint, typecheck or test? then keep it together
   2. is a half not usable on its own? then keep it together
-  3. do the two touch the same path? then keep them together — the paths are in the affected's `### Code` — or order them. Whether a file exists, and its shape, is the plan's
+  3. do the two touch the same path? then they are one plan — the paths are in the affected's `### Code`. Order the two only when one reads the output of the other; whether a file exists, and its shape, is the plan's
   4. does a piece depend on more than one plan? then it is its own plan, after all of them
 - A description never merges before the behaviour it describes.
 
@@ -21,7 +21,7 @@ Present one block per plan, in a fence. Then write the order last, numbered, for
 - ADR: <NN>
 - Place: <worktree|base>
 - Summary: <what this plan does, in one sentence>
-- Why: <which `Role change` and which `Adjustment` this plan takes>
+- Why: <read the `Role change` and the `Adjustment` in the affected, and write what those say and why they make these entries one plan; do not list the field names alone>
 
 ## Order:
 1. <plan-a>
