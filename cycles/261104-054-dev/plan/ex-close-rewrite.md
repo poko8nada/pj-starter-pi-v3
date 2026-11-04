@@ -65,10 +65,10 @@
 
 ### Slice 1: `close` のスキル本文の書き直し
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: 手順 11 と 12 を入れ替え、作業ツリーの片付けをロードマップの前にした。第三者レビューの指摘で、作業ツリーの後戻りがロードマップの後ろに来るのを避けるためである。手順 14 に `git status` の確認も足した。
+- Commit: `6ccb672`
+- Stopped: なし
 
 ## Work Review
 
