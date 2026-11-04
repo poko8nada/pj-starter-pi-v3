@@ -84,8 +84,17 @@ export function headingsOf(jobs: readonly Job[]): readonly string[];
 - Doubts: `fillDefaults` が `filled` を文書順の逆向き（`index.mjs:162` の後ろからの走査順）に積む点。現テンプレートは対象 `##` が 1 つのため発現しないが、対象 `##` が 2 つ以上に増えたら表示順が文書順と逆になる。`filled` を文書順に積み直すか、単一対象の前提を JSDoc に書いて残すか、オーナーの判断を求める。
   - fixed: `fillDefaults` が各見出しの名前を組で積み、最後に `toReversed()` して文書の順の `filled` を返すようにした。
 
+### Round 2
+
+- Stale: なし。理由：`fixed:` 2 件の差分は JSDoc 1 行と `groups`/`toReversed` の組立てのみで、削除済み関数（`headingsFor` 等）の復活やコメントの逆行は `index.mjs` に見当たらない。
+- Unlisted: なし。理由：`fixed:` 2 件は実装内の文言・順序の修正であり、Steps が名指す事例の追加や削除を伴わない。`left:` 2 件は回答済みとして再開しない。
+- Gaps: なし。理由：`fixed:` の申告と `index.mjs` の実体が一致する（下記 Noise・Doubts の確認どおり）。
+- Unproven: なし。理由：`left:` の非空側不足は再開しない。多 `##` の文書順は現テンプレート（対象 `##` が 1 つ）では発現せず、コード読解で順序保持を確認した（下記 Doubts）。今回の確認範囲は `index.mjs` の読解であり、新規テストの有無は問わない。
+- Noise: なし（`fixed:` 1 件を確認済み）。理由：申告どおり `index.mjs:149` が「箇条書きで埋めた `###` の見出し名（材料の名。文書の順）」となり、容器（`Default`）ではなく材料の名であることと文書順であることが明示され、実装（`index.mjs:162-177` の積み方）とも一致する。確認対象を `index.mjs` に限れば申告どおりに直っている。
+- Doubts: なし（`fixed:` 1 件を確認済み）。理由：`index.mjs:160-177` が `groups: readonly string[][]` に組で積み、最後に `groups.toReversed().flat()` で文書順に戻す。後ろからの走査＋反転で組単位の文書順が復元し、組内は `collectUnder` の文書順を維持する。単一対象・空集合でも従来どおりの結果になり、`node>=24` のため `toReversed` も利用可能である。
+
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: `pnpm test:run scripts/product-ready`（53 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（63 ファイル、756 件）、grep で `headingsFor`・`hasTarget`・`defaultLines`・`sourceNames` が 0 件、2 ファイルの読み、`git diff 6e8c996..HEAD` の通読。振る舞いを 2 つ壊して赤を確かめた。(1) `main` の表示を `headingsOf(jobs)` から空の配列にすると、2 件が赤。(2) `fillDefaults` が埋めた本文ではなく `block` を返すと、3 件が赤。いずれも戻すと 53 件が緑。
+- Findings: なし
+- Doubts: なし
