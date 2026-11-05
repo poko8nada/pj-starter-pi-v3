@@ -226,5 +226,7 @@ function isExcluded(file: string): boolean;
 - Findings:
   - `README.ja.md:50` と `README.md:50` — `exclude` がバッククォートに囲まれておらず、`README.ja.md` は英字の前後に空白がなく、同じファイルの他の行の表記と揃っていない。
     - fixed: 両方を `exclude` のバッククォート囲みにし、`README.ja.md` は「設定の `exclude` に書いたパスは検査しない。」に直した。
+  - `scripts/checks/ja-check.test.ts:291`、`:304`、`:317`、`:330` — 新しく足した 4 件のテストの見出しが英語で、同じファイルの他の見出し（日本語）と揃っていない。プランの `Steps` も日本語で書いていた。
+    - fixed: 4 件の見出しを、プランの `Steps` の書き方に合わせて日本語にした。
 - Doubts:
   - なし

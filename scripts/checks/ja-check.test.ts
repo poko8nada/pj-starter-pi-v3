@@ -288,7 +288,7 @@ describe('ja-check', () => {
 });
 
 describe('ja-check exclude', () => {
-  it('(happy) exclude ROADMAP.md skips root ROADMAP.md with error word -> exit 0', () => {
+  it('(happy) excludeがROADMAP.mdで行が1.x.xの下のerror語 → 報告せずexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
     writeFile(root, 'ROADMAP.md', `## 1.x.x\n${ERROR_WORD}\n`);
@@ -301,7 +301,7 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
 
-  it('(happy) exclude star-star affected skips nested affected.md -> exit 0', () => {
+  it('(happy) excludeが**/affected.mdで行がcycles配下のaffected.mdのerror語 → 報告せずexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exclude: ['**/affected.md'] });
     const file = writeFile(root, join('cycles', '999-test', 'affected.md'), `${ERROR_WORD}\n`);
@@ -314,7 +314,7 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
 
-  it('(happy) exclude ROADMAP.md still reports src ROADMAP.md -> exit 1', () => {
+  it('(happy) excludeがROADMAP.mdで行がsrc配下のROADMAP.mdのerror語 → 報告してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
     const file = writeFile(root, join('src', 'ROADMAP.md'), `${ERROR_WORD}\n`);
@@ -327,7 +327,7 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 1, warn 0.');
   });
 
-  it('(happy) exclude ROADMAP.md skips absolute path -> exit 0', () => {
+  it('(happy) excludeがROADMAP.mdで引数が絶対パス → 報告せずexit 0', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
     const file = writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
