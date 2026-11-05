@@ -104,7 +104,6 @@
   - 変えた4つのファイル全体と、そのファイルが名指すファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
-  - a proofread — plan md（`cycles/261105-055-feat-update-affected/plan/02-plan.md`）と `.pi/skills/plan/references/format.md` を、スキルの proofread 文で
 
 ## Notes
 
