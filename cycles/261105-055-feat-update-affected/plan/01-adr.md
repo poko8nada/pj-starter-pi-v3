@@ -432,8 +432,18 @@ export function checkEntry(markdown);
 - `cycles/261105-055-feat-update-affected/plan/01-adr.md:33` — Files は `README.md` を update と書くが、全 slice の Steps に README の手順がなく、差分にも README の変更がない。Notes は Scope 外として close 送りにしている。close で Files 行の修正か README 対応かの判断が必要。
 - `.pi/skills/adr/references/tasks.md:28` — 対象抽出の動詞8語に、ADR 01 の Adopted（`adr.md:64`）の10語中の「そろえる」に対応する語がない。抽出漏れの余地があるため、意図的な読み替えか補遺が必要かの判断が必要。
 
+### Round 2
+
+- なし — `.pi/extensions/consult/README.md:24` の Roles 表 `research` に `bash` があることと、`.pi/skills/adr/scripts/index.test.ts:260` に未知の `F9` への参照の error ケースがあることを、現行ファイルの読み取りで確かめたため。
+
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm typecheck` — ok。
+  - `pnpm test:run` — 63ファイル、757件 pass。
+  - 各スライスの `Verify` の `Always`。
+  - `Added`: a `base` plan's look — オーナーの look（各スライスで済み。例外は下の `Doubts`）。
+  - 振る舞いを壊して赤になるかの確認: `checkEntry` の `C` の抜けの分岐を利かなくして、`does not carry` のテストが赤になることを確かめた。
+- Findings: なし
 - Doubts:
+  - plan 02 の slice 1 は、オーナーの OK の前にコミットした（`df9379a`）。
