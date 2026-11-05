@@ -406,18 +406,31 @@ export function checkEntry(markdown);
 - Unplanned:
   - スキル全体と名指すファイルの通読で、7つの不整合を見つけて直した（冒頭の一覧、`Proofread` の3か所、`Files` の2か所、手順6の参照）
 - Commit: `8a0fb1d`
-- Stopped: なし
+
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+- `.pi/extensions/consult/README.md:24` — Roles 表の `research` 行の Tools に `bash` がなく、`types.json` の `research`（`tools` に `bash` 追加、`bash` は4接頭辞）と食い違う。変更が文書を陳腐化させたため。Notes は Scope 外として close 送りにしているが、陳腐化自体は残る。
+  - fixed: `README.md` の Roles 表の `research` に `bash` を足した。
 - Unlisted:
+- なし — 差分の Files 外の変更は、plan 02 の Files（plan skill 4件）・cycle の記録（`adr.md`/`affected.md`/plan md）・ROADMAP の運用であり、この plan の slice が起こした無名の製品変更はないため。
 - Gaps:
+- `.pi/skills/adr/scripts/index.test.ts:235` — `checkEntry` の未知番号の検査が `C9` のみで、未知の `F` 参照（例 `F9`）の error ケースがない。ADR 06 の Adopted は参照の実在を C と F の両方に求め、実装（`adr.mjs:176-178`）も両分岐を持つため、未知 F 参照の分岐が検査されない。
+  - fixed: `index.test.ts` に、未知の `F9` への参照の error ケースを足した。
 - Unproven:
+- なし — 各テストは名指す振る舞いを壊すと赤になる（`checkEntry` の happy／C2抜け／F3未衡量／C9未知／重複／empty、`parseArgs` の `--check` 真偽、`affectedEntrySkeleton` の見出し・行）ため。
 - Noise:
+- なし — `C9`・`F3` 等は plan・ADR が決めた値であり、型・スキーマ・DB 制約が決める断言や、誰も気づかない検査、マジックナンバー・ハードコードのケースはないため。
 - Doubts:
+- `cycles/261105-055-feat-update-affected/plan/01-adr.md:33` — Files は `README.md` を update と書くが、全 slice の Steps に README の手順がなく、差分にも README の変更がない。Notes は Scope 外として close 送りにしている。close で Files 行の修正か README 対応かの判断が必要。
+- `.pi/skills/adr/references/tasks.md:28` — 対象抽出の動詞8語に、ADR 01 の Adopted（`adr.md:64`）の10語中の「そろえる」に対応する語がない。抽出漏れの余地があるため、意図的な読み替えか補遺が必要かの判断が必要。
 
 ## Acceptance
 

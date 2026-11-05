@@ -257,6 +257,11 @@ describe('checkEntry', () => {
     expect(checkEntry(markdown)).toEqual(['01: A refers to unknown C9']);
   });
 
+  it('(error) F9 への参照 → 未知の番号として返す', () => {
+    const markdown = entry(option('      - 何か（C1, C2, F1, F9）'));
+    expect(checkEntry(markdown)).toEqual(['01: A refers to unknown F9']);
+  });
+
   it('(error) 同じ番号が2回出る → 重複として返す', () => {
     const markdown = entry(
       option('      - 何か（C1, F1）\n    - Keep:\n      - 何か（C1, C2）'),
