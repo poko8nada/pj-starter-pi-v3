@@ -154,9 +154,26 @@ function isExcluded(file: string): boolean;
 ### Slice 3: 説明を合わせる
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - 10221bf consult(ja-check-exclude): mention exclude in readmes
 - Stopped:
+  - なし
+
+### Cleanup: quoted-alone and relative-path duplicates
+
+- Dropped:
+  - Backtick quoted-alone skip (same quoted-alone skip as single-quote; kept single-quote as representative; file type and comment prefix add no branch).
+  - Double-quote quoted-alone skip (same quoted-alone skip as single-quote; kept single-quote as representative).
+  - Dot-relative ROADMAP skip (same join and relative branch as plain relative ROADMAP skip; kept plain relative with heading and absolute path to cover both sides of the absolute ternary).
+- Kept:
+  - Single-quote quoted-alone skip, extra-chars quoted report, truncation, exception cases, error and warn basics, no-args, unreadable skip, cycles a.md report, nested affected skip, src ROADMAP report, plain relative ROADMAP skip, absolute ROADMAP skip, self config skip, no-findings, no-config, broken JSON, key and value types, exception and exclude validation cases, extra field, top-level non-record.
+- Findings:
+  - なし
+- Unplanned:
+  - なし
 
 ## Work Review
 

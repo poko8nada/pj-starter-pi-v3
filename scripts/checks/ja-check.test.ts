@@ -258,30 +258,6 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain(suffix);
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
   });
-
-  it('バッククォート単独のコードコメント → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const quoted = `\`${ERROR_WORD}\``;
-    const file = writeFile(root, 'a.ts', `// ${quoted}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-  });
-
-  it('ダブルクォート単独のerror語 → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const quoted = `"${ERROR_WORD}"`;
-    const file = writeFile(root, 'a.md', `${quoted}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-  });
 });
 
 describe('ja-check exclude', () => {
@@ -329,19 +305,6 @@ describe('ja-check exclude', () => {
     writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
     const file = writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
     const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
-  });
-
-  it('(happy) exclude ROADMAP.md skips dot-relative path -> exit 0', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
-    writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
-    const out = run(root, ['./ROADMAP.md']);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(HEADER_1);
     expect(out.stdout).toContain(HEADER_2);
