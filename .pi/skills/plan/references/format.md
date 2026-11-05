@@ -166,7 +166,7 @@ Section and field names are English; the content is Japanese.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.
   - a `base` plan's look — the owner reads the slice's change; their OK closes it.
-  - a proofread — the Japanese document this slice amends, with the skill's proofread sentence
+  - a proofread — the Japanese document this slice amends; a file whose body is not Japanese (a code comment, a test description) is not one
   - other — a check the ADR's scope names that the checks above do not cover, by a throwaway script or a shell command.
 - A check that counts a string says what it compares: a string the file carried before the change is counted in the diff, not in the file.
 - A `Verify` that cannot be run, or that is red with the change in place, is a hole: fix it, or say why it does not apply.
