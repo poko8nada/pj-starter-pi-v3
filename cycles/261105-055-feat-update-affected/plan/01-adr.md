@@ -405,6 +405,8 @@ export function checkEntry(markdown);
     - left: 05 の作業として、同じサイクルで直した
 - Unplanned:
   - スキル全体と名指すファイルの通読で、7つの不整合を見つけて直した（冒頭の一覧、`Proofread` の3か所、`Files` の2か所、手順6の参照）
+  - `adr/SKILL.md` の校正の対象から書式文書を外し、読む対象に変えた。校正は記録文書だけを編集する
+  - `close/SKILL.md` の校正の対象から書式文書を外し、読む対象に変えた。両プランの対象外だが所有者の指示で修正した
 - Commit: `8a0fb1d`
 
 ### Cleanup: なし

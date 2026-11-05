@@ -158,7 +158,7 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 
 ## Proofread
 
-After the confirmation of an entry, run one `proofreader` subagent with the cycle's `adr.md` and `.pi/skills/adr/references/adr.format.md`; the role's policy applies; edit only the named files, and only this entry's lines.
+After the confirmation of an entry, run one `proofreader` subagent with the cycle's `adr.md`; have it read `.pi/skills/adr/references/adr.format.md` for the shape; the role's policy applies; edit only `adr.md`, and only this entry's lines.
 
 - read its report and `git diff` of the file
 - if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/adr.format.md`'s shape, in your own words
