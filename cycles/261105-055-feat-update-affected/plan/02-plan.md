@@ -110,10 +110,11 @@
 
 ### Slice 1: 読み方とステップ
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `format.md` の `## Slices` の「the `Why`」が、plan md にない欄を指していた。通読で見つけ、「the `Design`」に直した
+- Commit: `cfc94a2`
+- Stopped: なし
 
 ## Work Review
 
