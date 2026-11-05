@@ -143,9 +143,13 @@ function isExcluded(file: string): boolean;
 ### Slice 2: コードに固定した範囲判定を削除する
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - 3aa6dd7 consult(ja-check-exclude): drop hardcoded heading check
 - Stopped:
+  - なし
 
 ### Slice 3: 説明を合わせる
 
