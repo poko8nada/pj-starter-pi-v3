@@ -72,7 +72,7 @@
      - the read-through: read every changed file whole, and every file it names whole; follow the procedure in the order the file gives, as the one who acts on it; check the number, the path, the name and the shape at each place against what it points to; fix any inconsistency, and write the fix in `Unplanned`
      ```
    - update: `## Files` の「affected の `Code` のパスと `Direction` が `Files` の行である」を、「plan が affected のパスを読み、自分で印を決める」に変える。ツリーのディレクトリの行に、空の dir と残す dir の印（`add` / `drop`）を付けられるようにする。
-   - update: `Scope` を越えた step を書かない規則（156 行目）を、問い 3 と 4 の対象は越えても書く形に変える。
+   - update: `Scope` を越えた step を書かない規則（173 行目）を、問い 3 と 4 の対象は越えても書く形に変える。
 2. `.pi/skills/plan/SKILL.md`:
    - update: 手順 2 の地図の説明を、`Kind` と `Edge` に変え、「関係をたどらない」を消す。
    - update: 手順 3 の `Why` を、`Kind` と `Edge` から書く形に変える。
@@ -113,6 +113,7 @@
 - Findings: なし
 - Unplanned:
   - `format.md` の `## Slices` の「the `Why`」が、plan md にない欄を指していた。通読で見つけ、「the `Design`」に直した
+  - `plan/02-plan.md` の `Steps` の「156 行目」が、`df9379a` の変更で 173 行目に動いていた。通読で見つけ、直した
 - Commit: `df9379a`
 - Stopped: なし
 
