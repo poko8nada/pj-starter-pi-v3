@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { adrSkeleton, entrySkeleton } from './adr.mjs';
+import { adrSkeleton, checkEntry, entrySkeleton } from './adr.mjs';
 import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
 import {
   appendEntry,
@@ -140,16 +140,16 @@ describe('dirNames', () => {
 describe('parseArgs', () => {
   it('位置引数は番号になる', () => {
     const input = '017';
-    expect(parseArgs([input])).toEqual({ root: process.cwd(), nnn: Number(input) });
+    expect(parseArgs([input])).toEqual({ root: process.cwd(), nnn: Number(input), check: false });
   });
 
   it('空 → root は cwd、nnn は null', () => {
-    expect(parseArgs([])).toEqual({ root: process.cwd(), nnn: null });
+    expect(parseArgs([])).toEqual({ root: process.cwd(), nnn: null, check: false });
   });
 
   it('--root を読む', () => {
     const root = '/tmp/x';
-    expect(parseArgs(['--root', root])).toEqual({ root, nnn: null });
+    expect(parseArgs(['--root', root])).toEqual({ root, nnn: null, check: false });
   });
 
   it('数でない位置引数は投げる', () => {
@@ -161,6 +161,14 @@ describe('parseArgs', () => {
 
   it('--root の値が欠けていても投げる', () => {
     expect(() => parseArgs(['--root'])).toThrow();
+  });
+
+  it('--check は検査の印になる', () => {
+    expect(parseArgs(['--check'])).toEqual({ root: process.cwd(), nnn: null, check: true });
+  });
+
+  it('--check と番号を併せても読む', () => {
+    expect(parseArgs(['--check', '17'])).toEqual({ root: process.cwd(), nnn: 17, check: true });
   });
 
   it('2 つ目位置引数は投げる', () => {
@@ -194,6 +202,72 @@ describe('entrySkeleton', () => {
       '### Definition',
     ];
     expect(headings).toEqual(expected);
+  });
+});
+
+const entry = (options: string, context = '- C1: 前提\n- C2: 制約', research = '- F1 (C1): 事実') =>
+  `# ADR 001
+
+## 01: <問い>
+
+### Context
+
+${context}
+
+### Scope
+
+- 変更:
+  - format: in — 何か
+
+### Research & Trial
+
+${research}
+
+### Decision
+
+- Status:
+- Adopted:
+${options}
+`;
+
+const option = (lines: string) => `  - A: 説明\n    - Add:\n${lines}`;
+
+describe('checkEntry', () => {
+  it('(happy) すべての C と F を参照する選択肢 → 抜けは空', () => {
+    const markdown = entry(option('      - 何か（C1, F1）\n    - Keep:\n      - 何か（C2）'));
+    expect(checkEntry(markdown)).toEqual([]);
+  });
+
+  it('(error) C2 を参照しない選択肢 → C2 を抜けとして返す', () => {
+    const markdown = entry(option('      - 何か（C1, F1）'));
+    expect(checkEntry(markdown)).toEqual(['01: A does not carry C2']);
+  });
+
+  it('(error) どの選択肢も参照しない F3 → F3 を抜けとして返す', () => {
+    const markdown = entry(
+      option('      - 何か（C1, C2, F1）'),
+      '- C1: 前提\n- C2: 制約',
+      '- F1 (C1): 事実\n- F3 (C1): 事実',
+    );
+    expect(checkEntry(markdown)).toEqual(['01: F3 is not weighed']);
+  });
+
+  it('(error) C9 への参照 → 未知の番号として返す', () => {
+    const markdown = entry(option('      - 何か（C1, C2, F1, C9）'));
+    expect(checkEntry(markdown)).toEqual(['01: A refers to unknown C9']);
+  });
+
+  it('(error) 同じ番号が2回出る → 重複として返す', () => {
+    const markdown = entry(
+      option('      - 何か（C1, F1）\n    - Keep:\n      - 何か（C1, C2）'),
+      '- C1: 前提\n- C1: 制約\n- C2: 制約',
+    );
+    expect(checkEntry(markdown)).toEqual(['01: C1 is used twice']);
+  });
+
+  it('(empty) Context の項目がない → 抜けは空', () => {
+    const markdown = entry(option('      - 何か'), '', '');
+    expect(checkEntry(markdown)).toEqual([]);
   });
 });
 

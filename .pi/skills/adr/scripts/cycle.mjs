@@ -129,13 +129,14 @@ export function createLeafDir(parentDir, name) {
 }
 
 /**
- * CLI 引数を読む。root 既定は cwd。位置引数は番号 (`/^\d+$/`、1 以上)。`--root` 値欠落・未知引数・番号外・2 つ目は投げる。
+ * CLI 引数を読む。root 既定は cwd。位置引数は番号 (`/^\d+$/`、1 以上)。`--check` は検査の印。`--root` 値欠落・未知引数・番号外・2 つ目は投げる。
  * @param {readonly string[]} argv
- * @returns {{ root: string, nnn: number | null }}
+ * @returns {{ root: string, nnn: number | null, check: boolean }}
  */
 export function parseArgs(argv) {
   let root = process.cwd();
   let nnn = null;
+  let check = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--root') {
@@ -143,6 +144,8 @@ export function parseArgs(argv) {
       if (value === undefined) throw new Error('missing value for --root');
       root = value;
       i++;
+    } else if (arg === '--check') {
+      check = true;
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown argument: ${arg}`);
     } else {
@@ -153,7 +156,7 @@ export function parseArgs(argv) {
       nnn = n;
     }
   }
-  return { root, nnn };
+  return { root, nnn, check };
 }
 
 /**
