@@ -206,7 +206,10 @@ describe('ja-check', () => {
 
   it('ja-check.json自体のerror語 → 報告しない', () => {
     const root = fakeRoot();
-    writeConfig(root, validConfig());
+    writeConfig(root, {
+      ...validConfig(),
+      error: { [ERROR_WORD]: `x${ERROR_WORD}y` },
+    });
     const self = join(root, 'scripts', 'checks', 'ja-check.json');
     const out = run(root, [self]);
     expect(out.status).toBe(0);
@@ -257,6 +260,30 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain(prefix);
     expect(out.stdout).not.toContain(suffix);
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
+  });
+
+  it('バッククォート単独のコードコメント → 報告しない', () => {
+    const root = fakeRoot();
+    writeConfig(root, validConfig());
+    const quoted = `\`${ERROR_WORD}\``;
+    const file = writeFile(root, 'a.ts', `// ${quoted}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+  });
+
+  it('ダブルクォート単独のerror語 → 報告しない', () => {
+    const root = fakeRoot();
+    writeConfig(root, validConfig());
+    const quoted = `"${ERROR_WORD}"`;
+    const file = writeFile(root, 'a.md', `${quoted}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
   });
 });
 
