@@ -339,6 +339,53 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: No findings.');
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
+
+  it('(happy) excludeがROADMAP.mdで引数が./ROADMAP.md → 報告せずexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+    writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
+    const out = run(root, ['./ROADMAP.md']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(error) excludeのない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, {
+      error: { [ERROR_WORD]: 'replacement-error' },
+      warn: { [WARN_WORD]: 'replacement-warn' },
+      exception: [],
+    });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) excludeが配列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: 'x' });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) excludeの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: [1] });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
 });
 
 describe('ja-check', () => {
@@ -443,40 +490,6 @@ describe('ja-check', () => {
   it('(error) exceptionの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exception: [1] });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) excludeのない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, {
-      error: { [ERROR_WORD]: 'replacement-error' },
-      warn: { [WARN_WORD]: 'replacement-warn' },
-      exception: [],
-    });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) excludeが配列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: 'x' });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) excludeの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: [1] });
     const file = writeFile(root, 'a.md', 'ok\n');
     const out = run(root, [file]);
     expect(out.status).toBe(1);
