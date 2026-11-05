@@ -7,7 +7,7 @@
 ## Design
 
 - Inside:
-  - Modules: なし。`adr.mjs` と `affected.mjs` は、ADR用と affected 用の別の骨組みであり、形も対象も違う。`adr.format.md` と `options.md` は、前者は記録の形を定め、後者は提示の形を定めるもので、役割が違う。`adr/SKILL.md` の手順 3・4・6は選択肢の提示であり、手順 7は調査の手順である。いずれも1つの文書の中の別のセクションであり、これらは統合も分割もしない。
+  - Modules: なし。`adr.mjs` と `affected.mjs` は、ADR用と affected 用の互いに別の骨組みであり、形も対象も違う。`adr.format.md` と `options.md` は、前者が記録の形を定め、後者が提示の形を定めるもので、役割が違う。`adr/SKILL.md` の手順 3・4・6は選択肢の提示であり、手順 7は調査の手順である。これらはいずれも1つの文書の中の別のセクションであり、統合も分割もしない。
   - Dirs: なし。`references/` に `options.md` が増えるだけであり、ディレクトリの統合・分割・移動はない。
 - Outside:
   - Extract: なし。`adr/SKILL.md` と `plan/SKILL.md` の共通化は、作業が2つのスキルにまたがるため、このプランでは扱わない。3つの骨組みは形が違うため、共通化は成り立たない。
@@ -111,7 +111,7 @@ cycles/261105-055-feat-update-affected/
      - update: (happy) `adrSkeleton(1)` を呼び出して書くと、`Adopted` の下に `Add` / `Update` / `Drop` / `Keep` / `Cost` が並ぶ
      - update: (error) `Decision` の見出しを削って書くと、検査が赤になる
 5. `.pi/skills/adr/SKILL.md`:
-   - update: 手順 3（Options）・4（Discussion）・6（Write）について、`references/options.md` を指すように書き直す。散文の「何を得て、何をコストし、どこで成り立たないか」を、選択肢の記述から落とす。手順 3 は `references/options.md` の型で提示し、手順 6 は `adr.format.md` の形で書く。
+   - update: 手順 3（Options）・4（Discussion）・6（Write）の記述を、`references/options.md` を指すように書き直す。散文の「何を得て、何をコストし、どこで成り立たないか」という説明を、選択肢の記述から落とす。手順 3 では `references/options.md` の型で提示し、手順 6 では `adr.format.md` の形で書く。
 
 ### Verify
 
@@ -136,7 +136,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/affected.format.md`:
-   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにする。`### External` を `- Name:` / `Kind:` / `Used by:` にする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を落とす。外に何もないときは `なし` と書く。導き出せなかった事実は記録には書かず、報告に書く。
+   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにする。`### External` を `- Name:` / `Kind:` / `Used by:` のブロックにする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を文書から落とす。外部に書くものがないときは `なし` と書く。導き出せなかった事実は記録には書かず、報告に書く。
      ```md
      ### Code
 
@@ -157,7 +157,7 @@ cycles/261105-055-feat-update-affected/
      - update: (happy) `affectedEntrySkeleton(1)` を呼び出して書くと、`Path` / `Kind` / `Edge` と `Name` / `Used by` が並ぶ
      - update: (error) `Kind` の行を削って書くと、検査が赤になる
 4. `cycles/261105-055-feat-update-affected/affected.md`:
-   - update: `## 01:` の11のパスを、前項のブロックの形に書き直す。`## 02:` から `## 05:` は、旧形のまま残す（変更前に決まったエントリーの記録であり、このプランの対象ではない）。
+   - update: `## 01:` の11のパスを、前項のブロックの形に書き直す。`## 02:` から `## 05:` は、旧形のまま残す（この変更より前に決まったエントリーの記録であり、このプランの対象ではない）。
 
 ### Verify
 
@@ -183,7 +183,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/tasks.md`:
-   - update: `## Look at the affected` を、次の手順に書き直す。`## How to look` の11項目と `## What to answer` の9項目を落とす。検索名ごとに範囲を書く形と、前方と後方に分ける表現も落とす。
+   - update: `## Look at the affected` を、下の手順に書き直す。`## How to look` の11項目と `## What to answer` の9項目を文書から落とす。検索名ごとに範囲を書く形と、前方と後方に分ける表現も文書から落とす。
      ```md
      ## Look at the affected
 
@@ -255,7 +255,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/adr.format.md`:
-   - update: `Context` の項目に `C<n>`、`Research & Trial` の事実に `F<n> (C<n>)`、選択肢の各行に `（C*, F*）` を付け、`Decision` の `Status` に空の状態を足し、`Options` を決定の後は1行に縮め、`Deferred` を足す。`Entries` の `Status` と `Options` の説明も、同じ形に直す。
+   - update: `Context` の項目に `C<n>`、`Research & Trial` の事実に `F<n> (C<n>)`、選択肢の各行に `（C*, F*）` を付ける。`Decision` の `Status` に空の状態を足す。`Options` は決定後は1行に縮め、`Deferred` を足す。`Entries` の `Status` と `Options` の説明も、前文と同じ形に直す。
      ```md
      ### Context
 
@@ -279,7 +279,7 @@ cycles/261105-055-feat-update-affected/
        - <決めない項目と、その理由>
      ```
 2. `.pi/skills/adr/references/options.md`:
-   - update: 選択肢を、`Context` の `C` と `Research & Trial` の `F` を満たすものだけにし、各行に `（C*, F*）` を付ける規則を足す。
+   - update: 選択肢を、`Context` の `C` と `Research & Trial` の `F` を満たすものだけにする。そのうえで、各行に `（C*, F*）` を付ける規則を文書に足す。
 
 ### Verify
 
@@ -305,13 +305,13 @@ export function checkEntry(markdown);
 ### Steps
 
 1. `.pi/skills/adr/scripts/adr.mjs`:
-   - update: 骨組みに `C`、`F`、`Status` の空、選択肢の参照を足す。純粋な関数 `checkEntry(markdown)` を足し、抜けの一覧を返す。
+   - update: 骨組みに `C`、`F`、`Status` の空、選択肢の参照を足す。純粋な関数 `checkEntry(markdown)` を足す。その関数は抜けの一覧を返す。
 2. `.pi/skills/adr/scripts/cycle.mjs`:
-   - update: `parseArgs` に `--check` を足す。未知の引数として投げないようにする。
+   - update: `parseArgs` に `--check` を足す。その関数が未知の引数として投げないようにする。
 3. `.pi/skills/adr/scripts/index.mjs`:
-   - update: `--check` を足す。`adr.md` を読み、抜けを出し、抜けがあれば終了コード1で終える。
+   - update: `--check` を足す。その処理では `adr.md` を読み、抜けを出す。抜けがあれば終了コード1で終える。
 4. `.pi/skills/adr/scripts/index.test.ts`:
-   - update: 骨組みのアサーションを新しい形にし、`checkEntry` のテスト（正常系、`C` の抜け、`F` の参照なし、未知の番号、重複の場合）を足す。
+   - update: 骨組みのアサーションを新しい骨組みの形に合わせ直す。そのうえで、`checkEntry` のテスト（正常系、`C` の抜け、`F` の参照なし、未知の番号、重複の場合）を足す。
      - update: (happy) すべての `C` と `F` を参照する選択肢 → 抜けは空
      - update: (error) `C2` を参照しない選択肢 → `C2` を抜けとして返す
      - update: (error) どの選択肢も参照しない `F3` → `F3` を抜けとして返す
@@ -343,7 +343,7 @@ export function checkEntry(markdown);
 ### Steps
 
 1. `.pi/skills/adr/SKILL.md`:
-   - update: エントリーの手順を、12段の流れに書き直す。`Scope` をチャットで合意し、骨組みを作り `Scope` と `Context` を書く。調査を合意し、先に議論する。調査と議論のループで `Context` と `Research & Trial` を足し、必要なら `Scope` を提案して変える。オーナーが求めたら選択肢を作り、`Decision` に `Status` 空で書く。`--check` を走らせ、決定し、`Definition` を書き、オーナーの確認を受ける。校正と `Affected` は、その間に次のエントリーへ進む。最後に、オーナーが全体を確かめる。決めない項目は、`Deferred` と理由を書く。
+   - update: エントリーの手順を、12段の流れに書き直す。`Scope` をチャットで合意し、骨組みを作り `Scope` と `Context` を書く。調査について合意し、先に議論する。調査と議論のループで文書に `Context` と `Research & Trial` を足し、必要なら `Scope` を提案して変える。オーナーが求めたら選択肢を作り、`Decision` に `Status` を空にして書く。`--check` を実行し、決定を下し、`Definition` を書き、オーナーの確認を受ける。作業者は、校正と `Affected` の合間に次のエントリーへ進む。最後に、オーナーが全体を確かめる。決めない項目は、`Deferred` として理由とともに書く。
 
 ### Verify
 
