@@ -81,7 +81,7 @@ While that review runs, write the next plan file: the writing of one file and th
 
 ### 7. Proofread
 
-After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files.
+After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files. The read is the `## Verify`'s read-through: the file whole, and every file it names.
 
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words

@@ -114,6 +114,7 @@
 - Unplanned:
   - `format.md` の `## Slices` の「the `Why`」が、plan md にない欄を指していた。通読で見つけ、「the `Design`」に直した
   - `plan/02-plan.md` の `Steps` の「156 行目」が、`df9379a` の変更で 173 行目に動いていた。通読で見つけ、直した
+  - `SKILL.md` の手順7（proofread）が、`format.md` の `## Verify` の通読の新しい形（ファイル全体と名指すファイル）を読んでいなかった。通読で見つけ、手順7に1文を足した
 - Commit: `df9379a`
 - Stopped: なし
 
