@@ -35,9 +35,19 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 - Status: **accepted** | **rejected**（理由）
 - Adopted:
-  - <採用した形>
+  - <A>: <説明>
+    - Add:
+      - <増えるもの>
+    - Update:
+      - <変わるもの（何がどうなるか）>
+    - Drop:
+      - <消えるもの>
+    - Keep:
+      - <触らないものとその理由>
+    - Cost:
+      - <他の選択肢と比べたときの相対的なコスト>
 - Options:
-  - <案>（採用しなかった理由）
+  - <B>: <説明> - <その選択肢を採用しなかった理由>
 
 ### Definition
 
@@ -55,8 +65,9 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 - `Research & Trial` — the facts the decision rests on. The record is the ADR's, not the definition's.
 - `Decision` — `Status`, `Adopted`, `Options`.
   - `Status` — `accepted` or `rejected`. A rejected entry carries its reason on the same line, in parentheses.
-  - `Adopted` — the shape that was taken. It stays empty for a rejected entry.
-  - `Options` — every option weighed, each with the reason it was not taken. A rejected entry lists the options the same way, because none of them was taken.
+  - `Adopted` — the shape that was taken, named `A`, with `Add`, `Update`, `Drop`, `Keep` and `Cost`. `Add` is what grows, `Update` what changes, `Drop` what disappears, and `Keep` what is left untouched with the reason. `Cost` is the relative cost against the other options. Each field holds one bullet or more; a field with nothing in it is `なし`. `Adopted` stays empty for a rejected entry.
+  - `Options` — every option considered, named `B`, `C` in order, each with the reason it was not taken. A rejected entry lists the options the same way, because none of them was taken.
+  - The chat's presentation is in `references/options.md`; this file holds how the decision is written to `adr.md`.
 - `Definition` — the parts of `DEFINITION.md` the entry relates to, and what happens to each. It is the last thing the entry leaves.
 
 ## Scope

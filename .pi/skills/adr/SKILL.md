@@ -85,7 +85,8 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 ### 3. Options
 
 - an option is a way the entry's intent is met, standing on what came back; it is not a list of what is possible
-- two to four of them, each with what it buys, what it costs, and where it may not hold
+- two to four of them, named A, B, C in order, written in the shape `references/options.md` gives
+- `Add` is what grows, `Update` what changes, `Drop` what disappears, `Keep` what is not touched (with the reason), and `Cost` the relative cost against the other options
 - where the holding point is a fact nobody has, the trial or the drop is what answers it
 - a trial runs only with the owner's agreement, and the agreement is asked before it starts, in every case
 - the trial is run on that option alone: on the `Stack`, or on what can be checked on the spot
@@ -95,7 +96,7 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 
 ### 4. Discussion
 
-- put them in front of the owner, and hear what each one means for the entry's intent
+- put them in front of the owner in the shape `references/options.md` gives, and hear what each one means for the entry's intent
 - expect the talk to change them: an option may be sharpened, split or dropped here
 - drop the ones that cannot work in this setting, with the line that says why
 - an option left standing keeps its line, and the entry's `Options` carries it
@@ -109,6 +110,8 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 ### 6. Write
 
 - write the entry into `adr.md`: the `Context`, the `Scope`, the `Research & Trial`, the `Decision` and the `Definition`
+- the `Adopted` carries the shape that was taken, named A, with `Add`, `Update`, `Drop`, `Keep` and `Cost`, in the shape `references/adr.format.md` gives
+- the `Options` carry the rest, named B, C in order, each with the reason it was not taken
 - the entry's question is in its heading, and the number runs from `01`
 - the parts of `DEFINITION.md` the entry relates to: `Unit`, `Who`, `Stack`, `What`
 - each part carries one of four operations: `(added)`, `(updated)`, `(dropped)`, `(kept)`

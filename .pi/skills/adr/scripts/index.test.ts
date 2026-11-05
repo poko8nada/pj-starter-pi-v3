@@ -171,10 +171,14 @@ describe('parseArgs', () => {
 });
 
 describe('entrySkeleton', () => {
-  it('採用した形と採用しなかった理由を含む', () => {
+  it('採用した形の4つの操作と、採用しなかった理由を含む', () => {
     const skeleton = entrySkeleton(1);
-    expect(skeleton).toContain('<採用した形>');
-    expect(skeleton).toContain('（採用しなかった理由）');
+    expect(skeleton).toContain('Add:');
+    expect(skeleton).toContain('Update:');
+    expect(skeleton).toContain('Drop:');
+    expect(skeleton).toContain('Keep:');
+    expect(skeleton).toContain('Cost:');
+    expect(skeleton).toContain('採用しなかった理由');
   });
 
   it('adr.format.md のエントリーの見出しと一致する', () => {
