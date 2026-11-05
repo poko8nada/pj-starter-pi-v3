@@ -2,6 +2,7 @@
 // Usage: node scripts/checks/ja-check.mjs <file1> <file2> ...
 // Mechanism: reads scripts/checks/ja-check.json with fs.readFileSync and JSON.parse,
 // outputs header, per-hit context lines, No findings or No config lines, closing counts.
+// Skips files matching exclude without reading.
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -50,10 +51,11 @@ if (!isRecord(config)) {
 
 const keys = Object.keys(config);
 if (
-  keys.length !== 3 ||
+  keys.length !== 4 ||
   !keys.includes('error') ||
   !keys.includes('warn') ||
-  !keys.includes('exception')
+  !keys.includes('exception') ||
+  !keys.includes('exclude')
 ) {
   failConfig();
 }
@@ -62,12 +64,18 @@ if (!isRecord(config.error) || !isRecord(config.warn)) {
   failConfig();
 }
 
-if (!Array.isArray(config.exception)) {
+if (!Array.isArray(config.exception) || !Array.isArray(config.exclude)) {
   failConfig();
 }
 
 for (const word of config.exception) {
   if (typeof word !== 'string') {
+    failConfig();
+  }
+}
+
+for (const pattern of config.exclude) {
+  if (typeof pattern !== 'string') {
     failConfig();
   }
 }
@@ -83,6 +91,28 @@ for (const group of [config.error, config.warn]) {
 const errorEntries = Object.entries(config.error);
 const warnEntries = Object.entries(config.warn);
 const exceptionWords = config.exception;
+const excludePatterns = config.exclude;
+const configRelPosix = path.relative(root, configPath).split(path.sep).join('/');
+
+/**
+ * Argument may be relative or absolute.
+ * Converts to a relative path from the repo root with `/` separators,
+ * then matches against each `exclude` pattern and the config file itself.
+ */
+function isExcluded(file) {
+  const abs = path.isAbsolute(file) ? file : path.join(root, file);
+  const relPosix = path.relative(root, abs).split(path.sep).join('/');
+  if (relPosix === configRelPosix) {
+    return true;
+  }
+  for (const pattern of excludePatterns) {
+    const posixPattern = pattern.split(path.sep).join('/');
+    if (path.matchesGlob(relPosix, posixPattern)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // True when the hit at `at` with length `word.length` lies inside an exception word.
 // L is the exception length, N is the hit length; check each k in 0..L-N
@@ -132,14 +162,6 @@ function contextSnippet(line, word, at) {
   return `(…${before}[${word}]${after}…)`;
 }
 
-function isZeroHeading(line) {
-  return /^##\s+0\.x\.x\b/.test(line);
-}
-
-function isHeading(line) {
-  return /^##\s+/.test(line);
-}
-
 const files = process.argv.slice(2);
 let errors = 0;
 let warns = 0;
@@ -147,33 +169,19 @@ let warns = 0;
 printHeader();
 
 for (const file of files) {
-  const abs = path.isAbsolute(file) ? file : path.join(root, file);
-  if (abs === configPath) {
+  if (isExcluded(file)) {
     continue;
   }
+  const abs = path.isAbsolute(file) ? file : path.join(root, file);
   let content;
   try {
     content = fs.readFileSync(abs, 'utf8');
   } catch {
     continue;
   }
-  const isRoadmap = path.basename(abs) === 'ROADMAP.md';
   const lines = content.split('\n');
-  let inZero = false;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (isRoadmap) {
-      if (isZeroHeading(line)) {
-        inZero = true;
-        continue;
-      }
-      if (isHeading(line)) {
-        inZero = false;
-      }
-      if (inZero) {
-        continue;
-      }
-    }
     for (const [word, replacement] of errorEntries) {
       const at = findUnquoted(line, word);
       if (at !== -1) {

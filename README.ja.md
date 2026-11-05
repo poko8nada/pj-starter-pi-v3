@@ -47,7 +47,7 @@ English: [README.md](README.md)
 - test:
   - `vitest.config.ts` - プロダクト用の設定で、harness のパスを除外する。
   - `vitest.starter.config.ts` - スターター用の設定で、すべてのテストを対象にする。
-- japanese-check: `scripts/checks/ja-check.mjs` - 禁止語の出現を数え、error と warn で報告する。
+- japanese-check: `scripts/checks/ja-check.mjs` - 禁止語の出現を数え、error と warn で報告し、設定の `exclude` に書いたパスは検査しない。
 - localhook: `lefthook`
   - pre-commit: 変更分に書式と lint と型と関連テストと日本語検査を実行する。
   - pre-push: 全体の型とテストを実行する。
