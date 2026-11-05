@@ -55,15 +55,22 @@ scripts/checks/ja-check.test.ts   update
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 旧配置を示す文書・コメントはなく、移動で冗長になる文もないことを確かめた（scripts/checks/ja-check.test.ts:1-8、scripts/checks/ja-check.test.ts:290-389）。
+- Unlisted: なし — コード差分はFiles指定の1件のみで、plan mdの7→8件修正はVerifyの自己訂正でありFilesの対象外であることを確かめた（cycles/261105-055-dev/plan/ex-exclude-test-cases.md:37、scripts/checks/ja-check.test.ts:343-388）。
+- Gaps: なし — 新規happyの`./`除外と移動したerror 3件の振る舞いはSteps通りに検査され、Verifyの8件・happy 5件＋error 3件の数え方とも一致することを確かめた（scripts/checks/ja-check.test.ts:343-388、cycles/261105-055-dev/plan/ex-exclude-test-cases.md:30-39）。
+- Unproven: なし — `./`正規化（scripts/checks/ja-check.mjs:102-114）を壊せば新規happyが、`exclude`検証（scripts/checks/ja-check.mjs:58-77）を壊せば対応するerrorが、それぞれ赤くなることを実装と照合して確かめた（scripts/checks/ja-check.test.ts:343-388）。
+- Noise: なし — `ROADMAP.md`・`./ROADMAP.md`・header 2行・exit 0/1はいずれも計画が決めた値であり、型やスキーマが保証する前提の再現や魔数・決め打ちの新規導入はないことを確かめた（scripts/checks/ja-check.test.ts:343-388）。
+- Doubts: なし
 
 ## Acceptance
 
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:related scripts/checks/ja-check.test.ts` — 33 件が通過。
+  - `pnpm test:run` — 63 ファイル、762 件が通過。
+  - `pnpm typecheck` — `root: ok`、`.pi: ok`。
+  - `pnpm lint` と `pnpm format:check` — 通過。
+  - `grep` ツールで `describe(` を `scripts/checks/ja-check.test.ts` から検索し、`describe('ja-check exclude')`（290 行）から次の `describe(`（391 行）までの間に `it('` が 8 件（291、304、317、330、343、356、370、380 行）あり、happy 5 件のあとに error 3 件であることを確かめた。
+  - 2 つ目の `describe('ja-check')` から `exclude` の検証が消えていることを、同じ検索結果で確かめた。
+  - 差分を通読した。移した 3 件は題名と期待結果が変わらず、新しい 1 件は引数 `./ROADMAP.md` で終了コード 0 と `No findings` を確かめる。振る舞いを変えないテストだけの変更なので、壊して赤になるかの確認は行わない。
+- Findings: なし
+- Doubts: なし
