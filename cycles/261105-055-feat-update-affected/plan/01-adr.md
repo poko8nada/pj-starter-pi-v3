@@ -405,7 +405,7 @@ export function checkEntry(markdown);
     - left: 05 の作業として、同じサイクルで直した
 - Unplanned:
   - スキル全体と名指すファイルの通読で、7つの不整合を見つけて直した（冒頭の一覧、`Proofread` の3か所、`Files` の2か所、手順6の参照）
-- Commit:
+- Commit: `d330729`
 - Stopped: なし
 
 ## Work Review
