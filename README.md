@@ -47,7 +47,7 @@ Automated gates keep style, correctness, behavior, and wording consistent on eve
 - test:
   - `vitest.config.ts` - Product config excluding harness paths.
   - `vitest.starter.config.ts` - Starter config covering all tests.
-- japanese-check: `scripts/checks/ja-check.mjs` - Reports banned Japanese words with error and warn counts, skips the paths listed in exclude.
+- japanese-check: `scripts/checks/ja-check.mjs` - Reports banned Japanese words with error and warn counts, and skips the paths listed in `exclude`.
 - localhook: `lefthook`
   - pre-commit: Runs format, lint, staged typecheck, related tests, and japanese-check on changed parts.
   - pre-push: Runs full typecheck and tests.
