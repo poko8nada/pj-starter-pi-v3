@@ -141,6 +141,7 @@
   - `pnpm test:run` — 63ファイル、757件 pass。
   - 各スライスの `Verify` の `Always`。
   - `Added`: a `base` plan's look — オーナーの look（`Doubts` に下記）。
+  - 所有者の通読の修正の後に再実行: `pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`ja-check` — すべて緑。
 - Findings: なし
 - Doubts:
   - slice 1 は、オーナーの OK の前にコミットした（`df9379a`）。
