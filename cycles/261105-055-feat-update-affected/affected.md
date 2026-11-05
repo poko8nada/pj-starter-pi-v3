@@ -4,158 +4,41 @@
 
 ### Code
 
-#### .pi/skills/adr/references/tasks.md
-
-- Search:
-  - 01: `references/tasks.md`（.pi/skills/adr配下） - 1件/1ファイル: SKILL.md:29の短縮参照のみ当たり、実行時の手渡しは見えない
-  - 02: `Look at the affected`（リポジトリ全体） - 10件/4ファイル: SKILL.md手順7の言い換えや任務の運用結果は見えない
-  - 03: `.pi/skills/adr/references/tasks.md`（リポジトリ全体） - 15件/10ファイル: 大半はcycles/の記録であり、短縮参照のSKILL.md:29は見えない
-- Adr: ADRのContextの手順の不足（adr.md:10-11）、Scopeのprose in（adr.md:20）・behaviour in（adr.md:21）、DecisionのAdoptedのAdd（adr.md:58-75）とUpdateの1件目（adr.md:77）およびDrop（adr.md:81-83）と一致する。現文は20-52行目の11手順と9問いの手渡し文である。
-- Direction: _Read by_
-- Relation: 変更が書き直す相手であり、「Look at the affected」の全文が対象の導き方と表記の広げ方と探し方と判定と反復と停止と振り返りの並びに置き換えられる。
-- Role: 調査役へ渡す文で、調べ方の規則を渡す内部の文書である。
-- Role change: **Change**
-  - 調べ方の規則と流れが変わる。何を名詞とするかと5つの表記と手がかりと反復と停止と振り返りが足され、利用者数と可視性と境界は変わらない。
-- Adjustment: No
-
-#### .pi/skills/adr/SKILL.md
-
-- Search:
-  - 01: `references/tasks.md`（.pi/skills/adr配下） - 1件/1ファイル: SKILL.md:29のみ当たり、他スキルのtasks.mdや動的な手渡しは見えない
-  - 02: `Look at the affected`（リポジトリ全体） - 10件/4ファイル: 手順7の言い換えや任務の運用結果は見えない
-  - 03: `affected.format.md`（.pi/skills/adr配下） - 7件/4ファイル: SKILL.md:17・:19・:123の3件が当たり、書式の中身の一致や書き込みの実行結果は見えない
-- Adr: ADRのScopeのprose inのSKILL.mdの7の1文の修正（adr.md:20）とUpdateの2件目（adr.md:78）とDefinitionのUnit.adr-skillのkept（adr.md:89）と一致する。現文120-125行目はaffectedをresearch役が報告しtasks.mdの形で書くと定める。
-- Direction: _Read by_
-- Relation: 変更が規則と食い違う1文だけを直す相手であり、tasks.mdの手渡し文を指す手順7の文になる。
-- Role: サイクルの決定を記録する技能の手順で、入口から調査へ渡す内部の文書である。
-- Role change: **Change**
-  - 手順7の規則の文だけが変わり、流れと利用者数と可視性と境界は変わらない。
-- Adjustment: No
-
-#### .pi/extensions/consult/types.json
-
-- Search:
-  - 01: `.pi/extensions/consult/types.json`（リポジトリ全体） - 38件/20ファイル: 大半はcycles/の記録であり、呼び出しごとの読み込みや上書き不可の運用は見えない
-  - 02: `research`（.pi/extensions/consult配下） - 9件/6ファイル: types.json:4の定義を含み、実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-  - 03: `bash`（.pi/extensions/consult/types.json） - 2件/1ファイル: types.json:23・:37のみ当たり、接頭辞の照合意味や実行時のコマンドは見えない
-- Adr: ADRのScopeのdependency in（adr.md:22）とDecisionのAdoptedのポリシー（adr.md:75）とUpdateの3件目（adr.md:79）とDefinitionのUnit.subagent-consultのkeptの調査役が使える道具が変わる点（adr.md:90）と一致する。現文のresearchはtoolsが10件でbashを含まず、bashが空である。
-- Direction: _Read by_
-- Relation: 変更がresearchのtoolsにbashを足しbashに4接頭辞を入れる相手であり、toolsとbashの2か所が変わる。
-- Role: 役割の定義の実物で、呼び出しごとに読まれて子に渡す道具と許可を決める共有の台帳である。
-- Role change: **Change**
-  - 許す道具と打てる接頭辞が変わり、書ける所の境界はそのままで打てる読み取りのbashだけ広がる。利用者数と隔離と上限と任務文は変わらない。
-- Adjustment: No
-
-#### .pi/skills/adr/references/affected.format.md
-
-- Search:
-  - 01: `affected.format.md`（.pi/skills/adr配下） - 7件/4ファイル: SKILL.mdの3件とaffected.mjsの2件とindex.test.ts:287とtasks.md:51が当たり、書式の中身の一致や書き込みの実行結果は見えない
-  - 02: `references/affected.format.md`（.pi/skills/adr配下） - 3件/3ファイル: 上の7件のうち短縮参照のみ当たり、完全パスの言及は見えない
-- Adr: ADRのScopeのnaming out（adr.md:23）・refactor out（adr.md:24）とDefinitionのUnit.adr-skillのkeptの記録できることは変わらない点（adr.md:89）と一致する。現文は1見出し1パスの7バレットの形を持つ。
-- Direction: _Read_
-- Relation: 変更後のtasks.mdが書き先の形として指す書式であり、見出しと7バレットの並びを支える。
-- Role: 記録の形を定める書式で、調査の書き方の内部の基準面である。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/policy/types.ts
-
-- Search:
-  - 01: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: CONFIG_FILEの定義とloadTypesと注記が当たり、呼び出しごとの読み込みや上書き不可の運用は見えない
-  - 02: `bash`（.pi/extensions/consult配下） - 55件/10ファイル: KNOWN_TOOLSのbashとbash配列のスキーマが当たり、解決後絶対パスでの判定や環境展開の動的挙動は見えない
-- Adr: ADRのScopeのdependency inが形を変えない点およびResearchの索引器を前提にしない点（adr.md:49）と一致し、現文はKNOWN_TOOLSにbashを持ちbashを文字列配列で受ける。
-- Direction: _Read_
-- Relation: 変更が値を書き込む定義であり、形と検証と解決を変えずに research の tools と bash を受け止める。
-- Role: 役割の形を定めるスキーマで、壊れた設定を投げる検証である。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/run/subagent.ts
-
-- Search:
-  - 01: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: subagent.ts:82の子は読まない注記が当たり、呼び出しごとの読み込みや上書き不可の運用は見えない
-  - 02: `research`（.pi/extensions/consult配下） - 9件/6ファイル: 実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-- Adr: ADRのContextの調査役に読み取りのbashを許す点（adr.md:13）とScopeのdependency in（adr.md:22）と一致し、現文はpathsとbashをCONSULT_POLICYに載せて子に渡す。
-- Direction: _Read by_
-- Relation: 変更が流すpathsとbashを受けて環境に載せ、researchの子に渡す側である。
-- Role: 実行の経路で、上限と許可だけを渡して types.json を子に読ませない受け渡しである。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/tool/consult.ts
-
-- Search:
-  - 01: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: consult.ts:5の設定はtypes.jsonが持つ注記が当たり、呼び出しごとの読み込みや上書き不可の運用は見えない
-  - 02: `research`（.pi/extensions/consult配下） - 9件/6ファイル: 実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-- Adr: ADRのScopeのdependency in（adr.md:22）とDefinitionのUnit.subagent-consultのkeptの走らせ方は変わらない点（adr.md:90）と一致し、現文は呼び出しごとにresolveTypeで引き上書きの窓口を作らない。
-- Direction: _Read by_
-- Relation: 変更後のresearchを呼び出しごとに引き、CONSULT_POLICYに載せる側である。
-- Role: 入口の1回の呼び出しで、役割を解決して行き先を決める関数である。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/sub/guard.ts
-
-- Search:
-  - 01: `bash`（.pi/extensions/consult配下） - 55件/10ファイル: guard.tsの16件の判定が当たり、解決後絶対パスでの判定や環境展開の動的挙動は見えない
-  - 02: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: 呼び出しごとの読み込みや上書き不可の運用は見えない
-- Adr: ADRのScopeのdependency inの読み取りのbashの点（adr.md:22）と一致し、現文は bash を許可された接頭辞だけ通し、読みは縛らない。
-- Direction: _Read_
-- Relation: 変更が頼る判定であり、WRITE_TOOLSとcommandAllowedの接頭辞照合でbashを止める境界である。
-- Role: 子側のガードで、CONSULT_POLICY を規則にして書き込みと bash だけを止める境界である。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/README.md
-
-- Search:
-  - 01: `research`（.pi/extensions/consult配下） - 9件/6ファイル: README.md:24のRoles表のresearch行が当たり、実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-  - 02: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: README.md:20・:34・:44・:193・:197の5件が当たり、呼び出しごとの読み込みや上書き不可の運用は見えない
-  - 03: `bash`（.pi/extensions/consult配下） - 55件/10ファイル: README.md:25・:27-28・:32の説明が当たり、解決後絶対パスでの判定や環境展開の動的挙動は見えない
-- Adr: ADRのScopeのdependency in（adr.md:22）と一致するが、現文24行目のresearch行はbashを持たず、変更後は実物と合わなくなる。
-- Direction: _Read by_
-- Relation: 変更後の実物を写すRoles表の持ち主であり、research行の道具欄が実物とずれる相手である。
-- Role: 役割の方針の写しで、types.jsonを変えたら次から効くことを伝える案内である。
-- Role change: Not change
-- Adjustment: **YES**
-  - research行の道具欄にbashを足し、bash欄の読み取り接頭辞を実物に合わせる。
-
-#### .pi/extensions/consult/policy/types.test.ts
-
-- Search:
-  - 01: `research`（.pi/extensions/consult配下） - 9件/6ファイル: types.test.ts:107-115の実物の確かめが当たり、実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-  - 02: `types.json`（.pi/extensions/consult配下） - 15件/9ファイル: 呼び出しごとの読み込みや上書き不可の運用は見えない
-- Adr: ADRのScopeのerrors in（adr.md:27）が検査を調査で使わない点およびcompatibility out（adr.md:25）と一致し、現文107-115行目はresearchのtoolsとpathsを実物で確かめる。
-- Direction: _Check_
-- Relation: 変更の実物のresearchの値を確かめる側であり、toolsの4件とpathsの1件をなぞる。
-- Role: 型のガードで、実物を読んで読み込みと引当てを確かめる検査である。
-- Role change: Not change
-- Adjustment: No
-
-#### .pi/extensions/consult/sub/guard.test.ts
-
-- Search:
-  - 01: `bash`（.pi/extensions/consult配下） - 55件/10ファイル: guard.test.tsの24件の判定の確かめが当たり、解決後絶対パスでの判定や環境展開の動的挙動は見えない
-  - 02: `research`（.pi/extensions/consult配下） - 9件/6ファイル: 実行時に渡るrole引数の動的値とモデル解決の成否は見えない
-- Adr: ADRのScopeのerrors inが検査を調査で使わない点（adr.md:27）と一致し、現文は秘密の名前と接頭辞の語一致と壊れた許可の止め方を直書きのlimitsで確かめる。
-- Direction: _Check_
-- Relation: 変更が頼るbashの止め方を確かめる側であり、実物のresearchの値によらず判定をなぞる。
-- Role: 秘密のガードと役割の許可の検査で、直書きの limits で確かめる検査である。
-- Role change: Not change
-- Adjustment: No
+- Path: `.pi/skills/adr/references/tasks.md`
+  - Kind: `doc`
+  - Edge: `names` `.pi/skills/adr/references/affected.format.md`
+- Path: `.pi/skills/adr/SKILL.md`
+  - Kind: `doc`
+  - Edge: `names` `.pi/skills/adr/references/tasks.md`, `.pi/skills/adr/references/affected.format.md`
+- Path: `.pi/extensions/consult/types.json`
+  - Kind: `config`
+- Path: `.pi/skills/adr/references/affected.format.md`
+  - Kind: `doc`
+- Path: `.pi/extensions/consult/policy/types.ts`
+  - Kind: `module`
+  - Edge: `names` `.pi/extensions/consult/types.json`
+- Path: `.pi/extensions/consult/run/subagent.ts`
+  - Kind: `module`
+  - Edge: `names` `.pi/extensions/consult/types.json`
+- Path: `.pi/extensions/consult/tool/consult.ts`
+  - Kind: `module`
+  - Edge: `names` `.pi/extensions/consult/types.json`
+- Path: `.pi/extensions/consult/sub/guard.ts`
+  - Kind: `module`
+  - Edge: `names` `.pi/extensions/consult/types.json`
+- Path: `.pi/extensions/consult/README.md`
+  - Kind: `doc`
+  - Edge: `names` `.pi/extensions/consult/types.json`
+- Path: `.pi/extensions/consult/policy/types.test.ts`
+  - Kind: `test`
+  - Edge: `checks` `.pi/extensions/consult/policy/types.ts`
+- Path: `.pi/extensions/consult/sub/guard.test.ts`
+  - Kind: `test`
+  - Edge: `checks` `.pi/extensions/consult/sub/guard.ts`
 
 ### External
 
-#### なし
-
-- Search:
-  - 01: `https?://`の外部参照（.pi/extensions/consult配下） - 0件/0ファイル: モデル名が指す外部提供者はURLに出ないため見えない
-  - 02: 除外規定の行（.pi/skills/adr/references/tasks.md） - 1件/1ファイル: 規定が指す外部の品目自体は見えない
-- Adr: ADRのScopeのsecurity out（adr.md:29）・deploy out（adr.md:31）・migration out（adr.md:32）・logs and monitoring out（adr.md:33）と一致し、外部の品目はない。
-- Relation: 変更がリポジトリの外に作る・変える・読む対象はなく、外部との受け渡しは発生しない。
-- Role: リポジトリの外側に置かれる品目で、ここでは該当がないことを示す位置である。
-- Role change: Not change
-- Adjustment: No
+なし
 
 ## 02: 記録は何を残せば足りるか。落とす情報の役割はどこへ移るか
 

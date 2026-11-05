@@ -7,10 +7,10 @@
 ## Design
 
 - Inside:
-  - Modules: なし。`adr.mjs` と `affected.mjs` は、ADR と affected の別の骨組みで、形も対象も違う。`adr.format.md` と `options.md` は、記録の形と提示の形で、役割が違う。`adr/SKILL.md` の手順 3・4・6 と手順 7 は、選択肢の提示と調査の手順で、1つの文書の中で別のセクションである。統合も分割もしない。
-  - Dirs: なし。`references/` に `options.md` が増えるだけで、統合・分割・移動はない。
+  - Modules: なし。`adr.mjs` と `affected.mjs` は、ADR用と affected 用の別の骨組みであり、形も対象も違う。`adr.format.md` と `options.md` は、前者は記録の形を定め、後者は提示の形を定めるもので、役割が違う。`adr/SKILL.md` の手順 3・4・6は選択肢の提示であり、手順 7は調査の手順である。いずれも1つの文書の中の別のセクションであり、これらは統合も分割もしない。
+  - Dirs: なし。`references/` に `options.md` が増えるだけであり、ディレクトリの統合・分割・移動はない。
 - Outside:
-  - Extract: なし。`adr/SKILL.md` と `plan/SKILL.md` の共通化は、スキルをまたぐので扱わない。3つの骨組みの共通化も、形が違うので成り立たない。
+  - Extract: なし。`adr/SKILL.md` と `plan/SKILL.md` の共通化は、作業が2つのスキルにまたがるため、このプランでは扱わない。3つの骨組みは形が違うため、共通化は成り立たない。
   - Colocate: なし。
 
 ## Files
@@ -47,7 +47,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/options.md`:
-   - add: 選択肢の提示の型と規則を持つ新しい文書を作る。
+   - add: 選択肢の提示の型と規則を定める新しい文書を作る。
      ```md
      # Options
 
@@ -82,7 +82,7 @@ cycles/261105-055-feat-update-affected/
      A field with nothing in it is `なし`; do not leave it out.
      ```
 2. `.pi/skills/adr/references/adr.format.md`:
-   - update: `Decision` の `Adopted` と `Options` を、4つの操作と `Cost` の形にする。
+   - update: `Decision` の `Adopted` と `Options` を、4つの操作（Add／Update／Drop／Keep）と `Cost` の形にする。
      ```md
      ### Decision
 
@@ -103,14 +103,14 @@ cycles/261105-055-feat-update-affected/
        - <B>: <説明> - <採用しなかった理由>
      ```
 3. `.pi/skills/adr/scripts/adr.mjs`:
-   - update: `adrSkeleton` の `Decision` の骨組みを、`Add` / `Update` / `Drop` / `Keep` / `Cost` を持つ形にする。
+   - update: `adrSkeleton` の `Decision` の骨組みに、`Add` / `Update` / `Drop` / `Keep` / `Cost` を加える。
 4. `.pi/skills/adr/scripts/index.test.ts`:
-   - update: `adrSkeleton` の `Decision` の断言を、`Add` / `Update` / `Drop` / `Keep` / `Cost` に合わせる。
-     - update: (happy) `adrSkeleton(1)` を書く → `Adopted` の下に `Add` / `Update` / `Drop` / `Keep` / `Cost` が並ぶ
-     - update: (error) `Decision` の見出しを削る → 検査が赤になる
-     - add: (empty) `Options` に案がない → `Add` などの項目は出ず、`Status` だけが出る
+   - update: `adrSkeleton` の `Decision` のアサーションを、`Add` / `Update` / `Drop` / `Keep` / `Cost` に合わせる。
+     - update: (happy) `adrSkeleton(1)` を呼び出して書くと、`Adopted` の下に `Add` / `Update` / `Drop` / `Keep` / `Cost` が並ぶ
+     - update: (error) `Decision` の見出しを削って書くと、検査が赤になる
+     - add: (empty) `Options` に案がないときは、`Add` などの項目は出ず、`Status` だけが出る
 5. `.pi/skills/adr/SKILL.md`:
-   - update: 手順 3（Options）・4（Discussion）・6（Write）を、`references/options.md` を指す形に書き直す。散文の「何を得て、何をコストし、どこで成り立たないか」を、選択肢の側から落とす。手順 3 は `references/options.md` の型で提示し、手順 6 は `adr.format.md` の形で書く、とする。
+   - update: 手順 3（Options）・4（Discussion）・6（Write）について、`references/options.md` を指すように書き直す。散文の「何を得て、何をコストし、どこで成り立たないか」を、選択肢の記述から落とす。手順 3 は `references/options.md` の型で提示し、手順 6 は `adr.format.md` の形で書く。
 
 ### Verify
 
@@ -123,7 +123,6 @@ cycles/261105-055-feat-update-affected/
   - 変えた5つのファイル（`options.md`、`adr.format.md`、`adr.mjs`、`index.test.ts`、`SKILL.md`）を、変える前と並べて読む
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
-  - a proofread — plan md（`cycles/261105-055-feat-update-affected/plan/01-adr.md`）と `.pi/skills/adr/references/format.md` を、スキルの proofread 文で
 
 ## 2.affected の形
 
@@ -136,7 +135,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/affected.format.md`:
-   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにし、`### External` を `- Name:` / `Kind:` / `Used by:` にする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を落とす。外に何もないときは `なし`、導けなかった事実は記録に書かず報告に書く。
+   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにする。`### External` を `- Name:` / `Kind:` / `Used by:` にする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を落とす。外に何もないときは `なし` と書く。導き出せなかった事実は記録には書かず、報告に書く。
      ```md
      ### Code
 
@@ -151,16 +150,16 @@ cycles/261105-055-feat-update-affected/
        - Used by: `<それを使うパス>`
      ```
 2. `.pi/skills/adr/scripts/affected.mjs`:
-   - update: `affectedEntrySkeleton` を、上の形にする。
+   - update: `affectedEntrySkeleton` を、前項のブロックの形にする。
 3. `.pi/skills/adr/scripts/index.test.ts`:
-   - update: `affectedEntrySkeleton` の断言を、上の形に合わせる。
-     - update: (happy) `affectedEntrySkeleton(1)` を書く → `Path` / `Kind` / `Edge` と `Name` / `Used by` が並ぶ
-     - update: (error) `Kind` の行を削る → 検査が赤になる
-     - add: (empty) 外に何もない → `### External` の下に `なし` が出る
+   - update: `affectedEntrySkeleton` のアサーションを、前項のブロックの形に合わせる。
+     - update: (happy) `affectedEntrySkeleton(1)` を呼び出して書くと、`Path` / `Kind` / `Edge` と `Name` / `Used by` が並ぶ
+     - update: (error) `Kind` の行を削って書くと、検査が赤になる
+     - add: (empty) 外に何もないときは、`### External` の下に `なし` が出る
 4. `cycles/261105-055-feat-update-affected/affected.md`:
-   - update: `## 01:` の11のパスを、上の形に書き直す。`## 02:` から `## 05:` は、旧形のまま残す（変更の前に決まったエントリーの記録であり、この plan の対象ではない）。
+   - update: `## 01:` の11のパスを、前項のブロックの形に書き直す。`## 02:` から `## 05:` は、旧形のまま残す（変更前に決まったエントリーの記録であり、このプランの対象ではない）。
 5. `.pi/skills/adr/references/tasks.md`:
-   - update: 51 行目の `seven bullets` を、新しい形を指す文に変える。
+   - update: 51 行目の `seven bullets` を、新しい形を示す文に変える。
 
 ### Verify
 
@@ -173,7 +172,7 @@ cycles/261105-055-feat-update-affected/
   - 変えた4つのファイル（`affected.format.md`、`affected.mjs`、`index.test.ts`、`cycles/.../affected.md`）と `tasks.md` を、変える前と並べて読む
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
-  - a proofread — plan md（`cycles/261105-055-feat-update-affected/plan/01-adr.md`）と `.pi/skills/adr/references/format.md` を、スキルの proofread 文で
+  - a proofread — `cycles/261105-055-feat-update-affected/affected.md` の `## 01:`（このスライスが変える日本語の文書）
 
 ## 3.調査の手順と道具
 
@@ -186,7 +185,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/tasks.md`:
-   - update: `## Look at the affected` を、次の手順に書き直す。`## How to look` の11項目と `## What to answer` の9項目、検索名に範囲を書かせる形、前方と後方に分ける言い方は、落とす。
+   - update: `## Look at the affected` を、次の手順に書き直す。`## How to look` の11項目と `## What to answer` の9項目を落とす。検索名ごとに範囲を書く形と、前方と後方に分ける表現も落とす。
      ```md
      ## Look at the affected
 
@@ -212,9 +211,9 @@ cycles/261105-055-feat-update-affected/
      18. The policy: add `bash` to `.pi/extensions/consult/types.json`'s `research` tools; `bash` is `["git grep", "git ls-files", "git log", "rg"]`; no writing command and no `--run`.
      ```
 2. `.pi/skills/adr/SKILL.md`:
-   - update: 手順 7 の「規則と食い違っている1文」を、`references/tasks.md` の手順を指す文に変える。
+   - update: 手順 7 の「規則と食い違っている1文」を、`references/tasks.md` の手順を示す文に変える。
 3. `.pi/extensions/consult/types.json`:
-   - update: `research` の `tools` に `bash` を足し、`bash` を接頭辞の配列にする。ほかの道具は落とさない。
+   - update: `research` の `tools` に `bash` を足し、`bash` をプレフィックスの配列にする。ほかのツールは落とさない。
      ```json
      "tools": [
        "read",
@@ -232,7 +231,7 @@ cycles/261105-055-feat-update-affected/
      "bash": ["git grep", "git ls-files", "git log", "rg"],
      ```
 4. `.pi/extensions/consult/README.md`:
-   - update: `research` が `bash` を使えることと、接頭辞の一覧を書く。
+   - update: `research` が `bash` を使えることと、プレフィックスの一覧を同じファイルに書く。
 
 ### Verify
 
@@ -245,17 +244,16 @@ cycles/261105-055-feat-update-affected/
   - 変えた4つのファイル（`tasks.md`、`SKILL.md`、`types.json`、`README.md`）を、変える前と並べて読む
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
-  - a proofread — plan md（`cycles/261105-055-feat-update-affected/plan/01-adr.md`）と `.pi/skills/adr/references/format.md` を、スキルの proofread 文で
   - other — `node -e` を使わず、`types.json` を `read` で読み、`research` の `bash` が4つの接頭辞を持つことを確かめる
 
 ## Notes
 
 ### Slice 1: 選択肢の提示
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: `adr.mjs` の骨組みの語を、`adr.format.md` の語に揃えた（proofread の後に、私が行った）
+- Commit: `bf3039f`
+- Stopped: なし
 
 ### Slice 2: affected の形
 

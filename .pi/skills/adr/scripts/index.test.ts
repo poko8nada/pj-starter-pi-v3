@@ -288,21 +288,16 @@ describe('openCycleDir', () => {
 });
 
 describe('affectedEntrySkeleton', () => {
-  it('affected.format.md の見出しとバレットを持つ', () => {
+  it('affected.format.md の見出しとブロックを持つ', () => {
     const skeleton = affectedEntrySkeleton(1);
     const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
-    expect(headings).toEqual([
-      '## 01: <問い>',
-      '### Code',
-      '#### <パス>',
-      '### External',
-      '#### <外のもの>',
-    ]);
-    expect(skeleton).toContain('- Search:');
-    expect(skeleton).toContain('- Adr:');
-    expect(skeleton).toContain('- Direction: _Read_ | _Read by_ | _Check_ | _Generate_');
-    expect(skeleton).toContain('- Role change: **Change** | Not change');
-    expect(skeleton).toContain('- Adjustment: **YES** | No');
+    expect(headings).toEqual(['## 01: <問い>', '### Code', '### External']);
+    expect(skeleton).toContain('- Path: `');
+    expect(skeleton).toContain('- Kind: `module` | `test` | `doc` | `config` | `artifact` | `dir`');
+    expect(skeleton).toContain('- Edge: `needs` | `names` | `mentions` | `checks` | `contains` `');
+    expect(skeleton).toContain('- Name: `');
+    expect(skeleton).toContain('- Kind: `env` | `contract` | `data` | `path` | `limit`');
+    expect(skeleton).toContain('- Used by: `');
   });
 
   it('affected.md の骨組みは # Affected で始まり、渡したエントリー番号を持つ', () => {
