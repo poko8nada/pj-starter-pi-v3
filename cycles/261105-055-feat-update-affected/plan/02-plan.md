@@ -67,6 +67,10 @@
         - add: <空の dir を作る、または、最後のファイルを消して dir を残す>
      ````
    - update: `## Shape` の `### Steps` の例を、上の形にする。
+   - update: `## Verify` の `Always` の5行目と6行目を、下の1行に変える（5行目は消える）。
+     ```md
+     - the read-through: read every changed file whole, and every file it names whole; follow the procedure in the order the file gives, as the one who acts on it; check the number, the path, the name and the shape at each place against what it points to; fix any inconsistency, and write the fix in `Unplanned`
+     ```
    - update: `## Files` の「affected の `Code` のパスと `Direction` が `Files` の行である」を、「plan が affected のパスを読み、自分で印を決める」に変える。ツリーのディレクトリの行に、空の dir と残す dir の印（`add` / `drop`）を付けられるようにする。
    - update: `Scope` を越えた step を書かない規則（156 行目）を、問い 3 と 4 の対象は越えても書く形に変える。
 2. `.pi/skills/plan/SKILL.md`:
@@ -97,7 +101,7 @@
   - `pnpm lint`
   - `pnpm format:check`
   - `Role change`、`Adjustment`、`Direction`、`Relation`、`Role`、`does not walk the relations again`、`Code paths and directions`、`Check`、`Generate`、`One step is one file` を、大小文字を問わず検索する
-  - 変えた4つのファイルを、変える前と並べて読む
+  - 変えた4つのファイル全体と、そのファイルが名指すファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
   - a proofread — plan md（`cycles/261105-055-feat-update-affected/plan/02-plan.md`）と `.pi/skills/plan/references/format.md` を、スキルの proofread 文で

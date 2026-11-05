@@ -310,8 +310,8 @@
 ### Scope
 
 - 変更:
-  - format: in — ステップの単位を「1つのもの」にし、1行を「何がどうなるか」にし、ADR かチャットが具体的に決めた中身をフェンスに持たせる。
-  - prose: in — `format.md` の `## Slices` と `### Steps` の規則と `## Shape` の例と、`plan/SKILL.md` の 4（`Files` と `Steps` の説明）を書き直す。
+  - format: in — ステップの単位を「1つのもの」にし、1行を「何がどうなるか」にし、ADR かチャットが具体的に決めた中身をフェンスに持たせる。`Verify` の通読を、変えたファイル全体と、そのファイルが名指すファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す形にする。
+  - prose: in — `format.md` の `## Slices` と `### Steps` の規則と `## Shape` の例と `## Verify` の `Always` と、`plan/SKILL.md` の 4（`Files` と `Steps` の説明）を書き直す。
   - behaviour: in — plan は、ADR かチャットが具体的に決めた中身をフェンスにそのまま書く。
   - naming: in — ステップの単位の名前（ファイル、モジュール、ディレクトリ）を決める。
   - errors: in — 中身が決まっていないときの書き方（文だけにするか、`research` と `Stopped` に回すか）を決める。
@@ -347,6 +347,7 @@
       - ステップの順序と番号は、作業の順序のままとする。
     - Update:
       - `format.md` の `## Slices` と `### Steps` の規則と、`## Shape` の例を上の形に変える。
+      - `format.md` の `## Verify` の `Always` の6行目を、読む、たどる、当てる、直すの1行に変える。
       - `SKILL.md:38` の「One step is one file」と「1文」の規則を上の形に変える。
       - ツリー内のディレクトリの行に、空のディレクトリと残すディレクトリの印（`add` / `drop`）を付けられるようにする。
     - Drop:

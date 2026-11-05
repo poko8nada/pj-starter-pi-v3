@@ -13,6 +13,15 @@ Section and field names are English; the content is Japanese.
 - Place: <worktree|base>
 - Boundary Plans: <the plans this one stands on, and the order>
 
+## Design
+
+- Inside:
+  - Modules: <統合・分割するファイルやモジュール。答えと、なぜその形なのか。なければ なし>
+  - Dirs: <統合・分割・移動するディレクトリ。答えと、なぜその形なのか。なければ なし>
+- Outside:
+  - Extract: <共通化するモジュール。答えと、なぜその形なのか。なければ なし>
+  - Colocate: <共通化をやめ、コロケーションするモジュール。答えと、なぜその形なのか。なければ なし>
+
 ## Files
 
 ```text
@@ -37,14 +46,19 @@ Section and field names are English; the content is Japanese.
 
 ### Steps
 
-1. `<コードのファイル>`:
-   - add: <何をどうするか。1 文>
+1. `<ファイル>`:
+   - update: <何がどうなるか。1 文>
      - Outside: `<affected.md の ### External の項目>`。<そこでどうするか>
-2. `<テストのファイル>`:
-   - update: (happy) <given> → <result>
-   - update: (error) <given> → <result>
-3. `<文書>`:
-   - update: <何をどうするか。1 文>
+
+     ```ts
+     <ADR かチャットが決めた中身。決まっていないときは置かない>
+     ```
+
+2. `<path>#<module>`:
+   - update: <何がどうなるか。1 文>
+
+3. `<dir>/`:
+   - add: <空の dir を作る、または、最後のファイルを消して dir を残す>
 
 ### Verify
 
@@ -53,8 +67,7 @@ Section and field names are English; the content is Japanese.
   - <`pnpm typecheck`>
   - <`pnpm lint`>
   - <`pnpm format:check`>
-  - <このスライスが変えた名前と説明を、grep ツールで（大小文字を問わず）検索する>
-  - <変更した全ファイルを、変える前と並べて読み、矛盾、循環、重複、不足、不自然な流れがないか確かめる>
+  - <変えたファイル全体と、名指すファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
 ## 2.<スライス名>
@@ -104,7 +117,7 @@ Section and field names are English; the content is Japanese.
 ## Files
 
 - The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
-- Read the affected before writing it: the affected's `Code` paths and their directions are the `Files` lines. Do not walk the relations again.
+- Read the affected before writing it: its paths are the candidates, and the plan reads each one and decides its mark — `add`, `update`, `drop`, or no mark. The dirs the plan makes or leaves carry `add` or `drop` on the tree's dir line.
 - A new double or fixture is a file: it sits at the root of the feature whose shape it holds.
 - A fixture that holds a shape the feature does not own — the host, the OS, a format several units share — goes in `test/`.
 - `test/` is shared, not the harness's own: a project may keep its own files there.
@@ -126,14 +139,17 @@ Section and field names are English; the content is Japanese.
 - One slice is one closing: work that ends when its check passes. A subagent may carry several in one run; the size is a hint, not a handoff.
 - The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
 - A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
-- One step is one file: what to do in it. The shape follows the file:
-  - a code file — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`; a step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`
+- One step is one thing: a file, a module inside a file, or a dir. The line says what becomes what, and the content the ADR or the chat decided goes in a fence under it.
+  - a file — `<prefix>: <what becomes what, in one sentence>`; the prefix is `add:`, `update:` or `drop:`
+  - a module — `<path>#<module>: <what becomes what, in one sentence>`; the prefix says the module's change, and it may differ from the file's `Files` marker
   - a test file — one `<prefix>: (happy|error|empty|boundary) <given> → <result>` per case, with the same prefix as the `Files` tree's marker; each `Adopted` line's result is one of those cases
-  - a document — what to do, in one sentence, with a leading `add:`, `update:` or `drop:`
+  - a dir — only two cases: an empty dir to make, or the last file dropped and the dir left; the tree's dir line carries `add` or `drop`
+- A step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`, after the line and before the fence.
+- A step whose content the ADR or the chat decided carries it in a fence under the step: the language is `ts`, `md`, `json` or the like, and the content is copied as it was decided, markdown or code; a test step keeps its case lines, and the fence goes under them.
 - The cases of a test file follow `## Test cases`.
 - A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
 - The steps are numbered; the order is the order of the work.
-- A plan whose `Files` has neither `add` nor `drop` says in the `Steps` and the `Why` how the update is built into the existing, and how the whole is redesigned. A plan that only replaces words is not a plan.
+- A plan whose `Files` has neither `add` nor `drop` says in the `Steps` and the `Design` how the update is built into the existing, and how the whole is redesigned. A plan that only replaces words is not a plan.
 
 ## Types
 
@@ -153,14 +169,13 @@ Section and field names are English; the content is Japanese.
 
 - `Verify` is what closes the slice: what has to pass, not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
-- Each `Adopted` line's result is one of the related tests; a step that goes past the `Scope` is not written, and the review reads it.
+- Each `Adopted` line's result is one of the related tests; a step that goes past the `Scope` is not written, and the review reads it. A target of the plan's questions 3 and 4 is written even past the `Scope`: the reason is in `## Design`.
 - `Always:` — the bullets below, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - the comments and the documents hold no stale wording: a case-insensitive grep tool search for the names and the descriptions this slice changed
-  - every changed file is read against the file before the change: no contradiction, no circular flow, no duplication, no omission, no unnatural flow; a file that fails is fixed, and the fix is written in `Unplanned`
+  - the read-through: read every changed file whole, and every file it names whole; follow the procedure in the order the file gives, as the one who acts on it; check the number, the path, the name and the shape at each place against what it points to; fix any inconsistency, and write the fix in `Unplanned`
 - `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
   - DB — rows are written into the store and read back; a migration runs forward and back.
   - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.

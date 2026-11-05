@@ -22,7 +22,7 @@ Present one block per plan, in a fence. Then write the order last, numbered, for
 - ADR: <NN>
 - Place: <worktree|base>
 - Summary: <what this plan does, in one sentence>
-- Why: <read the `Role change` and the `Adjustment` in the affected, and write what those say and why they make these entries one plan; do not list the field names alone>
+- Why: <read the `Kind` and the `Edge` in the affected, and write what those say and why they make these entries one plan; do not list the field names alone>
 
 ## Order:
 
