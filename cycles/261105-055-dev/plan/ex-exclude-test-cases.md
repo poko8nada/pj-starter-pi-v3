@@ -34,7 +34,7 @@ scripts/checks/ja-check.test.ts   update
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - `grep` ツールで `describe(` を `scripts/checks/ja-check.test.ts` から検索し、`describe('ja-check exclude')` の行から次の `describe(` の行までの間に `it(` が 7 件あり、その並びが happy 5 件のあとに error 3 件であることを確かめる。
+  - `grep` ツールで `describe(` を `scripts/checks/ja-check.test.ts` から検索し、`describe('ja-check exclude')` の行から次の `describe(` の行までの間に `it(` が 8 件あり、その並びが happy 5 件のあとに error 3 件であることを確かめる。
   - 変更したすべてのファイルを通読し、矛盾、循環、重複、不足、不自然な流れがないか確かめる。
 - Added: なし
 
@@ -43,9 +43,13 @@ scripts/checks/ja-check.test.ts   update
 ### Slice 1: excludeの事例を1か所にまとめ、`./` 付きの事例を足す
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - a56d8e0 consult(ex-exclude-test-cases): group exclude cases and add dot-slash case
 - Stopped:
+  - なし
 
 ## Work Review
 
