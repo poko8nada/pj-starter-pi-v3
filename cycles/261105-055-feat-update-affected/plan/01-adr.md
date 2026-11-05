@@ -446,6 +446,7 @@ export function checkEntry(markdown);
   - 各スライスの `Verify` の `Always`。
   - `Added`: a `base` plan's look — オーナーの look（各スライスで済み。例外は下の `Doubts`）。
   - 振る舞いを壊して赤になるかの確認: `checkEntry` の `C` の抜けの分岐を利かなくして、`does not carry` のテストが赤になることを確かめた。
+  - 所有者の通読の修正の後に再実行: `pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`ja-check` — すべて緑。
 - Findings: なし
 - Doubts:
   - plan 02 の slice 1 は、オーナーの OK の前にコミットした（`df9379a`）。
