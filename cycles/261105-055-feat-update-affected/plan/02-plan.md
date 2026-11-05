@@ -120,15 +120,20 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 旧語彙（`Role change`・`Adjustment`・`Direction`・`Relation`・`does not walk the relations again`・`Code paths and directions`・`One step is one file`・`Generate`）は `.pi/skills/plan/` に残っていないことを grep で確かめた。残る `Why`（`SKILL.md:28`・`cut.md:25`）・`Scope`・`Checks`・`typecheck` は現行の欄名・観点名・コマンド名で、変更が冗長にした文ではない。
+- Unlisted: なし — `git diff 52fc5cb..HEAD` で `.pi/skills/plan/` 配下の変更は `Files` の4件（`SKILL.md`・`cut.md`・`format.md`・`tasks.md`）だけである。他の変更（`.pi/skills/adr/` 配下など）は 01-adr の所管で、この plan の `Scope`（03・05）外である。
+- Gaps: なし — スライスの `Verify`（通読・grep・`test:related`／`typecheck`／`lint`／`format:check`・`base` の look・proofread）は、03 の全パス読み・4つの問い・`## Design`・`Files` の印・問い 3・4 の `Scope` 越えと、05 の単位・行・フェンス・`Outside:` 位置・順序をいずれも辿って確かめられる。テストファイルを持たないため `## Test cases` で読むべきケースはなく、フェンスの中身は ADR・チャットが決めた値なので gap ではない。
+- Unproven: なし — このスライスはテストを追加・変更しておらず、振る舞いを外しても緑のまま残るテストはない。
+- Noise: なし — 同上、追加されたテストがないため、型・スキーマ・DB が保証する前提や誰も気づかないケース、マジックナンバー・ハードコード文字列の持ち込みはない。
+- Doubts: なし
 
 ## Acceptance
 
 - Ran:
-- Findings:
+  - `pnpm typecheck` — ok。
+  - `pnpm test:run` — 63ファイル、757件 pass。
+  - 各スライスの `Verify` の `Always`。
+  - `Added`: a `base` plan's look — オーナーの look（`Doubts` に下記）。
+- Findings: なし
 - Doubts:
+  - slice 1 は、オーナーの OK の前にコミットした（`df9379a`）。
