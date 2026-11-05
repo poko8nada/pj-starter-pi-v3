@@ -416,3 +416,31 @@
 - Role: リポジトリの外側に置かれる品目で、ここでは該当がないことを示す位置である。
 - Role change: Not change
 - Adjustment: No
+
+## 06: `Context` の項目が、選択肢と `Adopted` に、もれなく届くことをどう担保するか
+
+### Code
+
+- Path: `.pi/skills/adr/references/adr.format.md`
+  - Kind: `doc`
+- Path: `.pi/skills/adr/SKILL.md`
+  - Kind: `doc`
+  - Edge: `names` `.pi/skills/adr/references/adr.format.md`, `.pi/skills/adr/references/options.md`, `.pi/skills/adr/scripts/index.mjs`
+- Path: `.pi/skills/adr/references/options.md`
+  - Kind: `doc`
+  - Edge: `mentions` `.pi/skills/adr/references/adr.format.md`
+- Path: `.pi/skills/adr/scripts/adr.mjs`
+  - Kind: `module`
+- Path: `.pi/skills/adr/scripts/index.mjs`
+  - Kind: `module`
+  - Edge: `needs` `.pi/skills/adr/scripts/adr.mjs`
+- Path: `.pi/skills/adr/scripts/cycle.mjs`
+  - Kind: `module`
+  - Edge: `needs` `.pi/skills/adr/scripts/adr.mjs`
+- Path: `.pi/skills/adr/scripts/index.test.ts`
+  - Kind: `test`
+  - Edge: `checks` `.pi/skills/adr/scripts/adr.mjs`, `.pi/skills/adr/scripts/index.mjs`
+
+### External
+
+なし

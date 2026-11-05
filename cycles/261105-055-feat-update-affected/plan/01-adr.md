@@ -372,10 +372,10 @@ cycles/261105-055-feat-update-affected/
 
 ### Slice 3: 調査の手順と道具
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: `4752f3e`
+- Stopped: なし
 
 ### Slice 4: 記録の形
 
