@@ -107,7 +107,7 @@ Section and field names are English; the content is Japanese.
 ## One plan is one worktree
 
 - The plan is one worktree, one branch and one merge — unless the plan md's `Place` says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the plan's name.
-- A subagent reads the plan, and nothing else, to do the work. What the ADR decided is named where it bites, never restated.
+- A subagent (the agent itself, for a `base` plan) reads the plan, and nothing else, to do the work. What the ADR decided is named where it bites, never restated.
 
 ## No
 
@@ -167,7 +167,7 @@ Section and field names are English; the content is Japanese.
 
 ## Verify
 
-- `Verify` is what closes the slice: what has to pass, not what to test.
+- `Verify` is what closes the slice: what has to pass, and the read-through that proves it — not what to test.
 - It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
 - Each `Adopted` line's result is one of the related tests; a step that goes past the `Scope` is not written, and the review reads it. A target of the plan's questions 3 and 4 is written even past the `Scope`: the reason is in `## Design`.
 - `Always:` — the bullets below, and nothing else.

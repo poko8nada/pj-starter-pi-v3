@@ -5,7 +5,7 @@ description: Use when the ADR is settled and one of its plans has to become work
 
 # plan
 
-One plan is one worktree: a branch and a merge. It is written from the ADR and the affected, and it is what the work is done from — a subagent reads the plan, and nothing else, to do the work.
+One plan is one worktree: a branch and a merge — unless the plan md's `Place` says `base`: then the agent does the work in its own tree, with no branch and no merge. It is written from the ADR and the affected, and it is what the work is done from — a subagent (the agent itself, for a `base` plan) reads the plan, and nothing else, to do the work.
 
 ## File
 
@@ -47,7 +47,7 @@ A target of question 3 or 4 goes into `Files` even when it is past the ADR's `Sc
 - `Files` — the map's paths, and the plan's own marks: a marker for what changes, no marker for what follows; the dirs the plan makes or leaves carry `add` or `drop`.
 - `Slices`, `Types`, `Steps`, `Verify`, `Notes` — the rest of the shape. One step is one thing: a file, a module (`<path>#<module>`), or a dir. A step's line is `<prefix>: <what becomes what>`, and the content the ADR or the chat decided goes in a fence under it. A test file's line is `<prefix>: (happy|error|empty|boundary) <given> → <result>`. The prefix and the `Files` tree's marker are the same word.
 
-The affected is the plan's material: a `Kind: checks` is a `Verify` line, a `Kind: artifact` is a deliverable, an `### External` item is the step's `Outside:`, and a path is a `Files` line.
+The affected is the plan's material: an `Edge: checks` is a `Verify` line, a `Kind: artifact` is a deliverable, an `### External` item is the step's `Outside:`, and a path is a `Files` line.
 
 When the plan's `Files` has neither `add` nor `drop`, write in the `Steps` and the `Design` how the update is built into the existing, and how the whole is redesigned. A plan that only replaces words is not a plan.
 
@@ -81,7 +81,7 @@ While that review runs, write the next plan file: the writing of one file and th
 
 ### 7. Proofread
 
-After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` and `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the named files. The read is the `## Verify`'s read-through: the file whole, and every file it names.
+After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`; have it read `.pi/skills/plan/references/format.md` for the shape; the role's policy applies; edit only the plan md.
 
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
