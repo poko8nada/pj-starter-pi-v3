@@ -123,7 +123,7 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 ### 7. Affected
 
 - after the decision, with the proofread, a `research` subagent reads the entry and reports the files and the outside
-- the agent writes it to `affected.md`, in the shape `references/affected.format.md` gives
+- the `research` subagent writes it to `affected.md`, in the shape `references/affected.format.md` gives
 - the affected is the entry's: one section per entry, `### Code` and `### External`
 - the scaffold makes the `affected.md`'s bones with the entry's, and appends the next entry's bones to both
 

@@ -1,6 +1,6 @@
 # PLAN `01-adr`
 
-- No: 01, 02, 04
+- No: 01, 02, 04, 06
 - Place: base
 - Boundary Plans: なし
 
@@ -21,6 +21,8 @@
   scripts/
     adr.mjs                update
     affected.mjs           update
+    cycle.mjs
+    index.mjs              update
     index.test.ts          update
   references/
     adr.format.md          update
@@ -246,6 +248,112 @@ cycles/261105-055-feat-update-affected/
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
   - other — `node -e` を使わず、`types.json` を `read` で読み、`research` の `bash` が4つの接頭辞を持つことを確かめる
 
+## 4.記録の形
+
+### Types
+
+```ts
+なし;
+```
+
+### Steps
+
+1. `.pi/skills/adr/references/adr.format.md`:
+   - update: `Context` の項目に `C<n>`、`Research & Trial` の事実に `F<n> (C<n>)`、選択肢の各行に `（C*, F*）` を付け、`Decision` の `Status` に空の状態を足し、`Options` を決定の後は1行に縮める。
+     ```md
+     ### Context
+
+     - C1: <前提。いまの振る舞い>
+     - C2: <制約。Who の要望、上限、変えないと決めたこと>
+
+     ### Research & Trial
+
+     - F1 (C1): <事実>。出所。
+
+     ### Decision
+
+     - Status: <決定の前は空。`accepted` | `rejected`（理由）>
+     - Adopted:
+       - <A>: <説明>
+         - Add:
+           - <何が増えるか>（C1, F2）
+     - Options:
+       - <B>: <説明> - <その選択肢を採用しなかった理由>
+     ```
+2. `.pi/skills/adr/references/options.md`:
+   - update: 選択肢を、`Context` の `C` と `Research & Trial` の `F` を満たすものだけにし、各行に `（C*, F*）` を付ける規則を足す。
+
+### Verify
+
+- Always:
+  - `pnpm test:related .pi/skills/adr`（関連がなければ `pnpm test:run`）
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm format:check`
+  - `C<n>`、`F<n>`、`（C`、`Status` の空の状態を、大小文字を問わず検索する
+  - 変えた2つのファイル（`adr.format.md`、`options.md`）を、変える前と並べて読む
+- Added:
+  - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
+
+## 5.骨組みと検査
+
+### Types
+
+```ts
+なし;
+```
+
+### Steps
+
+1. `.pi/skills/adr/scripts/adr.mjs`:
+   - update: 骨組みに `C`、`F`、`Status` の空、選択肢の参照を足す。純粋な関数 `checkEntry(markdown)` を足し、抜けの一覧を返す。
+2. `.pi/skills/adr/scripts/index.mjs`:
+   - update: `--check` を足す。`adr.md` を読み、抜けを出し、抜けがあれば終了コード1で終える。
+3. `.pi/skills/adr/scripts/index.test.ts`:
+   - update: 骨組みのアサーションを新しい形にし、`checkEntry` のテスト（正常系、`C` の抜け、`F` の参照なし、未知の番号、重複の場合）を足す。
+     - add: (happy) すべての `C` と `F` を参照する選択肢 → 抜けは空
+     - add: (error) `C2` を参照しない選択肢 → `C2` を抜けとして返す
+     - add: (error) どの選択肢も参照しない `F3` → `F3` を抜けとして返す
+     - add: (error) `C9` への参照 → 未知の番号として返す
+     - add: (empty) `Context` の項目がない → 抜けは空
+
+### Verify
+
+- Always:
+  - `pnpm test:related .pi/skills/adr/scripts/index.test.ts`
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm format:check`
+  - `checkEntry`、`--check` を、大小文字を問わず検索する
+  - 変えた3つのファイル（`adr.mjs`、`index.mjs`、`index.test.ts`）を、変える前と並べて読む
+- Added:
+  - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
+
+## 6.エントリーの流れ
+
+### Types
+
+```ts
+なし;
+```
+
+### Steps
+
+1. `.pi/skills/adr/SKILL.md`:
+   - update: エントリーの手順を、12段の流れに書き直す。`Scope` をチャットで合意し、骨組みを作り `Scope` と `Context` を書く。調査を合意し、先に議論する。調査と議論のループで `Context` と `Research & Trial` を足し、必要なら `Scope` を提案して変える。オーナーが求めたら選択肢を作り、`Decision` に `Status` 空で書く。`--check` を走らせ、決定し、`Definition` を書き、オーナーの確認を受ける。校正と `Affected` は、その間に次のエントリーへ進む。
+
+### Verify
+
+- Always:
+  - `pnpm test:related .pi/skills/adr`（関連がなければ `pnpm test:run`）
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm format:check`
+  - `Context`、`Research & Trial`、`Deferred`、`--check`、`Scope` を、大小文字を問わず検索する
+  - `.pi/skills/adr/SKILL.md` を、変える前と並べて読む
+- Added:
+  - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
+
 ## Notes
 
 ### Slice 1: 選択肢の提示
@@ -257,12 +365,33 @@ cycles/261105-055-feat-update-affected/
 
 ### Slice 2: affected の形
 
+- Findings: なし
+- Unplanned: `tasks.md:51` の `seven bullets` は、変えていない。スライス3 が `## Look it up` のタスク文を全体で書き直すので、そこで消える
+- Commit: `f669211`
+- Stopped: なし
+
+### Slice 3: 調査の手順と道具
+
 - Findings:
 - Unplanned:
 - Commit:
 - Stopped:
 
-### Slice 3: 調査の手順と道具
+### Slice 4: 記録の形
+
+- Findings:
+- Unplanned:
+- Commit:
+- Stopped:
+
+### Slice 5: 骨組みと検査
+
+- Findings:
+- Unplanned:
+- Commit:
+- Stopped:
+
+### Slice 6: エントリーの流れ
 
 - Findings:
 - Unplanned:
