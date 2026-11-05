@@ -109,7 +109,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 
 - takes: the completed `close.md`
 - does:
-  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` and `.pi/skills/close/references/format.md`; the role's policy applies; edit only the named files
+  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md`; have it read `.pi/skills/close/references/format.md` for the shape; the role's policy applies; edit only `close.md`
   - read its report and `git diff`
   - an empty `## Verified` is normal at this point: do not fill it, and put it back if the subagent filled it
   - put the file back to `references/format.md`'s shape, in your own words, if a `Triage` line, a `Verified` line or a destination changed meaning, or a section or field name moved

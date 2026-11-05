@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
-import { adrSkeleton } from './adr.mjs';
+import { adrSkeleton, checkEntry } from './adr.mjs';
 import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
 import {
   append,
@@ -36,11 +36,18 @@ function appendAffectedEntry(markdown, nnn) {
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const { root, nnn: argNNN } = parseArgs(process.argv.slice(2));
+  const { root, nnn: argNNN, check } = parseArgs(process.argv.slice(2));
   const cyclesDir = join(root, 'cycles');
   const archiveDir = join(cyclesDir, 'archive');
   const openDir = openCycleDir(cyclesDir);
-  if (openDir !== null) {
+  if (check) {
+    if (openDir === null) throw new Error('no open cycle');
+    const adrPath = join(openDir, 'adr.md');
+    const problems = checkEntry(readFileSync(adrPath, 'utf8'));
+    for (const problem of problems) console.error(problem);
+    if (problems.length > 0) process.exit(1);
+    console.log(`checked: ${adrPath}`);
+  } else if (openDir !== null) {
     if (argNNN !== null) {
       throw new Error(`open cycle exists: ${openDir}; refusing nnn ${argNNN}`);
     }
