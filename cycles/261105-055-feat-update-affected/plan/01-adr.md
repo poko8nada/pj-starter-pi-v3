@@ -136,7 +136,7 @@ cycles/261105-055-feat-update-affected/
 ### Steps
 
 1. `.pi/skills/adr/references/affected.format.md`:
-   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにする。`### External` を `- Name:` / `Kind:` / `Used by:` のブロックにする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を文書から落とす。外部に書くものがないときは `なし` と書く。導き出せなかった事実は記録には書かず、報告に書く。
+   - update: `### Code` をパスごとの `- Path:` / `Kind:` / `Edge:` のブロックにする。`### External` を `- Name:` / `Kind:` / `Used by:` のブロックにする。`Search`、`Adr`、`Direction`、`Relation`、`Role`、`Role change`、`Adjustment` を文書から落とす。外部に書くものがないときは `なし` と書く。導き出せなかった事実は記録には書かず、報告に書く。`Edge` の意味は、`needs`（コードがそのパスを必要とする）、`names`（設定や文書がそのパスを値や記述として持つ）、`mentions`（文書がそのパスに言及する）、`checks`（テストがそのパスを確かめる）、`contains`（ディレクトリがそのパスを含む）とする。
      ```md
      ### Code
 
@@ -305,7 +305,7 @@ export function checkEntry(markdown);
 ### Steps
 
 1. `.pi/skills/adr/scripts/adr.mjs`:
-   - update: 骨組みに `C`、`F`、`Status` の空、選択肢の参照を足す。純粋な関数 `checkEntry(markdown)` を足す。その関数は抜けの一覧を返す。
+   - update: 骨組みに `C`、`F`、`Status` の空、選択肢の参照を足す。純粋な関数 `checkEntry(markdown)` を足す。その関数は、各選択肢がすべての `C` を参照するか、すべての `F` がどれかの選択肢から参照されるか、参照が実在するか、番号が重複しないかを確かめ、抜けの一覧を返す。
 2. `.pi/skills/adr/scripts/cycle.mjs`:
    - update: `parseArgs` に `--check` を足す。その関数が未知の引数として投げないようにする。
 3. `.pi/skills/adr/scripts/index.mjs`:
