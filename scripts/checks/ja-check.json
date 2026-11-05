@@ -67,5 +67,6 @@
     "前口上",
     "窓口",
     "未着手"
-  ]
+  ],
+  "exclude": ["ROADMAP.md", "**/affected.md"]
 }

@@ -3,6 +3,7 @@
  *
  * fake root holds temp files and a config.
  * WARN_WORD lives in warn, ERROR_WORD lives in error. Quoted alone is skipped.
+ * Paths matching exclude are skipped without reading.
  * 例外の語に一致するヒットを報告しない。
  */
 
@@ -25,6 +26,7 @@ interface JaCheckConfig {
   readonly error: Readonly<Record<string, string>>;
   readonly warn: Readonly<Record<string, string>>;
   readonly exception: readonly string[];
+  readonly exclude: readonly string[];
 }
 
 type TestConfig = JaCheckConfig;
@@ -60,6 +62,7 @@ function validConfig(): TestConfig {
     error: { [ERROR_WORD]: 'replacement-error' },
     warn: { [WARN_WORD]: 'replacement-warn' },
     exception: [],
+    exclude: [],
   };
 }
 
@@ -201,31 +204,6 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 1, warn 0.');
   });
 
-  it('ROADMAPの0.x.xセクション内のerror語 → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const file = writeFile(root, 'ROADMAP.md', `## 1.x.x\nok\n## 0.x.x\n${ERROR_WORD}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
-  });
-
-  it('ROADMAPの1.x.xセクション内のerror語 → 報告する', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const file = writeFile(root, 'ROADMAP.md', `## 1.x.x\n${ERROR_WORD}\n## 0.x.x\nok\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).toContain('[error]');
-    expect(out.stdout).toContain(`(…[${ERROR_WORD}]…)`);
-  });
-
   it('ja-check.json自体のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, validConfig());
@@ -303,6 +281,73 @@ describe('ja-check', () => {
     expect(out.stdout).toContain(HEADER_1);
     expect(out.stdout).not.toContain('[error]');
     expect(out.stdout).toContain('ja-check: No findings.');
+  });
+});
+
+describe('ja-check exclude', () => {
+  it('(happy) exclude ROADMAP.md skips root ROADMAP.md with error word -> exit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+    writeFile(root, 'ROADMAP.md', `## 1.x.x\n${ERROR_WORD}\n`);
+    const out = run(root, ['ROADMAP.md']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(happy) exclude star-star affected skips nested affected.md -> exit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['**/affected.md'] });
+    const file = writeFile(root, join('cycles', '999-test', 'affected.md'), `${ERROR_WORD}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(happy) exclude ROADMAP.md still reports src ROADMAP.md -> exit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+    const file = writeFile(root, join('src', 'ROADMAP.md'), `${ERROR_WORD}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain('[error]');
+    expect(out.stdout).toContain(`(…[${ERROR_WORD}]…)`);
+    expect(out.stdout).toContain('ja-check: 1 files, error 1, warn 0.');
+  });
+
+  it('(happy) exclude ROADMAP.md skips absolute path -> exit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+    const file = writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
+  it('(happy) exclude ROADMAP.md skips dot-relative path -> exit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+    writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
+    const out = run(root, ['./ROADMAP.md']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
 });
 
@@ -408,6 +453,40 @@ describe('ja-check', () => {
   it('(error) exceptionの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exception: [1] });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) excludeのない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, {
+      error: { [ERROR_WORD]: 'replacement-error' },
+      warn: { [WARN_WORD]: 'replacement-warn' },
+      exception: [],
+    });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) excludeが配列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: 'x' });
+    const file = writeFile(root, 'a.md', 'ok\n');
+    const out = run(root, [file]);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+  });
+
+  it('(error) excludeの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: [1] });
     const file = writeFile(root, 'a.md', 'ok\n');
     const out = run(root, [file]);
     expect(out.status).toBe(1);
