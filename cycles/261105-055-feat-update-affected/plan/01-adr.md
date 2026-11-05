@@ -343,7 +343,7 @@ export function checkEntry(markdown);
 ### Steps
 
 1. `.pi/skills/adr/SKILL.md`:
-   - update: エントリーの手順を、12段の流れに書き直す。`Scope` をチャットで合意し、骨組みを作り `Scope` と `Context` を書く。調査について合意し、先に議論する。調査と議論のループで文書に `Context` と `Research & Trial` を足し、必要なら `Scope` を提案して変える。オーナーが求めたら選択肢を作り、`Decision` に `Status` を空にして書く。`--check` を実行し、決定を下し、`Definition` を書き、オーナーの確認を受ける。作業者は、校正と `Affected` の合間に次のエントリーへ進む。最後に、オーナーが全体を確かめる。決めない項目は、`Deferred` として理由とともに書く。
+   - update: エントリーの流れを、12の手順に書き直す。`Scope` をチャットで合意し、骨組みを作り `Scope` と `Context` を書く。調査について合意し、先に議論する。調査と議論のループで文書に `Context` と `Research & Trial` を足し、必要なら `Scope` を提案して変える。オーナーが求めたら選択肢を作り、`Decision` に `Status` を空にして書く。`--check` を実行し、決定を下し、`Definition` を書き、オーナーの確認を受ける。作業者は、校正と `Affected` の合間に次のエントリーへ進む。最後に、オーナーが全体を確かめる。決めない項目は、`Deferred` として理由とともに書く。
 
 ### Verify
 
@@ -353,7 +353,7 @@ export function checkEntry(markdown);
   - `pnpm lint`
   - `pnpm format:check`
   - `Context`、`Research & Trial`、`Deferred`、`--check`、`Scope` を、大小文字を問わず検索する
-  - `.pi/skills/adr/SKILL.md` を、変える前と並べて読む
+  - `.pi/skills/adr/SKILL.md` を全体で読み、新しい流れに当てる。そのうえで、`.pi/skills/adr/references/adr.format.md` と `options.md` を読み、名指す手順と番号が合っているかを確かめる
 - Added:
   - a `base` plan's look — オーナーがスライスの変更を読み、OK がスライスを閉じる
 
@@ -384,24 +384,29 @@ export function checkEntry(markdown);
 
 ### Slice 4: 記録の形
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: `f23b063`
+- Stopped: なし
 
 ### Slice 5: 骨組みと検査
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `checkEntry` の `section` が、多行の文字列で最初の `###` を見つけるとき、`^### .*$` の `m` フラグの欠損で空を返していた。通読で見つけ、直した
+  - `checkEntry` の子の行の正規表現を `^ {4}` から `^ {4,}` に広げた。6 スペースの子の行が抜けていた
+- Commit: `acb7cdd`
+- Stopped: なし
 
 ### Slice 6: エントリーの流れ
 
 - Findings:
+  - `.pi/skills/plan/references/format.md` の `## Verify` の6行目が、変えたファイルの前後だけを読む形で、変えていない行と、名指すファイルを見ない。05 の `Scope` を広げて直した。
+    - left: 05 の作業として、同じサイクルで直した
 - Unplanned:
+  - スキル全体と名指すファイルの通読で、7つの不整合を見つけて直した（冒頭の一覧、`Proofread` の3か所、`Files` の2か所、手順6の参照）
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ## Work Review
 

@@ -64,7 +64,7 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 - `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
 - The entries are the cycle's split, and the order is the split's.
 - One bullet is one sentence.
-- `Context` — the entry's items, numbered `C1`, `C2`: what is happening, what the `Who` wants, and the premises and constraints the decision must respect.
+- `Context` — the entry's items, numbered `C1`, `C2`: what is happening, what the `Who` wants, or the entry's question, and the premises and constraints the decision must respect.
 - `Scope` — the list the owner agreed: every item is `in` or `out`, and an `out` item carries its reason.
 - `Research & Trial` — the facts the decision weighs, each with the item it serves and its source: `F1 (C1)`. A fact that serves no item adds one to `Context`.
 - `Decision` — `Status`, `Adopted`, `Options`, `Deferred`.
