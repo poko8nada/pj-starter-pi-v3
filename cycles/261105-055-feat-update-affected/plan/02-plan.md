@@ -113,7 +113,7 @@
 - Findings: なし
 - Unplanned:
   - `format.md` の `## Slices` の「the `Why`」が、plan md にない欄を指していた。通読で見つけ、「the `Design`」に直した
-- Commit: `cfc94a2`
+- Commit: `df9379a`
 - Stopped: なし
 
 ## Work Review

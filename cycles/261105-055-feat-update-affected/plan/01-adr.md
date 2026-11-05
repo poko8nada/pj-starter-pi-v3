@@ -363,14 +363,14 @@ export function checkEntry(markdown);
 
 - Findings: なし
 - Unplanned: `adr.mjs` の骨組みの語を、`adr.format.md` の語に揃えた（proofread の後に、私が行った）
-- Commit: `bf3039f`
+- Commit: `2a2c042`
 - Stopped: なし
 
 ### Slice 2: affected の形
 
 - Findings: なし
 - Unplanned: `tasks.md:51` の `seven bullets` は、変えていない。スライス3 が `## Look it up` のタスク文を全体で書き直すので、そこで消える
-- Commit: `f669211`
+- Commit: `78a2950`
 - Stopped: なし
 
 ### Slice 3: 調査の手順と道具
@@ -379,14 +379,14 @@ export function checkEntry(markdown);
   - `.pi/extensions/consult/README.md` — Roles 表の `research` の行に `bash` がない。`Adopted` の `Update` に `README.md` がなく、`Scope` の外である。
     - left: `Scope` の外なので、このスライスでは変えない。close で扱う
 - Unplanned: なし
-- Commit: `4752f3e`
+- Commit: `de34330`
 - Stopped: なし
 
 ### Slice 4: 記録の形
 
 - Findings: なし
 - Unplanned: なし
-- Commit: `f23b063`
+- Commit: `8195bc3`
 - Stopped: なし
 
 ### Slice 5: 骨組みと検査
@@ -395,7 +395,7 @@ export function checkEntry(markdown);
 - Unplanned:
   - `checkEntry` の `section` が、多行の文字列で最初の `###` を見つけるとき、`^### .*$` の `m` フラグの欠損で空を返していた。通読で見つけ、直した
   - `checkEntry` の子の行の正規表現を `^ {4}` から `^ {4,}` に広げた。6 スペースの子の行が抜けていた
-- Commit: `acb7cdd`
+- Commit: `c049bb8`
 - Stopped: なし
 
 ### Slice 6: エントリーの流れ
@@ -405,7 +405,7 @@ export function checkEntry(markdown);
     - left: 05 の作業として、同じサイクルで直した
 - Unplanned:
   - スキル全体と名指すファイルの通読で、7つの不整合を見つけて直した（冒頭の一覧、`Proofread` の3か所、`Files` の2か所、手順6の参照）
-- Commit: `d330729`
+- Commit: `8a0fb1d`
 - Stopped: なし
 
 ## Work Review
