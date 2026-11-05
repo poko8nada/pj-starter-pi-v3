@@ -131,9 +131,14 @@ function isExcluded(file: string): boolean;
 ### Slice 1: 除外の一覧を設定から読み、読み込みの前にスルーする
 
 - Findings:
+  - なし
 - Unplanned:
+  - Replaced custom globToRegExp with node:path matchesGlob to follow ADR Adopted (Option B was rejected).
+  - Split new exclude happy tests into describe('ja-check exclude') to keep max-lines-per-function under 240.
 - Commit:
+  - fbe1696 consult(ja-check-exclude): read exclude list and skip before reading
 - Stopped:
+  - なし
 
 ### Slice 2: コードに固定した範囲判定を削除する
 

@@ -162,14 +162,6 @@ function contextSnippet(line, word, at) {
   return `(…${before}[${word}]${after}…)`;
 }
 
-function isZeroHeading(line) {
-  return /^##\s+0\.x\.x\b/.test(line);
-}
-
-function isHeading(line) {
-  return /^##\s+/.test(line);
-}
-
 const files = process.argv.slice(2);
 let errors = 0;
 let warns = 0;
@@ -187,23 +179,9 @@ for (const file of files) {
   } catch {
     continue;
   }
-  const isRoadmap = path.basename(abs) === 'ROADMAP.md';
   const lines = content.split('\n');
-  let inZero = false;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (isRoadmap) {
-      if (isZeroHeading(line)) {
-        inZero = true;
-        continue;
-      }
-      if (isHeading(line)) {
-        inZero = false;
-      }
-      if (inZero) {
-        continue;
-      }
-    }
     for (const [word, replacement] of errorEntries) {
       const at = findUnquoted(line, word);
       if (at !== -1) {
