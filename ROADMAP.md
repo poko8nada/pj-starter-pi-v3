@@ -35,7 +35,7 @@
 |     | 0.9.4 | _todo_ |        | mid      | tmpファイルの即時削除拡張機能                |
 |     | 0.9.4 | _todo_ |        | mid      | proofreaderにja-checkの利用を義務化          |
 | 020 | 0.9.4 | _todo_ |        | mid      | affected.mdのja-check除外                    |
-| 019 | 0.9.4 | _todo_ |        | high     | affected.mdの調査と内容変更                  |
+| 019 | 0.9.4 | wip    |        | high     | affected.mdの調査と内容変更                  |
 | 018 | 0.9.4 | done   | 054-f  | mid      | 日本語修正スクリプトの修正                   |
 | 017 | 0.9.3 | done   | 052-d  | mid      | consultの完了報告をctrl+oで展開可能にする    |
 | 016 | 0.9.3 | done   | 054-d  | mid      | スキル、その他の一部修正                     |
