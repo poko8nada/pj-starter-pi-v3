@@ -1,23 +1,19 @@
 ---
 name: close
-description: Use when every plan of a cycle is done (done, or dropped by the owner). It collects what the plans left, proposes their triage in close.md, and after the owner's judgement asks, Unit by Unit, whether they will verify the function.
+description: Use when every plan of a cycle is done or dropped. It collects what the plans left in close.md, proposes their triage, and after the owner's judgement asks the owner to verify each Unit's function.
 ---
 
 # close
 
 Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at.
 What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
-This skill collects the holes, proposes their triage in `close.md`, and closes the cycle: after the owner's judgement on the proposal and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
+This skill collects the holes, proposes their triage in `close.md`, and closes the cycle. After the owner's judgement on the proposal and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
 
 Texts handed to subagents are in `references/tasks.md`.
 
-## File
-
-`cycles/<YYMMDD>-<NNN>-<slug>/close.md`, in the shape `references/format.md` gives.
-
 ## Who decides
 
-Three gates. The table names them and says what each decides; a step that says "the gate is ..." names one of the three, and does not restate it.
+Three gates. The table names them and says what each decides. A step that says "the gate is ..." names one of the three, and does not restate it.
 
 | gate                | what it decides                                     | where      |
 | ------------------- | --------------------------------------------------- | ---------- |
@@ -27,7 +23,7 @@ Three gates. The table names them and says what each decides; a step that says "
 
 ## The leftover's states
 
-A leftover is in one state at a time. This table is the only place the states are written; each step below names the state it takes and the state it gives.
+A leftover is in one state at a time. This table is the only place the states are written. Each step below names the state it takes and the state it gives.
 
 | state     | what it means           | what moves it on              |
 | --------- | ----------------------- | ----------------------------- |
@@ -38,19 +34,19 @@ A leftover is in one state at a time. This table is the only place the states ar
 | merged    | the plan's work is in   | nothing: the end              |
 | closed    | `dropped`, `_proposed_` | nothing: the end              |
 
-An `ex-` plan's merge puts its plan md's leftovers back to `collected`, and the leftover's path below runs again for them.
+An `ex-` plan's merge puts its plan md's leftovers back to `collected`. The leftover's path below runs again for them.
 
 ## Procedure
 
-The steps run in this order. The leftover's path is the collect, the exclusion, the proposal, the owner's judgement and the `ex-` plans; the rest are the cycle's.
+The steps run in this order. The leftover's path is the collect, the exclusion, the proposal, the owner's judgement and the `ex-` plans. The rest are the cycle's.
 
 ### 1. Check the trigger
 
 - takes: the cycle's plan mds
 - does:
-  - every plan is done: its `Commit:` is filled, and the work is done (`work` step 8 green)
+  - every plan is done: its `Commit:` is filled, and the work is done (work step 8 green)
   - or the owner dropped it: `Stopped`, no merge
-- gives: a cycle the close can run on. A plan still open is the work skill's business, not this close's
+- gives: a cycle the close can run on. A plan still open is not this close's business.
 
 ### 2. Read the cycle
 
@@ -72,7 +68,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - fill every `未特定` as `references/format.md` says; an `ex-` plan's `No` comes from the Triage
   - add the holes from the read as lines by hand: the script does not know them
   - do not copy by hand what the script collects: a line left out is a hole nobody finds again
-- gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread
+- gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread.
 
 ### 4. Exclude what is already resolved
 
@@ -81,7 +77,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - read the plan md, the diff and the close context
   - delete the line of a leftover the wording shows is already closed: the script does not judge this
   - re-filter after every rerun of `collect.mjs`, and after the rerun the `ex-` plans need
-- gives: `excluded` for the deleted ones, `collected` for the rest. The gate is the agent's reading
+- gives: `excluded` for the deleted ones, `collected` for the rest. The gate is the agent's reading.
 
 ### 5. Propose the triage, in `close.md`
 
@@ -105,20 +101,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - what completes here is the proposal the owner reads: the destinations' confirmation, the `ex-` merges and the verification come after their judgement
 - gives: the completed `close.md`
 
-### 7. Japanese Proofread
-
-- takes: the completed `close.md`
-- does:
-  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `close.md`; have it read `.pi/skills/close/references/format.md`; the role's policy applies; edit only `close.md`
-  - read its report and `git diff`
-  - an empty `## Verified` is normal at this point: do not fill it, and put it back if the subagent filled it
-  - put the file back to `references/format.md`'s shape, in your own words, if a `Triage` line, a `Verified` line or a destination changed meaning, or a section or field name moved
-  - the wording of a quoted passage is not a change of meaning: keep that correction
-  - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
-  - one round: the repaired file does not go through the subagent again
-- gives: the repaired `close.md`
-
-### 8. The owner's judgement
+### 7. The owner's judgement
 
 - takes: `proposed` leftovers
 - does:
@@ -128,21 +111,34 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - when the last one is answered, they read the whole `close.md` — the proposal, with its `Fact:` / `Why:` / `Then:`, and the empty `## Verified` as normal — as the final check; the final check is on the first pass only (a pass after an `ex-` plan's merge needs the one-at-a-time answers, not the whole read again)
   - a missing line comes back
   - a rejection sends you back to the step it came from: the collect for a collected line, the exclusion for a resolved one, the proposal for a destination, the verification for a Unit
-- gives: `judged` for every leftover. The gate is the owner's word
+- gives: `judged` for every leftover. The gate is the owner's word.
 
-### 9. Run the `ex-` plans and merge
+### 8. Run the `ex-` plans
 
-- takes: `judged` leftovers whose destination is `_ex-plan_`
+- takes: judged leftovers whose destination is `_ex-plan_`
 - does:
   - group them by the files they fix
   - say in the chat the round this is, and which `ex-` plans are not merged yet; count the unmerged ones each time from the `## Triage` lines that carry no `done`, and say it at every pass through this step
   - show the owner a table of the plan's name, the leftover numbers, and the files; when they agree, the `## Triage` lines carry the plan's name — the gate is the owner's word
-  - write the grouped plans directly, named `ex-<what it fixes>` (no `No` at the top); its `No` is read from the Triage
-  - write all of them, review them all, fix them, and commit them
-  - run their work one by one: when its `Place` is worktree make a worktree, and run its work
+  - write each grouped plan by the plan skill: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`
+  - review and fix it by the plan skill
+  - run its work by the work skill: when its `Place` is worktree make a worktree, and run its work
   - when one is merged — the gate is the merge — its line carries `done <commit>`
   - its plan md's leftovers go back to `collected`: run the leftover's path again — the collect, the exclusion, the proposal and the owner's judgement, one leftover at a time — and the `## Triage` numbers follow the new `## Collected`: its first line is 1, and the numbers run through the file
-- gives: `merged` for each. The step ends when no `ex-` is left without its `done <commit>`, and the chat said so
+- gives: `merged` for each. The step ends when no `ex-` is left without its `done <commit>`, and the chat said so.
+
+### 9. Japanese Proofread
+
+- takes: the completed `close.md` with no unmerged `ex-` left
+- does:
+  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `close.md`; have it read `.pi/skills/close/references/format.md`; the role's policy is in `.pi/extensions/consult/types.json`; edit everything except `## Verified`
+  - the verification in step 10 runs while it runs
+  - read its report and `git diff` after step 10
+  - put the file back to `references/format.md`'s shape, in your own words, if a `Triage` line or a destination changed meaning, or a section or field name moved
+  - the wording of a quoted passage is not a change of meaning: keep that correction
+  - an empty `## Verified` is normal at the proofread's start: do not fill it, and put it back if the subagent filled it
+  - one round: the repaired file does not go through the subagent again
+- gives: the repaired `close.md`
 
 ### 10. Verify, by Unit
 
@@ -151,10 +147,10 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - the Units are as `references/format.md` says: the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
   - for each Unit, propose how to check it: the command to run and what to see, or the place to read and what to look for, and the result that means it works; in words that hold without the reference files
   - the owner runs it, or asks for another way; their word closes the Unit
-  - the check is of the Unit's function on the merged base, not of the change: the change is what the work looked at
-  - a Unit whose function does not work gets an `ex-` plan, with the same steps as the `ex-` plans' — the grouping, the plan, the work, the merge; say in the chat which Unit is still open, and this step runs again for that Unit when it is merged
+  - the check is of the Unit's function, not of the change: the change is what the work looked at
+  - a Unit whose function does not work gets an `ex-` plan: write it by the plan skill and run it by the work skill; when it is merged, this step runs again for that Unit; say in the chat which Unit is still open
   - what they answered goes in `## Verified`, which sits after `## Triage`; a Unit they will not check carries `しない` and the reason on the same line
-- gives: the verified record, with an answer for every Unit. The gate is the owner's word
+- gives: the verified record, with an answer for every Unit. The gate is the owner's word.
 
 ### 11. Leftovers
 
@@ -172,7 +168,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - append this cycle's number to the item's `cycles`; a number that is already there is kept
   - ask the owner whether the item is finished; set its `status` to `done` only on their word, and leave it `wip` when they say it is not, or when they do not say
   - the shape and the rules of the table are in `rules/roadmap.md`
-- gives: the roadmap's row. The gate is the owner's word
+- gives: the roadmap's row. The gate is the owner's word.
 
 ### 13. Commit
 
@@ -182,7 +178,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - the roadmap is written before it: the roadmap step says so
   - commit them in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in `work` step 2 (`261104-054-dev` gives `dev`)
   - nothing about that cycle is edited afterwards
-  - an `ex-` plan and its work are committed at its merge, each on its own; this commit does not carry them
+  - an `ex-` plan and its work are committed at its own merge; this commit does not carry them
 - gives: the closed cycle
 
 ### 14. Clean the workspace

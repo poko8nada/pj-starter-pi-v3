@@ -43,7 +43,7 @@
 
 ## Collected
 
-- The collect step writes this section; the gate is the agent's reading, as `SKILL.md`'s table says.
+- The collect step writes this section.
 
 - The script writes this section: `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>`. It writes `close.md` itself, and creates the file when it is not there.
 - One leftover is one numbered line. The line is `<line> / <place> / <出どころ>`: the line in the plan md (the heading above names the plan), and where the hole came from (`Slice 1 (名前)`, `Cleanup: <what it cleaned>`, `Work Review Round 1`, `Acceptance`). It is the inventory only.
@@ -56,7 +56,7 @@
 
 ## Triage
 
-- The proposal step writes it, and the owner's word closes it, as `SKILL.md`'s table says.
+- The proposal step writes it, and the owner's word closes it.
 
 - One line per leftover: its number, where it goes, and the part of the definition it belongs to. The part is the `ADR` entry and the part of `DEFINITION.md` the leftover lands on.
 - Each bullet carries its grounds underneath, in this shape:
@@ -74,7 +74,7 @@
 
 ## Verified
 
-- The verification step writes it, and the owner's word closes it, as `SKILL.md`'s table says.
+- The verification step writes it, and the owner's word closes it.
 
 - The close's verification step writes it: the Units of the cycle, and what the owner answered for each.
 - At the completion of `close.md` `## Verified` is empty, and that is normal. It is filled after the owner's judgement on the triage and the `ex-` merges.
@@ -85,16 +85,6 @@
 - The check is of the Unit's function, not of the change: the change is what the work looked at.
 - `## Verified` sits after `## Triage`: the script rewrites `## Collected`, and keeps what is below `## Triage`.
 
-## Closing
-
-- Every leftover has a line in the `Triage`: nothing is left without a destination.
-- `close.md` is complete when `## Collected` holds the inventory, `## Triage` holds the proposal with its Fact / Why / Then, and `## Verified` is empty.
-- Then the Japanese proofread runs, and the owner reads the whole `close.md` and judges the triage.
-- Every `ex-` plan is merged, and its line carries `done <commit>`: the `Triage`'s line, or the Unit's `Fixed`.
-- Every Unit this cycle touched has a section in `## Verified`: what was checked, or the reason it was not, and the `ex-` that fixed a broken one.
-- Then the cycle is closed: `close.md` and `ROADMAP.md` go in one commit, and nothing about the cycle is edited afterwards. An `ex-` plan and its work are committed at its own merge.
-
 ## Writing
 
 - A file name is written from the project root.
-- Do not write what the reader can look up: name the plan and the place.
