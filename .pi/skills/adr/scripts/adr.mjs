@@ -1,10 +1,12 @@
 /**
  * 1 エントリー分の骨組み。`references/adr.format.md` のエントリーの形と合わせること。
  * @param {number} nnn
+ * @param {string} [title]
  * @returns {string}
  */
-export function entrySkeleton(nnn) {
-  return `## ${String(nnn).padStart(2, '0')}: <問い>
+export function entrySkeleton(nnn, title) {
+  const q = title === undefined ? '<問い>' : title;
+  return `## ${String(nnn).padStart(2, '0')}: ${q}
 
 ### Context
 
@@ -13,13 +15,13 @@ export function entrySkeleton(nnn) {
 
 ### Scope
 
-- 変更:
+- Change:
   - <kind>: in — <何をするか>
   - <kind>: out — <何をしないか>（理由）
-- 品質:
+- Quality:
   - <kind>: in — <何をするか>
   - <kind>: out — <何をしないか>（理由）
-- 運用:
+- Operation:
   - <kind>: in — <何をするか>
   - <kind>: out — <何をしないか>（理由）
 
@@ -30,22 +32,17 @@ export function entrySkeleton(nnn) {
 ### Decision
 
 - Status:
-- Adopted:
-  - <A>: <説明>
-    - Add:
-      - <何が増えるか>（C1）
-    - Update:
-      - <変わるもの（何がどうなるか）>（C1）
-    - Drop:
-      - <消えるもの>（F1）
-    - Keep:
-      - <触らないものとその理由>（C2）
-    - Cost:
-      - <他の選択肢と比べたときの相対的なコスト>（F1）
-- Options:
-  - <B>: <説明> - <その選択肢を採用しなかった理由>
-- Deferred:
-  - <決めない項目と、その理由>
+- Adopted: <説明>
+  - Add:
+    - <増えるもの>（C1）
+  - Update:
+    - <変わるもの（何がどうなるか）>（C1）
+  - Drop:
+    - <消えるもの>（F1）
+  - Keep:
+    - <触らないものとその理由>（C2）
+- Denied:
+  - <明示的にしないこと> - <しない理由>（C2）
 
 ### Definition
 
@@ -57,12 +54,13 @@ export function entrySkeleton(nnn) {
 /**
  * `adr.md` の骨組み。`references/adr.format.md` の形と合わせること。
  * @param {number} nnn
+ * @param {string} [title]
  * @returns {string}
  */
-export function adrSkeleton(nnn) {
+export function adrSkeleton(nnn, title) {
   return `# ADR ${String(nnn).padStart(3, '0')}
 
-${entrySkeleton(1)}`;
+${entrySkeleton(1, title)}`;
 }
 
 /**
@@ -91,35 +89,6 @@ function labels(text, pattern) {
 }
 
 /**
- * 選択肢のブロック。`Adopted` と `Options` の下の `- <名前>:` と、その子の行。
- * 子の行を持つものだけを、選択肢として返す。
- * @param {string} decision
- * @returns {readonly { name: string, text: string }[]}
- */
-function options(decision) {
-  const blocks = [];
-  let current = null;
-  for (const line of decision.split('\n')) {
-    const head = line.match(/^  - ([^:]+):(.*)$/u);
-    if (head) {
-      if (current !== null) blocks.push(current);
-      current = { name: head[1].trim(), text: line };
-      continue;
-    }
-    if (current === null) continue;
-    if (/^ {4,}\S/u.test(line)) {
-      current.text += `\n${line}`;
-      continue;
-    }
-    if (line.trim() === '') continue;
-    blocks.push(current);
-    current = null;
-  }
-  if (current !== null) blocks.push(current);
-  return blocks.filter((block) => /^ {4,}- /mu.test(block.text));
-}
-
-/**
  * 行末の括弧の `C<n>` と `F<n>` を集める。
  * @param {string} text
  * @returns {{ c: readonly string[], f: readonly string[] }}
@@ -141,8 +110,8 @@ function refs(text) {
 
 /**
  * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
- * `Decision` の選択肢から参照されているかを確かめる。
- * 各選択肢はすべての `C` を参照し、すべての `F` はどれかの選択肢から参照される。
+ * `Decision` から参照されているかを確かめる。
+ * `Adopted` と `Denied` を合わせて、すべての `C` を参照し、すべての `F` をどれかが参照する。
  * 参照は実在し、番号は重複しない。
  * @param {string} markdown
  * @returns {readonly string[]} 抜けの一覧。空なら良い
@@ -164,22 +133,18 @@ export function checkEntry(markdown) {
       if (seenF.has(n)) problems.push(`${nn}: F${n} is used twice`);
       seenF.add(n);
     }
-    const blocks = options(section(body, 'Decision'));
-    for (const block of blocks) {
-      const found = refs(block.text);
-      for (const c of cs) {
-        if (!found.c.includes(c)) problems.push(`${nn}: ${block.name} does not carry C${c}`);
-      }
-      for (const c of found.c) {
-        if (!cs.includes(c)) problems.push(`${nn}: ${block.name} refers to unknown C${c}`);
-      }
-      for (const f of found.f) {
-        if (!fs.includes(f)) problems.push(`${nn}: ${block.name} refers to unknown F${f}`);
-      }
+    const found = refs(section(body, 'Decision'));
+    for (const c of cs) {
+      if (!found.c.includes(c)) problems.push(`${nn}: Decision does not carry C${c}`);
     }
-    const weighed = new Set(blocks.flatMap((block) => refs(block.text).f));
+    for (const c of found.c) {
+      if (!cs.includes(c)) problems.push(`${nn}: Decision refers to unknown C${c}`);
+    }
+    for (const f of found.f) {
+      if (!fs.includes(f)) problems.push(`${nn}: Decision refers to unknown F${f}`);
+    }
     for (const f of fs) {
-      if (!weighed.has(f)) problems.push(`${nn}: F${f} is not weighed`);
+      if (!found.f.includes(f)) problems.push(`${nn}: F${f} is not weighed`);
     }
   }
   return problems;

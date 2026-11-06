@@ -46,7 +46,7 @@ Section and field names are English; the content is Japanese.
   - Keep:
     - <触らないものとその理由>（C2）
 - Denied:
-  - <明示的にしないこと> - <しない理由>（F3）
+  - <明示的にしないこと> - <しない理由>（C2, F2）
 
 ### Definition
 

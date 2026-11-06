@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { entrySkeleton } from './adr.mjs';
 
 /**
- * `markdown` 中の `## NN:` の最大値を返す。`## ` で始まる見出しが `## NN:` と一致しなければ理由付きで投げる。該当がなければ `null`。
+ * `markdown` 中の `## NN:` の最大値を返す。`## ` で始まる見出しが `## NN:` に一致しなければ理由付きで投げる。該当がなければ `null`。
  * @param {string} markdown
  * @returns {number | null}
  */
@@ -23,6 +23,21 @@ export function lastEntryNumber(markdown) {
 }
 
 /**
+ * `markdown` 中の `## NN:` の番号を出現順に返す。
+ * @param {string} markdown
+ * @returns {readonly number[]}
+ */
+export function entryNumbers(markdown) {
+  const numbers = [];
+  for (const line of markdown.split('\n')) {
+    if (!line.startsWith('## ')) continue;
+    const found = /^## (\d{2}):/.exec(line);
+    if (found) numbers.push(Number(found[1]));
+  }
+  return numbers;
+}
+
+/**
  * 末尾の改行を調整して `entry` を追記する。
  * @param {string} markdown
  * @param {string} entry
@@ -36,13 +51,95 @@ export function append(markdown, entry) {
 }
 
 /**
- * 末尾の改行を調整して `entrySkeleton(nnn)` を追記する。`# ADR NNN` は重複させない。
+ * 末尾の改行を調整して `entrySkeleton(nnn, title)` を追記する。`# ADR NNN` は重複させない。
  * @param {string} markdown
  * @param {number} nnn
+ * @param {string} [title]
  * @returns {string}
  */
-export function appendEntry(markdown, nnn) {
-  return append(markdown, entrySkeleton(nnn));
+export function appendEntry(markdown, nnn, title) {
+  return append(markdown, entrySkeleton(nnn, title));
+}
+
+/**
+ * `markdown` を先頭部と `## NN:` ごとの本文に分ける。
+ * @param {string} markdown
+ * @returns {{ head: string, bodies: readonly string[] }}
+ */
+function splitEntries(markdown) {
+  const parts = markdown.split(/^## (?=\d{2}:)/mu);
+  return { head: parts[0], bodies: parts.slice(1) };
+}
+
+/**
+ * 本文の先頭 `NN: <title>` の番号を返す。合わなければ投げる。
+ * @param {string} body
+ * @returns {number}
+ */
+function bodyNumber(body) {
+  const found = /^(\d{2}):/.exec(body);
+  if (!found) {
+    throw new Error(`broken entry heading: expected "NN:" but got "${body.slice(0, 20)}"`);
+  }
+  return Number(found[1]);
+}
+
+/**
+ * 本文の先頭 `NN: <title>` を `next` 番と元の題名で組み立てる。
+ * @param {string} body
+ * @param {number} next
+ * @returns {string}
+ */
+function renumberBody(body, next) {
+  const nn = String(next).padStart(2, '0');
+  return body.replace(/^\d{2}:/, `${nn}:`);
+}
+
+/**
+ * 全エントリーの番号を出現順に `01` から振り直す。
+ * @param {string} markdown
+ * @returns {string}
+ */
+export function renumberEntries(markdown) {
+  const { head, bodies } = splitEntries(markdown);
+  const renumbered = bodies.map((body, index) => renumberBody(body, index + 1));
+  return `${head}${renumbered.map((body) => `## ${body}`).join('')}`;
+}
+
+/**
+ * 番号 `nn` のエントリーの題名を `title` に置き換える。なければ投げる。
+ * @param {string} markdown
+ * @param {number} nn
+ * @param {string} title
+ * @returns {string}
+ */
+export function setEntryTitle(markdown, nn, title) {
+  const { head, bodies } = splitEntries(markdown);
+  let found = false;
+  const next = bodies.map((body) => {
+    if (bodyNumber(body) !== nn) return `## ${body}`;
+    found = true;
+    const rest = body.replace(/^\d{2}:\s*[^\n]*/, `${body.slice(0, 2)}: ${title}`);
+    return `## ${rest}`;
+  });
+  if (!found) throw new Error(`entry not found: ${String(nn).padStart(2, '0')}`);
+  return `${head}${next.join('')}`;
+}
+
+/**
+ * 番号 `nn` のエントリーを削除し、残りを `01` から振り直す。なければ投げる。
+ * @param {string} markdown
+ * @param {number} nn
+ * @returns {string}
+ */
+export function deleteEntry(markdown, nn) {
+  const { head, bodies } = splitEntries(markdown);
+  const kept = bodies.filter((body) => bodyNumber(body) !== nn);
+  if (kept.length === bodies.length) {
+    throw new Error(`entry not found: ${String(nn).padStart(2, '0')}`);
+  }
+  const renumbered = kept.map((body, index) => renumberBody(body, index + 1));
+  return `${head}${renumbered.map((body) => `## ${body}`).join('')}`;
 }
 
 /**
@@ -129,14 +226,21 @@ export function createLeafDir(parentDir, name) {
 }
 
 /**
- * CLI 引数を読む。root 既定は cwd。位置引数は番号 (`/^\d+$/`、1 以上)。`--check` は検査の印。`--root` 値欠落・未知引数・番号外・2 つ目は投げる。
+ * @typedef {{ root: string, add: string | null, del: number | null, set: { nn: number, title: string } | null, check: boolean }} Args
+ */
+
+/**
+ * CLI 引数を読む。`--root` 既定は cwd。操作は `--add`、`--delete`、`--set`、`--check` のいずれか一つ。
  * @param {readonly string[]} argv
- * @returns {{ root: string, nnn: number | null, check: boolean }}
+ * @returns {Args}
  */
 export function parseArgs(argv) {
   let root = process.cwd();
-  let nnn = null;
+  let add = null;
+  let del = null;
+  let set = null;
   let check = false;
+  const ops = () => [add !== null, del !== null, set !== null, check].filter(Boolean).length;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--root') {
@@ -144,19 +248,43 @@ export function parseArgs(argv) {
       if (value === undefined) throw new Error('missing value for --root');
       root = value;
       i++;
+    } else if (arg === '--add') {
+      const value = argv[i + 1];
+      if (value === undefined) throw new Error('missing value for --add');
+      if (ops() > 0) throw new Error('too many operations');
+      if (value.trim() === '') throw new Error('empty title for --add');
+      add = value;
+      i++;
+    } else if (arg === '--delete') {
+      const value = argv[i + 1];
+      if (value === undefined) throw new Error('missing value for --delete');
+      if (ops() > 0) throw new Error('too many operations');
+      if (!/^\d+$/.test(value)) throw new Error(`not an entry number: ${value}`);
+      const n = Number(value);
+      if (n < 1) throw new Error(`not an entry number: ${value}`);
+      del = n;
+      i++;
+    } else if (arg === '--set') {
+      const nnValue = argv[i + 1];
+      const titleValue = argv[i + 2];
+      if (nnValue === undefined || titleValue === undefined) {
+        throw new Error('missing value for --set');
+      }
+      if (ops() > 0) throw new Error('too many operations');
+      if (!/^\d+$/.test(nnValue)) throw new Error(`not an entry number: ${nnValue}`);
+      const n = Number(nnValue);
+      if (n < 1) throw new Error(`not an entry number: ${nnValue}`);
+      if (titleValue.trim() === '') throw new Error('empty title for --set');
+      set = { nn: n, title: titleValue };
+      i += 2;
     } else if (arg === '--check') {
+      if (ops() > 0) throw new Error('too many operations');
       check = true;
-    } else if (arg.startsWith('-')) {
-      throw new Error(`unknown argument: ${arg}`);
     } else {
-      if (nnn !== null) throw new Error(`too many arguments: ${arg}`);
-      if (!/^\d+$/.test(arg)) throw new Error(`not a cycle number: ${arg}`);
-      const n = Number(arg);
-      if (n < 1) throw new Error(`not a cycle number: ${arg}`);
-      nnn = n;
+      throw new Error(`unknown argument: ${arg}`);
     }
   }
-  return { root, nnn, check };
+  return { root, add, del, set, check };
 }
 
 /**

@@ -1,10 +1,12 @@
 /**
  * 1 エントリー分の affected の骨組み。`references/affected.format.md` の形と合わせること。
  * @param {number} nnn
+ * @param {string} [title]
  * @returns {string}
  */
-export function affectedEntrySkeleton(nnn) {
-  return `## ${String(nnn).padStart(2, '0')}: <問い>
+export function affectedEntrySkeleton(nnn, title) {
+  const q = title === undefined ? '<問い>' : title;
+  return `## ${String(nnn).padStart(2, '0')}: ${q}
 
 ### Code
 
@@ -24,10 +26,11 @@ export function affectedEntrySkeleton(nnn) {
  * `affected.md` の骨組み。`references/affected.format.md` の形と合わせること。`cycle` はサイクルの番号、`entry` は最初のエントリーの番号。
  * @param {number} cycle
  * @param {number} entry
+ * @param {string} [title]
  * @returns {string}
  */
-export function affectedSkeleton(cycle, entry) {
+export function affectedSkeleton(cycle, entry, title) {
   return `# Affected ${String(cycle).padStart(3, '0')}
 
-${affectedEntrySkeleton(entry)}`;
+${affectedEntrySkeleton(entry, title)}`;
 }
