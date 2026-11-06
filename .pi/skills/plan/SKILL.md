@@ -23,7 +23,7 @@ Read `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` for those entries. It is the imp
 
 - Before cutting, read `references/cut.md`.
 - Cut the work into plans by what it reads, not by where it lives.
-- Decide in this order: the split, the place of each plan, the order, and the boundary. When unsure of the place, propose worktree. The owner's answer decides the place.
+- Decide in this order: the split, the place of each plan, the order, and the boundary. Propose the place with the reason. When unsure of the place, propose worktree. The owner's answer decides the place.
 - Present them to the owner in the fence `references/cut.md` gives. One block per plan (`ADR`, `Place`, `Summary`, `Why`). Then the `Order` last, numbered, for all plans.
 - The `Why` reads the `Kind` and the `Edge`. It says what those mean and why the entries make one plan. The field names alone are not enough.
 - The owner agrees before any plan md is written. On disagreement, revise and present again until they agree.
@@ -34,7 +34,7 @@ Read `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` for those entries. It is the imp
 - Read the map's every path whole, and each file those paths directly name: what they import, what they re-export, and the tests beside them.
 - Decide each path's mark: `add`, `update`, `drop`, or no mark.
 - Answer the four questions in `## Design` of `references/format.md`.
-- A target of questions 3 and 4 goes into `Files` even when it is past the ADR's `Scope`. The reason goes into `## Design`.
+- A module for questions 3 and 4 goes into `Files` even when it is past the ADR's `Scope`. The reason goes into `## Design`.
 - The affected is the plan's material. An `Edge: checks` is an `Always` line with the related tests. A `Kind: artifact` is a path in `Files` with its mark. When it is generated, the step says how. An `### External` item is the step's `Outside:`. A path is a `Files` line.
 - Choose the `Added` checks the work needs: work on rows goes to DB, a component the owner must see goes to front, auth behavior goes to auth, an amended Japanese document goes to proofread, and anything else goes to other. `なし` when nothing applies.
 - The marks follow the `Adopted`: `Add` is `add`, `Update` is `update`, `Drop` is `drop`, and `Keep` is no mark.

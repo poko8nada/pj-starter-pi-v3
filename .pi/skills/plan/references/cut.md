@@ -42,5 +42,4 @@ Present one block per plan, in a fence. Then write the order last, numbered, for
 - The default is a worktree: a branch, a subagent, a merge.
 - A plan whose work needs the owner's eyes runs in the base. A browser, a screen, a look. The agent does it in its own tree, and the changes land as they are made. No branch and no merge.
 - A yolo plan is worktree. The base condition does not apply.
-- Propose one place per plan with the reason, and record the owner's answer. `worktree`, or `base` with what the owner watches.
 - A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes. Keep the files apart, or order the two.

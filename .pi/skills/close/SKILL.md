@@ -9,8 +9,6 @@ Each plan carries its own acceptance, and every merge runs the whole suite, so t
 What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
 This skill collects the holes, proposes their triage in `close.md`, and closes the cycle. After the owner's judgement on the proposal and its fixes, it asks the owner, Unit by Unit, whether they will verify the function.
 
-Texts handed to subagents are in `references/tasks.md`.
-
 ## Who decides
 
 Three gates. The table names them and says what each decides. A step that says "the gate is ..." names one of the three, and does not restate it.
@@ -128,7 +126,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - its plan md's leftovers go back to `collected`: run the leftover's path again in this step — the collect, the exclusion, the proposal and the owner's judgement, one leftover at a time; an `ex-` born there joins this step's count
   - new `## Triage` lines continue the numbers: they follow the current maximum, and `done <commit>` lines keep theirs
   - An `ex-` plan the work drops carries `dropped` and the reason on its line instead of `done <commit>`.
-- gives: `merged` for each. The step ends when no `ex-` is left without `done <commit>` or `dropped`, and the chat said so.
+- gives: `merged` for each. The step ends when no `ex-` is left without `done <commit>` or `dropped`, and the owner said so in the chat.
 
 ### 9. Japanese Proofread
 

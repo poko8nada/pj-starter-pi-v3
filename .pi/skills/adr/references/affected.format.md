@@ -42,4 +42,4 @@ Section and field names are English; the content is Japanese.
 ## Writing
 
 - An empty `### External` says `なし`.
-- A fact that could not be derived is not written to the record. It goes to the report.
+- A fact that could not be derived is not written to the record.
