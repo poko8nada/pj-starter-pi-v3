@@ -150,7 +150,7 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 ### 11. Proofread and Affected
 
 - after the confirmation, run the proofread and the affected research, and the next entry goes ahead while they run
-- the proofread is in `## Proofread`; the affected is the entry's, in `references/affected.format.md`'s shape, and the `research` subagent writes it to `affected.md`
+- the Japanese proofread is in `## Japanese Proofread`; the affected is the entry's, in `references/affected.format.md`'s shape, and the `research` subagent writes it to `affected.md`
 - the scaffold makes the `affected.md`'s bones with the entry's, and appends the next entry's bones to both
 
 ## Entries, together
@@ -158,12 +158,13 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 - when every entry is decided, read them together: the names they write, and the lines they move
 - two entries that touch the same name must not contradict, and a contradiction is settled here with the owner
 
-## Proofread
+## Japanese Proofread
 
-After the confirmation of an entry, run one `proofreader` subagent with the cycle's `adr.md`; have it read `.pi/skills/adr/references/adr.format.md` for the shape; the role's policy applies; edit only `adr.md`, and only this entry's lines.
+After the confirmation of an entry, run one `proofreader` subagent with the cycle's `adr.md` for the Japanese proofread of `adr.md`; have it read `.pi/skills/adr/references/adr.format.md`; the role's policy applies; edit only `adr.md`, and only this entry's lines.
 
 - read its report and `git diff` of the file
 - if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/adr.format.md`'s shape, in your own words
+- the wording of a quoted passage is not a change of meaning: keep that correction
 - if the report changed the meaning of a decision, settle it with the owner again
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
 - one round: the repaired file does not go through the subagent again

@@ -89,7 +89,7 @@
 
 - Every leftover has a line in the `Triage`: nothing is left without a destination.
 - `close.md` is complete when `## Collected` holds the inventory, `## Triage` holds the proposal with its Fact / Why / Then, and `## Verified` is empty.
-- Then the proofread runs, and the owner reads the whole `close.md` and judges the triage.
+- Then the Japanese proofread runs, and the owner reads the whole `close.md` and judges the triage.
 - Every `ex-` plan is merged, and its line carries `done <commit>`: the `Triage`'s line, or the Unit's `Fixed`.
 - Every Unit this cycle touched has a section in `## Verified`: what was checked, or the reason it was not, and the `ex-` that fixed a broken one.
 - Then the cycle is closed: `close.md` and `ROADMAP.md` go in one commit, and nothing about the cycle is edited afterwards. An `ex-` plan and its work are committed at its own merge.

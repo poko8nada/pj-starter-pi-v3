@@ -79,12 +79,13 @@ The task is in `references/tasks.md`. The plan is fixed from them, and the repor
 
 While that review runs, write the next plan file: the writing of one file and the review of the previous one overlap. A plan that is fixed from its review does not wait for the others.
 
-### 7. Proofread
+### 7. Japanese Proofread
 
-After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`; have it read `.pi/skills/plan/references/format.md` for the shape; the role's policy applies; edit only the plan md.
+After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` for the Japanese proofread of the plan md; have it read `.pi/skills/plan/references/format.md`; the role's policy applies; edit only the plan md.
 
 - read its report and `git diff` of the file
 - if a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words
+- the wording of a quoted passage is not a change of meaning: keep that correction
 - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
 - one round: a repaired file does not go through the subagent again
 
