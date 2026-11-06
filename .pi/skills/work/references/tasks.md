@@ -24,7 +24,7 @@ After the slices, clean the tests in the test files the plan's `Files` updates:
 - a test for a branch this plan's change stops making
 - a test the plan's `## Test cases` would not write: a premise the types, the schema or the DB already settle, one nobody would notice, or an `Adopted` line with no case
 Drop what you find, and keep the suite green.
-Write it in the plan md's ## Notes, as a section that is not a slice.
+Write it in the same plan md's ## Notes, as a section that is not a slice.
 ```
 
 - It is not a slice: what went stale is known only after the change.
@@ -42,7 +42,7 @@ Answer one question: can this diff close the plan? By five viewpoints:
 - Noise: a test the types, the schema or a DB constraint already settle, or one nobody would notice; a case written with a magic number or a hardcoded string
 Read the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.
 A value the plan or the ADR already decided is not a finding, and neither is a behavior the plan covers in `Added`.
-Write your findings in the plan md's ## Work Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
+Write your findings in the same plan md's ## Work Review, under ### Round 1: one bullet per finding, under the viewpoint it came from, each with <file>:<line>. Write なし for a viewpoint that found nothing.
 This is the only round of findings. A doubt or a note that is not a finding goes under `- Doubts:` in `### Round 1`. A doubt you resolved yourself is not written: write only a doubt that needs a fix or the owner's judgement.
 Do not change the code.
 ```
