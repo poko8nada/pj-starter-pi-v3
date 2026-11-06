@@ -210,16 +210,12 @@ Section and field names are English; the content is Japanese.
   - the id of the worktree it left
   - for a `base` plan, the worktree id is `なし`, because there is no worktree
 - A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line. It holds the line, the question, and the reason. The review reads it.
-- **The subagent writes its own slice's record** in the worktree's plan md. `Stopped` too, since the subagent runs the check and sees it fail.
-- For a `base` plan, the agent writes the slice's record in the base's plan md. `Stopped` too, since the agent runs the check and sees it fail.
-- The agent does not author a worktree plan's plan md before the acceptance. The agent writes it at the acceptance, from the worktree.
-- When a worktree plan is dropped, the agent copies the subagent's plan md to the base as it is.
 - The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
 - `Commit` is the slice's own commit, and it is not rewritten.
 
 ## Work Review
 
-- The reviewer writes here, and the fixing subagent answers here. Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
+- Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from:
   - `Stale` — what this change made stale: a doc, a comment, a test, or a sentence the change makes redundant
   - `Unlisted` — a change the plan's `Files` does not name
@@ -233,9 +229,8 @@ Section and field names are English; the content is Japanese.
 
 ## Acceptance
 
-- The agent writes it, after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
+- Written after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
 - `Doubts` — the same as the review's: a note that is not a finding. It is the agent's, and the close reads it as a leftover.
-- A `Findings` line without a `fixed:` is handed to a `code` subagent as the fix instruction; when it is fixed, the acceptance runs again and is written again.
 
 ## Writing
 

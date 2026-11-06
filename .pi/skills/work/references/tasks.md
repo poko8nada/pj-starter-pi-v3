@@ -7,7 +7,7 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md.
 Work its slices in order, as far as you can.
-For each slice: its `Steps`, then its `Verify`, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes.
+For each slice: its `Steps`, then its `Verify`, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes as `### Slice N: <name>`, in the shape `.pi/skills/plan/references/format.md` gives.
 A finding is a hole you could not close: one bullet for the hole, and `left: <why>` under it. What you did, and why, goes in the commit message. `Unplanned` is only for a hole you found and fixed here. Write なし when there is none.
 If you cannot finish, write where you stopped (Stopped) and stop.
 ```
