@@ -59,7 +59,7 @@ This is the last look. Write your answer in ### Round 2 of the same plan md, sam
 ## Fixes (the `code` subagent, continued)
 
 ```
-Read the plan md's ## Work Review, ### Round 1. For each finding without a `fixed:` or `left:` line, adopt it and fix it, or leave it.
+Read the plan md's ## Work Review, ### Round 1 in the same plan md. For each finding without a `fixed:` or `left:` line, adopt it and fix it, or leave it.
 When you adopt one, add a `fixed:` line under it, saying what you did. When you leave one, add a `left:` line under it, saying why. A `left:` goes on a finding, not on a doubt.
 Run the plan's checks after fixing. Then commit: consult(<plan id>): round <N> fixes
 ```
@@ -70,5 +70,5 @@ Run the plan's checks after fixing. Then commit: consult(<plan id>): round <N> f
 Acceptance found this, in cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md (## Acceptance, Findings):
 <the lines>
 Fix them, run the plan's checks, and commit: consult(<plan id>): acceptance fixes
-If one cannot be fixed here, write why under it instead, and leave it for the close.
+If one cannot be fixed here, write why under it in the same plan md instead, and leave it for the close.
 ```

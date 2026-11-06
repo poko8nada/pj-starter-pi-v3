@@ -59,9 +59,9 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 - when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself. The task is in the `Review` section of `references/tasks.md`.
 - it writes `## Work Review`, `### Round 1` in the worktree's plan md (the agent's tree for a `base` plan), under the five viewpoints and `Doubts`
 - it reads the test steps' cases by the plan's `## Test cases`, and each `Verify` by what closes its slice
-- fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line, and what it leaves carries a `left:` line; a `base` plan commits with `base(<plan id>): round <N> fixes`. The task is in the `Fixes` section of `references/tasks.md`.
+- fixing subagent is a `code` subagent, continued: it reads the plan md and writes a `fixed:` line for what it adopts, and a `left:` line for what it leaves, under each Round 1 finding in the worktree's plan md (the agent's tree for a `base` plan); a `base` plan commits with `base(<plan id>): round <N> fixes`. The task is in the `Fixes` section of `references/tasks.md`.
 - Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. The reviewer writes the verdict in `### Round 2` in the worktree's plan md (the agent's tree for a `base` plan). A Round 1 that finds nothing ends the review
-- Round 2 is the last look: the review ends there, and what is still open is fixed once more by the fixing subagent. No third round. What it cannot fix it writes as `left: <why>` under the finding, and the close reads it as a leftover
+- Round 2 is the last look: the review ends there, and what is still open is fixed once more by the fixing subagent. No third round. What the fixing subagent cannot fix it writes as `left: <why>` under the Round 1 finding, in the same plan md, and the close reads it as a leftover
 - a doubt or a note that is not a finding: the reviewer writes it under `- Doubts:` in the round it came from, and nowhere else
 
 ### 7. Acceptance
@@ -87,7 +87,7 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 **What is written**
 
 - `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing); the merge's commit is not written there, because the acceptance is committed before the merge. The agent writes the acceptance at the acceptance, in the worktree's plan md. For a `base` plan, in the base's plan md.
-- a `Findings` line is a fix instruction for a `code` subagent. The subagent writes `fixed:` or `left:` under the line it was handed. When it is fixed, repeat this step: the acceptance runs again and is written again. The task is in the `Acceptance's findings` section of `references/tasks.md`.
+- a `Findings` line is a fix instruction for a `code` subagent. The subagent writes `fixed:` or `left:` under the line it was handed, in the same plan md. When it is fixed, the agent repeats this step: the acceptance runs again and is written again in the same plan md. The task is in the `Acceptance's findings` section of `references/tasks.md`.
 - commit it in the worktree: `consult(<plan id>): acceptance`; a `base` plan commits it in the base with `base(<plan id>): acceptance`, and there is no worktree
 
 ### 8. Merge
@@ -107,6 +107,6 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 ## How not to do this
 
 - Do not close a slice whose check the subagent did not run: `Commit` means the check passed
-- Do not author the plan from the agent's side while a worktree is live: the code subagent writes its slice's record, and the agent writes at the acceptance. A dropped plan's plan md is copied, not authored
+- Do not author the plan from the agent's side while a worktree is live. The subagents write their own records there, and the agent writes the Acceptance section. A dropped plan's plan md is copied, not authored
 - Do not fix a hole silently: it goes in the record
 - Do not take a merge the acceptance did not pass

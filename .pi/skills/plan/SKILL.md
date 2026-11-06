@@ -59,8 +59,8 @@ When the plan's `Files` has neither `add` nor `drop`, write in the `Steps` and t
 For a line the plan cannot write, run one `research` subagent within the four kinds. The kinds are the code's present shape, the contract of the thing it calls, the library's or the package's practice, and the shape of the test double. The task is in `references/tasks.md`.
 
 - Research only the lines that block the plan. A line that can wait is a `Stopped` line. Skip what is already in hand.
-- Write facts about paths and marks in `Files`, facts about declarations in `Types`, and facts about behavior in `Steps`.
-- A missing fact the four kinds do not cover is a `Stopped` line with the reason, and the review reads it. Write it to `## Notes` as `### Slice N`, in the shape `references/format.md` gives.
+- The agent writes facts about paths and marks in `Files`, facts about declarations in `Types`, and facts about behavior in `Steps`.
+- A missing fact the four kinds do not cover is a `Stopped` line with the reason, and the review reads it. The agent writes it to `## Notes` as `### Slice N` in the base's plan md, in the shape `references/format.md` gives.
 - Set the threshold for the question. The research is not a ritual at every plan.
 
 ### 6. Review, one plan at a time
@@ -75,13 +75,13 @@ Write one plan md, and send it to its review at once. A `review` subagent reads 
 - `Checks` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed
 - `Flow` — a contradiction, a circular flow, a duplication, an omission, an unnatural flow inside a file the change made
 
-The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan. When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
+The task is in `references/tasks.md`. The agent fixes the plan from them, and the report to the owner says what was done with each finding. One subagent per plan. When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
 
 With two or more plans, while that review runs, write the next plan file. The writing of one file and the review of the previous one overlap. A plan that is fixed from its review does not wait for the others.
 
 ### 7. Japanese Proofread
 
-After every review and its fixes are done, run one `proofreader` subagent per file in parallel with the fixed plan mds for the Japanese proofread of each plan md (`NN` is the file's order prefix in `references/format.md`; an `ex-` plan has no prefix). Have it read `.pi/skills/plan/references/format.md`. The role's policy is in `.pi/extensions/consult/types.json`. It edits only the plan md.
+After every review and its fixes are done, run one `proofreader` subagent per file in parallel with the fixed plan mds for the Japanese proofread of each plan md (`NN` is the file's order prefix in `references/format.md`; an `ex-` plan has no prefix). Have it read `.pi/skills/plan/references/format.md`. The role's policy is in `.pi/extensions/consult/types.json`. It edits only the Japanese wording of the plan md. It does not change record fields.
 
 - Read its report and the `git diff` of the file.
 - If a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words.
@@ -91,7 +91,7 @@ After every review and its fixes are done, run one `proofreader` subagent per fi
 
 ### 8. Show the owner
 
-Show every plan of the cycle: files, slices, types, steps, verify. The owner answers approval or fixes. A fix to the cut goes back to step 3 and the affected plans are presented again. A fix to the content goes back to step 4 and through review and proofread again. Repeat until the owner approves.
+Show every plan of the cycle: files, slices, types, steps, verify. The owner answers approval or fixes. A fix to the cut goes back to step 3 and the affected plans are presented again. A fix to the content goes back to step 4 and through review and proofread again. The agent fixes what they point at in the base's plan md, and shows it again. Repeat until the owner approves.
 
 ### Changes after this
 
@@ -105,4 +105,4 @@ The agent edits the plan to match the owner's answers, and git holds the diff. T
 - Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
 - Do not leave a hole.
 - Do not write the plan from the agent's side while a worktree is live.
-- The code subagent writes its slice's record, and the agent writes at the acceptance
+- The subagents write their own records there, and the agent writes the Acceptance section.

@@ -222,7 +222,7 @@ Section and field names are English; the content is Japanese.
   - `Gaps` — a hole the slices passed over, a behavior the checks do not exercise; a decided value is not a gap
   - `Unproven` — a test that would stay green if the behavior it names were removed
   - `Noise` — a test step a type, a schema or a DB constraint already settles, or one nobody would notice
-- `Doubts` — a note that is not a finding, and still worth keeping: one bullet each. Nothing fixes it, and the close reads it as a leftover. `なし` when there is none.
+- `Doubts` — a note that is not a finding, and still worth keeping: one bullet each. The reviewer writes it under `- Doubts:` in the round it came from. Nothing fixes it, and the close reads it as a leftover. `なし` when there is none.
 - A finding is one bullet. What the fixing subagent did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left. The close reads the `left` lines.
 - `なし` when the viewpoint found nothing; a note may follow it (`なし — 何を確かめたか`). The close reads only the leftovers, so the note does not become one.
 - Round 1 is a new conversation; Round 2 continues the reviewer's own, and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review. What the final fix cannot close, the fixing subagent writes as `left:`, and the close reads it.
@@ -230,7 +230,7 @@ Section and field names are English; the content is Japanese.
 ## Acceptance
 
 - Written after the review's fixes: `Ran` (the checks that were run) and `Findings` (one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`; `なし` when there is nothing). The merge's commit is not written here: the acceptance is committed before the merge, and git holds the merge.
-- `Doubts` — the same as the review's: a note that is not a finding. It is the agent's, and the close reads it as a leftover.
+- `Doubts` — the same as the review's: a note that is not a finding. The agent writes the Acceptance's `Doubts`, and the close reads it as a leftover.
 
 ## Writing
 
