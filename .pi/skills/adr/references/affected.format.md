@@ -38,8 +38,3 @@ Section and field names are English; the content is Japanese.
 - One `Edge` line may list several paths, separated by a comma.
 - `Name` — the thing outside: an `env`, a `contract`, `data`, a `path` or a `limit`.
 - `Used by` — the paths that use it.
-
-## Writing
-
-- An empty `### External` says `なし`.
-- A fact that could not be derived is not written to the record.

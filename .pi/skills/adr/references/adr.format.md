@@ -58,20 +58,31 @@ Section and field names are English; the content is Japanese.
 
 - `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
 - One bullet is one sentence.
-- `Context` — the entry's items, numbered `C1`, `C2`: what is happening, what the `Who` wants, or the entry's question, and the premises and constraints the decision respects.
-- `Scope` — the agreed list. Every item is `in` or `out`, and an `out` item carries its reason.
-- `Research & Trial` — the facts the decision rests on, each with the item it serves and its source: `F1 (C1)`. A fact that serves no item adds one to `Context`.
-- `Decision` — `Status`, `Adopted`, `Denied`.
-  - `Status` — empty before the decision; after it, `accepted` or `rejected`. A rejected entry carries its reason on the same line, in parentheses.
-  - `Adopted` — the explanation of what is adopted, with `Add`, `Update`, `Drop` and `Keep`. `Add` is what grows, `Update` is what changes, `Drop` is what disappears, and `Keep` is what is left untouched with the reason. Each field holds one or more bullets; a field with nothing in it is `なし`. Each line carries the items it settles, in parentheses: `（C1, F2）`. A rejected entry leaves `Adopted` empty.
-  - `Denied` — what is explicitly not done, with the reason. Each line carries the items it settles, in parentheses.
-- `Definition` — the parts of `DEFINITION.md` the entry relates to, and what happens to each. It is the last thing the entry leaves.
+- `Definition` is the last section the entry leaves.
+
+## Context
+
+- An item is one line: `C<n>: <the item>`.
+- The number runs from `C1`, in the order the items were settled.
 
 ## Scope
 
-- The axes and the kinds: `Change`, `Quality`, `Operation` and the kinds under each. This file holds the place they are written.
-- Under each axis, one line per kind: `<kind>: in`, or `<kind>: out` with its reason. A revisit condition goes on the kind that needs one.
-- The list is the entry's whole scope. A reader can tell what the entry does not do.
+- Three axes: `Change`, `Quality`, `Operation`.
+- Under each axis, one line per kind: `<kind>: in — <what is done>`, or `<kind>: out — <what is not done>（理由）`.
+- An `out` kind carries its reason. A revisit condition goes on the kind that needs one.
+
+## Research & Trial
+
+- A fact is one line: `F<n> (C<n>): <the fact>。<出所>`.
+- The first parenthesis names the `Context` item the fact serves.
+
+## Decision
+
+- `Status` — empty before the decision. After it, `accepted`, or `rejected` with its reason in parentheses on the same line.
+- `Adopted` — the explanation of what is adopted, with `Add`, `Update`, `Drop` and `Keep`. `Add` is what grows, `Update` is what changes, `Drop` is what disappears, and `Keep` is what is left untouched with the reason. A rejected entry leaves it empty.
+- `Denied` — what is explicitly not done, with the reason.
+- A line under `Adopted` or `Denied` ends with the items it settles, in parentheses: `（C1, F2）`.
+- A field with nothing in it is `なし`.
 
 ## Definition
 
@@ -83,7 +94,7 @@ Section and field names are English; the content is Japanese.
   - `Product` / `What`
 - The operation is `(added)`, `(updated)`, `(dropped)` or `(kept)`.
 - The value is the new line for `(added)` and `(updated)`, the reason the line stands for `(kept)`, and nothing for `(dropped)`.
-- Every accepted entry names the parts it relates to. A rejected entry carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
+- A rejected entry carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
 ## Writing
 

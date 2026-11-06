@@ -6,13 +6,8 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 
 ```markdown
 Answer the question the task carries, and nothing else.
-The type answers its own question:
-
-- the official information — can it be built here, and does it fit the use
-- the source — can it be built here, and does it fit the use
-- the shape it is actually used in — how it is held up where it is already done
-  Keep the source of each fact.
-  Report the facts. A question you could not answer is a fact too: say what it is holding up.
+Keep the source of each fact.
+Report the facts. A question you could not answer is a fact too: say what it is holding up.
 ```
 
 - The agent puts the question and the approved type in the task.
@@ -37,19 +32,19 @@ The change is the entry's decision. The record is `affected.md`; its shape is th
 11. An edge: a file a search cell hit is an edge to the object. `needs` — the code needs the path. `names` — a config or a doc holds the path as a value or a description. `mentions` — a doc touches the path. `checks` — a test checks the path. `contains` — a dir holds the path. One `Edge` line may list several paths.
 12. Repeat: add the names the hits give (the file, the parent directory, the identifier, the nearby heading) until no new name comes.
 13. Stop when no new name comes and the worksheet has no blank.
-14. The agent checks the worksheet: a cell filled by `ls` or `find` alone is not accepted.
-15. Check that each kind in the `Scope`'s `in` has at least one operation; if not, the extraction is not done.
-16. The reflection: the ranges seen, the ranges not seen and why, the names added. The questions that could not be answered, the nouns that could not be derived and the reason the work stopped go to the report as facts.
-17. The constraints: the change is not applied, so the checks are not run. No indexer, AST or LLM. The cost follows the change's size; no full enumeration.
+14. Check that each kind in the `Scope`'s `in` has at least one operation; if not, the extraction is not done.
+15. The reflection: the ranges seen, the ranges not seen and why, the names added. The questions that could not be answered, the nouns that could not be derived and the reason the work stopped go to the report as facts.
+16. The constraints: the change is not applied, so the checks are not run. No indexer, AST or LLM. The cost follows the change's size; no full enumeration.
 
 Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 
 Report the facts only.
-Write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`.
+Write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds. Do not touch them, and do not delete them.
 ```
 
 - The agent puts the entry and the change in the task.
 - The affected is written to `affected.md`, not to the ADR.
+- The agent checks the worksheet. A cell filled by `ls` or `find` alone is not accepted.
 
 ## Try it (a `trial` subagent)
 
