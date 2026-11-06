@@ -31,12 +31,12 @@
 
 | No  | Ver   | status | cycles | priority | title                                        |
 | --- | ----- | ------ | ------ | -------- | -------------------------------------------- |
-|     | 0.9.4 | _todo_ |        | mid      | quality-gateの例外追加                       |
-|     | 0.9.4 | _todo_ |        | mid      | tmpファイルの即時削除拡張機能                |
-|     | 0.9.4 | _todo_ |        | mid      | proofreaderにja-checkの利用を義務化          |
-| 020 | 0.9.4 | done   | 055-d  | mid      | affected.mdのja-check除外                    |
-| 019 | 0.9.4 | _todo_ |        | high     | affected.mdの調査と内容変更                  |
-| 020 | 0.9.4 | _todo_ |        | mid      | affected.mdのja-check除外                    |
+|     | 0.9.5 | _todo_ |        | mid      | quality-gateの例外追加                       |
+|     | 0.9.5 | _todo_ |        | mid      | tmpファイルの即時削除拡張機能                |
+|     | 0.9.4 | _todo_ |        | mid      | コンサルの稼働状況表示                       |
+| 022 | 0.9.4 | _todo_ |        | mid      | スキル文体の見直し                           |
+| 021 | 0.9.4 | _todo_ |        | mid      | proofreaderにja-checkの利用を義務化          |
+| 020 | 0.9.4 | done   | 054-f  | mid      | affected.mdのja-check除外                    |
 | 019 | 0.9.4 | done   | 055-f  | high     | affected.mdの調査と内容変更                  |
 | 018 | 0.9.4 | done   | 054-f  | mid      | 日本語修正スクリプトの修正                   |
 | 017 | 0.9.3 | done   | 052-d  | mid      | consultの完了報告をctrl+oで展開可能にする    |
@@ -56,6 +56,16 @@
 | 003 | 0.9.1 | done   | 045-d  | mid      | planスキル、ゴールフォーマットと導出方法変更 |
 | 002 | 0.9.1 | done   | 045-d  | low      | sound-notifyの設定値json化                   |
 | 001 | 0.9.0 | done   | 044-d  | high     | ロードマップの初版の基盤整備                 |
+
+### 0.9.4 021
+
+- description:
+  - proofreaderにja-checkの利用を義務化したい
+- ideas:
+  - proofreaderにja-checkを許可する
+  - roleにja-checkを校正に用いてwarn,error共にゼロになるようにすることを明記
+  - 各スキルのタスクについて、proofreaderのロール内に既に定義されていることは重複するので、task側から削除
+  - スキル内のproofreadについて、全て棚卸しして、"日本語の校正"である事を明記
 
 ### 0.9.4 020
 
