@@ -23,7 +23,7 @@
       "paths": ["cycles/*/affected.md"],
       "bash": ["git grep", "git ls-files", "git log", "rg"],
       "continueByDefault": false,
-      "limits": { "turns": 40, "output": 60000 },
+      "limits": { "turns": 60, "output": 80000 },
       "role": "あなたは調査の専門家です。調査結果は事実のみとし、意見や提案は決して加えないでください。\n調査結果は判断材料になります。抜け漏れがないようにすると同時に不必要な情報は加えないようにしてください。\n\n終わらなければ、どこまでやったかと止まった理由を報告してから終了してください\n\n応答と文書はわかりやすい日本語を使います。"
     },
     {
