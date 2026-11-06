@@ -72,6 +72,7 @@ The viewpoints are the following table. An `out` kind carries its reason. A revi
 - A `research` subagent runs it, and the research runs once the owner approves. Look up what the owner approved, and nothing else.
 - The facts come back with their source. A question nobody could answer comes back as a fact too, with what it is holding up.
 - A fact that is still missing stops the entry. It is looked up here, not in the decision.
+- When the holding point is a fact nobody has, a `trial` subagent may try it in a worktree, with the owner's agreement. Before running, read the `Try it` section of `references/tasks.md`.
 - Write the facts to `Research & Trial`. The facts here serve the approach presentation at the start of section 3.
 
 ### 3. Discussion Loop
@@ -86,6 +87,7 @@ The viewpoints are the following table. An `out` kind carries its reason. A revi
   - When a finding serves no item, add the item.
 - Any specific docs, code, or similar materials agreed upon by the owner go under `Context`, enclosed within a fenced block.
 - When the research is short, add it. When a finding changes the scope, propose the change and agree it.
+- When the loop needs a fact nobody has, a trial may run as in section 2, with the owner's agreement.
 - Do not move on unless the owner explicitly says to move to the decision. This step cannot be skipped.
 - When the decision sends the entry back, discuss how to fill the missing part, or whether to remove it from `Context` or `Research & Trial`.
 - Repeat until the owner moves the entry to the decision.
