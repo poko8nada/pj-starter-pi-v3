@@ -5,7 +5,7 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 ## Review of a plan (a `review` subagent)
 
 ```
-Read through cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md — each slice's `### Verify` and its `### Steps`, and every file it names — and the ADR's `Adopted`, `Denied` and `Scope`. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
+Read through cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md — each slice's `### Verify` and its `### Steps`, and every file it names — and the ADR's `Adopted`, `Denied`, `Scope` and `Definition`. The shape is in `.pi/skills/plan/references/format.md`, and a test case is read by its `## Test cases`.
 Each slice closes when its check passes, so the check is the slice. Answer one question: can this `Verify`, and these `Steps`, close the slice?
 - `Goal` — each line of the ADR's `Adopted` and the `Scope` that no step and no check carries, a step that goes past the `Scope`, a step or a check that does what `Denied` says not to do, and a `Definition` line whose target `Files` does not name; the answers in `## Design` against the four questions
 - `Integration` — how the update is built into the existing, and how the whole is redesigned; a plan that only replaces words

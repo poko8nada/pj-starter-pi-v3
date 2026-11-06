@@ -13,7 +13,7 @@ It is written from the ADR and the affected. The work is done from it. A subagen
 
 ### 1. Read the ADR's entries
 
-Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. Read the adopted entries the plan cuts, in full, with each entry's `Definition` as the scope boundary. The `No` is the ADR's entry number. A normal plan is cut from the ADR's entries, and writes `No` at the top of the plan md as it is. An `ex-` plan comes from the close's triage, and does not write `No`. The Triage line in `close.md` is the only source.
+Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. Read all of its accepted entries in full, with each entry's `Definition` as the scope boundary. A normal plan is cut from the ADR's entries, and writes `No` at the top of the plan md as it is. An `ex-` plan comes from the close's triage instead: read its Triage line in `close.md`, and do not write `No`. The Triage line is the only source.
 
 ### 2. Read the affected
 
@@ -23,19 +23,22 @@ Read `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` for those entries. It is the imp
 
 - Before cutting, read `references/cut.md`.
 - Cut the work into plans by what it reads, not by where it lives.
-- Decide the split, the order, the boundary and the place.
+- Decide in this order: the split, the place of each plan, the order, and the boundary.
 - Present them to the owner in the fence `references/cut.md` gives. One block per plan (`ADR`, `Place`, `Summary`, `Why`). Then the `Order` last, numbered, for all plans.
 - The `Why` reads the `Kind` and the `Edge`. It says what those mean and why the entries make one plan. The field names alone are not enough.
-- The owner agrees before any plan md is written.
+- The owner agrees before any plan md is written. On disagreement, revise and present again until they agree.
 
 ### 4. Write the plan md from the affected
 
 - Before writing, read `references/format.md`.
-- Read the map's every path, and the files around them. Decide each path's mark: `add`, `update`, `drop`, or no mark.
+- Read the map's every path whole, and each file those paths directly name: what they import, what they re-export, and the tests beside them.
+- Decide each path's mark: `add`, `update`, `drop`, or no mark.
 - Answer the four questions in `## Design` of `references/format.md`.
 - A target of questions 3 and 4 goes into `Files` even when it is past the ADR's `Scope`. The reason goes into `## Design`.
-- The affected is the plan's material. An `Edge: checks` is a `Verify` line. A `Kind: artifact` is a deliverable. An `### External` item is the step's `Outside:`. A path is a `Files` line.
-- Decide the slices by the check that closes them.
+- The affected is the plan's material. An `Edge: checks` is an `Always` line with the related tests. A `Kind: artifact` is a path in `Files` with its mark. When it is generated, the step says how. An `### External` item is the step's `Outside:`. A path is a `Files` line.
+- The marks follow the `Adopted`: `Add` is `add`, `Update` is `update`, `Drop` is `drop`, and `Keep` is no mark.
+- Read the `Definition` `Unit` lines as the scope. Lines with `(added)`, `(updated)` or `(dropped)` are the work. Lines with `(kept)` are context.
+- Decide the slices by the check that closes them. The check comes first. Then the dependency order. Then the same place together.
   - One slice closes with one `Verify`.
   - Different checks mean different slices.
   - One check closes the parts together.
@@ -54,13 +57,14 @@ When the plan's `Files` has neither `add` nor `drop`, write in the `Steps` and t
 
 For a line the plan cannot write, run one `research` subagent within the four kinds. The kinds are the code's present shape, the contract of the thing it calls, the library's or the package's practice, and the shape of the test double. The task is in `references/tasks.md`.
 
-- Write the facts in `Files`, `Types` and `Steps`.
-- A missing fact the four kinds do not cover is a `Stopped` line with the reason, and the review reads it.
+- Research what the map, the files, and the ADR and the chat do not already give. Skip what is already in hand.
+- Write facts about paths and marks in `Files`, facts about declarations in `Types`, and facts about behavior in `Steps`.
+- A missing fact the four kinds do not cover is a `Stopped` line with the reason, and the review reads it. Write it to `## Notes` as `### Slice N`, in the shape `references/format.md` gives.
 - Set the threshold for the question. The research is not a ritual at every plan.
 
 ### 6. Review, one plan at a time
 
-Write one plan md, and send it to its review at once. A `review` subagent reads through the plan md and every file it names. It also reads the ADR's `Adopted`, `Denied` and `Scope`. It answers on these viewpoints:
+Write one plan md, and send it to its review at once. A `review` subagent reads through the plan md and every file it names. It also reads the ADR's `Adopted`, `Denied`, `Scope` and `Definition`. It answers on these viewpoints:
 
 - `Goal` — the steps and the checks that do not carry each line of the ADR's `Adopted`, and the `Scope`. A step or a check that does what `Denied` says not to do. A `Definition` line whose target `Files` does not name.
 - `Integration` — how the update is built into the existing, and how the whole is redesigned
@@ -72,11 +76,11 @@ Write one plan md, and send it to its review at once. A `review` subagent reads 
 
 The task is in `references/tasks.md`. The plan is fixed from them, and the report to the owner says what was done with each finding. One subagent per plan.
 
-While that review runs, write the next plan file. The writing of one file and the review of the previous one overlap. A plan that is fixed from its review does not wait for the others.
+With two or more plans, while that review runs, write the next plan file. The writing of one file and the review of the previous one overlap. A plan that is fixed from its review does not wait for the others.
 
 ### 7. Japanese Proofread
 
-After every review is done, run one `proofreader` subagent per file in parallel with `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` for the Japanese proofread of the plan md (`NN` is the file's order prefix in `references/format.md`). Have it read `.pi/skills/plan/references/format.md`. The role's policy applies. It edits only the plan md.
+After every review and its fixes are done, run one `proofreader` subagent per file in parallel with the fixed plan mds for the Japanese proofread of the plan md (`NN` is the file's order prefix in `references/format.md`). Have it read `.pi/skills/plan/references/format.md`. The role's policy applies. It edits only the plan md.
 
 - Read its report and the `git diff` of the file.
 - If a slice's `Steps`, a `Verify` line, a test case or a field name changed meaning, or a section or field name moved, put the file back to `references/format.md`'s shape, in your own words.
@@ -86,7 +90,7 @@ After every review is done, run one `proofreader` subagent per file in parallel 
 
 ### 8. Show the owner
 
-Show every plan of the cycle: files, slices, types, steps, verify. The owner answers approval or fixes. Fix what they point at, and show it again.
+Show every plan of the cycle: files, slices, types, steps, verify. The owner answers approval or fixes. Fix what they point at, and show it again. Repeat until the owner approves.
 
 ### Changes after this
 
