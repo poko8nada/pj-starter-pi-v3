@@ -105,14 +105,15 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - what completes here is the proposal the owner reads: the destinations' confirmation, the `ex-` merges and the verification come after their judgement
 - gives: the completed `close.md`
 
-### 7. Proofread
+### 7. Japanese Proofread
 
 - takes: the completed `close.md`
 - does:
-  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md`; have it read `.pi/skills/close/references/format.md` for the shape; the role's policy applies; edit only `close.md`
+  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `close.md`; have it read `.pi/skills/close/references/format.md`; the role's policy applies; edit only `close.md`
   - read its report and `git diff`
   - an empty `## Verified` is normal at this point: do not fill it, and put it back if the subagent filled it
   - put the file back to `references/format.md`'s shape, in your own words, if a `Triage` line, a `Verified` line or a destination changed meaning, or a section or field name moved
+  - the wording of a quoted passage is not a change of meaning: keep that correction
   - say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
   - one round: the repaired file does not go through the subagent again
 - gives: the repaired `close.md`

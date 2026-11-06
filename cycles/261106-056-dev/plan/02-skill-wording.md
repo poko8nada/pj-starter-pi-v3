@@ -108,24 +108,29 @@
 
 ### Slice 1: 校正の呼び名を整える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 586f1c2
 - Stopped:
+
+### Cleanup: テスト掃除
+
+- Findings: なし — 計画の `Files` が更新する5件は文書のみでテストファイルを含まない。隣接の `adr/scripts/index.test.ts` と `close/scripts/collect.test.ts` は変更文言に触れず、重複・消滅した振る舞い・消滅した分岐のいずれにも当たらないため削除なし。`pnpm test:run` は63ファイル771テスト合格で緑を保つ
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 旧見出し `## Proofread` / `### 7. Proofread` は `.pi/skills/adr/SKILL.md:161`、`.pi/skills/plan/SKILL.md:82`、`.pi/skills/close/SKILL.md:108` の新見出しに置き換わり、削るはずの `for the shape` の残存も対象3手順になく、名指す文が新見出しを指すため陳腐化・冗長化なし
+- Unlisted: なし — 差分の5件は `Files` の `update` 5件 (`.pi/skills/adr/SKILL.md`、`.pi/skills/plan/SKILL.md`、`.pi/skills/close/SKILL.md`、`.pi/skills/close/references/format.md`、`.pi/skills/yolo/SKILL.md`) と一致し、無印の関連2件 (`.pi/skills/adr/references/adr.format.md`、`.pi/skills/plan/references/format.md`) に変更なし
+- Gaps: なし — 例外文3件の `Added` の計数は差分で3件 (`.pi/skills/adr/SKILL.md:167`、`.pi/skills/plan/SKILL.md:88`、`.pi/skills/close/SKILL.md:116`) を確認でき、残る `yolo` 2行と完了条件1行は `Always` の読み通しが担い、型・テストの移動がないため追加の振る舞いなし
+- Unproven: なし — 計画はテストファイルを持たず (`Types` なし・テスト手順なし)、既存テストに変更がないため壊れても緑のままになる命名テストなし
+- Noise: なし — 新規テストがなく、既存テストも変更文言に触れないため、型・スキーマで済む主張やマジックナンバー・ハードコード文字列の判定対象なし
+- Doubts: 対象外に残る素の `proofread` (例: `.pi/skills/adr/SKILL.md:150` の `### 11. Proofread and Affected`、同 `:152` の `run the proofread`、`.pi/skills/close/SKILL.md:75` の `after the proofread`、`.pi/skills/yolo/SKILL.md:45` の `complete and proofread`) も `the Japanese proofread` にそろえるかは所有者の判断が必要 — 計画の `Design` は見出し3つと名指す文のみを対象と決めており、拡大は本計画の外になるため所見にせず残す
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: 型検査と試験の全体をワークツリーで走らせた（`pnpm typecheck` は合格、63ファイル771試験が合格）。文書だけの変更のため、差分を読み、5件の文言が計画どおりであることを確かめた。
+- Findings: なし
+- Doubts: `Round 1` の `Doubts` にある残る素の `proofread` の扱いは、所有者の判断を待ち、終了処理が引き継ぐ。
