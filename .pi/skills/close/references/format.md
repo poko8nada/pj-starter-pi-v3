@@ -71,6 +71,7 @@
 - `dropped` — the rest: the fix weighs more than leaving it.
 - `done <commit>` — the `ex-` plan has merged, and this is its merge commit.
 - `done <commit>` sits at the end of that line: `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>): done <commit>`.
+- `dropped <reason>` sits there instead when the work drops the `ex-` plan.
 - After the grouping, `_ex-plan_` keeps the plan id right after it, with no backticks: `collect.mjs` reads it there.
 - `なし` when there is none.
 

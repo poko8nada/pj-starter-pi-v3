@@ -57,7 +57,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - read each plan md's `## Acceptance`, `## Work Review` and `## Notes`
   - do not read the cut from memory: the files hold it
   - list a hole: a change an entry decided that no plan's `Files` carries
-- gives: the holes, for the collect
+- gives: the holes, for the collect, and the Units of the accepted entries, for the verification
 
 ### 3. Collect
 
@@ -68,7 +68,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - fill every `未特定` as `references/format.md` says; an `ex-` plan's `No` comes from the Triage
   - add the holes from the read as lines by hand, under a heading naming the ADR entry, as `references/format.md` says: the script does not know them
   - do not copy by hand what the script collects: a line left out is a hole nobody finds again
-- gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread.
+- gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it at the owner's judgement.
 
 ### 4. Exclude what is already resolved
 
@@ -85,7 +85,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 - does:
   - write one destination per leftover in `## Triage`, in the order and the shape `references/format.md` gives
   - each bullet carries its `Fact:` / `Why:` / `Then:`
-  - a leftover that needs facts nobody has gets a `research` subagent; the rest do not
+  - a leftover that needs facts nobody has gets a `research` subagent; the rest do not. The task is in the `Look it up` section of `references/tasks.md`.
   - an `ex-` destination has no plan name yet: the grouping in the `ex-` plans' step names it, as `references/format.md` says
   - do not triage with the owner line by line before every destination is in `## Triage`
 - gives: `proposed` for every leftover
@@ -120,17 +120,19 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - group them by the files their `## Collected` lines and plan mds name
   - say in the chat the round this is, and which `ex-` plans are not merged yet; count the unmerged ones each time from the `## Triage` lines that carry no `done`, and say it at every pass through this step
   - show the owner a table of the plan's name, the leftover numbers, and the files; when they agree, the `## Triage` lines carry the plan's name — the gate is the owner's word
-  - write, research, review, fix and proofread each grouped plan by the plan skill, steps 4 to 7: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`
-  - the plan skill's cut and show are replaced here: the close's grouping is the cut, and the owner's agreement here and the Unit's verification are the show
+  - decide their order from the dependencies. Each `ex-` plan's `Boundary Plans` names the plans it stands on.
+  - write, research, review, fix, proofread and show each grouped plan by the plan skill, steps 4 to 8: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`; its Triage line is the only source, and there is no affected for an `ex-` plan
+  - the plan skill's cut is replaced here: the close's grouping is the cut
   - run its work by the work skill: when its `Place` is worktree make a worktree, and run its work
   - when one is merged — the gate is the merge — its line carries `done <commit>`
   - its plan md's leftovers go back to `collected`: run the leftover's path again in this step — the collect, the exclusion, the proposal and the owner's judgement, one leftover at a time; an `ex-` born there joins this step's count
   - new `## Triage` lines continue the numbers: they follow the current maximum, and `done <commit>` lines keep theirs
-- gives: `merged` for each. The step ends when no `ex-` is left without its `done <commit>`, and the chat said so.
+  - An `ex-` plan the work drops carries `dropped` and the reason on its line instead of `done <commit>`.
+- gives: `merged` for each. The step ends when no `ex-` is left without `done <commit>` or `dropped`, and the chat said so.
 
 ### 9. Japanese Proofread
 
-- takes: the completed `close.md` with no unmerged `ex-` left
+- takes: the completed `close.md` with no `ex-` left without `done <commit>` or `dropped`
 - does:
   - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `## Collected` and `## Triage`; have it read `.pi/skills/close/references/format.md`; the role's policy is in `.pi/extensions/consult/types.json`; edit only those sections
   - the verification conversations in step 10 run while it runs; `## Verified` is written after the repair below
@@ -146,9 +148,9 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 - takes: the merged base and the Units read in step 2
 - does:
   - the Units are as `references/format.md` says: the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
-  - take one Unit at a time: propose how to check it — the command to run and what to see, or the place to read and what to look for, and the result that means it works; in words that hold without the reference files — wait for the owner's answer, and write it before the next Unit
+  - take one Unit at a time: propose how to check it — the command to run and what to see, or the place to read and what to look for, and the result that means it works; in words that hold without the reference files — wait for the owner's answer, and hold it in the chat before the next Unit
   - the check is of the Unit's function, not of the change: the change is what the work looked at
-  - a Unit whose function does not work gets an `ex-` plan: write, research, review, fix and proofread it by the plan skill, steps 4 to 7, and run it by the work skill; when it is merged, this step runs again for that Unit; say in the chat which Unit is still open
+  - a Unit whose function does not work gets an `ex-` plan: write, research, review, fix, proofread and show it by the plan skill, steps 4 to 8, and run it by the work skill; when it is merged, this step runs again for that Unit; say in the chat which Unit is still open
   - write what they answered in `## Verified` after step 9's repair, which sits after `## Triage`; a Unit they will not check carries `しない` and the reason on the same line
 - gives: the verified record, with an answer for every Unit. The gate is the owner's word.
 
@@ -157,7 +159,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 - takes: the worktrees
 - does:
   - before the roadmap and the commit, run `consult_worktree list` and remove what no plan and no line keeps
-  - what this step finds that the proposal did not carry goes back to the proposal, before the roadmap: the destinations, their `ex-` plans and the verification run again, and the roadmap is written after them
+  - what this step finds that the proposal did not carry goes back to the proposal, before the roadmap: the destinations, their `ex-` plans and the verification run again, and the roadmap is written after them. Re-proofread what changed.
 - gives: the worktrees with nothing left behind
 
 ### 12. Roadmap
@@ -193,5 +195,5 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 
 - Do not run the plan's checks again: the acceptance ran them, and the merge gate held. The owner's verification is of the Unit's function, and it goes in `## Verified`
 - Do not fix a hole silently, and do not write the fix into `DEFINITION.md` or a plan
-- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination and every `ex-` plan has merged
+- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination and every `ex-` plan has merged or is dropped
 - Do not skip the resolved exclusion: what the wording shows is already closed is deleted by the agent, and re-filtered after every rerun of the script
