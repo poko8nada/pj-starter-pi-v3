@@ -36,10 +36,14 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 - hand the plan md to one `code` subagent in the worktree: slices in order, as far as it can. The task is in the `Slices` section of `references/tasks.md`.
 - the subagent runs each slice's check, commits after it passes, and writes that slice's record in the worktree's plan md. `Stopped` too, since the subagent runs the check and sees it fail.
 - when it stops, read its report and the worktree's plan md. Three answers:
-  - it only ran out and the work is sound: continue it (`continue: true`), without calling the owner
+  - it stopped only because the run ended, and the work is sound: continue it (`continue: true`), without calling the owner
   - the run disproves a premise: triage it here with the owner. Either it is within tolerance, or it is a change the work absorbs. The plan is not rewritten to keep going
-  - what work cannot absorb: the owner decides. Drop the plan: for a worktree plan, the subagent writes `Stopped` and the reason in the worktree's plan md; if it did not, continue it to write it. The agent copies that plan md into the base's plan md, commits it in the base, removes the worktree, and merges nothing. For a `base` plan, the agent writes `Stopped` and the reason in the base's plan md, and commits it in the base. A dropped plan is not carried to the close; the close reads its record as a dropped plan.
+  - what work cannot absorb: the owner decides. Drop the plan.
+    - For a worktree plan, the subagent writes `Stopped` and the reason in the worktree's plan md. If it did not, continue it to write it.
+    - The agent copies that plan md into the base's plan md as it is, commits it in the base, removes the worktree, and merges nothing.
+    - For a `base` plan, the agent writes `Stopped` and the reason in the base's plan md, and commits it in the base.
 - a `base` plan: the agent does the slices, writes each slice's record in the base's plan md, shows the owner after each slice, and waits for their OK before committing with `base(<plan id>): <subject>`.
+- A dropped plan is not carried to the close. The close reads its record as a dropped plan.
 
 ### 5. Clean the tests
 
@@ -48,17 +52,17 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 - and the tests the plan's `## Test cases` would not write: a premise a type, a schema or a DB constraint already settles, one nobody would notice, and an `Adopted` line with no case
 - it drops them, and keeps the suite green
 - it is not a slice: what went stale is known only after the change, and a slice carries a `Verify` of its own
-- it writes it in the plan md's `## Notes`, as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`; it has no `Commit` and no `Stopped`
+- it writes it in the worktree's plan md, in `## Notes` as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`; it has no `Commit` and no `Stopped`. For a `base` plan, in the base's plan md.
 
 ### 6. Review
 
 - when the slices and the test cleanup are done: a `review` subagent, in the worktree (the agent's tree for a `base` plan), in a new conversation, with the plan md and `<base hash>`; it runs `git diff <base hash>..HEAD` itself. The task is in the `Review` section of `references/tasks.md`.
-- it writes `## Work Review`, `### Round 1`, under the five viewpoints and `Doubts`
+- it writes `## Work Review`, `### Round 1` in the worktree's plan md (the agent's tree for a `base` plan), under the five viewpoints and `Doubts`
 - it reads the test steps' cases by the plan's `## Test cases`, and each `Verify` by what closes its slice
 - fixing subagent is a `code` subagent, continued: it reads the plan md and answers each finding, and what it adopts carries a `fixed:` line, and what it leaves carries a `left:` line; a `base` plan commits with `base(<plan id>): round <N> fixes`. The task is in the `Fixes` section of `references/tasks.md`.
-- Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. A Round 1 that finds nothing ends the review
-- Round 2 is the last look: the review ends there, and what is still open is fixed once more. No third round. What remains is written as `left: <why>` in the round, and the close reads it as a leftover
-- a doubt or a note that is not a finding goes under `- Doubts:` in the round it came from, and nowhere else
+- Round 2 continues the reviewer's own conversation and looks at the `fixed` lines only. The reviewer writes the verdict in `### Round 2` in the worktree's plan md (the agent's tree for a `base` plan). A Round 1 that finds nothing ends the review
+- Round 2 is the last look: the review ends there, and what is still open is fixed once more by the fixing subagent. No third round. What it cannot fix it writes as `left: <why>` under the finding, and the close reads it as a leftover
+- a doubt or a note that is not a finding: the reviewer writes it under `- Doubts:` in the round it came from, and nowhere else
 
 ### 7. Acceptance
 
@@ -82,8 +86,8 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 
 **What is written**
 
-- `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing); the merge's commit is not written there, because the acceptance is committed before the merge. The agent writes the acceptance at the acceptance, from the worktree. For a `base` plan, from the base's plan md.
-- a `Findings` line is a fix instruction for a `code` subagent, and when it is fixed, the acceptance runs again and is written again. The task is in the `Acceptance's findings` section of `references/tasks.md`.
+- `## Acceptance`: `Ran`, `Findings` and `Doubts` (`なし` when there is nothing); the merge's commit is not written there, because the acceptance is committed before the merge. The agent writes the acceptance at the acceptance, in the worktree's plan md. For a `base` plan, in the base's plan md.
+- a `Findings` line is a fix instruction for a `code` subagent. The subagent writes `fixed:` or `left:` under the line it was handed. When it is fixed, repeat this step: the acceptance runs again and is written again. The task is in the `Acceptance's findings` section of `references/tasks.md`.
 - commit it in the worktree: `consult(<plan id>): acceptance`; a `base` plan commits it in the base with `base(<plan id>): acceptance`, and there is no worktree
 
 ### 8. Merge
@@ -103,6 +107,6 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 ## How not to do this
 
 - Do not close a slice whose check the subagent did not run: `Commit` means the check passed
-- Do not author the plan from the agent's side while a worktree is live: the subagent writes its slice's record, and the agent writes at the acceptance. A dropped plan's plan md is copied, not authored
+- Do not author the plan from the agent's side while a worktree is live: the code subagent writes its slice's record, and the agent writes at the acceptance. A dropped plan's plan md is copied, not authored
 - Do not fix a hole silently: it goes in the record
 - Do not take a merge the acceptance did not pass

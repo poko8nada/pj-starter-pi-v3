@@ -105,4 +105,4 @@ The agent edits the plan to match the owner's answers, and git holds the diff. T
 - Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
 - Do not leave a hole.
 - Do not write the plan from the agent's side while a worktree is live.
-- The subagent writes its slice's record, and the agent writes at the acceptance
+- The code subagent writes its slice's record, and the agent writes at the acceptance

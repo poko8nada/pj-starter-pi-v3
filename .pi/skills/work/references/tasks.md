@@ -1,6 +1,6 @@
 # Texts handed to subagents
 
-A subagent does not read this skill. What it knows is the task, so the task carries the rules.
+A subagent does not read this skill. What it knows is the task, so the task carries the rules. Work in the tree you were given. Read and write the plan md there.
 
 ## Slices (a `code` subagent)
 
@@ -49,7 +49,7 @@ Do not change the code.
 
 ```
 Fixes for Round 1 are in. Look only at the lines marked fixed:, and check each one is really fixed.
-This is the last look. Write your answer in ### Round 2, same viewpoints, and stop. A doubt that is not a finding goes under `- Doubts:` in `### Round 2`.
+This is the last look. Write your answer in ### Round 2 of the same plan md, same viewpoints, and stop. A doubt that is not a finding goes under `- Doubts:` in `### Round 2`.
 ```
 
 - Round 1 runs in a new conversation (`continue: false`); Round 2 continues the reviewer's own. A Round 1 that finds nothing ends the review.
