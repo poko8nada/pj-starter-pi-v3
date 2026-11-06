@@ -13,6 +13,8 @@
 
 ### <plan id> (ADR <プランの No の値>) — `NN` を持たない `ex-` のプラン
 
+### (ADR <NN>) — 運ぶ計画がない項目
+
 1. <line> / <place> / <出どころ>
 
 ## Triage
@@ -49,7 +51,7 @@
 - One leftover is one numbered line. The line is `<line> / <place> / <出どころ>`: the line in the plan md (the heading above names the plan), and where the hole came from (`Slice 1 (名前)`, `Cleanup: <what it cleaned>`, `Work Review Round 1`, `Acceptance`). It is the inventory only.
 - The agent excludes what the wording shows is already resolved, by hand, after every run of the script: the script rewrites the numbered lines, so re-filter every time.
 - A hole the script cannot see — a change an entry decided that no plan carries — is added by the agent as a numbered line, in the same shape, after every run of the script.
-- The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`, and so is a line the grouping has not named yet: the plan's name comes first. Fill it before showing the owner.
+- The heading of a normal plan carries the `No` of its plan md. `未特定` when the plan md has no `No` (a plan written by hand). A hole no plan carries goes under `### (ADR <NN>) — 運ぶ計画がない項目` naming its entry. The `## Collected` heading's `No` for an `ex-` plan comes from the Triage: its `No` is the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>)`. A missing Triage line is `未特定`, and so is a line the grouping has not named yet: the plan's name comes first. Fill it before showing the owner.
 - The numbering runs through the whole file. A plan with no leftover is not listed.
 - `なし` when there is none.
 - The order is the `NN` numeric order for the plans that have an `NN`, and the `ex-` plans after them in name order, so adding an `ex-` plan does not move the numbers above it.

@@ -66,7 +66,7 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
   - `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>` writes `close.md` and its `## Collected`, and creates the file
   - the heading, the plan id and the line's shape are in `references/format.md`
   - fill every `未特定` as `references/format.md` says; an `ex-` plan's `No` comes from the Triage
-  - add the holes from the read as lines by hand: the script does not know them
+  - add the holes from the read as lines by hand, under a heading naming the ADR entry, as `references/format.md` says: the script does not know them
   - do not copy by hand what the script collects: a line left out is a hole nobody finds again
 - gives: every leftover `collected`. Do not show `## Collected` to the owner here: the proposal comes first, and they read it after the proofread.
 
@@ -117,39 +117,39 @@ The steps run in this order. The leftover's path is the collect, the exclusion, 
 
 - takes: judged leftovers whose destination is `_ex-plan_`
 - does:
-  - group them by the files they fix
+  - group them by the files their `## Collected` lines and plan mds name
   - say in the chat the round this is, and which `ex-` plans are not merged yet; count the unmerged ones each time from the `## Triage` lines that carry no `done`, and say it at every pass through this step
   - show the owner a table of the plan's name, the leftover numbers, and the files; when they agree, the `## Triage` lines carry the plan's name — the gate is the owner's word
-  - write each grouped plan by the plan skill: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`
-  - review and fix it by the plan skill
+  - write, research, review, fix and proofread each grouped plan by the plan skill, steps 4 to 7: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`
+  - the plan skill's cut and show are replaced here: the close's grouping is the cut, and the owner's agreement here and the Unit's verification are the show
   - run its work by the work skill: when its `Place` is worktree make a worktree, and run its work
   - when one is merged — the gate is the merge — its line carries `done <commit>`
-  - its plan md's leftovers go back to `collected`: run the leftover's path again — the collect, the exclusion, the proposal and the owner's judgement, one leftover at a time — and the `## Triage` numbers follow the new `## Collected`: its first line is 1, and the numbers run through the file
+  - its plan md's leftovers go back to `collected`: run the leftover's path again in this step — the collect, the exclusion, the proposal and the owner's judgement, one leftover at a time; an `ex-` born there joins this step's count
+  - new `## Triage` lines continue the numbers: they follow the current maximum, and `done <commit>` lines keep theirs
 - gives: `merged` for each. The step ends when no `ex-` is left without its `done <commit>`, and the chat said so.
 
 ### 9. Japanese Proofread
 
 - takes: the completed `close.md` with no unmerged `ex-` left
 - does:
-  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `close.md`; have it read `.pi/skills/close/references/format.md`; the role's policy is in `.pi/extensions/consult/types.json`; edit everything except `## Verified`
-  - the verification in step 10 runs while it runs
-  - read its report and `git diff` after step 10
-  - put the file back to `references/format.md`'s shape, in your own words, if a `Triage` line or a destination changed meaning, or a section or field name moved
+  - run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md` for the Japanese proofread of `## Collected` and `## Triage`; have it read `.pi/skills/close/references/format.md`; the role's policy is in `.pi/extensions/consult/types.json`; edit only those sections
+  - the verification conversations in step 10 run while it runs; `## Verified` is written after the repair below
+  - read its report and `git diff` after step 10's answers are collected in the chat
+  - put `## Collected` and `## Triage` back to `references/format.md`'s shape, in your own words, if a line or a destination changed meaning, or a section or field name moved
   - the wording of a quoted passage is not a change of meaning: keep that correction
-  - an empty `## Verified` is normal at the proofread's start: do not fill it, and put it back if the subagent filled it
+  - an empty `## Verified` is normal at the proofread's start and at the repair: do not fill it, and remove what the subagent filled there
   - one round: the repaired file does not go through the subagent again
 - gives: the repaired `close.md`
 
 ### 10. Verify, by Unit
 
-- takes: the merged base
+- takes: the merged base and the Units read in step 2
 - does:
   - the Units are as `references/format.md` says: the lines under `Users can do` of the `accepted` entries' `Definition`; of those, the ones this cycle touched — its line or its route — are verified; a `####` heading is not a Unit; `Product` / `What` / `Who` / `Stack` are not Units
-  - for each Unit, propose how to check it: the command to run and what to see, or the place to read and what to look for, and the result that means it works; in words that hold without the reference files
-  - the owner runs it, or asks for another way; their word closes the Unit
+  - take one Unit at a time: propose how to check it — the command to run and what to see, or the place to read and what to look for, and the result that means it works; in words that hold without the reference files — wait for the owner's answer, and write it before the next Unit
   - the check is of the Unit's function, not of the change: the change is what the work looked at
-  - a Unit whose function does not work gets an `ex-` plan: write it by the plan skill and run it by the work skill; when it is merged, this step runs again for that Unit; say in the chat which Unit is still open
-  - what they answered goes in `## Verified`, which sits after `## Triage`; a Unit they will not check carries `しない` and the reason on the same line
+  - a Unit whose function does not work gets an `ex-` plan: write, research, review, fix and proofread it by the plan skill, steps 4 to 7, and run it by the work skill; when it is merged, this step runs again for that Unit; say in the chat which Unit is still open
+  - write what they answered in `## Verified` after step 9's repair, which sits after `## Triage`; a Unit they will not check carries `しない` and the reason on the same line
 - gives: the verified record, with an answer for every Unit. The gate is the owner's word.
 
 ### 11. Leftovers
