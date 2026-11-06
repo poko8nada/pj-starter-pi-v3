@@ -146,5 +146,5 @@ This skill keeps its own business — the entry and the decision — and does no
 - Do not write `DEFINITION.md` itself. The `Definition` carries the new lines, and a plan writes them into the file.
 - Do not look up before the intent is settled. The target would be wrong, and the time and the money go with it.
 - Do not leave the intent in the agent's words. An intent the owner did not correct is a guess.
-- Do not skip the scope. An option with no edge cannot be weighed.
+- Do not skip the scope. An entry without a scope cannot be weighed.
 - Do not write an adopted change as a line of `DEFINITION.md`. That is the plan's work.

@@ -50,16 +50,3 @@ Write the affected to `affected.md` in the shape `references/affected.format.md`
 
 - The agent puts the entry and the change in the task.
 - The affected is written to `affected.md`, not to the ADR.
-
-## Try it (a `trial` subagent)
-
-```
-Try <the candidate> in <the setting>, in a worktree.
-Install it, set it up, and find the smallest shape that works.
-Report three: what clashes, the versions, and the smallest working shape.
-Ask before you touch the shared store.
-Leave the worktree as it is. Nothing you write enters the product.
-```
-
-- The agent asks the owner before the subagent touches the shared store.
-- The trial is the bench: what it leaves is the fact, and nothing else.
