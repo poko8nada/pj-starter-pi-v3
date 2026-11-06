@@ -148,7 +148,7 @@ Section and field names are English; the content is Japanese.
 - A step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`. It goes after the line and before the fence.
 - A step whose content the ADR or the chat decided carries it in a fence under the step. The language is `ts`, `md`, `json` or the like, and the content is copied as it was decided, markdown or code. A test step keeps its case lines, and the fence goes under them.
 - The cases of a test file follow `## Test cases`.
-- A shape a plan does not need is not written. A plan with no test file has no test step. A code step that meets nothing outside carries no `Outside:` line.
+- A plan with no test file has no test step. A code step that meets nothing outside carries no `Outside:` line.
 - The steps are numbered. The order is the order of the work.
 
 ## Types
@@ -241,7 +241,5 @@ Section and field names are English; the content is Japanese.
 
 - One bullet is one sentence.
 - A file name is written from the project root. The tree, the steps and the checks use the same name.
-- Do not write what the reader can look up.
 - Keep a table short: a wide one breaks with long text.
 - A field whose content cannot be written yet keeps its name and stays empty.
-- Do not copy the ADR. Name it where it bites.
