@@ -23,7 +23,7 @@ The caller picks a role, and the role holds the whole policy: model candidates, 
 | ------------- | ------------------------------------------------------------------------------------------- | --------------------- | ----- | ------------- | --------------------- |
 | `research`    | read, ls, find, grep, web_search, fetch_content, edit, quick_edit, target_edit, write, bash | the base              | 60    | 80,000        | no                    |
 | `review`      | bash, read, ls, find, grep, web_search, quick_edit, target_edit                             | the base              | 40    | 60,000        | no                    |
-| `proofreader` | read, ls, find, grep, edit, quick_edit, target_edit, write                                  | the base              | 60    | 100,000       | no                    |
+| `proofreader` | read, ls, find, grep, edit, quick_edit, target_edit, write, bash                            | the base              | 60    | 100,000       | no                    |
 | `trial`       | plus bash, and writing                                                                      | a worktree (required) | 80    | 120,000       | yes                   |
 | `code`        | plus bash, and writing                                                                      | a worktree (required) | 80    | 120,000       | yes                   |
 

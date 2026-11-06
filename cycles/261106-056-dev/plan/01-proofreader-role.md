@@ -77,23 +77,40 @@ lefthook.yaml
 ### Slice 1: proofreaderにja-checkを義務づける
 
 - Findings:
+  - なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - なし
+- Commit: cfca414
+- Stopped: なし
+
+### Test cleanup
+
+- 対象: `Files` の update（`types.json`、`README.md`）に関わるテスト（`policy/types.test.ts`、`run/subagent.test.ts`、`sub/guard.test.ts`、`sub/spec.test.ts`、`scripts/checks/ja-check.test.ts`）を精査した。
+- 重複: なし。`guard.test.ts` の proofreader ブロックは `**/*.md` 系の否定側（`src/a.ts` を止める）だけを担い、肯定側を担う `役割の許可` ブロックと相補のため残す。`ja-check.test.ts` の引用符3種・excludeの相対／絶対／`./`・設定異常系は各々別の分岐（引用符種別、正規化、検証項目）を確認するため残す。
+- 消えた仕様のテスト: なし。旧 role 文面（直訳語のカタカナ化など）を断言するテストは存在しない。
+- 消えた分岐のテスト: なし。`bash: []`＝全面許可の分岐は `trial`／`code` が今も使うため残す。`guard.test.ts` の proofreader 固定値 `bash: []` は path 阻止だけに使い bash 断言を含まないため、動作の断言ではなく残す（削ると `**/*.md` 系の否定カバレッジが失われる）。
+- 書かないはずのテスト: なし。計画に `## Test cases` はなく、型・スキーマが定める前提だけを確かめる Adopted 行もない。
+- 削除: なし。スイートは緑（`.pi/extensions/consult` 300件、`ja-check.test.ts` 33件が通過）。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — 旧role文面や旧toolsを断言する文書・コメント・テストはなく、`.pi/extensions/consult/sub/guard.test.ts:185` の `bash: []` は合成値の否定側fixtureでbash断言を含まないため陳腐化しないことを確かめた。
 - Unlisted:
+  - なし — 差分は `Files` のupdateである `.pi/extensions/consult/types.json:50` と `.pi/extensions/consult/README.md:26` の2件のみで、名指しのない変更はないことを確かめた。
 - Gaps:
+  - なし — 新動作（toolsへのbash追加、接頭辞 `node scripts/checks/ja-check.mjs`、role文面）は `Added` のgrep 3語と `Always` の読合せで exercised され、経路不変の `CONSULT_POLICY` 渡しは既存の `commandAllowed`・`subagentEnv` の守備範囲のため穴はないことを確かめた（`cycles/261106-056-dev/plan/01-proofreader-role.md:66`）。
 - Unproven:
+  - なし — 差分はテストを加えず、既存テストは新動作（bash接頭辞・role文面）を名指ししないため、壊しても緑のままのテストはないことを `.pi/extensions/consult/sub/guard.test.ts:184` ほかで確かめた。
 - Noise:
+  - なし — 計画に `## Test cases` はなく追加・変更テストもないため、型・スキーマが定める前提の再掲や幻数・固定文字列の事例はないことを `cycles/261106-056-dev/plan/01-proofreader-role.md:87` で確かめた。
 - Doubts:
+  - なし
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts:
+- Ran: 型検査と試験をワークツリーで走らせた（`pnpm typecheck` は合格、`.pi/extensions/consult` の300試験が合格）。設定の変更のため、差分を読み、2件が計画どおりであることを確かめた。接頭辞と `ゼロ` と `終了コード 1` があることも確かめた。
+- Findings: なし
+- Doubts: なし
