@@ -92,8 +92,10 @@ An entry after the first starts with the scaffold: it appends the entry's bones 
 
 ### 4. Loop
 
+- **The cycle of discussion and investigation is a step that can never be skipped. Agents do not have decision-making authority.**
 - discuss before the options: the discussion and the research run in a loop
 - a fact the discussion brings goes to `Context` or `Research & Trial` by the rule in 2
+- Any specific docs, code, or similar materials agreed upon by the owner should be included under `Context`, enclosed within a fenced block.
 - when the research is short, add it; when a finding changes the scope, propose the change and agree it
 - repeat until the owner asks for the options
 
