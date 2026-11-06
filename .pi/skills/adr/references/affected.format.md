@@ -2,7 +2,7 @@
 
 `cycles/<YYMMDD-NNN-slug>/affected.md`. One cycle has one affected.
 
-The procedure is in `SKILL.md`. Section and field names are English; the content is Japanese.
+Section and field names are English; the content is Japanese.
 
 ## Shape
 
@@ -27,7 +27,6 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 ## Entries
 
 - `## <NN>: <問い>` — one entry is one question, and the number is the ADR's.
-- The entries are the cycle's split, and the order is the split's.
 - `### Code` — the paths the change relates to, one block per path.
 - `### External` — what the change talks to outside the repository, one block per thing. When there is nothing outside, the section says `なし`.
 
@@ -42,8 +41,5 @@ The procedure is in `SKILL.md`. Section and field names are English; the content
 
 ## Writing
 
-- Do not write what the reader can look up.
-- Do not write the plan: the files, the steps and the checks belong to the plan.
-- Do not write a design: the `Kind` and the `Edge` are facts.
 - An empty `### External` says `なし`.
-- A fact that could not be derived is not written to the record; it goes to the report.
+- A fact that could not be derived is not written to the record. It goes to the report.

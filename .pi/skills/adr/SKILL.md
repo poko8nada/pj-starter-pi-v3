@@ -1,32 +1,15 @@
 ---
 name: adr
-description: Use when the owner starts a cycle or raises a point about the definition or the cycle. It settles the intent, the roadmap item and the entries, and writes `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, recording the owner's decision on what the cycle does to `DEFINITION.md`.
+description: Use when the owner names an unfinished ROADMAP.md item or asks for a change to DEFINITION.md. It settles the intent, the roadmap item and the entries, and writes cycles/<YYMMDD>-<NNN>-<slug>/adr.md, recording what the cycle changes in DEFINITION.md.
 ---
 
 # adr
 
-One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It is where the cycle's decisions about `DEFINITION.md` are recorded and left.
+One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It records the cycle's decisions about `DEFINITION.md`.
 
-The ADR records the owner's decision on what the picture becomes, and a plan writes it. The plan and the work are written from `DEFINITION.md`, and none of them argues.
+The ADR records what the picture becomes. A plan writes the change from `DEFINITION.md`. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
-The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry: the scope, the context, the research, the loop, the options and their writing, the check, the decision, the definition, the confirmation, and the proofread and the affected.
-
-## Files
-
-- `cycles/<YYMMDD>-<NNN>-<slug>/adr.md` — the record, in the shape `references/adr.format.md` gives. Read that file before writing.
-- `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` — the entry's affected, in the shape `references/affected.format.md` gives. Read that file before writing.
-- `references/adr.format.md` — the shape of `adr.md`.
-- `references/affected.format.md` — the shape of `affected.md`.
-- `scripts/index.mjs` — the way in: it writes `adr.md` and `affected.md`, and appends the next entry to both; `--check` reads `adr.md` and reports what an entry is missing.
-- `scripts/cycle.mjs` — the cycle's detection, the next number, the append and the leaf.
-- `scripts/adr.mjs` — the `adr.md` skeleton, and the check of an entry's items.
-- `scripts/affected.mjs` — the `affected.md` skeleton.
-- `DEFINITION.md` — the product's picture. The entry names the parts of it it relates to, and what happens to each; a plan writes them.
-- `rules/definition.rules.md` — what may be a Unit, and how a Unit is named and written. Read it before deciding an entry's change.
-- `rules/definition.format.md` — the shape of the picture.
-- `rules/roadmap.md` — the shape and the rules of `ROADMAP.md`. Read it before choosing an item.
-- `ROADMAP.md` — the items the cycle chooses from, in the shape `rules/roadmap.md` gives.
-- `references/tasks.md` — the texts handed to the `research` and `trial` subagents.
+The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry.
 
 The entry's question, the intent and the split are the owner's. The procedure writes them down, and the owner's answer is the decision.
 
@@ -34,158 +17,134 @@ The entry's question, the intent and the split are the owner's. The procedure wr
 
 ### 1. Intent
 
-- write what you understood first, and let the owner correct it
-- repeat it until no point is left in dispute
-- the intent is the measure of all that follows: an option is worth weighing only against it
-- do not start the research from the declaration alone: the target would be wrong
+- Write what you understood first, and let the owner correct it.
+- Repeat it until no point is left in dispute.
+- The intent is the only measure of what follows.
+- Do not start the research before the intent is settled.
 
 ### 2. Roadmap
 
-- after the intent is settled, ask which item of `ROADMAP.md` the cycle fits
-- an item whose `status` is `_todo_` or `wip` is a candidate; a `done` item is not. The shape and the rules of the table are in `rules/roadmap.md`
-- when one fits, set its `status` to `wip`, with the owner's agreement first
-- when none fits, show the owner the item as you would write it, and add it to `ROADMAP.md` when they agree
+- Before choosing, read `rules/roadmap.md` and `ROADMAP.md`.
+- After the intent is settled, ask which item of `ROADMAP.md` the cycle fits.
+- An item whose `status` is `_todo_` or `wip` is a candidate. A `done` item is not.
+- When one fits, set its `status` to `wip`, with the owner's agreement first.
+- When none fits, show the owner the item as you would write it, and add it to `ROADMAP.md` after agreement.
 
 ### 3. Entries
 
-- split the cycle into entries: one entry is one question
-- show the owner the split and each entry's intent before any entry's scope is written
-- the owner's answer is the split; a rejected split is rewritten and shown again. A new entry found while an entry runs is shown to the owner first, and added after their answer.
-- run the scaffold: `node .pi/skills/adr/scripts/index.mjs`. It writes a new cycle's `adr.md` and `affected.md` with one entry's bones; on an open cycle it appends the next entry's bones to both. It prints the path it wrote
-- when every entry is decided, the entries are read together, and the change to the picture is settled
+- Split the cycle into entries. One entry is one question.
+- Show the owner the split and each entry's intent before any entry's scope is written.
+- The owner's answer is the split. A rejected split is rewritten and shown again. A new entry found while an entry runs is shown to the owner first, and added after the answer.
+- Run the scaffold to keep the record current:
+  - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and `affected.md`. When a file does not exist, it creates it first.
+  - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from both files and renumbers the rest.
+  - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in both files.
+- Write what the chat settled promptly. Do not keep an agreement only in the chat.
+- When every entry is decided, the entries are read together, and the change to the picture is settled.
 
 ## One entry
 
 The entry stage runs once per entry, in the order the split gave.
 
-An entry after the first starts with the scaffold: it appends the entry's bones (`## NN:`), and the number is the next after the existing headings. The bones are filled as the entry runs.
-
 ### 1. Scope
 
-- agree the scope in the chat: every kind, one by one, in or out
-- the change: behaviour, refactor, dependency, naming, format, prose
-- the quality: speed, security, compatibility, errors
-- the operation: deploy, migration, logs and monitoring
-- an `out` kind carries its reason; a revisit condition goes on the kind that needs one
-- the depth of an `out` kind — out of this cycle, out for now, out — is chosen here
-- the owner corrects the list, and the entry's `Scope` takes it
-- the scope is of this entry, not of the cycle: the other entries' scope is theirs
+The agent does the following in the chat:
 
-### 2. Context
+1. Agree the scope. Every kind, one by one, `in` or `out`.
+2. Let the owner correct the list, and write the result to the entry's `Scope`.
+3. The scope is of this entry. The other entries keep their own scope.
 
-- write the entry's `Context` next, as numbered items: `C1`, `C2`, ...
-- an item is a premise (how it behaves now), a constraint (the `Who`'s want, a limit, what must not change), or the entry's question
-- a fact that limits the decision is an item; a fact the decision weighs is not, and goes to `Research & Trial`
-- when a finding shows a premise is wrong, correct the item, and keep the finding in `Research & Trial` with its source
-- when a finding serves no item, add the item
+The viewpoints are the following table. An `out` kind carries its reason. A revisit condition goes on the kind that needs one.
 
-### 3. Research
+| Axis      | Kinds                                                  |
+| --------- | ------------------------------------------------------ |
+| Change    | behaviour, refactor, dependency, naming, format, prose |
+| Quality   | speed, security, compatibility, errors                 |
+| Operation | deploy, migration, logs and monitoring                 |
 
-- what must be known follows from the entry's intent, and each type answers its own question: the official information and the source answer whether it can be built here and whether it fits the use, and the shape it is actually used in answers how it is held up where it is already done
-- the question is one of two: `compare` — what ways are there at all for this kind of problem, and what does each buy and cost; `mechanism` and `triage` — does this candidate hold here, and what are its limits
-- the `compare` question is asked when the ways are not visible yet, and not otherwise
-- propose the type and the question together, and say what the answer would decide
-- a `research` subagent runs it, and the research runs once the owner approves
-- look up what the owner approved, and nothing else
-- the facts come back with their source; a question nobody could answer comes back as a fact too, with what it is holding up
-- a fact that is still missing stops the entry: it is looked up here, not in the decision
+### 2. Pre-research
 
-### 4. Loop
+- Before running, read the `Look it up` section of `references/tasks.md`.
+- Propose the type and the question together, and say what the answer would decide.
+- The types answer their own questions: the official information and the source answer whether it can be built here and whether it fits the use, and the shape it is actually used in answers how it is held up where it is already done.
+- The question is one of two: `compare` — what ways there are at all for this kind of problem, and what each buys and costs; `mechanism` and `triage` — whether this candidate holds here, and what its limits are.
+- The `compare` question is asked when the ways are not visible yet, and not otherwise.
+- A `research` subagent runs it, and the research runs once the owner approves. Look up what the owner approved, and nothing else.
+- The facts come back with their source. A question nobody could answer comes back as a fact too, with what it is holding up.
+- A fact that is still missing stops the entry. It is looked up here, not in the decision.
+- Write the facts to `Research & Trial`. The facts here serve the approach presentation at the start of section 3.
 
-- **The cycle of discussion and investigation is a step that can never be skipped. Agents do not have decision-making authority.**
-- discuss before the options: the discussion and the research run in a loop
-- a fact the discussion brings goes to `Context` or `Research & Trial` by the rule in 2
-- Any specific docs, code, or similar materials agreed upon by the owner should be included under `Context`, enclosed within a fenced block.
-- when the research is short, add it; when a finding changes the scope, propose the change and agree it
-- repeat until the owner asks for the options
+### 3. Discussion Loop
 
-### 5. Options
+- At the start, present the approaches and how each would be practiced, briefly, as the draft.
+- Discuss before the decision. The discussion and the investigation run in a loop.
+- Fill `Context` and `Research & Trial` here:
+  - Write the entry's `Context` as numbered items: `C1`, `C2`, ...
+  - An item is a premise (how it behaves now), a constraint (the `Who`'s want, a limit, what must not change), or the entry's question.
+  - A fact that limits the decision is an item. A fact the decision weighs is not, and goes to `Research & Trial`.
+  - When a finding shows a premise is wrong, correct the item, and keep the finding in `Research & Trial` with its source.
+  - When a finding serves no item, add the item.
+- Any specific docs, code, or similar materials agreed upon by the owner go under `Context`, enclosed within a fenced block.
+- When the research is short, add it. When a finding changes the scope, propose the change and agree it.
+- Do not move on unless the owner explicitly says to move to the decision. This step cannot be skipped.
+- When the decision sends the entry back, discuss how to fill the missing part, or whether to remove it from `Context` or `Research & Trial`.
+- Repeat until the owner moves the entry to the decision.
 
-- make the options from what the entry has now: each one satisfies every `C`, every `F` and the `Scope`
-- an option that does not is not written; two to four of them, named A, B, C in order, in the shape `references/options.md` gives
-- `Add` is what grows, `Update` what changes, `Drop` what disappears, `Keep` what is not touched (with the reason), and `Cost` the relative cost against the other options
-- where the holding point is a fact nobody has, the trial or the drop is what answers it
-- a trial runs only with the owner's agreement, and the agreement is asked before it starts, in every case
-- the trial is run on that option alone: on the `Stack`, or on what can be checked on the spot
-- a `trial` subagent runs it in a worktree, because the `trial` role writes
-- ask the owner before it touches the shared store
-- the trial is the bench, and nothing it writes enters the product
+### 4. Decision
 
-### 6. Options into the Decision
+- Before writing, read the `Decision` section of `references/adr.format.md`.
+- The agent checks that every `C` and every `F` is carried. When one is missing, explain the missing part to the owner first, and return to section 3 explicitly. When nothing is missing, the entry passes.
+- The owner explicitly judges `accepted` or `rejected`. Then `Status` is filled.
+- An accepted entry writes `Adopted` with `Add`, `Update`, `Drop` and `Keep`, and writes what is explicitly not done to `Denied`.
+- A rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
 
-- write every option into the `Decision` before the decision: `Options` carries `A`, `B`, `C`, each in the shape `references/adr.format.md` gives, and each line carries the items it settles, in parentheses: `（C1, F2）`
-- `Status` stays empty and `Adopted` stays empty
+### 5. Definition
 
-### 7. Check
+- Before writing, read `rules/definition.rules.md` and `rules/definition.format.md`, and the `Definition` section of `references/adr.format.md`.
+- Write the parts of `DEFINITION.md` the entry relates to: `Unit`, `Who`, `Stack`, `What`.
+- Each part carries one of four operations: `(added)`, `(updated)`, `(dropped)`, `(kept)`.
+- `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up.
+- The parts are named, not summarised. A part left unnamed is a part the entry did not weigh.
+- A Unit that `rules/definition.rules.md` does not allow is not a Unit.
+- A rejected entry adopts nothing. Its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
-- run `node .pi/skills/adr/scripts/index.mjs --check`
-- it reports an option that carries no `C`, an `F` no option weighs, a reference that does not exist, and a number used twice
-- an option that does not carry every `C`, or does not weigh an `F`, is withdrawn, or the option itself is corrected
-- an `F` no option weighs is weighed by an option, or the loop in 4 is revisited
-- a reference that does not exist, and a number used twice, are corrected
-- an item the entry does not settle becomes a `Deferred` line with the reason
+### 6. Japanese proofread and affected
 
-### 8. Decision
+- After the decision and the definition, run the Japanese proofread and the affected research. There is no per-entry confirmation. The owner confirms all entries together after the last proofread.
+- Japanese proofread: run one `proofreader` subagent with the cycle's `adr.md`, and have it read `references/adr.format.md`. The role's policy applies. It edits only `adr.md`, and only this entry's lines.
+  - Read its report and the `git diff` of the file.
+  - If a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to the shape `references/adr.format.md` gives, in your own words.
+  - The wording of a quoted passage is not a change of meaning. Keep that correction.
+  - One round. The repaired file does not go through the subagent again.
+- Affected research: run one `research` subagent to write the entry's affected to `affected.md` in the shape `references/affected.format.md` gives.
+  - Before running, read the `Look at the affected` section of `references/tasks.md` and `references/affected.format.md`.
+  - The scaffold makes the `affected.md` bones with the entry's, and appends the next entry's bones to both.
 
-- the owner's answer is the decision, and nothing else records it
-- the option that is adopted moves from `Options` to `Adopted`
-- the rest keep the reason each was not taken, in one line
-- an entry the owner rejects carries `Status: **rejected**（理由）`, adopts nothing, and every option keeps the reason it was not taken
-- an ADR the owner rejects decides nothing: every entry carries `Status: **rejected**`, `DEFINITION.md` takes no change, and the roadmap item goes back to `_todo_`
+### 7. Next entry
 
-### 9. Definition
-
-- the parts of `DEFINITION.md` the entry relates to: `Unit`, `Who`, `Stack`, `What`
-- each part carries one of four operations: `(added)`, `(updated)`, `(dropped)`, `(kept)`
-- `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up
-- the parts are named, not summarised: a part left unnamed is a part the entry did not weigh
-- a Unit that `rules/definition.rules.md` does not allow is not a Unit
-- a rejected entry adopts nothing: its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`
-
-### 10. Confirmation
-
-- the owner reads the `Definition`, and their answer closes the entry's decision
-- a part they change is settled here, before the proofread
-
-### 11. Proofread and Affected
-
-- after the confirmation, run the proofread and the affected research, and the next entry goes ahead while they run
-- the Japanese proofread is in `## Japanese Proofread`; the affected is the entry's, in `references/affected.format.md`'s shape, and the `research` subagent writes it to `affected.md`
-- the scaffold makes the `affected.md`'s bones with the entry's, and appends the next entry's bones to both
+- While the proofread and the affected research run, the next entry goes ahead.
+- The next entry's stage starts after the proofread report is read. The next entry is written to `adr.md` after the report is read.
+- The affected research in section 6 runs at the same time.
 
 ## Entries, together
 
-- when every entry is decided, read them together: the names they write, and the lines they move
-- two entries that touch the same name must not contradict, and a contradiction is settled here with the owner
-
-## Japanese Proofread
-
-After the confirmation of an entry, run one `proofreader` subagent with the cycle's `adr.md` for the Japanese proofread of `adr.md`; have it read `.pi/skills/adr/references/adr.format.md`; the role's policy applies; edit only `adr.md`, and only this entry's lines.
-
-- read its report and `git diff` of the file
-- if a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to `references/adr.format.md`'s shape, in your own words
-- the wording of a quoted passage is not a change of meaning: keep that correction
-- if the report changed the meaning of a decision, settle it with the owner again
-- say in your report to the owner what you repaired: `fixed: <what>`, or `left: <why>`
-- one round: the repaired file does not go through the subagent again
-- the next entry's stage goes ahead while the proofread runs; the next entry is written to `adr.md` after the report is read
-- the affected research (step 11) runs at the same time
+- When every entry is decided, read them together: the names they write, and the lines they move.
+- Two entries that touch the same name must not contradict, and a contradiction is settled here with the owner.
+- After all proofreads finish, the owner reads the `Definition` lines together, and the answer closes the entries' decisions.
 
 ## What comes after an entry
 
-An entry decided here is not work done: the plan cuts it, the plan writes it, and the work carries it out.
+An entry decided here is not work done. The plan cuts it, the plan writes it, and the work carries it out.
 
 This skill keeps its own business — the entry and the decision — and does not do theirs.
 
 ## How not to write this
 
-- Do not decide: the ADR writes the options down before the decision, and the owner's answer there is the decision
-- Do not write the work here: files, steps and checks belong to the plan
-- Do not leave an entry undecided: a cycle decides every entry it raises
-- Do not write `DEFINITION.md` itself: the `Definition` carries the new lines, and a plan writes them into the file
-- Do not look up before the intent is settled: the target would be wrong, and the time and the money go with it
-- Do not put one option on the table: a single option cannot be weighed
-- Do not take the count of the options for the end: the end is the laid-out set
-- Do not leave the intent in the agent's words: an intent the owner did not correct is a guess
-- Do not skip the scope: an option with no edge cannot be weighed
-- Do not write an option as a line of `DEFINITION.md`: that is the ADR's work, and it would bend the options to its shape
+- Do not decide. The ADR writes the adopted change after the discussion, and the owner's answer there is the decision.
+- Do not write the work here. Files, steps and checks belong to the plan.
+- Do not leave an entry undecided. A cycle decides every entry it raises.
+- Do not write `DEFINITION.md` itself. The `Definition` carries the new lines, and a plan writes them into the file.
+- Do not look up before the intent is settled. The target would be wrong, and the time and the money go with it.
+- Do not leave the intent in the agent's words. An intent the owner did not correct is a guess.
+- Do not skip the scope. An option with no edge cannot be weighed.
+- Do not write an adopted change as a line of `DEFINITION.md`. That is the plan's work.
