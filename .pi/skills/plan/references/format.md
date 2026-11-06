@@ -136,7 +136,7 @@ Section and field names are English; the content is Japanese.
 - A test file sits beside the file it tests.
 - The way in is one. A feature keeps its `index` at its root, and the rest of the project comes in there.
 - A feature whose files are very few may stay flat at its root.
-- When an added or an updated feature grows the flat set, propose the dirs these rules give, before the file count is past reading.
+- A feature that outgrows its flat set uses dirs, one per concern.
 
 ## Slices
 
@@ -169,7 +169,7 @@ Section and field names are English; the content is Japanese.
 
 - `Verify` is what closes the slice. What has to pass, and the read-through that proves it. Not what to test.
 - It has two fields. `Always` is the same in every slice. `Added` is what the change decides.
-- Each `Add`, `Update` and `Drop` line's result is one of the related tests. A step that goes past the `Scope`, or does what `Denied` says not to do, is not written. The review reads it. A target of the plan's questions 3 and 4 is written even past the `Scope`. The reason is in `## Design`.
+- Each `Add`, `Update` and `Drop` line's result is one of the related tests. A step that goes past the `Scope`, or does what `Denied` says not to do, is not written. The review reads it. A module for the plan's questions 3 and 4 is written even past the `Scope`. The reason is in `## Design`.
 - `Always:` — the bullets below, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`

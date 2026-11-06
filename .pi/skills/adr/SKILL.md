@@ -19,7 +19,7 @@ The entry's question, the intent and the split are the owner's. The procedure wr
 
 - Write what you understood first, and let the owner correct it.
 - Repeat it until no point is left in dispute.
-- The intent is the only measure of what follows.
+- Weigh everything that follows against the intent alone.
 - Do not start the research before the intent is settled.
 
 ### 2. Roadmap
@@ -113,7 +113,7 @@ The viewpoints are the following table. An `out` kind carries its reason. A revi
 ### 6. Japanese proofread and affected
 
 - After the decision and the definition, run the Japanese proofread and the affected research. There is no per-entry confirmation. The owner confirms all entries together after the last proofread.
-- Japanese proofread: run one `proofreader` subagent with the cycle's `adr.md`, and have it read `references/adr.format.md`. The role's policy applies. It edits only `adr.md`, and only this entry's lines.
+- Japanese proofread: run one `proofreader` subagent with the cycle's `adr.md`, and have it read `references/adr.format.md`. The role's policy is in `.pi/extensions/consult/types.json`. It edits only `adr.md`, and only this entry's lines.
   - Read its report and the `git diff` of the file.
   - If a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved, put the file back to the shape `references/adr.format.md` gives, in your own words.
   - The wording of a quoted passage is not a change of meaning. Keep that correction.

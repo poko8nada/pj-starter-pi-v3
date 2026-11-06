@@ -87,6 +87,4 @@ Section and field names are English; the content is Japanese.
 
 ## Writing
 
-- Do not write what the reader can look up.
 - The exchange is not recorded. Only the organized `Context` stays.
-- Do not write the work. The files, the steps and the checks belong to the plan.
