@@ -1,6 +1,6 @@
 # Plan format
 
-`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`. The `NN-` is the file's order prefix and is not part of the plan id.
+`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`. The `NN-` is the file's order prefix and is not part of the plan id. An `ex-` plan omits the `NN-` prefix.
 
 Section and field names are English; the content is Japanese.
 
@@ -104,52 +104,52 @@ Section and field names are English; the content is Japanese.
 - Doubts:
 ````
 
-## One plan is one worktree
+## Design
 
-- The plan is one worktree, one branch and one merge — unless the plan md's `Place` says `base`: then the agent does the work in its own tree, with no branch and no merge. The plan id is the plan's name.
-- A subagent (the agent itself, for a `base` plan) reads the plan, and nothing else, to do the work. What the ADR decided is named where it bites, never restated.
+- Each field answers one question:
+  - `Inside.Modules` — within the plan's scope, is there a file or a module inside a file (code or doc) to merge or split?
+  - `Inside.Dirs` — within the plan's scope, is there a directory to merge, split or move?
+  - `Outside.Extract` — outside the plan's scope, does this plan's work create a module (code or doc) that should be shared?
+  - `Outside.Colocate` — outside the plan's scope, does this plan's work make a module that should no longer be shared and should sit beside its user?
+- Each answer says the answer and why that shape. `なし` when there is none.
 
 ## No
 
 - `No` is the ADR's entry number, copied as it is. A normal plan keeps `- No: <NN>` at the top.
-- An `ex-` plan does not write `No`; the close reads the `ADR <NN>` of the Triage line. The Triage line is the only source.
+- An `ex-` plan does not write `No`. The close reads the `ADR <NN>` of the Triage line. The Triage line is the only source.
 
 ## Files
 
-- The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`; a related file carries no marker.
-- Read the affected before writing it: its paths are the candidates, and the plan reads each one and decides its mark — `add`, `update`, `drop`, or no mark. The dirs the plan makes or leaves carry `add` or `drop` on the tree's dir line.
-- A new double or fixture is a file: it sits at the root of the feature whose shape it holds.
-- A fixture that holds a shape the feature does not own — the host, the OS, a format several units share — goes in `test/`.
-- `test/` is shared, not the harness's own: a project may keep its own files there.
+- The tree holds what changes and what follows the change. A changed file ends with `add`, `update` or `drop`. A related file carries no marker.
+- The map's paths are the candidates for the tree. The dirs the plan makes or leaves carry `add` or `drop` on the tree's dir line.
+- A new double or fixture is a file. It sits at the root of the feature whose shape it holds.
+- A fixture that holds a shape the feature does not own goes in `test/`. The host, the OS, a format several units share.
+- `test/` is shared, not the harness's own. A project may keep its own files there.
 - Name a fixture `<name>.fixture.ts`, wherever it sits.
 - A helper that is not a double keeps its own name.
 - A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy` (the pull list).
-- Say how a double or a fixture behaves when it is run outside its test: refuse, do not hang.
+- Say how a double or a fixture behaves when it is run outside its test. Refuse, do not hang.
 
 ### Structure
 
 - A file lives in the dir of the concern the feature needs.
 - A test file sits beside the file it tests.
-- The way in is one: a feature keeps its `index` at its root, and the rest of the project comes in there.
+- The way in is one. A feature keeps its `index` at its root, and the rest of the project comes in there.
 - A feature whose files are very few may stay flat at its root.
 - When an added or an updated feature grows the flat set, propose the dirs these rules give, before the file count is past reading.
 
 ## Slices
 
-- One slice is one closing: work that ends when its check passes. A subagent may carry several in one run; the size is a hint, not a handoff.
-- The subagent commits only after the check passes: a filled `Commit` means that slice's check passed.
-- A `base` plan is cut where the owner can look and decide: its check carries the look, and their answer closes the slice.
 - One step is one thing: a file, a module inside a file, or a dir. The line says what becomes what, and the content the ADR or the chat decided goes in a fence under it.
   - a file — `<prefix>: <what becomes what, in one sentence>`; the prefix is `add:`, `update:` or `drop:`
   - a module — `<path>#<module>: <what becomes what, in one sentence>`; the prefix says the module's change, and it may differ from the file's `Files` marker
-  - a test file — one `<prefix>: (happy|error|empty|boundary) <given> → <result>` per case, with the same prefix as the `Files` tree's marker; each `Adopted` line's result is one of those cases
+  - a test file — one `<prefix>: (happy|error|empty|boundary) <given> → <result>` per case, with the same prefix as the `Files` tree's marker; each `Add`, `Update` and `Drop` line's result is one of those cases
   - a dir — only two cases: an empty dir to make, or the last file dropped and the dir left; the tree's dir line carries `add` or `drop`
-- A step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`, after the line and before the fence.
-- A step whose content the ADR or the chat decided carries it in a fence under the step: the language is `ts`, `md`, `json` or the like, and the content is copied as it was decided, markdown or code; a test step keeps its case lines, and the fence goes under them.
+- A step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`. It goes after the line and before the fence.
+- A step whose content the ADR or the chat decided carries it in a fence under the step. The language is `ts`, `md`, `json` or the like, and the content is copied as it was decided, markdown or code. A test step keeps its case lines, and the fence goes under them.
 - The cases of a test file follow `## Test cases`.
-- A shape a plan does not need is not written: a plan with no test file has no test step, and a code step that meets nothing outside carries no `Outside:` line.
-- The steps are numbered; the order is the order of the work.
-- A plan whose `Files` has neither `add` nor `drop` says in the `Steps` and the `Design` how the update is built into the existing, and how the whole is redesigned. A plan that only replaces words is not a plan.
+- A shape a plan does not need is not written. A plan with no test file has no test step. A code step that meets nothing outside carries no `Outside:` line.
+- The steps are numbered. The order is the order of the work.
 
 ## Types
 
@@ -160,46 +160,45 @@ Section and field names are English; the content is Japanese.
 ### Type rules
 
 - A state is a discriminated union. Never a combination of optionals.
-- A `switch` over a union is exhaustive: the last branch assigns to `never`. No `default`.
+- A `switch` over a union is exhaustive. The last branch assigns to `never`. No `default`.
 - Fields are `readonly`, arrays are `readonly T[]`, and an argument object is not written to.
-- A constraint the compiler cannot check — a brand, a template literal built from a runtime string, a value that must be validated — has one factory, and the check lives inside it.
+- A constraint the compiler cannot check has one factory, and the check lives inside it. A brand, a template literal built from a runtime string, a value that must be validated.
 - A failure is a state or a throw. Never a silent success.
 
 ## Verify
 
-- `Verify` is what closes the slice: what has to pass, and the read-through that proves it — not what to test.
-- It has two fields. `Always` is the same in every slice; `Added` is what the change decides.
-- Each `Adopted` line's result is one of the related tests; a step that goes past the `Scope` is not written, and the review reads it. A target of the plan's questions 3 and 4 is written even past the `Scope`: the reason is in `## Design`.
+- `Verify` is what closes the slice. What has to pass, and the read-through that proves it. Not what to test.
+- It has two fields. `Always` is the same in every slice. `Added` is what the change decides.
+- Each `Add`, `Update` and `Drop` line's result is one of the related tests. A step that goes past the `Scope`, or does what `Denied` says not to do, is not written. The review reads it. A target of the plan's questions 3 and 4 is written even past the `Scope`. The reason is in `## Design`.
 - `Always:` — the bullets below, and nothing else.
   - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
   - `pnpm typecheck`
   - `pnpm lint`
   - `pnpm format:check`
-  - the read-through: read every changed file whole, and every file it names whole; follow the procedure in the order the file gives, as the one who acts on it; check the number, the path, the name and the shape at each place against what it points to; fix any inconsistency, and write the fix in `Unplanned`
-- `Added:` — what the change decides. One bullet per check that applies; `なし` when nothing does.
-  - DB — rows are written into the store and read back; a migration runs forward and back.
-  - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser; their OK in the chat closes it.
+  - the read-through: read every changed file whole, and every file it names whole. Follow the procedure in the order the file gives, as the one who acts on it. Check the number, the path, the name and the shape at each place against what it points to. Fix any inconsistency, and write the fix in `Unplanned`
+- `Added:` — what the change decides. One bullet per check that applies. `なし` when nothing does.
+  - DB — rows are written into the store and read back. A migration runs forward and back.
+  - front (a component, and what it shows) — the agent reports in the chat what to open, and the owner starts the server and looks in cmux-browser. Their OK in the chat closes it.
   - auth — the library's sandbox or test environment shows the behaviour that was intended.
-  - a `base` plan's look — the owner reads the slice's change; their OK closes it.
-  - a proofread — the Japanese document this slice amends; a file whose body is not Japanese (a code comment, a test description) is not one
+  - a `base` plan's look — the owner reads the slice's change. Their OK closes it.
+  - a proofread — the Japanese document this slice amends. A file whose body is not Japanese (a code comment, a test description) is not one
   - other — a check the ADR's scope names that the checks above do not cover, by a throwaway script or a shell command.
-- A check that counts a string says what it compares: a string the file carried before the change is counted in the diff, not in the file.
-- A `Verify` that cannot be run, or that is red with the change in place, is a hole: fix it, or say why it does not apply.
+- A check that counts a string says what it compares. A string the file carried before the change is counted in the diff, not in the file.
 
 ## Test cases
 
-- The cases are used where a test file's cases are decided: a step that writes one, the reviewer that reads one, and the work's cleanup that drops one. A case keeps its step's prefix. A `<given>` names a premise that can be built one way, and keeps the ADR's subject when the ADR names one.
+- The cases are used where a test file's cases are decided. A step that writes one, the reviewer that reads one, and the work's cleanup that drops one. A case keeps its step's prefix. A `<given>` names a premise that can be built one way, and keeps the ADR's subject when the ADR names one.
 - A premise the types, the spec, the schema or a DB constraint already guarantees is not reproduced in a test.
 - An assertion carries neither a magic number nor a hardcoded string.
-- A boundary value is not a test of its own: the test says the spec it belongs to is met.
+- A boundary value is not a test of its own. The test says the spec it belongs to is met.
 - A behaviour that is unlikely to happen, and whose breakage nobody would notice, is not tested.
-- A mock is made only where the outside gives the types of its input and its output; a mock whose shape is guessed is not made, and not tested.
+- A mock is made only where the outside gives the types of its input and its output. A mock whose shape is guessed is not made, and not tested.
 - Dummy data comes from a factory function, not from a literal written at each test.
 
 ## Notes
 
 - `## Notes` holds one `### Slice N: <name>` per slice. The name is copied from the slice's heading (`## 1.<name>`) as it is.
-- A section that is not a slice — the test cleanup — is `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`; it has no `Commit` and no `Stopped`.
+- A section that is not a slice — the test cleanup — is `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`. It has no `Commit` and no `Stopped`.
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it. Under it, `left: <why>` says why it could not be closed here. `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash. `なし（理由）` when the slice changed nothing.
