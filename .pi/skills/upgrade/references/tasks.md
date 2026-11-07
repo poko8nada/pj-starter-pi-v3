@@ -23,6 +23,15 @@ Report facts and sources. Do not decide, and do not design the procedure.
 A question you could not answer is a fact too: say what it is holding up.
 ```
 
-- One subagent per package. Two packages are never bundled into one task.
-- Hand it the paths to read. The notes are not always a `CHANGELOG.md`: a package may keep them in its releases, a migration guide or a product blog, and some have no notes at all. Let the subagent find where they live.
-- The task carries the range (`<A>` to `<B>`) and the repository's own files, so the answer can say whether a change hits.
+- Hand it the paths to read.
+- The notes are not always a `CHANGELOG.md`.
+- A package may keep them in its releases, a migration guide or a product blog.
+- Some have no notes at all.
+- Let the subagent find where they live.
+- The task carries the range (`<A>` to `<B>`) and the repository's own files.
+- The answer says whether a change hits.
+
+## Writing
+
+- One bullet is one sentence.
+- A file name is written from the project root.

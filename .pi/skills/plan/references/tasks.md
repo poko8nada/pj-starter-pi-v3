@@ -27,13 +27,20 @@ Answer in this shape, one section per slice:
 - Checks: ...
 - Flow: ...
 
-One finding is one bullet. Write なし for a name that found nothing.
+One finding is one bullet.
+Write なし for a name that found nothing.
 This is the only round: the findings come back once.
 Do not change the code or the plan.
 ```
 
-- One subagent per plan; the plans do not wait for each other.
-- One round: the agent fixes the plan from the findings, and says in its report to the owner what it did with each: `fixed: <what was done>`, or `left: <why>` for one it did not adopt. The plan stage reserves the section; its content belongs to the work.
+- One subagent per plan.
+- The plans do not wait for each other.
+- One round: the agent fixes the plan from the findings.
+- The agent says in its report to the owner what it did with each finding.
+- The report says `fixed: <what was done>` for one it adopted.
+- The report says `left: <why>` for one it did not adopt.
+- The plan stage reserves the section.
+- Its content belongs to the work.
 
 ## Research the unwritable lines (a `research` subagent)
 
@@ -49,3 +56,8 @@ Ask one question within these four kinds:
 Report the facts that exist now, with where they were found. Do not decide, and do not write the plan.
 If the missing fact is none of the four kinds, answer なし; the plan writes the line as `Stopped`, with the question and the reason.
 ```
+
+## Writing
+
+- One bullet is one sentence.
+- A file name is written from the project root.

@@ -37,8 +37,14 @@ What `upgrade` puts in front of the owner once the out-of-range packages are fou
 
 ## Rules
 
-- Write the hits in full. For the rest, one line for the count and one for the largest.
+- Write the hits in full.
+- For the rest, write one line for the count and one for the largest.
 - An unknown says what run settles it.
-- Every fact carries its URL, and the file and line it hits.
+- Every fact carries its URL.
+- Every fact carries the file and line it hits.
 - Write a number only when it was measured.
-- `pnpm outdated` exits 1 when it finds something. That is not a failure.
+
+## Writing
+
+- One bullet is one sentence.
+- A file name is written from the project root.
