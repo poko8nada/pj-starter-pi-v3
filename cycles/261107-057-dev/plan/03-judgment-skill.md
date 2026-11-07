@@ -144,26 +144,26 @@ ROADMAP.md
 
 ### Slice 1: 判定スキルの形を揃える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0ba9589cf4a56e421c1f256739d57cdbeccf0acb
 - Stopped:
 
 ### Cleanup: テスト掃除
 
-- Findings:
-- Unplanned:
+- Findings: なし — 計画の Files は文書のみで、テストファイルを含まない
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 名指し（the collect step・work step 8 green・references/format.md・collect.mjs・.pi/extensions/consult/types.json・rules/roadmap.md・ROADMAP.md・tasks.mdの見出し・consult_worktree list・work step 2・plan skill steps 4〜8）は指し先の現状と合い、takes/gives→View・禁止/条件→Notesへの移動と14手順の内容保存に脱落や陳腐化はなかった（`.pi/skills/close/SKILL.md:46`）。
+- Unlisted: なし — 差分はFilesがupdateと名指すSKILL.mdの1件のみで、Filesの名指さない変更はなかった（`cycles/261107-057-dev/plan/03-judgment-skill.md:22`）。
+- Gaps: なし — Alwaysの読み通し（14手順の実行順追跡と名指し先の解決確認）とAddedの件数確認がこの文書変更の振る舞いを覆い、checksがexerciseしない振る舞いは残らなかった（`cycles/261107-057-dev/plan/03-judgment-skill.md:141`）。
+- Unproven: なし — 計画のFilesは文書のみでテストを含まないため、振る舞いを壊しても緑のまま残るテストはない（`cycles/261107-057-dev/plan/03-judgment-skill.md:152`）。
+- Noise: なし — テスト手順がなく、型・スキーマ・DB制約が決着済みの断定やマジックナンバー・ハードコード文字列を持つcasesもない（`cycles/261107-057-dev/plan/03-judgment-skill.md:152`）。
+- Doubts: なし
 
 ### Round 2
 
@@ -176,6 +176,6 @@ ROADMAP.md
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts: このサイクルだけ、オーナーが受入の前に自分で確かめる。
+- Ran: ワークツリーで `pnpm test:run`（63 ファイル、782 試験が合格）、`pnpm typecheck`（root と `.pi` が ok）、`pnpm lint`、`pnpm format:check` を走らせた。変えた `close/SKILL.md` を読み、`Steps:`・`View:`・`Notes:` の分け方、門の表、状態の表、各ステップの `takes` と `gives`、ステップ 8 の戻り、末尾の 4 項目、冒頭文、frontmatter、名指しの解決を確かめた。`git diff` で、`###` の見出しが 14 件、門の表が 3 行、状態の表が 6 行であることを確かめた。
+- Findings: なし
+- Doubts: オーナーが受入の前に確認した。直す点の指摘はなかった。
