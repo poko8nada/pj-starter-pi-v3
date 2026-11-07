@@ -103,26 +103,30 @@
 
 ### Slice 1: 手順スキルの形を揃える
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `.pi/skills/plan/SKILL.md:135` — `Steps` の「止まる」と `Notes` の「止まり、形を決める」が重なっていたため、`Notes` から「止まる」を削り、決める文だけを残した。読み通しで直す不整合のため、ここで直した。
+  - `.pi/skills/work/SKILL.md:77` — `View` の 1 行目の条件に「作業が健全」が落ちていたため、`Steps` に合わせて足した。読み通しで直す不整合のため、ここで直した。
+  - `.pi/skills/upgrade/SKILL.md:90-114` — ステップ 5 に 3 つの行動が 1 文に入り、`Notes` が `Steps` と重なっていたため、1 行動ずつに分け、重なった `Notes` の 2 行を削った。読み通しで直す不整合のため、ここで直した。
+  - `.pi/skills/upgrade/SKILL.md:137-143` — ステップ 7 に 3 つの行動が 1 文に入っていたため、1 行動ずつに分けた。読み通しで直す不整合のため、ここで直した。
+- Commit: `0888f6f3c1497cc32b3910a70a70ca29ff24c4ed`
 - Stopped:
 
-### Cleanup: テスト掃除
+### Cleanup: 文書のみのため掃除なし
 
-- Findings:
-- Unplanned:
+- Findings: なし — 計画の `Files` は 3 つの `SKILL.md`（文書）の `update` のみで、テストファイルを含まないため、削る対象がない。`pnpm test:run` は緑（63 files / 782 tests passed）であることを確かめた。
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — close の名指し（work step 8、plan steps 4 to 8、work step 2）が相手の現状と合うこと、参照資料のパス、frontmatter、セクション番号が変わっていないことを確かめた。
+- Unlisted: なし — 差分は Files の 3 ファイルのみで、Unplanned の 4 件はいずれも同ファイル内の読み通し修正であることを確かめた。
+- Gaps: なし — Added なし・文書のみの変更であり、Always の読み通し（番号・パス・名前・形の照合）が Unplanned の修正として残っていることを確かめた。
+- Unproven: なし — 追加・更新するテストがなく、緑のまま残るテストがないことを確かめた。
+- Noise: なし — 書くべきテスト事例がなく、型や制約が決める値の重複もないことを確かめた。
+- Doubts: なし
 
 ### Round 2
 
@@ -135,6 +139,6 @@
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts: このサイクルだけ、オーナーが受入の前に自分で確かめる。
+- Ran: ワークツリーで `pnpm test:run`（63 ファイル、782 試験が合格）、`pnpm typecheck`（root と `.pi` が ok）、`pnpm lint`、`pnpm format:check` を走らせた。変えた 3 ファイルを読み、`Steps:`・`View:`・`Notes:` の分け方、末尾の 4 項目、冒頭文、frontmatter、名指しの解決を確かめた。
+- Findings: なし
+- Doubts: オーナーが受入の前に確認した。直す点の指摘はなかった。
