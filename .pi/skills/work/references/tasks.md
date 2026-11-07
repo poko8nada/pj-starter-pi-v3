@@ -2,20 +2,6 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules. Work in the tree you were given. Read and write the plan md there.
 
-## Shape
-
-```md
-## Slices (a `code` subagent)
-
-## Clean the tests (the `code` subagent, continued)
-
-## Review (a `review` subagent)
-
-## Fixes (the `code` subagent, continued)
-
-## Acceptance's findings (a `code` subagent)
-```
-
 ## Slices (a `code` subagent)
 
 ```

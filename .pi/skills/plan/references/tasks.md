@@ -2,14 +2,6 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules.
 
-## Shape
-
-```md
-## Review of a plan (a `review` subagent)
-
-## Research the unwritable lines (a `research` subagent)
-```
-
 ## Review of a plan (a `review` subagent)
 
 ```

@@ -56,7 +56,7 @@ ROADMAP.md
 ### Steps
 
 1. `.pi/skills/plan/references/cut.md`:
-   - update: 見出し、1 行の説明、`## Shape`、`## <section>`、`## Writing` の並びに揃え、1 つの箇条書きに 1 つの規則を置き、重複した文は意味を変えずに短くする。セクション名は変えない。
+   - update: 形を持つファイルだけに `## Shape` を置くため、見出し、1 行の説明、`## <section>`、`## Writing` の並びに揃えて `## Shape` を外し、1 つの箇条書きに 1 つの規則を置き、重複した文は意味を変えずに短くする。セクション名は変えない。
 2. `.pi/skills/plan/references/format.md`:
    - update: 同じ並びに揃え、1 つの箇条書きに 1 つの規則を置き、「Round 1 is a new conversation; Round 2 continues the reviewer's own, ...」と「Written after the review's fixes: ...」を削り、テストの書き方は `## Test cases` に寄せて `## Slices` の重複を削り、`## Writing` を置き、重複した文は意味を変えずに短くする。セクション名は変えない。
 3. `.pi/skills/plan/references/tasks.md`:
@@ -100,26 +100,33 @@ ROADMAP.md
 
 ### Slice 1: 参照資料の形を揃える
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 0a488690f8f8400c4cf74950cfcb4bc6ed9a8069
 
 ### Cleanup: テスト掃除
 
-- Findings:
-- Unplanned:
+- Findings: この plan の `Files` が `update` する 8 件は英語の参照資料のみで、テストファイルを `Files` に持たない。よって掃除対象のテストは存在しない。`pnpm test:run` は緑（63 files / 782 tests passed）であることを確かめた。
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/skills/plan/references/format.md:91` — `## Shape` の中の `## Work Review` が `### Round 1` のみを示し、本文の `### Round 2`（`.pi/skills/plan/references/format.md:300-302`）を含まない。理由：`## Shape` は計画 md の形を示すものであり、到着時点で形と本文が食い違っているため、読み手は Round 2 の記録場所を形から読み取れない。計画の Verify（番号・名前・形の照合）が見逃した不一致である。なお計画が名指した削除文（`close/references/format.md` の 3 文、`plan/references/format.md` の 2 文、`upgrade/references/tasks.md:26`、`work/references/tasks.md:55`、`upgrade/references/report.md:44`、`close/references/format.md:72-75` の集約、`## Slices`／`## Test cases` の集約）はいずれも除去済みであることを確認した。
+    - fixed: `## Shape` の `## Work Review` に `### Round 2` を足し、本文の `### Round 1`／`### Round 2` と一致させた。
 - Unlisted:
+  - なし — 差分の 8 件は `Files` の `update` 8 件と一致し、`SKILL.md`・`collect.mjs`・`ROADMAP.md`（無印＝関連ファイル）への変更はない。
 - Gaps:
+  - なし — `Added` はなしで振る舞いがなく、`Always` の読み合わせ対象は 8 ファイルの役割順読みと `SKILL.md` 4 件が名指すセクション名（`Slices`／`Clean the tests`／`Review`／`Fixes`／`Acceptance's findings`、`Look it up`、`Look one package up`、`Collected`／`Triage`／`Verified`、`Design`／`Test cases` 等）であり、いずれも残存を確認した。
 - Unproven:
+  - なし — テストファイルの追加・更新がなくテストステップ自体がないため、`## Test cases` で照合すべき cases が存在しない。
 - Noise:
+  - なし — 同上。テストステップがないため、型・スキーマ・DB 制約が決めることや誰も気づかないケースの有無を論じる対象がない。
 - Doubts:
+  - `.pi/skills/plan/references/cut.md:5-13` ほか `tasks.md` 4 件の `## Shape` は、ADR の `Shape`（別成果物 `adr.md`／`affected.md` の形を示す）とは異なり、自身の見出しの再掲になっている。理由：直下の見出しと同一の情報を繰り返すだけで、セクション改名時の二重更新を強いる。計画が 8 件の並びを `## Shape` 含みで揃えると決めたため指摘にはしないが、残す価値があったかはオーナーの判断を求める。
+    - fixed: オーナーの判断により、記録の形を定めない 5 件（plan `cut.md`・plan `tasks.md`・work `tasks.md`・upgrade `tasks.md`・close `tasks.md`）から `## Shape` を外し、`## Shape` を残すのは記録の形を定める 3 件（plan `format.md`・upgrade `report.md`・close `format.md`）だけにした。
 
 ### Round 2
 

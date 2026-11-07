@@ -2,16 +2,6 @@
 
 The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by what the work reads, not by where it lives.
 
-## Shape
-
-```md
-## Cut
-
-## Present
-
-## Where
-```
-
 ## Cut
 
 - Work that reads the same input stays in one plan.
