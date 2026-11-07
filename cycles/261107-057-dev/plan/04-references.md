@@ -114,7 +114,7 @@ ROADMAP.md
 ### Round 1
 
 - Stale:
-  - `.pi/skills/plan/references/format.md:91` — `## Shape` の中の `## Work Review` が `### Round 1` のみを示し、本文の `### Round 2`（`.pi/skills/plan/references/format.md:300-302`）を含まない。理由：`## Shape` は計画 md の形を示すものであり、到着時点で形と本文が食い違っているため、読み手は Round 2 の記録場所を形から読み取れない。計画の Verify（番号・名前・形の照合）が見逃した不一致である。なお計画が名指した削除文（`close/references/format.md` の 3 文、`plan/references/format.md` の 2 文、`upgrade/references/tasks.md:26`、`work/references/tasks.md:55`、`upgrade/references/report.md:44`、`close/references/format.md:72-75` の集約、`## Slices`／`## Test cases` の集約）はいずれも除去済みであることを確認した。
+  - `.pi/skills/plan/references/format.md:91` — `## Shape` の中の `## Work Review` が `### Round 1` のみを示し、本文の `### Round 2`（`.pi/skills/plan/references/format.md:300-302`）を含まない。理由：`## Shape` は計画 md の形を示すものであり、到着時点で形と本文が食い違っているため、読む者は Round 2 の記録場所を形から読み取れない。計画の Verify（番号・名前・形の照合）が見逃した不一致である。なお計画が名指した削除文（`close/references/format.md` の 3 文、`plan/references/format.md` の 2 文、`upgrade/references/tasks.md:26`、`work/references/tasks.md:55`、`upgrade/references/report.md:44`、`close/references/format.md:72-75` の集約、`## Slices`／`## Test cases` の集約）はいずれも除去済みであることを確認した。
     - fixed: `## Shape` の `## Work Review` に `### Round 2` を足し、本文の `### Round 1`／`### Round 2` と一致させた。
 - Unlisted:
   - なし — 差分の 8 件は `Files` の `update` 8 件と一致し、`SKILL.md`・`collect.mjs`・`ROADMAP.md`（無印＝関連ファイル）への変更はない。
@@ -131,14 +131,21 @@ ROADMAP.md
 ### Round 2
 
 - Stale:
+  - なし — `.pi/skills/plan/references/format.md:100` の `### Round 2` が本文の `### Round 1`（`:302`）／`### Round 2`（`:304`）および `:282` の「Two rounds」と見出し一致し、計画 md の `### Steps` の 1（`04-references.md:58-59`）の「形を持つファイルだけに `## Shape` を置くため…`## Shape` を外し」が現物の `cut.md:1-63`（見出し・1 行説明・`## Cut`／`Present`／`Where`・`## Writing`）と合っていることを確かめた。
 - Unlisted:
+  - なし — 差分は `## Shape` 5 件除去と `format.md` 2 行追加と計画 md の `Steps` 1 行・`Notes`・`Work Review` のみで `SKILL.md`・`collect.mjs`・`ROADMAP.md` への変更はないことを確かめた。
 - Gaps:
+  - なし — `## Shape` が残るのは記録の形を定める 3 件（`plan/references/format.md:7`・`upgrade/references/report.md:5`・`close/references/format.md:5`）だけで外れた 5 件（`plan/cut.md`・`plan/tasks.md`・`work/tasks.md`・`upgrade/tasks.md`・`close/tasks.md`）の全文に `## Shape` がなく外した跡の見出し並びも崩れていないことを確かめた。
 - Unproven:
+  - なし — テストファイルの追加・更新がなくテストステップ自体がないため `## Test cases` で照合すべき cases が存在しないことを確かめた。
 - Noise:
+  - なし — 同上のため型・スキーマ・DB 制約が決めることや誰も気づかないケースの有無を論じる対象がないことを確かめた。
 - Doubts:
+  - `.pi/skills/plan/references/format.md:91-100` の `## Shape` は `### Round 1` の下に 6 視点を並べるが `### Round 2` の下は空で本文（`:282-298`）の両ラウンド共通の書き方や計画 md（`04-references.md:131-138`）の両ラウンド 6 視点と見た目が非対称であり繰り返すかはオーナーの判断を求める。
+    - fixed: オーナーの判断により、`## Shape` の `### Round 2` にも 6 視点（`Stale`、`Unlisted`、`Gaps`、`Unproven`、`Noise`、`Doubts`）を並べた。
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts: このサイクルだけ、オーナーが受入の前に自分で確かめる。
+- Ran: ワークツリーで `pnpm test:run`（63 ファイル、782 試験が合格）、`pnpm typecheck`（root と `.pi` が ok）、`pnpm lint`、`pnpm format:check` を走らせた。変えた 8 ファイルを読み、見出し、1 行の説明、`## <section>`、`## Writing` の並び、`## Shape` を持つ 3 ファイルと持たない 5 ファイル、`Adopted/Drop` が名指す 9 つの文の削除、`done <commit>` の統合、`## Test cases` への寄せ、`SKILL.md` 4 件が名指すセクション名の残存を確かめた。`ja-check` は plan md で error 0 件、warn 0 件だった。オーナーの判断で `## Shape` の `### Round 2` に足した 6 視点も確かめた。
+- Findings: なし
+- Doubts: オーナーが受入の前に確認した。Round 2 の疑い 1 件は、オーナーの判断で 6 視点を足した。

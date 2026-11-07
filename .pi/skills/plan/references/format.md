@@ -99,6 +99,13 @@ Section and field names are English; the content is Japanese.
 
 ### Round 2
 
+- Stale:
+- Unlisted:
+- Gaps:
+- Unproven:
+- Noise:
+- Doubts:
+
 ## Acceptance
 
 - Ran:
