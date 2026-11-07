@@ -9,78 +9,159 @@ A package is updated in two parts: inside the declared range, and past it. The f
 
 The work has two stops, and the owner answers at both: the report, where they pick the packages; and the audit, where they say the leftovers are as expected.
 
-## Not a cycle
+This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no affected and no plan. Its record is the commits: one package, one commit, with the checks that passed. When an update forces a decision the product owns — a behavior, a line of `DEFINITION.md`, a choice between two ways — the agent stops the upgrade, and opens a cycle for that part.
 
-- This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no affected and no plan.
-- Its record is the commits: one package, one commit, with the checks that passed.
-- When an update forces a decision the product owns — a behavior, a line of `DEFINITION.md`, a choice between two ways — stop the upgrade, and open a cycle for that part.
-
-## Files
-
-- `references/report.md` — the shape of the report the owner reads.
-- `references/tasks.md` — the text handed to a `research` subagent that looks one package up.
+`references/report.md` holds the shape of the report the owner reads. `references/tasks.md` holds the text handed to a `research` subagent that looks one package up.
 
 ## Procedure
 
 ### 1. Update inside the range
 
-- `pnpm update`, every time, whether or not anything is out of date.
-- It writes the range in `package.json` and moves `pnpm-lock.yaml`. Nothing may move; say so and go on.
+Steps:
+
+1. Run `pnpm update` every time, whether or not anything is out of date.
+
+Notes:
+
+- It writes the range in `package.json` and moves `pnpm-lock.yaml`.
+- The agent says so and goes on when nothing moves.
 
 ### 2. Find what is out of range
 
-- `pnpm outdated --json`. It exits 1 when it finds something, and that is not a failure.
-- `wanted` is the newest version inside the declared range; `latest` is the newest one after `minimumReleaseAge` is applied. A package is out of range when `latest !== wanted`.
-- `peerDependencies` are not checked: `pnpm outdated` does not see them. Say that in the report.
-- The target is the newest stable version that is at least `minimumReleaseAge` minutes old. Read the number from `pnpm-workspace.yaml`; 1440 when it is not there. Prereleases are not counted.
-- When every `latest` is old enough, the target is `latest`.
-- Apply with `pnpm update --latest <package>`, never with an explicit version: the range keeps its shape, and the resolution goes through the age filter.
+Steps:
+
+1. Run `pnpm outdated --json`.
+2. Read the number from `pnpm-workspace.yaml`.
+3. Apply with `pnpm update --latest <package>`, never with an explicit version.
+
+View:
+
+| field    | what it is                                                 |
+| -------- | ---------------------------------------------------------- |
+| `wanted` | the newest version inside the declared range               |
+| `latest` | the newest one after `minimumReleaseAge` is applied        |
+| target   | the newest stable version at least `minimumReleaseAge` old |
+
+Notes:
+
+- It exits 1 when it finds something, and that is not a failure.
+- A package is out of range when `latest !== wanted`.
+- `peerDependencies` are not checked.
+- `pnpm outdated` does not see them.
+- The agent says that in the report.
+- The number is `minimumReleaseAge` minutes.
+- It is 1440 when it is not there.
+- Prereleases are not counted.
+- The target is `latest` when every `latest` is old enough.
+- The range keeps its shape.
+- The resolution goes through the age filter.
 
 ### 3. Look each package up, all at once
 
-- One `research` subagent per package, all started together. The task is in `references/tasks.md`, and the range it carries is `<installed>` to `<target>`.
-- Hand it the files that hold the package's setting and its use in this repository.
-- Wait for all of them. A package whose answer is thin is still reported: what is unknown is written as unknown.
+Steps:
+
+1. Start one `research` subagent per package, all together.
+2. Hand it the files that hold the package's setting and its use in this repository.
+3. Wait for all of them.
+
+Notes:
+
+- The task is in `references/tasks.md`.
+- The range it carries is `<installed>` to `<target>`.
+- A package whose answer is thin is still reported.
+- What is unknown is written as unknown.
 
 ### 4. Report, and stop
 
-- Write the report in the shape `references/report.md` gives, and put it in the chat. It is not written into a file.
-- The owner picks which packages to take, and in what order. Nothing is applied before they answer.
+Steps:
+
+1. Write the report in the shape `references/report.md` gives, and put it in the chat.
+2. Wait for the owner's answer.
+
+Notes:
+
+- It is not written into a file.
+- The owner picks which packages to take, and in what order.
 
 ### 5. Apply one package at a time
 
-- `pnpm update --latest <package>`, one package at a time, in the owner's order.
-- Read the resolved version. When it is not the target, stop and report: the resolution and the report disagree, and the owner decides.
-- Take the breaking change the report named for that package, and change what the package forces. Nothing else is tidied in the same commit.
-- Run the checks the project has: the test, the typecheck, the lint, the format check, and the build when `package.json` has one.
-- One package, one commit. A package whose checks do not pass is not committed: the change is undone, the reason is written, and the owner is told.
+Steps:
+
+1. Run `pnpm update --latest <package>`, one package at a time, in the owner's order.
+2. Read the resolved version.
+3. Stop when it is not the target.
+4. Report in that case.
+5. Take the breaking change the report named for that package, and change what the package forces.
+6. Run the checks the project has.
+7. Commit it when the checks pass.
+8. Undo the change when the checks do not pass.
+9. Write the reason in that case.
+10. Tell the owner in that case.
+
+View:
+
+- the test
+- the typecheck
+- the lint
+- the format check
+- the build when `package.json` has one
+
+Notes:
+
+- The resolution and the report disagree when the resolved version is not the target.
+- The owner decides in that case.
+- Nothing else is tidied in the same commit.
+- One package is one commit.
 
 ### 6. Keep the configuration true
 
-- `minimumReleaseAgeExclude` holds lines such as `package@1.2.3`. Keep a line only while it names a version that is installed; drop the rest.
-- Never rewrite a version in that list: a rewritten line allows a younger version, which is the opposite of what the list is for.
+Steps:
+
+1. Drop the lines that do not name a version that is installed.
+2. Leave a package named in `package.json` only as a peer, and add no line for it.
+
+Notes:
+
+- `minimumReleaseAgeExclude` holds lines such as `package@1.2.3`.
+- The agent keeps a line only while it names a version that is installed.
+- The agent never rewrites a version in that list.
+- A rewritten line allows a younger version.
+- That is the opposite of what the list is for.
 - A line that `pnpm audit --fix=update` wrote stays while its version is installed.
-- A package named in `package.json` only as a peer is not updated by this procedure; leave it, and do not add a line for it.
+- A package named in `package.json` only as a peer is not updated by this procedure.
 
 ### 7. Audit, and stop
 
-- `pnpm audit --audit-level low`. The level is not raised and not lowered.
-- The exit code tells the two apart: 1 is an advisory at or above the level, an exception is a failed registry. Say which one it was.
-- With leftovers, `pnpm audit --fix=update` once, then the checks again, then the audit again.
-- `override` is the last step, and it is taken only with the owner's OK.
-- `--ignore` and `--ignore-unfixable` are taken only with the owner's OK, and never in the same run as `--fix`.
+Steps:
+
+1. Run `pnpm audit --audit-level low`.
+2. Say which one it was.
+3. Run `pnpm audit --fix=update` once with leftovers.
+4. Run the checks again.
+5. Run the audit again.
+6. Take `override` only with the owner's OK.
+7. Take `--ignore` and `--ignore-unfixable` only with the owner's OK.
+
+View:
+
+| exit         | what it is                        |
+| ------------ | --------------------------------- |
+| 1            | an advisory at or above the level |
+| an exception | a failed registry                 |
+
+Notes:
+
+- The level is not raised and not lowered.
+- The exit code tells the two apart.
+- The agent runs `--fix` and `--ignore` in no same audit.
+- The agent calls no advisory closed before the audit says it is gone.
+- `override` is the last step.
 - The work ends when the owner reads the leftovers and says they are as expected.
 
-## Out of scope
-
-- `peerDependencies`, and the peers that a package installs by itself: `pnpm outdated` does not see them.
-- The CI's automatic updates (renovate, dependabot and the like): not this skill.
-- A version younger than `minimumReleaseAge`: never taken.
-
-## How not to do this
+## How not to write this
 
 - Do not apply a package before the owner has picked it
-- Do not put two packages in one commit
-- Do not run `--fix` and `--ignore` in the same audit
-- Do not call an advisory closed before the audit says it is gone
-- Do not write a version or a number of minutes into this procedure: both are read from the project
+- Do not write a version or a number of minutes into this procedure.
+- Both are read from the project.
+- Do not touch the CI's automatic updates (renovate, dependabot and the like).
+- Do not take a version younger than `minimumReleaseAge`.
