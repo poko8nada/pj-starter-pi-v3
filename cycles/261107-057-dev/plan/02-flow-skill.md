@@ -110,26 +110,32 @@
 
 ### Slice 1: 流れスキルの形を揃える
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 60a8bff9392976555550daf7f5a20c770b03755c
 - Stopped:
 
 ### Cleanup: テスト掃除
 
-- Findings:
-- Unplanned:
+- Findings: なし — 計画の Files は文書のみで、テストファイルを含まない
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — yolo の 7 観点・work 手順・close 手順の名指しは相手の現状と一致し、旧見出しへの残存参照もない (`.pi/skills/yolo/SKILL.md:34`、`.pi/skills/plan/SKILL.md:66-78`、`.pi/skills/work/SKILL.md:34-55`、`.pi/skills/close/SKILL.md:41-100`)。
 - Unlisted:
+  - なし — 差分の変更は Files が update とする yolo のみで、plan・work・close は関連参照のままである (`.pi/skills/yolo/SKILL.md:11-103`、`cycles/261107-057-dev/plan/02-flow-skill.md:16-29`)。
 - Gaps:
+  - なし — 表の行数は Added の目視対象で、frontmatter・冒頭文・名指しの不整合は Always の読み通しが担い、該当しない proofread・DB 等はない (`cycles/261107-057-dev/plan/02-flow-skill.md:98-107`)。
 - Unproven:
+  - なし — 計画にテストファイルがなく、Added は目視の行数確認なので、壊しても緑のままのテストはない (`cycles/261107-057-dev/plan/02-flow-skill.md:35-39`)。
 - Noise:
+  - なし — テスト手順がなく、Added の 4 行・2 行は ADR と plan のフェンスが決めた値で、型や制約が済ませる重複確認でもない (`cycles/261107-057-dev/plan/02-flow-skill.md:107`、`cycles/261107-057-dev/adr.md:192-213`)。
 - Doubts:
+  - なし
 
 ### Round 2
 
@@ -142,6 +148,6 @@
 
 ## Acceptance
 
-- Ran:
-- Findings:
-- Doubts: このサイクルだけ、オーナーが受入の前に自分で確かめる。
+- Ran: ワークツリーで `pnpm test:run`（63 ファイル、782 試験が合格）、`pnpm typecheck`（root と `.pi` が ok）、`pnpm lint`、`pnpm format:check` を走らせた。変えた `yolo/SKILL.md` を読み、`Steps:`・`View:`・`Notes:` の分け方、`## When it runs` の表、`## When a step cannot run` の表、停止の表、末尾の 3 項目、冒頭文、frontmatter、名指しの解決を確かめた。`git diff` で、停止の表が 4 行、置き換えの表が 2 行であることを確かめた。
+- Findings: なし
+- Doubts: オーナーが受入の前に確認した。直す点の指摘はなかった。
