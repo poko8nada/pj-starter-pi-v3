@@ -2,6 +2,20 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules. Work in the tree you were given. Read and write the plan md there.
 
+## Shape
+
+```md
+## Slices (a `code` subagent)
+
+## Clean the tests (the `code` subagent, continued)
+
+## Review (a `review` subagent)
+
+## Fixes (the `code` subagent, continued)
+
+## Acceptance's findings (a `code` subagent)
+```
+
 ## Slices (a `code` subagent)
 
 ```
@@ -12,8 +26,10 @@ A finding is a hole you could not close: one bullet for the hole, and `left: <wh
 If you cannot finish, write where you stopped (Stopped) and stop.
 ```
 
-- Agent passes `worktree` (for a worktree plan) and `continue: true` after the first run. Role's own permissions (`types.json`) are what the subagent works under.
-- Check comes before the commit: a filled `Commit` means that slice's check passed.
+- Agent passes `worktree` (for a worktree plan) and `continue: true` after the first run.
+- Role's own permissions (`types.json`) are what the subagent works under.
+- Check comes before the commit.
+- A filled `Commit` means that slice's check passed.
 
 ## Clean the tests (the `code` subagent, continued)
 
@@ -27,7 +43,8 @@ Drop what you find, and keep the suite green.
 Write it in the same plan md's ## Notes, as a section that is not a slice.
 ```
 
-- It is not a slice: what went stale is known only after the change.
+- It is not a slice.
+- What went stale is known only after the change.
 
 ## Review (a `review` subagent)
 
@@ -52,9 +69,12 @@ Fixes for Round 1 are in. Look only at the lines marked fixed:, and check each o
 This is the last look. Write your answer in ### Round 2 of the same plan md, same viewpoints, and stop. A doubt that is not a finding goes under `- Doubts:` in `### Round 2`.
 ```
 
-- Round 1 runs in a new conversation (`continue: false`); Round 2 continues the reviewer's own. A Round 1 that finds nothing ends the review.
-- After Round 2 the review ends. What is still open is fixed once more, and nothing looks at it again: the record and the report hold it.
-- Reviewer's role allows it to write only `cycles/*/plan/*.md`: it writes the record, and nothing else.
+- A Round 1 that finds nothing ends the review.
+- After Round 2 the review ends.
+- What is still open is fixed once more.
+- Nothing looks at it again: the record and the report hold it.
+- Reviewer's role allows it to write only `cycles/*/plan/*.md`.
+- It writes the record, and nothing else.
 
 ## Fixes (the `code` subagent, continued)
 
@@ -72,3 +92,8 @@ Acceptance found this, in cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md (#
 Fix them, run the plan's checks, and commit: consult(<plan id>): acceptance fixes
 If one cannot be fixed here, write why under it in the same plan md instead, and leave it for the close.
 ```
+
+## Writing
+
+- One bullet is one sentence.
+- A file name is written from the project root.
