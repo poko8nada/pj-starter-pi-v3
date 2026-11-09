@@ -388,3 +388,36 @@
 - Unplanned: なし
 - Commit: 9a913fe base(readable-rules): shape field references as field, table, rules
 - Stopped: なし
+
+### Slice 2: task-shape
+
+- Findings: なし
+- Unplanned: なし
+- Commit: acae805 base(readable-rules): shape subagent tasks as job, steps, report
+- Stopped: なし
+
+### Slice 3: slice-concern
+
+- Findings: なし
+- Unplanned: ステップの追加で、plan の 1.8 の例（`10.` から `14.` までが `9.` から `13.` になる）と番号が 1 つずれた。名前の規則を `8.` に入れ、`9.` を落としたので、残りは `10.` から `14.` のままである。
+- Commit: a2e49cd base(readable-rules): cut slices by concern, prove closure with Verify
+- Stopped: なし
+
+### Slice 4: premise
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 5615f7f base(readable-rules): split clean-test view into drop and fix
+- Stopped: なし
+
+### Slice 5: advice
+
+- Findings: なし
+- Unplanned: `adr` の「Do not leave `Keep`/`Denied` in the new shape.」を落とした。058 で `Keep`/`Denied` は `Adopted` と `Policy` に置き換わり、いまの形にその欄はないため、自明な項目になった。
+- Commit: e9068b4 base(readable-rules): start each advice item with its situation
+- Stopped: なし
+
+### Cleanup: 文書のみのため掃除なし
+
+- Findings: なし
+- Unplanned: なし
