@@ -20,7 +20,7 @@ Steps:
 1. Read the shape in `.pi/skills/plan/references/format.md` before reading the record.
 2. Read `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` for a plan that has an `NN`.
 3. Read `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` for an `ex-` plan.
-4. Read the plan md's `Files`, each slice's `Types`, `Steps` and `Verify`, and `## Notes`.
+4. Read the plan md's `Files`, `## Goal`, each slice's `Types`, `Steps`, `Policy` and `Verify`, and `## Notes`.
 5. Read the plan md's `Place`.
 
 View:
@@ -119,7 +119,7 @@ Notes:
 - The task is in the `Clean the tests` section of `references/tasks.md`.
 - A premise a type, a schema or a DB constraint already settles is one the plan would not write.
 - One nobody would notice is one the plan would not write.
-- An `Adopted` line with no case is one the plan would not write.
+- An `Add`, `Update` or `Drop` line with no case is one the plan would not write.
 - It is not a slice.
 - What went stale is known only after the change.
 - A slice carries a `Verify` of its own.
@@ -154,6 +154,7 @@ Notes:
 - The reviewer writes it under the five viewpoints and `Doubts`.
 - The reviewer reads the test steps' cases by the plan's `## Test cases`.
 - The reviewer reads each `Verify` by what closes its slice.
+- `Gaps` reads the plan's `Policy` and `Goal`: a `Forbidden` the steps break, and a hole that misses the `Goal`.
 - The fixing subagent reads the plan md.
 - The fixing subagent writes a `fixed:` line for what it adopts under each Round 1 finding.
 - The fixing subagent writes a `left:` line for what it leaves under each Round 1 finding.
@@ -214,7 +215,28 @@ Notes:
 - There is no worktree for a `base` plan.
 - The field says `なし` when there is nothing.
 
-### 8. Merge
+### 8. The owner's confirmation
+
+Steps:
+
+1. Show the owner the `## Acceptance`'s `Ran`, `Findings` and `Doubts`.
+2. Wait for their OK before the merge.
+3. A `yolo` plan passes this confirmation: the agent's acceptance check is the confirmation.
+
+View:
+
+| case           | who closes it |
+| -------------- | ------------- |
+| the owner's OK | the owner     |
+| a `yolo` plan  | the agent     |
+
+Notes:
+
+- The owner's word closes it.
+- The merge does not start before it.
+- A `yolo` plan passes this confirmation.
+
+### 9. Merge
 
 Steps:
 
@@ -239,7 +261,7 @@ Notes:
 - Green means done.
 - A `base` plan has nothing to merge.
 
-### 9. Report
+### 10. Report
 
 Steps:
 
@@ -253,3 +275,4 @@ Steps:
 - A dropped plan's plan md is copied, not authored.
 - Do not fix a hole silently.
 - It goes in the record.
+- Do not drop the plan's `Policy` and `Goal`: the task carries them, and `Gaps` holds their holes.

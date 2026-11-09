@@ -13,6 +13,10 @@ Section and field names are English; the content is Japanese.
 - Place: <worktree|base>
 - Boundary Plans: <the plans this one stands on, and the order>
 
+## Goal
+
+<何が> が <どうなる>、1 行。
+
 ## Design
 
 - Inside:
@@ -46,19 +50,24 @@ Section and field names are English; the content is Japanese.
 
 ### Steps
 
-1. `<ファイル>`:
-   - update: <何がどうなるか。1 文>
-     - Outside: `<affected.md の ### External の項目>`。<そこでどうするか>
+1. `<ファイル>`
+   1. update: <1 つの変更>
+   2. update: <1 つの変更>
 
-     ```ts
-     <ADR かチャットが決めた中身。決まっていないときは置かない>
-     ```
+      ```ts
+      <ADR かチャットが決めた中身>
+      ```
 
-2. `<path>#<module>`:
-   - update: <何がどうなるか。1 文>
+   3. drop: <1 つの変更>
+2. Outside: `<affected.md の ### External の項目>`
+   1. update: <1 つの変更>
 
-3. `<dir>/`:
-   - add: <空の dir を作る、または、最後のファイルを消して dir を残す>
+### Policy
+
+- Allowed:
+  - <して良いこと>
+- Forbidden:
+  - <してはいけないこと> - <しない理由>
 
 ### Verify
 
@@ -113,6 +122,13 @@ Section and field names are English; the content is Japanese.
 - Doubts:
 ````
 
+## Goal
+
+- `## Goal` sits above `## Design`, in one line.
+- A normal plan's `Goal` comes from the ADR's `Adopted` one-liner.
+- An `ex-` plan's `Goal` comes from the close's Triage line.
+- The cut's `Goal` and its `Summary` both stay.
+
 ## Design
 
 - `Inside.Modules` — within the plan's scope, is there a file or a module inside a file (code or doc) to merge or split?
@@ -159,26 +175,16 @@ Section and field names are English; the content is Japanese.
 
 ## Slices
 
-- One step is one thing: a file, a module inside a file, or a dir.
-- The line says what becomes what.
-- The content the ADR or the chat decided goes in a fence under it.
-  - a file — `<prefix>: <what becomes what, in one sentence>`.
-  - The prefix is `add:`, `update:` or `drop:`.
-  - a module — `<path>#<module>: <what becomes what, in one sentence>`.
-  - The prefix says the module's change.
-  - It may differ from the file's `Files` marker.
-  - a test file — one line per case, with the same prefix as the `Files` tree's marker.
-  - a dir — only two cases: an empty dir to make, or the last file dropped and the dir left.
-  - The tree's dir line carries `add` or `drop`.
-- A step that meets the outside carries `- Outside: <the affected.md ### External item>.<what to do there>`.
-- It goes after the line and before the fence.
-- A step whose content the ADR or the chat decided carries it in a fence under the step.
+- One step is one file, and its substeps are its changes.
+- A file step names the file, and each substep is one change in one line.
+- A substep starts with `add:`, `update:` or `drop:`.
+- The content the ADR or the chat decided goes in a fence under the file step.
 - The language is `ts`, `md`, `json` or the like.
 - The content is copied as it was decided, markdown or code.
+- A step that meets the outside carries `2. Outside: <the affected.md ### External item>` with its substeps.
 - A test step keeps its case lines, and the fence goes under them.
 - The cases of a test file follow `## Test cases`.
 - A plan with no test file has no test step.
-- A code step that meets nothing outside carries no `Outside:` line.
 - The steps are numbered in the order of the work.
 
 ## Types
@@ -201,6 +207,13 @@ Section and field names are English; the content is Japanese.
 - A constraint the compiler cannot check has one factory, and the check lives inside it, such as a brand, a template literal built from a runtime string, or a value that must be validated.
 - A failure is a state or a throw, never a silent success.
 
+## Policy
+
+- `### Policy` sits between the `Steps` and the `Verify` in each slice.
+- It copies the ADR's `Policy` that the slice needs without omission, and repetition across slices is allowed.
+- A policy that hits only one slice goes only there.
+- It carries no `C`/`F` reference.
+
 ## Verify
 
 - `Verify` is what closes the slice.
@@ -211,7 +224,7 @@ Section and field names are English; the content is Japanese.
 - `Added` is what the change decides.
 - Each `Add`, `Update` and `Drop` line's result is one of the related tests.
 - A step that goes past the `Scope` is not written.
-- A step that does what `Denied` says not to do is not written.
+- A step that does what the `Policy`'s `Forbidden` says not to do is not written.
 - The review reads it.
 - A module for the plan's questions 3 and 4 is written even past the `Scope`.
 - The reason is in `## Design`.

@@ -43,7 +43,7 @@ Note: a leftover is in one state at a time. This table is the only place the sta
 Steps:
 
 1. Read every plan md's `Commit:` and `Stopped`.
-2. Treat a plan as done when its `Commit:` is filled and its work is done (work step 8 green).
+2. Treat a plan as done when its `Commit:` is filled and its work is done (work step 9 green).
 3. Treat a plan as dropped when the owner dropped it: `Stopped` holds, and nothing merges.
 
 View:
@@ -179,7 +179,7 @@ Steps:
 3. Show the owner a table of the plan's name, the leftover numbers, and the files.
 4. Write the plan's name into the `## Triage` lines when they agree.
 5. Decide their order from the dependencies; each `ex-` plan's `Boundary Plans` names the plans it stands on.
-6. Write, research, review, fix, proofread and show each grouped plan by the plan skill, steps 4 to 8: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`; its Triage line is the only source, and there is no affected for an `ex-` plan.
+6. Write, research, review, fix, proofread and show each grouped plan by the plan skill, steps 4 to 9: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`; its Triage line is the only source, and there is no affected for an `ex-` plan.
 7. Run its work by the work skill; when its `Place` is worktree, make a worktree.
 8. Carry `done <commit>` on its line when it merges.
 9. Put its plan md's leftovers back to `collected` when it merges.
@@ -229,7 +229,7 @@ Steps:
 
 1. Take one Unit at a time: propose how to check it — the command to run and what to see, or the place to read and what to look for, and the result that means it works — in words that hold without the reference files.
 2. Wait for the owner's answer, and hold it in the chat before the next Unit.
-3. Give a Unit whose function does not work an `ex-` plan: write, research, review, fix, proofread and show it by the plan skill, steps 4 to 8, and run it by the work skill.
+3. Give a Unit whose function does not work an `ex-` plan: write, research, review, fix, proofread and show it by the plan skill, steps 4 to 9, and run it by the work skill.
 4. Run this step again for that Unit when it merges; say in the chat which Unit is still open.
 5. Write what they answered in `## Verified` after step 9's repair, which sits after `## Triage`.
 
