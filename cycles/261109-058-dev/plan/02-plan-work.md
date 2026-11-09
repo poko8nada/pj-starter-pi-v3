@@ -227,8 +227,12 @@ plan が ADR の `Add`/`Update`/`Drop` を affected のファイル群に当て�
 ### Slice 1: plan-work
 
 - Findings:
+  - `pnpm test:run` は `.pi/extensions/consult/index.test.ts` の 4 件（`startTick`/`stopTick` のタイマー）を赤のまま残し、このスライスはそのファイルに触らない。
+    - left: 対象は plan の `Files` と `Outside` の外であり、このスライスの作業ではない。
 - Unplanned:
+  - なし
 - Commit:
+  - 13aea210ef0e8c6be983bcc8b7903cc615237317
 - Stopped:
 
 ### Cleanup: 文書のみのため掃除なし
@@ -240,24 +244,37 @@ plan が ADR の `Add`/`Update`/`Drop` を affected のファイル群に当て�
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — 変えた8ファイルとcollect 3ファイルを読み、手順番号・パス・名前・形を確かめたが、古くした文書・コメント・テストはなかった。
+- Unlisted: なし — 差分（7d5fb00..HEAD）はFilesがupdateと名指す8ファイルだけであり、collect.mjs等への変更はなかった。
+- Gaps: なし — StepsはADRのAdd/Update/Dropを漏れなく当て、PolicyはC/Fなしで写し、Forbidden違反とGoalに届かない抜けはなかった。
+- Unproven: なし — テストファイルに触れずAddedもなしのため、壊しても緑のまま残るテストはなかった。
+- Noise: なし — 追加・変更したテストがなく、型や制約が決める前提の重複ケースもなかった。
 - Doubts:
+  - 同一ブランチ上の7d5fb00がROADMAP.mdに77行を足しているが、スライスのコミット（13aea21）外であり、マージ前に整理が必要か判断が要る。
+  - Notesの赤4件（.pi/extensions/consult/index.test.tsのstartTick/stopTick）はFilesとOutsideの外としてleftされており、このスライスで扱わないことが妥当か確認が要る。
+  - レビューはスライスのコミット差分（7d5fb00..HEAD）で見ており、8d32faaを基点に含めるとROADMAP差分が混ざるため、基点の扱いの確認が要る。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Unproven:
-- Noise:
+- Stale: なし — Round 1の所見がなく、確かめる修正がなかった。
+- Unlisted: なし — Round 1の所見がなく、確かめる修正がなかった。
+- Gaps: なし — Round 1の所見がなく、確かめる修正がなかった。
+- Unproven: なし — Round 1の所見がなく、確かめる修正がなかった。
+- Noise: なし — Round 1の所見がなく、確かめる修正がなかった。
 - Doubts:
+  - なし。
 
 ## Acceptance
 
 - Ran:
+  - `pnpm test:related`（8 ファイル）: 関連なし、exit 0。
+  - `pnpm typecheck`: 通過。
+  - `pnpm lint`: 通過。
+  - `pnpm format:check`: 通過。
+  - 変えた 8 ファイルと `collect.mjs`・`collect.test.ts`・`collect.fixture.ts` の読み通し: 番号、パス、名前、形に不整合なし。
 - Findings:
+  - `pnpm test:run` の `.pi/extensions/consult/index.test.ts` の 4 件（`startTick`/`stopTick` のタイマー）は赤のまま。対象は plan の `Files` と `Outside` の外であり、このスライスの作業ではない（left）。
 - Doubts:
+  - 同一ブランチ上の `7d5fb00` が `ROADMAP.md` に 77 行を足している。スライスのコミット（`13aea21`）の外であり、マージ前の整理が必要か。
+  - `Notes` の赤 4 件（`.pi/extensions/consult/index.test.ts` の `startTick`/`stopTick`）を `Files` と `Outside` の外として `left` にしたことが妥当か。
+  - レビューの基点を `8d32faa` にすると `ROADMAP` の差分が混ざる。基点の扱いをどうするか。

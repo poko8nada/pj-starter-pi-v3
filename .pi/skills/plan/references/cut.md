@@ -29,6 +29,7 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 - ADR: <NN>
 - Place: <worktree|base>
+- Goal: <何が> が <どうなる>、1 行。
 - Summary: <what this plan does, in one sentence>
 - Why: <read the `Kind` and the `Edge` in the affected, and write what those say and why they make these entries one plan; do not list the field names alone>
 
@@ -41,6 +42,7 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 - `ADR` — the ADR entries this plan cuts, by number.
 - `Place` — `worktree`, or `base` with what the owner watches.
+- `Goal` — what becomes what, in one line.
 - `Summary` — what this plan does, in one sentence.
 - `Why` — what the `Kind` and the `Edge` say, and why they make these entries one plan.
 - `## Order:` — one trailing list, not one per plan.

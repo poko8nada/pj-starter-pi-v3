@@ -29,10 +29,10 @@ Note: The cycle's three stages run in their order. Each keeps its work. Each los
 
 Steps:
 
-1. Write every plan md: its files, its slices, the types, the steps, the verify and the record.
+1. Write every plan md: its goal, its files, its slices, the types, the steps, the policy, the verify and the record.
 2. Run the research for the lines the plan cannot write, and write a `Stopped` line for what the four kinds do not cover.
-3. Read the plans together, and review each plan on the seven viewpoints: `Goal`, `Integration`, `Files`, `Types`, `Cases`, `Checks`, `Flow`.
-4. Go on to the work.
+3. Read the plans together, and review each plan on the five viewpoints: `Goal`, `Design`, `Files`, `Slice`, `Other`.
+4. Confirm as the agent what the plan step 5 would ask the owner, and go on to the work.
 
 Notes:
 
@@ -43,13 +43,13 @@ Notes:
 Steps:
 
 1. Commit the cycle's files, and run the plans in the order the cut gives.
-2. A plan: its slices, the test cleanup, the review, the acceptance, and the merge with the base's dependencies set again.
+2. A plan: its slices, the test cleanup, the review, the acceptance, the owner confirmation is passed, and the merge with the base's dependencies set again.
 3. A `base` plan is not used: every plan is a worktree, and the `Added` owner look (front cmux-browser, base slice) is passed.
 4. Go on to the close.
 
 Notes:
 
-- skips: the report to the owner.
+- skips: the report to the owner, and the owner confirmation before the merge.
 
 ### 3. close
 

@@ -6,8 +6,9 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 
 ```
 Read cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md.
+Follow the plan's `Goal` and each slice's `Policy`.
 Work its slices in order, as far as you can.
-For each slice: its `Steps`, then its `Verify`, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes as `### Slice N: <name>`, in the shape `.pi/skills/plan/references/format.md` gives.
+For each slice: its `Steps` and its `Policy`, then its `Verify`, then commit (consult(<plan id>): <short English subject>), then write that slice's record in ## Notes as `### Slice N: <name>`, in the shape `.pi/skills/plan/references/format.md` gives.
 A finding is a hole you could not close: one bullet for the hole, and `left: <why>` under it. What you did, and why, goes in the commit message. `Unplanned` is only for a hole you found and fixed here. Write なし when there is none.
 If you cannot finish, write where you stopped (Stopped) and stop.
 ```
@@ -24,7 +25,7 @@ After the slices, clean the tests in the test files the plan's `Files` updates:
 - two or more tests that check the same behavior
 - a test for a behavior that is gone
 - a test for a branch this plan's change stops making
-- a test the plan's `## Test cases` would not write: a premise the types, the schema or the DB already settle, one nobody would notice, or an `Adopted` line with no case
+- a test the plan's `## Test cases` would not write: a premise the types, the schema or the DB already settle, one nobody would notice, or an `Add`, `Update` or `Drop` line with no case
 Drop what you find, and keep the suite green.
 Write it in the same plan md's ## Notes, as a section that is not a slice.
 ```
@@ -40,7 +41,7 @@ Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git statu
 Answer one question: can this diff close the plan? By five viewpoints:
 - Stale: a document, a comment or a test this change makes stale, or a sentence the change makes redundant
 - Unlisted: a change the plan's Files does not name
-- Gaps: a behavior the checks do not exercise
+- Gaps: a behavior the checks do not exercise, a step against the plan's `Policy`, and a hole that misses the plan's `Goal`
 - Unproven: a test that stays green when the behavior it names is broken
 - Noise: a test the types, the schema or a DB constraint already settle, or one nobody would notice; a case written with a magic number or a hardcoded string
 Read the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.

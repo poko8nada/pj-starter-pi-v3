@@ -31,6 +31,8 @@ Notes:
 
 - Each entry's `Definition` is the scope boundary.
 - The Triage line is the only source for an `ex-` plan.
+- A normal plan's `Goal` comes from the ADR's `Adopted` one-liner.
+- An `ex-` plan's `Goal` comes from the close's Triage line.
 
 ### 2. Read the affected
 
@@ -57,13 +59,14 @@ Steps:
 1. Read `references/cut.md` before cutting.
 2. Cut the work into plans by what it reads, not by where it lives.
 3. Decide the split, the place of each plan, the order, and the boundary. Propose the place with the reason. When unsure of the place, propose worktree.
-4. Present them to the owner in the fence `references/cut.md` gives: one block per plan (`ADR`, `Place`, `Summary`, `Why`), then the `Order` last, numbered, for all plans.
+4. Present them to the owner in the fence `references/cut.md` gives: one block per plan (`ADR`, `Place`, `Goal`, `Summary`, `Why`), then the `Order` last, numbered, for all plans.
 5. Wait for the owner's agreement. On disagreement, revise and present again until they agree.
 
 Notes:
 
 - The owner's answer decides the place.
 - The `Why` reads the `Kind` and the `Edge`. It says what those mean and why the entries make one plan. The field names alone are not enough.
+- The `Goal` is one line, and `Goal` and `Summary` both stay.
 - The owner agrees before any plan md is written.
 
 ### 4. Write the plan md from the affected
@@ -74,14 +77,16 @@ Steps:
 2. Read the map's every path whole.
 3. Read each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
 4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
-5. Answer the four questions in `## Design` of `references/format.md`.
-6. Decide the slices by the check that closes them.
-7. Order the slices by dependency.
-8. Keep the same place together.
-9. Put a slice that reads another slice's output after it.
-10. Keep steps that touch the same place in one slice.
-11. Leave a line the plan cannot write with its name and an empty field.
-12. Stop when a boundary has no answer.
+5. Write `## Goal` above `## Design` as one line.
+6. Answer the four questions in `## Design` of `references/format.md`.
+7. Decide the slices by the check that closes them.
+8. Order the slices by dependency.
+9. Keep the same place together.
+10. Put a slice that reads another slice's output after it.
+11. Keep steps that touch the same place in one slice. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
+12. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
+13. Leave a line the plan cannot write with its name and an empty field.
+14. Stop when a boundary has no answer.
 
 View:
 
@@ -98,7 +103,6 @@ View:
 | `Add`     | `add`    |
 | `Update`  | `update` |
 | `Drop`    | `drop`   |
-| `Keep`    | no mark  |
 
 | work                           | check     |
 | ------------------------------ | --------- |
@@ -134,9 +138,23 @@ Notes:
 - A `Verify` that is red with the change in place is a hole too.
 - The agent decides the shape before writing on.
 - The agent says why a hole does not apply.
-- Step 5 fills the left line.
+- Step 6 fills the left line.
 
-### 5. Research the lines the plan cannot write
+### 5. Confirm what the plan leaves open
+
+Steps:
+
+1. List what making the slices and the steps found: what the ADR does not decide, and what file the work would touch that the affected does not name.
+2. Report them to the owner before the review and the proofread, with `なし` when there is nothing.
+3. Wait for the owner's answer, and follow it before going on.
+
+Notes:
+
+- The owner's answer decides what the plan carries.
+- A file the affected does not name is not touched without the owner's report.
+- The whole is confirmed here once before the review.
+
+### 6. Research the lines the plan cannot write
 
 Steps:
 
@@ -164,23 +182,27 @@ Notes:
 - The agent sets the threshold for the question.
 - The research is not a ritual at every plan.
 
-### 6. Review, one plan at a time
+### 7. Review, one plan at a time
 
 Steps:
 
-1. Write one plan md, and send it to its review at once: the plan md, every file it names, and the ADR's `Adopted`, `Denied`, `Scope` and `Definition`.
-2. Read the report, and fix the plan from the findings.
-3. Report to the owner what was done with each finding.
+1. Write one plan md, and send it to Round 1 at once: the plan md, every file it names, and the ADR's `Adopted`, `Policy`, `Scope` and `Definition`.
+2. Read the Round 1 report, and fix the plan from the findings.
+3. Send the fixed plan to Round 2, which checks each Round 1 finding: fixed, or left with the reason.
+4. Report to the owner what was done with each finding.
 
 View:
 
-- `Goal` — the steps and the checks that do not carry each line of the ADR's `Adopted`, and the `Scope`. A step or a check that does what `Denied` says not to do. A `Definition` line whose target `Files` does not name.
-- `Integration` — how the update is built into the existing, and how the whole is redesigned
-- `Files` — a file the change needs but `Files` does not name, and a document, a comment or a test the change makes stale
-- `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules
-- `Cases` — the test steps' cases against `## Test cases`
-- `Checks` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed
-- `Flow` — a contradiction, a circular flow, a duplication, an omission, an unnatural flow inside a file the change made
+- `Goal` — the plan's `Goal` against the ADR's `Adopted`; can the plan achieve it?
+- `Design` — the four questions.
+- `Files` — the files the affected names, and a file it does not name.
+- `Slice` — the slice that closes with its check.
+  - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules.
+  - `Steps` — the target files from the affected or the `External`; the ADR's `Add`, `Update` and `Drop` without omission.
+  - `Policy` — the ADR's `Policy` without omission.
+  - `Verify` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed.
+  - `Cases` — the test steps' cases against `## Test cases`.
+- `Other` — a contradiction, a circular flow, a duplication, an omission.
 
 Notes:
 
@@ -188,8 +210,9 @@ Notes:
 - One subagent per plan.
 - When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
 - With two or more plans, while that review runs, write the next plan file. A plan that is fixed from its review does not wait for the others.
+- Round 2 checks the Round 1 fixes. It does not review the whole plan again.
 
-### 7. Japanese Proofread
+### 8. Japanese Proofread
 
 Steps:
 
@@ -217,11 +240,11 @@ Notes:
 - One round.
 - A repaired file does not go through the subagent again.
 
-### 8. Show the owner
+### 9. Show the owner
 
 Steps:
 
-1. Show every plan of the cycle: files, slices, types, steps, verify.
+1. Show every plan of the cycle: goal, files, slices, types, steps, policy, verify.
 2. Fix what the owner points at in the base's plan md.
 3. Show it again.
 4. Repeat until the owner approves.
@@ -246,3 +269,7 @@ Notes:
 - Do not invent a check: `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides
 - Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
 - Do not leave a hole.
+- Do not write one line per file: write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`
+- Do not leave the slice's `Policy` out: copy the ADR's `Policy` without omission and without `C`/`F`
+- Do not touch a file the affected does not name without reporting it to the owner in step 5
+- Do not review the whole plan again in Round 2: check only the Round 1 fixes
