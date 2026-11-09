@@ -4,10 +4,14 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 
 ## Look it up (a `research` subagent)
 
-```markdown
+When the agent needs a fact the entry does not hold.
+
+```text
 Answer the question the task carries, and nothing else.
-Keep the source of each fact.
-Report the facts. A question you could not answer is a fact too: say what it is holding up.
+
+1. Keep the source of each fact.
+2. Report the facts.
+   - A question you could not answer is a fact too: report it, and say what it is holding up.
 ```
 
 - The agent puts the question and the approved type in the task.
@@ -15,8 +19,11 @@ Report the facts. A question you could not answer is a fact too: say what it is 
 
 ## Look at the affected (a `research` subagent)
 
+When the agent needs the impact of one entry's decision.
+
 ```markdown
 Answer the question the task carries for one entry, and nothing else.
+
 The change is the entry's decision. The record is `affected.md`; its shape is the one `references/affected.format.md` gives.
 
 1. Read the entry in full: `Scope`'s `In`, `Adopted`, `Policy`, `Definition`.
@@ -35,11 +42,9 @@ The change is the entry's decision. The record is `affected.md`; its shape is th
 14. Check that each kind in the `Scope`'s `In` has at least one operation; if not, the extraction is not done.
 15. The reflection: the ranges seen, the ranges not seen and why, the names added. The questions that could not be answered, the nouns that could not be derived and the reason the work stopped go to the report as facts.
 16. The constraints: the change is not applied, so the checks are not run. No indexer, AST or LLM. The cost follows the change's size; no full enumeration.
+17. Report the facts only, and write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds: do not touch them, and do not delete them.
 
 Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
-
-Report the facts only.
-Write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds. Do not touch them, and do not delete them.
 ```
 
 - The agent puts the entry and the change in the task.
@@ -48,12 +53,15 @@ Write the affected to `affected.md` in the shape `references/affected.format.md`
 
 ## Try it (a `trial` subagent)
 
-```
+When the entry's holding point is a fact nobody has, and the owner agreed to a run.
+
+```text
 Try <the candidate> in <the setting>, in a worktree.
-Install it, set it up, and find the smallest shape that works.
-Report three: what clashes, the versions, and the smallest working shape.
-Ask before you touch the shared store.
-Leave the worktree as it is. Nothing you write enters the product.
+
+1. Install it, set it up, and find the smallest shape that works.
+2. Ask before you touch the shared store.
+3. Leave the worktree as it is, and let nothing you write enter the product.
+4. Report three: what clashes, the versions, and the smallest working shape.
 ```
 
 - The agent asks the owner before the subagent touches the shared store.

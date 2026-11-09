@@ -4,10 +4,14 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 
 ## Look it up (a `research` subagent)
 
-```
+When the agent needs a fact the leftover's destination rests on.
+
+```text
 Answer the question the task carries, and nothing else.
-Keep the source of each fact.
-Report the facts. A question you could not answer is a fact too: say what it is holding up.
+
+1. Keep the source of each fact.
+2. Report the facts.
+   - A question you could not answer is a fact too: report it, and say what it is holding up.
 ```
 
 - The agent puts the question and the leftover in the task.
@@ -17,5 +21,5 @@ Report the facts. A question you could not answer is a fact too: say what it is 
 
 ## Writing
 
-- One bullet is one sentence.
+- One bullet is one rule.
 - A file name is written from the project root.

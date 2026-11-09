@@ -4,23 +4,22 @@ A subagent does not read this skill. What it knows is the task, so the task carr
 
 ## Look one package up (a `research` subagent)
 
-```
+When the agent has a package's installed and target versions.
+
+```text
+Report what a package's move from <A> to <B> changes in this repository, and nothing else.
+
 Repository: <root>
 
 Target: `<name>`. Installed <A> → target <B>.
 
 1. Read this repository first: <the files that hold this package's setting and its use>. Name them in the task.
 2. Read the breaking changes between <A> and <B>, from the changelog, the releases, or the migration guide.
-3. For each breaking change:
-   - what changed, in one sentence
-   - whether it hits this repository (hits / does not hit / unknown), and the ground: a file and a line
-   - when it hits, what to change here, in one sentence
-   - the source URL
-   A change that does not hit is one line in a list.
+3. For each breaking change, write what changed in one sentence, whether it hits this repository (hits / does not hit / unknown) with the ground: a file and a line, what to change here in one sentence when it hits, and the source URL.
+   - IF the change does not hit → write it as one line in a list.
 4. Add what only a run settles: a type, a setting, a requirement. Write it as `unknown`, with the run that settles it.
-
-Report facts and sources. Do not decide, and do not design the procedure.
-A question you could not answer is a fact too: say what it is holding up.
+5. Report facts and sources. Do not decide, and do not design the procedure.
+   - A question you could not answer is a fact too: report it, and say what it is holding up.
 ```
 
 - Hand it the paths to read.
@@ -33,5 +32,5 @@ A question you could not answer is a fact too: say what it is holding up.
 
 ## Writing
 
-- One bullet is one sentence.
+- One bullet is one rule.
 - A file name is written from the project root.
