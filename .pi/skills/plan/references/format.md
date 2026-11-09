@@ -124,12 +124,16 @@ Section and field names are English; the content is Japanese.
 
 ## Goal
 
+What the plan achieves, in one line.
+
 - `## Goal` sits above `## Design`, in one line.
 - A normal plan's `Goal` comes from the ADR's `Adopted` one-liner.
 - An `ex-` plan's `Goal` comes from the close's Triage line.
 - The cut's `Goal` and its `Summary` both stay.
 
 ## Design
+
+The four questions the plan answers about shape, and why that shape.
 
 - `Inside.Modules` — within the plan's scope, is there a file or a module inside a file (code or doc) to merge or split?
 - `Inside.Dirs` — within the plan's scope, is there a directory to merge, split or move?
@@ -140,6 +144,8 @@ Section and field names are English; the content is Japanese.
 
 ## No
 
+The ADR entry the plan carries.
+
 - `No` is the ADR's entry number, copied as it is.
 - A normal plan keeps `- No: <NN>` at the top.
 - An `ex-` plan does not write `No`.
@@ -148,11 +154,18 @@ Section and field names are English; the content is Japanese.
 
 ## Files
 
+What the plan changes, and what follows the change.
+
+### The tree
+
 - The tree holds what changes and what follows the change.
 - A changed file ends with `add`, `update` or `drop`.
 - A related file carries no marker.
 - The map's paths are the candidates for the tree.
 - The dirs the plan makes or leaves carry `add` or `drop` on the tree's dir line.
+
+### Doubles and fixtures
+
 - A new double or fixture is a file.
 - It sits at the root of the feature whose shape it holds.
 - A fixture that holds a shape the feature does not own goes in `test/`, such as the host, the OS, or a format several units share.
@@ -161,10 +174,11 @@ Section and field names are English; the content is Japanese.
 - Name a fixture `<name>.fixture.ts`, wherever it sits.
 - A helper that is not a double keeps its own name.
 - A file in `test/` that a carried test imports is named in `scripts/harness/harness.json`'s `copy` (the pull list).
-- Say how a double or a fixture behaves when it is run outside its test.
-- Refuse, do not hang.
+- Say how a double or a fixture behaves when it is run outside its test: refuse, do not hang.
 
 ### Structure
+
+Where a file lives.
 
 - A file lives in the dir of the concern the feature needs.
 - A test file sits beside the file it tests.
@@ -174,6 +188,8 @@ Section and field names are English; the content is Japanese.
 - A feature that outgrows its flat set uses dirs, one per concern.
 
 ## Slices
+
+How the work is cut into slices, one concern per slice.
 
 - One step is one file, and its substeps are its changes.
 - A file step names the file, and each substep is one change in one line.
@@ -189,6 +205,8 @@ Section and field names are English; the content is Japanese.
 
 ## Types
 
+The declarations the slice moves, as code.
+
 - `Types` sits in the slice that moves it.
 - It holds the declarations that move, as code: a type, a schema, a signature, a state.
 - What a declaration leaves open, the `Steps` and the `Verify` settle.
@@ -196,6 +214,8 @@ Section and field names are English; the content is Japanese.
 - The behaviour is written in the step that does it, not here.
 
 ### Type rules
+
+How a declaration is written.
 
 - A state is a discriminated union, never a combination of optionals.
 - A `switch` over a union is exhaustive.
@@ -209,12 +229,16 @@ Section and field names are English; the content is Japanese.
 
 ## Policy
 
+The ADR's `Policy` each slice needs, copied without omission.
+
 - `### Policy` sits between the `Steps` and the `Verify` in each slice.
 - It copies the ADR's `Policy` that the slice needs without omission, and repetition across slices is allowed.
 - A policy that hits only one slice goes only there.
 - It carries no `C`/`F` reference.
 
 ## Verify
+
+What closes the slice, and what proves it.
 
 - `Verify` is what closes the slice.
 - It holds what has to pass, and the read-through that proves it.
@@ -255,6 +279,8 @@ Section and field names are English; the content is Japanese.
 
 ## Test cases
 
+The cases a test file carries, and what they must hold.
+
 - A case is `<prefix>: (happy|error|empty|boundary) <given> → <result>`.
 - Each `Add`, `Update` and `Drop` line's result is one of those cases.
 - The cases are used where a test file's cases are decided.
@@ -273,10 +299,15 @@ Section and field names are English; the content is Japanese.
 
 ## Notes
 
+The work's record, one section per slice and one for the cleanup.
+
 - `## Notes` holds one `### Slice N: <name>` per slice.
 - The name is copied from the slice's heading (`## 1.<name>`) as it is.
 - A section that is not a slice — the test cleanup — is `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`.
 - It has no `Commit` and no `Stopped`.
+
+### The fields
+
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it.
 - Under it, `left: <why>` says why it could not be closed here.
 - `なし` when there is none.
@@ -284,20 +315,34 @@ Section and field names are English; the content is Japanese.
 - `Commit`: the slice's commit hash.
 - `なし（理由）` when the slice changed nothing.
 - `Stopped`: only for a slice that stopped.
-- It holds what the stop left:
-  - the output of the check that failed
-  - the files changed
-  - the subagent's last text
-  - how many times it ran, and the time
-  - the id of the worktree it left
-  - for a `base` plan, the worktree id is `なし`, because there is no worktree
 - A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line.
-- It holds the line, the question, and the reason.
+- A `Stopped` line holds the line, the question, and the reason.
 - The review reads it.
-- The three states: `Commit` filled is done; `Stopped` is interrupted; neither is not started.
+
+### The stop
+
+What a `Stopped` line holds when the slice stopped.
+
+- the output of the check that failed
+- the files changed
+- the subagent's last text
+- how many times it ran, and the time
+- the id of the worktree it left
+- for a `base` plan, the worktree id is `なし`, because there is no worktree
+
+### The states
+
+| `Commit` | `Stopped` | the slice   |
+| -------- | --------- | ----------- |
+| filled   |           | done        |
+|          | filled    | interrupted |
+|          |           | not started |
+
 - `Commit` is the slice's own commit, and it is not rewritten.
 
 ## Work Review
+
+The two rounds of the work's review, and the findings under their viewpoints.
 
 - Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from:
@@ -325,6 +370,8 @@ Section and field names are English; the content is Japanese.
 
 ## Acceptance
 
+What the acceptance ran, and what it found.
+
 - `Ran` holds the checks that were run.
 - `Findings` holds one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`.
 - `なし` when there is nothing.
@@ -337,7 +384,7 @@ Section and field names are English; the content is Japanese.
 
 ## Writing
 
-- One bullet is one sentence.
+- One bullet is one rule.
 - A file name is written from the project root.
 - The tree, the steps and the checks use the same name.
 - Keep a table short: a wide one breaks with long text.

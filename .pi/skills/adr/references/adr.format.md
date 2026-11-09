@@ -51,14 +51,16 @@ Section and field names are English; the content is Japanese.
 
 ## Entries
 
-- `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
-- One bullet is one sentence.
+The entries the ADR holds, one question per entry.
+
+- `## <NN>: <問い>` holds one question, and its number runs from `01`.
 - The sections run `Scope`, `Context`, `Research & Trial`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
+- One bullet is one rule.
 
 ## Scope
 
-- The `View` is the table of 13 kinds:
+The range the entry decides, in `In` and `Out`.
 
 | kind                | what it is                                                                                        |
 | ------------------- | ------------------------------------------------------------------------------------------------- |
@@ -76,38 +78,56 @@ Section and field names are English; the content is Japanese.
 | migration           | an existing record or an installed version of the product that must be moved                      |
 | logs and monitoring | the records or signals the product leaves                                                         |
 
-- The output is `In:` and `Out:`: `- In:` with one line per kind in scope (`<kind>: <what is done>`), `- Out:` with one line per kind out of scope (`<kind>: <what is not done>（理由）`).
-- An `Out` kind carries its reason. A revisit condition goes on the kind that needs one.
+- `In:` holds one line per kind in scope, in `<kind>: <what is done>`.
+- `Out:` holds one line per kind out of scope, in `<kind>: <what is not done>（理由）`.
+- When a kind is `Out`, carry its reason.
+- When a kind needs a revisit condition, put it on that kind.
 
 ## Context
 
-- An item is one line: `C<n>: <the item>`.
+The facts that limit the entry.
+
+- An item is one line, `C<n>: <the item>`.
 - The number runs from `C1`, in the order the items were settled.
 
 ## Research & Trial
 
-- A fact is one line: `F<n> (C<n>): <the fact>。<出所>`.
+The facts the decision weighs, with their sources.
+
+- A fact is one line, `F<n> (C<n>): <the fact>。<出所>`.
 - The first parenthesis names the `Context` item the fact serves.
 
 ## Decision
 
-- `Status` — empty before the decision. After it, `accepted`, or `rejected` with its reason in parentheses on the same line.
-- `Adopted` — the one line of what the entry becomes as a whole, with `Add`, `Update` and `Drop` under it. `Add` is what grows, `Update` is what changes, and `Drop` is what disappears. A rejected entry leaves it empty.
-- `Policy` — what holds the decision: `Allowed` is what may be done, `Forbidden` is what must not be done, with the reason.
+What the entry becomes, and what holds it.
+
+- `Status` is empty before the decision; after it, `accepted`, or `rejected` with its reason in parentheses on the same line.
+- `Adopted` is the one line of what the entry becomes as a whole, with `Add`, `Update` and `Drop` under it, and a rejected entry leaves it empty.
+- `Add` is what grows, `Update` is what changes, and `Drop` is what disappears.
+- `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Adopted` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
-- A field with nothing in it is `なし`.
+- When a field has nothing in it, write `なし`.
 
 ## Definition
 
+How the lines of `DEFINITION.md` move, one line per name.
+
 - A line is `<name>(<operation>): <value>`.
-- The name is how `DEFINITION.md` calls it.
+- The name is how `DEFINITION.md` calls it:
   - `Unit.<name>` — a line under `Users can do`; a `####` heading is not a Unit
   - `Who.<name>` — a role
   - `Stack.<group>` / `Stack.<group>.<role>`
   - `Product` / `What`
-- The operation is `(added)`, `(updated)`, `(dropped)` or `(kept)`.
-- The value is the new line for `(added)` and `(updated)`, the reason the line stands for `(kept)`, and nothing for `(dropped)`.
-- A rejected entry carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
+- The operation is one of:
+
+| operation   | what the value holds       |
+| ----------- | -------------------------- |
+| `(added)`   | the new line               |
+| `(updated)` | the new line               |
+| `(kept)`    | the reason the line stands |
+| `(dropped)` | nothing                    |
+
+- When the entry is rejected, carry only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
 ## Writing
 

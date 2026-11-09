@@ -37,6 +37,8 @@ What `upgrade` puts in front of the owner once the out-of-range packages are fou
 
 ## Rules
 
+What the report's content must hold.
+
 - Write the hits in full.
 - For the rest, write one line for the count and one for the largest.
 - An unknown says what run settles it.
@@ -46,5 +48,5 @@ What `upgrade` puts in front of the owner once the out-of-range packages are fou
 
 ## Writing
 
-- One bullet is one sentence.
+- One bullet is one rule.
 - A file name is written from the project root.
