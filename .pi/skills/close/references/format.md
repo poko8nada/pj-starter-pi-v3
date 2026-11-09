@@ -45,7 +45,7 @@
 
 ## Collected
 
-The inventory of the cycle's leftovers, one numbered line for each.
+The inventory of the cycle's leftovers.
 
 - The script writes `close.md` itself.
 - It creates the file when it is not there.
@@ -77,7 +77,7 @@ The inventory of the cycle's leftovers, one numbered line for each.
 
 ## Triage
 
-The destination of every leftover, one line for each.
+Where every leftover goes.
 
 - One line holds its number, where it goes, and the part of the definition it belongs to.
 - The part is the ADR entry and the part of `DEFINITION.md` the leftover lands on.

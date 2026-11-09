@@ -158,7 +158,6 @@ What the plan changes, and what follows the change.
 
 ### Tree
 
-- The tree holds what changes and what follows the change.
 - A changed file ends with `add`, `update` or `drop`.
 - A related file carries no marker.
 - The map's paths are the candidates for the tree.
@@ -206,10 +205,10 @@ How the work is cut into slices, one concern per slice.
 
 ## Types
 
-The declarations the slice moves, as code.
+The declarations the slice moves.
 
 - `Types` sits in the slice that moves it.
-- It holds the declarations that move, as code: a type, a schema, a signature, a state.
+- It holds them as code: a type, a schema, a signature, a state.
 - What a declaration leaves open, the `Steps` and the `Verify` settle.
 - `なし` when nothing moves.
 - The behaviour is written in the step that does it, not here.
@@ -230,7 +229,7 @@ How a declaration is written.
 
 ## Policy
 
-The ADR's `Policy` each slice needs, copied without omission.
+What holds the slice's decision.
 
 - `### Policy` sits between the `Steps` and the `Verify` in each slice.
 - It copies the ADR's `Policy` that the slice needs without omission, and repetition across slices is allowed.
@@ -239,9 +238,8 @@ The ADR's `Policy` each slice needs, copied without omission.
 
 ## Verify
 
-What proves that the slice is closed, and what the proof holds.
+The proof that the slice is closed.
 
-- `Verify` proves that the slice is closed.
 - It holds what has to pass, and the read-through that proves it.
 - It is not what to test.
 - It has two fields.
@@ -300,7 +298,7 @@ The cases a test file carries, and what they must hold.
 
 ## Notes
 
-The work's record, one section per slice and one for the cleanup.
+The work's record.
 
 - `## Notes` holds one `### Slice N: <name>` per slice.
 - The name is copied from the slice's heading (`## 1.<name>`) as it is.
@@ -343,7 +341,7 @@ What a `Stopped` line holds when the slice stopped.
 
 ## Work Review
 
-The two rounds of the work's review, and the findings under their viewpoints.
+The work's review record.
 
 - Two rounds: `### Round 1` (the findings) and `### Round 2` (the check of the fixes).
 - A finding sits under the viewpoint it came from:
@@ -371,7 +369,7 @@ The two rounds of the work's review, and the findings under their viewpoints.
 
 ## Acceptance
 
-What the acceptance ran, and what it found.
+The acceptance's record.
 
 - `Ran` holds the checks that were run.
 - `Findings` holds one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`.

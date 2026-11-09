@@ -51,7 +51,7 @@ Section and field names are English; the content is Japanese.
 
 ## Entries
 
-The entries the ADR holds, one question per entry.
+The entries the ADR holds.
 
 - `## <NN>: <問い>` holds one question, and its number runs from `01`.
 - The sections run `Scope`, `Context`, `Research & Trial`, `Decision`, `Definition`.

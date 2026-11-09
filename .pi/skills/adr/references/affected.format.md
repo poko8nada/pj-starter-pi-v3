@@ -26,7 +26,7 @@ Section and field names are English; the content is Japanese.
 
 ## Entries
 
-The entries the affected covers, one per ADR entry.
+The entries the affected covers.
 
 - `## <NN>: <問い>` holds one entry, and its number is the ADR's.
 - `### Code` holds the paths the change relates to, one block per path.

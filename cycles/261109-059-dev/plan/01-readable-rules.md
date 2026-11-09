@@ -475,4 +475,6 @@
     - fixed: `plan/references/format.md` の `### The tree`、`### The fields`、`### The stop`、`### The states` を `### Tree`、`### Fields`、`### Stop`、`### States` にし、`close/references/format.md` の `### The heading`、`### The order`、`### The destination`、`### The Unit`、`### The fields` から `The` を落とした。
   - `plan/references/cut.md` の `## Where` の表は、`base` の行が長すぎる（オーナーの確認で指摘）。
     - fixed: 表を `the default` と `the plan whose work needs the owner's eyes` の 2 語にし、詳しい規則は箇条書きに戻した。
+  - 通読で、いくつかのセクションの「何か」の 1 行が、最初の規則と同じことを言っていた（`plan` の `## Files`、`## Types`、`## Policy`、`## Verify`、`## Notes`、`## Work Review`、`## Acceptance`、`close` の `## Collected`、`## Triage`、`adr` の `## Entries`、`affected` の `## Entries`）（オーナーの依頼で通読して指摘）。
+    - fixed: その 1 行を「その欄が何か」だけにし、規則と重ならない形にした。`plan` の `## Files` は、`### Tree` にあった同じ文の規則を落とした。
 - Doubts: なし
