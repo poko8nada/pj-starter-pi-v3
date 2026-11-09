@@ -191,6 +191,7 @@ Where a file lives.
 
 How the work is cut into slices, one concern per slice.
 
+- The slice's heading names its concern, and its first line says the concern in one sentence.
 - One step is one file, and its substeps are its changes.
 - A file step names the file, and each substep is one change in one line.
 - A substep starts with `add:`, `update:` or `drop:`.
@@ -240,7 +241,7 @@ The ADR's `Policy` each slice needs, copied without omission.
 
 What closes the slice, and what proves it.
 
-- `Verify` is what closes the slice.
+- `Verify` proves that the slice is closed.
 - It holds what has to pass, and the read-through that proves it.
 - It is not what to test.
 - It has two fields.

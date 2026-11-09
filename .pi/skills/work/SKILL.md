@@ -153,7 +153,7 @@ Notes:
 - The reviewer writes it in the agent's tree for a `base` plan.
 - The reviewer writes it under the five viewpoints and `Doubts`.
 - The reviewer reads the test steps' cases by the plan's `## Test cases`.
-- The reviewer reads each `Verify` by what closes its slice.
+- The reviewer reads each `Verify` by what it proves.
 - `Gaps` reads the plan's `Policy` and `Goal`: a `Forbidden` the steps break, and a hole that misses the `Goal`.
 - The fixing subagent reads the plan md.
 - The fixing subagent writes a `fixed:` line for what it adopts under each Round 1 finding.

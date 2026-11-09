@@ -79,11 +79,11 @@ Steps:
 4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
 5. Write `## Goal` above `## Design` as one line.
 6. Answer the four questions in `## Design` of `references/format.md`.
-7. Decide the slices by the check that closes them.
-8. Order the slices by dependency.
-9. Keep the same place together.
+7. Decide the slices by the concern the change carries.
+8. Name the concern in the slice's heading, and say it in one sentence on the slice's first line.
+9. Order the slices by dependency.
 10. Put a slice that reads another slice's output after it.
-11. Keep steps that touch the same place in one slice. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
+11. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
 12. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
 13. Leave a line the plan cannot write with its name and an empty field.
 14. Stop when a boundary has no answer.
@@ -123,9 +123,7 @@ Notes:
 - The reason goes into `## Design`.
 - The `Added` field says `なし` when nothing applies.
 - The agent writes a change of `Who`, `Stack` or `What` as steps on `DEFINITION.md` when the `Definition` changes one of them.
-- One slice closes with one `Verify`.
-- Different checks mean different slices.
-- One check closes the parts together.
+- One slice closes with the checks that prove it.
 - A subagent may carry several slices in one run.
 - The agent cuts a `base` plan where the owner can look and decide.
 - Its check carries the look.
@@ -196,7 +194,7 @@ View:
 - `Goal` — the plan's `Goal` against the ADR's `Adopted`; can the plan achieve it?
 - `Design` — the four questions.
 - `Files` — the files the affected names, and a file it does not name.
-- `Slice` — the slice that closes with its check.
+- `Slice` — the slice whose concern its heading names, and whose closure its `Verify` proves.
   - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules.
   - `Steps` — the target files from the affected or the `External`; the ADR's `Add`, `Update` and `Drop` without omission.
   - `Policy` — the ADR's `Policy` without omission.
