@@ -469,7 +469,7 @@
 
 ## Acceptance
 
-- Ran: `pnpm test:run`（63 ファイル、782 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。`git diff 443c830..HEAD` の 17 ファイルを読み直した。オーナーの確認のあと、次の 2 点を直して、もう一度実行した。
+- Ran: `pnpm test:run`（63 ファイル、782 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。`git diff 443c830..HEAD` の 17 ファイルを読み直した。オーナーの確認と通読のあと、4 点を直して、もう一度実行した。
 - Findings:
   - `plan/references/format.md` と `close/references/format.md` の `The XX` の見出しは、`The` が不要（オーナーの確認で指摘）。
     - fixed: `plan/references/format.md` の `### The tree`、`### The fields`、`### The stop`、`### The states` を `### Tree`、`### Fields`、`### Stop`、`### States` にし、`close/references/format.md` の `### The heading`、`### The order`、`### The destination`、`### The Unit`、`### The fields` から `The` を落とした。
