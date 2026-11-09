@@ -1,7 +1,7 @@
 # PLAN `readable-rules`
 
 - No: 01, 02, 03, 04
-- Place: worktree
+- Place: base
 - Boundary Plans: なし
 
 ## Goal
@@ -78,7 +78,13 @@
      - Exception: <what the exception is>.
    ```
 
-   表は決まった値の組があるセクションにだけ置き、`## Shape` の見本は残す。
+   形の規則:
+   - 表は、決まった値の組があるセクションにだけ置く。
+   - 値だけを言う箇条書きは、表の行に移し、箇条書きには残さない。
+   - 1 つの規則は、1 つの箇条書きにする。説明、例、理由は、その規則の中か、その下の入れ子に置き、別の箇条書きにしない。
+   - 「何か」の 1 行は、その欄が何かを言う。最初の規則を言い換えない。
+   - `## Shape` の見本は残す。
+   - セクションの中の見本のフェンス（tree、`ts`、提示のフェンス）は、そのままの内容で残す。動かすのは、その周りの書き方だけにする。
 
 2. `.pi/skills/adr/references/affected.format.md`
    1. update: `## Entries` と `## The block` を、手順 1 の形にする。
@@ -152,7 +158,12 @@
    - <the agent's own rule>
    ````
 
-   分岐は `IF <condition> → <action>` とし、最後にどれにも当てはまらない場合の受け皿を置く。最後の step は報告にする。
+   形の規則:
+   - 「いつ渡すか」の 1 行は、文にする。
+   - 仕事の 1 行は、そのタスクが何をするかだけを言う。step 1 で言い換えない。
+   - 分岐は `IF <condition> → <action>` とし、最後に受け皿を置く。受け皿は、どの条件にも当てはまらないときの動作である。
+   - 続きの文は、その step か `IF` の下の入れ子に置き、別の step にしない。
+   - 最後の step は報告にする。
 
 2. `.pi/skills/close/references/tasks.md`
    1. update: `## Look it up` のフェンスの中を、手順 1 の形にする。
@@ -270,7 +281,7 @@
    ```
 
 2. `.pi/skills/work/references/tasks.md`
-   1. update: `## Clean the tests` のフェンスの中を、4 つの `IF`（落とす）と 2 つの `IF`（直す）と報告の step にする。直す 2 つは、次の文を `IF` の形にする。
+   1. update: `## Clean the tests` のフェンスの中を、4 つの `IF`（落とす）と 2 つの `IF`（直す）と報告の step にする。直す 2 つは、次の文を `IF` の形にする。最後に、どの条件にも当てはまらないときの受け皿（`IF none of the above` → そのテストを残す）を置く。
 
       ```text
       a test that hides the premise the behavior needs: move the premise into the test, and leave only the values that do not affect the behavior in the setup.
@@ -368,3 +379,12 @@
   - Check the number, the path, the name and the shape at each place against what it points to.
   - Fix any inconsistency, and write the fix in `Unplanned`.
 - Added: なし
+
+## Notes
+
+### Slice 1: field-reference
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 9a913fe base(readable-rules): shape field references as field, table, rules
+- Stopped: なし
