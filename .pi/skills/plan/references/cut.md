@@ -61,11 +61,13 @@ How the cut is shown to the owner, one block per plan in a fence.
 
 Where the plan runs.
 
-| `Place`    | what it means                                                                                                                                                                       |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `worktree` | the default: a branch, a subagent, a merge                                                                                                                                          |
-| `base`     | the plan whose work needs the owner's eyes: a browser, a screen, or a look. The agent does it in its own tree, the changes land as they are made, and it has no branch and no merge |
+| `Place`    | what it means                              |
+| ---------- | ------------------------------------------ |
+| `worktree` | the default                                |
+| `base`     | the plan whose work needs the owner's eyes |
 
+- A worktree plan is a branch, a subagent and a merge.
+- A base plan runs in the agent's own tree: the changes land as they are made, and it has no branch and no merge.
 - The owner's eyes are a browser, a screen, or a look.
 - A yolo plan is worktree, so the base condition does not apply.
 - A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes.

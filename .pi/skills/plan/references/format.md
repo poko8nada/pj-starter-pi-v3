@@ -156,7 +156,7 @@ The ADR entry the plan carries.
 
 What the plan changes, and what follows the change.
 
-### The tree
+### Tree
 
 - The tree holds what changes and what follows the change.
 - A changed file ends with `add`, `update` or `drop`.
@@ -307,7 +307,7 @@ The work's record, one section per slice and one for the cleanup.
 - A section that is not a slice — the test cleanup — is `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`.
 - It has no `Commit` and no `Stopped`.
 
-### The fields
+### Fields
 
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it.
 - Under it, `left: <why>` says why it could not be closed here.
@@ -320,7 +320,7 @@ The work's record, one section per slice and one for the cleanup.
 - A `Stopped` line holds the line, the question, and the reason.
 - The review reads it.
 
-### The stop
+### Stop
 
 What a `Stopped` line holds when the slice stopped.
 
@@ -331,7 +331,7 @@ What a `Stopped` line holds when the slice stopped.
 - the id of the worktree it left
 - for a `base` plan, the worktree id is `なし`, because there is no worktree
 
-### The states
+### States
 
 | `Commit` | `Stopped` | the slice   |
 | -------- | --------- | ----------- |

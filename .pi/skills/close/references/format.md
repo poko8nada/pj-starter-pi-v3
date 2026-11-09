@@ -58,7 +58,7 @@ The inventory of the cycle's leftovers, one numbered line for each.
 - A hole the script cannot see — a change an entry decided that no plan carries — is added by the agent as a numbered line, in the same shape, after every run of the script.
 - A hole no plan carries goes under `### (ADR <NN>) — 運ぶ計画がない項目`, naming its entry.
 
-### The heading
+### Heading
 
 - The heading of a normal plan carries the `No` of its plan md.
 - `未特定` when the plan md has no `No` (a plan written by hand).
@@ -67,7 +67,7 @@ The inventory of the cycle's leftovers, one numbered line for each.
 - A line the grouping has not named yet is `未特定`: the plan's name comes first.
 - Fill it before showing the owner.
 
-### The order
+### Order
 
 - The numbering runs through the whole file.
 - A plan with no leftover is not listed.
@@ -87,7 +87,7 @@ The destination of every leftover, one line for each.
   - Then: for an `ex-` what policy the plan follows, for a `_proposed_` what to discuss next, for a `dropped` nothing.
 - `なし` when there is none.
 
-### The destination
+### Destination
 
 - The proposal order is: the cycle's own concern → `_ex-plan_`.
 - An obvious bug, vulnerability, or stale implementation or wording outside that concern → `_ex-plan_`.
@@ -115,14 +115,14 @@ The Units of the cycle and what the owner answered for each.
 - `## Verified` sits after `## Triage`.
 - The script rewrites `## Collected`, and keeps what is below `## Triage`.
 
-### The Unit
+### Unit
 
 - `### <Unit>` holds one section per Unit this cycle touched, among the Units listed in `Users can do`.
 - A Unit is a line under `Users can do`, and a `####` heading is not a Unit.
 - The name is copied as it is.
 - `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
 
-### The fields
+### Fields
 
 - `Plans` holds one bullet per plan that cuts an entry the Unit is named by, taken from the plan md's `No`.
 - `Result` is `OK` when the owner checked the Unit's function and it worked, and what they found when it did not.
