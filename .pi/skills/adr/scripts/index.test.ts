@@ -211,13 +211,14 @@ describe('parseArgs', () => {
 });
 
 describe('entrySkeleton', () => {
-  it('採用した形の4つの操作と、明示的にしないことを含む', () => {
+  it('採用した形の3つの操作と、Policy を含む', () => {
     const skeleton = entrySkeleton(1);
     expect(skeleton).toContain('Add:');
     expect(skeleton).toContain('Update:');
     expect(skeleton).toContain('Drop:');
-    expect(skeleton).toContain('Keep:');
-    expect(skeleton).toContain('Denied:');
+    expect(skeleton).toContain('Policy:');
+    expect(skeleton).toContain('Allowed:');
+    expect(skeleton).toContain('Forbidden:');
     expect(skeleton).not.toContain('Cost:');
     expect(skeleton).not.toContain('Options:');
   });
@@ -228,8 +229,8 @@ describe('entrySkeleton', () => {
       .filter((line) => line.startsWith('#'));
     const expected = [
       '## 01: <問い>',
-      '### Context',
       '### Scope',
+      '### Context',
       '### Research & Trial',
       '### Decision',
       '### Definition',
@@ -237,11 +238,10 @@ describe('entrySkeleton', () => {
     expect(headings).toEqual(expected);
   });
 
-  it('Scope の見出しは英語', () => {
+  it('Scope は In と Out を持つ', () => {
     const skeleton = entrySkeleton(1);
-    expect(skeleton).toContain('- Change:');
-    expect(skeleton).toContain('- Quality:');
-    expect(skeleton).toContain('- Operation:');
+    expect(skeleton).toContain('- In:');
+    expect(skeleton).toContain('- Out:');
   });
 
   it('題名を渡すと見出しに入る', () => {
@@ -258,14 +258,14 @@ const entry = (
 
 ## 01: <問い>
 
+### Scope
+
+- In:
+  - format: 何か
+
 ### Context
 
 ${context}
-
-### Scope
-
-- Change:
-  - format: in — 何か
 
 ### Research & Trial
 
@@ -281,16 +281,16 @@ ${decision}
 `;
 
 const decision = (lines: string) => `- Status:
-- Adopted: 説明
+- Adopted: エントリ全体として何がどうなるか
 ${lines}
-- Denied:
-  - なし
 `;
 
 describe('checkEntry', () => {
-  it('(happy) すべての C と F を参照する決定 → 抜けは空', () => {
+  it('(happy) Policy で C と F を参照する決定 → 抜けは空', () => {
     const markdown = entry(
-      decision('  - Add:\n      - 何か（C1, F1）\n  - Keep:\n      - 何か（C2）'),
+      decision(
+        '  - Add:\n      - 何か（C1, F1）\n- Policy:\n  - Allowed:\n    - 何か（C2）\n  - Forbidden:\n    - なし',
+      ),
     );
     expect(checkEntry(markdown)).toEqual([]);
   });
@@ -321,7 +321,9 @@ describe('checkEntry', () => {
 
   it('(error) 同じ番号が2回出る → 重複として返す', () => {
     const markdown = entry(
-      decision('  - Add:\n      - 何か（C1, F1）\n  - Keep:\n      - 何か（C1, C2）'),
+      decision(
+        '  - Add:\n      - 何か（C1, F1）\n- Policy:\n  - Allowed:\n    - 何か（C1, C2）\n  - Forbidden:\n    - なし',
+      ),
       '- C1: 前提\n- C1: 制約\n- C2: 制約',
     );
     expect(checkEntry(markdown)).toEqual(['01: C1 is used twice']);
@@ -569,7 +571,7 @@ describe('CLI', () => {
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    const adr = `# ADR 015\n\n## 01: 問い\n\n### Context\n\n- C1: 前提\n\n### Scope\n\n- Change:\n  - format: in — 何か\n\n### Research & Trial\n\n- F1 (C1): 事実\n\n### Decision\n\n- Status:\n- Adopted: 説明\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n  - Keep:\n    - なし\n- Denied:\n  - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
+    const adr = `# ADR 015\n\n## 01: 問い\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1 (C1): 事実\n\n### Decision\n\n- Status:\n- Adopted: エントリ全体として何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
     const done = spawnSync(process.execPath, [script, '--root', root, '--check'], {
       encoding: 'utf8',
