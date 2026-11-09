@@ -29,8 +29,9 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
   return aRunRecord({ ended: 2000, state: 'done', notice: 'できた', ...extra });
 }
 
-function pending(found: Place, at: Date, extra: Partial<RunRecord> = {}): void {
-  appendRun(found, record(extra), at);
+/** 記録は「いま」の日付ファイルに書く。読み取り側も同じテストの時計を見るので、日付は固定しない */
+function pending(found: Place): void {
+  appendRun(found, record());
 }
 
 function fakePi(fail: { next: boolean } = { next: false }): {
@@ -95,8 +96,7 @@ describe('flushPending', () => {
 describe('startTick / stopTick', () => {
   it('印のない完了の行、startTick、5 秒進める → 送り 1 回、印 1 本、音 1 回', () => {
     const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    pending(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
 
@@ -149,8 +149,7 @@ describe('startTick / stopTick', () => {
 
   it('音が off、印のない完了 → 鳴らさず、送る', () => {
     const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    pending(found);
     setSoundEnabled(false);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
@@ -163,8 +162,7 @@ describe('startTick / stopTick', () => {
 
   it('sendMessage が投げる → 印を書かない。次の tick で送り直す', () => {
     const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    pending(found);
     const fail = { next: true };
     const { pi, sent } = fakePi(fail);
     startTick(portFor(found, pi, 'session-a'));
@@ -178,8 +176,7 @@ describe('startTick / stopTick', () => {
 
   it('startTick を 2 回呼ぶ → タイマーは 1 本。5 秒で送信 1 回、音 1 回', () => {
     const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    pending(found);
     const { pi, sent } = fakePi();
     const port = portFor(found, pi, 'session-a');
     startTick(port);
@@ -193,8 +190,7 @@ describe('startTick / stopTick', () => {
 
   it('stopTick の後、10 秒進める → 送らず鳴らさない', () => {
     const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    pending(found, at);
+    pending(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
     stopTick();
