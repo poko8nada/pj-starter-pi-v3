@@ -239,7 +239,7 @@ The ADR's `Policy` each slice needs, copied without omission.
 
 ## Verify
 
-What closes the slice, and what proves it.
+What proves that the slice is closed, and what the proof holds.
 
 - `Verify` proves that the slice is closed.
 - It holds what has to pass, and the read-through that proves it.

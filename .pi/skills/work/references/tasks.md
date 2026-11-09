@@ -89,6 +89,7 @@ Read the plan md's `## Work Review`, `### Round 1`, in the same plan md.
 2. Add a `fixed:` line under the finding you adopt, saying what you did, and a `left:` line under the one you leave, saying why. A `left:` goes on a finding, not on a doubt.
 3. Run the plan's checks after fixing.
 4. Commit it as `consult(<plan id>): round <N> fixes`.
+5. Report the findings you fixed, and the ones you left.
 ```
 
 ## Acceptance's findings (a `code` subagent)
@@ -103,6 +104,7 @@ Acceptance found this, in cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md (`
 2. Run the plan's checks.
 3. Commit it as `consult(<plan id>): acceptance fixes`.
    - IF one cannot be fixed here → write why under it in the same plan md instead, and leave it for the close.
+4. Report the findings you fixed, and the ones you left.
 ```
 
 ## Writing

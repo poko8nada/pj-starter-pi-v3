@@ -21,10 +21,12 @@ Answer the question the task carries, and nothing else.
 
 When the agent needs the impact of one entry's decision.
 
-```markdown
+```text
 Answer the question the task carries for one entry, and nothing else.
 
 The change is the entry's decision. The record is `affected.md`; its shape is the one `references/affected.format.md` gives.
+
+Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 
 1. Read the entry in full: `Scope`'s `In`, `Adopted`, `Policy`, `Definition`.
 2. Take the objects (skip the `Forbidden` lines: they name what does not change): for each kind in the `Scope`'s `In`, for each sentence of the `Adopted`, for each line of the `Policy`'s `Allowed`, take the verbs (remove, drop, replace, rewrite, add, align, move, merge, retire) and their objects. Split a sentence with two operations; a sentence that states a result is an operation. The object list goes to the report before the search.
@@ -43,8 +45,6 @@ The change is the entry's decision. The record is `affected.md`; its shape is th
 15. The reflection: the ranges seen, the ranges not seen and why, the names added. The questions that could not be answered, the nouns that could not be derived and the reason the work stopped go to the report as facts.
 16. The constraints: the change is not applied, so the checks are not run. No indexer, AST or LLM. The cost follows the change's size; no full enumeration.
 17. Report the facts only, and write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds: do not touch them, and do not delete them.
-
-Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 ```
 
 - The agent puts the entry and the change in the task.

@@ -27,7 +27,7 @@ Answer one question: can this plan achieve its Goal, and do the Steps and the Po
    - Other: ...
 
 4. Report one finding per bullet, and `なし` for a name that found nothing. Do not change the code or the plan.
-5. When the fixed plan comes back, check each finding: fixed, or left with the reason. Do not re-review the whole plan.
+5. When the fixed plan comes back, check each finding: fixed, or left with the reason, and report it. Do not re-review the whole plan.
 ```
 
 - One subagent per plan.
