@@ -421,3 +421,54 @@
 
 - Findings: なし
 - Unplanned: なし
+
+## Work Review
+
+### Round 1
+
+- Stale:
+  - `.pi/skills/plan/references/format.md:242` — 見出し直下の `What closes the slice, and what proves it.` の前半が旧概念を残している。直下の 244 行が `Verify proves that the slice is closed.` に変わり、閉じるのは checks で Verify は証明だけになったため、`What closes the slice` が残ると Verify が閉じるという意味に読める。理由：スライス 3 が境界の基準を関心に変え、Verify の役割を証明に変えたため。
+    - fixed: 「What proves that the slice is closed, and what the proof holds.」に変えた。
+- Unlisted:
+  - なし — `git diff 443c830..HEAD --stat` の `.pi` 配下 17 ファイルは `## Files` の 17 項目と一致し、対象外ファイルの変更はない。plan md 自体の `## Notes` 追記は作業記録のため数えない。
+- Gaps:
+  - `.pi/skills/adr/references/tasks.md:24` — `## Look at the affected` のフェンスが ` ```markdown ` のままで、タスクの形の ` ```text ` になっていない。他の全タスク（同ファイルの `Look it up`、`Try it` を含む）は `text` に揃っているため、1 か所だけ形が適用されていない。
+    - fixed: フェンスを ` ```text ` に変えた。
+  - `.pi/skills/adr/references/tasks.md:47` — 報告の step 17 の後に `Do not read the cycle's earlier affected, its plan, or a memo: ...` の文がフェンス内に残り、最後の step が報告になっていない。形の規則「最後の step は報告にする」（plan `### Steps` の手順 1 の形）に反するため。
+    - fixed: 「Do not read the cycle's earlier affected, its plan, or a memo: ...」を step 1 の前に移し、最後の step を報告にした。
+  - `.pi/skills/work/references/tasks.md:91` — `## Fixes` の step 4 が `Commit it as ...` で終わり、報告の step がない。同ファイルの `## Slices`（step 5 `Report the slices ...`）と `## Clean the tests`（step 4 `Report it in ...`）が commit の後に報告を置く形に揃う中、この task だけ報告を欠くため。
+    - fixed: step 5 に「Report the findings you fixed, and the ones you left.」を足した。
+  - `.pi/skills/work/references/tasks.md:104` — `## Acceptance's findings` の step 3 が `Commit it as ...` で終わり、報告の step がない。理由は前項と同じく、形の規則「最後の step は報告にする」に反するため。
+    - fixed: step 4 に「Report the findings you fixed, and the ones you left.」を足した。
+  - `.pi/skills/plan/references/tasks.md:30` — `## Review of a plan` の最後（step 5）が `When the fixed plan comes back, check each finding: ...` で終わり、報告の step がない。step 4 が報告だがその後に step 5 が続くため、最後の step が報告という形の規則に反する。
+    - fixed: step 5 を「... check each finding: fixed, or left with the reason, and report it.」に変えた。
+- Unproven:
+  - なし — 文書のみの変更で全スライスの `Added` が なし、対象のテストファイルがなく、壊れても緑のまま残るテストは存在しない。
+- Noise:
+  - なし — テストの追加・変更がなく、型・スキーマ・DB 制約が決める検査や魔数・ハードコード文字列の事例は対象外。
+- Doubts:
+  - `.pi/skills/plan/references/cut.md:49-54` の `## Present` の表（field / what it holds）が、形の規則「表は、決まった値の組があるセクションにだけ置く」に当たるかの境界事例。フィールド名 6 つは固定だが値の組ではないため、自分では断定せず、残すか外すかの判断をオーナーに委ねる。
+  - base plan の各スライスの owner の look は acceptance で閉じる前提のため、この diff だけでは証明できない。acceptance の確認待ちとして残す。
+
+### Round 2
+
+- Stale:
+  - `.pi/skills/plan/references/format.md:242` — 直った。現行 242 行が「What proves that the slice is closed, and what the proof holds.」になり、前半の旧概念が消えた。理由：`git diff 443c830..HEAD` で当該行の置換を確認した。
+- Unlisted:
+  - なし
+- Gaps:
+  - `.pi/skills/adr/references/tasks.md:24` — 直った。現行 24 行が ` ```text ` になり、同ファイルの他タスクと揃った。理由：`git diff 443c830..HEAD` でフェンスの置換を確認した。
+  - `.pi/skills/adr/references/tasks.md:47` — 直った。「Do not read ...」が現行 29 行（step 1 の前）に移り、最後の step 17 が報告になった。理由：`git diff 443c830..HEAD` で移動と step 17 の報告化を確認した。
+  - `.pi/skills/work/references/tasks.md:91` — 直った。`## Fixes` に step 5「Report the findings you fixed, and the ones you left.」がある。理由：`git diff 443c830..HEAD` で step 5 の追加を確認した。
+  - `.pi/skills/work/references/tasks.md:104` — 直った。`## Acceptance's findings` に step 4「Report the findings you fixed, and the ones you left.」がある。理由：`git diff 443c830..HEAD` で step 4 の追加を確認した。
+  - `.pi/skills/plan/references/tasks.md:30` — 直った。現行 step 5 が「... check each finding: fixed, or left with the reason, and report it.」で終わり、最後の step が報告になった。理由：`git diff 443c830..HEAD` で step 5 末尾への `and report it` 追加を確認した。
+- Unproven:
+  - なし
+- Noise:
+  - なし
+
+## Acceptance
+
+- Ran: `pnpm test:run`（63 ファイル、782 テスト）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。`git diff 443c830..HEAD` の 17 ファイルを読み直した。
+- Findings: なし
+- Doubts: なし
