@@ -145,8 +145,14 @@ ADR のエントリが、`Scope` を先頭に置き、`In`/`Out` の `Scope`、`
 ### Slice 1: adr-entry
 
 - Findings:
+  - 追加検査の 2 本（`node .pi/skills/adr/scripts/index.mjs --check` と `node scripts/checks/ja-check.mjs cycles/261109-058-dev/adr.md`）を直接実行できず、59 件の試験（新形での `--check` 起動を含む）の通過と hook の `ja-check` の通過で代え、実ファイルでの実行は所有者の shell に残す。
+    - left: 作業 shell が素の `node` 実行を禁じ、`cycles/261109-058-dev/adr.md` はこのスライスの `Files` 外で触れないため。
 - Unplanned:
-- Commit:
+  - `.pi/skills/adr/scripts/adr.mjs` の `checkEntry` の説明が `Denied` に触れていたため `Policy` に直し、旧形の名残を消した。
+  - `.pi/skills/adr/references/tasks.md` の手順 14 の `Scope` の `in` を新形の `In` に直し、表記を合わせた。
+  - `.pi/skills/adr/scripts/index.test.ts` の `--check` 試験の fixture が旧形だったため新形（`Scope` 先頭、`In`、`Adopted` の一言、`Policy`）に直し、試験が旧形を教えないようにした。
+  - `.pi/skills/adr/scripts/index.test.ts` の整形を `oxfmt` で直し、`pnpm format:check` を通した。
+- Commit: 50baa5ec1a361b3b9cc2c9470353ced21edbe68e
 - Stopped:
 
 ### Cleanup: テストの掃除
@@ -159,11 +165,17 @@ ADR のエントリが、`Scope` を先頭に置き、`In`/`Out` の `Scope`、`
 ### Round 1
 
 - Stale:
+  - なし — `.pi/skills/adr/SKILL.md`、`.pi/skills/adr/references/adr.format.md`、`.pi/skills/adr/references/tasks.md`、`.pi/skills/adr/scripts/adr.mjs` の旧形語（`Keep`/`Denied`、`Change`/`Quality`/`Operation`、`Axis`、`in —`）を確かめ、残存が意図した禁止文のみであるため stale はない。
 - Unlisted:
+  - なし — `git diff b55d116..HEAD --stat` が `Files` の5件のみを示し、計画外の変更がないため unlisted はない。
 - Gaps:
+  - なし — `Steps` の全 substep と `Policy` の禁止5件を diff と突き合わせ、`Scope` 先頭・`In`/`Out`・`Adopted` 一言・`Policy`・13 kind 同順・`checkEntry` の `C`/`F` 読み不変がいずれも満たされ、`Goal` の4要素に穴がないため gaps はない。
 - Unproven:
+  - なし — 見出し順・`In`/`Out`・`Policy`・`Policy` 付き `checkEntry` の各試験が対象を壊せば赤になることを確かめたため unproven はない。
 - Noise:
+  - なし — 断言値は計画または ADR が決めた仕様であり、型が保証する前提の再現や魔数・ハードコード文字列の独自断言がないため noise はない。
 - Doubts:
+  - 追加検査2本の直接実行が `cycles/261109-058-dev/plan/01-adr-entry.md` の `## Notes` の `left` として所有者の shell に残るため、受入前に所有者の shell での実行結果の確認が要る。
 
 ### Round 2
 
@@ -177,5 +189,10 @@ ADR のエントリが、`Scope` を先頭に置き、`In`/`Out` の `Scope`、`
 ## Acceptance
 
 - Ran:
+  - `node .pi/skills/adr/scripts/index.mjs --check`: checked `cycles/261109-058-dev/adr.md`。
+  - `node scripts/checks/ja-check.mjs cycles/261109-058-dev/adr.md`: error 0、warn 0。
+  - `## Notes` の 59 件の試験通過と hook の `ja-check` 通過の記録を確認。
 - Findings:
+  - なし。`## Notes` の `left` の 2 本は直接実行で閉じた。
 - Doubts:
+  - なし。
