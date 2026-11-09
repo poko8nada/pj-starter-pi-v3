@@ -263,11 +263,12 @@ Notes:
 
 ## How not to write this
 
-- Do not copy the ADR: name it where it bites, and write what the reader has to do
-- Do not invent a check: `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides
-- Do not write a case the type, the schema or the DB settles: it is noise, and the reviewer takes it out
-- Do not leave a hole.
-- Do not write one line per file: write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`
-- Do not leave the slice's `Policy` out: copy the ADR's `Policy` without omission and without `C`/`F`
-- Do not touch a file the affected does not name without reporting it to the owner in step 5
-- Do not review the whole plan again in Round 2: check only the Round 1 fixes
+- When you write a slice: do not leave its concern to the name alone. The heading names it, and the first line says it in one sentence.
+- When you write a step: do not copy the ADR. Name it where it bites, and write what the reader has to do.
+- When you write a `Verify`: do not invent a check. `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
+- When you write a test case: do not write a case the type, the schema or the DB settles. It is noise, and the reviewer takes it out.
+- When you write a plan: do not leave a hole.
+- When you write `Steps`: do not write one line per file. Write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`.
+- When you write a slice: do not leave its `Policy` out. Copy the ADR's `Policy` without omission and without `C`/`F`.
+- When you touch a file the affected does not name: do not go on without reporting it to the owner in step 5.
+- In Round 2: do not review the whole plan again. Check only the Round 1 fixes.

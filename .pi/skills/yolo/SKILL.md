@@ -98,6 +98,6 @@ Note: a hole the run finds and fixes in the plan's own files is not one of these
 
 ## How not to write this
 
-- Do not decide a change the ADR did not accept
-- Do not call the other skills: each stage keeps its own rules, and the flow above is the order it walks them
-- Do not change a stage or the stop point
+- When you walk the cycle: do not decide a change the ADR did not accept.
+- When you run a stage: do not call the other skills. Each stage keeps its own rules, and the flow above is the order it walks them.
+- When you run the cycle: do not change a stage or the stop point.

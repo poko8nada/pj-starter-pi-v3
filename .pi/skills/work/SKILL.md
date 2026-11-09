@@ -276,10 +276,8 @@ Steps:
 
 ## How not to write this
 
-- Do not author the plan from the agent's side while a worktree is live.
-- The subagents write their own records there.
-- The agent writes the Acceptance section.
-- A dropped plan's plan md is copied, not authored.
-- Do not fix a hole silently.
-- It goes in the record.
-- Do not drop the plan's `Policy` and `Goal`: the task carries them, and `Gaps` holds their holes.
+- While a worktree is live: do not author the plan from the agent's side. The subagents write their own records there, and the agent writes only the Acceptance section.
+- When the plan is dropped: do not author its plan md. It is copied as it is.
+- When you clean the tests: do not drop a test that hides its premise. Move the premise into the test; the test itself is right.
+- When you fix a hole: do not do it silently. It goes in the record.
+- When you run the slices: do not drop the plan's `Policy` and `Goal`. The task carries them, and `Gaps` holds their holes.

@@ -259,12 +259,10 @@ This skill keeps its own business — the entry and the decision — and does no
 
 ## How not to write this
 
-- Do not decide. The ADR writes the adopted change after the discussion, and the owner's answer there is the decision.
-- Do not write the work here. Files, steps and checks belong to the plan.
-- Do not leave an entry undecided. A cycle decides every entry it raises.
-- Do not write `DEFINITION.md` itself. The `Definition` carries the new lines, and a plan writes them into the file.
-- Do not look up before the intent is settled. The target would be wrong, and the time and the money go with it.
-- Do not leave the intent in the agent's words. An intent the owner did not correct is a guess.
-- Do not skip the scope. An entry without a scope cannot be weighed.
-- Do not write an adopted change as a line of `DEFINITION.md`. That is the plan's work.
-- Do not leave `Keep`/`Denied` in the new shape. The adopted change uses `Adopted` with `Add`/`Update`/`Drop` and `Policy` with `Allowed`/`Forbidden`.
+- Before the owner's answer: do not decide. The ADR writes the adopted change after the discussion, and the owner's answer there is the decision.
+- When you write an entry: do not write the work. Files, steps and checks belong to the plan.
+- When the cycle ends: do not leave an entry undecided. A cycle decides every entry it raises.
+- When you write the `Definition`: do not write `DEFINITION.md` itself. The `Definition` carries the new lines, and a plan writes them into the file.
+- Before the intent is settled: do not look up. The target would be wrong, and the time and the money go with it.
+- When you write the intent: do not leave it in the agent's words. An intent the owner did not correct is a guess.
+- When you write an entry: do not skip the scope. An entry without a scope cannot be weighed.

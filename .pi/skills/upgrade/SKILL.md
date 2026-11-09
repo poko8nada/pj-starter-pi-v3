@@ -160,8 +160,7 @@ Notes:
 
 ## How not to write this
 
-- Do not apply a package before the owner has picked it
-- Do not write a version or a number of minutes into this procedure.
-- Both are read from the project.
-- Do not touch the CI's automatic updates (renovate, dependabot and the like).
-- Do not take a version younger than `minimumReleaseAge`.
+- When the owner has not picked a package: do not apply it.
+- When you write this procedure: do not put a version or a number of minutes in it. Both are read from the project.
+- When you update packages: do not touch the CI's automatic updates (renovate, dependabot and the like).
+- When you pick a version: do not take one younger than `minimumReleaseAge`.

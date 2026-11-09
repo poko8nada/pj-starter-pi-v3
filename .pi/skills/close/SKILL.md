@@ -323,7 +323,7 @@ Notes:
 
 ## How not to write this
 
-- Do not run the plan's checks again: the acceptance ran them, and the merge gate held. The owner's verification is of the Unit's function, and it goes in `## Verified`
-- Do not fix a hole silently, and do not write the fix into `DEFINITION.md` or a plan
-- Do not leave a leftover without a line in the `Triage`: the cycle closes only when every one of them has a destination and every `ex-` plan has merged or is dropped
-- Do not skip the resolved exclusion: what the wording shows is already closed is deleted by the agent, and re-filtered after every rerun of the script
+- When the owner verifies a Unit: do not run the plan's checks again. The acceptance ran them, and the merge gate held, and the verification is of the Unit's function, in `## Verified`.
+- When you find a hole: do not fix it silently, and do not write the fix into `DEFINITION.md` or a plan.
+- When you close the cycle: do not leave a leftover without a line in the `Triage`. The cycle closes only when every one of them has a destination and every `ex-` plan has merged or is dropped.
+- After every rerun of the script: do not skip the resolved exclusion. What the wording shows is already closed is deleted by the agent, and re-filtered.
