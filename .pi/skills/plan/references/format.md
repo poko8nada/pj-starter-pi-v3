@@ -285,7 +285,7 @@ The cases a test file carries, and what they must hold.
 - A case is `<prefix>: (happy|error|empty|boundary) <given> → <result>`.
 - Each `Add`, `Update` and `Drop` line's result is one of those cases.
 - The cases are used where a test file's cases are decided.
-- A step writes one, the reviewer reads one, and the work's cleanup drops one.
+- A step writes one, the reviewer reads one, and the work's cleanup drops one or fixes its premise.
 - A case keeps its step's prefix.
 - A `<given>` names a premise that can be built one way.
 - It keeps the ADR's subject when the ADR names one.

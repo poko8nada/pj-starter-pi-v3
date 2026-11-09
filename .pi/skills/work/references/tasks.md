@@ -34,14 +34,16 @@ When the slices are done.
 Clean the tests in the test files the plan's `Files` updates, and keep the suite green.
 
 1. Read the plan md and the test files the plan's `Files` updates.
-2. For each test, decide keep or drop:
+2. For each test, decide keep, drop, or fix:
    - IF two or more tests check the same behavior → drop it.
    - IF the test is for a behavior that is gone → drop it.
    - IF the test is for a branch this plan's change stops making → drop it.
    - IF the test is one the plan's `## Test cases` would not write (a premise the types, the schema or the DB already settle, one nobody would notice, or an `Add`, `Update` or `Drop` line with no case) → drop it.
+   - IF the test hides the premise the behavior needs → move the premise into the test, and leave only the values that do not affect the behavior in the setup.
+   - IF the test builds a premise another test already shares → share it when nobody changes it, and keep a mutable premise in each test.
    - IF none of the above → keep it.
-3. Drop what you found, and keep the suite green.
-4. Report it in the plan md's `## Notes`, as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`.
+3. Drop the tests you found and fix the premises you found, and keep the suite green.
+4. Report it in the plan md's `## Notes`, as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`, and a fixed premise goes in `Unplanned`.
 ```
 
 - It is not a slice.

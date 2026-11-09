@@ -103,14 +103,21 @@ Notes:
 Steps:
 
 1. Continue the `code` subagent that ran the slices.
-2. Drop what it finds, and keep the suite green.
+2. Drop the tests it finds, fix the premises it finds, and keep the suite green.
 
 View:
+
+Drop:
 
 - two or more tests that check the same behavior
 - a test for a behavior that is gone
 - a test for a branch this plan's change stops making
 - a test the plan's `## Test cases` would not write
+
+Fix:
+
+- a test that hides the premise the behavior needs: move the premise into the test, and leave only the values that do not affect the behavior in the setup.
+- a test that builds a premise another test already shares: share it when nobody changes it, and keep a mutable premise in each test.
 
 Notes:
 
@@ -124,7 +131,7 @@ Notes:
 - What went stale is known only after the change.
 - A slice carries a `Verify` of its own.
 - It writes it in the worktree's plan md, in `## Notes` as `### Cleanup: <what it cleaned>`.
-- It writes it with `Findings` and `Unplanned`.
+- It writes it with `Findings` and `Unplanned`, and a fixed premise goes in `Unplanned`.
 - It has no `Commit` and no `Stopped`.
 - For a `base` plan, it writes it in the base's plan md.
 
