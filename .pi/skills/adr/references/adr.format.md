@@ -11,42 +11,37 @@ Section and field names are English; the content is Japanese.
 
 ## <NN>: <問い>
 
+### Scope
+
+- In:
+  - <kind>: <何をするか>
+- Out:
+  - <kind>: <何をしないか>（理由）
+
 ### Context
 
 - C1: <前提。いまの振る舞い>
 - C2: <制約。Who の要望、上限、変えないと決めたこと>
 
-### Scope
-
-- Change:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
-- Quality:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
-- Operation:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
-
 ### Research & Trial
 
 - F1 (C1): <事実>。出所。
-- F2 (C2): <事実>。出所。
 
 ### Decision
 
 - Status: <決定の前は空。**accepted** | **rejected**（理由）>
-- Adopted: <説明>
+- Adopted: <エントリ全体として何がどうなるか>
   - Add:
     - <増えるもの>（C1, F2）
   - Update:
     - <変わるもの（何がどうなるか）>（C1）
   - Drop:
     - <消えるもの>（F1）
-  - Keep:
-    - <触らないものとその理由>（C2）
-- Denied:
-  - <明示的にしないこと> - <しない理由>（C2, F2）
+- Policy:
+  - Allowed:
+    - <して良いこと>（C2, F2）
+  - Forbidden:
+    - <明示的にしてはいけないこと> - <しない理由>（C2, F2）
 
 ### Definition
 
@@ -58,18 +53,36 @@ Section and field names are English; the content is Japanese.
 
 - `## <NN>: <問い>` — one entry is one question, and the number runs from `01`.
 - One bullet is one sentence.
+- The sections run `Scope`, `Context`, `Research & Trial`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
+
+## Scope
+
+- The `View` is the table of 13 kinds:
+
+| kind                | what it is                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| behaviour           | what the product does; the actions a user takes, and what the product returns                     |
+| refactor            | the shape of the code or the document, without changing what the product does                     |
+| dependency          | a package, a library, or an external contract the product relies on                               |
+| naming              | the name of a section, field, file, or identifier in the product                                  |
+| format              | the section order, headings, table shape, and fences of a product document                        |
+| prose               | the wording, sentence structure, and voice of a product document                                  |
+| speed               | the time or the resources the work takes                                                          |
+| security            | secrets, permissions, or exposure in the product                                                  |
+| compatibility       | an existing reference, a past record, or another part of the product that names the changed thing |
+| errors              | a check, a test, a validation, or a failure the product must keep                                 |
+| deploy              | the distribution or release of the product                                                        |
+| migration           | an existing record or an installed version of the product that must be moved                      |
+| logs and monitoring | the records or signals the product leaves                                                         |
+
+- The output is `In:` and `Out:`: `- In:` with one line per kind in scope (`<kind>: <what is done>`), `- Out:` with one line per kind out of scope (`<kind>: <what is not done>（理由）`).
+- An `Out` kind carries its reason. A revisit condition goes on the kind that needs one.
 
 ## Context
 
 - An item is one line: `C<n>: <the item>`.
 - The number runs from `C1`, in the order the items were settled.
-
-## Scope
-
-- Three axes: `Change`, `Quality`, `Operation`.
-- Under each axis, one line per kind: `<kind>: in — <what is done>`, or `<kind>: out — <what is not done>（理由）`.
-- An `out` kind carries its reason. A revisit condition goes on the kind that needs one.
 
 ## Research & Trial
 
@@ -79,9 +92,9 @@ Section and field names are English; the content is Japanese.
 ## Decision
 
 - `Status` — empty before the decision. After it, `accepted`, or `rejected` with its reason in parentheses on the same line.
-- `Adopted` — the explanation of what is adopted, with `Add`, `Update`, `Drop` and `Keep`. `Add` is what grows, `Update` is what changes, `Drop` is what disappears, and `Keep` is what is left untouched with the reason. A rejected entry leaves it empty.
-- `Denied` — what is explicitly not done, with the reason.
-- A line under `Adopted` or `Denied` ends with the items it settles, in parentheses: `（C1, F2）`.
+- `Adopted` — the one line of what the entry becomes as a whole, with `Add`, `Update` and `Drop` under it. `Add` is what grows, `Update` is what changes, and `Drop` is what disappears. A rejected entry leaves it empty.
+- `Policy` — what holds the decision: `Allowed` is what may be done, `Forbidden` is what must not be done, with the reason.
+- A line under `Adopted` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - A field with nothing in it is `なし`.
 
 ## Definition

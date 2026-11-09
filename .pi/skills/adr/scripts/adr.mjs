@@ -8,22 +8,17 @@ export function entrySkeleton(nnn, title) {
   const q = title === undefined ? '<問い>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
+### Scope
+
+- In:
+  - <kind>: <何をするか>
+- Out:
+  - <kind>: <何をしないか>（理由）
+
 ### Context
 
 - C1: <前提。いまの振る舞い>
 - C2: <制約。Who の要望、上限、変えないと決めたこと>
-
-### Scope
-
-- Change:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
-- Quality:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
-- Operation:
-  - <kind>: in — <何をするか>
-  - <kind>: out — <何をしないか>（理由）
 
 ### Research & Trial
 
@@ -32,17 +27,18 @@ export function entrySkeleton(nnn, title) {
 ### Decision
 
 - Status:
-- Adopted: <説明>
+- Adopted: <エントリ全体として何がどうなるか>
   - Add:
     - <増えるもの>（C1）
   - Update:
     - <変わるもの（何がどうなるか）>（C1）
   - Drop:
     - <消えるもの>（F1）
-  - Keep:
-    - <触らないものとその理由>（C2）
-- Denied:
-  - <明示的にしないこと> - <しない理由>（C2）
+- Policy:
+  - Allowed:
+    - <して良いこと>（C2）
+  - Forbidden:
+    - <明示的にしてはいけないこと> - <しない理由>（C2）
 
 ### Definition
 
@@ -111,7 +107,7 @@ function refs(text) {
 /**
  * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
  * `Decision` から参照されているかを確かめる。
- * `Adopted` と `Denied` を合わせて、すべての `C` を参照し、すべての `F` をどれかが参照する。
+ * `Adopted` と `Policy` を合わせて、すべての `C` を参照し、すべての `F` をどれかが参照する。
  * 参照は実在し、番号は重複しない。
  * @param {string} markdown
  * @returns {readonly string[]} 抜けの一覧。空なら良い

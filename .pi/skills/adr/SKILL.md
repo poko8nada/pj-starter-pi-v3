@@ -63,11 +63,44 @@ Note: write what the chat settled at once. Do not keep an agreement only in the 
 
 The entry stage runs once per entry, in the order the split gave.
 
-### 1. Context
+### 1. Scope
 
 Steps:
 
-1. Write what is known now, all of it, for this entry only.
+1. Agree the scope with the owner in the chat. Every kind, one by one, `In` or `Out`.
+2. Let the owner correct the list.
+3. Write the result to the entry's `Scope` as `In:` and `Out:`.
+
+View:
+
+| kind                | what it is                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| behaviour           | what the product does; the actions a user takes, and what the product returns                     |
+| refactor            | the shape of the code or the document, without changing what the product does                     |
+| dependency          | a package, a library, or an external contract the product relies on                               |
+| naming              | the name of a section, field, file, or identifier in the product                                  |
+| format              | the section order, headings, table shape, and fences of a product document                        |
+| prose               | the wording, sentence structure, and voice of a product document                                  |
+| speed               | the time or the resources the work takes                                                          |
+| security            | secrets, permissions, or exposure in the product                                                  |
+| compatibility       | an existing reference, a past record, or another part of the product that names the changed thing |
+| errors              | a check, a test, a validation, or a failure the product must keep                                 |
+| deploy              | the distribution or release of the product                                                        |
+| migration           | an existing record or an installed version of the product that must be moved                      |
+| logs and monitoring | the records or signals the product leaves                                                         |
+
+Notes:
+
+- An `Out` kind carries its reason. A revisit condition goes on the kind that needs one.
+- The scope is of this entry. The other entries keep their own scope.
+- A constraint the owner adds here goes to `Context` as a new item.
+- The first `Scope` is a guess. Rewrite it in `Discussion Loop` with the owner.
+
+### 2. Context
+
+Steps:
+
+1. After the `Scope` is agreed, write what is known now, all of it, for this entry only.
 2. Number the items `C1`, `C2`, ...
 
 View:
@@ -79,28 +112,6 @@ View:
 | question   | the entry's question                            |
 
 Note: do not leave out what is known. What is not known yet stays out, and the research or the discussion adds it.
-
-### 2. Scope
-
-Steps:
-
-1. Agree the scope with the owner in the chat. Every kind, one by one, `in` or `out`.
-2. Let the owner correct the list.
-3. Write the result to the entry's `Scope`.
-
-View:
-
-| Axis      | Kinds                                                  |
-| --------- | ------------------------------------------------------ |
-| Change    | behaviour, refactor, dependency, naming, format, prose |
-| Quality   | speed, security, compatibility, errors                 |
-| Operation | deploy, migration, logs and monitoring                 |
-
-Notes:
-
-- An `out` kind carries its reason. A revisit condition goes on the kind that needs one.
-- The scope is of this entry. The other entries keep their own scope.
-- A constraint the owner adds here goes to `Context` as a new item.
 
 ### 3. Pre-research
 
@@ -167,7 +178,7 @@ Steps:
 3. When one is missing, explain it to the owner, and return to section 4.
 4. Wait for the owner's judgement: `accepted` or `rejected`.
 5. Write `Status`.
-6. Write `Adopted` with `Add`, `Update`, `Drop` and `Keep`, and write what is explicitly not done to `Denied`.
+6. Write `Adopted` as the one line of what the entry becomes as a whole, with `Add`, `Update` and `Drop` under it, and write `Policy` with `Allowed` and `Forbidden`.
 7. Write a `Context` item or a fence the decision settles, at that moment.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
@@ -256,3 +267,4 @@ This skill keeps its own business — the entry and the decision — and does no
 - Do not leave the intent in the agent's words. An intent the owner did not correct is a guess.
 - Do not skip the scope. An entry without a scope cannot be weighed.
 - Do not write an adopted change as a line of `DEFINITION.md`. That is the plan's work.
+- Do not leave `Keep`/`Denied` in the new shape. The adopted change uses `Adopted` with `Add`/`Update`/`Drop` and `Policy` with `Allowed`/`Forbidden`.
