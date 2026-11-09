@@ -477,4 +477,6 @@
     - fixed: 表を `the default` と `the plan whose work needs the owner's eyes` の 2 語にし、詳しい規則は箇条書きに戻した。
   - 通読で、いくつかのセクションの「何か」の 1 行が、最初の規則と同じことを言っていた（`plan` の `## Files`、`## Types`、`## Policy`、`## Verify`、`## Notes`、`## Work Review`、`## Acceptance`、`close` の `## Collected`、`## Triage`、`adr` の `## Entries`、`affected` の `## Entries`）（オーナーの依頼で通読して指摘）。
     - fixed: その 1 行を「その欄が何か」だけにし、規則と重ならない形にした。`plan` の `## Files` は、`### Tree` にあった同じ文の規則を落とした。
+  - `plan/references/format.md` の `## Notes` は、`Stopped` を 2 つの意味で使っていた。止まったスライスの記録と、plan が書けない行の `Stopped` 行である（通読で指摘）。
+    - fixed: `### Stop` を「`Stopped` が持つもの、2 つの場合」にし、止まったスライスの 6 項目と、書けない行の `Stopped` 行（行・問い・理由）を、それぞれの下に置いた。`### Fields` の `Stopped` は 2 つの場合を指す 1 行にした。
 - Doubts: なし

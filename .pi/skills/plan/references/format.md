@@ -313,21 +313,21 @@ The work's record.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash.
 - `なし（理由）` when the slice changed nothing.
-- `Stopped`: only for a slice that stopped.
-- A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line.
-- A `Stopped` line holds the line, the question, and the reason.
+- `Stopped`: only for a slice that stopped, or for a line the plan cannot write.
 - The review reads it.
 
 ### Stop
 
-What a `Stopped` line holds when the slice stopped.
+What `Stopped` holds, in its two cases.
 
-- the output of the check that failed
-- the files changed
-- the subagent's last text
-- how many times it ran, and the time
-- the id of the worktree it left
-- for a `base` plan, the worktree id is `なし`, because there is no worktree
+- A slice that stopped writes what the stop left:
+  - the output of the check that failed
+  - the files changed
+  - the subagent's last text
+  - how many times it ran, and the time
+  - the id of the worktree it left
+  - for a `base` plan, the worktree id is `なし`, because there is no worktree
+- A line the plan cannot write, and the four kinds do not cover the missing fact, is a `Stopped` line, and it holds the line, the question, and the reason.
 
 ### States
 
