@@ -171,11 +171,12 @@ Notes:
 
 Steps:
 
-1. Present the approaches and how each would be practiced, briefly, as the draft.
+1. Start from the opening proposal in `Decision`.
 2. Discuss, and investigate where a fact is missing.
 3. Write an added `Context` item as `C<n>`, after the existing numbers, at the moment it is settled.
 4. Write what is settled in a fence under `Context`, at the moment it is settled.
-5. Repeat until the owner moves the entry to the decision.
+5. Update `Scope`, `Context`, `Research & Trial` and `Decision` as the discussion settles them.
+6. Repeat until the owner moves the entry to the decision.
 
 View:
 
@@ -183,6 +184,8 @@ View:
 | ---------------------- | ------------------------------- |
 | `Context`              | a fact that limits the decision |
 | `Research & Trial`     | a fact the decision weighs      |
+| `Decision`             | a change the decision settles   |
+| `Scope`                | a change the scope settles      |
 
 Notes:
 
@@ -198,13 +201,10 @@ Notes:
 
 Steps:
 
-1. Read the `Decision` section of `references/adr.format.md`.
-2. Check that every `C` and every `F` is carried.
-3. When one is missing, explain it to the owner, and return to section 4.
-4. Wait for the owner's judgement: `accepted` or `rejected`.
-5. Write `Status`.
-6. Write `Adopted` as the one line of what the entry becomes as a whole, with `Add`, `Update` and `Drop` under it, and write `Policy` with `Allowed` and `Forbidden`.
-7. Write a `Context` item or a fence the decision settles, at that moment.
+1. Check that every `C` and every `F` is carried.
+2. When one is missing, explain it to the owner, and return to section 4.
+3. Wait for the owner's judgement: `accepted` or `rejected`.
+4. Write `Status`.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
 

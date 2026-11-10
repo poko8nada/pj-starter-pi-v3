@@ -414,8 +414,6 @@ Discussion Loop で Scope・Context・Research & Trial・Decision を随時更�
       2. When one is missing, explain it to the owner, and return to section 4.
       3. Wait for the owner's judgement: `accepted` or `rejected`.
       4. Write `Status`.
-      5. Write the `Main`, `Sub` and `Policy` as the loop settled them.
-      6. Write a `Context` item or a fence the decision settles.
       ```
 
    4. update: `### 5. Decision` から `Decision` の書き方を読むステップを外す（`### 3. The opening proposal` が持つ）。`### 4. Discussion Loop` の `section 3` の参照は、`### 3. The opening proposal` を指したままにする。
@@ -628,7 +626,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ### Slice 6: loop-decision
 
 - Findings:
-- Unplanned:
+- Unplanned: Decision のステップ 5 と 6 を削除した。`Main`、`Sub`、`Policy` は Loop が、`Context` の項目とフェンスは Loop のステップ 3 と 4 が書く（オーナーの指示）。
 - Commit:
 - Stopped:
 

@@ -364,8 +364,6 @@ The `View` table gains:
 2. When one is missing, explain it to the owner, and return to section 4.
 3. Wait for the owner's judgement: `accepted` or `rejected`.
 4. Write `Status`.
-5. Write the `Main`, `Sub` and `Policy` as the loop settled them.
-6. Write a `Context` item or a fence the decision settles.
 
 **`7. Affected`** stays.
 ```
