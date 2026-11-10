@@ -28,8 +28,8 @@ The change is the entry's decision. The record is `affected.md`; its shape is th
 
 Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 
-1. Read the entry in full: `Scope`'s `In`, `Adopted`, `Policy`, `Definition`.
-2. Take the objects (skip the `Forbidden` lines: they name what does not change): for each kind in the `Scope`'s `In`, for each sentence of the `Adopted`, for each line of the `Policy`'s `Allowed`, take the verbs (remove, drop, replace, rewrite, add, align, move, merge, retire) and their objects. Split a sentence with two operations; a sentence that states a result is an operation. The object list goes to the report before the search.
+1. Read the entry in full: `Scope`'s `In`, `Main`, `Sub`, `Policy`, `Definition`.
+2. Take the objects (skip the `Forbidden` lines: they name what does not change): for each kind in the `Scope`'s `In`, for each sentence of `Main` and `Sub`, for each line of the `Policy`'s `Allowed`, take the verbs (remove, drop, replace, rewrite, add, align, move, merge, retire) and their objects. Split a sentence with two operations; a sentence that states a result is an operation. The object list goes to the report before the search.
 3. Sort the nouns into paths, directories, headings, keys, identifiers, strings, sentences, commands and abstracts. Fix an abstract on the file the entry names; an abstract that cannot be fixed is returned as a fact.
 4. Widen each to five spellings: the full path, the parent directory, the last element, the identifier, the URL fragment.
 5. The range is the whole repository, always.

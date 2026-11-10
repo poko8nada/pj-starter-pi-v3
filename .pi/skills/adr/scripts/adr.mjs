@@ -27,7 +27,14 @@ export function entrySkeleton(nnn, title) {
 ### Decision
 
 - Status:
-- Adopted: <エントリ全体として何がどうなるか>
+- Main: <この関心事は、何がどうなるか>
+  - Add:
+    - <増えるもの>（C1）
+  - Update:
+    - <変わるもの（何がどうなるか）>（C1）
+  - Drop:
+    - <消えるもの>（F1）
+- Sub: <この関心事は、何がどうなるか>
   - Add:
     - <増えるもの>（C1）
   - Update:
@@ -107,7 +114,7 @@ function refs(text) {
 /**
  * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
  * `Decision` から参照されているかを確かめる。
- * `Adopted` と `Policy` を合わせて、すべての `C` を参照し、すべての `F` をどれかが参照する。
+ * `Decision` セクション全体で、すべての `C` を参照し、すべての `F` をどれかが参照する。
  * 参照は実在し、番号は重複しない。
  * @param {string} markdown
  * @returns {readonly string[]} 抜けの一覧。空なら良い

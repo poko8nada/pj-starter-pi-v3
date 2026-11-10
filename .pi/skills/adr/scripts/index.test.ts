@@ -219,8 +219,8 @@ describe('entrySkeleton', () => {
     expect(skeleton).toContain('Policy:');
     expect(skeleton).toContain('Allowed:');
     expect(skeleton).toContain('Forbidden:');
-    expect(skeleton).not.toContain('Cost:');
-    expect(skeleton).not.toContain('Options:');
+    expect(skeleton).toContain('Main:');
+    expect(skeleton).toContain('Sub:');
   });
 
   it('adr.format.md のエントリーの見出しと一致する', () => {
@@ -281,7 +281,7 @@ ${decision}
 `;
 
 const decision = (lines: string) => `- Status:
-- Adopted: エントリ全体として何がどうなるか
+- Main: この関心事は、何がどうなるか
 ${lines}
 `;
 
@@ -571,7 +571,7 @@ describe('CLI', () => {
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    const adr = `# ADR 015\n\n## 01: 問い\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1 (C1): 事実\n\n### Decision\n\n- Status:\n- Adopted: エントリ全体として何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
+    const adr = `# ADR 015\n\n## 01: 問い\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1 (C1): 事実\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
     const done = spawnSync(process.execPath, [script, '--root', root, '--check'], {
       encoding: 'utf8',

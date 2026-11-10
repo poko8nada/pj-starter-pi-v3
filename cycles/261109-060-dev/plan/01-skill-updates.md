@@ -90,8 +90,8 @@ ADR の Decision が `Main` と `Sub` に分かれ、`Adopted` がなくなり�
    1. update: `entrySkeleton` の `Decision` を、`Status:`、`Main:`、`Sub:`、`Policy:` の形に変え、`Adopted:` を置かない。`Main` と `Sub` を 1 つずつ置き、`Sub` を増やせることを示す。冒頭のコメントは「`references/adr.format.md` のエントリの形と合わせること」。
    2. update: `checkEntry` のコメントの「`Adopted` と `Policy` を合わせて」を「`Decision` セクション全体で」に変える。
 3. `.pi/skills/adr/scripts/index.test.ts`
-   1. update: `entrySkeleton` のテストに、`Main` と `Sub` があり、`Adopted` がないことを足す。
-      - `3.1: (happy) entrySkeleton(1) → Main と Sub があり、Adopted がない`
+   1. update: `entrySkeleton` のテストに、`Main` と `Sub` があることを足す。`Adopted`、`Cost`、`Options` の不在を確かめる assertion は置かない。
+      - `3.1: (happy) entrySkeleton(1) → Main と Sub がある`
    2. update: `entry()` の `Adopted` 行を、`Main` と `Sub` に変える。
       - `3.2: (happy) entry(decision) → Decision が Main と Sub の C/F を運ぶ`
    3. update: `--check` の CLI テストの ADR 文字列を、`Main` と `Sub` の形に変える。
@@ -583,7 +583,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ### Slice 1: adr-decision
 
 - Findings:
-- Unplanned:
+- Unplanned: テストの不在 assertion（`Adopted`、`Cost`、`Options`）は置かない（オーナーの指示）。
 - Commit:
 - Stopped:
 
