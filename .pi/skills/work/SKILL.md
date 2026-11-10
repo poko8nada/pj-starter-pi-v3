@@ -186,15 +186,17 @@ Steps:
 1. Run the plan's checks the agent can run.
 2. Break the code that carries two or three behaviors this plan adds, run the plan's executable check, confirm it goes red, and restore it.
 3. Read what it changed for a plan that adds no behavior.
-4. Write `## Acceptance` with `Ran`, `Findings` and `Doubts`.
-5. Commit it in the worktree with `consult(<plan id>): acceptance`.
-6. Repeat this step when a finding is fixed.
+4. Say whether the implementation achieves the plan's `Goal`.
+5. Write `## Acceptance` with `Goal`, `Ran`, `Findings` and `Doubts`.
+6. Commit it in the worktree with `consult(<plan id>): acceptance`.
+7. Repeat this step when a finding is fixed.
 
 View:
 
 | check                                  | who closes it |
 | -------------------------------------- | ------------- |
 | `Always` and the executable `Added`    | the agent     |
+| the plan's `Goal`                      | the agent     |
 | the whole typecheck and test           | the agent     |
 | the broken-and-restored behavior check | the agent     |
 | the front in cmux-browser              | the owner     |
@@ -202,6 +204,8 @@ View:
 
 Notes:
 
+- `Goal` is the plan's `Goal`.
+- A gap between the `Goal` and the implementation is a `Findings` line.
 - The agent runs in the worktree (or the base).
 - The executable `Added` is DB, auth and other.
 - A plan that adds no behavior is a document or a setting.
@@ -227,7 +231,7 @@ Notes:
 
 Steps:
 
-1. Show the owner the `## Acceptance`'s `Ran`, `Findings` and `Doubts`.
+1. Show the owner the `## Acceptance`'s `Goal`, `Ran`, `Findings` and `Doubts`.
 2. Wait for their OK before the merge.
 3. A `yolo` plan passes this confirmation: the agent's acceptance check is the confirmation.
 

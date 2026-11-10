@@ -117,6 +117,7 @@ Section and field names are English; the content is Japanese.
 
 ## Acceptance
 
+- Goal:
 - Ran:
 - Findings:
 - Doubts:
@@ -372,6 +373,8 @@ The work's review record.
 
 The acceptance's record.
 
+- `Goal` holds the plan's `Goal` and whether the implementation achieves it.
+- A gap between the `Goal` and the implementation is a `Findings` line.
 - `Ran` holds the checks that were run.
 - `Findings` holds one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`.
 - `なし` when there is nothing.
