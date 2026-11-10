@@ -48,7 +48,7 @@
 | 025 | 0.9.5 | wip    | 060-d        | mid      | スキルの修正                              |
 | 024 | 0.9.5 | done   | 058-d, 059-d | mid      | スキルの見直し                            |
 | 023 | 0.9.5 | done   | 057-d        | mid      | スキルの文体と構造の見直し                |
-| 022 | 0.9.4 | _todo_ |              | mid      | コンサルの稼働状況表示                    |
+| 022 | 0.9.4 | done   | 061-d        | mid      | コンサルの稼働状況表示                    |
 | 021 | 0.9.4 | done   | 056-d        | mid      | proofreaderにja-checkの利用を義務化       |
 | 020 | 0.9.4 | done   | 054-f        | mid      | affected.mdのja-check除外                 |
 | 019 | 0.9.4 | done   | 055-f        | high     | affected.mdの調査と内容変更               |
