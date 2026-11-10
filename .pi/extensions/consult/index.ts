@@ -6,6 +6,8 @@
  */
 
 import { rmSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createRuntime, type ConsultRuntime, type PiFace } from './tool/consult.ts';
 import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/subagents.ts';
@@ -23,10 +25,15 @@ import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
+import { loadTypes } from './policy/types.ts';
+import { countRoles, showRunning, type WidgetUI } from './view/widget.ts';
 import { registerNotice } from './view/notice.ts';
 
 /** いまの pi のセッション id である。`session_start` で読み直す（照合に使うだけ） */
 let session = '';
+
+/** 拡張のルート。`types.json` はここに置く */
+const EXTENSION_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** cwd から保存場所を決める。頂点が取れなければ cwd 自身に落とす（読み込みで例外を投げない） */
 function placeOf(cwd: string): Place {
@@ -65,6 +72,8 @@ export interface TickPort {
   readonly place: Place;
   readonly sessionNow: () => string;
   readonly check?: CheckRecord;
+  /** 表示の窓口。tick が 5 秒ごとにウィジェットをセットし直す */
+  readonly ui: WidgetUI;
 }
 
 /**
@@ -96,6 +105,24 @@ export function flushPending(port: TickPort): number {
 
 let tickTimer: ReturnType<typeof setInterval> | undefined;
 
+/** 表示に並べる役割の順序。`types.json` の並びを読み、読めなければ空の配列を返す */
+function roleOrder(): readonly string[] {
+  try {
+    return loadTypes(EXTENSION_DIR).map((type) => type.name);
+  } catch {
+    return [];
+  }
+}
+
+/** いまの session の稼働表示を 1 回セットする。失敗は握って、呼び出し側を止めない */
+function showRunningOnce(ui: WidgetUI, place: Place, sessionId: string, check?: CheckRecord): void {
+  try {
+    showRunning(ui, countRoles(runningRuns(place, { session: sessionId }, check), roleOrder()));
+  } catch {
+    // 表示は補助。失敗しても開始を止めない
+  }
+}
+
 /**
  * 5 秒ごとに、印のない完了を渡し、まだあれば音を鳴らす。すでに動いていれば何もしない。
  *
@@ -117,10 +144,15 @@ export function startTick(port: TickPort): void {
       if (current === '') {
         return;
       }
-      const running = runningRuns(port.place, { session: current }, port.check).length > 0;
+      const running = runningRuns(port.place, { session: current }, port.check);
       const pending = pendingReports(port.place, { session: current, days: KEEP_DAYS }).length > 0;
-      if (running || delivered > 0 || pending) {
+      if (running.length > 0 || delivered > 0 || pending) {
         playSound();
+      }
+      try {
+        showRunning(port.ui, countRoles(running, roleOrder()));
+      } catch {
+        // 表示の更新で落ちても、実行と音と完了報告は止めない
       }
     } catch {
       // 音の判定で落ちても tick は止めない
@@ -204,24 +236,8 @@ function closeQuietly(place: Place, current: string): void {
   }
 }
 
-export default function (pi: ExtensionAPI) {
-  const place = placeOf(process.cwd());
-  const consult = createRuntime(pi, place, undefined, () => session);
-
-  // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
-  registerNotice(pi);
-
-  // reload をまたいだサブエージェントがまだ走っていれば知らせ、tick で記録を読み直す
-  pi.on('session_start', (_event, ctx) => {
-    session = readSession(ctx);
-    closeQuietly(place, session);
-    announceRunningSubagents(place, session, ctx);
-    sweep(place, ctx.cwd);
-    flushPending({ pi, place, sessionNow: () => session });
-    pruneCursors(place, new Date(), KEEP_DAYS);
-    startTick({ pi, place, sessionNow: () => session });
-  });
-
+/** consult_run の道具を登録する。サブエージェントを始めた直後に、表示をセットし直す */
+function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place): void {
   pi.registerTool({
     name: 'consult_run',
     label: 'Consult run',
@@ -236,8 +252,35 @@ export default function (pi: ExtensionAPI) {
       'The policy (models, tools, isolated, paths, bash, continueByDefault, limits, role) lives in .pi/extensions/consult/types.json; the caller cannot override it.',
     ],
     parameters: RUN_PARAMETERS,
-    execute: (...args) => consult.run(...args),
+    execute: (...args) => {
+      const started = consult.run(...args);
+      const [, , , , ctx] = args;
+      showRunningOnce(ctx.ui, place, session);
+      return started;
+    },
   });
+}
+
+export default function (pi: ExtensionAPI) {
+  const place = placeOf(process.cwd());
+  const consult = createRuntime(pi, place, undefined, () => session);
+
+  // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
+  registerNotice(pi);
+
+  // reload をまたいだサブエージェントがまだ走っていれば知らせ、tick で記録を読み直す
+  pi.on('session_start', (_event, ctx) => {
+    session = readSession(ctx);
+    closeQuietly(place, session);
+    announceRunningSubagents(place, session, ctx);
+    showRunningOnce(ctx.ui, place, session);
+    sweep(place, ctx.cwd);
+    flushPending({ pi, place, sessionNow: () => session, ui: ctx.ui });
+    pruneCursors(place, new Date(), KEEP_DAYS);
+    startTick({ pi, place, sessionNow: () => session, ui: ctx.ui });
+  });
+
+  registerRunTool(pi, consult, place);
 
   pi.registerTool({
     name: 'consult_subagents',

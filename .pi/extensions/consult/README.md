@@ -173,6 +173,8 @@ Whatever has to reach the subagent reaches it as `task`. There is no way to hand
 
 A subagent is started **detached**: it outlives the pi process that started it, so a reload does not kill it, and its work stays in its worktree. When a subagent finishes, the completion is one row in the record (the report body with the values that point at the run). The session re-reads the record every 5 seconds and hands rows without a mark over one by one, adding one mark row for each handover (a notice may arrive twice, but none is lost). The old cursor (`delivered.json`) is only read as the water level for notice rows written before this change; nothing new is written to it.
 
+Above the editor, consult shows one line for the running subagents of this session: one count per role, in the order `types.json` gives, and a role with none is left out, so an idle line is gone. It is read from the same record as the sound, and it is set from the same 5-second tick and at `session_start`, so a subagent that was running before a reload is counted.
+
 **Esc does not stop a subagent.** The tool call has already returned, so there is no call left to cancel. Use `consult_subagents{action: "cancel", id}` (or `/consult-cancel <id>`).
 
 There are two faces for stopping a subagent, and one implementation behind them:

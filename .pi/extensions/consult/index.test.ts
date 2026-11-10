@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { aRunRecord } from './consult.fixture.ts';
+import { aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
 import entry, { flushPending, startTick, stopTick, type TickPort } from './index.ts';
 import { renderNotice } from './view/notice.ts';
+import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { rowsOf } from './tool/subagents.ts';
 import type { ConsultMessage, PiFace } from './tool/consult.ts';
@@ -51,6 +52,11 @@ function fakePi(fail: { next: boolean } = { next: false }): {
   return { pi, sent };
 }
 
+/** 呼び出しを捨てる ui。ウィジェットを見ないテストで使う */
+function quietUI(): WidgetUI {
+  return { setWidget: () => {} };
+}
+
 function portFor(
   found: Place,
   pi: PiFace,
@@ -61,6 +67,7 @@ function portFor(
     pi,
     place: found,
     sessionNow: () => session,
+    ui: quietUI(),
     ...(check === undefined ? {} : { check }),
   };
 }
@@ -199,6 +206,48 @@ describe('startTick / stopTick', () => {
 
     expect(sent).toHaveLength(0);
     expect(played).toHaveLength(0);
+  });
+});
+
+describe('widget', () => {
+  it('走っている review が 1 体 → consult-running に rev:1 をセットする', () => {
+    const found = place();
+    appendRun(found, aRunRecord({ role: 'review', pid: process.pid }), new Date());
+    const { pi } = fakePi();
+    const { ui, calls } = aWidgetUI();
+    startTick({ ...portFor(found, pi, 'session-a'), ui });
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+
+    expect(calls).toContainEqual({ key: WIDGET_KEY, content: ['[rev:1]'] });
+  });
+
+  it('何も走っていない → consult-running に undefined をセットする', () => {
+    const found = place();
+    const { pi } = fakePi();
+    const { ui, calls } = aWidgetUI();
+    startTick({ ...portFor(found, pi, 'session-a'), ui });
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+
+    expect(calls).toContainEqual({ key: WIDGET_KEY, content: undefined });
+  });
+
+  it('setWidget が投げる → 音は鳴り、完了報告の送信は続く', () => {
+    const found = place();
+    pending(found);
+    const { pi, sent } = fakePi();
+    const ui: WidgetUI = {
+      setWidget: () => {
+        throw new Error('ui');
+      },
+    };
+    startTick({ ...portFor(found, pi, 'session-a'), ui });
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+
+    expect(sent).toHaveLength(1);
+    expect(played).toHaveLength(1);
   });
 });
 

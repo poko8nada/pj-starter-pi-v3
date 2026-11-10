@@ -13,6 +13,7 @@
 import type { TypePolicy } from './policy/types.ts';
 import type { ConsultOptions } from './sub/spec.ts';
 import type { RunRecord } from './run/log.ts';
+import type { WidgetUI } from './view/widget.ts';
 
 /** 最小の正しい type を作る。1 箇所だけ壊すときに使う */
 export function aTypePolicy(overrides: Partial<TypePolicy> = {}): TypePolicy {
@@ -58,4 +59,18 @@ export function aRunRecord(overrides: Partial<RunRecord> = {}): RunRecord {
     started: 1000,
     ...overrides,
   };
+}
+
+/** `setWidget` の呼び出しを記録する ui。呼び出しは `calls` に順に残る */
+export function aWidgetUI(): {
+  readonly ui: WidgetUI;
+  readonly calls: ReadonlyArray<{ readonly key: string; readonly content: unknown }>;
+} {
+  const calls: Array<{ key: string; content: unknown }> = [];
+  const ui: WidgetUI = {
+    setWidget: (key: string, content: unknown) => {
+      calls.push({ key, content });
+    },
+  };
+  return { ui, calls };
 }

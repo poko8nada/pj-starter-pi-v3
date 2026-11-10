@@ -24,6 +24,7 @@
   index.ts                        update
   index.test.ts                   update
   README.md                       update
+  consult.fixture.ts              update
   types.json
   policy/
     types.ts
@@ -103,43 +104,44 @@ export interface TickPort {
       ```
 
    2. add: `countRoles(runs, order)` を足す。記録を役割ごとに数え、`order` の順、そのあとに初出順で返す。
-   3. add: `runningLine(counts)` を足す。数が 0 より大きい役割だけを `res:2 rev:1` の 1 行にする。1 つもなければ `undefined` を返す。
+   3. add: `runningLine(counts)` を足す。数が 0 より大きい役割だけを `[res:2 rev:1]` の 1 行にする。1 つもなければ `undefined` を返す。
    4. add: `showRunning(ui, counts)` を足す。行があれば 1 行の配列、なければ `undefined` を `WIDGET_KEY` に渡す。
 
 2. `.pi/extensions/consult/index.ts`
    1. update: `TickPort` に `ui: WidgetUI` を足す。
    2. update: 拡張のルート（`EXTENSION_DIR`）と、`types.json` の並びを読む `roleOrder()` を足す。読めなければ空の配列を返す。
-   3. update: tick で `runningRuns` の配列を持ち、音を鳴らしたあとに `showRunning(port.ui, countRoles(running, roleOrder()))` を個別の try/catch で呼ぶ。
-   4. update: `session_start` で、`runningRuns` をもとに同じ表示を 1 回セットする。表示の更新に失敗しても握りつぶし、開始を止めない。
+   3. update: `consult_run` の実行で、サブエージェントを始めた直後に `showRunningOnce(ctx.ui, place, session)` を呼ぶ。
+   4. update: tick で `runningRuns` の配列を持ち、音を鳴らしたあとに `showRunning(port.ui, countRoles(running, roleOrder()))` を個別の try/catch で呼ぶ。
+   5. update: `session_start` で、`runningRuns` をもとに同じ表示を 1 回セットする。表示の更新に失敗しても握りつぶし、開始を止めない。
 
 3. `.pi/extensions/consult/index.test.ts`
    1. update: `portFor` にテスト用の `ui` を足して、`setWidget` の呼び出しを記録する。
    2. update: tick の検査に次のケースを足す。
 
-      - `widget`: (happy) review が 1 体稼働している → `consult-running` に `rev:1` をセットする
+      - `widget`: (happy) review が 1 体稼働している → `consult-running` に `[rev:1]` をセットする
       - `widget`: (empty) 何も稼働していない → `consult-running` に `undefined` をセットする
       - `widget`: (error) `setWidget` が投げる → 音は鳴り、完了報告の送信は続く
 
 4. `.pi/extensions/consult/view/widget.test.ts`
    1. add: 次のケースを持つ。
 
-      - `widget`: (happy) research 2 体と review 1 体があり、`order` が `types.json` の並びの場合 → `res:2 rev:1`
-      - `widget`: (boundary) 定めた 5 つの役割に含まれない `custom` が 1 体 → `cus:1`
-      - `widget`: (boundary) 先頭 3 文字が同じ `research` と `researcher` が 1 体ずつ → `res:1 res:2`
+      - `widget`: (happy) research 2 体と review 1 体があり、`order` が `types.json` の並びの場合 → `[res:2 rev:1]`
+      - `widget`: (boundary) 定めた 5 つの役割に含まれない `custom` が 1 体 → `[cus:1]`
+      - `widget`: (boundary) 先頭 3 文字が同じ `research` と `researcher` が 1 体ずつ → `[res:1 res:1]`
       - `widget`: (empty) 記録がない → `undefined`
 
 5. `.pi/extensions/consult/README.md`
    1. update: `Background and stopping` の detached の段落のあとに、表示の段落を足す。
 
       ```md
-      Above the editor, consult shows one line for the running subagents of this session: one count per role, in the order `types.json` gives, and a role with none is left out, so an idle line is gone. It is read from the same record as the sound, and it is set from the same 5-second tick and at `session_start`, so a subagent that was running before a reload is counted.
+      Above the editor, consult shows one line for the running subagents of this session: one count per role in brackets (`[res:2 pro:1]`), in the order `types.json` gives, and a role with none is left out, so an idle line is gone. It is read from the same record as the sound, and it is set when a subagent starts, from the same 5-second tick and at `session_start`, so a subagent that was running before a reload is counted.
       ```
 
 ### Policy
 
 - Allowed:
   - 表示では、`ctx.ui.setWidget` に文字列の配列を渡してよい。
-  - consult は、表示の値を 5 秒ごとの tick と `session_start` でセットし直してよい。
+  - consult は、表示の値を開始、5 秒ごとの tick、`session_start` でセットし直してよい。
   - consult は、他の拡張と同じ場所に consult 固有のキーで表示を出してよい。
   - 先頭 3 文字が同じ役割は、同じ短い名前で表示してよい。
 - Forbidden:
@@ -203,8 +205,10 @@ export interface TickPort {
 
 ### Slice 1: 稼働中の数の表示
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: `cycles/261110-061-dev/plan/01-running-widget.md:128` と `.pi/extensions/consult/view/widget.test.ts:44` — 衝突のケースの期待値を `res:1 res:2` から `res:1 res:1` に直した。`research` と `researcher` がそれぞれ 1 体で、テストが赤になるため待てなかった。
+- Unplanned: `.pi/extensions/consult/consult.fixture.ts` に `aWidgetUI` を置き、2 つのテストにあった同じ偽の `ui` を 1 か所にまとめた。`plan` の `Files` になかったが、オーナーの指示で共有したため、待てなかった。
+- Unplanned: オーナーの確認で、`[]` のあしらいと、開始の瞬間の表示を足した。ADR の `C5`、`Decision`、`Policy` と、`plan` の 1 行、手順、テストの期待値を直した。開始の遅れは確認で見つかったため、待てなかった。
 - Commit:
 - Stopped:
 
