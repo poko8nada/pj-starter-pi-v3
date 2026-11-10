@@ -615,7 +615,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned: ステップ 5 の長い一文を、短いステップ 5〜7 と `Notes` に分割した（オーナーの指示）。
-- Commit:
+- Commit: 33c1ba77c6f194d13c9a8eabbc3590dbd3eb5595
 - Stopped:
 
 ### Slice 5: scope-first
