@@ -598,7 +598,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned:
-- Commit:
+- Commit: f2b058c26095a7018c1b0166faf502d571f979ad
 - Stopped:
 
 ### Slice 4: pre-research
