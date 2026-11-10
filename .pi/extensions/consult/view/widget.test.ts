@@ -1,18 +1,12 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { aRunRecord, aWidgetUI } from '../consult.fixture.ts';
+import { aRunRecord } from '../consult.fixture.ts';
 import { loadTypes } from '../policy/types.ts';
-import { WIDGET_KEY, countRoles, roleShort, runningLine, showRunning } from './widget.ts';
+import { countRoles, runningLine } from './widget.ts';
 
 const extensionDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const ORDER = loadTypes(extensionDir).map((type) => type.name);
-
-describe('roleShort', () => {
-  it('名前の先頭 3 文字を返す', () => {
-    expect(roleShort('proofreader')).toBe('pro');
-  });
-});
 
 describe('countRoles / runningLine', () => {
   it('order の順に数え、動いている役割だけの 1 行にする', () => {
@@ -39,23 +33,5 @@ describe('countRoles / runningLine', () => {
 
   it('記録がない → undefined', () => {
     expect(runningLine(countRoles([], ORDER))).toBeUndefined();
-  });
-});
-
-describe('showRunning', () => {
-  it('1 行の配列にしてウィジェットに渡す', () => {
-    const { ui, calls } = aWidgetUI();
-
-    showRunning(ui, countRoles([aRunRecord({ role: 'review' })], ORDER));
-
-    expect(calls).toEqual([{ key: WIDGET_KEY, content: ['[rev:1]'] }]);
-  });
-
-  it('行がなければ undefined を渡して消す', () => {
-    const { ui, calls } = aWidgetUI();
-
-    showRunning(ui, []);
-
-    expect(calls).toEqual([{ key: WIDGET_KEY, content: undefined }]);
   });
 });

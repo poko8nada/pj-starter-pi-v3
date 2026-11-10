@@ -440,7 +440,6 @@ export interface ConsultRuntime {
   run(...args: RunExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
   control(action: ControlAction, session: string): ControlOutcome;
   commands: {
-    status(args: string, ctx: CommandContext): Promise<void>;
     cancel(args: string, ctx: CommandContext): Promise<void>;
     sound(args: string, ctx: CommandContext): Promise<void>;
   };
@@ -483,17 +482,6 @@ export function createRuntime(
     control: (action, session) =>
       controlSubagent(action, state.subagents, state.place, session, undefined, check),
     commands: {
-      status: async (_args, ctx) => {
-        const outcome = controlSubagent(
-          { action: 'list' },
-          state.subagents,
-          state.place,
-          state.sessionNow(),
-          undefined,
-          check,
-        );
-        ctx.ui.notify(outcome.text, 'info');
-      },
       cancel: async (args, ctx) => {
         const id = args.trim();
         if (id === '') {

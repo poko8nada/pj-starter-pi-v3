@@ -11,7 +11,7 @@
 ## Design
 
 - Inside:
-  - Modules: `view/widget.ts` を足します。役割の数え方、1 行の組み立て、`setWidget` の呼び出しを 1 か所にまとめ、`index.ts` では tick と `session_start` から呼ぶだけにします。新しい表示の処理は `view/notice.ts` と同じ view の関心に置きます。短い名前は名前の先頭 3 文字で作り、並び順は `types.json` の並び順を使います。名前と順序の出どころを 1 つに保つためです。作業はスライス 1、2 の順に進めます。`index.ts`、`index.test.ts`、`README.md` は 2 つのスライスが触りますが、スライス 1 は表示の追加、スライス 2 はコマンドの削除で、変える行は重なりません。
+  - Modules: `view/widget.ts` を足します。役割の数え方、1 行の組み立て、`setWidget` の呼び出しを 1 か所にまとめ、`index.ts` では tick と `session_start` から呼ぶだけにします。新しい表示の処理は `view/notice.ts` と同じ view の関心に置きます。短い名前は名前の先頭 3 文字で作り、並び順は `types.json` の並び順を使います。名前と順序の出どころを 1 つに保つためです。作業はスライス 1、2 の順に進めます。`index.ts`、`index.test.ts`、`README.md` は 2 つのスライスが触りますが、スライス 1 は表示の追加、スライス 2 はコマンドの削除で、変える行は重なりません。スライス 2 は、なくなるものだけなのでテストケースを持ちません。存在しなくなるものを試すテストは書かないためです。
   - Dirs: なし。
 - Outside:
   - Extract: なし。
@@ -175,12 +175,7 @@ export interface TickPort {
 2. `.pi/extensions/consult/tool/consult.ts`
    1. drop: `ConsultRuntime.commands` から `status` を消す。
    2. drop: `createRuntime` の `commands.status` の実装を消す。
-3. `.pi/extensions/consult/index.test.ts`
-   1. update: テスト用の `registerCommand` が名前を記録するようにして、次のケースを足す。
-
-      - `command`: (happy) 拡張の入口を呼び出す → `consult-cancel` と `consult-sound` が登録され、`consult-status` は登録されない
-
-4. `.pi/extensions/consult/README.md`
+3. `.pi/extensions/consult/README.md`
    1. update: `Background and stopping` の表の user の行から `/consult-status` の記載を消し、`/consult-cancel <id>` だけを残す。
 
 ### Policy
@@ -209,13 +204,13 @@ export interface TickPort {
 - Unplanned: `cycles/261110-061-dev/plan/01-running-widget.md:128` と `.pi/extensions/consult/view/widget.test.ts:44` — 衝突のケースの期待値を `res:1 res:2` から `res:1 res:1` に直した。`research` と `researcher` がそれぞれ 1 体で、テストが赤になるため待てなかった。
 - Unplanned: `.pi/extensions/consult/consult.fixture.ts` に `aWidgetUI` を置き、2 つのテストにあった同じ偽の `ui` を 1 か所にまとめた。`plan` の `Files` になかったが、オーナーの指示で共有したため、待てなかった。
 - Unplanned: オーナーの確認で、`[]` のあしらいと、開始の瞬間の表示を足した。ADR の `C5`、`Decision`、`Policy` と、`plan` の 1 行、手順、テストの期待値を直した。開始の遅れは確認で見つかったため、待てなかった。
-- Commit:
+- Commit: b91df7719580155034945c0245d8613b23bc8b59
 - Stopped:
 
 ### Slice 2: `/consult-status` の廃止
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: スライス 1 で足した `roleShort` と `showRunning` の単体テストを消した（振る舞いが `runningLine` と tick のテストで重複するため）。`/consult-status` の不在を試すテストも消した（存在しなくなるものを試さない）。
 - Commit:
 - Stopped:
 

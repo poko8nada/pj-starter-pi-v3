@@ -193,10 +193,6 @@ function announceRunningSubagents(
 
 /** 人が使う入口である。サブエージェントの一覧と停止、音の切り替えを受け付ける */
 function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
-  pi.registerCommand('consult-status', {
-    description: 'List the consult subagents that are still running',
-    handler: (args, ctx) => consult.commands.status(args, ctx),
-  });
   pi.registerCommand('consult-cancel', {
     description: 'Stop a running consult subagent (usage: /consult-cancel <id>)',
     handler: (args, ctx) => consult.commands.cancel(args, ctx),

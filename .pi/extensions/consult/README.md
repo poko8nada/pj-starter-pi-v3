@@ -179,10 +179,10 @@ Above the editor, consult shows one line for the running subagents of this sessi
 
 There are two faces for stopping a subagent, and one implementation behind them:
 
-| Who       | How                                                                             |
-| --------- | ------------------------------------------------------------------------------- |
-| The user  | `/consult-status` lists the running subagents; `/consult-cancel <id>` stops one |
-| The agent | the `consult_subagents` tool with `action: "cancel"` and an `id`                |
+| Who       | How                                                              |
+| --------- | ---------------------------------------------------------------- |
+| The user  | `/consult-cancel <id>` stops one                                 |
+| The agent | the `consult_subagents` tool with `action: "cancel"` and an `id` |
 
 An unknown id is refused with a reason, and nothing is stopped. A subagent this instance holds is stopped through its `AbortSignal`; a subagent from before a reload is stopped by sending SIGTERM to the pid in the record — only when it is still running (no end row for that subagent and its `startToken` still matches its pid's `lstart`), since the end row is written by the side that held that subagent, and where that side is already gone the row stays `lost` and its worktree is left in place (with its changes) so the agent can decide. A start with an end row, or with a `startToken` that no longer matches, is refused as already finished or lost and nothing is killed.
 
