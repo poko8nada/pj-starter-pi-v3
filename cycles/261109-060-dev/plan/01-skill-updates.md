@@ -627,7 +627,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned: Decision のステップ 5 と 6 を削除した。`Main`、`Sub`、`Policy` は Loop が、`Context` の項目とフェンスは Loop のステップ 3 と 4 が書く（オーナーの指示）。
-- Commit:
+- Commit: 1d1bca1fb99309687037699b41f402fcc7ab8304
 - Stopped:
 
 ### Slice 7: review-policy
