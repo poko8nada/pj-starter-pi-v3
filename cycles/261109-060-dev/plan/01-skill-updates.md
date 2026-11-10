@@ -691,6 +691,6 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ## Acceptance
 
 - Goal: 5 つのエントリの決定が、adr・plan・work・close のスキル、テンプレート、検査、記録に反映された。
-- Ran: `pnpm test:run`（63 ファイル、784 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node .pi/skills/adr/scripts/index.mjs --check`、ja-check。壊して戻す確認: `collect.mjs` の `LABELS` から `Policy` を外すと `collect.test.ts` の `Policy` が赤（15 件中 1 件）、戻すと緑。`adr.mjs` の `entrySkeleton` から `Sub` を外すと `index.test.ts` の `Sub` が赤（60 件中 1 件）、戻すと緑。
+- Ran: `pnpm test:run`（63 ファイル、784 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node .pi/skills/adr/scripts/index.mjs --check`、ja-check。壊して戻す確認: `collect.mjs` の `LABELS` から `Policy` を外すと `collect.test.ts` の `Policy` が赤（15 件中 1 件）、戻すと緑。`adr.mjs` の `entrySkeleton` から `Sub` を外すと `index.test.ts` の `Sub` が赤（60 件中 1 件）、戻すと緑。精読: 変えた 12 ファイル全体を読み、番号、パス、名前、形を当て、5 つのエントリの決定が反映されていることを確かめた。
 - Findings: なし
 - Doubts: なし
