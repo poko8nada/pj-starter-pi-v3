@@ -79,6 +79,13 @@ export function roleOrder(dir = EXTENSION_DIR): readonly string[];
 - Stopped:
   - なし
 
+### Cleanup: roleOrder テストの重複と前提の見直し
+
+- Findings:
+  - なし
+- Unplanned:
+  - なし
+
 ## Work Review
 
 ### Round 1
