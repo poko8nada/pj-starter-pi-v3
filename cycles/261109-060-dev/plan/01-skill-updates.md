@@ -641,13 +641,13 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned:
-- Commit:
+- Commit: 41702a5341abf2d19aa7e96785ca94cf65a6a1ad
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
