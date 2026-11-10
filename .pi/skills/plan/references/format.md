@@ -348,6 +348,7 @@ The work's review record.
   - `Stale` — what this change made stale: a doc, a comment, a test, or a sentence the change makes redundant
   - `Unlisted` — a change the plan's `Files` does not name
   - `Gaps` — a hole the slices passed over, a behavior the checks do not exercise; a decided value is not a gap
+  - `Policy` — a `Policy` line the diff does not keep: an `Allowed` it forbids, or a `Forbidden` it does
   - `Unproven` — a test that would stay green if the behavior it names were removed
   - `Noise` — a test step a type, a schema or a DB constraint already settles, or one nobody would notice
 - `Doubts` — a note that is not a finding, and still worth keeping: one bullet each.

@@ -181,3 +181,17 @@ describe('collectPlan with review', () => {
     expect(again).toContain(`### 01 ${planId} (ADR ${adrNo})`);
   });
 });
+
+describe('collectPlan with Policy', () => {
+  it('(happy) planDoc に Policy の観点を渡す → Policy の指摘が残りとして出る', () => {
+    const doc = planDoc({
+      no: adrNo,
+      name: planId,
+      notes: 'なし',
+      review: ['Policy: a policy hole'],
+    });
+    const items = collectPlan(doc);
+    expect(items.map((item) => item.finding)).toContain('a policy hole');
+    expect(items.map((item) => item.place)).toContain('Work Review Round 1');
+  });
+});

@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
 
 /** セクションや観点の見出し（出どころではない行） */
 const LABELS =
-  /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Unproven|Noise|Doubts):\s*(.*)$/;
+  /^(Findings|Unplanned|Commit|Stopped|Ran|Stale|Unlisted|Gaps|Policy|Unproven|Noise|Doubts):\s*(.*)$/;
 /** 出どころに対する対応 */
 const HANDLINGS = /^(fixed|left):\s*(.*)$/;
 const ADR_FIELD = /^-\s*No:\s*(.*)$/;
@@ -29,7 +29,7 @@ const ADR_FIELD = /^-\s*No:\s*(.*)$/;
 const UNKNOWN = '未特定';
 /** 番号行。`1. <line> / …`。plan は上の `### ` の見出しから取る */
 const NUMBERED = /^\s*\d+\.\s+(\d+)\s+\//;
-/** 出どころを並べる所（`Slice 2 (…)` / `Round 1`）の見分け */
+/** 出どころを並べる所（`Slice 2 (…)` / `Round 1`）の識別 */
 const SLICE_PLACE = /^Slice\s+(\d+):\s*(.*)$/;
 const ROUND_PLACE = /^Round\s+(\d+)/;
 

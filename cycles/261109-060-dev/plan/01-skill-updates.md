@@ -633,7 +633,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ### Slice 7: review-policy
 
 - Findings:
-- Unplanned:
+- Unplanned: ja-check が `collect.mjs` の既存コメントの語を誤検出したため、「識別」に直した。
 - Commit:
 - Stopped:
 
