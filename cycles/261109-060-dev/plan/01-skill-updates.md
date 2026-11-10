@@ -584,7 +584,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned: テストの不在 assertion（`Adopted`、`Cost`、`Options`）は置かない（オーナーの指示）。
-- Commit:
+- Commit: 9785bce5dd30759bd9708fc6a5dd7e68378c324c
 - Stopped:
 
 ### Slice 2: plan-goal-no
