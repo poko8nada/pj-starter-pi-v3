@@ -48,7 +48,7 @@ View:
 
 Steps:
 
-1. Split the cycle into entries. One entry is one question.
+1. Split the cycle into entries. One entry has one `Main`.
 2. Show the owner the split and each entry's intent.
 3. Rewrite a rejected split, and show it again.
 4. Add every agreed entry at once, in the split's order, with the scaffold:
@@ -57,7 +57,21 @@ Steps:
    - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in both files.
 5. Show the owner a new entry found while an entry runs, and add it after the answer.
 
-Note: write what the chat settled at once. Do not keep an agreement only in the chat.
+View:
+
+| case                                                                               | the entry     |
+| ---------------------------------------------------------------------------------- | ------------- |
+| the main concern                                                                   | one `Main`    |
+| a change that follows the `Main`'s change or addition uniquely, without discussion | one `Sub`     |
+| a change that needs discussion, or does not follow uniquely                        | another entry |
+
+Notes:
+
+- Write what the chat settled at once. Do not keep an agreement only in the chat.
+- An entry has one `Main` and may have `Sub`s.
+- A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
+- A change that needs discussion, or does not follow uniquely, is another entry.
+- The owner's answer decides the split.
 
 ## One entry
 
