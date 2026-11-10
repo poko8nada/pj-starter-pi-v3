@@ -634,7 +634,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned: ja-check が `collect.mjs` の既存コメントの語を誤検出したため、「識別」に直した。
-- Commit:
+- Commit: 3f0cf52343725f98c7e4b06369ca7ce8652992ab
 - Stopped:
 
 ### Slice 8: acceptance-goal
