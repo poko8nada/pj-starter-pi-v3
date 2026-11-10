@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tempDir } from '../../../test/temp-dir.ts';
 import { aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
@@ -6,11 +8,13 @@ import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
 import entry, {
   flushPending,
+  roleOrder,
   showRunningOnce,
   startTick,
   stopTick,
   type TickPort,
 } from './index.ts';
+import { loadTypes } from './policy/types.ts';
 import { renderNotice } from './view/notice.ts';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
@@ -264,6 +268,17 @@ describe('showRunningOnce', () => {
     showRunningOnce(ui, found, 'session-a');
 
     expect(calls).toEqual([{ key: WIDGET_KEY, content: undefined }]);
+  });
+});
+
+describe('roleOrder', () => {
+  it('roleOrder: (happy) 既定のルートで呼ぶ → types.json の並びを返す', () => {
+    const root = dirname(fileURLToPath(import.meta.url));
+    expect(roleOrder()).toEqual(loadTypes(root).map((type) => type.name));
+  });
+
+  it('roleOrder: (empty) types.json のない一時ディレクトリで呼ぶ → [] を返す', () => {
+    expect(roleOrder(tempDir())).toEqual([]);
   });
 });
 

@@ -70,8 +70,8 @@ export function roleOrder(dir = EXTENSION_DIR): readonly string[];
 
 ### Slice 1: 読み失敗のテスト
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
