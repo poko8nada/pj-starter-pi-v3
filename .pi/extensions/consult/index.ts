@@ -105,10 +105,10 @@ export function flushPending(port: TickPort): number {
 
 let tickTimer: ReturnType<typeof setInterval> | undefined;
 
-/** 表示に並べる役割の順序。`types.json` の並びを読み、読めなければ空の配列を返す */
-function roleOrder(): readonly string[] {
+/** 表示に並べる役割の順序。`types.json` の並びを読み込み、失敗時は空の配列を返す */
+export function roleOrder(dir = EXTENSION_DIR): readonly string[] {
   try {
-    return loadTypes(EXTENSION_DIR).map((type) => type.name);
+    return loadTypes(dir).map((type) => type.name);
   } catch {
     return [];
   }
