@@ -105,7 +105,7 @@ The entry stage runs once per entry, in the order the split gave.
 
 Steps:
 
-1. Agree the scope with the owner in the chat. Every kind, one by one, `In` or `Out`.
+1. Write the `Scope` to adr.md, every kind, `In` or `Out`.
 2. Let the owner correct the list.
 3. Write the result to the entry's `Scope` as `In:` and `Out:`.
 
