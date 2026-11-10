@@ -264,16 +264,37 @@ export interface TickPort {
 ### Round 2
 
 - Stale:
+  - `.pi/extensions/consult/view/widget.ts:4` — fixedを確認。冒頭コメントが `[res:2 pro:1]`（括弧あり）になっている。理由：実装（`:65`）と plan（`plan:107`）の括弧ありと一致し、旧形 `res:2 pro:1` は残っていないため。
+  - `.pi/extensions/consult/view/widget.ts:57` — fixedを確認。`runningLine` の doc が `[res:2 pro:1]` になっている。理由：同上、旧形は残っていないため。
+  - `.pi/extensions/consult/index.ts:69` — fixedを確認。`TickPort` の説明が「保存場所と、いまのセッションと、送る pi と、表示の窓口を持つ」になっている。理由：`:76` の `ui` と整合し、「だけ」の偽装が解消されたため。
+  - `.pi/extensions/consult/index.ts:199` — fixedを確認。`registerCommands` の説明から「一覧」が消え「サブエージェントの停止と、音の切り替え」になっている。理由：スライス 2 で `consult-status` が消え、残り（cancel と sound のみ）と一致するため。
+  - `.pi/extensions/consult/index.test.ts:210` — fixedを確認。ケース名が `[rev:1]` になっている。理由：断言（`:219`）と plan のケース（`plan:121`）の `[rev:1]` と一致するため。
+  - `.pi/extensions/consult/README.md:176` — fixedを確認。段落が “it is set when a subagent starts, from the same 5-second tick and at `session_start`” を含む形になっている。理由：実装（`index.ts:259` の開始直後、`index.ts:158` の tick、`index.ts:277` の `session_start`）と plan の fence（`plan:141`）に整合するため。
+  - `cycles/261110-061-dev/plan/01-running-widget.md:14` — fixedを確認。Design が「tick、`session_start`、開始の直後から呼ぶだけ」になっている。理由：Steps 2.3（`plan:113`）の開始直後の呼び出しと一致するため。
 - Unlisted:
+  - なし — Round 1 の当該区分に `fixed:` 行がなく、確認対象外。`git diff HEAD~1..HEAD` のコード変更は `index.ts`、`index.test.ts`、`README.md`、`view/widget.ts`、`view/widget.test.ts` に収まる。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:118`（旧 `:255`）— fixedを確認。`showRunningOnce` が export され、`index.test.ts:251-268` に走っている記録→`[rev:1]` と記録なし→`undefined` の 2 件がある。理由：Steps 2.3 が呼ぶ関数自体の振る舞いが exercised され、呼び出し（`index.ts:259` の開始直後、`index.ts:277` の `session_start`）と対応するため。
+  - `.pi/extensions/consult/index.ts:277`（旧 `:272`）— fixedを確認。上記と同じ 2 件で、`session_start` が呼ぶ関数（`showRunningOnce`）の振る舞いが確かめられている。理由：`session_start` ハンドラが当該関数を呼ぶこと（`:277`）と、ヘルパーのテスト内容が一致するため。
 - Policy:
+  - なし — Round 1 の当該区分に `fixed:` 行がなく、確認対象外。今回差分の表示文言・キー・try/catch に Forbidden の違反なし。
 - Unproven:
+  - `.pi/extensions/consult/view/widget.test.ts:22` — fixedを確認。`code` と `research` の組で `[res:1 cod:1]` を断言するケースがある。理由：`types.json` 順（research＜code の前後）が辞書順（code＜research）と逆であり、実装が辞書順に変われば赤になるため。
+  - `.pi/extensions/consult/view/widget.test.ts:34` — fixedを確認。`zeta` と `alpha` の 2 体で `[zet:1 alp:1]`（初出順）を断言するケースがある。理由：要素 2 体で初出順の配置が観測でき、未知役割の配置を壊せば赤になるため。
 - Noise:
+  - なし — Round 1 の当該区分に `fixed:` 行がなく、確認対象外。
 - Doubts:
+  - `.pi/extensions/consult/index.ts:259,277` — `showRunningOnce` のヘルパー自体はテストされたが、`consult_run` の execute（`:259`）と `session_start` ハンドラ（`:277`）の呼び出し元の配線を直接 exercised するテストはない（`entry wiring` はレンダラーのみ）。finding 化は見送り、ヘルパー止まりでよいか・使い捨て確認で足りるかをオーナー判断としたい。理由：ヘルパーが正しくても呼び出しが外れれば Goal の即時性・復元が失われるが、配線の自動テストは既存方針（`entry` の偽物は使う入口のみ）を超える手間が要るため。
 
 ## Acceptance
 
-- Goal:
+- Goal: 達成している。稼働中のサブエージェントの数が、エディタの上に他の拡張の表示と並んで `[res:2 pro:1]` のように見え、`/consult-status` はない。オーナーが `/reload` のあとに 3 体を動かし、`[res:2 pro:1]` から数が減って消えるまでを見て承認した。
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run`: 64 ファイル、791 件が通った。
+  - `pnpm typecheck`: `root: ok`、`.pi: ok`。
+  - `pnpm lint`: 指摘なし。
+  - `pnpm format:check`: すべて整っている。
+  - `pnpm test:related .pi/extensions/consult/index.ts .pi/extensions/consult/view/widget.ts .pi/extensions/consult/index.test.ts .pi/extensions/consult/view/widget.test.ts`: 21 件が通った。
+  - 壊して赤を確かめた: 角括弧を外す → 7 件が赤、順序を辞書順にする → 2 件が赤、0 体で `undefined` を返さない → 3 件が赤。3 つとも戻した。
+- Findings: なし
+- Doubts: `.pi/extensions/consult/index.ts:259,277` — `showRunningOnce` のヘルパーはテストしたが、`consult_run` の execute と `session_start` ハンドラの配線を直接試すテストはない。オーナーの look では即時表示と復元を見たが、配線を外したときに赤になるテストはない。
