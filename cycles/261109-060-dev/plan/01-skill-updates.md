@@ -654,22 +654,39 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ### Round 1
 
 - Stale:
+  - `.pi/skills/plan/references/format.md:104` — `## Shape` の `### Round 1`（`### Round 2` の `:113` も同じ）が `Policy` の行を持たず、本文の観点一覧が6観点になった後も5観点のままである。Slice 7 の「`## Work Review` に `Policy` の観点を足す」は本文だけに足され、型（`Shape`）に足されていない。
+    - fixed: `## Shape` の `### Round 1` と `### Round 2` に `- Policy:` を足した。
 - Unlisted:
+  - なし — `Files` の12件はすべて更新されている。`cycles/` 配下の差分（plan md の `Notes`・`Steps` 整備と `adr.md` の2行削除）は所有者承認の記録整備であり、実装の変更ではない。
 - Gaps:
+  - `.pi/skills/adr/scripts/index.test.ts:289` — `Sub` が C/F を運ぶ振る舞いを動かす検査がない。`checkEntry` の各テストも CLI の `--check`（`:574` の ADR 文字列に `Sub` がない）も `Sub` 行を作らず、Slice 1 の case `3.2` が名指す「`Main` と `Sub` の C/F」のうち `Sub` 側がどの検査にも現れない。
+    - fixed: `index.test.ts` に、`Sub` が C を運ぶ `checkEntry` のテストを足した。
 - Policy:
+  - `.pi/skills/work/SKILL.md:288` — 「`Gaps` holds their holes（`Policy` and `Goal`）」が残り、Slice 7 の `Forbidden`（`Gaps` に Policy の確認を残すこと）が守られていない。`### 6. Review`（`:161`〜`:165`）では分割したが、`How not to write this` では分割していない。
+    - fixed: `work/SKILL.md` の `How not to write this` を、`Policy` と `Gaps` がそれぞれの穴を持つ形に直した。
 - Unproven:
+  - なし — 各テストは名指す振る舞いが壊れると赤になる（`Sub` の不在は `Gaps` に書いたとおり、名指すテスト自体がない）。
 - Noise:
+  - なし — `collect.test.ts` の `Policy` の case（`5.1`）は `LABELS` の変更を赤で示せる意味のある検査で、既存の `review` の case と同じ書き方である。
 - Doubts:
+  - 作業ツリーに `base..HEAD` の外の `M ROADMAP.md` がある。今回の差分ではなく読んでいない。扱いは所有者の判断に任せる。
 
 ### Round 2
 
 - Stale:
+  - `.pi/skills/plan/references/format.md:104` — 直った。理由：`## Shape` の `### Round 1`（現行102〜108行）と `### Round 2`（現行112〜118行）に `- Policy:` があり、本文の6観点と一致することを確かめた。
 - Unlisted:
+  - なし — Round 1がなしでfixed対象がないため、新たに確かめる差分はない。
 - Gaps:
+  - `.pi/skills/adr/scripts/index.test.ts:336` — 直った。理由：`Sub` が `C2` を運ぶ `checkEntry` のテストがあり、`Sub` を無視すれば `C2` の抜けで赤になる構成（`:298〜300` の欠けテストと対になる）のため、`Sub` 側が検査に現れることを確かめた。
 - Policy:
+  - `.pi/skills/work/SKILL.md:288` — 直った。理由：現行288行が「`Policy` holds the `Policy`'s holes, and `Gaps` the `Goal`'s.」で、`Policy` と `Gaps` を分割し、Slice 7の `Forbidden` に合うことを確かめた。
 - Unproven:
+  - なし — Round 1がなしでfixed対象がないため、新たに確かめる検査はない。
 - Noise:
+  - なし — 同上。fixed対象がなく、Round 1の判断（`collect.test.ts` の `5.1` は意味のある検査）が崩れる変更はない。
 - Doubts:
+  - なし — Round 2で新たに見つけた疑いはない。Round 1の `M ROADMAP.md` は今回の差分の外でfixed対象がなく、扱いはcloseに任せる。
 
 ## Acceptance
 

@@ -285,4 +285,4 @@ Steps:
 - When the plan is dropped: do not author its plan md. It is copied as it is.
 - When you clean the tests: do not drop a test that hides its premise. Move the premise into the test; the test itself is right.
 - When you fix a hole: do not do it silently. It goes in the record.
-- When you run the slices: do not drop the plan's `Policy` and `Goal`. The task carries them, and `Gaps` holds their holes.
+- When you run the slices: do not drop the plan's `Policy` and `Goal`. The task carries them; `Policy` holds the `Policy`'s holes, and `Gaps` the `Goal`'s.

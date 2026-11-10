@@ -102,6 +102,7 @@ Section and field names are English; the content is Japanese.
 - Stale:
 - Unlisted:
 - Gaps:
+- Policy:
 - Unproven:
 - Noise:
 - Doubts:
@@ -111,6 +112,7 @@ Section and field names are English; the content is Japanese.
 - Stale:
 - Unlisted:
 - Gaps:
+- Policy:
 - Unproven:
 - Noise:
 - Doubts:
