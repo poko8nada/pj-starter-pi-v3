@@ -17,21 +17,21 @@ Steps:
 
 1. Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`.
 2. Read every accepted entry in full.
-3. Write `No` at the top of a normal plan md as it is.
+3. Write the entry numbers the plan carries at the top of a normal plan md as `No`.
 4. Read the Triage line in `close.md` for an `ex-` plan, and do not write `No`.
 
 View:
 
-| plan   | source                  | `No`                      |
-| ------ | ----------------------- | ------------------------- |
-| normal | the ADR's entries       | the entry number as it is |
-| `ex-`  | the close's Triage line | none                      |
+| plan   | source                  | `No`                          |
+| ------ | ----------------------- | ----------------------------- |
+| normal | the ADR's entries       | the entry numbers as they are |
+| `ex-`  | the close's Triage line | none                          |
 
 Notes:
 
 - Each entry's `Definition` is the scope boundary.
 - The Triage line is the only source for an `ex-` plan.
-- A normal plan's `Goal` comes from the ADR's `Adopted` one-liner.
+- A normal plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - An `ex-` plan's `Goal` comes from the close's Triage line.
 
 ### 2. Read the affected
@@ -98,11 +98,11 @@ View:
 | `### External` item  | the step's `Outside:`                   |
 | a path               | a `Files` line                          |
 
-| `Adopted` | mark     |
-| --------- | -------- |
-| `Add`     | `add`    |
-| `Update`  | `update` |
-| `Drop`    | `drop`   |
+| `Main` / `Sub` | mark     |
+| -------------- | -------- |
+| `Add`          | `add`    |
+| `Update`       | `update` |
+| `Drop`         | `drop`   |
 
 | work                           | check     |
 | ------------------------------ | --------- |
@@ -184,14 +184,14 @@ Notes:
 
 Steps:
 
-1. Write one plan md, and send it to Round 1 at once: the plan md, every file it names, and the ADR's `Adopted`, `Policy`, `Scope` and `Definition`.
+1. Write one plan md, and send it to Round 1 at once: the plan md, every file it names, and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`.
 2. Read the Round 1 report, and fix the plan from the findings.
 3. Send the fixed plan to Round 2, which checks each Round 1 finding: fixed, or left with the reason.
 4. Report to the owner what was done with each finding.
 
 View:
 
-- `Goal` — the plan's `Goal` against the ADR's `Adopted`; can the plan achieve it?
+- `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
 - `Design` — the four questions.
 - `Files` — the files the affected names, and a file it does not name.
 - `Slice` — the slice whose concern its heading names, and whose closure its `Verify` proves.

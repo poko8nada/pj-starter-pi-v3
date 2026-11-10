@@ -9,9 +9,9 @@ When the plan md is written and its cut is agreed.
 ```text
 Answer one question: can this plan achieve its Goal, and do the Steps and the Policy carry the ADR?
 
-1. Read the plan md, the files it names, and the ADR's `Adopted`, `Policy`, `Scope` and `Definition`.
+1. Read the plan md, the files it names, and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`.
 2. Answer under these viewpoints:
-   - `Goal` — the plan's `Goal` against the ADR's `Adopted`; can the plan achieve it?
+   - `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
    - `Design` — the four questions.
    - `Files` — the files the affected names, and a file it does not name.
    - `Slice` — `Types` (a declaration the code uses but `Types` does not name, and one against the type rules), `Steps` (the target files from the affected or `External`, and the ADR's `Add`/`Update`/`Drop` without omission), `Policy` (the ADR's `Policy` without omission), `Verify` (one that does not run as written, one red with the change, and one green with the behavior removed), and `Cases` (the test steps' cases against `## Test cases`).
@@ -46,7 +46,7 @@ When the plan has a line it cannot write.
 ```text
 Answer for one line the plan cannot write, and nothing else.
 
-The task names the line, the ADR's `Adopted` and `Scope`, and what the plan holds so far.
+The task names the line, the ADR's `Main` and `Sub` and `Scope`, and what the plan holds so far.
 
 1. Before writing, read the file the line belongs to again.
 2. Ask one question within these four kinds:

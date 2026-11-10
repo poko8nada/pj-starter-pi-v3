@@ -9,7 +9,7 @@ Section and field names are English; the content is Japanese.
 ````md
 # PLAN `<plan id>`
 
-- No: <NN>
+- No: <NN>[, <NN>...]
 - Place: <worktree|base>
 - Boundary Plans: <the plans this one stands on, and the order>
 
@@ -127,7 +127,7 @@ Section and field names are English; the content is Japanese.
 What the plan achieves, in one line.
 
 - `## Goal` sits above `## Design`, in one line.
-- A normal plan's `Goal` comes from the ADR's `Adopted` one-liner.
+- A normal plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - An `ex-` plan's `Goal` comes from the close's Triage line.
 - The cut's `Goal` and its `Summary` both stay.
 
@@ -146,8 +146,8 @@ The four questions the plan answers about shape, and why that shape.
 
 The ADR entry the plan carries.
 
-- `No` is the ADR's entry number, copied as it is.
-- A normal plan keeps `- No: <NN>` at the top.
+- `No` holds the entry numbers the plan carries, copied as they are, as a comma-separated list.
+- A normal plan keeps `- No: <NN>[, <NN>...]` at the top.
 - An `ex-` plan does not write `No`.
 - The close reads the `ADR <NN>` of the Triage line.
 - The Triage line is the only source.
