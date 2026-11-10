@@ -591,7 +591,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned:
-- Commit:
+- Commit: 0dedef9c4e09a036dfa08e0b77662c0c1486ec0a
 - Stopped:
 
 ### Slice 3: entry-split
