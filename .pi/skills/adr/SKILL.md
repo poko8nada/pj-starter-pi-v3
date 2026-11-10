@@ -55,7 +55,10 @@ Steps:
    - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and `affected.md`. When a file does not exist, it creates it first.
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from both files and renumbers the rest.
    - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in both files.
-5. Show the owner a new entry found while an entry runs, and add it after the answer.
+5. Read the `Look it up` section of `references/tasks.md`.
+6. Propose the pre-research of every entry together, and run the approved ones in parallel.
+7. Wait for all of them, and write each result in its entry's `Research & Trial`.
+8. Show the owner a new entry found while an entry runs, and add it after the answer.
 
 View:
 
@@ -65,6 +68,24 @@ View:
 | a change that follows the `Main`'s change or addition uniquely, without discussion | one `Sub`     |
 | a change that needs discussion, or does not follow uniquely                        | another entry |
 
+For the pre-research:
+
+| entry | type | question | what the answer decides |
+| ----- | ---- | -------- | ----------------------- |
+
+The types and the questions:
+
+| type                        | the question it answers                       |
+| --------------------------- | --------------------------------------------- |
+| the official information    | can it be built here, and does it fit the use |
+| the source                  | can it be built here, and does it fit the use |
+| the shape it is used in now | how it is held up where it is already done    |
+
+| question              | asked when                                                 |
+| --------------------- | ---------------------------------------------------------- |
+| `compare`             | the ways are not visible yet                               |
+| `mechanism`, `triage` | whether this candidate holds here, and what its limits are |
+
 Notes:
 
 - Write what the chat settled at once. Do not keep an agreement only in the chat.
@@ -72,6 +93,9 @@ Notes:
 - A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
 - A change that needs discussion, or does not follow uniquely, is another entry.
 - The owner's answer decides the split.
+- The proposal names the type, the question, and what the answer would decide.
+- Group the entries whose question is the same.
+- Run one `research` or `trial` subagent per group after the owner approves.
 
 ## One entry
 
@@ -127,34 +151,21 @@ View:
 
 Note: do not leave out what is known. What is not known yet stays out, and the research or the discussion adds it.
 
-### 3. Pre-research
+### 3. The opening proposal
 
 Steps:
 
-1. Read the `Look it up` section of `references/tasks.md`.
-2. Propose the type and the question together, and say what the answer would decide.
-3. Run one `research` subagent after the owner approves. Look up what the owner approved, and nothing else.
-4. Write the facts to `Research & Trial`.
-
-View:
-
-| type                        | the question it answers                       |
-| --------------------------- | --------------------------------------------- |
-| the official information    | can it be built here, and does it fit the use |
-| the source                  | can it be built here, and does it fit the use |
-| the shape it is used in now | how it is held up where it is already done    |
-
-| question              | asked when                                                 |
-| --------------------- | ---------------------------------------------------------- |
-| `compare`             | the ways are not visible yet                               |
-| `mechanism`, `triage` | whether this candidate holds here, and what its limits are |
+1. Read the entry's pre-research facts in `Research & Trial`, and what they decide.
+2. Read the `Decision` section of `references/adr.format.md`.
+3. Write the opening proposal of the Discussion Loop in the entry's `Decision`, with `Status` empty.
+4. Say what the facts decide and what the proposal is, and go to the Discussion Loop.
 
 Notes:
 
-- The facts come back with their source. A question nobody could answer comes back as a fact too, with what it is holding up.
+- The proposal is in adr.md, not only in the chat.
+- The facts serve the opening proposal.
 - A fact that is still missing stops the entry. It is looked up here, not in the decision.
 - When the holding point is a fact nobody has, a `trial` subagent may try it in a worktree, with the owner's agreement. Read the `Try it` section of `references/tasks.md` before running.
-- The facts here serve the approach presentation at the start of section 4.
 
 ### 4. Discussion Loop
 

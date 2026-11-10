@@ -257,16 +257,18 @@ plan が、複数の ADR を束ね、`Main` を統合した `Goal` と複数の 
 ### Steps
 
 1. `.pi/skills/adr/SKILL.md`
-   1. add: Cycle 3 Entries のステップ 5 を足す。
+   1. add: Cycle 3 Entries のステップ 5〜7 を足す。
 
       ```md
-      5. Read the `Look it up` section of `references/tasks.md`. Propose the pre-research of every entry together: for each entry, the type, the question, and what the answer would decide. Group the entries whose question is the same. After the owner's approval, run one `research` or `trial` subagent per group in parallel. Wait for all of them, and write each result in its entry's `Research & Trial`.
+      5. Read the `Look it up` section of `references/tasks.md`.
+      6. Propose the pre-research of every entry together, and run the approved ones in parallel.
+      7. Wait for all of them, and write each result in its entry's `Research & Trial`.
       ```
 
-   2. update: 現在のステップ 5 をステップ 6 に繰り下げる。
+   2. update: 現在のステップ 5 をステップ 8 に繰り下げる。
 
       ```md
-      6. Show the owner a new entry found while an entry runs, and add it after the answer.
+      8. Show the owner a new entry found while an entry runs, and add it after the answer.
       ```
 
    3. add: Cycle 3 Entries に、まとめ提案の `View` を足す。
@@ -278,7 +280,15 @@ plan が、複数の ADR を束ね、`Main` を統合した `Goal` と複数の 
 
       `Pre-research` の `View` にあった 3 つの type と 3 つの question は、このまとめ提案の `View` に移す。
 
-   4. update: `### 3. Pre-research` を `### 3. The opening proposal` に置き換える。
+   4. add: Cycle 3 Entries の `Notes` に、pre-research の決まりを足す。
+
+      ```md
+      - The proposal names the type, the question, and what the answer would decide.
+      - Group the entries whose question is the same.
+      - Run one `research` or `trial` subagent per group after the owner approves.
+      ```
+
+   5. update: `### 3. Pre-research` を `### 3. The opening proposal` に置き換える。
 
       ```md
       1. Read the entry's pre-research facts in `Research & Trial`, and what they decide.
@@ -604,7 +614,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 ### Slice 4: pre-research
 
 - Findings:
-- Unplanned:
+- Unplanned: ステップ 5 の長い一文を、短いステップ 5〜7 と `Notes` に分割した（オーナーの指示）。
 - Commit:
 - Stopped:
 
