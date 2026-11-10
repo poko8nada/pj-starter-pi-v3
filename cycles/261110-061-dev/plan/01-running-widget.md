@@ -11,7 +11,7 @@
 ## Design
 
 - Inside:
-  - Modules: `view/widget.ts` を足します。役割の数え方、1 行の組み立て、`setWidget` の呼び出しを 1 か所にまとめ、`index.ts` では tick と `session_start` から呼ぶだけにします。新しい表示の処理は `view/notice.ts` と同じ view の関心に置きます。短い名前は名前の先頭 3 文字で作り、並び順は `types.json` の並び順を使います。名前と順序の出どころを 1 つに保つためです。作業はスライス 1、2 の順に進めます。`index.ts`、`index.test.ts`、`README.md` は 2 つのスライスが触りますが、スライス 1 は表示の追加、スライス 2 はコマンドの削除で、変える行は重なりません。スライス 2 は、なくなるものだけなのでテストケースを持ちません。存在しなくなるものを試すテストは書かないためです。
+  - Modules: `view/widget.ts` を足します。役割の数え方、1 行の組み立て、`setWidget` の呼び出しを 1 か所にまとめ、`index.ts` では tick、`session_start`、開始の直後から呼ぶだけにします。新しい表示の処理は `view/notice.ts` と同じ view の関心に置きます。短い名前は名前の先頭 3 文字で作り、並び順は `types.json` の並び順を使います。名前と順序の出どころを 1 つに保つためです。作業はスライス 1、2 の順に進めます。`index.ts`、`index.test.ts`、`README.md` は 2 つのスライスが触りますが、スライス 1 は表示の追加、スライス 2 はコマンドの削除で、変える行は重なりません。スライス 2 は、なくなるものだけなのでテストケースを持ちません。存在しなくなるものを試すテストは書かないためです。
   - Dirs: なし。
 - Outside:
   - Extract: なし。
@@ -121,12 +121,16 @@ export interface TickPort {
       - `widget`: (happy) review が 1 体稼働している → `consult-running` に `[rev:1]` をセットする
       - `widget`: (empty) 何も稼働していない → `consult-running` に `undefined` をセットする
       - `widget`: (error) `setWidget` が投げる → 音は鳴り、完了報告の送信は続く
+      - `widget`: (happy) 走っている記録で `showRunningOnce` を呼ぶ → `consult-running` に `[rev:1]` をセットする
+      - `widget`: (empty) 記録がない → `consult-running` に `undefined` をセットする
 
 4. `.pi/extensions/consult/view/widget.test.ts`
    1. add: 次のケースを持つ。
 
       - `widget`: (happy) research 2 体と review 1 体があり、`order` が `types.json` の並びの場合 → `[res:2 rev:1]`
+      - `widget`: (happy) `order` が辞書順と違う `code` と `research` → `[res:1 cod:1]`
       - `widget`: (boundary) 定めた 5 つの役割に含まれない `custom` が 1 体 → `[cus:1]`
+      - `widget`: (boundary) `order` にない `zeta` と `alpha` が 1 体ずつ → `[zet:1 alp:1]`
       - `widget`: (boundary) 先頭 3 文字が同じ `research` と `researcher` が 1 体ずつ → `[res:1 res:1]`
       - `widget`: (empty) 記録がない → `undefined`
 
@@ -211,20 +215,51 @@ export interface TickPort {
 
 - Findings: なし
 - Unplanned: スライス 1 で足した `roleShort` と `showRunning` の単体テストを消した（振る舞いが `runningLine` と tick のテストで重複するため）。`/consult-status` の不在を試すテストも消した（存在しなくなるものを試さない）。
-- Commit:
+- Commit: ed0a62f1c04dedbb229eae02cb89f279a94951c5
 - Stopped:
+
+### Cleanup: 走っている記録の前提
+
+- Findings: なし
+- Unplanned: `index.test.ts` の `startTick` のテストと `widget` のテストが、同じ「走っている記録」をそれぞれ組み立てていたので、`running(found, role)` にまとめた。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/view/widget.ts:4` — 冒頭コメントの例が `res:2 pro:1`（括弧なし）のまま。実装（`:65`）と plan（`plan:107`）は `[res:2 rev:1]` の括弧ありに変わった。理由：`[]` のあしらいを足した Unplanned で期待値は直したが、コメントの例が旧形のまま残ったため。
+    - fixed: 冒頭コメントの例を `[res:2 pro:1]` に直した。
+  - `.pi/extensions/consult/view/widget.ts:57` — `runningLine` の doc が同じく `res:2 pro:1` の旧形。理由：同上。
+    - fixed: `runningLine` の doc を `[res:2 pro:1]` に直した。
+  - `.pi/extensions/consult/index.ts:69` — `TickPort` の説明が「保存場所と、いまのセッションと、送る pi だけを持つ」だが、`:76` で `ui` を持つ。「だけ」が偽になった。理由：Steps 2.1 の `ui` 追加に説明が追従していないため。
+    - fixed: `TickPort` の説明に「表示の窓口」を足した。
+  - `.pi/extensions/consult/index.ts:194` — `registerCommands` の説明が「サブエージェントの一覧と停止、音の切り替え」だが、一覧（`consult-status`）はスライス 2 で消え、残りは cancel と sound のみ（`:195-204`）。理由：コマンド削除にコメントが追従していないため。
+    - fixed: `registerCommands` の説明から「一覧」を消した。
+  - `.pi/extensions/consult/index.test.ts:213` — ケース名が `rev:1` だが、断言（`:222`）と plan のケース（`plan:121`）は `[rev:1]`。理由：`[]` 追加後の名前の直し忘れで、読む者が形を誤読するため。
+    - fixed: ケース名を `[rev:1]` に直した。
+  - `.pi/extensions/consult/README.md:176` — 追加段落が「5 秒ごとの tick と `session_start` でセット」と書くが、実装（`index.ts:251-255`）は開始直後にもセットし、plan の fence（`plan:137`）も “set when a subagent starts” を含む。理由：開始直後の表示を足した Unplanned が README に反映されていないため。
+    - fixed: 段落を、開始のときにセットすることを含む形に直した。
+  - `cycles/261110-061-dev/plan/01-running-widget.md:14` — Design が「tick と `session_start` から呼ぶだけ」と書くが、Steps 2.3（`plan:113`）は開始直後の呼び出しを足した。理由：同じ Unplanned で Steps は直したが Design が旧形のままのため。
+    - fixed: Design を「tick、`session_start`、開始の直後」に直した。
 - Unlisted:
+  - なし — 差分のコード変更はすべて `Files` の指名内（`index.ts`、`index.test.ts`、`README.md`、`consult.fixture.ts`、`tool/consult.ts`、`view/widget.ts`、`view/widget.test.ts`）に収まる。plan と ADR の変更は記録のため対象外。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:255` — `consult_run` 実行直後の `showRunningOnce`（Steps 2.3）を自動テストが exercised しない。`index.test.ts:212-252` の widget 章は tick のみ。Added の look（`plan:161`）も `/reload` 後の表示だけで、開始から 5 秒以内の表示を確かめない。理由：ADR C5 の「開始の時点でセット」が自動でも目視でも区別されず、Goal の即時性に穴が残るため。
+    - fixed: `showRunningOnce` を export し、走っている記録から `[rev:1]` をセットするテストを足した。
+  - `.pi/extensions/consult/index.ts:272` — `session_start` での復元（Steps 2.5）を自動テストが exercised しない。Added の look は `/reload` 後を見るが、最初の tick（5 秒後）でも表示されるため、どちらの経路で出たか区別できない。理由：`session_start` 経路が壊れても tick が 5 秒後に直すので目視が通り、経路別の穴が残るため。
+    - fixed: 同じ `showRunningOnce` のテストで、`session_start` が呼ぶ関数の振る舞いを確かめた。
 - Policy:
+  - なし — Allowed（文字列の配列、開始・tick・`session_start` の 3 時点、固有キー、同名短縮）を満たし、Forbidden（失敗時の継続＝try/catch、テーマ色の保持なし、他拡張キー不使用、拡張間の積み順の保証なし）の違反なし。行内の `types.json` 順は ADR C4 の決定値のため、Forbidden の「順序を保証しない」（拡張間の積み順）には当たらない。
 - Unproven:
+  - `.pi/extensions/consult/view/widget.test.ts:12` — happy が research＋review のみで、`types.json` 順と辞書順が一致する（research＜review）ため、実装が辞書順に変わっても緑のまま。理由：順序の出所（`types.json`）を壊しても検出できず、code＋research のように両順序が逆になる組がないため。
+    - fixed: 辞書順と逆になる `code` と `research` のケースを足した。
+  - `.pi/extensions/consult/view/widget.test.ts:22` — custom 1 体では「初出順で後ろに置く」配置が観測できず、未知役割の配置を壊しても緑のまま。理由：要素が 1 つでは順序が定義されず、2 体組（例：zeta＋alpha）がないため。
+    - fixed: `order` にない `zeta` と `alpha` の 2 体のケースを足した。
 - Noise:
+  - なし — `[res:2 rev:1]`・`[cus:1]`・`[rev:1]` 等の括弧と短縮名は ADR C4 と plan の決定値のため、指示 4 により finding 化しない。
 - Doubts:
+  - `.pi/extensions/consult/index.ts:109` — `roleOrder()` の読失敗時 `[]`（Steps 2.2）を確かめるテストがなく、Added の look も正常系のみ。finding 化は見送り、捨て置きか使い捨て確認かをオーナー判断としたい。理由：`types.json` の読み失敗は稀で影響も小さい（初出順表示に退化するだけ）ため。
 
 ### Round 2
 

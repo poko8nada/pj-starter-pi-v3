@@ -4,7 +4,13 @@ import { aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { placeFor, type Place } from './run/place.ts';
-import entry, { flushPending, startTick, stopTick, type TickPort } from './index.ts';
+import entry, {
+  flushPending,
+  showRunningOnce,
+  startTick,
+  stopTick,
+  type TickPort,
+} from './index.ts';
 import { renderNotice } from './view/notice.ts';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
@@ -33,6 +39,11 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
 /** 記録は「いま」の日付ファイルに書く。読み取り側も同じテストの時計を見るので、日付は固定しない */
 function pending(found: Place): void {
   appendRun(found, record());
+}
+
+/** 走っている記録を 1 行足す。pid はこのテストのプロセスなので、既定の check で走っていると見える */
+function running(found: Place, role = 'review'): void {
+  appendRun(found, aRunRecord({ role, pid: process.pid }), new Date());
 }
 
 function fakePi(fail: { next: boolean } = { next: false }): {
@@ -119,21 +130,7 @@ describe('startTick / stopTick', () => {
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
     const found = place();
-    const subagent = 'consult-1';
-    appendRun(
-      found,
-      aRunRecord({
-        session: 'session-a',
-        subagent,
-        role: 'review',
-        pid: process.pid,
-        started: 1000,
-        ended: undefined,
-        state: undefined,
-        notice: undefined,
-      }),
-      new Date(),
-    );
+    running(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
 
@@ -210,9 +207,9 @@ describe('startTick / stopTick', () => {
 });
 
 describe('widget', () => {
-  it('走っている review が 1 体 → consult-running に rev:1 をセットする', () => {
+  it('走っている review が 1 体 → consult-running に [rev:1] をセットする', () => {
     const found = place();
-    appendRun(found, aRunRecord({ role: 'review', pid: process.pid }), new Date());
+    running(found);
     const { pi } = fakePi();
     const { ui, calls } = aWidgetUI();
     startTick({ ...portFor(found, pi, 'session-a'), ui });
@@ -248,6 +245,25 @@ describe('widget', () => {
 
     expect(sent).toHaveLength(1);
     expect(played).toHaveLength(1);
+  });
+});
+
+describe('showRunningOnce', () => {
+  it('走っている記録 → consult-running に [rev:1] をセットする', () => {
+    const found = place();
+    running(found);
+    const { ui, calls } = aWidgetUI();
+    showRunningOnce(ui, found, 'session-a');
+
+    expect(calls).toEqual([{ key: WIDGET_KEY, content: ['[rev:1]'] }]);
+  });
+
+  it('記録がない → consult-running に undefined をセットする', () => {
+    const found = place();
+    const { ui, calls } = aWidgetUI();
+    showRunningOnce(ui, found, 'session-a');
+
+    expect(calls).toEqual([{ key: WIDGET_KEY, content: undefined }]);
   });
 });
 

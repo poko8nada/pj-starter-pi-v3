@@ -19,10 +19,22 @@ describe('countRoles / runningLine', () => {
     expect(runningLine(countRoles(runs, ORDER))).toBe('[res:2 rev:1]');
   });
 
+  it('order が辞書順と違う組でも、order の順に並ぶ', () => {
+    const runs = [aRunRecord({ role: 'code' }), aRunRecord({ role: 'research' })];
+
+    expect(runningLine(countRoles(runs, ORDER))).toBe('[res:1 cod:1]');
+  });
+
   it('order にない役割は初出順で後ろに置き、名前の先頭 3 文字を使う', () => {
     const runs = [aRunRecord({ role: 'custom' })];
 
     expect(runningLine(countRoles(runs, ORDER))).toBe('[cus:1]');
+  });
+
+  it('order にない役割が 2 つ → 初出順で後ろに並ぶ', () => {
+    const runs = [aRunRecord({ role: 'zeta' }), aRunRecord({ role: 'alpha' })];
+
+    expect(runningLine(countRoles(runs, ORDER))).toBe('[zet:1 alp:1]');
   });
 
   it('先頭 3 文字が同じ役割は、同じ短い名前で 2 つ出る', () => {

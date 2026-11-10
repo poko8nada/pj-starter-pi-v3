@@ -66,7 +66,7 @@ function noticeDetails(record: RunRecord): Record<string, unknown> {
   };
 }
 
-/** tick に渡す窓口である。保存場所と、いまのセッションと、送る pi だけを持つ */
+/** tick に渡す窓口である。保存場所と、いまのセッションと、送る pi と、表示の窓口を持つ */
 export interface TickPort {
   readonly pi: PiFace;
   readonly place: Place;
@@ -115,7 +115,12 @@ function roleOrder(): readonly string[] {
 }
 
 /** いまの session の稼働表示を 1 回セットする。失敗は握って、呼び出し側を止めない */
-function showRunningOnce(ui: WidgetUI, place: Place, sessionId: string, check?: CheckRecord): void {
+export function showRunningOnce(
+  ui: WidgetUI,
+  place: Place,
+  sessionId: string,
+  check?: CheckRecord,
+): void {
   try {
     showRunning(ui, countRoles(runningRuns(place, { session: sessionId }, check), roleOrder()));
   } catch {
@@ -191,7 +196,7 @@ function announceRunningSubagents(
   );
 }
 
-/** 人が使う入口である。サブエージェントの一覧と停止、音の切り替えを受け付ける */
+/** 人が使う入口である。サブエージェントの停止と、音の切り替えを受け付ける */
 function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
   pi.registerCommand('consult-cancel', {
     description: 'Stop a running consult subagent (usage: /consult-cancel <id>)',

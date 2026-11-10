@@ -1,7 +1,7 @@
 /**
  * consult の稼働表示 — エディタの上の 1 行。
  *
- * 記録から数えた役割ごとの稼働数を、`res:2 pro:1` の 1 行にして、pi のウィジェットに渡す。
+ * 記録から数えた役割ごとの稼働数を、`[res:2 pro:1]` の 1 行にして、pi のウィジェットに渡す。
  * 短い名前は役割名の先頭 3 文字である。並びは `types.json` の並びで、そこにない役割は
  * 初出順に後ろへ置く。稼働が 0 の役割は出さない。
  */
@@ -54,7 +54,7 @@ export function countRoles(
   return out;
 }
 
-/** 稼働数を `res:2 pro:1` の 1 行にする。数が 0 より大きい役割だけを出し、1 つもなければ `undefined` */
+/** 稼働数を `[res:2 pro:1]` の 1 行にする。数が 0 より大きい役割だけを出し、1 つもなければ `undefined` */
 export function runningLine(counts: readonly RoleCount[]): string | undefined {
   const parts: string[] = [];
   for (const entry of counts) {
