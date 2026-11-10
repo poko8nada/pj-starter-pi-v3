@@ -70,10 +70,14 @@ export function roleOrder(dir = EXTENSION_DIR): readonly string[];
 
 ### Slice 1: 読み失敗のテスト
 
-- Findings: なし
-- Unplanned: なし
+- Findings:
+  - なし
+- Unplanned:
+  - なし
 - Commit:
+  - 12f7294 consult(ex-role-order-fallback): export roleOrder with dir fallback test
 - Stopped:
+  - なし
 
 ## Work Review
 
