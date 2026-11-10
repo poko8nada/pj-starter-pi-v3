@@ -622,7 +622,7 @@ work の acceptance が、実装が plan の `Goal` を達成しているかを 
 
 - Findings:
 - Unplanned:
-- Commit:
+- Commit: b2d4c66319d7b52b630cda7b925dcf9b29740c72
 - Stopped:
 
 ### Slice 6: loop-decision
