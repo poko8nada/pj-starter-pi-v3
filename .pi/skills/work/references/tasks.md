@@ -21,10 +21,7 @@ Work the plan's slices in order, as far as you can.
 5. Report the slices you worked, with their commits.
 ```
 
-- Agent passes `worktree` (for a worktree plan) and `continue: true` after the first run.
-- Role's own permissions (`types.json`) are what the subagent works under.
 - Check comes before the commit.
-- A filled `Commit` means that slice's check passed.
 
 ## Clean the tests (the `code` subagent, continued)
 
@@ -38,16 +35,13 @@ Clean the tests in the test files the plan's `Files` updates, and keep the suite
    - IF two or more tests check the same behavior → drop it.
    - IF the test is for a behavior that is gone → drop it.
    - IF the test is for a branch this plan's change stops making → drop it.
-   - IF the test is one the plan's `## Test cases` would not write (a premise the types, the schema or the DB already settle, one nobody would notice, or an `Add`, `Update` or `Drop` line with no case) → drop it.
+   - IF the test is one `.pi/skills/plan/references/design.md`'s `## Test cases` would not write (a premise the types, the schema or the DB already settle, one nobody would notice, or an `Add`, `Update` or `Drop` line with no case) → drop it.
    - IF the test hides the premise the behavior needs → move the premise into the test, and leave only the values that do not affect the behavior in the setup.
    - IF the test builds a premise another test already shares → share it when nobody changes it, and keep a mutable premise in each test.
    - IF none of the above → keep it.
 3. Drop the tests you found and fix the premises you found, and keep the suite green.
 4. Report it in the plan md's `## Notes`, as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`, and a fixed premise goes in `Unplanned`.
 ```
-
-- It is not a slice.
-- What went stale is known only after the change.
 
 ## Review (a `review` subagent)
 
@@ -56,7 +50,7 @@ When the slices and the test cleanup are done.
 ```text
 Answer one question: can this diff close the plan?
 
-1. Read the plan md (`## Files`, the slices' `### Verify` and `### Steps`, `## Notes`) and the test steps' cases by `.pi/skills/plan/references/format.md`'s `## Test cases`.
+1. Read the plan md (`## Files`, the slices' `### Verify` and `### Steps`, `## Notes`) and the test steps' cases by `.pi/skills/plan/references/design.md`'s `## Test cases`.
 2. Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git status` and `git log` are allowed for this role).
 3. Answer under six viewpoints:
    - `Stale` — a document, a comment or a test this change makes stale, or a sentence the change makes redundant
@@ -72,12 +66,7 @@ Answer one question: can this diff close the plan?
 6. Report the record you wrote, and change no code.
 ```
 
-- A Round 1 that finds nothing ends the review.
-- After Round 2 the review ends.
-- What is still open is fixed once more.
-- Nothing looks at it again: the record and the report hold it.
 - Reviewer's role allows it to write only `cycles/*/plan/*.md`.
-- It writes the record, and nothing else.
 
 ## Fixes (the `code` subagent, continued)
 
@@ -107,8 +96,3 @@ Acceptance found this, in cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md (`
    - IF one cannot be fixed here → write why under it in the same plan md instead, and leave it for the close.
 4. Report the findings you fixed, and the ones you left.
 ```
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.
