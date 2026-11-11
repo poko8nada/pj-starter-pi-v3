@@ -1,5 +1,5 @@
 [
-  "scripts/harness",
+  "scripts/harness-sync",
   ".pi",
   "scripts/checks",
   "scripts/product-ready",

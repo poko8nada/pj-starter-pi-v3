@@ -326,15 +326,18 @@ function readList(root: string): HarnessList;
 
 ### Slice 1: テストの除外を product-ready の設定へ移す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `scripts/product-ready/index.test.ts` の dry-run の表示断言が macOS の一時領域の symlink（`/var` と `/private/var`）で落ちたため、`realpathSync` で実パスに揃えた。子プロセスの `process.cwd()` が実パスを返すため、待ちきれない崩れとしてここで直した。
+- Commit: 445833ff7e92101ae117f1f2fc01a1369c07c90e
 - Stopped:
 
 ### Slice 2: ハーネス同期を harness-sync の名前へ揃える
 
 - Findings:
-- Unplanned:
+  - 旧名の `git grep` に `cycles/` の記録以外の残りが2件ある（`scripts/product-ready/index.test.ts:24` の試料値 `'scripts/harness'` と `ROADMAP.md:272` の当時の記述 `harness.json`）。
+    - left: 前者は Slice 2 の Policy が `scripts/product-ready` の変更（`test-exclude.json` を除く）を禁じるため。後者は過去の版の記録であり、直すと履歴を改ざんするため。どちらも振る舞いに影響しない。
+- Unplanned: なし
 - Commit:
 - Stopped:
 

@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * `scripts/harness/harness.json` の形
+ * `scripts/harness-sync/setting.json` の形
  * @typedef {{ readonly starter: string, readonly copy: readonly string[], readonly push: readonly string[] }} HarnessList
  */
 
@@ -13,7 +13,7 @@ import * as path from 'node:path';
  * @returns {HarnessList}
  */
 export function readList(root) {
-  const file = path.join(root, 'scripts', 'harness', 'harness.json');
+  const file = path.join(root, 'scripts', 'harness-sync', 'setting.json');
   let text;
   try {
     text = fs.readFileSync(file, 'utf8');

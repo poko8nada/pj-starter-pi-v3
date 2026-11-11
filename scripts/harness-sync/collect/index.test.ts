@@ -1,5 +1,5 @@
 /**
- * `scripts/harness/collect/index.mjs` の振る舞いを fake root で試す。
+ * `scripts/harness-sync/collect/index.mjs` の振る舞いを fake root で試す。
  *
  * fake root を `tempDir()` で作り、ファイルを置いてから `collect` で集める。
  * 期待はテストが渡した値から組み立てる。

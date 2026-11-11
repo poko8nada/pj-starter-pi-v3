@@ -55,7 +55,7 @@ Automated gates keep style, correctness, behavior, and wording consistent on eve
 
 Moving work between starter and product stays explicit and repeatable.
 
-- harness-sync: `scripts/harness/*` - Brings starter parts in and returns project parts back without deleting files.
+- harness-sync: `scripts/harness-sync/*` - Brings starter parts in and returns project parts back without deleting files.
 - product-ready: `scripts/product-ready/*` - Replaces roadmap, definition, and readmes with templates, and writes the test exclude list from test-exclude.json on first run.
 
 ### CI

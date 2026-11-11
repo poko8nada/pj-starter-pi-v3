@@ -55,7 +55,7 @@ English: [README.md](README.md)
 
 スターターとプロダクトの間の移動は、明示的で再現可能な形で行う。
 
-- harness-sync: `scripts/harness/*` - スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルは削除しない。
+- harness-sync: `scripts/harness-sync/*` - スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルは削除しない。
 - product-ready: `scripts/product-ready/*` - roadmap と定義と readme をテンプレートに置き換え、test-exclude.json の一覧をテストの除外に書く。
 
 ### CI

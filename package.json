@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist",
-    "harness:pull": "node scripts/harness/index.mjs pull",
-    "harness:push": "node scripts/harness/index.mjs push",
+    "harness-sync:pull": "node scripts/harness-sync/index.mjs pull",
+    "harness-sync:push": "node scripts/harness-sync/index.mjs push",
     "product:ready": "node scripts/product-ready/index.mjs",
     "test": "vitest",
     "test:run": "vitest run",
