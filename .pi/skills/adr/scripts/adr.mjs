@@ -8,6 +8,10 @@ export function entrySkeleton(nnn, title) {
   const q = title === undefined ? '<問い>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
+### Research & Trial
+
+- F1: <事実>。出所。
+
 ### Scope
 
 - In:
@@ -19,10 +23,6 @@ export function entrySkeleton(nnn, title) {
 
 - C1: <前提。いまの振る舞い>
 - C2: <制約。Who の要望、上限、変えないと決めたこと>
-
-### Research & Trial
-
-- F1 (C1): <事実>。出所。
 
 ### Decision
 
@@ -125,7 +125,7 @@ export function checkEntry(markdown) {
   for (const body of entries) {
     const nn = body.slice(0, 2);
     const cs = labels(section(body, 'Context'), /^- C(\d+):/gmu);
-    const fs = labels(section(body, 'Research & Trial'), /^- F(\d+) \(C\d+\):/gmu);
+    const fs = labels(section(body, 'Research & Trial'), /^- F(\d+):/gmu);
     const seenC = new Set();
     for (const n of cs) {
       if (seenC.has(n)) problems.push(`${nn}: C${n} is used twice`);

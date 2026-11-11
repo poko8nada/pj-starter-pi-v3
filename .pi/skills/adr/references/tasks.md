@@ -17,6 +17,22 @@ Answer the question the task carries, and nothing else.
 - The agent puts the question and the approved type in the task.
 - What is looked up is not carried into the ADR. Only the fact the decision rests on goes, and the ADR writes it.
 
+## Try it (a `trial` subagent)
+
+When the entry's holding point is a fact nobody has, and the owner agreed to a run.
+
+```text
+Try <the candidate> in <the setting>, in a worktree.
+
+1. Install it, set it up, and find the smallest shape that works.
+2. Ask before you touch the shared store.
+3. Leave the worktree as it is, and let nothing you write enter the product.
+4. Report three: what clashes, the versions, and the smallest working shape.
+```
+
+- The agent asks the owner before the subagent touches the shared store.
+- The trial is the bench: what it leaves is the fact, and nothing else.
+
 ## Look at the affected (a `research` subagent)
 
 When the agent needs the impact of one entry's decision.
@@ -50,19 +66,3 @@ Do not read the cycle's earlier affected, its plan, or a memo: the answers are t
 - The agent puts the entry and the change in the task.
 - The affected is written to `affected.md`, not to the ADR.
 - The agent checks the worksheet. A cell filled by `ls` or `find` alone is not accepted.
-
-## Try it (a `trial` subagent)
-
-When the entry's holding point is a fact nobody has, and the owner agreed to a run.
-
-```text
-Try <the candidate> in <the setting>, in a worktree.
-
-1. Install it, set it up, and find the smallest shape that works.
-2. Ask before you touch the shared store.
-3. Leave the worktree as it is, and let nothing you write enter the product.
-4. Report three: what clashes, the versions, and the smallest working shape.
-```
-
-- The agent asks the owner before the subagent touches the shared store.
-- The trial is the bench: what it leaves is the fact, and nothing else.

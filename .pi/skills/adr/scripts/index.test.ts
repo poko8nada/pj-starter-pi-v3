@@ -229,9 +229,9 @@ describe('entrySkeleton', () => {
       .filter((line) => line.startsWith('#'));
     const expected = [
       '## 01: <問い>',
+      '### Research & Trial',
       '### Scope',
       '### Context',
-      '### Research & Trial',
       '### Decision',
       '### Definition',
     ];
@@ -249,14 +249,14 @@ describe('entrySkeleton', () => {
   });
 });
 
-const entry = (
-  decision: string,
-  context = '- C1: 前提\n- C2: 制約',
-  research = '- F1 (C1): 事実',
-) =>
+const entry = (decision: string, context = '- C1: 前提\n- C2: 制約', research = '- F1: 事実') =>
   `# ADR 001
 
 ## 01: <問い>
+
+### Research & Trial
+
+${research}
 
 ### Scope
 
@@ -266,10 +266,6 @@ const entry = (
 ### Context
 
 ${context}
-
-### Research & Trial
-
-${research}
 
 ### Decision
 
@@ -304,9 +300,18 @@ describe('checkEntry', () => {
     const markdown = entry(
       decision('  - Add:\n      - 何か（C1, C2, F1）'),
       '- C1: 前提\n- C2: 制約',
-      '- F1 (C1): 事実\n- F3 (C1): 事実',
+      '- F1: 事実\n- F3: 事実',
     );
     expect(checkEntry(markdown)).toEqual(['01: F3 is not weighed']);
+  });
+
+  it('(happy) F のラベルを外した事実は、Decision に載らなくても通る', () => {
+    const markdown = entry(
+      decision('  - Add:\n      - 何か（C1, C2, F1）'),
+      '- C1: 前提\n- C2: 制約',
+      '- F1: 事実\n- 使わなかった事実',
+    );
+    expect(checkEntry(markdown)).toEqual([]);
   });
 
   it('(error) C9 への参照 → 未知の番号として返す', () => {
@@ -579,7 +584,7 @@ describe('CLI', () => {
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    const adr = `# ADR 015\n\n## 01: 問い\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1 (C1): 事実\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
+    const adr = `# ADR 015\n\n## 01: 問い\n\n### Research & Trial\n\n- F1: 事実\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
     const done = spawnSync(process.execPath, [script, '--root', root, '--check'], {
       encoding: 'utf8',

@@ -11,6 +11,10 @@ Section and field names are English; the content is Japanese.
 
 ## <NN>: <問い>
 
+### Research & Trial
+
+- F1: <事実>。出所。
+
 ### Scope
 
 - In:
@@ -22,10 +26,6 @@ Section and field names are English; the content is Japanese.
 
 - C1: <前提。いまの振る舞い>
 - C2: <制約。Who の要望、上限、変えないと決めたこと>
-
-### Research & Trial
-
-- F1 (C1): <事実>。出所。
 
 ### Decision
 
@@ -61,7 +61,7 @@ Section and field names are English; the content is Japanese.
 The entries the ADR holds.
 
 - `## <NN>: <問い>` holds one question, and its number runs from `01`.
-- The sections run `Scope`, `Context`, `Research & Trial`, `Decision`, `Definition`.
+- The sections run `Research & Trial`, `Scope`, `Context`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
 - One bullet is one rule.
 
@@ -99,10 +99,11 @@ The facts that limit the entry.
 
 ## Research & Trial
 
-The facts the decision weighs, with their sources.
+The facts the entry holds, with their sources.
 
-- A fact is one line, `F<n> (C<n>): <the fact>。<出所>`.
-- The first parenthesis names the `Context` item the fact serves.
+- A fact is one line, `F<n>: <the fact>。<出所>`.
+- The pre-research writes the facts here before the entry stage.
+- When the decision does not weigh a fact, remove its `F<n>:` label and keep the fact here as a plain bullet.
 
 ## Decision
 

@@ -55,10 +55,6 @@ Steps:
    - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and `affected.md`. When a file does not exist, it creates it first.
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from both files and renumbers the rest.
    - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in both files.
-5. Read the `Look it up` section of `references/tasks.md`.
-6. Propose the pre-research of every entry together, and run the approved ones in parallel.
-7. Wait for all of them, and write each result in its entry's `Research & Trial`.
-8. Show the owner a new entry found while an entry runs, and add it after the answer.
 
 View:
 
@@ -67,6 +63,24 @@ View:
 | the main concern                                                                   | one `Main`    |
 | a change that follows the `Main`'s change or addition uniquely, without discussion | one `Sub`     |
 | a change that needs discussion, or does not follow uniquely                        | another entry |
+
+Notes:
+
+- Write what the chat settled at once. Do not keep an agreement only in the chat.
+- An entry has one `Main` and may have `Sub`s.
+- A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
+- A change that needs discussion, or does not follow uniquely, is another entry.
+- The owner's answer decides the split.
+
+### 4. Pre-research
+
+Steps:
+
+1. Read the `Look it up` section of `references/tasks.md`.
+2. Propose the pre-research of every entry together. Name the entry, the type, the question, and what the answer decides.
+3. Run the approved ones in parallel. Group the entries whose question is the same, and run one `research` or `trial` subagent per group.
+4. Wait for all of them, and write each result in its entry's `Research & Trial`.
+5. Show the owner a new entry found while the pre-research runs, and add it after the answer.
 
 For the pre-research:
 
@@ -88,14 +102,7 @@ The types and the questions:
 
 Notes:
 
-- Write what the chat settled at once. Do not keep an agreement only in the chat.
-- An entry has one `Main` and may have `Sub`s.
-- A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
-- A change that needs discussion, or does not follow uniquely, is another entry.
-- The owner's answer decides the split.
-- The proposal names the type, the question, and what the answer would decide.
-- Group the entries whose question is the same.
-- Run one `research` or `trial` subagent per group after the owner approves.
+- The pre-research runs before the entry stage. Its facts are in `Research & Trial` before the first entry starts.
 
 ## One entry
 
@@ -202,9 +209,10 @@ Notes:
 Steps:
 
 1. Check that every `C` and every `F` is carried.
-2. When one is missing, explain it to the owner, and return to section 4.
-3. Wait for the owner's judgement: `accepted` or `rejected`.
-4. Write `Status`.
+2. When a `C` is missing, explain it to the owner, and return to section 4.
+3. When an `F` is not carried, remove its `F<n>:` label and keep the fact in `Research & Trial` as a plain bullet. Do not delete the content.
+4. Wait for the owner's judgement: `accepted` or `rejected`.
+5. Write `Status`.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
 
