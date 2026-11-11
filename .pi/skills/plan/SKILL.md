@@ -144,7 +144,7 @@ Notes:
 Steps:
 
 1. List what making the slices and the steps found: what the ADR does not decide, and what file the work would touch that the affected does not name.
-2. Report them to the owner before the review and the proofread, with `なし` when there is nothing.
+2. Report them to the owner before the reviews and the proofread, with `なし` when there is nothing.
 3. Wait for the owner's answer, and follow it before going on.
 
 Notes:
@@ -181,13 +181,24 @@ Notes:
 - The agent sets the threshold for the question.
 - The research is not a ritual at every plan.
 
-### 7. Review, one plan at a time
+### 7. Review the plan for a first-time subagent
 
 Steps:
 
-1. Write one plan md, and send it to Round 1 at once: the plan md, every file it names, and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`.
-2. Read the Round 1 report, and fix the plan from the findings.
-3. Send the fixed plan to Round 2, which checks each Round 1 finding: fixed, or left with the reason.
+1. Read the `First review of a plan` section of `references/tasks.md`.
+2. Send one plan md to one `review` subagent. Give it the plan md only: no ADR, no affected, no chat. The codebase is readable.
+3. Read the report. For every `迷うが実装できる` and `実装できない`, fix the plan from the ADR. When the ADR does not hold it, decide the supplement by your own principles, and write it in the existing format: the substep line, a fence under it, the `Design`, or the `Types`.
+4. Do not send the fixed plan to the first review again.
+
+Note: the first review asks whether a subagent with only the plan md can implement each substep. It does not check the ADR.
+
+### 8. Review the plan against the ADR
+
+Steps:
+
+1. Read the `Review of a plan against the ADR` section of `references/tasks.md`.
+2. Send the plan md and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition` to one `review` subagent. The reviewer reads the files the plan names.
+3. Read the report, and fix the plan from the findings.
 4. Report to the owner what was done with each finding.
 
 View:
@@ -209,9 +220,8 @@ Notes:
 - One subagent per plan.
 - When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
 - With two or more plans, while that review runs, write the next plan file. A plan that is fixed from its review does not wait for the others.
-- Round 2 checks the Round 1 fixes. It does not review the whole plan again.
 
-### 8. Japanese Proofread
+### 9. Japanese Proofread
 
 Steps:
 
@@ -239,7 +249,7 @@ Notes:
 - One round.
 - A repaired file does not go through the subagent again.
 
-### 9. Show the owner
+### 10. Show the owner
 
 Steps:
 
@@ -272,4 +282,3 @@ Notes:
 - When you write `Steps`: do not write one line per file. Write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`.
 - When you write a slice: do not leave its `Policy` out. Copy the ADR's `Policy` without omission and without `C`/`F`.
 - When you touch a file the affected does not name: do not go on without reporting it to the owner in step 5.
-- In Round 2: do not review the whole plan again. Check only the Round 1 fixes.

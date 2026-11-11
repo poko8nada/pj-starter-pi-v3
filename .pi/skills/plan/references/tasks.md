@@ -2,9 +2,45 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules.
 
-## Review of a plan (a `review` subagent)
+## First review of a plan (a `review` subagent)
 
-When the plan md is written and its cut is agreed.
+When the plan md is written and its cut is agreed, before the review against the ADR.
+
+```text
+You receive one plan md, and nothing else. You can read the codebase. You cannot read the ADR, the affected, or a chat.
+
+Answer one question for each substep in `Steps`: can a subagent implement it without hesitation?
+
+- **実装できる** — the substep names the file, the change, and what to do. A subagent can implement it.
+- **迷うが実装できる** — a subagent can implement it, but it must interpret something. Write the part that makes it hesitate and how it would interpret it.
+- **実装できない** — a subagent cannot implement it. Write why.
+
+1. Read the plan md.
+2. Read the files the plan names, where the substep needs them.
+3. Answer one section per slice, one subsection per file step, one bullet per substep, in the plan's order:
+
+   ## <slice name>
+
+   ### <file step>
+
+   - **実装できる**: `<substep>`
+   - **迷うが実装できる**: `<substep>`
+     - 迷う部分: <...>
+     - 解釈: <...>
+   - **実装できない**: `<substep>`
+     - 理由: <...>
+
+4. Do not change the plan.
+```
+
+- One subagent per plan.
+- A `Steps` subsection is a file step, including an `Outside:` step.
+- The agent fixes each `迷うが実装できる` and `実装できない` from the ADR, or by its own principles when the ADR does not hold it.
+- The fixed plan is not sent to the first review again.
+
+## Review of a plan against the ADR (a `review` subagent)
+
+When the first review is fixed.
 
 ```text
 Answer one question: can this plan achieve its Goal, and do the Steps and the Policy carry the ADR?
@@ -27,12 +63,11 @@ Answer one question: can this plan achieve its Goal, and do the Steps and the Po
    - Other: ...
 
 4. Report one finding per bullet, and `なし` for a name that found nothing. Do not change the code or the plan.
-5. When the fixed plan comes back, check each finding: fixed, or left with the reason, and report it. Do not re-review the whole plan.
 ```
 
 - One subagent per plan.
 - The plans do not wait for each other.
-- Two rounds: the agent fixes the plan from the Round 1 findings, and Round 2 checks the fixes.
+- One round: the agent fixes the plan from the findings, and there is no second review.
 - The agent says in its report to the owner what it did with each finding.
 - The report says `fixed: <what was done>` for one it adopted.
 - The report says `left: <why>` for one it did not adopt.
