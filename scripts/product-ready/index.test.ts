@@ -21,7 +21,7 @@ const CYCLES_LABEL = 'cycles';
 const REPLACE_LABEL = 'replace';
 const RULE_FILES = ['roadmap.md', 'definition.format.md', 'readme.format.md'];
 const TEST_EXCLUDE_ENTRIES: readonly string[] = [
-  'scripts/harness',
+  'scripts/harness-sync',
   '.pi',
   'scripts/checks',
   'scripts/product-ready',
