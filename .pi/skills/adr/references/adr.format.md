@@ -6,7 +6,7 @@ Section and field names are English; the content is Japanese.
 
 ## Shape
 
-```md
+````md
 # ADR <NNN>
 
 ## <NN>: <問い>
@@ -50,11 +50,18 @@ Section and field names are English; the content is Japanese.
   - Forbidden:
     - <明示的にしてはいけないこと> - <しない理由>（C2, F2）
 
+#### Details
+
+- <フェンスのタイトル>
+  ```text
+  <決まったコードや文書>
+  ```
+
 ### Definition
 
 - `Unit.<name>`(updated): <新しい行>
 - `Unit.<name>`(kept): <その行が動かない理由>
-```
+````
 
 ## Entries
 
@@ -64,6 +71,7 @@ The entries the ADR holds.
 - The sections run `Research & Trial`, `Scope`, `Context`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
 - One bullet is one rule.
+- A bullet under `#### Details` is the title of one fence.
 
 ## Scope
 
@@ -96,6 +104,7 @@ The facts that limit the entry.
 
 - An item is one line, `C<n>: <the item>`.
 - The number runs from `C1`, in the order the items were settled.
+- A code or a document does not go here; it goes under `Decision`'s `#### Details`.
 
 ## Research & Trial
 
@@ -114,6 +123,8 @@ What the entry becomes, and what holds it.
 - `Add` is what grows, `Update` is what changes, and `Drop` is what disappears.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
+- `#### Details` holds the concrete code and documents the discussion settled. One bullet is the title of one fence, and the fence follows it. A fence carries one item.
+- When `#### Details` has nothing, write `なし` under it.
 - When a field has nothing in it, write `なし`.
 
 ## Definition
@@ -139,4 +150,4 @@ How the lines of `DEFINITION.md` move, one line per name.
 
 ## Writing
 
-- The exchange is not recorded. Only the organized `Context` stays.
+- The exchange is not recorded. Only the organized `Context` and `Decision` stay.

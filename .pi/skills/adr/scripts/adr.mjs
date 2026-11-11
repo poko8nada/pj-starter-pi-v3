@@ -47,6 +47,13 @@ export function entrySkeleton(nnn, title) {
   - Forbidden:
     - <明示的にしてはいけないこと> - <しない理由>（C2）
 
+#### Details
+
+- <フェンスのタイトル>
+  \`\`\`text
+  <決まったコードや文書>
+  \`\`\`
+
 ### Definition
 
 - \`Unit.<name>\`(updated): <新しい行>
@@ -112,9 +119,22 @@ function refs(text) {
 }
 
 /**
+ * `text` の先頭から、行頭が `heading` の行の手前までを返す。`heading` がなければ全体。
+ * @param {string} text
+ * @param {string} heading
+ * @returns {string}
+ */
+function beforeHeading(text, heading) {
+  const lines = text.split('\n');
+  const end = lines.findIndex((line) => line === heading);
+  return (end === -1 ? lines : lines.slice(0, end)).join('\n');
+}
+
+/**
  * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
  * `Decision` から参照されているかを確かめる。
- * `Decision` セクション全体で、すべての `C` を参照し、すべての `F` をどれかが参照する。
+ * `Decision` セクションの `#### Details` より前で、すべての `C` を参照し、すべての `F` をどれかが参照する。
+ * `#### Details` の中の括弧は参照として数えない。
  * 参照は実在し、番号は重複しない。
  * @param {string} markdown
  * @returns {readonly string[]} 抜けの一覧。空なら良い
@@ -136,7 +156,7 @@ export function checkEntry(markdown) {
       if (seenF.has(n)) problems.push(`${nn}: F${n} is used twice`);
       seenF.add(n);
     }
-    const found = refs(section(body, 'Decision'));
+    const found = refs(beforeHeading(section(body, 'Decision'), '#### Details'));
     for (const c of cs) {
       if (!found.c.includes(c)) problems.push(`${nn}: Decision does not carry C${c}`);
     }

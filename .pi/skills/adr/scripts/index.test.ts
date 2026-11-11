@@ -221,6 +221,8 @@ describe('entrySkeleton', () => {
     expect(skeleton).toContain('Forbidden:');
     expect(skeleton).toContain('Main:');
     expect(skeleton).toContain('Sub:');
+    expect(skeleton).toContain('#### Details');
+    expect(skeleton).toContain('  ```text');
   });
 
   it('adr.format.md のエントリーの見出しと一致する', () => {
@@ -233,6 +235,7 @@ describe('entrySkeleton', () => {
       '### Scope',
       '### Context',
       '### Decision',
+      '#### Details',
       '### Definition',
     ];
     expect(headings).toEqual(expected);
@@ -310,6 +313,15 @@ describe('checkEntry', () => {
       decision('  - Add:\n      - 何か（C1, C2, F1）'),
       '- C1: 前提\n- C2: 制約',
       '- F1: 事実\n- 使わなかった事実',
+    );
+    expect(checkEntry(markdown)).toEqual([]);
+  });
+
+  it('(happy) Details のフェンス内の括弧は参照として数えない', () => {
+    const markdown = entry(
+      decision(
+        '  - Add:\n      - 何か（C1, C2, F1）\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n#### Details\n\n- 例\n  ```text\n  何か（C9, F9）\n  ```',
+      ),
     );
     expect(checkEntry(markdown)).toEqual([]);
   });

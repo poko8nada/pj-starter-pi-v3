@@ -112,31 +112,13 @@ The entry stage runs once per entry, in the order the split gave.
 
 Steps:
 
-1. Write the `Scope` to adr.md, every kind, `In` or `Out`.
-2. Let the owner correct the list.
-3. Write the result to the entry's `Scope` as `In:` and `Out:`.
-
-View:
-
-| kind                | what it is                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| behaviour           | what the product does; the actions a user takes, and what the product returns                     |
-| refactor            | the shape of the code or the document, without changing what the product does                     |
-| dependency          | a package, a library, or an external contract the product relies on                               |
-| naming              | the name of a section, field, file, or identifier in the product                                  |
-| format              | the section order, headings, table shape, and fences of a product document                        |
-| prose               | the wording, sentence structure, and voice of a product document                                  |
-| speed               | the time or the resources the work takes                                                          |
-| security            | secrets, permissions, or exposure in the product                                                  |
-| compatibility       | an existing reference, a past record, or another part of the product that names the changed thing |
-| errors              | a check, a test, a validation, or a failure the product must keep                                 |
-| deploy              | the distribution or release of the product                                                        |
-| migration           | an existing record or an installed version of the product that must be moved                      |
-| logs and monitoring | the records or signals the product leaves                                                         |
+1. Read the `## Scope` section of `references/adr.format.md`.
+2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
+3. Let the owner correct the list.
+4. Write the result to the entry's `Scope` as `In:` and `Out:`.
 
 Notes:
 
-- An `Out` kind carries its reason. A revisit condition goes on the kind that needs one.
 - The scope is of this entry. The other entries keep their own scope.
 - A constraint the owner adds here goes to `Context` as a new item.
 - The first `Scope` is a guess. Rewrite it in `Discussion Loop` with the owner.
@@ -164,7 +146,7 @@ Steps:
 
 1. Read the entry's pre-research facts in `Research & Trial`, and what they decide.
 2. Read the `Decision` section of `references/adr.format.md`.
-3. Write the opening proposal of the Discussion Loop in the entry's `Decision`, with `Status` empty.
+3. Write the opening proposal of the Discussion Loop in the entry's `Decision`, with `Status` empty and `#### Details` `なし`.
 4. Say what the facts decide and what the proposal is, and go to the Discussion Loop.
 
 Notes:
@@ -179,26 +161,29 @@ Notes:
 Steps:
 
 1. Start from the opening proposal in `Decision`.
-2. Discuss, and investigate where a fact is missing.
-3. Write an added `Context` item as `C<n>`, after the existing numbers, at the moment it is settled.
-4. Write what is settled in a fence under `Context`, at the moment it is settled.
-5. Update `Scope`, `Context`, `Research & Trial` and `Decision` as the discussion settles them.
+2. Take the `In` items of `Scope`, in their order.
+3. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
+4. Show one point at a time, and discuss it until it is settled.
+5. Write what is settled where the View gives, at the moment it is settled.
 6. Repeat until the owner moves the entry to the decision.
 
 View:
 
-| where the finding goes | the rule                        |
-| ---------------------- | ------------------------------- |
-| `Context`              | a fact that limits the decision |
-| `Research & Trial`     | a fact the decision weighs      |
-| `Decision`             | a change the decision settles   |
-| `Scope`                | a change the scope settles      |
+| where the settled item goes | the rule                                  |
+| --------------------------- | ----------------------------------------- |
+| `Context`                   | a fact that limits the decision           |
+| `Research & Trial`          | a fact the decision weighs                |
+| `Decision`                  | a change the decision settles             |
+| `Decision`'s `#### Details` | a code or a document the decision settles |
+| `Scope`                     | a change the scope settles                |
 
 Notes:
 
+- Write an added `Context` item as `C<n>`, after the existing numbers.
+- Write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
+- The opening proposal is in `Decision`. A point and its proposal stay in the chat until the owner settles it.
 - When a finding shows a premise is wrong, correct the item, and keep the finding in `Research & Trial` with its source.
 - When a finding serves no item, add the item.
-- Any specific docs, code, or similar materials agreed upon by the owner go under `Context`, enclosed within a fenced block.
 - When the research is short, add it. When a finding changes the scope, propose the change and agree it.
 - When the loop needs a fact nobody has, a trial may run as in section 3, with the owner's agreement.
 - Only the owner moves the entry to the decision. The agent has no right to do so. This step cannot be skipped.
