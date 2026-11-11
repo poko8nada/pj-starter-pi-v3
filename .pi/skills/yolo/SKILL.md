@@ -19,8 +19,6 @@ View:
 | a stage the cycle has passed                                  | that stage is not walked again                                  |
 | the ADR                                                       | not this skill's business: no entry is accepted or checked here |
 
-Note: when the cycle stands inside a close's `ex-` plan, the run walks that plan to its merge, then runs the close's collect and the proposal again, and stops before the owner's judgement on the new triage.
-
 ## Procedure
 
 Note: The cycle's three stages run in their order. Each keeps its work. Each loses only its look at the owner.
@@ -56,16 +54,16 @@ Notes:
 Steps:
 
 1. Check the trigger, read the cycle, collect the leftovers, and exclude what the wording shows is already resolved.
-2. Give every leftover a `_proposed_` destination, in this order: the cycle's own concern → `_ex-plan_`; an obvious bug, vulnerability, or stale implementation or wording outside that concern → `_ex-plan_`; one of the above too large for one `ex-`, or needing further outside or inside research → `_proposed_`; the rest → `dropped`, each with its `Fact:` / `Why:` / `Then:`.
+2. Give every leftover a destination, in this order: the cycle's own concern → `_ex-change_`; a small change outside it → `_ex-change_`; a possible obvious bug or a large debt → `**proposed**`; a future consideration → `_roadmap_`; the rest → `dropped`, each with its `Fact:` / `Why:` / `Then:`.
 3. Complete `close.md`: `## Collected` holds the inventory, `## Triage` holds the proposal, and `## Verified` stays empty at the completion (and that is normal).
 4. Run the Japanese proofread here, so the `close.md` at the stop is what the owner can read.
 5. It ends here: before the owner's judgement on the triage, with the proposal complete and proofread.
 
 Notes:
 
-- skips: the owner's judgement on the triage, the `ex-` plans and their merges, and the verification of what the cycle delivered.
+- skips: the owner's judgement on the triage, the `_ex-change_` implementations, and the verification of what the cycle delivered.
 
-Note: What comes after that judgement — the confirmed triage, the `ex-` plans, the verification, the commit that closes the cycle — is not this skill's work. The order from the completion of `close.md` to the verification is the same as the close skill's.
+Note: What comes after that judgement — the confirmed triage, the `_ex-change_` implementations, the verification, the commit that closes the cycle — is not this skill's work. The order from the completion of `close.md` to the verification is the same as the close skill's.
 
 ## When a step cannot run
 

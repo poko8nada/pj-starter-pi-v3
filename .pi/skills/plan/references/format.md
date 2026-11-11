@@ -1,6 +1,6 @@
 # Plan format
 
-`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`. The `NN-` is the file's order prefix and is not part of the plan id. An `ex-` plan omits the `NN-` prefix.
+`cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`. The `NN-` is the file's order prefix and is not part of the plan id.
 
 Section and field names are English; the content is Japanese.
 
@@ -130,8 +130,7 @@ Section and field names are English; the content is Japanese.
 What the plan achieves, in one line.
 
 - `## Goal` sits above `## Design`, in one line.
-- A normal plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
-- An `ex-` plan's `Goal` comes from the close's Triage line.
+- The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - The cut's `Goal` and its `Summary` both stay.
 
 ## Design
@@ -150,10 +149,7 @@ The four questions the plan answers about shape, and why that shape.
 The ADR entry the plan carries.
 
 - `No` holds the entry numbers the plan carries, copied as they are, as a comma-separated list.
-- A normal plan keeps `- No: <NN>[, <NN>...]` at the top.
-- An `ex-` plan does not write `No`.
-- The close reads the `ADR <NN>` of the Triage line.
-- The Triage line is the only source.
+- The plan keeps `- No: <NN>[, <NN>...]` at the top.
 
 ## Files
 

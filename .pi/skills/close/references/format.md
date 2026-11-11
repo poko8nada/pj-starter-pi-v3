@@ -9,9 +9,9 @@
 
 ## Collected
 
-### <NN> <plan id> (ADR <プランの No の値>) — `NN` のあるプラン
+### <NN> <plan id> (ADR <プランの No の値>)
 
-### <plan id> (ADR <プランの No の値>) — `NN` を持たない `ex-` のプラン
+1. <line> / <place> / <出どころ>
 
 ### (ADR <NN>) — 運ぶ計画がない項目
 
@@ -19,15 +19,18 @@
 
 ## Triage
 
-- <N>: _ex-plan_ (ADR <NN>, <定義の部分>) — the grouping has not named the plan yet
+- <N>: _ex-change_ (ADR <NN>, <定義の部分>): done <commit>
   - Fact: <何が起きて現状どうなっているか>
   - Why: <このトリアージ案を推奨した理由>
-  - Then: <ex- の場合はどういう方針のプランを立てるか、_proposed_ の場合は次に論点にすべき点、drop の場合はなし>
-- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>) — after the grouping
-- <N>: _proposed_ (ADR <NN>, <定義の部分>)
+  - Then: <どう変えるか>
+- <N>: **proposed** (ADR <NN>, <定義の部分>)
   - Fact: <何が起きて現状どうなっているか>
   - Why: <このトリアージ案を推奨した理由>
   - Then: <次に論点にすべき点>
+- <N>: _roadmap_ (ADR <NN>, <定義の部分>)
+  - Fact: <何が起きて現状どうなっているか>
+  - Why: <このトリアージ案を推奨した理由>
+  - Then: なし
 - <N>: dropped (ADR <NN>, <定義の部分>)
   - Fact: <何が起きて現状どうなっているか>
   - Why: <このトリアージ案を推奨した理由>
@@ -40,7 +43,7 @@
 - Plans:
   - `<plan id>`
 - Result: <OK / 見つかったもの / しない — 理由>
-- Fixed: `ex-<what it fixes>` (<commit>)
+- Fixed: `_ex-change_` (<commit>)
 ```
 
 ## Collected
@@ -60,11 +63,8 @@ The inventory of the cycle's leftovers.
 
 ### Heading
 
-- The heading of a normal plan carries the `No` of its plan md.
+- The heading of a plan carries the `No` of its plan md.
 - `未特定` when the plan md has no `No` (a plan written by hand).
-- The `## Collected` heading's `No` for an `ex-` plan comes from the Triage, in the `<NN>` of the `ADR <NN>` in the Triage line `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>)`.
-- A missing Triage line is `未特定`.
-- A line the grouping has not named yet is `未特定`: the plan's name comes first.
 - Fill it before showing the owner.
 
 ### Order
@@ -72,8 +72,7 @@ The inventory of the cycle's leftovers.
 - The numbering runs through the whole file.
 - A plan with no leftover is not listed.
 - `なし` when there is none.
-- The order is the `NN` numeric order for the plans that have an `NN`.
-- The `ex-` plans follow them in name order, so adding an `ex-` plan does not move the numbers above it.
+- The order is the `NN` numeric order of the plans.
 
 ## Triage
 
@@ -84,33 +83,50 @@ Where every leftover goes.
 - Each bullet carries its grounds underneath, in this shape:
   - Fact: what happened and how it stands now.
   - Why: why this proposal is recommended.
-  - Then: for an `ex-` what policy the plan follows, for a `_proposed_` what to discuss next, for a `dropped` nothing.
+  - Then: for an `_ex-change_` what to change, for a `**proposed**` what to discuss next, for an `_roadmap_` and a `dropped` nothing.
 - `なし` when there is none.
 
 ### Destination
 
-- The proposal order is: the cycle's own concern → `_ex-plan_`.
-- An obvious bug, vulnerability, or stale implementation or wording outside that concern → `_ex-plan_`.
-- One of the above whose scope or change is too large for one `ex-`, or that needs further outside or inside research → `_proposed_`.
+- The proposal order is: the cycle's own concern, then a small change outside it, then a possible bug or a large debt, then a future consideration, then the rest.
+- A change of one code place, one test, or documents only, in the cycle's concern or outside it, that is worth doing → `_ex-change_`.
+- A possible obvious bug, or a debt that would grow large if it stays → `**proposed**`.
+- A future implementation or change worth considering, outside the two above → `_roadmap_`.
 - The rest → `dropped`.
 
-### `_ex-plan_`
+### `_ex-change_`
 
-- The cycle fixes it now, whatever files it changes.
-- It is the cycle's own concern, or an obvious defect, and it fits one plan.
-- The plan is named `ex-<what it fixes>` at the grouping, and it has no `No`.
-- Until the grouping the line is `- <N>: _ex-plan_ (ADR <NN>, <定義の部分>)`.
-- After it, the plan id follows `_ex-plan_` with no `NN-`.
-- `done <commit>` sits at the end of the line, in `- <N>: _ex-plan_ <plan id> (ADR <NN>, <定義の部分>): done <commit>`, and it means the `ex-` plan has merged, and this is its merge commit.
-- `dropped <reason>` sits there instead when the work drops the `ex-` plan.
-- After the grouping, `_ex-plan_` keeps the plan id right after it, with no backticks: `collect.mjs` reads it there.
+- The close fixes it now, in the base, with no plan and no worktree.
+- It is one code place, one test, or documents only.
+- The line is `- <N>: _ex-change_ (ADR <NN>, <定義の部分>)`.
+- After the implementation, `: done <commit>` sits at the end of the line, and the commit is `base(ex-change): <subject>`.
+- The commit is one per `_ex-change_`; two changes do not share one commit.
+- `Then:` is the change it makes.
+
+### `**proposed**`
+
+- The next cycle's ADR takes it.
+- The close updates the roadmap, splits the next cycle's entries, runs the pre-research, and fills each entry's `Context` and `Research & Trial`.
+- The close leaves the `Scope` empty and commits nothing of the next cycle.
+- `Then:` is what the next cycle should discuss.
+
+### `_roadmap_`
+
+- The close gives it no destination, and it ends here.
+- The owner reads it and decides later whether to put it into `ROADMAP.md`.
+- `Then:` is `なし`.
+
+### `dropped`
+
+- It gets no destination, and the reason is in the `Fact:` and the `Why:`.
+- `Then:` is `なし`.
 
 ## Verified
 
 The Units of the cycle and what the owner answered for each.
 
 - The close's verification step writes it.
-- It is filled after the owner's judgement on the triage and the `ex-` merges.
+- It is filled after the owner's judgement on the triage.
 - At the completion of `close.md`, `## Verified` is empty, and that is normal.
 - `## Verified` sits after `## Triage`.
 - The script rewrites `## Collected`, and keeps what is below `## Triage`.
@@ -127,7 +143,7 @@ The Units of the cycle and what the owner answered for each.
 - `Plans` holds one bullet per plan that cuts an entry the Unit is named by, taken from the plan md's `No`.
 - `Result` is `OK` when the owner checked the Unit's function and it worked, and what they found when it did not.
 - `Result` is `しない` with the reason on the same line when they will not check.
-- `Fixed` is the `ex-` plan and the commit it merged as, written only when the function did not work, and it takes the place of the `done <commit>` a `Triage` line carries.
+- `Fixed` is the `_ex-change_` and the commit it made, written only when the function did not work, and it takes the place of the `done <commit>` a `## Triage` line carries.
 - The close resumes at its verification step for that Unit.
 - The check is of the Unit's function, not of the change.
 - The change is what the work looked at.

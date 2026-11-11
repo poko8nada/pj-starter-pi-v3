@@ -5,7 +5,7 @@
  * テストの外から読まれても、何も起きずに止まらない（読んだだけでは何もしない）。
  */
 
-/** plan md の材料。`no` を省くと `- No:` の無い形（`ex-` plan）になる。 */
+/** plan md の材料。`no` を省くと `- No:` の無い形になる。 */
 export type PlanDocOptions = {
   readonly name: string;
   readonly no?: string | null;
@@ -20,18 +20,4 @@ export function planDoc({ no = null, name, notes, review }: PlanDocOptions): str
   if (review === undefined) return base;
   const bullets = review.map((item) => `- ${item}`).join('\n');
   return `${base}\n## Work Review\n\n### Round 1\n\n${bullets}\n`;
-}
-
-/** close md の Triage 行の材料。 */
-export type TriageOptions = {
-  readonly name: string;
-  readonly no: string;
-};
-
-/** Triage 行を持つ close md のテンプレートを作る。 */
-export function closeDoc({ triages }: { readonly triages: readonly TriageOptions[] }): string {
-  const lines = triages.map(
-    (triage, index) => `- ${index + 1}: _ex-plan_ ${triage.name} (ADR ${triage.no}, xxx): why`,
-  );
-  return `# Close 001\n\n## Collected\n\nなし\n\n## Triage\n\n${lines.join('\n')}\n`;
 }

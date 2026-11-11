@@ -18,8 +18,3 @@ Answer the question the task carries, and nothing else.
 - What is looked up is not carried into `close.md`.
 - Only the fact the leftover's destination rests on goes there.
 - The close writes it.
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.

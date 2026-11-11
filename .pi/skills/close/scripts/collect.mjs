@@ -1,7 +1,6 @@
 // close.md の `## Collected` を書く。
 // 使い方: node .pi/skills/close/scripts/collect.mjs <cycle-dir>
 // 仕組み: <cycle-dir>/plan/*.md の残りを集め、plan md の `No` を読んで、
-// （`ex-` plan の `No` は close.md の `## Triage` から読んで、）
 // close.md の `## Collected` を書き直す。番号行より深い行（エージェントの文脈）と `## Triage` は残す。
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,13 +9,15 @@ import { pathToFileURL } from 'node:url';
 /**
  * 残りの1件。番号付き。
  *
- * @typedef {{ plan: string, link: string, line: number, place: string, finding: string, handling: string | null } & ({ nn: string } | { nn: null })} Leftover
- */
-
-/**
- * Triageの1行。`ex-` planの`No`の出所。
- *
- * @typedef {{ planId: string, adrNo: string }} TriageEntry
+ * @typedef {{
+ *   plan: string,
+ *   link: string,
+ *   line: number,
+ *   place: string,
+ *   finding: string,
+ *   handling: string | null,
+ *   nn: string,
+ * }} Leftover
  */
 
 /** セクションや観点の見出し（出どころではない行） */
@@ -220,51 +221,25 @@ export function collectPlan(text) {
 const isLeftover = (item) => !item.handling?.startsWith('fixed:');
 
 /**
- * ファイル名から plan の番号と id を出す。`NN-` の無い `ex-` の名前は番号を持たない。
- * どちらでもない名前は投げる（検証はこの関数の中）。
+ * ファイル名から plan の番号と id を出す。`NN-` の無い名前は投げる（検証はこの関数の中）。
  *
  * @param {string} file
- * @returns {{ nn: string, id: string } | { nn: null, id: string }}
+ * @returns {{ nn: string, id: string }}
  */
 export function planName(file) {
   const base = file.replace(/\.md$/, '');
   const found = base.match(/^(\d+)-(.+)$/);
   if (found) return { nn: found[1], id: found[2] };
-  if (base.startsWith('ex-')) return { nn: null, id: base };
   throw new Error(`no NN prefix: ${file}`);
 }
 
-/** 通常の plan が先、`ex-` の plan が後。`id` は `NN-` を除いた名前。 */
-const planRank = (id) => (id.startsWith('ex-') ? 1 : 0);
-
 /**
- * close.mdの`## Triage`から`ex-` planの`No`を読む。`_ex-plan_ <plan id> (ADR <NN>, ...)`の対応。
+ * planの`No`の値。plan mdの`- No:`。無ければnull。
  *
- * @param {string} closeText
- * @returns {Map<string, string>}
- */
-function readTriageNos(closeText) {
-  /** @type {Map<string, string>} */
-  const map = new Map();
-  for (const line of triagePart(closeText).split('\n')) {
-    const found = line.match(/^-\s*\d+:\s*_ex-plan_\s+(\S+)\s*\(ADR\s+([^,\s)]+)/);
-    if (found) map.set(found[1], found[2].trim());
-  }
-  return map;
-}
-
-/**
- * planの`No`の値。通常planはplan mdの`- No:`、`ex-` planはclose.mdの`## Triage`行の`ADR <NN>`。無ければnull。
- *
- * @param {string} planId
  * @param {string} text plan md本文
- * @param {string} closeText close.md本文
  * @returns {string | null}
  */
-export function noOf(planId, text, closeText) {
-  if (planId.startsWith('ex-')) {
-    return readTriageNos(closeText ?? '').get(planId) ?? null;
-  }
+export function noOf(text) {
   for (const line of text.split('\n')) {
     const found = line.match(ADR_FIELD);
     if (found) return found[1].trim() || null;
@@ -296,8 +271,7 @@ function render(items, contexts) {
   let n = 0;
   const flush = () => {
     if (!current) return;
-    const head = current.nn === null ? `### ${current.id}` : `### ${current.nn} ${current.id}`;
-    blocks.push(`${head} (${current.link})\n\n${lines.join('\n')}`);
+    blocks.push(`### ${current.nn} ${current.id} (${current.link})\n\n${lines.join('\n')}`);
     lines.length = 0;
   };
   for (const item of items) {
@@ -330,7 +304,7 @@ function readContexts(text) {
   /** @type {string | null} */
   let current = null;
   for (const line of text.split('\n')) {
-    const head = line.match(/^### (\d+)? ?(\S+)/);
+    const head = line.match(/^### (\d+)\s+(\S+)/);
     if (head) {
       plan = head[2];
       current = null;
@@ -367,27 +341,25 @@ function triagePart(text) {
 
 /**
  * cycle の plan md を読み、`ADR` を付けて残りを返す。
- * 通常planの`No`はplan md、`ex-` planの`No`はclose.mdの`## Triage`から読む。
  *
  * @param {string} planDir
- * @param {string} closeText close.md本文
  * @returns {Leftover[]}
  */
-export function collectCycle(planDir, closeText = '') {
+export function collectCycle(planDir) {
   const files = readdirSync(planDir)
     .filter((file) => file.endsWith('.md'))
     .toSorted((a, b) => {
       const pa = planName(a);
       const pb = planName(b);
-      const numeric = pa.nn !== null && pb.nn !== null ? Number(pa.nn) - Number(pb.nn) : 0;
-      return planRank(pa.id) - planRank(pb.id) || numeric || a.localeCompare(b);
+      const numeric = Number(pa.nn) - Number(pb.nn);
+      return numeric || a.localeCompare(b);
     });
   /** @type {Leftover[]} */
   const items = [];
   for (const file of files) {
     const { nn, id } = planName(file);
     const text = readFileSync(join(planDir, file), 'utf8');
-    const link = linkText(noOf(id, text, closeText));
+    const link = linkText(noOf(text));
     for (const item of collectPlan(text)) {
       items.push({ plan: id, nn, link, ...item });
     }
@@ -413,7 +385,7 @@ export function writeClose(cycleDir) {
   }
   const closePath = join(cycleDir, 'close.md');
   const old = existsSync(closePath) ? readFileSync(closePath, 'utf8') : '';
-  const items = collectCycle(planDir, old);
+  const items = collectCycle(planDir);
   const body = render(items, readContexts(old));
   const triage = triagePart(old);
   const nnn = (cycleDir.replace(/\/+$/, '').split('/').pop() ?? '').split('-')[1] ?? '';

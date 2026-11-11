@@ -18,7 +18,7 @@ Work keeps its own business: slices, checks, commits, review, acceptance, merge 
 Steps:
 
 1. Read the shape in `.pi/skills/plan/references/format.md` before reading the record.
-2. Read the plan md: `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md` for a plan with an `NN`, or `cycles/<YYMMDD>-<NNN>-<slug>/plan/<plan id>.md` for an `ex-` plan.
+2. Read the plan md: `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`.
 3. Read its `Files`, `## Goal`, each slice's `Types`, `Steps`, `Policy` and `Verify`, and `## Notes`.
 4. Read its `Place`.
 
@@ -33,7 +33,7 @@ View:
 Notes:
 
 - Work writes no file of its own. It writes into the plan md: the slices' records under `## Notes`, and `## Work Review` and `## Acceptance`.
-- `Place` is `worktree` or `base`. An `ex-` plan takes the default, a worktree.
+- `Place` is `worktree` or `base`.
 
 ### 2. Commit the documents
 

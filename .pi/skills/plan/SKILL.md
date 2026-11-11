@@ -17,22 +17,12 @@ Steps:
 
 1. Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`.
 2. Read every accepted entry in full.
-3. Write the entry numbers the plan carries at the top of a normal plan md as `No`.
-4. Read the Triage line in `close.md` for an `ex-` plan, and do not write `No`.
-
-View:
-
-| plan   | source                  | `No`                          |
-| ------ | ----------------------- | ----------------------------- |
-| normal | the ADR's entries       | the entry numbers as they are |
-| `ex-`  | the close's Triage line | none                          |
+3. Write the entry numbers the plan carries at the top of the plan md as `No`.
 
 Notes:
 
 - Each entry's `Definition` is the scope boundary.
-- The Triage line is the only source for an `ex-` plan.
-- A normal plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
-- An `ex-` plan's `Goal` comes from the close's Triage line.
+- The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 
 ### 2. Read the affected
 
