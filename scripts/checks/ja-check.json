@@ -72,5 +72,5 @@
     "分ける",
     "分けて"
   ],
-  "exclude": ["ROADMAP.md", "**/affected.md", "**/affected/*.md"]
+  "exclude": ["ROADMAP.md", "**/affected/*.md"]
 }
