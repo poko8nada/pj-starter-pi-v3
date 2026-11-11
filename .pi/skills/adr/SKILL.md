@@ -245,16 +245,6 @@ Steps:
 
 Note: the affected research runs at the same time. Do not wait for it.
 
-## Entries, together
-
-Steps:
-
-1. Read the decided entries together: the names they write, and the lines they move.
-2. Settle a contradiction with the owner.
-3. Read the `Definition` lines together with the owner, and let their answer close the entries' decisions.
-
-Note: two entries that touch the same name must not contradict.
-
 ## Japanese Proofread
 
 Steps:
@@ -262,12 +252,30 @@ Steps:
 1. After every entry is decided, run one `proofreader` subagent with the cycle's `adr.md` for the Japanese proofread of the whole file.
 2. Have it read `references/adr.format.md`. The role's policy is in `.pi/extensions/consult/types.json`. It edits only `adr.md`.
 3. Read its report and the `git diff` of the file.
-4. Put the file back to the shape `references/adr.format.md` gives, in your own words, when a decision, a reason, a number, a name or a `Scope` line changed meaning, or a section or field name moved.
+4. Put the file back to the shape `references/adr.format.md` gives, in your own words, when a decision, a reason, a number, a name, a `Scope` line or a fence changed meaning, or a section or field name moved.
 
 Notes:
 
 - The wording of a quoted passage is not a change of meaning. Keep that correction.
 - One round. The repaired file does not go through the subagent again.
+
+## Entries, together
+
+Steps:
+
+1. Wait until every entry's affected research is done.
+2. Read every entry and every affected section, and check both files for what is missing and what is too much.
+3. Report these to the owner, and propose what to do:
+   - a path `affected.md` lacks
+   - an item an entry lacks, entry by entry
+   - what is too much
+4. When the check leaves nothing to add, read the decided entries together, settle a contradiction, and read the `Definition` lines together. The owner's answer closes the entries' decisions.
+5. When the owner agrees to add an item to an entry, go back to that entry's Discussion Loop. The next pass of this section starts again from step 1.
+
+Notes:
+
+- The affected is written by its research subagent. Do not fix it here; propose the addition.
+- Two entries that touch the same name must not contradict.
 
 ## What comes after an entry
 
