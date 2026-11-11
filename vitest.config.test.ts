@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configDefaults } from 'vitest/config';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import config from './vitest.config.ts';
 
 function markerList(): readonly string[] {
@@ -28,10 +28,27 @@ describe('vitest config', () => {
     expect(exclude.slice(configDefaults.exclude.length)).toEqual([...markerList()]);
   });
 
-  it('happy: reporters と passWithNoTests が今の値のまま → 一致する', () => {
-    const verbose = process.env.TEST_VERBOSE === '1';
-    const expected = verbose ? ['verbose'] : [['default', { summary: false }]];
-    expect(config.test?.reporters).toEqual(expected);
-    expect(config.test?.passWithNoTests).toBe(true);
+  it('happy: TEST_VERBOSE の有無で reporters が切り替わり、passWithNoTests が今の値のまま → 一致する', async () => {
+    const original = process.env.TEST_VERBOSE;
+    try {
+      process.env.TEST_VERBOSE = '1';
+      vi.resetModules();
+      const verboseConfig = (await import('./vitest.config.ts')).default;
+      expect(verboseConfig.test?.reporters).toEqual(['verbose']);
+      expect(verboseConfig.test?.passWithNoTests).toBe(true);
+
+      delete process.env.TEST_VERBOSE;
+      vi.resetModules();
+      const plainConfig = (await import('./vitest.config.ts')).default;
+      expect(plainConfig.test?.reporters).toEqual([['default', { summary: false }]]);
+      expect(plainConfig.test?.passWithNoTests).toBe(true);
+    } finally {
+      if (original === undefined) {
+        delete process.env.TEST_VERBOSE;
+      } else {
+        process.env.TEST_VERBOSE = original;
+      }
+      vi.resetModules();
+    }
   });
 });
