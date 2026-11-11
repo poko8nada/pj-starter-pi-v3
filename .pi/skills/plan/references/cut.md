@@ -72,8 +72,3 @@ Where the plan runs.
 - A yolo plan is worktree, so the base condition does not apply.
 - A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes.
 - Keep the files apart, or order the two.
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.

@@ -33,10 +33,7 @@ Answer one question for each substep in `Steps`: can a subagent implement it wit
 4. Do not change the plan.
 ```
 
-- One subagent per plan.
 - A `Steps` subsection is a file step, including an `Outside:` step.
-- The agent fixes each `迷うが実装できる` and `実装できない` from the ADR, or by its own principles when the ADR does not hold it.
-- The fixed plan is not sent to the first review again.
 
 ## Review of a plan against the ADR (a `review` subagent)
 
@@ -45,12 +42,12 @@ When the first review is fixed.
 ```text
 Answer one question: can this plan achieve its Goal, and do the Steps and the Policy carry the ADR?
 
-1. Read the plan md, the files it names, and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`.
+1. Read the plan md, the files it names, the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`, and `.pi/skills/plan/references/design.md`.
 2. Answer under these viewpoints:
    - `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
    - `Design` — the four questions.
    - `Files` — the files the affected names, and a file it does not name.
-   - `Slice` — `Types` (a declaration the code uses but `Types` does not name, and one against the type rules), `Steps` (the target files from the affected or `External`, and the ADR's `Add`/`Update`/`Drop` without omission), `Policy` (the ADR's `Policy` without omission), `Verify` (one that does not run as written, one red with the change, and one green with the behavior removed), and `Cases` (the test steps' cases against `## Test cases`).
+   - `Slice` — `Types` (a declaration the code uses but `Types` does not name, and one against the type rules), `Steps` (the target files from the affected or `External`, and the ADR's `Add`/`Update`/`Drop` without omission), `Policy` (the ADR's `Policy` without omission), `Verify` (one that does not run as written, one red with the change, and one green with the behavior removed), and `Cases` (the test steps' cases against `design.md`'s `## Test cases`).
    - `Other` — a contradiction, a circular flow, a duplication, an omission.
 3. Answer in this shape, one section per slice:
 
@@ -64,15 +61,6 @@ Answer one question: can this plan achieve its Goal, and do the Steps and the Po
 
 4. Report one finding per bullet, and `なし` for a name that found nothing. Do not change the code or the plan.
 ```
-
-- One subagent per plan.
-- The plans do not wait for each other.
-- One round: the agent fixes the plan from the findings, and there is no second review.
-- The agent says in its report to the owner what it did with each finding.
-- The report says `fixed: <what was done>` for one it adopted.
-- The report says `left: <why>` for one it did not adopt.
-- The plan stage reserves the section.
-- Its content belongs to the work.
 
 ## Research the unwritable lines (a `research` subagent)
 
@@ -92,8 +80,3 @@ The task names the line, the ADR's `Main` and `Sub` and `Scope`, and what the pl
 3. Report the facts that exist now, with where they were found. Do not decide, and do not write the plan.
    - IF the missing fact is none of the four kinds → answer `なし`; the plan writes the line as `Stopped`, with the question and the reason.
 ```
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.
