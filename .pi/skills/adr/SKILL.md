@@ -230,7 +230,7 @@ Notes:
 Steps:
 
 1. Read the `Look at the affected` section of `references/tasks.md` and `references/affected.format.md`.
-2. Run one `research` subagent to write the entry's affected to `affected.md` in the shape `references/affected.format.md` gives.
+2. Run one `research` subagent to write the entry's affected to `affected.md` in the shape `references/affected.format.md` gives, including the `Keywords` list.
 
 Notes:
 

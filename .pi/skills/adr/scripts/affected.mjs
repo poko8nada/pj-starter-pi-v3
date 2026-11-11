@@ -8,11 +8,15 @@ export function affectedEntrySkeleton(nnn, title) {
   const q = title === undefined ? '<問い>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
+### Keywords
+
+- \`<キーワード>\`
+
 ### Code
 
 - Path: \`<パス>\`
   - Kind: \`module\` | \`test\` | \`doc\` | \`config\` | \`artifact\` | \`dir\`
-  - Edge: \`needs\` | \`names\` | \`mentions\` | \`checks\` | \`contains\` \`<パス>\`
+  - Edge: \`needs\` | \`names\` | \`mentions\` | \`checks\` | \`contains\` | \`defines\` \`<パス>\`
 
 ### External
 

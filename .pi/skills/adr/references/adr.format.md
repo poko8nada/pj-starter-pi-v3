@@ -13,7 +13,7 @@ Section and field names are English; the content is Japanese.
 
 ### Research & Trial
 
-- F1: <事実>。出所。
+- F1: <事実>。出所: <出所>
 
 ### Scope
 
@@ -110,7 +110,8 @@ The facts that limit the entry.
 
 The facts the entry holds, with their sources.
 
-- A fact is one line, `F<n>: <the fact>。<出所>`.
+- A fact is one line, `F<n>: <the fact>。出所: <the source>`.
+- The source follows `出所: `, one item per fact.
 - The pre-research writes the facts here before the entry stage.
 - When the decision does not weigh a fact, remove its `F<n>:` label and keep the fact here as a plain bullet.
 

@@ -223,6 +223,7 @@ describe('entrySkeleton', () => {
     expect(skeleton).toContain('Sub:');
     expect(skeleton).toContain('#### Details');
     expect(skeleton).toContain('  ```text');
+    expect(skeleton).toContain('出所: <出所>');
   });
 
   it('adr.format.md のエントリーの見出しと一致する', () => {
@@ -498,10 +499,13 @@ describe('affectedEntrySkeleton', () => {
   it('affected.format.md の見出しとブロックを持つ', () => {
     const skeleton = affectedEntrySkeleton(1);
     const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
-    expect(headings).toEqual(['## 01: <問い>', '### Code', '### External']);
+    expect(headings).toEqual(['## 01: <問い>', '### Keywords', '### Code', '### External']);
+    expect(skeleton).toContain('- `<キーワード>`');
     expect(skeleton).toContain('- Path: `');
     expect(skeleton).toContain('- Kind: `module` | `test` | `doc` | `config` | `artifact` | `dir`');
-    expect(skeleton).toContain('- Edge: `needs` | `names` | `mentions` | `checks` | `contains` `');
+    expect(skeleton).toContain(
+      '- Edge: `needs` | `names` | `mentions` | `checks` | `contains` | `defines` `',
+    );
     expect(skeleton).toContain('- Name: `');
     expect(skeleton).toContain('- Kind: `env` | `contract` | `data` | `path` | `limit`');
     expect(skeleton).toContain('- Used by: `');

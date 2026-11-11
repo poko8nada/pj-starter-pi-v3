@@ -10,7 +10,7 @@ export function entrySkeleton(nnn, title) {
 
 ### Research & Trial
 
-- F1: <事実>。出所。
+- F1: <事実>。出所: <出所>
 
 ### Scope
 

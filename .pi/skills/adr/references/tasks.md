@@ -44,23 +44,22 @@ The change is the entry's decision. The record is `affected.md`; its shape is th
 
 Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 
-1. Read the entry in full: `Scope`'s `In`, `Main`, `Sub`, `Policy`, `Definition`.
-2. Take the objects (skip the `Forbidden` lines: they name what does not change): for each kind in the `Scope`'s `In`, for each sentence of `Main` and `Sub`, for each line of the `Policy`'s `Allowed`, take the verbs (remove, drop, replace, rewrite, add, align, move, merge, retire) and their objects. Split a sentence with two operations; a sentence that states a result is an operation. The object list goes to the report before the search.
-3. Sort the nouns into paths, directories, headings, keys, identifiers, strings, sentences, commands and abstracts. Fix an abstract on the file the entry names; an abstract that cannot be fixed is returned as a fact.
-4. Widen each to five spellings: the full path, the parent directory, the last element, the identifier, the URL fragment.
-5. The range is the whole repository, always.
-6. Search every name as a string first, with `git grep`; a path is no exception. `git ls-files` and `find` only answer whether it exists. A heading is `grep '^#\{1,6\} '`; a key is a `grep` of the config; a sentence is a `read`; a command is the `scripts` of `package.json`.
-7. Exclude `cycles/` records, `node_modules` and generated files by kind, never by count.
-8. A hit is a candidate: read it before deciding the item. A string match is not a dependency.
-9. For each object, check the seven effects: breaks, loses its target, becomes a lie, stops checking, stays in the generated, needs a registration, changes the outside contract.
-10. Fill the worksheet: per object, the five spellings' hits and the seven effects, no blank. A cell that found nothing says `なし`; a blank means the search is not done. Fill a cell with the `git grep` result, not with `ls` or `find`. Every path in the worksheet is a `Path`; a `Path` is not added beyond the worksheet. The worksheet goes to the report, not the record.
-11. An edge: a file a search cell hit is an edge to the object. `needs` — the code needs the path. `names` — a config or a doc holds the path as a value or a description. `mentions` — a doc touches the path. `checks` — a test checks the path. `contains` — a dir holds the path. One `Edge` line may list several paths.
-12. Repeat: add the names the hits give (the file, the parent directory, the identifier, the nearby heading) until no new name comes.
-13. Stop when no new name comes and the worksheet has no blank.
-14. Check that each kind in the `Scope`'s `In` has at least one operation; if not, the extraction is not done.
-15. The reflection: the ranges seen, the ranges not seen and why, the names added. The questions that could not be answered, the nouns that could not be derived and the reason the work stopped go to the report as facts.
-16. The constraints: the change is not applied, so the checks are not run. No indexer, AST or LLM. The cost follows the change's size; no full enumeration.
-17. Report the facts only, and write the affected to `affected.md` in the shape `references/affected.format.md` gives: one `Path` block per path, with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds: do not touch them, and do not delete them.
+1. Read the entry in full: `Context`, `Research & Trial` (the fact, not the `出所:` part), and `Decision`'s `Add`, `Update`, `Drop`, `Policy`'s `Allowed` and `#### Details`.
+2. Take every keyword there that is a name in this repository: a path, a directory, a heading, a key, an identifier, a string or a command. Do not take a free sentence, a common word that names no specific thing, the `Forbidden` lines or the `出所:` part. Write the list under `### Keywords` in this entry's section of `affected.md`, before `### Code`.
+3. The targets are what the `Add`, `Update`, `Drop`, `Allowed` and `Details` lines change.
+4. Widen each keyword to five spellings: the full path, the parent directory, the last element, the identifier, the URL fragment.
+5. The range is the whole repository, always. Search every spelling as a string first, with `git grep`; a path is no exception. `git ls-files` and `find` only answer whether it exists. A heading is `grep '^#\{1,6\} '`; a key is a `grep` of the config; a sentence is a `read`; a command is the `scripts` of `package.json`.
+6. Exclude `cycles/` records, `node_modules` and generated files by kind, never by count.
+7. A hit is a candidate: read it before deciding the item. A string match is not a dependency. For a non-target keyword, read a hit only when its path or line looks related; record the rest as a hit.
+8. For each target, check the seven effects: breaks, loses its target, becomes a lie, stops checking, stays in the generated, needs a registration, changes the outside contract.
+9. Fill the worksheet: the targets get the five spellings' hits and the seven effects, no blank. The other keywords get the five spellings' hits only. A cell that found nothing says `なし`; a blank means the search is not done. Fill a cell with the `git grep` result, not with `ls` or `find`. Every path in the worksheet is a `Path`; a `Path` is not added beyond the worksheet. The worksheet goes to the report, not the record. When a hit of a non-target keyword reads as related, promote it to a target and fill its seven effects.
+10. An edge: a file a search cell hit is an edge to the keyword. `needs` — the code needs the path. `names` — a config or a doc holds the path as a value or a description. `mentions` — a doc touches the path. `checks` — a test checks the path. `contains` — a dir holds the path. `defines` — the path defines a value the other path uses. One `Edge` line may list several paths.
+11. Repeat: add the keywords the hits give (the file, the parent directory, the identifier, the nearby heading) until no new keyword comes and the worksheet has no blank for the targets.
+12. Report the facts only, with these:
+    - the ranges seen, the ranges not seen and why, the keywords added
+    - the questions that could not be answered, the keywords that could not be derived and the reason the work stopped
+    - the constraint: the change is not applied, so the checks are not run; no indexer, AST or LLM; the cost follows the change's size, no full enumeration
+13. Write the affected to `affected.md` in the shape `references/affected.format.md` gives: the `Keywords` list, one `Path` block per path with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. An external contract the change calls or reads goes in `### External`; a fact about its behavior stays in `Research & Trial`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds: do not touch them, and do not delete them.
 ```
 
 - The agent puts the entry and the change in the task.
