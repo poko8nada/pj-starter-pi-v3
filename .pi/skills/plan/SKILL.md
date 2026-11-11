@@ -75,19 +75,20 @@ Notes:
 Steps:
 
 1. Read `references/format.md` before writing.
-2. Read the map's every path whole.
-3. Read each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
-4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
-5. Write `## Goal` above `## Design` as one line.
-6. Answer the four questions in `## Design` of `references/format.md`.
-7. Decide the slices by the concern the change carries.
-8. Name the concern in the slice's heading, and say it in one sentence on the slice's first line.
-9. Order the slices by dependency.
-10. Put a slice that reads another slice's output after it.
-11. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
-12. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
-13. Leave a line the plan cannot write with its name and an empty field.
-14. Stop when a boundary has no answer.
+2. Create the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> --place <worktree|base> --entries <NN[,NN...]>`. Take the plan id, the order, the place and the entries from the cut.
+3. Read the map's every path whole.
+4. Read each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
+5. Decide each path's mark: `add`, `update`, `drop`, or no mark.
+6. Write `## Goal` above `## Design` as one line.
+7. Answer the four questions in `## Design` of `references/format.md`.
+8. Decide the slices by the concern the change carries.
+9. Name the concern in the slice's heading, and say it in one sentence on the slice's first line.
+10. Order the slices by dependency.
+11. Put a slice that reads another slice's output after it.
+12. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
+13. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
+14. Leave a line the plan cannot write with its name and an empty field.
+15. Stop when a boundary has no answer.
 
 View:
 
@@ -137,7 +138,7 @@ Notes:
 - A `Verify` that is red with the change in place is a hole too.
 - The agent decides the shape before writing on.
 - The agent says why a hole does not apply.
-- Step 6 fills the left line.
+- Step 7 fills the left line.
 
 ### 5. Confirm what the plan leaves open
 

@@ -179,7 +179,7 @@ Steps:
 3. Show the owner a table of the plan's name, the leftover numbers, and the files.
 4. Write the plan's name into the `## Triage` lines when they agree.
 5. Decide their order from the dependencies; each `ex-` plan's `Boundary Plans` names the plans it stands on.
-6. Write, research, review, fix, proofread and show each grouped plan by the plan skill, steps 4 to 9: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`; its Triage line is the only source, and there is no affected for an `ex-` plan.
+6. Write, research, review, fix, proofread and show each grouped plan by the plan skill, steps 4 to 10: named `ex-<what it fixes>`, with no `No` at the top; its `No` is the `<NN>` of the Triage line's `ADR <NN>`; its Triage line is the only source, and there is no affected for an `ex-` plan.
 7. Run its work by the work skill; when its `Place` is worktree, make a worktree.
 8. Carry `done <commit>` on its line when it merges.
 9. Put its plan md's leftovers back to `collected` when it merges.

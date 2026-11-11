@@ -33,7 +33,7 @@ How the cut is shown to the owner, one block per plan in a fence.
 ```markdown
 ## <plan id>
 
-- ADR: <NN>
+- ADR: <NN>[, <NN>...]
 - Place: <worktree|base>
 - Goal: <何が> が <どうなる>、1 行。
 - Summary: <what this plan does, in one sentence>
@@ -48,7 +48,7 @@ How the cut is shown to the owner, one block per plan in a fence.
 
 | field       | what it holds                                                                |
 | ----------- | ---------------------------------------------------------------------------- |
-| `ADR`       | the ADR entries this plan cuts, by number                                    |
+| `ADR`       | the ADR entries this plan cuts, by number, comma-separated                   |
 | `Place`     | `worktree`, or `base` with what the owner watches                            |
 | `Goal`      | what becomes what, in one line                                               |
 | `Summary`   | what this plan does, in one sentence                                         |
