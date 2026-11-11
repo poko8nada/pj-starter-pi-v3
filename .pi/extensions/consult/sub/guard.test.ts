@@ -22,8 +22,8 @@ beforeEach(() => {
   writeFileSync(join(dir, '.env.bak'), 'x\n');
   writeFileSync(join(dir, '.ENV'), 'x\n');
   writeFileSync(join(dir, 'foo.env'), 'x\n');
-  mkdirSync(join(dir, 'cycles/010'), { recursive: true });
-  writeFileSync(join(dir, 'cycles/010/affected.md'), 'x\n');
+  mkdirSync(join(dir, 'cycles/010/affected'), { recursive: true });
+  writeFileSync(join(dir, 'cycles/010/affected/01.md'), 'x\n');
   symlinkSync(join(dir, '.env'), join(dir, 'link-to-env'));
 });
 
@@ -134,14 +134,14 @@ describe('judgeToolCall + 役割の許可', () => {
     expect(pathAllowed('src/a.ts', '/w', ['src/a.ts'])).toBe(true);
     expect(pathAllowed('src/b.ts', '/w', ['src'])).toBe(true);
     expect(pathAllowed('cycles/010-2026-09-29/plan/x.md', '/w', ['cycles/*/plan/*.md'])).toBe(true);
-    expect(existsSync(join(dir, 'cycles/010/affected.md'))).toBe(true);
-    expect(pathAllowed('cycles/010/affected.md', dir, ['cycles/*/affected.md'])).toBe(true);
+    expect(existsSync(join(dir, 'cycles/010/affected/01.md'))).toBe(true);
+    expect(pathAllowed('cycles/010/affected/01.md', dir, ['cycles/*/affected/*.md'])).toBe(true);
     expect(judgeToolCall('edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
     expect(judgeToolCall('quick_edit', { path: 'cycles/010/plan/x.md' }, dir, limits)).toEqual({});
     expect(
-      judgeToolCall('write', { path: 'cycles/010/affected.md' }, dir, {
+      judgeToolCall('write', { path: 'cycles/010/affected/01.md' }, dir, {
         state: 'set',
-        paths: ['cycles/*/affected.md'],
+        paths: ['cycles/*/affected/*.md'],
         bash: [],
       }),
     ).toEqual({});
@@ -150,7 +150,7 @@ describe('judgeToolCall + 役割の許可', () => {
     );
     expect(pathAllowed('.pi/skills/adr/SKILL.md', '/w', ['**/*.md', '**/.*/**/*.md'])).toBe(true);
     expect(
-      judgeToolCall('write', { path: 'cycles/261026-042-dev/affected.md' }, '/w', {
+      judgeToolCall('write', { path: 'cycles/261026-042-dev/affected/01.md' }, '/w', {
         state: 'set',
         paths: ['**/*.md', '**/.*/**/*.md'],
         bash: [],
