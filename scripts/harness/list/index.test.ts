@@ -2,7 +2,6 @@
  * `scripts/harness/list/index.mjs` の振る舞いを fake root で試す。
  *
  * fake root を `tempDir()` で作り、パスを作ってから読む。
- * `harnessExcludes` は純粋に一覧から glob を作る。
  * 期待はテストが渡した値から組み立てる。
  */
 
@@ -10,7 +9,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { harnessExcludes, readList } from './index.mjs';
+import { readList } from './index.mjs';
 
 function writeFile(abs: string, content: string): void {
   mkdirSync(dirname(abs), { recursive: true });
@@ -65,25 +64,5 @@ describe('readList', () => {
       copy: 'x',
     });
     expect(() => readList(root)).toThrow(file);
-  });
-});
-
-describe('harnessExcludes', () => {
-  it('copy 1 件と push 1 件 → 4 つの glob が順に並ぶ', () => {
-    const first = '.pi';
-    const second = 'lib';
-    expect(harnessExcludes({ starter: '~/x', copy: [first], push: [second] })).toEqual([
-      first,
-      `${first}/**`,
-      second,
-      `${second}/**`,
-    ]);
-  });
-
-  it('末尾の / は落とし、空と . は飛ばす', () => {
-    const base = '.pi';
-    expect(
-      harnessExcludes({ starter: '~/x', copy: [`${base}/`, '', '.'], push: ['', '.'] }),
-    ).toEqual([base, `${base}/**`]);
   });
 });

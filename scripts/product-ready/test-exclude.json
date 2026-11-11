@@ -1,0 +1,9 @@
+[
+  "scripts/harness",
+  ".pi",
+  "scripts/checks",
+  "scripts/product-ready",
+  "test/temp-dir.ts",
+  "test/pi.fixture.ts",
+  "test/scripts.fixture.ts"
+]

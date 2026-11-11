@@ -4,9 +4,8 @@ import { labels, plan, remove, skeletonFor } from './targets.mjs';
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 import { blockUnder, sectionOf } from './blocks.mjs';
 
-const STARTER_FLAG = ' --config vitest.starter.config.ts';
-const STARTER_CONFIG_AT = 'vitest.starter.config.ts';
-const TARGET_SCRIPTS = ['test', 'test:run', 'test:related'];
+const TEST_EXCLUDE_START = '// product-ready: test-exclude start';
+const TEST_EXCLUDE_END = '// product-ready: test-exclude end';
 
 /**
  * 見出しごとに、本文だけをテンプレートの本文で置き換える（副作用なし）。見出しが無ければ投げる。
@@ -256,28 +255,53 @@ export function applyJobs(jobs) {
 }
 
 /**
- * flag を持つ script の名を返す（副作用なし）。
+ * テストの除外の一覧を読む（副作用なし）。無い / JSON でない / 配列でない / 要素が文字列でない → パスを入れた 1 つのエラーで投げる。
  *
- * @param {Readonly<Record<string, unknown>> | undefined} scripts `package.json` の `scripts`
- * @returns {readonly string[]}
+ * @param {string} root リポジトリのルート
+ * @returns {readonly string[]} 除外の並び
  */
-export function flaggedScripts(scripts) {
-  /** @type {string[]} */
-  const names = [];
-  if (scripts === undefined) {
-    return names;
+export function readTestExclude(root) {
+  const file = path.join(root, 'scripts', 'product-ready', 'test-exclude.json');
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    throw new Error(`the test exclude is not valid: ${file}`, { cause: error });
   }
-  for (const name of TARGET_SCRIPTS) {
-    const value = scripts[name];
-    if (typeof value === 'string' && value.includes(STARTER_FLAG)) {
-      names.push(name);
-    }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`the test exclude is not valid: ${file}`, { cause: error });
   }
-  return names;
+  if (!Array.isArray(data) || !data.every((entry) => typeof entry === 'string')) {
+    throw new Error(`the test exclude is not valid: ${file}`);
+  }
+  return data;
 }
 
 /**
- * スターターだけの物を消し、テンプレートに差し替え、`test*` の flag を外し、`vitest.starter.config.ts` を消す入口。引数なしは表示だけ、`--run` で実行する。
+ * `vitest.config.ts` の目印の間を書き換える（副作用）。空なら間を空にする。
+ *
+ * @param {string} root リポジトリのルート
+ * @param {readonly string[]} paths 除外の並び
+ */
+export function writeTestExclude(root, paths) {
+  const file = path.join(root, 'vitest.config.ts');
+  const text = fs.readFileSync(file, 'utf8');
+  const lines = text.split('\n');
+  const start = lines.findIndex((line) => line.includes(TEST_EXCLUDE_START));
+  const end = lines.findIndex((line) => line.includes(TEST_EXCLUDE_END));
+  if (start === -1 || end === -1 || start >= end) {
+    throw new Error(`no test exclude markers: ${file}`);
+  }
+  const indent = lines[start].slice(0, lines[start].indexOf('//'));
+  const body = paths.map((entry) => `${indent}'${entry}',`);
+  fs.writeFileSync(file, [...lines.slice(0, start + 1), ...body, ...lines.slice(end)].join('\n'));
+}
+
+/**
+ * スターターだけの物を消し、テンプレートに差し替え、テストの除外を `vitest.config.ts` に書く入口。引数なしは表示だけ、`--run` で実行する。
  *
  * @param {readonly string[]} argv `process.argv.slice(2)` の形
  * @returns {number} 終了コード（0 か 1）
@@ -298,23 +322,13 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  const packageFile = path.join(root, 'package.json');
-  let packageText;
+  let exclude;
   try {
-    packageText = fs.readFileSync(packageFile, 'utf8');
-  } catch (_unused) {
-    console.error(`no such file: ${packageFile}`);
+    exclude = readTestExclude(root);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
-  let packageData;
-  try {
-    packageData = JSON.parse(packageText);
-  } catch (_unused) {
-    console.error(`the package.json is not valid JSON: ${packageFile}`);
-    return 1;
-  }
-  const flagged = flaggedScripts(packageData?.scripts);
-  const configExists = fs.existsSync(path.join(root, STARTER_CONFIG_AT));
   let jobs;
   try {
     jobs = jobsFor(root, entries);
@@ -322,9 +336,11 @@ export function main(argv) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
+  const excludeFile = path.join(root, 'scripts', 'product-ready', 'test-exclude.json');
+  const configFile = path.join(root, 'vitest.config.ts');
   const headings = headingsOf(jobs);
   for (const line of [
-    ...switchLines({ config: configExists, scripts: flagged }),
+    ...switchLines({ exclude: excludeFile, config: configFile }),
     ...planLines(labels(args.only), entries, headings),
   ]) {
     console.log(line);
@@ -334,23 +350,7 @@ export function main(argv) {
   }
   try {
     remove(entries.filter((entry) => entry.action === 'remove'));
-    if (typeof packageData === 'object' && packageData !== null) {
-      const nextScripts =
-        typeof packageData.scripts === 'object' && packageData.scripts !== null
-          ? { ...packageData.scripts }
-          : {};
-      for (const name of flagged) {
-        const value = nextScripts[name];
-        if (typeof value === 'string') {
-          nextScripts[name] = value.replaceAll(STARTER_FLAG, '');
-        }
-      }
-      packageData = { ...packageData, scripts: nextScripts };
-      fs.writeFileSync(packageFile, `${JSON.stringify(packageData, null, 2)}\n`);
-    }
-    if (configExists) {
-      fs.rmSync(path.join(root, STARTER_CONFIG_AT), { force: true });
-    }
+    writeTestExclude(root, exclude);
     applyJobs(jobs);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
