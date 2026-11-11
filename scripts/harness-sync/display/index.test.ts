@@ -1,5 +1,5 @@
 /**
- * `scripts/harness/display/index.mjs` の振る舞いを試す。
+ * `scripts/harness-sync/display/index.mjs` の振る舞いを試す。
  *
  * `formatLines` は純粋に表示の行を作る。期待はテストが渡した値から組み立てる。
  */

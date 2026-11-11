@@ -57,9 +57,9 @@ export function configLine(path: string): string {
   return `config: ${path}`;
 }
 
-/** `scripts: <a>, <b>` の形を作る */
-export function scriptsLine(names: readonly string[]): string {
-  return `scripts: ${names.join(', ')}`;
+/** `test-exclude: <path>` の形を作る */
+export function testExcludeLine(path: string): string {
+  return `test-exclude: ${path}`;
 }
 
 /** `--only=<value>` の形を作る */

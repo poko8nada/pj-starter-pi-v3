@@ -45,8 +45,7 @@ English: [README.md](README.md)
   - `scripts/checks/typecheck.mjs` - push 時にルートと harness の型を確認する。
   - `scripts/checks/typecheck-staged.mjs` - commit 時に変更分だけの型を確認する。
 - test:
-  - `vitest.config.ts` - プロダクト用の設定で、harness のパスを除外する。
-  - `vitest.starter.config.ts` - スターター用の設定で、すべてのテストを対象にする。
+  - `vitest.config.ts` - テストの設定で、product:ready が test-exclude.json の一覧を除外に書く。
 - japanese-check: `scripts/checks/ja-check.mjs` - 禁止語の出現を数え、error と warn で報告し、`scripts/checks/ja-check.json` の `exclude` に書いたパスは検査しない。
 - localhook: `lefthook`
   - pre-commit: 変更分に書式と lint と型と関連テストと日本語検査を実行する。
@@ -56,8 +55,8 @@ English: [README.md](README.md)
 
 スターターとプロダクトの間の移動は、明示的で再現可能な形で行う。
 
-- harness-sync: `scripts/harness/*` - スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルは削除しない。
-- product-ready: `scripts/product-ready/*` - roadmap と定義と readme をテンプレートに置き換え、スターター用のテスト配線を外す。
+- harness-sync: `scripts/harness-sync/*` - スターターの部品を取り込み、プロジェクトの部品を戻し、ファイルは削除しない。
+- product-ready: `scripts/product-ready/*` - roadmap と定義と readme をテンプレートに置き換え、test-exclude.json の一覧をテストの除外に書く。
 
 ### CI
 

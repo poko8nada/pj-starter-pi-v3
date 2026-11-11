@@ -40,23 +40,11 @@ export function parseArgs(argv) {
 /**
  * 切り替えの 2 行（副作用なし）。
  *
- * @param {{ readonly config: boolean, readonly scripts: readonly string[] }} plan 残る物
+ * @param {{ readonly exclude: string, readonly config: string }} plan 残る物
  * @returns {readonly string[]} 表示の行
  */
 export function switchLines(plan) {
-  /** @type {string[]} */
-  const lines = [];
-  if (plan.config) {
-    lines.push('config: vitest.starter.config.ts');
-  } else {
-    lines.push('no config to remove');
-  }
-  if (plan.scripts.length === 0) {
-    lines.push('no scripts to change');
-  } else {
-    lines.push(`scripts: ${plan.scripts.join(', ')}`);
-  }
-  return lines;
+  return [`test-exclude: ${plan.exclude}`, `config: ${plan.config}`];
 }
 
 /**

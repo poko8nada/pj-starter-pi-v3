@@ -1,5 +1,5 @@
 /**
- * `scripts/harness/diff/index.mjs` の振る舞いを fake root で試す。
+ * `scripts/harness-sync/diff/index.mjs` の振る舞いを fake root で試す。
  *
  * fake の 2 つのツリーを作り、`sameFile` で中身を比べ、`diffPaths` で写す物を作る。
  */

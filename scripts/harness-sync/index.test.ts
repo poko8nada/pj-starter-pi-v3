@@ -1,8 +1,8 @@
 /**
- * `scripts/harness/index.mjs` の振る舞いを、子プロセスとして実行して試す。
+ * `scripts/harness-sync/index.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
  * fake の 2 つのツリー（元と先）を `tempDir()` で作り、
- * `node scripts/harness/index.mjs` を子プロセスで呼ぶ。
+ * `node scripts/harness-sync/index.mjs` を子プロセスで呼ぶ。
  * 通し（copy、missing、終了コード、3 種のエラー、same、`--run`）だけを見る。
  * 細かい分岐は `path`、`collect`、`diff`、`display` の単体で見る。
  */
@@ -23,7 +23,7 @@ import {
 } from '../../test/scripts.fixture.ts';
 import { tempDir } from '../../test/temp-dir.ts';
 
-const SCRIPT = join(process.cwd(), 'scripts', 'harness', 'index.mjs');
+const SCRIPT = join(process.cwd(), 'scripts', 'harness-sync', 'index.mjs');
 
 interface RunOut {
   readonly status: number;
@@ -60,7 +60,7 @@ function writeList(
   copy: readonly string[] = ['.pi'],
   push: readonly string[] = ['.pi'],
 ): void {
-  writeJson(join(root, 'scripts', 'harness', 'harness.json'), { starter, copy, push });
+  writeJson(join(root, 'scripts', 'harness-sync', 'setting.json'), { starter, copy, push });
 }
 
 /** 元と先の 2 つを作り、先に一覧と相手のパスを置く */
@@ -161,7 +161,7 @@ describe('harness errors', () => {
   it('copy が配列でない → 1 行で exit 1', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
-    writeJson(join(local, 'scripts', 'harness', 'harness.json'), {
+    writeJson(join(local, 'scripts', 'harness-sync', 'setting.json'), {
       starter: origin,
       copy: 'x',
       push: [],

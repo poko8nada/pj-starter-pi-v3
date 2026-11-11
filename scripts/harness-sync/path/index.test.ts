@@ -1,5 +1,5 @@
 /**
- * `scripts/harness/path/index.mjs` の振る舞いを fake root で試す。
+ * `scripts/harness-sync/path/index.mjs` の振る舞いを fake root で試す。
  *
  * `resolvePath` は純粋に `~` と相対を開いて絶対パスを返す。
  * `resolveStarter` は存在を確認して `self` か `other` を返す。

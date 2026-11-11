@@ -1,41 +1,17 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
-import { harnessExcludes, readList } from './scripts/harness/list/index.mjs';
 
 const verbose = process.env.TEST_VERBOSE === '1';
 
-// config 自身のパスから root を出す（`vitest --root` でも同じ所を読む）。
-const root = dirname(fileURLToPath(import.meta.url));
-
 type Reporters = ['verbose'] | [['default', { summary: boolean }]];
 
-type TestConf = {
+export default defineConfig({
   test: {
-    reporters: Reporters;
-    passWithNoTests: boolean;
-    exclude?: string[];
-  };
-};
-
-/**
- * テストの設定を作る（副作用なし）。starter（`true`）は全てが対象、product（`false`）はハーネスの一覧を除外で外す。
- */
-export function testConfig(harness: boolean): TestConf {
-  const base = {
+    exclude: [
+      ...configDefaults.exclude,
+      // product-ready: test-exclude start
+      // product-ready: test-exclude end
+    ],
     reporters: (verbose ? ['verbose'] : [['default', { summary: false }]]) as Reporters,
-    // 開始時はテストが0本でも緑。product は除外の結果0本になる。
     passWithNoTests: true,
-  };
-  if (harness) {
-    return { test: base };
-  }
-  return {
-    test: {
-      ...base,
-      exclude: [...configDefaults.exclude, ...harnessExcludes(readList(root))],
-    },
-  };
-}
-
-export default defineConfig(testConfig(false));
+  },
+});

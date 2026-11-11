@@ -1,6 +1,6 @@
 // ハーネスを運ぶ（スターターとプロダクトの間で差分で合わせる）。
-// 使い方: node scripts/harness/index.mjs pull|push [--run]
-// 仕組み: scripts/harness/harness.json の一覧の内側のファイルを両側で集め、
+// 使い方: node scripts/harness-sync/index.mjs pull|push [--run]
+// 仕組み: scripts/harness-sync/setting.json の一覧の内側のファイルを両側で集め、
 // 元にある物は写す。既定は表示だけ、`--run` で実行する
 import * as fs from 'node:fs';
 import * as path from 'node:path';

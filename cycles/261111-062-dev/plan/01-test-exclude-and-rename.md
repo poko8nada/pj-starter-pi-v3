@@ -326,43 +326,72 @@ function readList(root: string): HarnessList;
 
 ### Slice 1: テストの除外を product-ready の設定へ移す
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `scripts/product-ready/index.test.ts` の dry-run の表示断言が macOS の一時領域の symlink（`/var` と `/private/var`）で落ちたため、`realpathSync` で実パスに揃えた。子プロセスの `process.cwd()` が実パスを返すため、待ちきれない崩れとしてここで直した。
+- Commit: 445833ff7e92101ae117f1f2fc01a1369c07c90e
 - Stopped:
 
 ### Slice 2: ハーネス同期を harness-sync の名前へ揃える
 
 - Findings:
-- Unplanned:
-- Commit:
+  - 旧名の `git grep` に `cycles/` の記録以外の残りが2件ある（`scripts/product-ready/index.test.ts:24` の試料値 `'scripts/harness'` と `ROADMAP.md:272` の当時の記述 `harness.json`）。
+    - left: 前者は Slice 2 の Policy が `scripts/product-ready` の変更（`test-exclude.json` を除く）を禁じるため。後者は当時の記録であり、直すと履歴を改ざんするため。どちらも振る舞いに影響しない。
+- Unplanned: なし
+- Commit: e7d2a633ca78bc4fa071622ef7bad958697cbf68
 - Stopped:
+
+### Cleanup: 更新したテストの重複・廃止の点検（落とすものなし）
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし（`scripts/product-ready/index.test.ts:24` の `'scripts/harness'` 試料と `ROADMAP.md:272` の `harness.json` は Notes の Slice 2 Findings で left と決定済みのため finding にしない。`testConfig`・`harnessExcludes`・`vitest.starter.config.ts` への参照は `cycles/` の記録以外に残っていない）。
 - Unlisted:
+  - なし（Files の列挙に `scripts/harness/config.test.ts` の行はないが、Slice 1 Steps 9 と Design Modules で `vitest.config.test.ts` への移動が決定済みで、`scripts/harness/` の drop に含まれる。`realpathSync` の Unplanned 対応も Files 記載の `scripts/product-ready/index.test.ts` の内側）。
 - Gaps:
+  - 空配列で目印の間を空にする振る舞い（Policy Allowed・Slice 1 Steps 3.2、`scripts/product-ready/index.mjs:289`）を確かめるテストがない。happy は7件、error は壊れた JSON のみ（`scripts/product-ready/index.test.ts:191`）。
+    - fixed: `(empty) 空配列の JSON で --run` を追加し、config 全文不変と JSON の `[]` 残存を断言した。
+  - `readTestExclude` の不正4種（無い・JSONでない・配列でない・要素が文字列でない、`scripts/product-ready/index.mjs:263`）のうち、error テスト（`scripts/product-ready/index.test.ts:207`）が扱うのは「JSONでない」1種のみ。残り3種で書き換えず exit 1 になることがチェックされておらず、Policy Forbidden 5行目（不正時の書き換え禁止）の保証が1種にしかない。
+    - fixed: 不正3種の error テストを `product-ready index exclude errors` に追加し、いずれも1行 exit 1・ツリー不変を断言した。
 - Policy:
+  - なし（Forbidden はいずれも保持。Slice 1: harness 由来の除外導出なし・2つ目の設定なし・`configDefaults` 非対象・実行時 JSON 読みなし・不正時は副作用（`remove`、`writeTestExclude`、`applyJobs`）より前の `return 1`（`scripts/product-ready/index.mjs:325`）・029/028 不干渉。Slice 2: 過去 `cycles/` 不変・`scopes.json` と `HARNESS_DIRS` 不変・pull/push の振る舞い不変（`.mjs` はパスとコメントのみ変更）・`setting.json` の形不変・`vitest.config.ts` 追従なし）。
 - Unproven:
+  - happy テストの目印の断言が `toContain` の繰り返し（`scripts/product-ready/index.test.ts:200`）のため、8行目の混入・重複書き込み・順序入替・目印外のゴミがあっても緑のまま。「目印の間に7件が入る」の厳密な一致は証明されない。
+    - fixed: happy を config 全文の `toBe` 一致（目印間への7件挿入のみの差分）に強化し、順序・重複・余分・目印外変更があれば落ちる形にした。
 - Noise:
+  - なし（`toHaveLength(1)` と `the test exclude is not valid:` は plan 指定の仕様値、`TEST_EXCLUDE_ENTRIES` の7件は Slice 1 Steps 12.1 決定の共有定数で各テストのリテラルではない、`cli.test.ts` の期待は `testExcludeLine`/`configLine` の helper 組み立て、削除されたテストは plan 指定の drop）。
 - Doubts:
+  - `main` は `remove()`（`scripts/product-ready/index.mjs:352`）を `writeTestExclude()`（`:353`）より先に呼ぶため、目印欠落（`no test exclude markers`、`:295`）では cycles 削除済みの半端状態が残る。JSON 不正時は副作用前に `return 1` するが、markers 異常時の順序（write 先か現状維持か）は plan・Policy ともに無言。修正か現状追認か、オーナー判断が必要。
+    - decided(fix): Steps に順序指定がないため `writeTestExclude` を `remove` より先にし、markers 異常時は副作用なしにした。欠落時の error テストで cycles 残存を固定した。
+  - `reporters` テスト（`vitest.config.test.ts:31`）は実行時 env の分岐しか確かめない。もう一方の `TEST_VERBOSE` 分岐が壊れても通常実行では緑のまま。plan は「今の値のまま」と決めた形だが、CI を両 env で回すか現状でよいか、オーナー判断が必要。
+    - decided(leave): Steps 9 は今の値の一致のみ要求し、両分岐の実行を要求しないため現状維持。
 
 ### Round 2
 
 - Stale:
+  - なし（`testConfig`・`harnessExcludes`・`vitest.starter.config.ts` への参照は `cycles/` の記録以外に残っていない。残る `scripts/harness` は `scripts/product-ready/index.test.ts:24` の試料値と `ROADMAP.md:272` の当時記述のみで、Round 1 Notes の left 決定どおりのため finding にしない）。
 - Unlisted:
+  - なし（Files 外の変更は `realpathSync` の Unplanned 対応のみで `scripts/product-ready/index.test.ts` の内側。`vitest.config.test.ts` への移動は Slice 1 Steps 9 決定どおり）。
 - Gaps:
+  - なし（空配列の振る舞いは `scripts/product-ready/index.test.ts:215` の `(empty)` が config 全文不変と JSON `[]` 残存を断言し、Slice 1 Steps 3.2・Policy Allowed を満たす。`readTestExclude` の不正4種は `:225` の壊れた JSON に加え、`:431` の欠落・`:446` の非配列・`:461` の非文字列要素の3種が追加され、いずれも1行 exit 1・出力空・config 不変・targets 不変・cycles 残存を断言し、Policy Forbidden の不正時書き換え禁止を4種とも保証する）。
 - Policy:
+  - なし（Forbidden はいずれも保持。不正時は `scripts/product-ready/index.mjs:326` の `readTestExclude` 直後の `return 1` で副作用前に終了し、目印欠落時は `:351-355` の `writeTestExclude` 先行・同一 try 内のため `remove`・`applyJobs` まで届かず、`:413` の error テストが cycles 残存・config 不変・targets 不変を固定する。`configDefaults` 非対象・実行時 JSON 読みなし・2つ目の設定なしも変わらない）。
 - Unproven:
+  - なし（happy は `scripts/product-ready/index.test.ts:200-210` の `toContain` 繰り返しから `:205-210` の目印間7件挿入のみの差分による config 全文 `toBe` 一致に強化され、順序入替・重複・混入・目印外変更があれば落ちる。`reporters` は `vitest.config.test.ts:31` の今の値の一致のままで、Round 1 の decided(leave) どおり両分岐実行は要求しないため追加の証明は不要）。
 - Noise:
+  - なし（`toHaveLength(1)` と `the test exclude is not valid:` は plan 指定の仕様値、`TEST_EXCLUDE_ENTRIES` は Steps 12.1 決定の共有定数、`cli.test.ts` の期待は helper 組み立て、削除テストは plan 指定の drop のままで、新たな冗長・脆さはない）。
 - Doubts:
+  - なし（Round 1 の2件は decided 済みで、順序修正は上記 Policy どおり実装・固定され、`reporters` の片 env のみは Steps 9 の要求どおりのため、新たにオーナー判断を求める事項はない）。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: テストの除外が `product-ready` の設定だけで決まり、ハーネス同期が `harness-sync` の名前で揃う。実装はこれを達成している。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（65 files / 813 tests）、`pnpm product:ready` の dry-run、`pnpm harness-sync:pull` と `push`（pull の missing 5 はベースが旧 `scripts/harness` のため。push は13を写す）、`git grep 'scripts/harness'`（`scripts/harness-sync` の部分一致と `scripts/product-ready/index.test.ts:24` の試料、`ROADMAP.md:272` の `harness.json`）。`readTestExclude` の検証を外すと不正 JSON の2テストが赤になり、戻すと緑に戻ることを確認した。
+- Findings: なし
+- Doubts: `reporters` テストは実行時 env の片分岐だけを見る。`Steps` 9 は「今の値のまま」の一致だけを求めるため、両 env では回さない（decided(leave)）。

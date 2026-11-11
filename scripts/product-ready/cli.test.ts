@@ -6,29 +6,22 @@ import {
   countLine,
   indented,
   onlyEquals,
-  scriptsLine,
+  testExcludeLine,
 } from '../../test/scripts.fixture.ts';
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 
-function makeScriptNames(): readonly string[] {
-  return ['test', 'test:run'];
-}
-
 describe('switchLines', () => {
-  it('config あり・scripts 2件 → 2行', () => {
-    const configAt = 'vitest.starter.config.ts';
-    const scripts = makeScriptNames();
-    expect(switchLines({ config: true, scripts: [...scripts] })).toEqual([
-      configLine(configAt),
-      scriptsLine(scripts),
+  it('happy: JSON のパスと config のパス → test-exclude と config の2行', () => {
+    const exclude = 'scripts/product-ready/test-exclude.json';
+    const config = 'vitest.config.ts';
+    expect(switchLines({ exclude, config })).toEqual([
+      testExcludeLine(exclude),
+      configLine(config),
     ]);
   });
 
-  it('空 → 消す物が無い旨の2行', () => {
-    expect(switchLines({ config: false, scripts: [] })).toEqual([
-      'no config to remove',
-      'no scripts to change',
-    ]);
+  it('empty: exclude と config が空 → test-exclude: と config: の2行', () => {
+    expect(switchLines({ exclude: '', config: '' })).toEqual([testExcludeLine(''), configLine('')]);
   });
 });
 

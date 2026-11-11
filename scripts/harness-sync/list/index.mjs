@@ -1,32 +1,11 @@
-// ハーネスの一覧を読む。保存場所は `scripts/harness/harness.json`。
+// ハーネスの一覧を読む。
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * `scripts/harness/harness.json` の形
+ * `scripts/harness-sync/setting.json` の形
  * @typedef {{ readonly starter: string, readonly copy: readonly string[], readonly push: readonly string[] }} HarnessList
  */
-
-/**
- * テストの除外を作る（副作用なし）。`copy` と `push` の両方の項目から `<項目>` と `<項目>/**` を作る。末の `/` は落とす。空と `.` は飛ばす。
- * @param {HarnessList} list 一覧
- * @returns {readonly string[]} 除外の glob（一覧の順）
- */
-export function harnessExcludes(list) {
-  /** @type {string[]} */
-  const out = [];
-  for (const entry of [...(list.copy ?? []), ...(list.push ?? [])]) {
-    if (typeof entry !== 'string' || entry === '') {
-      continue;
-    }
-    const rel = entry.replace(/\/+$/, '');
-    if (rel === '' || rel === '.') {
-      continue;
-    }
-    out.push(rel, `${rel}/**`);
-  }
-  return out;
-}
 
 /**
  * 一覧を読む。無い / JSON として読めない / `starter` が文字列でない / `copy` が配列でない / `push` が配列でない → パスを入れた 1 つのエラーで投げる。
@@ -34,7 +13,7 @@ export function harnessExcludes(list) {
  * @returns {HarnessList}
  */
 export function readList(root) {
-  const file = path.join(root, 'scripts', 'harness', 'harness.json');
+  const file = path.join(root, 'scripts', 'harness-sync', 'setting.json');
   let text;
   try {
     text = fs.readFileSync(file, 'utf8');

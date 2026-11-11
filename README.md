@@ -45,8 +45,7 @@ Automated gates keep style, correctness, behavior, and wording consistent on eve
   - `scripts/checks/typecheck.mjs` - Checks root and harness types on push.
   - `scripts/checks/typecheck-staged.mjs` - Checks only staged files on commit.
 - test:
-  - `vitest.config.ts` - Product config excluding harness paths.
-  - `vitest.starter.config.ts` - Starter config covering all tests.
+  - `vitest.config.ts` - Test config; product:ready writes the harness paths into its exclude list from test-exclude.json.
 - japanese-check: `scripts/checks/ja-check.mjs` - Reports banned Japanese words with error and warn counts, and skips the paths listed in `exclude` in `scripts/checks/ja-check.json`.
 - localhook: `lefthook`
   - pre-commit: Runs format, lint, staged typecheck, related tests, and japanese-check on changed parts.
@@ -56,8 +55,8 @@ Automated gates keep style, correctness, behavior, and wording consistent on eve
 
 Moving work between starter and product stays explicit and repeatable.
 
-- harness-sync: `scripts/harness/*` - Brings starter parts in and returns project parts back without deleting files.
-- product-ready: `scripts/product-ready/*` - Replaces roadmap, definition, and readmes with templates and drops starter-only test wiring on first run.
+- harness-sync: `scripts/harness-sync/*` - Brings starter parts in and returns project parts back without deleting files.
+- product-ready: `scripts/product-ready/*` - Replaces roadmap, definition, and readmes with templates, and writes the test exclude list from test-exclude.json on first run.
 
 ### CI
 
