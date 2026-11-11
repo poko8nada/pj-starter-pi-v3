@@ -314,6 +314,23 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
 
+  it('(happy) excludeが**/affected/*.mdで行がcycles配下のaffected/01.mdのerror語 → 報告せずexit 0', () => {
+    const root = fakeRoot();
+    writeConfig(root, { ...validConfig(), exclude: ['**/affected/*.md'] });
+    const file = writeFile(
+      root,
+      join('cycles', '999-test', 'affected', '01.md'),
+      `${ERROR_WORD}\n`,
+    );
+    const out = run(root, [file]);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).not.toContain('[error]');
+    expect(out.stdout).toContain('ja-check: No findings.');
+    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  });
+
   it('(happy) excludeがROADMAP.mdで行がsrc配下のROADMAP.mdのerror語 → 報告してexit 1', () => {
     const root = fakeRoot();
     writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });

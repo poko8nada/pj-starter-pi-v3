@@ -20,7 +20,7 @@
         "bash"
       ],
       "isolated": false,
-      "paths": ["cycles/*/affected.md"],
+      "paths": ["cycles/*/affected/*.md"],
       "bash": ["git grep", "git ls-files", "git log", "rg"],
       "continueByDefault": false,
       "limits": { "turns": 60, "output": 80000 },

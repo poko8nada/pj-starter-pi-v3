@@ -6,17 +6,16 @@
  *   node index.mjs --root <dir> --set <NN> <title>
  *   node index.mjs --root <dir> --check
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { git } from '../../../../lib/git-env.mjs';
 import { adrSkeleton, checkEntry, entrySkeleton } from './adr.mjs';
-import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
+import { affectedEntrySkeleton } from './affected.mjs';
 import {
   append,
   createLeafDir,
   cycleDirName,
-  cycleNumberOf,
   deleteEntry,
   dirNames,
   lastEntryNumber,
@@ -29,14 +28,55 @@ import {
 } from './cycle.mjs';
 
 /**
- * `affected.md` の本文に `affectedEntrySkeleton(nnn, title)` を追記する。
- * @param {string} markdown
- * @param {number} nnn
- * @param {string} title
+ * `affected/` の dir を返す。
+ * @param {string} openDir
  * @returns {string}
  */
-function appendAffectedEntry(markdown, nnn, title) {
-  return append(markdown, affectedEntrySkeleton(nnn, title));
+function affectedDir(openDir) {
+  return join(openDir, 'affected');
+}
+
+/**
+ * 1 エントリ分の affected の path を返す。
+ * @param {string} openDir
+ * @param {number} nn
+ * @returns {string}
+ */
+function affectedPath(openDir, nn) {
+  return join(affectedDir(openDir), `${String(nn).padStart(2, '0')}.md`);
+}
+
+/**
+ * `affected/` の `.md` を番号順に返す。dir がなければ空。
+ * @param {string} openDir
+ * @returns {readonly { nn: number, path: string }[]}
+ */
+function affectedFiles(openDir) {
+  let entries;
+  try {
+    entries = readdirSync(affectedDir(openDir), { withFileTypes: true });
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return [];
+    throw err;
+  }
+  const files = [];
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const found = /^(\d{2})\.md$/.exec(entry.name);
+    if (!found) continue;
+    files.push({ nn: Number(found[1]), path: join(affectedDir(openDir), entry.name) });
+  }
+  return files.toSorted((a, b) => a.nn - b.nn);
+}
+
+/**
+ * 1 エントリ分の affected の見出し番号を `next` に変える。
+ * @param {string} markdown
+ * @param {number} next
+ * @returns {string}
+ */
+function renumberEntryFile(markdown, next) {
+  return markdown.replace(/^## \d{2}:/u, `## ${String(next).padStart(2, '0')}:`);
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -57,18 +97,12 @@ if (isMain) {
       const adrPath = join(openDir, 'adr.md');
       const current = readFileSync(adrPath, 'utf8');
       const next = (lastEntryNumber(current) ?? 0) + 1;
-      const cycle = cycleNumberOf(basename(openDir));
-      if (cycle === null) throw new Error(`broken cycle dir name: ${openDir}`);
       writeFileSync(adrPath, append(current, entrySkeleton(next, add)));
       console.log(`appended: ${adrPath}`);
-      const affectedPath = join(openDir, 'affected.md');
-      if (existsSync(affectedPath)) {
-        const affectedCurrent = readFileSync(affectedPath, 'utf8');
-        writeFileSync(affectedPath, appendAffectedEntry(affectedCurrent, next, add));
-      } else {
-        writeFileSync(affectedPath, affectedSkeleton(cycle, next, add));
-      }
-      console.log(`appended: ${affectedPath}`);
+      mkdirSync(affectedDir(openDir), { recursive: true });
+      const path = affectedPath(openDir, next);
+      writeFileSync(path, affectedEntrySkeleton(next, add));
+      console.log(`created: ${path}`);
     } else {
       let branch = '';
       try {
@@ -91,7 +125,8 @@ if (isMain) {
         throw err;
       }
       writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn, add));
-      writeFileSync(join(leaf, 'affected.md'), affectedSkeleton(nnn, 1, add));
+      mkdirSync(affectedDir(leaf), { recursive: true });
+      writeFileSync(affectedPath(leaf, 1), affectedEntrySkeleton(1, add));
       console.log(`created: ${leaf}`);
     }
   } else if (del !== null) {
@@ -99,23 +134,28 @@ if (isMain) {
     const adrPath = join(openDir, 'adr.md');
     writeFileSync(adrPath, deleteEntry(readFileSync(adrPath, 'utf8'), del));
     console.log(`deleted: ${adrPath}`);
-    const affectedPath = join(openDir, 'affected.md');
-    if (existsSync(affectedPath)) {
-      writeFileSync(affectedPath, deleteEntry(readFileSync(affectedPath, 'utf8'), del));
-      console.log(`deleted: ${affectedPath}`);
+    const path = affectedPath(openDir, del);
+    if (existsSync(path)) {
+      rmSync(path);
+      console.log(`deleted: ${path}`);
+    }
+    for (const file of affectedFiles(openDir)) {
+      if (file.nn <= del) continue;
+      const next = file.nn - 1;
+      const nextPath = affectedPath(openDir, next);
+      writeFileSync(nextPath, renumberEntryFile(readFileSync(file.path, 'utf8'), next));
+      rmSync(file.path);
+      console.log(`renamed: ${file.path} -> ${nextPath}`);
     }
   } else if (set !== null) {
     if (openDir === null) throw new Error('no open cycle');
     const adrPath = join(openDir, 'adr.md');
     writeFileSync(adrPath, setEntryTitle(readFileSync(adrPath, 'utf8'), set.nn, set.title));
     console.log(`set: ${adrPath}`);
-    const affectedPath = join(openDir, 'affected.md');
-    if (existsSync(affectedPath)) {
-      writeFileSync(
-        affectedPath,
-        setEntryTitle(readFileSync(affectedPath, 'utf8'), set.nn, set.title),
-      );
-      console.log(`set: ${affectedPath}`);
+    const path = affectedPath(openDir, set.nn);
+    if (existsSync(path)) {
+      writeFileSync(path, setEntryTitle(readFileSync(path, 'utf8'), set.nn, set.title));
+      console.log(`set: ${path}`);
     }
   } else {
     throw new Error('no operation: use --add, --delete, --set or --check');

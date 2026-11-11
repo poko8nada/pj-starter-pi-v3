@@ -59,7 +59,7 @@ Section and field names are English; the content is Japanese.
       ```
 
    3. drop: <1 つの変更>
-2. Outside: `<affected.md の ### External の項目>`
+2. Outside: `<affected/<NN>.md の ### External の項目>`
    1. update: <1 つの変更>
 
 ### Policy
@@ -200,7 +200,7 @@ How the work is cut into slices, one concern per slice.
 - The content the ADR or the chat decided goes in a fence under the file step.
 - The language is `ts`, `md`, `json` or the like.
 - The content is copied as it was decided, markdown or code.
-- A step that meets the outside carries `2. Outside: <the affected.md ### External item>` with its substeps.
+- A step that meets the outside carries `2. Outside: <the affected/<NN>.md ### External item>` with its substeps.
 - A test step keeps its case lines, and the fence goes under them.
 - The cases of a test file follow `## Test cases`.
 - A plan with no test file has no test step.

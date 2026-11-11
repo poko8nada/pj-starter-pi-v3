@@ -21,20 +21,7 @@ export function affectedEntrySkeleton(nnn, title) {
 ### External
 
 - Name: \`<外のもの>\`
-  - Kind: \`env\` | \`contract\` | \`data\` | \`path\` | \`limit\`
+  - Kind: \`env\` | \`contract\` | \`event\` | \`data\` | \`path\` | \`limit\`
   - Used by: \`<それを使うパス>\`
 `;
-}
-
-/**
- * `affected.md` の骨組み。`references/affected.format.md` の形と合わせること。`cycle` はサイクルの番号、`entry` は最初のエントリーの番号。
- * @param {number} cycle
- * @param {number} entry
- * @param {string} [title]
- * @returns {string}
- */
-export function affectedSkeleton(cycle, entry, title) {
-  return `# Affected ${String(cycle).padStart(3, '0')}
-
-${affectedEntrySkeleton(entry, title)}`;
 }

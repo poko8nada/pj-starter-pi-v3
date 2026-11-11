@@ -5,9 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { adrSkeleton, checkEntry, entrySkeleton } from './adr.mjs';
-import { affectedEntrySkeleton, affectedSkeleton } from './affected.mjs';
+import { affectedEntrySkeleton } from './affected.mjs';
 import {
-  append,
   appendEntry,
   createLeafDir,
   cycleDirName,
@@ -507,39 +506,32 @@ describe('affectedEntrySkeleton', () => {
       '- Edge: `needs` | `names` | `mentions` | `checks` | `contains` | `defines` `',
     );
     expect(skeleton).toContain('- Name: `');
-    expect(skeleton).toContain('- Kind: `env` | `contract` | `data` | `path` | `limit`');
+    expect(skeleton).toContain('- Kind: `env` | `contract` | `event` | `data` | `path` | `limit`');
     expect(skeleton).toContain('- Used by: `');
-  });
-
-  it('affected.md の骨組みは # Affected で始まり、渡したエントリー番号を持つ', () => {
-    expect(affectedSkeleton(15, 1).startsWith('# Affected 015\n')).toBe(true);
-    expect(affectedSkeleton(15, 1)).toContain('## 01: <問い>');
-    expect(affectedSkeleton(15, 3).startsWith('# Affected 015\n')).toBe(true);
-    expect(affectedSkeleton(15, 3)).toContain('## 03: <問い>');
   });
 
   it('題名を渡すと見出しに入る', () => {
     expect(affectedEntrySkeleton(2, '題名')).toContain('## 02: 題名');
-    expect(affectedSkeleton(15, 1, '題名')).toContain('## 01: 題名');
   });
 });
 
 describe('CLI', () => {
   const script = fileURLToPath(new URL('./index.mjs', import.meta.url));
 
-  it('--add は開いたサイクルの adr.md と affected.md に題名付きで追記する', () => {
+  it('--add は開いたサイクルの adr.md に追記し、affected のファイルを作る', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
     writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '一'));
-    writeFileSync(join(cyclesDir, name, 'affected.md'), affectedSkeleton(15, 1, '一'));
+    mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '一'));
     const done = spawnSync(process.execPath, [script, '--root', root, '--add', '二'], {
       encoding: 'utf8',
     });
     expect(done.status).toBe(0);
     const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
-    const affectedAfter = readFileSync(join(cyclesDir, name, 'affected.md'), 'utf8');
+    const affectedAfter = readFileSync(join(cyclesDir, name, 'affected', '02.md'), 'utf8');
     expect(adrAfter).toContain('## 02: 二');
     expect(affectedAfter).toContain('## 02: 二');
     expect(adrAfter.match(/^# ADR /gm) ?? []).toHaveLength(1);
@@ -555,21 +547,21 @@ describe('CLI', () => {
     expect(names).toHaveLength(1);
     const leaf = join(join(root, 'cycles'), names[0]);
     expect(readFileSync(join(leaf, 'adr.md'), 'utf8')).toContain('## 01: 一');
-    expect(readFileSync(join(leaf, 'affected.md'), 'utf8')).toContain('## 01: 一');
+    expect(readFileSync(join(leaf, 'affected', '01.md'), 'utf8')).toContain('## 01: 一');
   });
 
-  it('--delete は両ファイルから削除して振り直す', () => {
+  it('--delete は adr と affected から削除して振り直す', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
     const adr = appendEntry(appendEntry(adrSkeleton(15, '一'), 2, '二'), 3, '三');
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
-    const affected = append(
-      append(affectedSkeleton(15, 1, '一'), affectedEntrySkeleton(2, '二')),
-      affectedEntrySkeleton(3, '三'),
-    );
-    writeFileSync(join(cyclesDir, name, 'affected.md'), affected);
+    const affectedDir = join(cyclesDir, name, 'affected');
+    mkdirSync(affectedDir, { recursive: true });
+    writeFileSync(join(affectedDir, '01.md'), affectedEntrySkeleton(1, '一'));
+    writeFileSync(join(affectedDir, '02.md'), affectedEntrySkeleton(2, '二'));
+    writeFileSync(join(affectedDir, '03.md'), affectedEntrySkeleton(3, '三'));
     const done = spawnSync(process.execPath, [script, '--root', root, '--delete', '2'], {
       encoding: 'utf8',
     });
@@ -578,6 +570,9 @@ describe('CLI', () => {
     expect(adrAfter).toContain('## 01: 一');
     expect(adrAfter).toContain('## 02: 三');
     expect(adrAfter).not.toContain('二');
+    expect(readFileSync(join(affectedDir, '01.md'), 'utf8')).toContain('## 01: 一');
+    expect(readFileSync(join(affectedDir, '02.md'), 'utf8')).toContain('## 02: 三');
+    expect(existsSync(join(affectedDir, '03.md'))).toBe(false);
   });
 
   it('--set は両ファイルの題名を置き換える', () => {
@@ -586,13 +581,14 @@ describe('CLI', () => {
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
     writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '旧'));
-    writeFileSync(join(cyclesDir, name, 'affected.md'), affectedSkeleton(15, 1, '旧'));
+    mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '旧'));
     const done = spawnSync(process.execPath, [script, '--root', root, '--set', '1', '新'], {
       encoding: 'utf8',
     });
     expect(done.status).toBe(0);
     expect(readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8')).toContain('## 01: 新');
-    expect(readFileSync(join(cyclesDir, name, 'affected.md'), 'utf8')).toContain('## 01: 新');
+    expect(readFileSync(join(cyclesDir, name, 'affected', '01.md'), 'utf8')).toContain('## 01: 新');
   });
 
   it('--check は不足がなければ通る', () => {

@@ -40,12 +40,12 @@ When the agent needs the impact of one entry's decision.
 ```text
 Answer the question the task carries for one entry, and nothing else.
 
-The change is the entry's decision. The record is `affected.md`; its shape is the one `references/affected.format.md` gives.
+The change is the entry's decision. The record is `affected/<NN>.md`; its shape is the one `references/affected.format.md` gives.
 
-Do not read the cycle's earlier affected, its plan, or a memo: the answers are there, and the facts come from the entry and the repository.
+Do not read another entry's affected, the cycle's plan, or a memo: the answers are there, and the facts come from the entry and the repository.
 
 1. Read the entry in full: `Context`, `Research & Trial` (the fact, not the `出所:` part), and `Decision`'s `Add`, `Update`, `Drop`, `Policy`'s `Allowed` and `#### Details`.
-2. Take every keyword there that is a name in this repository: a path, a directory, a heading, a key, an identifier, a string or a command. Do not take a free sentence, a common word that names no specific thing, the `Forbidden` lines or the `出所:` part. Write the list under `### Keywords` in this entry's section of `affected.md`, before `### Code`.
+2. Take every keyword there that is a name in this repository: a path, a directory, a heading, a key, an identifier, a string or a command. Do not take a free sentence, a common word that names no specific thing, the `Forbidden` lines or the `出所:` part. Write the list under `### Keywords` in `affected/<NN>.md`, before `### Code`.
 3. The targets are what the `Add`, `Update`, `Drop`, `Allowed` and `Details` lines change.
 4. Widen each keyword to five spellings: the full path, the parent directory, the last element, the identifier, the URL fragment.
 5. The range is the whole repository, always. Search every spelling as a string first, with `git grep`; a path is no exception. `git ls-files` and `find` only answer whether it exists. A heading is `grep '^#\{1,6\} '`; a key is a `grep` of the config; a sentence is a `read`; a command is the `scripts` of `package.json`.
@@ -59,9 +59,9 @@ Do not read the cycle's earlier affected, its plan, or a memo: the answers are t
     - the ranges seen, the ranges not seen and why, the keywords added
     - the questions that could not be answered, the keywords that could not be derived and the reason the work stopped
     - the constraint: the change is not applied, so the checks are not run; no indexer, AST or LLM; the cost follows the change's size, no full enumeration
-13. Write the affected to `affected.md` in the shape `references/affected.format.md` gives: the `Keywords` list, one `Path` block per path with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. An external contract the change calls or reads goes in `### External`; a fact about its behavior stays in `Research & Trial`. Write only inside this entry's `## NN:` section. Other sections may hold unfinished scaffolds: do not touch them, and do not delete them.
+13. Write the affected to `affected/<NN>.md` in the shape `references/affected.format.md` gives: the `Keywords` list, one `Path` block per path with its `Kind` and its `Edge`, and `### External` with `Name`, `Kind` and `Used by`. An external contract the change calls, an event it listens to, a value it reads, a store it uses, a path it opens, or a limit it must stay within goes in `### External`; a fact about its behavior stays in `Research & Trial`. Write only this file; do not touch another entry's file.
 ```
 
 - The agent puts the entry and the change in the task.
-- The affected is written to `affected.md`, not to the ADR.
+- The affected is written to `affected/<NN>.md`, not to the ADR.
 - The agent checks the worksheet. A cell filled by `ls` or `find` alone is not accepted.

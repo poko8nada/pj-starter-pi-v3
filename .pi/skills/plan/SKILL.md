@@ -38,7 +38,7 @@ Notes:
 
 Steps:
 
-1. Read `cycles/<YYMMDD>-<NNN>-<slug>/affected.md` for those entries.
+1. Read `cycles/<YYMMDD>-<NNN>-<slug>/affected/<NN>.md` for each entry.
 2. Read the shape in `.pi/skills/adr/references/affected.format.md`.
 
 View:
@@ -51,6 +51,7 @@ View:
 Notes:
 
 - The affected is the impact map.
+- `### Keywords` is the search range, not the impact map.
 
 ### 3. Cut, and present
 

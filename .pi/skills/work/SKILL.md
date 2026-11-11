@@ -42,7 +42,7 @@ Notes:
 
 Steps:
 
-1. Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `affected.md` and `plan/*.md`.
+1. Commit the cycle's files: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`, `affected/*.md` and `plan/*.md`.
 
 Notes:
 

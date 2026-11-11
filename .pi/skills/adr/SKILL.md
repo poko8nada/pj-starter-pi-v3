@@ -52,9 +52,9 @@ Steps:
 2. Show the owner the split and each entry's intent.
 3. Rewrite a rejected split, and show it again.
 4. Add every agreed entry at once, in the split's order, with the scaffold:
-   - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and `affected.md`. When a file does not exist, it creates it first.
-   - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from both files and renumbers the rest.
-   - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in both files.
+   - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and creates `affected/<NN>.md`.
+   - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from `adr.md` and `affected/<NN>.md`, and renumbers the rest.
+   - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in `adr.md` and `affected/<NN>.md`.
 
 View:
 
@@ -230,7 +230,7 @@ Notes:
 Steps:
 
 1. Read the `Look at the affected` section of `references/tasks.md` and `references/affected.format.md`.
-2. Run one `research` subagent to write the entry's affected to `affected.md` in the shape `references/affected.format.md` gives, including the `Keywords` list.
+2. Run one `research` subagent to write the entry's affected to `affected/<NN>.md` in the shape `references/affected.format.md` gives, including the `Keywords` list.
 
 Notes:
 
@@ -264,9 +264,9 @@ Notes:
 Steps:
 
 1. Wait until every entry's affected research is done.
-2. Read every entry and every affected section, and check both files for what is missing and what is too much.
+2. Read every entry and every affected file, and check both for what is missing and what is too much.
 3. Report these to the owner, and propose what to do:
-   - a path `affected.md` lacks
+   - a path an affected file lacks
    - an item an entry lacks, entry by entry
    - what is too much
 4. When the check leaves nothing to add, read the decided entries together, settle a contradiction, and read the `Definition` lines together. The owner's answer closes the entries' decisions.

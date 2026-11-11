@@ -105,12 +105,12 @@ describe('resolveType', () => {
 });
 
 describe('research の実物', () => {
-  it('research は affected.md だけに書ける', () => {
+  it('research は affected/ のファイルだけに書ける', () => {
     const extensionDir = dirname(dirname(fileURLToPath(import.meta.url)));
     const research = resolveType(loadTypes(extensionDir), 'research');
     expect(research.tools).toEqual(
       expect.arrayContaining(['edit', 'quick_edit', 'target_edit', 'write']),
     );
-    expect(research.paths).toEqual(['cycles/*/affected.md']);
+    expect(research.paths).toEqual(['cycles/*/affected/*.md']);
   });
 });
