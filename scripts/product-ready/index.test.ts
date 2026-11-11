@@ -191,17 +191,35 @@ describe('product-ready index', () => {
   it('happy: --run → 目印の間に7件が入り、JSON が残る', () => {
     const tree = makeTree();
     const names = makeCycleNames();
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
     const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
     for (const name of names) {
       expect(existsSync(join(tree.root, CYCLES_LABEL, name))).toBe(false);
     }
-    const text = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    for (const entry of TEST_EXCLUDE_ENTRIES) {
-      expect(text).toContain(`'${entry}',`);
-    }
+    const beforeLines = beforeConfig.split('\n');
+    const start = beforeLines.findIndex((line) =>
+      line.includes('product-ready: test-exclude start'),
+    );
+    const end = beforeLines.findIndex((line) => line.includes('product-ready: test-exclude end'));
+    const expected = [
+      ...beforeLines.slice(0, start + 1),
+      ...TEST_EXCLUDE_ENTRIES.map((entry) => `      '${entry}',`),
+      ...beforeLines.slice(end),
+    ].join('\n');
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(expected);
     const kept = JSON.parse(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8'));
     expect(kept).toEqual([...TEST_EXCLUDE_ENTRIES]);
+  });
+
+  it('(empty) 空配列の JSON で --run → 目印の間が空のまま終わる', () => {
+    const tree = makeTree();
+    writeTestExclude(tree.root, []);
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(0);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(JSON.parse(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8'))).toEqual([]);
   });
 
   it('error: JSON が壊れている → 1行で exit 1、ツリーは変わらない', () => {
@@ -389,6 +407,70 @@ describe('product-ready index', () => {
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(readTargets(tree.root)).toEqual(before);
+  });
+});
+describe('product-ready index exclude errors', () => {
+  it('(error) 目印が無い config で --run → エラー1行で exit 1、cycles は残る', () => {
+    const tree = makeTree();
+    writeText(
+      tree.root,
+      VITEST_CONFIG_AT,
+      "import { configDefaults, defineConfig } from 'vitest/config';\nexport default defineConfig({ test: { exclude: [...configDefaults.exclude] } });\n",
+    );
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
+    const beforeTargets = readTargets(tree.root);
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(result.errors).toContain('no test exclude markers:');
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readTargets(tree.root)).toEqual(beforeTargets);
+  });
+
+  it('(error) JSON が無い → 1行で exit 1、ツリーは変わらない', () => {
+    const tree = makeTree();
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
+    const beforeTargets = readTargets(tree.root);
+    rmSync(join(tree.root, TEST_EXCLUDE_AT));
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(result.errors).toContain('the test exclude is not valid:');
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readTargets(tree.root)).toEqual(beforeTargets);
+  });
+
+  it('(error) JSON が配列でない → 1行で exit 1、ツリーは変わらない', () => {
+    const tree = makeTree();
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
+    const beforeTargets = readTargets(tree.root);
+    writeFileSync(join(tree.root, TEST_EXCLUDE_AT), '{"exclude": []}\n');
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(result.errors).toContain('the test exclude is not valid:');
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readTargets(tree.root)).toEqual(beforeTargets);
+  });
+
+  it('(error) 要素が文字列でない → 1行で exit 1、ツリーは変わらない', () => {
+    const tree = makeTree();
+    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
+    const beforeTargets = readTargets(tree.root);
+    writeFileSync(join(tree.root, TEST_EXCLUDE_AT), '[".pi", 1]\n');
+    const result = run(INDEX, [RUN_FLAG], tree.root);
+    expect(result.status).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errors.trim().split('\n')).toHaveLength(1);
+    expect(result.errors).toContain('the test exclude is not valid:');
+    expect(existsSync(tree.cycleA)).toBe(true);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readTargets(tree.root)).toEqual(beforeTargets);
   });
 });
 describe('product-ready defaults', () => {

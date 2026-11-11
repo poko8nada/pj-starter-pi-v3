@@ -349,8 +349,9 @@ export function main(argv) {
     return 0;
   }
   try {
-    remove(entries.filter((entry) => entry.action === 'remove'));
+    // 先に書く。目印欠落で投げてもツリーは変わらない。
     writeTestExclude(root, exclude);
+    remove(entries.filter((entry) => entry.action === 'remove'));
     applyJobs(jobs);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
