@@ -165,7 +165,7 @@ Steps:
 3. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
 4. Show one point at a time, and discuss it until it is settled.
 5. Write what is settled where the View gives, at the moment it is settled.
-6. Repeat until the owner moves the entry to the decision.
+6. Repeat until the owner moves the entry to the decision. **Agent does not have the right.**
 
 View:
 
