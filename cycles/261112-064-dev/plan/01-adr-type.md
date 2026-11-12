@@ -796,12 +796,21 @@ type SetArg = {
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/adr/scripts/adr.mjs:202` — `checkEntry` の JSDoc は `Context` の `C<n>` と `Research & Trial` の `F<n>` の参照検査だけを説明し、差分で足した Type/omission 検査に触れていないため、コメントが古くなった。
+    - fixed: JSDoc の冒頭に `Type:` 行の有無・値と Type に応じた `_omission_` の検査を追記した。
+  - `.pi/skills/adr/scripts/index.test.ts:346` — `Details のフェンス内の括弧は参照として数えない` のテストが `decision` 文字列の中に `#### Details` を埋め込んだまま残り、helper の `entry()` が自動付与する `#### Details` と重複して見出しが2つになるため、実物の形とずれた stale な組み立てになった。
+    - fixed: `decision` 文字列への埋め込みをやめ、`entry()` の `{ details }` 引数でフェンスを渡す形に直した。アサートはそのまま。
+- Unlisted: なし — 差分の全ファイルは計画の `Files` に名指しされており、ファイル外の変更はないため。
 - Gaps:
-- Policy:
+  - `.pi/skills/adr/scripts/index.mjs:128` — 新規サイクル作成分岐の `--add <title> Simple`（`adrSkeleton(nnn, add.title, add.type)`）を通す CLI テストがなく、開いたサイクルへの追記（`index.test.ts:656`）だけが検証されているため、Goal の「スクリプトが Type と omission を書く」の新規作成側が検査されていない。
+    - fixed: `--add はサイクルがなければ Simple で新規作成する` の CLI テストを足し、新規 `adr.md` の Type・`_omission_` と affected の題名を確かめる形にした。
+- Policy: なし — 古い `--add`/`--set` 呼び出しは既定値（Full／`type: null` 保持）で動き、Type 省略 `--set` の保持はテストで確認し、`--check` は開いたサイクルのみを読むままで、`SKILL.md` に owner-decides が明記のため。
 - Unproven:
-- Noise:
+  - `.pi/skills/adr/scripts/index.test.ts:472` — `setEntryType` の Full テストは題名に `Scope/Details を Full の形に` とうたうが、`Type: _Full_` と `- In:` しか確かめておらず `Details` のフェンス（` ```text`）を確かめていないため、`Details` の書き換えが壊れても緑のままになる。
+    - fixed: Full テストに ` ```text` のアサートを足し、`Details` の復元も確かめる形にした。
+- Noise: なし — 新規ケースの `Type: _Full_` などの固定文字列はスライス6の `Steps` が指定した検証そのもので、型が保証する前提の再現や誰も気づかない振る舞いのテストはないため。
 - Doubts:
+  - `.pi/skills/adr/scripts/cycle.mjs:146` — Type 行を持たない旧エントリに `--set <NN> <title> <Type>` を実行すると `replace(/^Type: .*$/mu, ...)` が何も置き換えず、Scope/Details だけが新 Type の形になる。旧エントリの移行をこの振る舞いのままでよいか、オーナーの判断が必要。
 
 ### Round 2
 

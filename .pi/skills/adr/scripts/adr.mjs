@@ -200,7 +200,8 @@ function typeOf(entry) {
 }
 
 /**
- * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
+ * エントリーの `Type:` 行の有無と値、および Type に応じた `Scope` と `#### Details` の `_omission_` を確かめ、
+ * つづけて `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
  * `Decision` から参照されているかを確かめる。
  * `Decision` セクションの `#### Details` より前で、すべての `C` を参照し、すべての `F` をどれかが参照する。
  * `#### Details` の中の括弧は参照として数えない。

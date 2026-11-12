@@ -346,8 +346,11 @@ describe('checkEntry', () => {
   it('(happy) Details のフェンス内の括弧は参照として数えない', () => {
     const markdown = entry(
       decision(
-        '  - Add:\n      - 何か（C1, C2, F1）\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n#### Details\n\n- 例\n  ```text\n  何か（C9, F9）\n  ```',
+        '  - Add:\n      - 何か（C1, C2, F1）\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし',
       ),
+      undefined,
+      undefined,
+      { details: '- 例\n  ```text\n  何か（C9, F9）\n  ```' },
     );
     expect(checkEntry(markdown)).toEqual([]);
   });
@@ -474,6 +477,7 @@ describe('setEntryType', () => {
     const next = setEntryType(markdown, 2, '新', 'Full');
     expect(next).toContain('## 02: 新\n\nType: _Full_');
     expect(next).toContain('- In:');
+    expect(next).toContain('```text');
   });
 
   it('(happy) Simple → Type 行と Scope/Details を _omission_ にし、題名を変える', () => {
@@ -650,6 +654,23 @@ describe('CLI', () => {
     expect(names).toHaveLength(1);
     const leaf = join(join(root, 'cycles'), names[0]);
     expect(readFileSync(join(leaf, 'adr.md'), 'utf8')).toContain('## 01: 一');
+    expect(readFileSync(join(leaf, 'affected', '01.md'), 'utf8')).toContain('## 01: 一');
+  });
+
+  it('--add はサイクルがなければ Simple で新規作成する', () => {
+    const root = tempDir();
+    const done = spawnSync(process.execPath, [script, '--root', root, '--add', '一', 'Simple'], {
+      encoding: 'utf8',
+    });
+    expect(done.status).toBe(0);
+    const names = readdirSync(join(root, 'cycles'));
+    expect(names).toHaveLength(1);
+    const leaf = join(join(root, 'cycles'), names[0]);
+    const adr = readFileSync(join(leaf, 'adr.md'), 'utf8');
+    expect(adr).toContain('## 01: 一');
+    expect(adr).toContain('Type: _Simple_');
+    expect(adr).toContain('### Scope\n\n_omission_');
+    expect(adr).toContain('#### Details\n\n_omission_');
     expect(readFileSync(join(leaf, 'affected', '01.md'), 'utf8')).toContain('## 01: 一');
   });
 
