@@ -19,6 +19,7 @@ import {
   parseArgs,
   renumberEntries,
   setEntryTitle,
+  setEntryType,
   slugBranch,
   toYYMMDD,
 } from './cycle.mjs';
@@ -166,16 +167,28 @@ describe('parseArgs', () => {
     });
   });
 
-  it('--add は題名になる', () => {
-    expect(parseArgs(['--add', '題名']).add).toBe('題名');
+  it('--add は題名と Full になる', () => {
+    expect(parseArgs(['--add', '題名']).add).toEqual({ title: '題名', type: 'Full' });
+  });
+
+  it('--add 題名 Simple は Simple になる', () => {
+    expect(parseArgs(['--add', '題名', 'Simple']).add).toEqual({ title: '題名', type: 'Simple' });
   });
 
   it('--delete は番号になる', () => {
     expect(parseArgs(['--delete', '2']).del).toBe(2);
   });
 
-  it('--set は番号と題名になる', () => {
-    expect(parseArgs(['--set', '2', '題名']).set).toEqual({ nn: 2, title: '題名' });
+  it('--set は番号と題名になり Type は null になる', () => {
+    expect(parseArgs(['--set', '2', '題名']).set).toEqual({ nn: 2, title: '題名', type: null });
+  });
+
+  it('--set 2 題名 Full は Type 付きになる', () => {
+    expect(parseArgs(['--set', '2', '題名', 'Full']).set).toEqual({
+      nn: 2,
+      title: '題名',
+      type: 'Full',
+    });
   });
 
   it('--check は検査の印になる', () => {
@@ -223,6 +236,7 @@ describe('entrySkeleton', () => {
     expect(skeleton).toContain('#### Details');
     expect(skeleton).toContain('  ```text');
     expect(skeleton).toContain('出所: <出所>');
+    expect(skeleton).toContain('Type: _Full_');
   });
 
   it('adr.format.md のエントリーの見出しと一致する', () => {
@@ -252,10 +266,18 @@ describe('entrySkeleton', () => {
   });
 });
 
-const entry = (decision: string, context = '- C1: 前提\n- C2: 制約', research = '- F1: 事実') =>
-  `# ADR 001
+const entry = (
+  decision: string,
+  context = '- C1: 前提\n- C2: 制約',
+  research = '- F1: 事実',
+  bodies: { details?: string; scope?: string } = {},
+) => {
+  const { details = '- 例\n  ```text\n  何か\n  ```', scope = '- In:\n  - format: 何か' } = bodies;
+  return `# ADR 001
 
 ## 01: <問い>
+
+Type: _Full_
 
 ### Context
 
@@ -267,17 +289,21 @@ ${research}
 
 ### Scope
 
-- In:
-  - format: 何か
+${scope}
 
 ### Decision
 
 ${decision}
 
+#### Details
+
+${details}
+
 ### Definition
 
 - \`Unit.<name>\`(updated): 新しい行
 `;
+};
 
 const decision = (lines: string) => `- Status:
 - Main: この関心事は、何がどうなるか
@@ -360,6 +386,62 @@ describe('checkEntry', () => {
   });
 });
 
+describe('checkEntry の Type', () => {
+  const carried =
+    '  - Add:\n      - 何か（C1, F1）\n- Policy:\n  - Allowed:\n    - 何か（C2）\n  - Forbidden:\n    - なし';
+  const full = () => entry(decision(carried));
+
+  it('(error) Type がない → Type is missing を返す', () => {
+    expect(checkEntry(full().replace('Type: _Full_\n\n', ''))).toEqual(['01: Type is missing']);
+  });
+
+  it('(error) Type の値が違う → Type is not _Full_ or _Simple_ を返す', () => {
+    expect(checkEntry(full().replace('Type: _Full_', 'Type: _Foo_'))).toEqual([
+      '01: Type is not _Full_ or _Simple_: _Foo_',
+    ]);
+  });
+
+  it('(error) Simple の Scope が書いてある → Simple Scope is not _omission_ を返す', () => {
+    const markdown = entry(decision(carried), undefined, undefined, {
+      details: '_omission_',
+    }).replace('Type: _Full_', 'Type: _Simple_');
+    expect(checkEntry(markdown)).toEqual(['01: Simple Scope is not _omission_']);
+  });
+
+  it('(error) Simple の Details が書いてある → Simple Details is not _omission_ を返す', () => {
+    const markdown = entry(decision(carried), undefined, undefined, {
+      scope: '_omission_',
+    }).replace('Type: _Full_', 'Type: _Simple_');
+    expect(checkEntry(markdown)).toEqual(['01: Simple Details is not _omission_']);
+  });
+
+  it('(error) Full の Scope が _omission_ → Full Scope is _omission_ を返す', () => {
+    const markdown = entry(decision(carried), undefined, undefined, { scope: '_omission_' });
+    expect(checkEntry(markdown)).toEqual(['01: Full Scope is _omission_']);
+  });
+
+  it('(error) Full の Details が _omission_ → Full Details is _omission_ を返す', () => {
+    const markdown = entry(decision(carried), undefined, undefined, { details: '_omission_' });
+    expect(checkEntry(markdown)).toEqual(['01: Full Details is _omission_']);
+  });
+});
+
+describe('entrySkeleton の Type', () => {
+  it('(happy) Full → Type: _Full_ と Scope/Details の骨組み', () => {
+    const skeleton = entrySkeleton(1, '題名', 'Full');
+    expect(skeleton).toContain('Type: _Full_');
+    expect(skeleton).toContain('- In:');
+    expect(skeleton).toContain('```text');
+  });
+
+  it('(happy) Simple → Type: _Simple_ と Scope/Details の _omission_', () => {
+    const skeleton = entrySkeleton(1, '題名', 'Simple');
+    expect(skeleton).toContain('Type: _Simple_');
+    expect(skeleton).toContain('### Scope\n\n_omission_');
+    expect(skeleton).toContain('#### Details\n\n_omission_');
+  });
+});
+
 describe('lastEntryNumber', () => {
   it('## NN: を持つ markdown から、その最大値を返す', () => {
     expect(lastEntryNumber(adrSkeleton(7))).toBe(1);
@@ -383,6 +465,27 @@ describe('entryNumbers', () => {
   it('出現順に番号を返す', () => {
     const markdown = appendEntry(appendEntry(adrSkeleton(7), 2, '二'), 3, '三');
     expect(entryNumbers(markdown)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('setEntryType', () => {
+  it('(happy) Full → Type 行と Scope/Details を Full の形にし、題名を変える', () => {
+    const markdown = appendEntry(adrSkeleton(7, '一', 'Simple'), 2, '二', 'Simple');
+    const next = setEntryType(markdown, 2, '新', 'Full');
+    expect(next).toContain('## 02: 新\n\nType: _Full_');
+    expect(next).toContain('- In:');
+  });
+
+  it('(happy) Simple → Type 行と Scope/Details を _omission_ にし、題名を変える', () => {
+    const markdown = adrSkeleton(7, '一');
+    const next = setEntryType(markdown, 1, '新', 'Simple');
+    expect(next).toContain('## 01: 新\n\nType: _Simple_');
+    expect(next).toContain('### Scope\n\n_omission_');
+    expect(next).toContain('#### Details\n\n_omission_');
+  });
+
+  it('ない番号 → 投げる', () => {
+    expect(() => setEntryType(adrSkeleton(7), 9, '新', 'Full')).toThrow(/entry not found/);
   });
 });
 
@@ -591,12 +694,53 @@ describe('CLI', () => {
     expect(readFileSync(join(cyclesDir, name, 'affected', '01.md'), 'utf8')).toContain('## 01: 新');
   });
 
+  it('--set は Type なしでは Type 行を変えない', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '旧'));
+    mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '旧'));
+    const done = spawnSync(process.execPath, [script, '--root', root, '--set', '1', '新'], {
+      encoding: 'utf8',
+    });
+    expect(done.status).toBe(0);
+    const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    expect(adrAfter).toContain('## 01: 新');
+    expect(adrAfter).toContain('Type: _Full_');
+  });
+
+  it('--set は Type ありでは Type 行と本文を変える', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '旧'));
+    mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '旧'));
+    const done = spawnSync(
+      process.execPath,
+      [script, '--root', root, '--set', '1', '新', 'Simple'],
+      {
+        encoding: 'utf8',
+      },
+    );
+    expect(done.status).toBe(0);
+    const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    expect(adrAfter).toContain('## 01: 新');
+    expect(adrAfter).toContain('Type: _Simple_');
+    expect(adrAfter).toContain('### Scope\n\n_omission_');
+    expect(adrAfter).toContain('#### Details\n\n_omission_');
+    expect(readFileSync(join(cyclesDir, name, 'affected', '01.md'), 'utf8')).toContain('## 01: 新');
+  });
+
   it('--check は不足がなければ通る', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    const adr = `# ADR 015\n\n## 01: 問い\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1: 事実\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
+    const adr = `# ADR 015\n\n## 01: 問い\n\nType: _Full_\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1: 事実\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
     const done = spawnSync(process.execPath, [script, '--root', root, '--check'], {
       encoding: 'utf8',

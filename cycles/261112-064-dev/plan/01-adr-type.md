@@ -776,13 +776,13 @@ type SetArg = {
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 891efda
 - Stopped:
 
 ### Slice 6: テストを新しい形に合わせる
 
-- Findings:
-- Unplanned:
+- Findings: スライス2・スライス4で残した 13 件の失敗は、このスライスで閉じた。`pnpm test:run` で 828 件全て通る。
+- Unplanned: `entry()` の引数が5つになり lint（max-params）に触れたため、第4引数を `{ details?, scope? }` の1つにまとめ、既存の呼び出しはそのままにした。テストの形を保つための変更である。
 - Commit:
 - Stopped:
 
