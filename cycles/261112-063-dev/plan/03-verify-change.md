@@ -171,7 +171,9 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 ### Cleanup: 掃除なし
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 
 ## Work Review
 
