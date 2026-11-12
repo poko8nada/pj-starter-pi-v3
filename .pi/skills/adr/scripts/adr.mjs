@@ -8,6 +8,12 @@ export function entrySkeleton(nnn, title) {
   const q = title === undefined ? '<問い>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
+### Context
+
+- C1: <前提。いまの振る舞い>
+- C2: <制約。上限、変えないと決めたこと>
+- C3: <意図。オーナーの意図と意志>
+
 ### Research & Trial
 
 - F1: <事実>。出所: <出所>
@@ -18,11 +24,6 @@ export function entrySkeleton(nnn, title) {
   - <kind>: <何をするか>
 - Out:
   - <kind>: <何をしないか>（理由）
-
-### Context
-
-- C1: <前提。いまの振る舞い>
-- C2: <制約。Who の要望、上限、変えないと決めたこと>
 
 ### Decision
 

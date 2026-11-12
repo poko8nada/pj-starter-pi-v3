@@ -225,13 +225,13 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 39b2a8f8c4cf6b0cac9e92a4ada7da55b456c2b6
 - Stopped:
 
 ### Slice 3: 骨組みと検査を新しい並びにする
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

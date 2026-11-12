@@ -231,9 +231,9 @@ describe('entrySkeleton', () => {
       .filter((line) => line.startsWith('#'));
     const expected = [
       '## 01: <問い>',
+      '### Context',
       '### Research & Trial',
       '### Scope',
-      '### Context',
       '### Decision',
       '#### Details',
       '### Definition',
@@ -257,6 +257,10 @@ const entry = (decision: string, context = '- C1: 前提\n- C2: 制約', researc
 
 ## 01: <問い>
 
+### Context
+
+${context}
+
 ### Research & Trial
 
 ${research}
@@ -265,10 +269,6 @@ ${research}
 
 - In:
   - format: 何か
-
-### Context
-
-${context}
 
 ### Decision
 
@@ -596,7 +596,7 @@ describe('CLI', () => {
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    const adr = `# ADR 015\n\n## 01: 問い\n\n### Research & Trial\n\n- F1: 事実\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Context\n\n- C1: 前提\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
+    const adr = `# ADR 015\n\n## 01: 問い\n\n### Context\n\n- C1: 前提\n\n### Research & Trial\n\n- F1: 事実\n\n### Scope\n\n- In:\n  - format: 何か\n\n### Decision\n\n- Status:\n- Main: この関心事は、何がどうなるか\n  - Add:\n    - 何か（C1, F1）\n  - Update:\n    - なし\n  - Drop:\n    - なし\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし\n\n### Definition\n\n- \`Unit.<name>\`(updated): 新しい行\n`;
     writeFileSync(join(cyclesDir, name, 'adr.md'), adr);
     const done = spawnSync(process.execPath, [script, '--root', root, '--check'], {
       encoding: 'utf8',
