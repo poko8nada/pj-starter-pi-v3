@@ -199,9 +199,9 @@ yolo の adr 段階に、Simple が Scope と discussion を歩かない例外�
 
 ### Slice 3: yolo が Simple を歩く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dbf26d2
 - Stopped:
 
 ## Work Review
