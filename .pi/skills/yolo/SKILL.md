@@ -1,6 +1,6 @@
 ---
 name: yolo
-description: Use when the owner says to run the cycle through without their confirmations, at any time after every entry of the ADR is accepted. It walks the cycle's stages from where it stands, and stops at the close's triage, and passes the `Added` owner check.
+description: Use when the owner says to run the cycle through without their confirmations, at any time after the entries' scaffold is made.
 disable-model-invocation: true
 ---
 
@@ -12,12 +12,12 @@ One cycle, walked without the owner's confirmations. The owner starts it; the ag
 
 View:
 
-| case                                                          | does it run                                                     |
-| ------------------------------------------------------------- | --------------------------------------------------------------- |
-| the owner starts it, after every entry of the ADR is accepted | it runs                                                         |
-| started before that                                           | it does not run: nothing runs, and it says so                   |
-| a stage the cycle has passed                                  | that stage is not walked again                                  |
-| the ADR                                                       | not this skill's business: no entry is accepted or checked here |
+| case                                                     | does it run                                                                            |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| the owner starts it, after the entries' scaffold is made | it runs                                                                                |
+| started before that                                      | it does not run: nothing runs, and it says so                                          |
+| a stage the cycle has passed                             | that stage is not walked again                                                         |
+| the ADR's entry stage                                    | walked here: the agent settles each entry by the checks `When a step cannot run` gives |
 
 ## Procedure
 

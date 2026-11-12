@@ -137,8 +137,8 @@ yolo を、エントリ分割のスキャフォールドができた後（プリ
 
 ### Slice 1: 発動点をスキャフォールドの直後にする
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
