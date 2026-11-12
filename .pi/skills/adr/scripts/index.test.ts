@@ -653,6 +653,26 @@ describe('CLI', () => {
     expect(readFileSync(join(leaf, 'affected', '01.md'), 'utf8')).toContain('## 01: 一');
   });
 
+  it('--add は Simple では Type と omission を書く', () => {
+    const root = tempDir();
+    const cyclesDir = join(root, 'cycles');
+    const name = cycleDirName(15, '261010', 'main');
+    mkdirSync(join(cyclesDir, name), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '一'));
+    mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
+    writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '一'));
+    const done = spawnSync(process.execPath, [script, '--root', root, '--add', '二', 'Simple'], {
+      encoding: 'utf8',
+    });
+    expect(done.status).toBe(0);
+    const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
+    expect(adrAfter).toContain('## 02: 二');
+    expect(adrAfter).toContain('Type: _Simple_');
+    expect(adrAfter).toContain('### Scope\n\n_omission_');
+    expect(adrAfter).toContain('#### Details\n\n_omission_');
+    expect(readFileSync(join(cyclesDir, name, 'affected', '02.md'), 'utf8')).toContain('## 02: 二');
+  });
+
   it('--delete は adr と affected から削除して振り直す', () => {
     const root = tempDir();
     const cyclesDir = join(root, 'cycles');
@@ -699,7 +719,7 @@ describe('CLI', () => {
     const cyclesDir = join(root, 'cycles');
     const name = cycleDirName(15, '261010', 'main');
     mkdirSync(join(cyclesDir, name), { recursive: true });
-    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '旧'));
+    writeFileSync(join(cyclesDir, name, 'adr.md'), adrSkeleton(15, '旧', 'Simple'));
     mkdirSync(join(cyclesDir, name, 'affected'), { recursive: true });
     writeFileSync(join(cyclesDir, name, 'affected', '01.md'), affectedEntrySkeleton(1, '旧'));
     const done = spawnSync(process.execPath, [script, '--root', root, '--set', '1', '新'], {
@@ -708,7 +728,8 @@ describe('CLI', () => {
     expect(done.status).toBe(0);
     const adrAfter = readFileSync(join(cyclesDir, name, 'adr.md'), 'utf8');
     expect(adrAfter).toContain('## 01: 新');
-    expect(adrAfter).toContain('Type: _Full_');
+    expect(adrAfter).toContain('Type: _Simple_');
+    expect(adrAfter).toContain('### Scope\n\n_omission_');
   });
 
   it('--set は Type ありでは Type 行と本文を変える', () => {

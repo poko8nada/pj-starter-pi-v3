@@ -783,8 +783,13 @@ type SetArg = {
 
 - Findings: スライス2・スライス4で残した 13 件の失敗は、このスライスで閉じた。`pnpm test:run` で 828 件全て通る。
 - Unplanned: `entry()` の引数が5つになり lint（max-params）に触れたため、第4引数を `{ details?, scope? }` の1つにまとめ、既存の呼び出しはそのままにした。テストの形を保つための変更である。
-- Commit:
+- Commit: 18782c7
 - Stopped:
+
+### Cleanup: Type テストの穴をふさぐ
+
+- Findings: `--set` の Type なしテストが Full 起点で、Type 書き換えを見逃す作りだった。Simple 起点に直し、Type と Scope の保持を確かめる形にした。CLI の `--add Simple` 経路にコミット済みのテストがなく、捨てスクリプトでの確認だけだった。`--add 二 Simple` のテストを足し、Type・`_omission_`・affected の題名を確かめる形にした。既存テストは全て保ち、削ったものはない。
+- Unplanned: なし
 
 ## Work Review
 
