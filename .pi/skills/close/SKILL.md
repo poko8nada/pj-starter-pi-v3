@@ -111,23 +111,24 @@ Notes:
 
 Steps:
 
-1. Take one Unit at a time: propose how to check it — the command to run and what to see, or the place to read and what to look for, and the result that means it works — in words that hold without the reference files.
-2. Wait for the owner's answer, and hold it in the chat before the next Unit.
-3. Give a Unit whose function does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
-4. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
-5. Write what they answered in `## Verified` after step 5's repair, which sits after `## Triage`.
+1. Take one Unit at a time: propose how to check its function, and how to check what the plans that cut it changed — the command to run and what to see, or the place to read and what to look for, and the result that means it works.
+2. Explain what changed, in the same message: what every plan in `Plans:` changed, and where.
+3. Wait for the owner's answer, and hold it in the chat before the next Unit.
+4. Give a Unit whose function does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
+5. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
+6. Write what they answered in `## Verified` after step 5's repair, which sits after `## Triage`.
 
 View:
 
-| the Unit                                            | the check                                                               |
-| --------------------------------------------------- | ----------------------------------------------------------------------- |
-| a line under `Users can do`                         | its function; the acceptance and the merge already looked at the change |
-| a `####` heading, `Product`, `What`, `Who`, `Stack` | not a Unit                                                              |
+| the Unit                                            | the check                                               |
+| --------------------------------------------------- | ------------------------------------------------------- |
+| a line under `Users can do`                         | its function, and the change the plans that cut it made |
+| a `####` heading, `Product`, `What`, `Who`, `Stack` | not a Unit                                              |
 
 Notes:
 
 - The Units are as `references/format.md` says.
-- The check is of the Unit's function, not of the change.
+- The check has two parts: the Unit's function, and the change the plans made.
 - A Unit they will not check carries `しない` and the reason on the same line.
 - The `Fixed` is the `_ex-change_` and the commit.
 - The gate is the owner's word.
@@ -194,7 +195,7 @@ Notes:
 
 ## How not to write this
 
-- When the owner verifies a Unit: do not run the plan's checks again. The acceptance ran them, and the merge gate held, and the verification is of the Unit's function, in `## Verified`.
+- When the owner verifies a Unit: do not run the plan's checks again. The acceptance ran them, and the merge gate held, and the verification is of the Unit's function and the change, in `## Verified`.
 - When you find a hole: do not fix it silently, and do not write the fix into `DEFINITION.md` or a plan. It goes in the `## Triage`.
 - When you close the cycle: do not leave a leftover without a line in the `## Triage`. The cycle closes only when every one of them has a destination, and every `_ex-change_` line in the `## Triage` has its `done`.
 - When you implement an `_ex-change_`: do not batch. One change, one commit, and its `done <commit>`.

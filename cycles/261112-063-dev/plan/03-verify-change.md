@@ -149,9 +149,12 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 ### Slice 1: Verify が機能と変更の 2 つを見る
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
 - Stopped:
+  - なし
 
 ### Slice 2: Verified に Change を足す
 
