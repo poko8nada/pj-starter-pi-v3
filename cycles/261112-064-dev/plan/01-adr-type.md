@@ -746,13 +746,14 @@ type SetArg = {
 
 - Findings: なし
 - Unplanned: なし
-- Commit: 6f4908d
+- Commit: 1023c75
 - Stopped:
 
 ### Slice 2: スクリプトの骨組みに Type と omission を出す
 
-- Findings:
-- Unplanned:
+- Findings: `pnpm test:related` で 11 件失敗する。旧テストの inline ADR に `Type:` 行がなく、`checkEntry` が `Type is missing` を返すため。
+  - left: スライス6でテストを新しい形に合わせるときに閉じる。このスライスでは旧テストを変えない。
+- Unplanned: なし
 - Commit:
 - Stopped:
 
