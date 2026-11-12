@@ -237,8 +237,8 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 ### Cleanup: 掃除なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
