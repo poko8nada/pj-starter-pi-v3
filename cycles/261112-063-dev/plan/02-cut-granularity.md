@@ -209,26 +209,40 @@ plan の cut が、共有の設定ファイルや文書を別のプランに切�
 ### Round 1
 
 - Stale:
+  - なし — `.pi/skills/plan/SKILL.md:59` の `Why` 要約、`## Where` の `Keep the files apart`、`.pi/skills/adr/references/affected.format.md`、`plan.mjs`、`close/scripts/collect.mjs` を確認。いずれも新規則と矛盾せず、冗長になった文もない。`cut.md:20` と `cut.md:22` の重なりは計画が決めた文言のため指摘にしない。
 - Unlisted:
+  - なし — 差分は `Files` の3件（`cut.md`、`format.md`、`work/SKILL.md`）と本計画mdの `## Notes` 記録のみ。`format.md:149` の単数→複数修正は同一ファイル同一セクションで `## Notes` の `Unplanned` に開示済みのため、新規ファイルの持ち込みではない。
 - Gaps:
+  - なし — `Goal` の3点（共有 `config`/`doc` の切り出し、触る部分が違えば分割、マージで両方残す）は `cut.md:18-22,28-29`、`format.md:153`、`work/SKILL.md:227` に対応し、各 `Verify` の読通しで手順をたどる形になっている。文書のみの変更で `Added: なし` は `design.md` の `## Test cases`（検査ファイルなし→検査手順なし）と整合し、実行可能な振る舞いの未検証はない。
 - Policy:
+  - なし — `Allowed`（複数エントリ名乗り `cut.md:56`・`format.md:151-153`、前後配置 `cut.md:19,29`）を妨げず、`Forbidden`（コードの切り出しなし `cut.md:18` が `config`/`doc` に限定、`affected` に触る部分を持たせない `cut.md:21`）を破らない。
 - Unproven:
+  - なし — 全スライス `Added: なし` で振る舞いを名乗る新規テストがない。`Always` の `pnpm test:run`・`typecheck`・`lint`・`format:check` は回帰止めであり、文書の正誤で赤くならないのは想定通り。
 - Noise:
+  - なし — 新規テストがなく、マジックナンバー・ハードコード文字列・型で済むケースの有無を問う対象がない。
 - Doubts:
+  - なし
 
 ### Round 2
 
 - Stale:
+  - なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
 - Unlisted:
+  - なし — 同上。
 - Gaps:
+  - なし — 同上。
 - Policy:
+  - なし — 同上。
 - Unproven:
+  - なし — 同上。
 - Noise:
+  - なし — 同上。
 - Doubts:
+  - なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「plan の cut が、共有の設定ファイルや文書を別のプランに切り出し、触る部分が違えば分割し、work のマージが両方の変更を残す」を達成している。`cut.md` の `## Cut` と `### Asking of a split` が新しい 2 つの規則を持ち、`work/SKILL.md` の手順 2 が両方の変更を残す。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み）。変更の適用後に `git diff 6a9dfab..HEAD -- .pi/skills` を読み、`cut.md`、`plan/references/format.md`、`work/SKILL.md` の用語（`config`、`doc`、`No`、`merge`）が揃っていることを確かめた。
+- Findings: なし
+- Doubts: なし
