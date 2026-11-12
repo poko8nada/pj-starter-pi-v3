@@ -216,55 +216,55 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 ### Slice 1: サイクル段階で Context を書く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c7ac58f8619f2f7f698945e8b6e1fbd051b771f1
 - Stopped:
 
 ### Slice 2: エントリのセクションを Context 先頭にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 39b2a8f8c4cf6b0cac9e92a4ada7da55b456c2b6
 - Stopped:
 
 ### Slice 3: 骨組みと検査を新しい並びにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f3ab33ea3bf01f3197ccb2e5c4dcd1a01ef45129
 - Stopped:
 
 ### Cleanup: 掃除なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「adr スキルが、プリリサーチの間に全エントリの `Context` を書き、`adr.md` のエントリを `Context` から並べる」を達成している。`SKILL.md` に `### 5. Context` があり、`## One entry` から `Context` の手順が消え、`adr.format.md`、`adr.mjs`、`index.test.ts` が `Context` 先頭の並びになっている。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み）。変更の適用後に `git diff 6a9dfab..HEAD -- .pi/skills/adr` を読み、`SKILL.md` の手順番号（`1`〜`7`）と本文中の参照（`section 2`、`section 3`、`section 5`）、`adr.format.md` の `Shape` と `Entries`、`adr.mjs` の `entrySkeleton` が一致することを確かめた。
+- Findings: なし
+- Doubts: なし

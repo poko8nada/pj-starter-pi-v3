@@ -11,6 +11,12 @@ Section and field names are English; the content is Japanese.
 
 ## <NN>: <問い>
 
+### Context
+
+- C1: <前提。いまの振る舞い>
+- C2: <制約。上限、変えないと決めたこと>
+- C3: <意図。オーナーの意図と意志>
+
 ### Research & Trial
 
 - F1: <事実>。出所: <出所>
@@ -21,11 +27,6 @@ Section and field names are English; the content is Japanese.
   - <kind>: <何をするか>
 - Out:
   - <kind>: <何をしないか>（理由）
-
-### Context
-
-- C1: <前提。いまの振る舞い>
-- C2: <制約。Who の要望、上限、変えないと決めたこと>
 
 ### Decision
 
@@ -68,7 +69,7 @@ Section and field names are English; the content is Japanese.
 The entries the ADR holds.
 
 - `## <NN>: <問い>` holds one question, and its number runs from `01`.
-- The sections run `Research & Trial`, `Scope`, `Context`, `Decision`, `Definition`.
+- The sections run `Context`, `Research & Trial`, `Scope`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
 - One bullet is one rule.
 - A bullet under `#### Details` is the title of one fence.
@@ -100,11 +101,13 @@ The range the entry decides, in `In` and `Out`.
 
 ## Context
 
-The facts that limit the entry.
+What limits the entry: a fact, and the owner's intent or will.
 
 - An item is one line, `C<n>: <the item>`.
 - The number runs from `C1`, in the order the items were settled.
 - A code or a document does not go here; it goes under `Decision`'s `#### Details`.
+- The cycle stage writes the items while the pre-research runs; the discussion adds the rest.
+- When the decision does not weigh an item, remove its `C<n>:` label and keep the item here as a plain bullet.
 
 ## Research & Trial
 
