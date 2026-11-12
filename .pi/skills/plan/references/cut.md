@@ -6,20 +6,34 @@ The cycle's changes are the `accepted` entries of the cycle's ADR. Cut them by w
 
 What the work reads decides how the plans are cut.
 
-- Work that reads the same input stays in one plan, except the paths cut out below.
+### The input
+
 - The input is the entries it decides, the sources it changes, and the outside it talks to.
 - The input is not every file the work happens to read.
-- One subagent continues the work, so nothing is read twice.
-- Split only when the inputs differ and the halves can run at once, or when the parts the two change are clearly different.
 - The paths are in the affected's `### Code`.
-- Order the two when one reads the output of the other, or when the cut takes out a shared path.
+
+### One plan
+
+- Work that reads the same input stays in one plan, except the paths cut out below.
+- One subagent continues the work, so nothing is read twice.
 - Whether a file exists, and its shape, is the plan's.
-- A description never merges before the behaviour it describes.
+
+### A shared path
+
 - A path that more than one entry changes with the same change, and that is a `config` or a `doc`, is cut into a plan of its own. The entries change it the same way; a path they change differently is not cut out.
 - Where that plan sits is decided by what it holds: before, after, or between the others.
+
+### Splitting
+
+- Split only when the inputs differ and the halves can run at once, or when the parts the two change are clearly different.
 - Two plans may touch the same path when the parts they change are clearly different.
 - The parts are read from the file, not from the affected: the plan step reads every path whole before it writes.
 - Two plans that change different parts of the same path may run at once. Their merge keeps both changes.
+
+### The order
+
+- Order the two when one reads the output of the other, or when the cut takes out a shared path.
+- A description never merges before the behaviour it describes.
 
 ### Asking of a split
 
