@@ -218,13 +218,13 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: c7ac58f8619f2f7f698945e8b6e1fbd051b771f1
 - Stopped:
 
 ### Slice 2: エントリのセクションを Context 先頭にする
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
