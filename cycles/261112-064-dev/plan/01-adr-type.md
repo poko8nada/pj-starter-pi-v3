@@ -761,13 +761,14 @@ type SetArg = {
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: d1c6c92
 - Stopped:
 
 ### Slice 4: スクリプトの引数と本文の書き換え
 
-- Findings:
-- Unplanned:
+- Findings: `pnpm test:related` で 13 件失敗する。スライス2からの 11 件（Type のない旧 fixture）に加え、`parseArgs` の `--add`/`--set` 形状変更の 2 件が旧期待値のまま残るため。
+  - left: スライス6でテストを新しい形に合わせるときに閉じる。このスライスではテストを変えない。
+- Unplanned: 通読で `index.mjs` の affected 書き込み 2 か所が旧い `add` のまま（オブジェクトを題名に渡し `[object Object]` になる）なのを見つけ、`add.title` に直した。計画の `Steps` が示す形であり、次の実行を待てなかった。
 - Commit:
 - Stopped:
 

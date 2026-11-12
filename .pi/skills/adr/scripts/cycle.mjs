@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { entrySkeleton } from './adr.mjs';
+import { detailsBody, entrySkeleton, scopeBody, sectionRange, typeLine } from './adr.mjs';
 
 /**
  * `markdown` 中の `## NN:` の最大値を返す。`## ` で始まる見出しが `## NN:` に一致しなければ理由付きで投げる。該当がなければ `null`。
@@ -51,14 +51,15 @@ export function append(markdown, entry) {
 }
 
 /**
- * 末尾の改行を調整して `entrySkeleton(nnn, title)` を追記する。`# ADR NNN` は重複させない。
+ * 末尾の改行を調整して `entrySkeleton(nnn, title, type)` を追記する。`# ADR NNN` は重複させない。
  * @param {string} markdown
  * @param {number} nnn
  * @param {string} [title]
+ * @param {'Full' | 'Simple'} [type]
  * @returns {string}
  */
-export function appendEntry(markdown, nnn, title) {
-  return append(markdown, entrySkeleton(nnn, title));
+export function appendEntry(markdown, nnn, title, type = 'Full') {
+  return append(markdown, entrySkeleton(nnn, title, type));
 }
 
 /**
@@ -104,6 +105,51 @@ export function renumberEntries(markdown) {
   const { head, bodies } = splitEntries(markdown);
   const renumbered = bodies.map((body, index) => renumberBody(body, index + 1));
   return `${head}${renumbered.map((body) => `## ${body}`).join('')}`;
+}
+
+/**
+ * `heading` の本文を `body` に置き換える。見出しがなければ投げる。
+ * @param {string} entry
+ * @param {string} heading
+ * @param {string} body
+ * @returns {string}
+ */
+function replaceSection(entry, heading, body) {
+  const lines = entry.split('\n');
+  const range = sectionRange(lines, heading);
+  if (range === null) throw new Error(`section not found: ${heading}`);
+  return [
+    ...lines.slice(0, range.start + 1),
+    '',
+    ...body.split('\n'),
+    '',
+    ...lines.slice(range.end),
+  ].join('\n');
+}
+
+/**
+ * 番号 `nn` のエントリーの題名、Type 行、`### Scope` と `#### Details` の本文を、
+ * `type` の形に置き換える。なければ投げる。
+ * @param {string} markdown
+ * @param {number} nn
+ * @param {string} title
+ * @param {'Full' | 'Simple'} type
+ * @returns {string}
+ */
+export function setEntryType(markdown, nn, title, type) {
+  const { head, bodies } = splitEntries(markdown);
+  let found = false;
+  const next = bodies.map((body) => {
+    if (bodyNumber(body) !== nn) return `## ${body}`;
+    found = true;
+    let entry = body.replace(/^\d{2}:\s*[^\n]*/, `${body.slice(0, 2)}: ${title}`);
+    entry = entry.replace(/^Type: .*$/mu, typeLine(type));
+    entry = replaceSection(entry, '### Scope', scopeBody(type));
+    entry = replaceSection(entry, '#### Details', detailsBody(type));
+    return `## ${entry}`;
+  });
+  if (!found) throw new Error(`entry not found: ${String(nn).padStart(2, '0')}`);
+  return `${head}${next.join('')}`;
 }
 
 /**
@@ -226,7 +272,16 @@ export function createLeafDir(parentDir, name) {
 }
 
 /**
- * @typedef {{ root: string, add: string | null, del: number | null, set: { nn: number, title: string } | null, check: boolean }} Args
+ * `Full` か `Simple` なら返し、そうでなければ `null` を返す。
+ * @param {string | undefined} value
+ * @returns {'Full' | 'Simple' | null}
+ */
+function typeArg(value) {
+  return value === 'Full' || value === 'Simple' ? value : null;
+}
+
+/**
+ * @typedef {{ root: string, add: { title: string, type: 'Full' | 'Simple' } | null, del: number | null, set: { nn: number, title: string, type: 'Full' | 'Simple' | null } | null, check: boolean }} Args
  */
 
 /**
@@ -253,8 +308,9 @@ export function parseArgs(argv) {
       if (value === undefined) throw new Error('missing value for --add');
       if (ops() > 0) throw new Error('too many operations');
       if (value.trim() === '') throw new Error('empty title for --add');
-      add = value;
-      i++;
+      const type = typeArg(argv[i + 2]) ?? 'Full';
+      add = { title: value, type };
+      i += typeArg(argv[i + 2]) === null ? 1 : 2;
     } else if (arg === '--delete') {
       const value = argv[i + 1];
       if (value === undefined) throw new Error('missing value for --delete');
@@ -275,8 +331,9 @@ export function parseArgs(argv) {
       const n = Number(nnValue);
       if (n < 1) throw new Error(`not an entry number: ${nnValue}`);
       if (titleValue.trim() === '') throw new Error('empty title for --set');
-      set = { nn: n, title: titleValue };
-      i += 2;
+      const setType = typeArg(argv[i + 3]);
+      set = { nn: n, title: titleValue, type: setType };
+      i += setType === null ? 2 : 3;
     } else if (arg === '--check') {
       if (ops() > 0) throw new Error('too many operations');
       check = true;
