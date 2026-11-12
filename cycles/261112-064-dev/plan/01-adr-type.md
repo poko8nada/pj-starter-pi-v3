@@ -754,13 +754,13 @@ type SetArg = {
 - Findings: `pnpm test:related` で 11 件失敗する。旧テストの inline ADR に `Type:` 行がなく、`checkEntry` が `Type is missing` を返すため。
   - left: スライス6でテストを新しい形に合わせるときに閉じる。このスライスでは旧テストを変えない。
 - Unplanned: なし
-- Commit:
+- Commit: 25b4d6f
 - Stopped:
 
 ### Slice 3: adr スキルの手順を Full と Simple に分ける
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
