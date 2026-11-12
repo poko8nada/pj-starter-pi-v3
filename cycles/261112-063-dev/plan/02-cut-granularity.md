@@ -194,9 +194,9 @@ plan の cut が、共有の設定ファイルや文書を別のプランに切�
 
 ### Slice 3: 同じファイルの別の部分を変える 2 つのプランのマージ
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f89ec53738e6ebf70c4dfc8aa74f65cf5fdfb949
 - Stopped:
 
 ### Cleanup: 掃除なし
