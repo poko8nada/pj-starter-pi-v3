@@ -107,8 +107,8 @@ Where every leftover goes.
 ### `**proposed**`
 
 - The next cycle's ADR takes it.
-- The close updates the roadmap, splits the next cycle's entries, runs the pre-research, and fills each entry's `Context` and `Research & Trial`.
-- The close leaves the `Scope` empty and commits nothing of the next cycle.
+- The close updates the roadmap, splits the next cycle's entries, proposes each entry's `Type`, runs the pre-research, and fills each entry's `Context` and `Research & Trial`.
+- The close leaves the `Scope` as the scaffold wrote it and commits nothing of the next cycle.
 - `Then:` is what the next cycle should discuss.
 
 ### `_roadmap_`

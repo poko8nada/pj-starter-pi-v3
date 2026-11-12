@@ -185,36 +185,36 @@ yolo の adr 段階に、Simple が Scope と discussion を歩かない例外�
 
 ### Slice 1: plan のレビューが omission を読む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ad9ab69
 - Stopped:
 
 ### Slice 2: close が Type から始める
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e8a7bc3
 - Stopped:
 
 ### Slice 3: yolo が Simple を歩く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 152e70a
 - Stopped:
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
@@ -228,7 +228,8 @@ yolo の adr 段階に、Simple が Scope と discussion を歩かない例外�
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: plan・close・yolo が Simple のエントリを正しく読む — 達成した。
+- Ran: `pnpm test:run` 830件通過、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、ADR 03 と `affected/03.md` の読み合わせ（plan のタスク文、close の開始位置と表、yolo の例外）
+- Findings: `## Notes` の `Commit` が amend 前のハッシュだった（a7f6f59、1093ced、dbf26d2）。
+  - fixed: 実際のスライスのコミット（ad9ab69、e8a7bc3、152e70a）に直した。
+- Doubts: なし
