@@ -829,6 +829,6 @@ type SetArg = {
 ## Acceptance
 
 - Goal: ADR のエントリが Type を持ち、スクリプトが Type と omission を書く — 達成した。
-- Ran: `pnpm test:related` 78件通過、`pnpm test:run` 829件通過（スライス6）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`--check`（cycle の adr.md）、`typeLine` を壊して3件赤→戻して78件緑、CLI の `--add Simple` と `--set Full`
+- Ran: `pnpm test:related` 78件通過、`pnpm test:run` 830件通過（スライス6のあと、Round 1 の修正で1件追加）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`--check`（cycle の adr.md）、`typeLine` を壊して3件赤→戻して78件緑、CLI の `--add Simple` と `--set Full`
 - Findings: なし
 - Doubts: `cycle.mjs:146` — Type 行のない旧エントリに Type 付き `--set` をすると、Type 行を足さず Scope/Details だけ変わる。オーナーの判断が要る。
