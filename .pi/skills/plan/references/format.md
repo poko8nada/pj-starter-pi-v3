@@ -146,10 +146,11 @@ The four questions the plan answers about shape, and why that shape.
 
 ## No
 
-The ADR entry the plan carries.
+The ADR entries the plan carries.
 
 - `No` holds the entry numbers the plan carries, copied as they are, as a comma-separated list.
 - The plan keeps `- No: <NN>[, <NN>...]` at the top.
+- The same entry number may appear in another plan.
 
 ## Files
 

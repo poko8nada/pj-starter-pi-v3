@@ -224,7 +224,7 @@ Steps:
 Worktree:
 
 1. Run `git merge --no-ff consult/<plan id>` in the agent's tree.
-2. Resolve a conflict there.
+2. Resolve a conflict there. Two plans that changed different parts of the same path keep both changes. When keeping both would change either side's meaning, stop and ask the owner.
 3. Set the dependencies again in the base.
 4. Run the whole typecheck and test on the base.
 5. When red, undo the merge (`git reset --hard ORIG_HEAD`), keep the worktree, fix it in the plan, and merge again when it is green.
