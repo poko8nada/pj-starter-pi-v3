@@ -180,12 +180,23 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 ### Round 1
 
 - Stale:
+  - `.pi/skills/close/SKILL.md:3` — description が「verifies each Unit's function」のままで、変更の確認に触れていない。理由: 今回の変更で Verify は機能と変更の 2 部構成になったのに、冒頭の説明が機能のみのまま残り、読み手は Verify の範囲を機能だけと誤読しうるため。
+    - fixed: description を「verifies each Unit's function and the change the plans made」に直した。
+  - `.pi/skills/close/SKILL.md:10` — Procedure 冒頭の「asks the owner to verify each Unit's function」が機能のみのままで、変更の確認に触れていない。理由: 同上。`### 6. Verify, by Unit` と `format.md` が 2 部構成に変わったため、この一文は古いまま残っているため。
+    - fixed: 冒頭文を「asks the owner to verify each Unit's function and the change the plans made」に直した。
 - Unlisted:
+  - なし — diff が変えた実装は `Files` が名指す 2 ファイル（`SKILL.md`、`references/format.md`）だけで、`plan md` の差分は `Notes` の記録追記のみのため、計画外の変更はないため。
 - Gaps:
+  - `.pi/skills/close/SKILL.md:117` と `.pi/skills/close/references/format.md:149` — `Fixed` は「the function or the change did not work」のときに書くのに対し、`_ex-change_` を作る手順 4 は「whose function does not work」のままで、変更が意図どおりでなかったときの直し方がない。理由: `Goal` の「変更も見て」に失敗した場合の扱いが欠けており、`Verify` の目視確認（番号・パス・名前・形）だけではこの手順の欠けを実際に動かして確かめないため。
+    - fixed: 手順 4 を「Give a Unit whose function or change does not work」に直し、`format.md` の `Fixed`（function or the change）と一致させた。
 - Policy:
+  - なし — スライス 1 の `Allowed`（機能と変更の確認を 1 度に提示、`Plans:` の範囲）が手順 1〜2 の形で守られ、`Forbidden`（acceptance の繰り返し禁止は `How not to write this` で維持、`## Verified` に説明を書かずチャットで説明、`yolo` 不変）が守られ、スライス 2 の `Forbidden`（`collect.mjs` / `collect.test.ts` 不変、過去 `close.md` の移行なし）が守られているため。
 - Unproven:
+  - なし — 両スライスとも `Verify` の `Added: なし`（関連するテストがないことが明記）で、新規・更新のテストが存在せず、既存の `pnpm test:run` 等も今回の文書挙動を名指ししていないため、壊れても緑のまま残るテストはないため。
 - Noise:
+  - なし — 同上。`Added` のテスト自体がなく、型・スキーマ・DB 制約がすでに保証する前提を再現したテストも、マジックナンバーやハードコード文字列を持つケースも存在しないため。`design.md` の `## Test cases` に照らすべき対象がないため。
 - Doubts:
+  - `.pi/skills/close/SKILL.md:119` — 手順 6 の「Write what they answered in `## Verified`」が `Result:` と `Change:` の両方を書くことを明示していない。`Goal` の「結果を `Change:` に残す」を手順上で保証するために `Change:` を名指しすべきかは、`what they answered` を両方の回答と読めば足りるとも言えるため、修正が必要か所有者の判断が要る。
 
 ### Round 2
 

@@ -1,13 +1,13 @@
 ---
 name: close
-description: Use when every plan of a cycle is done or dropped. It collects what the plans left in close.md, proposes their destinations, and after the owner's judgement makes the small changes, verifies each Unit's function, writes the roadmap, and hands the proposed items to the next cycle.
+description: Use when every plan of a cycle is done or dropped. It collects what the plans left in close.md, proposes their destinations, and after the owner's judgement makes the small changes, verifies each Unit's function and the change the plans made, writes the roadmap, and hands the proposed items to the next cycle.
 ---
 
 # close
 
 Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at. What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
 
-This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's function, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
+This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
 
 ## Procedure
 
@@ -114,7 +114,7 @@ Steps:
 1. Take one Unit at a time: propose how to check its function, and how to check what the plans that cut it changed — the command to run and what to see, or the place to read and what to look for, and the result that means it works.
 2. Explain what changed, in the same message: what every plan in `Plans:` changed, and where.
 3. Wait for the owner's answer, and hold it in the chat before the next Unit.
-4. Give a Unit whose function does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
+4. Give a Unit whose function or change does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
 5. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
 6. Write what they answered in `## Verified` after step 5's repair, which sits after `## Triage`.
 
