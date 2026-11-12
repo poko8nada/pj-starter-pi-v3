@@ -232,7 +232,7 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: f3ab33ea3bf01f3197ccb2e5c4dcd1a01ef45129
 - Stopped:
 
 ### Cleanup: 掃除なし
