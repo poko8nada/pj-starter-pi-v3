@@ -21,9 +21,22 @@ View:
 
 ## Procedure
 
-Note: The cycle's three stages run in their order. Each keeps its work. Each loses only its look at the owner.
+Note: The cycle's four stages run in their order. Each keeps its work. Each loses only its look at the owner.
 
-### 1. plan
+### 1. adr
+
+Steps:
+
+1. Walk the adr skill's cycle stage and entry stage, in its order, from where the cycle stands: the pre-research, every entry's `Context`, its `Scope`, the opening proposal, the discussion, the decision, and its `Definition`. A stage the cycle has passed is not walked again.
+2. Give each entry's affected to a `research` subagent, and go on without waiting for it.
+3. Go on to the plan.
+
+Notes:
+
+- The agent takes the owner's place for the entry: it proposes, settles, and moves the entry to the decision.
+- skips: the Japanese proofread, and the owner's look at every step of the entry stage.
+
+### 2. plan
 
 Steps:
 
@@ -36,7 +49,7 @@ Notes:
 
 - skips: the Japanese proofread (the owner does not read the plan mds under `yolo`, so it does not run later either), and the owner's look at the plan mds.
 
-### 2. work
+### 3. work
 
 Steps:
 
@@ -49,7 +62,7 @@ Notes:
 
 - skips: the report to the owner, and the owner confirmation before the merge.
 
-### 3. close
+### 4. close
 
 Steps:
 
@@ -99,3 +112,4 @@ Note: a hole the run finds and fixes in the plan's own files is not one of these
 - When you walk the cycle: do not decide a change the ADR did not accept.
 - When you run a stage: do not call the other skills. Each stage keeps its own rules, and the flow above is the order it walks them.
 - When you run the cycle: do not change a stage or the stop point.
+- When you walk the entry stage: do not skip a step of it. The steps are walked, and only their look at the owner is lost.

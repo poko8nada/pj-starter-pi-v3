@@ -139,13 +139,13 @@ yolo を、エントリ分割のスキャフォールドができた後（プリ
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: afcc0dd8da36d4f0512a1d5fe8fb140e1bc6155d
 - Stopped:
 
 ### Slice 2: エントリ段階を歩く
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
