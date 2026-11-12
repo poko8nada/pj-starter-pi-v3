@@ -180,9 +180,9 @@ plan の cut が、共有の設定ファイルや文書を別のプランに切�
 
 ### Slice 1: cut の粒度の規則を新しい形にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 47f9ced7d04864d5201b2c045d924b11ae483638
 - Stopped:
 
 ### Slice 2: プランの No は複数のエントリを名乗れる
