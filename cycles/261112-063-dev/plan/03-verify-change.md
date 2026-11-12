@@ -149,47 +149,76 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 ### Slice 1: Verify が機能と変更の 2 つを見る
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - 6132e4c consult(verify-change): verify by unit checks function and change
 - Stopped:
+  - なし
 
 ### Slice 2: Verified に Change を足す
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
+  - e2854ed consult(verify-change): add Change to Verified
 - Stopped:
+  - なし
 
 ### Cleanup: 掃除なし
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/skills/close/SKILL.md:3` — description が「verifies each Unit's function」のままで、変更の確認に触れていない。理由: 今回の変更で Verify は機能と変更の 2 部構成になったのに、冒頭の説明が機能のみのまま残り、読み手は Verify の範囲を機能だけと誤読しうるため。
+    - fixed: description を「verifies each Unit's function and the change the plans made」に直した。
+  - `.pi/skills/close/SKILL.md:10` — Procedure 冒頭の「asks the owner to verify each Unit's function」が機能のみのままで、変更の確認に触れていない。理由: 同上。`### 6. Verify, by Unit` と `format.md` が 2 部構成に変わったため、この一文は古いまま残っているため。
+    - fixed: 冒頭文を「asks the owner to verify each Unit's function and the change the plans made」に直した。
 - Unlisted:
+  - なし — diff が変えた実装は `Files` が名指す 2 ファイル（`SKILL.md`、`references/format.md`）だけで、`plan md` の差分は `Notes` の記録追記のみのため、計画外の変更はないため。
 - Gaps:
+  - `.pi/skills/close/SKILL.md:117` と `.pi/skills/close/references/format.md:149` — `Fixed` は「the function or the change did not work」のときに書くのに対し、`_ex-change_` を作る手順 4 は「whose function does not work」のままで、変更が意図どおりでなかったときの直し方がない。理由: `Goal` の「変更も見て」に失敗した場合の扱いが欠けており、`Verify` の目視確認（番号・パス・名前・形）だけではこの手順の欠けを実際に動かして確かめないため。
+    - fixed: 手順 4 を「Give a Unit whose function or change does not work」に直し、`format.md` の `Fixed`（function or the change）と一致させた。
 - Policy:
+  - なし — スライス 1 の `Allowed`（機能と変更の確認を 1 度に提示、`Plans:` の範囲）が手順 1〜2 の形で守られ、`Forbidden`（acceptance の繰り返し禁止は `How not to write this` で維持、`## Verified` に説明を書かずチャットで説明、`yolo` 不変）が守られ、スライス 2 の `Forbidden`（`collect.mjs` / `collect.test.ts` 不変、過去 `close.md` の移行なし）が守られているため。
 - Unproven:
+  - なし — 両スライスとも `Verify` の `Added: なし`（関連するテストがないことが明記）で、新規・更新のテストが存在せず、既存の `pnpm test:run` 等も今回の文書挙動を名指ししていないため、壊れても緑のまま残るテストはないため。
 - Noise:
+  - なし — 同上。`Added` のテスト自体がなく、型・スキーマ・DB 制約がすでに保証する前提を再現したテストも、マジックナンバーやハードコード文字列を持つケースも存在しないため。`design.md` の `## Test cases` に照らすべき対象がないため。
 - Doubts:
+  - `.pi/skills/close/SKILL.md:119` — 手順 6 の「Write what they answered in `## Verified`」が `Result:` と `Change:` の両方を書くことを明示していない。`Goal` の「結果を `Change:` に残す」を手順上で保証するために `Change:` を名指しすべきかは、`what they answered` を両方の回答と読めば足りるとも言えるため、修正が必要か所有者の判断が要る。
 
 ### Round 2
 
 - Stale:
+  - OK — `.pi/skills/close/SKILL.md:3` の description が「verifies each Unit's function and the change the plans made」になっており、Round 1 の指摘どおり機能と変更の 2 部構成と一致するため。
+  - OK — `.pi/skills/close/SKILL.md:10` の冒頭文が「asks the owner to verify each Unit's function and the change the plans made」になっており、同上、Verify の範囲の誤読が解消されているため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - OK — `.pi/skills/close/SKILL.md:117` が「Give a Unit whose function or change does not work」になっており、`.pi/skills/close/references/format.md:149` の「written only when the function or the change did not work」と一致し、変更が意図どおりでない場合の直し方が確保されているため。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 3 件はいずれも文言どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「close の Verify が、Unit の機能に加えて今サイクルの変更も見て、結果を `Change:` に残す」を達成している。`### 6. Verify, by Unit` の手順 1 と 2 が機能と変更の 2 つを 1 回で見せ、`## Verified` が `Result:` と `Change:` を並びに持つ。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み）。変更の適用後に `git diff 6a9dfab..HEAD -- .pi/skills/close` を読み、`SKILL.md` と `references/format.md` の用語（機能と変更、`Fixed`、`Plans:`）が揃っていることを確かめた。
+- Findings: なし
+- Doubts: なし
