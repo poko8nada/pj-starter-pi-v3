@@ -164,6 +164,7 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 - Unplanned:
   - なし
 - Commit:
+  - e2854ed consult(verify-change): add Change to Verified
 - Stopped:
   - なし
 
