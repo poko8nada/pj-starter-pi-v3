@@ -173,24 +173,24 @@ Notes:
 
 Steps:
 
-1. Take the `**proposed**` lines to the next cycle's ADR: omit the intent; first update `ROADMAP.md`; then split the entries; then run the pre-research; then fill each entry's `Context` and `Research & Trial`.
-2. Leave the `Scope` empty. Do not commit the next cycle's files.
+1. Take the `**proposed**` lines to the next cycle's ADR: omit the intent; first update `ROADMAP.md`; then split the entries, proposing each entry's `Type`; then run the pre-research; then fill each entry's `Context` and `Research & Trial`.
+2. Leave the `Scope` as the scaffold wrote it. Do not commit the next cycle's files.
 3. Stop there: another session starts from the next cycle's ADR.
 
 View:
 
-| the next cycle          | what is filled                   |
-| ----------------------- | -------------------------------- |
-| `ROADMAP.md`            | the proposed items               |
-| each entry              | `Context` and `Research & Trial` |
-| each `affected/<NN>.md` | the scaffold                     |
-| `Scope`                 | empty                            |
+| the next cycle          | what is filled                           |
+| ----------------------- | ---------------------------------------- |
+| `ROADMAP.md`            | the proposed items                       |
+| each entry              | `Type`, `Context` and `Research & Trial` |
+| each `affected/<NN>.md` | the scaffold                             |
+| `Scope`                 | the scaffold's                           |
 
 Notes:
 
 - The intent is omitted; this is not the normal ADR.
 - The next cycle's `adr.md` and `affected/*.md` are written by the adr skill's scaffold and the pre-research.
-- The next session starts at the entry's `Scope`.
+- The next session starts at the entry's `Type`.
 - The files are not committed.
 
 ## How not to write this

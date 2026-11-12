@@ -192,9 +192,9 @@ yolo の adr 段階に、Simple が Scope と discussion を歩かない例外�
 
 ### Slice 2: close が Type から始める
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1093ced
 - Stopped:
 
 ### Slice 3: yolo が Simple を歩く
