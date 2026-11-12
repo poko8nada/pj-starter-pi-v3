@@ -116,7 +116,7 @@ Steps:
 3. Wait for the owner's answer, and hold it in the chat before the next Unit.
 4. Give a Unit whose function or change does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
 5. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
-6. Write what they answered in `## Verified` after step 5's repair, which sits after `## Triage`.
+6. Write `Result:` and `Change:` from what they answered, in `## Verified`, after step 5's repair, which sits after `## Triage`.
 
 View:
 
