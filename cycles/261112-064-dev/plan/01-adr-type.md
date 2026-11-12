@@ -744,9 +744,9 @@ type SetArg = {
 
 ### Slice 1: format に Type と omission を足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 6f4908d
 - Stopped:
 
 ### Slice 2: スクリプトの骨組みに Type と omission を出す
