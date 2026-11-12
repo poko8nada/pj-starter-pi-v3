@@ -216,8 +216,8 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 ### Slice 1: サイクル段階で Context を書く
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

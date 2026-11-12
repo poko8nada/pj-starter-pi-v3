@@ -79,8 +79,9 @@ Steps:
 1. Read the `Look it up` section of `references/tasks.md`.
 2. Propose the pre-research of every entry together. Name the entry, the type, the question, and what the answer decides.
 3. Run the approved ones in parallel. Group the entries whose question is the same, and run one `research` or `trial` subagent per group.
-4. Wait for all of them, and write each result in its entry's `Research & Trial`.
-5. Show the owner a new entry found while the pre-research runs, and add it after the answer.
+4. Write every entry's `Context` in section 5 while they run.
+5. Wait for all of them, and write each result in its entry's `Research & Trial`.
+6. Show the owner a new entry found while the pre-research runs, and add it after the answer, with its `Context`.
 
 For the pre-research:
 
@@ -104,6 +105,27 @@ Notes:
 
 - The pre-research runs before the entry stage. Its facts are in `Research & Trial` before the first entry starts.
 
+### 5. Context
+
+Steps:
+
+1. Once the pre-research is running, write the items of every entry, in the split's order.
+2. Write what is settled at that point: the cycle's intent, the roadmap item, the split, and what the owner said.
+3. Write one entry's own items only: its premise, its constraint, its intent, and its question.
+4. Number them `C1`, `C2`, ... in each entry.
+
+View:
+
+| kind       | what it is                              |
+| ---------- | --------------------------------------- |
+| premise    | how it behaves now                      |
+| constraint | a limit, or what must not change        |
+| intent     | what the owner wants to become, and why |
+| question   | the entry's question                    |
+
+Note: do not leave out what is known. What is not known yet stays out, and the research or the discussion adds it.
+Note: write what is settled. A guess stays in the chat.
+
 ## One entry
 
 The entry stage runs once per entry, in the order the split gave.
@@ -120,31 +142,13 @@ Steps:
 Notes:
 
 - The scope is of this entry. The other entries keep their own scope.
-- A constraint the owner adds here goes to `Context` as a new item.
 - The first `Scope` is a guess. Rewrite it in `Discussion Loop` with the owner.
 
-### 2. Context
+### 2. The opening proposal
 
 Steps:
 
-1. After the `Scope` is agreed, write what is known now, all of it, for this entry only.
-2. Number the items `C1`, `C2`, ...
-
-View:
-
-| kind       | what it is                                      |
-| ---------- | ----------------------------------------------- |
-| premise    | how it behaves now                              |
-| constraint | the `Who`'s want, a limit, what must not change |
-| question   | the entry's question                            |
-
-Note: do not leave out what is known. What is not known yet stays out, and the research or the discussion adds it.
-
-### 3. The opening proposal
-
-Steps:
-
-1. Read the entry's pre-research facts in `Research & Trial`, and what they decide.
+1. Read the entry's `Context` and its pre-research facts in `Research & Trial`, and what they decide.
 2. Read the `Decision` section of `references/adr.format.md`.
 3. Write the opening proposal of the Discussion Loop in the entry's `Decision`, with `Status` empty and `#### Details` `なし`.
 4. Say what the facts decide and what the proposal is, and go to the Discussion Loop.
@@ -156,7 +160,7 @@ Notes:
 - A fact that is still missing stops the entry. It is looked up here, not in the decision.
 - When the holding point is a fact nobody has, a `trial` subagent may try it in a worktree, with the owner's agreement. Read the `Try it` section of `references/tasks.md` before running.
 
-### 4. Discussion Loop
+### 3. Discussion Loop
 
 Steps:
 
@@ -185,23 +189,23 @@ Notes:
 - When a finding shows a premise is wrong, correct the item, and keep the finding in `Research & Trial` with its source.
 - When a finding serves no item, add the item.
 - When the research is short, add it. When a finding changes the scope, propose the change and agree it.
-- When the loop needs a fact nobody has, a trial may run as in section 3, with the owner's agreement.
+- When the loop needs a fact nobody has, a trial may run as in section 2, with the owner's agreement.
 - Only the owner moves the entry to the decision. The agent has no right to do so. This step cannot be skipped.
 - When the decision sends the entry back, discuss how to fill the missing part, or whether to remove it from `Context` or `Research & Trial`.
 
-### 5. Decision
+### 4. Decision
 
 Steps:
 
 1. Check that every `C` and every `F` is carried.
-2. When a `C` is missing, explain it to the owner, and return to section 4.
+2. When a `C` is not carried, explain it to the owner. When they say it no longer limits the entry, remove its `C<n>:` label and keep the item in `Context` as a plain bullet. Otherwise return to section 3.
 3. When an `F` is not carried, remove its `F<n>:` label and keep the fact in `Research & Trial` as a plain bullet. Do not delete the content.
 4. Wait for the owner's judgement: `accepted` or `rejected`.
 5. Write `Status`.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
 
-### 6. Definition
+### 5. Definition
 
 Steps:
 
@@ -225,7 +229,7 @@ Notes:
 - A Unit that `rules/definition.rules.md` does not allow is not a Unit.
 - A rejected entry adopts nothing. Its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
-### 7. Affected
+### 6. Affected
 
 Steps:
 
@@ -237,7 +241,7 @@ Notes:
 - Do not wait for its result. Do not fix it. There is no procedure for it here.
 - It runs in parallel with the next entry.
 
-### 8. Next entry
+### 7. Next entry
 
 Steps:
 
