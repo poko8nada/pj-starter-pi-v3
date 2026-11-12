@@ -153,15 +153,19 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 - Unplanned:
   - なし
 - Commit:
+  - 6132e4c consult(verify-change): verify by unit checks function and change
 - Stopped:
   - なし
 
 ### Slice 2: Verified に Change を足す
 
 - Findings:
+  - なし
 - Unplanned:
+  - なし
 - Commit:
 - Stopped:
+  - なし
 
 ### Cleanup: 掃除なし
 
