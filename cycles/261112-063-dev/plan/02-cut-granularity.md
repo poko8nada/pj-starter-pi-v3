@@ -201,8 +201,8 @@ plan の cut が、共有の設定ファイルや文書を別のプランに切�
 
 ### Cleanup: 掃除なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
