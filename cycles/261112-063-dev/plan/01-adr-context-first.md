@@ -244,27 +244,27 @@ adr スキルが、プリリサーチの間に全エントリの `Context` を�
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「adr スキルが、プリリサーチの間に全エントリの `Context` を書き、`adr.md` のエントリを `Context` から並べる」を達成している。`SKILL.md` に `### 5. Context` があり、`## One entry` から `Context` の手順が消え、`adr.format.md`、`adr.mjs`、`index.test.ts` が `Context` 先頭の並びになっている。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み）。変更の適用後に `git diff 6a9dfab..HEAD -- .pi/skills/adr` を読み、`SKILL.md` の手順番号（`1`〜`7`）と本文中の参照（`section 2`、`section 3`、`section 5`）、`adr.format.md` の `Shape` と `Entries`、`adr.mjs` の `entrySkeleton` が一致することを確かめた。
+- Findings: なし
+- Doubts: なし
