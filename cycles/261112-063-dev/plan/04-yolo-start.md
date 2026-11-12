@@ -159,12 +159,19 @@ yolo を、エントリ分割のスキャフォールドができた後（プリ
 ### Round 1
 
 - Stale:
+  - なし — `.pi/skills/yolo/SKILL.md:3,17-20,24,26-37,115` が計画どおりで、`DEFINITION.md:28`・`README.md:29` の停止点（トリアージまで）と矛盾せず、古くなった文書・コメント・冗長文はない。`SKILL.md:19` と `:30` の「通った段階は歩き直さない」の重なりは計画が決めた文言のため指摘にしない。
 - Unlisted:
+  - なし — 差分は `Files` の1件（`.pi/skills/yolo/SKILL.md`）と本計画mdの `## Notes` 記録のみ。`cycles/261112-063-dev/plan/04-yolo-start.md:137-156` の差分は `Commit` hashの追記だけで、計画外の変更はない。
 - Gaps:
+  - なし — `Goal` の2点（スキャフォールド直後からの発動は `SKILL.md:3,17-18`、プリリサーチとエントリ段階の歩行は `SKILL.md:26-37`）に対応し、各 `Verify` の読通し（番号 `SKILL.md:26,39,52,65`、パス・名前・形）で手順をたどる形になっている。文書のみの変更で `Added: なし` は `design.md` の `## Test cases`（検査ファイルなし→検査手順なし）と整合し、動かして確かめるべき振る舞いの欠けはない。
 - Policy:
+  - なし — スライス1の `Forbidden`（エージェントが選ばない `SKILL.md:9`、`close` の `### 9. Proposed` 不変は `git diff` で `close` 無変更）が守られ、スライス2の `Allowed`（エントリの判断移行 `SKILL.md:36`）を妨げず、`Forbidden`（歩き直さない `SKILL.md:19,30`、トリアージ前で止まる `SKILL.md:73`、日本語校正なし `SKILL.md:37`、過去記録の移行なし）が守られているため。
 - Unproven:
+  - なし — 全スライス `Added: なし` で振る舞いを名乗る新規テストがなく、既存の `pnpm test:run` 等も今回の文書挙動を名指ししていないため、壊れても緑のまま残るテストはないため。
 - Noise:
+  - なし — 同上。`Added` のテスト自体がなく、型・スキーマ・DB制約がすでに保証する前提を再現したテストも、マジックナンバーやハードコード文字列を持つケースも存在しないため。`design.md` の `## Test cases` に照らすべき対象がないため。
 - Doubts:
+  - なし
 
 ### Round 2
 
@@ -178,7 +185,7 @@ yolo を、エントリ分割のスキャフォールドができた後（プリ
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「yolo が、エントリのスキャフォールドの後から発動でき、プリリサーチとエントリ段階も歩ける」を達成している。`description` と `## When it runs` がスキャフォールドの後からの発動を示し、`## Procedure` の `### 1. adr` がプリリサーチとエントリ段階を歩く。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み。plan md の整形崩れを 1 件直した）。変更の適用後に `git diff 4fb2af3..HEAD -- .pi/skills/yolo` を読み、`description`、`## When it runs` の 4 行、`## Procedure` の 4 段階と Note、`## How not to write this` が揃っていることを確かめた。
+- Findings: なし
+- Doubts: なし
