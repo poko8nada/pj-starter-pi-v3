@@ -185,9 +185,9 @@ yolo の adr 段階に、Simple が Scope と discussion を歩かない例外�
 
 ### Slice 1: plan のレビューが omission を読む
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a7f6f59
 - Stopped:
 
 ### Slice 2: close が Type から始める
