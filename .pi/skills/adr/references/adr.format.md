@@ -11,6 +11,8 @@ Section and field names are English; the content is Japanese.
 
 ## <NN>: <問い>
 
+Type: _Full_
+
 ### Context
 
 - C1: <前提。いまの振る舞い>
@@ -73,6 +75,16 @@ The entries the ADR holds.
 - `Definition` is the last section the entry leaves.
 - One bullet is one rule.
 - A bullet under `#### Details` is the title of one fence.
+- Every entry has one `Type:` line under its heading, before `Context`.
+
+## Type
+
+The entry's way of working.
+
+- The line sits under the entry's heading, before `Context`: `Type: _Full_` or `Type: _Simple_`.
+- `_Full_` walks every step of the entry stage.
+- `_Simple_` keeps `Scope` and `#### Details` as `_omission_`, does not walk the `Scope` step or the Discussion Loop, and settles the `Decision` with the owner directly.
+- `_omission_` means the entry does not record the item because of its type. `なし` means the item has nothing to record. A Full entry uses `なし`; a Simple entry uses `_omission_`.
 
 ## Scope
 
@@ -98,6 +110,7 @@ The range the entry decides, in `In` and `Out`.
 - `Out:` holds one line per kind out of scope, in `<kind>: <what is not done>（理由）`.
 - When a kind is `Out`, carry its reason.
 - When a kind needs a revisit condition, put it on that kind.
+- A Simple entry's body is `_omission_`.
 
 ## Context
 
@@ -128,7 +141,7 @@ What the entry becomes, and what holds it.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - `#### Details` holds the concrete code and documents the discussion settled. One bullet is the title of one fence, and the fence follows it. A fence carries one item.
-- When `#### Details` has nothing, write `なし` under it.
+- When `#### Details` has nothing, write `なし` under it. A Simple entry's body is `_omission_`.
 - When a field has nothing in it, write `なし`.
 
 ## Definition

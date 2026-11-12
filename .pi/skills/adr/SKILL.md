@@ -49,12 +49,20 @@ View:
 Steps:
 
 1. Split the cycle into entries. One entry has one `Main`.
-2. Show the owner the split and each entry's intent.
-3. Rewrite a rejected split, and show it again.
-4. Add every agreed entry at once, in the split's order, with the scaffold:
-   - `node .pi/skills/adr/scripts/index.mjs --add <title>` appends an entry with the title to the end of `adr.md` and creates `affected/<NN>.md`.
+2. Propose each entry's `Type` with its reason, in the split's order, and show it with the split:
+   - `Type` is `_Full_` or `_Simple_`.
+   - A Simple proposal meets all of these:
+     - the change is reversible with git.
+     - it crosses no Unit, as merging functions would.
+     - the owner's intent has a single reading.
+     - the outline of the work is inferable, and there is one way to do it, with nothing to compare.
+   - The reason names the conditions the entry meets, when the proposal is Simple.
+3. Show the owner the split, each entry's intent, and each entry's `Type`.
+4. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry.
+5. Add every agreed entry at once, in the split's order, with the scaffold:
+   - `node .pi/skills/adr/scripts/index.mjs --add <title> [Full|Simple]` appends an entry with the title and `Type` to the end of `adr.md` and creates `affected/<NN>.md`.
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from `adr.md` and `affected/<NN>.md`, and renumbers the rest.
-   - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title>` replaces the title of entry `NN` in `adr.md` and `affected/<NN>.md`.
+   - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title> [Full|Simple]` replaces the title of entry `NN` in `adr.md` and `affected/<NN>.md`. When the `Type` is given, it also writes the `Type:` line, `Scope` and `#### Details` in `adr.md` in that `Type`'s shape; when it is omitted, the `Type` stays.
 
 View:
 
@@ -128,7 +136,19 @@ Note: write what is settled. A guess stays in the chat.
 
 ## One entry
 
-The entry stage runs once per entry, in the order the split gave.
+The entry stage runs once per entry, in the order the split gave. An entry is `_Full_` or `_Simple_`. A Simple entry keeps `Scope` and `#### Details` as `_omission_` and skips `### 1. Scope` and `### 3. Discussion Loop`. A Full entry walks the steps below.
+
+### 0. Type
+
+Steps:
+
+1. Read the entry's `Type:` line.
+2. When the owner changes a Simple entry to Full before the `Decision`'s confirmation, write `_Full_` in the line, and walk the steps from `### 1. Scope` as a Full entry.
+
+Notes:
+
+- The owner decides the `Type`; the agent writes it.
+- A Full entry does not become Simple after the entry stage starts.
 
 ### 1. Scope
 
@@ -150,8 +170,12 @@ Steps:
 
 1. Read the entry's `Context` and its pre-research facts in `Research & Trial`, and what they decide.
 2. Read the `Decision` section of `references/adr.format.md`.
-3. Write the opening proposal of the Discussion Loop in the entry's `Decision`, with `Status` empty and `#### Details` `なし`.
-4. Say what the facts decide and what the proposal is, and go to the Discussion Loop.
+3. Write the opening proposal in the entry's `Decision`, with `Status` empty:
+   - Full: with `#### Details` `なし`.
+   - Simple: with `#### Details` kept as `_omission_`.
+4. Say what the facts decide and what the proposal is, and go on:
+   - Full: go to the Discussion Loop.
+   - Simple: go to the `Decision`.
 
 Notes:
 
@@ -198,9 +222,13 @@ Notes:
 Steps:
 
 1. Check that every `C` and every `F` is carried.
-2. When a `C` is not carried, explain it to the owner. When they say it no longer limits the entry, remove its `C<n>:` label and keep the item in `Context` as a plain bullet. Otherwise return to section 3.
+2. When a `C` is not carried:
+   - Full: explain it to the owner. When they say it no longer limits the entry, remove its `C<n>:` label and keep the item in `Context` as a plain bullet. Otherwise return to section 3.
+   - Simple: add it to the proposal, and ask the owner again.
 3. When an `F` is not carried, remove its `F<n>:` label and keep the fact in `Research & Trial` as a plain bullet. Do not delete the content.
-4. Wait for the owner's judgement: `accepted` or `rejected`.
+4. Wait for the owner's judgement:
+   - Full: `accepted` or `rejected`, after the discussion.
+   - Simple: `accepted` or `rejected`, on the proposal directly.
 5. Write `Status`.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.

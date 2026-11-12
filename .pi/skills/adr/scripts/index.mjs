@@ -1,9 +1,9 @@
 /**
  * index — adr と affected の入り口。
  *
- *   node index.mjs --root <dir> --add <title>
+ *   node index.mjs --root <dir> --add <title> [Full|Simple]
  *   node index.mjs --root <dir> --delete <NN>
- *   node index.mjs --root <dir> --set <NN> <title>
+ *   node index.mjs --root <dir> --set <NN> <title> [Full|Simple]
  *   node index.mjs --root <dir> --check
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,6 +23,7 @@ import {
   openCycleDir,
   parseArgs,
   setEntryTitle,
+  setEntryType,
   slugBranch,
   toYYMMDD,
 } from './cycle.mjs';
@@ -97,11 +98,11 @@ if (isMain) {
       const adrPath = join(openDir, 'adr.md');
       const current = readFileSync(adrPath, 'utf8');
       const next = (lastEntryNumber(current) ?? 0) + 1;
-      writeFileSync(adrPath, append(current, entrySkeleton(next, add)));
+      writeFileSync(adrPath, append(current, entrySkeleton(next, add.title, add.type)));
       console.log(`appended: ${adrPath}`);
       mkdirSync(affectedDir(openDir), { recursive: true });
       const path = affectedPath(openDir, next);
-      writeFileSync(path, affectedEntrySkeleton(next, add));
+      writeFileSync(path, affectedEntrySkeleton(next, add.title));
       console.log(`created: ${path}`);
     } else {
       let branch = '';
@@ -124,9 +125,9 @@ if (isMain) {
         }
         throw err;
       }
-      writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn, add));
+      writeFileSync(join(leaf, 'adr.md'), adrSkeleton(nnn, add.title, add.type));
       mkdirSync(affectedDir(leaf), { recursive: true });
-      writeFileSync(affectedPath(leaf, 1), affectedEntrySkeleton(1, add));
+      writeFileSync(affectedPath(leaf, 1), affectedEntrySkeleton(1, add.title));
       console.log(`created: ${leaf}`);
     }
   } else if (del !== null) {
@@ -150,7 +151,13 @@ if (isMain) {
   } else if (set !== null) {
     if (openDir === null) throw new Error('no open cycle');
     const adrPath = join(openDir, 'adr.md');
-    writeFileSync(adrPath, setEntryTitle(readFileSync(adrPath, 'utf8'), set.nn, set.title));
+    const markdown = readFileSync(adrPath, 'utf8');
+    writeFileSync(
+      adrPath,
+      set.type === null
+        ? setEntryTitle(markdown, set.nn, set.title)
+        : setEntryType(markdown, set.nn, set.title, set.type),
+    );
     console.log(`set: ${adrPath}`);
     const path = affectedPath(openDir, set.nn);
     if (existsSync(path)) {

@@ -1,12 +1,50 @@
 /**
+ * `Type:` 行を返す。
+ * @param {'Full' | 'Simple'} type
+ * @returns {string}
+ */
+export function typeLine(type) {
+  return type === 'Simple' ? 'Type: _Simple_' : 'Type: _Full_';
+}
+
+/**
+ * `### Scope` の本文を返す。
+ * @param {'Full' | 'Simple'} type
+ * @returns {string}
+ */
+export function scopeBody(type) {
+  if (type === 'Simple') return '_omission_';
+  return `- In:
+  - <kind>: <何をするか>
+- Out:
+  - <kind>: <何をしないか>（理由）`;
+}
+
+/**
+ * `#### Details` の本文を返す。
+ * @param {'Full' | 'Simple'} type
+ * @returns {string}
+ */
+export function detailsBody(type) {
+  if (type === 'Simple') return '_omission_';
+  return `- <フェンスのタイトル>
+  \`\`\`text
+  <決まったコードや文書>
+  \`\`\``;
+}
+
+/**
  * 1 エントリー分の骨組み。`references/adr.format.md` のエントリーの形と合わせること。
  * @param {number} nnn
  * @param {string} [title]
+ * @param {'Full' | 'Simple'} [type]
  * @returns {string}
  */
-export function entrySkeleton(nnn, title) {
+export function entrySkeleton(nnn, title, type = 'Full') {
   const q = title === undefined ? '<問い>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
+
+${typeLine(type)}
 
 ### Context
 
@@ -20,10 +58,7 @@ export function entrySkeleton(nnn, title) {
 
 ### Scope
 
-- In:
-  - <kind>: <何をするか>
-- Out:
-  - <kind>: <何をしないか>（理由）
+${scopeBody(type)}
 
 ### Decision
 
@@ -50,10 +85,7 @@ export function entrySkeleton(nnn, title) {
 
 #### Details
 
-- <フェンスのタイトル>
-  \`\`\`text
-  <決まったコードや文書>
-  \`\`\`
+${detailsBody(type)}
 
 ### Definition
 
@@ -66,12 +98,29 @@ export function entrySkeleton(nnn, title) {
  * `adr.md` の骨組み。`references/adr.format.md` の形と合わせること。
  * @param {number} nnn
  * @param {string} [title]
+ * @param {'Full' | 'Simple'} [type]
  * @returns {string}
  */
-export function adrSkeleton(nnn, title) {
+export function adrSkeleton(nnn, title, type = 'Full') {
   return `# ADR ${String(nnn).padStart(3, '0')}
 
-${entrySkeleton(1, title)}`;
+${entrySkeleton(1, title, type)}`;
+}
+
+/**
+ * `heading` の行番号の範囲を返す。見出しがなければ `null`。
+ * @param {readonly string[]} lines
+ * @param {string} heading
+ * @returns {{ start: number, end: number } | null}
+ */
+export function sectionRange(lines, heading) {
+  const start = lines.indexOf(heading);
+  if (start === -1) return null;
+  const level = /^#+/u.exec(heading)[0].length;
+  const end = lines.findIndex(
+    (line, index) => index > start && /^(#+)\s/u.test(line) && /^#+/u.exec(line)[0].length <= level,
+  );
+  return { start, end: end === -1 ? lines.length : end };
 }
 
 /**
@@ -81,12 +130,20 @@ ${entrySkeleton(1, title)}`;
  * @returns {string}
  */
 function section(entry, name) {
+  return sectionAt(entry, `### ${name}`);
+}
+
+/**
+ * `heading` の本文を返す。見出しがなければ空文字。
+ * @param {string} entry
+ * @param {string} heading
+ * @returns {string}
+ */
+function sectionAt(entry, heading) {
   const lines = entry.split('\n');
-  const start = lines.findIndex((line) => line === `### ${name}`);
-  if (start === -1) return '';
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((line) => line.startsWith('### '));
-  return (end === -1 ? rest : rest.slice(0, end)).join('\n');
+  const range = sectionRange(lines, heading);
+  if (range === null) return '';
+  return lines.slice(range.start + 1, range.end).join('\n');
 }
 
 /**
@@ -132,7 +189,19 @@ function beforeHeading(text, heading) {
 }
 
 /**
- * エントリーの `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
+ * エントリの `Type:` の値を返す。行がなければ `null`。
+ * @param {string} entry
+ * @returns {string | null}
+ */
+function typeOf(entry) {
+  const head = beforeHeading(entry, '### Context');
+  const found = /^Type: (.*)$/mu.exec(head);
+  return found ? found[1] : null;
+}
+
+/**
+ * エントリーの `Type:` 行の有無と値、および Type に応じた `Scope` と `#### Details` の `_omission_` を確かめ、
+ * つづけて `Context` の項目（`C<n>`）と `Research & Trial` の事実（`F<n>`）が、
  * `Decision` から参照されているかを確かめる。
  * `Decision` セクションの `#### Details` より前で、すべての `C` を参照し、すべての `F` をどれかが参照する。
  * `#### Details` の中の括弧は参照として数えない。
@@ -145,6 +214,26 @@ export function checkEntry(markdown) {
   const entries = markdown.split(/^## (?=\d{2}:)/mu).slice(1);
   for (const body of entries) {
     const nn = body.slice(0, 2);
+    const type = typeOf(body);
+    if (type === null) problems.push(`${nn}: Type is missing`);
+    else if (type !== '_Full_' && type !== '_Simple_') {
+      problems.push(`${nn}: Type is not _Full_ or _Simple_: ${type}`);
+    }
+    if (type === '_Simple_') {
+      if (section(body, 'Scope').trim() !== '_omission_') {
+        problems.push(`${nn}: Simple Scope is not _omission_`);
+      }
+      if (sectionAt(body, '#### Details').trim() !== '_omission_') {
+        problems.push(`${nn}: Simple Details is not _omission_`);
+      }
+    } else if (type === '_Full_') {
+      if (section(body, 'Scope').trim() === '_omission_') {
+        problems.push(`${nn}: Full Scope is _omission_`);
+      }
+      if (sectionAt(body, '#### Details').trim() === '_omission_') {
+        problems.push(`${nn}: Full Details is _omission_`);
+      }
+    }
     const cs = labels(section(body, 'Context'), /^- C(\d+):/gmu);
     const fs = labels(section(body, 'Research & Trial'), /^- F(\d+):/gmu);
     const seenC = new Set();

@@ -744,71 +744,91 @@ type SetArg = {
 
 ### Slice 1: format に Type と omission を足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1023c75
 - Stopped:
 
 ### Slice 2: スクリプトの骨組みに Type と omission を出す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: `pnpm test:related` で 11 件失敗する。旧テストの inline ADR に `Type:` 行がなく、`checkEntry` が `Type is missing` を返すため。
+  - left: スライス6でテストを新しい形に合わせるときに閉じる。このスライスでは旧テストを変えない。
+- Unplanned: なし
+- Commit: 25b4d6f
 - Stopped:
 
 ### Slice 3: adr スキルの手順を Full と Simple に分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d1c6c92
 - Stopped:
 
 ### Slice 4: スクリプトの引数と本文の書き換え
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: `pnpm test:related` で 13 件失敗する。スライス2からの 11 件（Type のない旧 fixture）に加え、`parseArgs` の `--add`/`--set` 形状変更の 2 件が旧期待値のまま残るため。
+  - left: スライス6でテストを新しい形に合わせるときに閉じる。このスライスではテストを変えない。
+- Unplanned: 通読で `index.mjs` の affected 書き込み 2 か所が旧い `add` のまま（オブジェクトを題名に渡し `[object Object]` になる）なのを見つけ、`add.title` に直した。計画の `Steps` が示す形であり、次の実行を待てなかった。
+- Commit: 277b115
 - Stopped:
 
 ### Slice 5: SKILL.md の scaffold の行
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 891efda
 - Stopped:
 
 ### Slice 6: テストを新しい形に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: スライス2・スライス4で残した 13 件の失敗は、このスライスで閉じた。`pnpm test:run` で 828 件全て通る。
+- Unplanned: `entry()` の引数が5つになり lint（max-params）に触れたため、第4引数を `{ details?, scope? }` の1つにまとめ、既存の呼び出しはそのままにした。テストの形を保つための変更である。
+- Commit: 18782c7
 - Stopped:
+
+### Cleanup: Type テストの穴をふさぐ
+
+- Findings: `--set` の Type なしテストが Full 起点で、Type 書き換えを見逃す作りだった。Simple 起点に直し、Type と Scope の保持を確かめる形にした。CLI の `--add Simple` 経路にコミット済みのテストがなく、捨てスクリプトでの確認だけだった。`--add 二 Simple` のテストを足し、Type・`_omission_`・affected の題名を確かめる形にした。既存テストは全て保ち、削ったものはない。
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/adr/scripts/adr.mjs:202` — `checkEntry` の JSDoc は `Context` の `C<n>` と `Research & Trial` の `F<n>` の参照検査だけを説明し、差分で足した Type/omission 検査に触れていないため、コメントが古くなった。
+    - fixed: JSDoc の冒頭に `Type:` 行の有無・値と Type に応じた `_omission_` の検査を追記した。
+  - `.pi/skills/adr/scripts/index.test.ts:346` — `Details のフェンス内の括弧は参照として数えない` のテストが `decision` 文字列の中に `#### Details` を埋め込んだまま残り、helper の `entry()` が自動付与する `#### Details` と重複して見出しが2つになるため、実物の形とずれた stale な組み立てになった。
+    - fixed: `decision` 文字列への埋め込みをやめ、`entry()` の `{ details }` 引数でフェンスを渡す形に直した。アサートはそのまま。
+- Unlisted: なし — 差分の全ファイルは計画の `Files` に名指しされており、ファイル外の変更はないため。
 - Gaps:
-- Policy:
+  - `.pi/skills/adr/scripts/index.mjs:128` — 新規サイクル作成分岐の `--add <title> Simple`（`adrSkeleton(nnn, add.title, add.type)`）を通す CLI テストがなく、開いたサイクルへの追記（`index.test.ts:656`）だけが検証されているため、Goal の「スクリプトが Type と omission を書く」の新規作成側が検査されていない。
+    - fixed: `--add はサイクルがなければ Simple で新規作成する` の CLI テストを足し、新規 `adr.md` の Type・`_omission_` と affected の題名を確かめる形にした。
+- Policy: なし — 古い `--add`/`--set` 呼び出しは既定値（Full／`type: null` 保持）で動き、Type 省略 `--set` の保持はテストで確認し、`--check` は開いたサイクルのみを読むままで、`SKILL.md` に owner-decides が明記のため。
 - Unproven:
-- Noise:
+  - `.pi/skills/adr/scripts/index.test.ts:472` — `setEntryType` の Full テストは題名に `Scope/Details を Full の形に` とうたうが、`Type: _Full_` と `- In:` しか確かめておらず `Details` のフェンス（` ```text`）を確かめていないため、`Details` の書き換えが壊れても緑のままになる。
+    - fixed: Full テストに ` ```text` のアサートを足し、`Details` の復元も確かめる形にした。
+- Noise: なし — 新規ケースの `Type: _Full_` などの固定文字列はスライス6の `Steps` が指定した検証そのもので、型が保証する前提の再現や誰も気づかない振る舞いのテストはないため。
 - Doubts:
+  - `.pi/skills/adr/scripts/cycle.mjs:146` — Type 行を持たない旧エントリに `--set <NN> <title> <Type>` を実行すると `replace(/^Type: .*$/mu, ...)` が何も置き換えず、Scope/Details だけが新 Type の形になる。旧エントリの移行をこの振る舞いのままでよいか、オーナーの判断が必要。
 
 ### Round 2
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/adr/scripts/adr.mjs:202` — 直っている。JSDocの冒頭が `Type:` 行の有無・値とTypeに応じた `Scope`・`#### Details` の `_omission_` 検査を説明し（203行）、実装の有無検査（218行）・値検査（219-221行）・Simple/Full分岐（222-236行）と一致するため。理由：指摘の古さ（C/F参照検査のみの説明）が解消されている。
+  - `.pi/skills/adr/scripts/index.test.ts:346` — 直っている。`decision` 文字列に `#### Details` を埋め込まず（349行はAdd/Policyのみ）、フェンスは `entry()` の `{ details }` 引数で渡し（353行）、helperが単一の `#### Details` 見出しを付与する（298-300行）ため重複がなく、アサート（355行）も残るため。理由：指摘の二重見出しの組み立てが単一見出しに戻っている。
+- Unlisted: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
 - Gaps:
-- Policy:
+  - `.pi/skills/adr/scripts/index.mjs:128` — 直っている。新規作成分岐が `adrSkeleton(nnn, add.title, add.type)` とTypeを渡し（128行）、CLIテスト `--add はサイクルがなければ Simple で新規作成する`（660行）が新規 `adr.md` の `Type: _Simple_`・`Scope` と `Details` の `_omission_`（671-673行）とaffectedの題名（674行）を確かめるため。理由：指摘の未検証側（新規作成）が検査で覆われた。
+- Policy: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
 - Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/adr/scripts/index.test.ts:475`（Round 1の472行と同名テスト） — 直っている。Fullテストが `Type: _Full_`（478行）・`- In:`（479行）に加え ` ```text`（480行）を確かめ、`Details` の復元が壊れれば赤になるため。理由：指摘の検証不足（Details未確認）が足された。
+- Noise: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
+- Doubts: なし — Round 2で新たに見つけた疑いはないため。Round 1のDoubtはRound 1に残る。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: ADR のエントリが Type を持ち、スクリプトが Type と omission を書く — 達成した。
+- Ran: `pnpm test:related` 78件通過、`pnpm test:run` 829件通過（スライス6）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`--check`（cycle の adr.md）、`typeLine` を壊して3件赤→戻して78件緑、CLI の `--add Simple` と `--set Full`
+- Findings: なし
+- Doubts: `cycle.mjs:146` — Type 行のない旧エントリに Type 付き `--set` をすると、Type 行を足さず Scope/Details だけ変わる。オーナーの判断が要る。
