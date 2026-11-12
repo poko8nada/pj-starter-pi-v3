@@ -187,9 +187,9 @@ plan の cut が、共有の設定ファイルや文書を別のプランに切�
 
 ### Slice 2: プランの No は複数のエントリを名乗れる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `.pi/skills/plan/references/format.md` の `## No` の説明行が `The ADR entry the plan carries.` と単数で、`No` がエントリの並びを持つことと食い違っていた。同じ `## No` を触るこのスライスで `The ADR entries the plan carries.` に直した。
+- Commit: cb58b1647e79fd16f38532355f8ff48d7b653b99
 - Stopped:
 
 ### Slice 3: 同じファイルの別の部分を変える 2 つのプランのマージ
