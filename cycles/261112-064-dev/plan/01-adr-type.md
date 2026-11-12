@@ -815,16 +815,20 @@ type SetArg = {
 ### Round 2
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/adr/scripts/adr.mjs:202` — 直っている。JSDocの冒頭が `Type:` 行の有無・値とTypeに応じた `Scope`・`#### Details` の `_omission_` 検査を説明し（203行）、実装の有無検査（218行）・値検査（219-221行）・Simple/Full分岐（222-236行）と一致するため。理由：指摘の古さ（C/F参照検査のみの説明）が解消されている。
+  - `.pi/skills/adr/scripts/index.test.ts:346` — 直っている。`decision` 文字列に `#### Details` を埋め込まず（349行はAdd/Policyのみ）、フェンスは `entry()` の `{ details }` 引数で渡し（353行）、helperが単一の `#### Details` 見出しを付与する（298-300行）ため重複がなく、アサート（355行）も残るため。理由：指摘の二重見出しの組み立てが単一見出しに戻っている。
+- Unlisted: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
 - Gaps:
-- Policy:
+  - `.pi/skills/adr/scripts/index.mjs:128` — 直っている。新規作成分岐が `adrSkeleton(nnn, add.title, add.type)` とTypeを渡し（128行）、CLIテスト `--add はサイクルがなければ Simple で新規作成する`（660行）が新規 `adr.md` の `Type: _Simple_`・`Scope` と `Details` の `_omission_`（671-673行）とaffectedの題名（674行）を確かめるため。理由：指摘の未検証側（新規作成）が検査で覆われた。
+- Policy: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
 - Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/adr/scripts/index.test.ts:475`（Round 1の472行と同名テスト） — 直っている。Fullテストが `Type: _Full_`（478行）・`- In:`（479行）に加え ` ```text`（480行）を確かめ、`Details` の復元が壊れれば赤になるため。理由：指摘の検証不足（Details未確認）が足された。
+- Noise: なし — Round 1の指摘なしのため `fixed:` 行なし、確認対象なし。
+- Doubts: なし — Round 2で新たに見つけた疑いはないため。Round 1のDoubtはRound 1に残る。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: ADR のエントリが Type を持ち、スクリプトが Type と omission を書く — 達成した。
+- Ran: `pnpm test:related` 78件通過、`pnpm test:run` 829件通過（スライス6）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`--check`（cycle の adr.md）、`typeLine` を壊して3件赤→戻して78件緑、CLI の `--add Simple` と `--set Full`
+- Findings: なし
+- Doubts: `cycle.mjs:146` — Type 行のない旧エントリに Type 付き `--set` をすると、Type 行を足さず Scope/Details だけ変わる。オーナーの判断が要る。
