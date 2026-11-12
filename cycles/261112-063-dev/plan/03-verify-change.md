@@ -201,16 +201,24 @@ close の Verify が、Unit の機能に加えて今サイクルの変更も見�
 ### Round 2
 
 - Stale:
+  - OK — `.pi/skills/close/SKILL.md:3` の description が「verifies each Unit's function and the change the plans made」になっており、Round 1 の指摘どおり機能と変更の 2 部構成と一致するため。
+  - OK — `.pi/skills/close/SKILL.md:10` の冒頭文が「asks the owner to verify each Unit's function and the change the plans made」になっており、同上、Verify の範囲の誤読が解消されているため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - OK — `.pi/skills/close/SKILL.md:117` が「Give a Unit whose function or change does not work」になっており、`.pi/skills/close/references/format.md:149` の「written only when the function or the change did not work」と一致し、変更が意図どおりでない場合の直し方が確保されているため。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 3 件はいずれも文言どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「close の Verify が、Unit の機能に加えて今サイクルの変更も見て、結果を `Change:` に残す」を達成している。`### 6. Verify, by Unit` の手順 1 と 2 が機能と変更の 2 つを 1 回で見せ、`## Verified` が `Result:` と `Change:` を並びに持つ。
+- Ran: `pnpm test:run`（65 files / 813 tests passed）、`pnpm typecheck`（root: ok、.pi: ok）、`pnpm lint`（指摘なし）、`pnpm format:check`（整形済み）。変更の適用後に `git diff 6a9dfab..HEAD -- .pi/skills/close` を読み、`SKILL.md` と `references/format.md` の用語（機能と変更、`Fixed`、`Plans:`）が揃っていることを確かめた。
+- Findings: なし
+- Doubts: なし
