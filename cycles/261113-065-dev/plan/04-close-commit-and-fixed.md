@@ -77,13 +77,13 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
    1. update: `### 8. Commit` の Step 1 に、wip のときは `close.md` だけをコミットし、`ROADMAP.md` を作業ツリーに残す条件と、そのときのメッセージを足す。
 
       ```md
-      1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status stays `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
+      1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status is `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
       ```
 
    2. update: `### 8. Commit` の Note `The roadmap is written before it` に、wip のときはコミットに含めないことを足す。
 
       ```md
-      - The roadmap is written before it: the roadmap step says so. When the item stays `wip`, it is written but stays out of this commit.
+      - The roadmap is written before it: the roadmap step says so. When the item is `wip`, it is written but stays out of this commit.
       ```
 
 2. Outside: `git commit`
@@ -130,7 +130,7 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
    2. update: `### Fields` の `Fixed` の説明を、変更内容と commit を持つ形にする。
 
       ```md
-      - `Fixed` is a short description of the change and the commit it made, written only when the function or the change did not work, and it takes the place of the `done <commit>` a `## Triage` line carries. When there was no fix, write `なし`.
+      - `Fixed` is a short description of the change and the commit it made, or `なし` when there was no fix, and it takes the place of the `done <commit>` a `## Triage` line carries.
       ```
 
 2. `.pi/skills/close/SKILL.md`
@@ -182,17 +182,27 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
 - Commit: 829ede7
 - Stopped: なし
 
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
+
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `.pi/skills/close/references/format.md:149` — 足した `When there was no fix, write なし.` が、同じ行に残る `written only when the function or the change did not work` を古くしている。実際の `close.md` は `Result: OK` の Unit にも `Fixed: なし` を書いており（`cycles/261112-064-dev/close.md:31-33`）、修正が要らなかった Unit に `なし` を書くのか行ごと書かないのかが読者に決められない。`なし` を書くと決めた以上、前半の「修正があったときだけ書く」はもう規則を言っていない。理由: 同じ行の中で「書くのは壊れたときだけ」と「無ければ `なし` を書く」が並び、`## Shape`（`:47`）も `なし` を示さないため、書く側が二通りに読む。直すなら「修正があったときは変更内容と commit を持ち、無ければ `なし`」の一つの規則にまとめる。
+    - fixed: `.pi/skills/close/references/format.md` の `Fixed` を「変更内容と commit、無ければ `なし`」の一つの規則にまとめ、「written only when the function or the change did not work」を消した。
+- Unlisted: なし
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `.pi/skills/close/SKILL.md:162`（同じ語を使う `:168` の Note も） — 条件が `stays wip`（close の前から wip だったときに限る）で、ADR 05 の C4「status が wip のとき」より狭い。`### 7. Roadmap` の step 3 は done と言われなければ `wip` を書くので、close の前が `_todo_` だった項目は close の途中で `wip` になり、条件が偽になって `ROADMAP.md` が close のコミットに混ざる。本サイクルの `ROADMAP.md:25` の 031 は実際に `_todo_` のままで（adr の `### 2. Roadmap` が `wip` にしていない）、close で `wip` になる側である。理由: この分かれ道が偽になると Goal の「wip のとき close のコミットが `close.md` だけを含む」を外し、しかも `Verify` の目視では踏まれない。直すなら close が書いた後の status を条件にする。
+    - fixed: `.pi/skills/close/SKILL.md` の条件を close 後の status を見る `is wip` に変え、`:162` の Step 1 と `:168` の Note の両方を直した。
+- Policy: なし
+- Unproven: なし
+- Noise: なし
 - Doubts:
+  - wip で close した後に作業ツリーへ残る `ROADMAP.md` を、どのコミットが持つのかがどのスキルにも書かれていない。`### 9. Proposed` は「次サイクルのファイルはコミットしない」、adr の `### 2. Roadmap` と work の Step 1 も `ROADMAP.md` を名指さない（過去は `1dc4af8 update: roadmap` のように手でコミットしている）。wip のまま close したサイクルの `cycles` 追記が未コミットで残る運用でよいかは、オーナーの判断が要る。
 
 ### Round 2
 

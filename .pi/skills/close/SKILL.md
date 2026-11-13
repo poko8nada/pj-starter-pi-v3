@@ -159,13 +159,13 @@ Notes:
 
 Steps:
 
-1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status stays `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
+1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status is `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
 2. End here when no `**proposed**` line is left; otherwise go to step 9.
 
 Notes:
 
 - The worktrees are clean: the work skill's merge step removes each plan's worktree.
-- The roadmap is written before it: the roadmap step says so. When the item stays `wip`, it is written but stays out of this commit.
+- The roadmap is written before it: the roadmap step says so. When the item is `wip`, it is written but stays out of this commit.
 - An `_ex-change_` and its work are committed at its own commit; this commit does not carry them.
 - The `**proposed**` files are after this commit, and are not committed.
 
