@@ -575,7 +575,7 @@ describe('cleanWorktrees', () => {
 });
 
 describe('unit の保存場所', () => {
-  it('worktree の外を指す → 記録を置いてもリポジトリは汚れない', () => {
+  it('unit の保存場所 → worktree の実体は unit の下の wt', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 

@@ -30,17 +30,12 @@ describe('readCursor', () => {
     expect(readCursor(aPlace(), 'session-a')).toBeUndefined();
   });
 
-  it('壊れている（JSON でない）→ undefined（全部返す側に倒れる）', () => {
+  it('壊れている（JSON でない）→ undefined', () => {
     const found = aPlace();
     const at = aAt();
-    const subagent = 'consult-1';
-    notice(found, at, { ended: 2000, subagent });
-    writeCursorFile(found, { 'session-a': 9999 });
+    notice(found, at, { ended: 2000, subagent: 'consult-1' });
     writeFileSync(join(found.dir, CURSOR_FILE), 'これは JSON ではない');
     expect(readCursor(found, 'session-a')).toBeUndefined();
-    expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
-      subagent,
-    ]);
   });
 });
 

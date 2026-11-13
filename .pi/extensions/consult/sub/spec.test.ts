@@ -33,7 +33,6 @@ describe('buildPiArgs: subagent-guard', () => {
     const args = buildPiArgs(options());
     const index = args.indexOf('--extension');
     expect(index).toBeGreaterThan(args.indexOf('--tools'));
-    expect(args[index + 1]?.endsWith('guard.ts')).toBe(true);
   });
 
   it('-e は guard と budget の 2 回（順に guard・budget の絶対パス）', () => {

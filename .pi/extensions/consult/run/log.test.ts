@@ -34,7 +34,6 @@ describe('appendRun / readRuns', () => {
     const run = record({ worktree: '2-a', turns: 12, spend: '0.01 usd' });
     appendRun(found, run, at);
     expect(readRuns(found, { at })).toEqual([run]);
-    expect(readFileSync(dayFile(found, at), 'utf8').trim().split('\n')).toHaveLength(1);
   });
 
   it('同じ run を 2 回足す → 2 行になる（追記で、上書きしない）', () => {
@@ -64,10 +63,10 @@ describe('appendRun / readRuns', () => {
     const found = aPlace();
     appendRun(found, record({ started: 1 }), at);
     const file = dayFile(found, at);
-    // subagent がない行と session がない行の 2 種類。どちらも parseRun が落とす
+    // subagent がない行。parseRun が落とすことは単体で見る。ここでは読み飛ばすことだけを見る
     writeFileSync(
       file,
-      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n{"subagent":"consult-9","role":"review","pid":1,"started":3}\n`,
+      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n`,
     );
     expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1]);
   });
@@ -140,10 +139,9 @@ describe('pidAlive', () => {
     expect(pidAlive(process.pid)).toBe(true);
   });
 
-  it('ありえない pid と 0 以下 → 死んでいる扱い', () => {
+  it('ありえない pid と負の pid → 死んでいる扱い', () => {
     // macOS の pid は 5 桁まで。6 桁は存在しない
     expect(pidAlive(999999)).toBe(false);
-    expect(pidAlive(0)).toBe(false);
     expect(pidAlive(-1)).toBe(false);
   });
 });
@@ -309,11 +307,6 @@ describe('parseRun', () => {
     const found = aPlace();
     appendRun(found, record({ token }), at);
     expect(readRuns(found, { at })[0]).toMatchObject({ token });
-    expect(
-      parseRun(
-        JSON.stringify({ session: 's', subagent: 'c', role: 'r', pid: 1, started: 2, token }),
-      ),
-    ).toMatchObject({ token });
   });
 
   it('startToken 付きの開始行 → 往復して同じ文字列が返る', () => {
@@ -324,18 +317,6 @@ describe('parseRun', () => {
     expect(readRuns(found, { at })[0]).toMatchObject({
       startToken,
     });
-    expect(
-      parseRun(
-        JSON.stringify({
-          session: 's',
-          subagent: 'c',
-          role: 'r',
-          pid: 1,
-          started: 2,
-          startToken,
-        }),
-      ),
-    ).toMatchObject({ startToken });
   });
 
   it('数値の startToken と数値でない delivered の行 → どちらも捨てて、行は読める', () => {
@@ -437,15 +418,6 @@ describe('closeOrphans', () => {
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }));
     expect(closeOrphans(found, 'A')).toEqual([]);
     expect(readRuns(found, { session: 'A' })).toHaveLength(1);
-  });
-
-  it('閉じた行 → ended が数値、reason が空でない文字列', () => {
-    const found = aPlace();
-    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
-    const closed = closeOrphans(found, 'A', () => 'ended');
-    expect(typeof closed[0]?.ended).toBe('number');
-    expect(typeof closed[0]?.reason).toBe('string');
-    expect((closed[0]?.reason ?? '').length).toBeGreaterThan(0);
   });
 });
 

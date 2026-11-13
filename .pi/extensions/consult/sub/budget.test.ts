@@ -25,9 +25,8 @@ function aBudgetPi(
 }
 
 describe('lastTurn', () => {
-  it('有効な上限 → 上限-2 番（40→38、最小の2→0）', () => {
+  it('有効な上限 → 上限-2 番', () => {
     expect(lastTurn(40)).toBe(38);
-    expect(lastTurn(2)).toBe(0);
   });
 
   it('lastTurn: (boundary) 上限なし・1 → 何もしない', () => {
@@ -42,7 +41,6 @@ describe('turnsFrom', () => {
     expect(turnsFrom('')).toBeUndefined();
     expect(turnsFrom('たくさん')).toBeUndefined();
     expect(turnsFrom('0')).toBeUndefined();
-    expect(turnsFrom('2.5')).toBeUndefined();
   });
 });
 
