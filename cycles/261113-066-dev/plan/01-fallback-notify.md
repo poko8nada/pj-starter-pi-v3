@@ -568,7 +568,12 @@ export function modelNotifier(
 
 ## Acceptance
 
-- Goal:
+- Goal: 達成している。乗り換えの判定は、生成が 0 の場合と末尾メッセージが失敗した場合の両方で次の候補へ進む。モデルの再試行と乗り換えは、起きたその場で `warning` の行として出る。
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run`: 66 files, 862 tests passed。
+  - `pnpm typecheck`: `root: ok`、`.pi: ok`。
+  - `pnpm lint`: 指摘なし。
+  - `pnpm format:check`: すべて整っている。
+  - 壊して赤を確かめた: `moveOn` から `failureFrom` を外す → 1 件赤。`run.stopped !== undefined` を外す → 1 件赤。`ctx.ui.notify` の型を `warning` から `info` に変える → 4 件赤。3 つとも戻した。
+- Findings: なし
+- Doubts: `maxAttempts` が 0 のままの `retry-end` は `retry N/0` と出る。型不正の `retry-start` が捨てられた後に `retry-end` が来た場合だけで、実運用では start が先に来る。plan の「覚えた `maxAttempts` を使う」に従った扱いである。
