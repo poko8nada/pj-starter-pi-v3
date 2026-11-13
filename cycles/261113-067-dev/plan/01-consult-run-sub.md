@@ -308,13 +308,13 @@ function aBudgetPi(
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: d48bc33
 - Stopped:
 
 ### Slice 2: budget の重複断言と入力
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: `budget.test.ts` の `aBudgetPi` 呼び出し 3 か所を `{ }` 付きの arrow にした。plan の `(pi) => registerBudget(pi, turns)` の形だと `lint` の `no-confusing-void-expression` に触れて `Verify` が通らないため、ここで直した。
 - Commit:
 - Stopped:
 
