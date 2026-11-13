@@ -480,9 +480,12 @@ export function modelNotifier(
 
 ### Slice 3: 再試行と乗り換えの通知
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `.pi/extensions/consult/tool/render.ts` の `retryStartLine` と `retryEndLine` に `eslint-disable-next-line max-params` を理由付きで足した。plan の署名が 6 個・5 個の引数を持ち、`pnpm lint` の上限 4 を超えるため。
+  - `.pi/extensions/consult/run/subagent.ts` の既存コメントで、サブエージェントを識別する語を `区別` に直した。ja-check がこのファイルを変えた commit で既存の行をエラーにし、commit が止まるため。
+  - `.pi/extensions/consult/tool/consult.test.ts` の既存コメントを、ctx が cwd と通知の窓口を持つ形に合わせた。
+- Commit: 5a3db14
 - Stopped:
 
 ### Slice 4: ドキュメント
