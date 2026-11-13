@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { changedSince, filterByExtensions, fingerprint, parseStatus } from './targets.ts';
 
-// porcelain の解析と差分だけを試す。git の起動は実際のリポジトリが要るので扱わない。
+// porcelain の解析、差分、指紋、拡張子の絞り込みを試す。`git` の起動は試さない。
 // porcelain の入力と期待するパスの一覧は表にし、断言は表の値から取る。
 
 const trackedA = 'src/a.ts';
