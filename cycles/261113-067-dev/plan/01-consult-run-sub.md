@@ -374,16 +374,23 @@ function aBudgetPi(
 ### Round 2
 
 - Stale:
+  - OK — `.pi/extensions/consult/consult.fixture.ts:7` は「テストの外から読んでも止まらない。読むだけでは作らず（`temp-dir.ts` の `afterEach` 登録だけ引き込む）、作るのは `aPlace()` を呼んだとき。」になっており、Round 1 が指摘した「何も起きない・副作用なし」の文言は消えた。`consult.fixture.ts:16` が `test/temp-dir.ts` を読むと `temp-dir.ts:29` の `afterEach` 登録だけが走り、`mkdtempSync` は走らないこと、`aPlace()`（`:67-69`）を呼んだときに `tempDir()` が 2 回走ることと一致する。理由: 読むだけの引き込みと呼んだときの作成を分けて書くという `fixed:` の内容どおりになり、矛盾が解消されたため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 1 件は文言どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: consult の `run` と `sub` のテストが、各テスト固有の事実だけを残し、同じ事実をレイヤーごとに1回確認する形になる。達成した。
+- Ran: `pnpm test:run`（66 ファイル、870 件成功）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、plan の Always の読合わせ。
+- Findings: なし。
+- Doubts: cleanup で plan の見込みより 1 件多くテストを削除した（plan の 2 件 + cleanup の 1 件 = 3 件減、870 件）。
