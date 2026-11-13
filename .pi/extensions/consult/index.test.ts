@@ -271,7 +271,7 @@ describe('roleOrder', () => {
 });
 
 describe('reload', () => {
-  it('同じ印で一覧は running から done へ、音は鳴る状態から鳴らない状態へ', () => {
+  it('同じ印で tick を進める → 送り 1 回、音 1 回、2 回目は送らない', () => {
     const found = aPlace();
     const subagent = 'consult-9';
     appendRun(found, record({ subagent }), new Date());
@@ -317,12 +317,12 @@ describe('entry wiring', () => {
     return { commands, received };
   }
 
-  it('入口を呼ぶ → consult のレンダラーとして renderNotice が登録される', () => {
+  it('入口を呼ぶ → consult のレンダラーが 1 件登録される', () => {
     const { received } = fakeEntry();
     expect(received).toHaveLength(1);
   });
 
-  it('consult-status を登録し、handler を呼ぶと commands.status が info で通知する', () => {
+  it('consult-status を登録する → 説明文を持つ', () => {
     const { commands } = fakeEntry();
     const command = commands.get('consult-status');
     expect(command?.description).toBe('List the running consult subagents of this session');
