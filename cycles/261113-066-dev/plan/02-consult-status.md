@@ -273,26 +273,34 @@ export interface ConsultRuntime {
 
 ### Round 2
 
-`fixed:` の付いた行はまだないため、修正の確認はできない。Round 1 の指摘は未修正のまま。
-
 - Stale:
-  - 未修正（Round 1 の 2 件のまま）
+  - なし — `.pi/extensions/consult/index.test.ts:336`（1 件目の `fixed:`）: コメントは「入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す」に変わり、「このテスト」が消えた。この行は `fakeEntry`（320-340）の中にあり、342 と 347 が共有する関数全体を指す。偽物の入口は `on`、`registerTool`、`registerCommand`、`registerMessageRenderer` の 4 つで、数も合う。理由: 読む者が指す範囲を取り違える余地が消えた。
+  - なし — `.pi/extensions/consult/README.md:56`（2 件目の `fixed:`）: `take none` は `take no id` になった。`/consult-sound` は `on|off` を取り（`.pi/extensions/consult/tool/consult.ts:569-571`、`.pi/extensions/consult/index.ts:210`）、`/consult-status` は id を読まない。理由: 「引数を取らない」ではなく「id を取らない」というプランの意図どおりになった。
 - Unlisted:
   - なし
 - Gaps:
-  - 未修正（Round 1 の 1 件のまま）
+  - なし — `.pi/extensions/consult/tool/subagents.test.ts:195-202`（3 件目の `fixed:`）: 同じ `consult-1` に開始行（`ended` なし、`pid: 4242`）と終わりの行（`ended: 2000`、`notice` なし）を並べ、`running` で `no subagents running in this session` を期待する。`rowsOf` は `latest` の後に `alive || waiting` で絞る（`.pi/extensions/consult/tool/subagents.ts:176-183`）ため、`latest` は終わりの行を選び、`isRunning` は `ended !== undefined` で偽、`isWaiting` は `notice` なしで偽になり、行が残らない。逆に `latest` の前に絞ると開始行だけが残り `consult-1` の行が出るので、このテストは赤になる。理由: プラン slice 1 step 1.2 の「`latest` の後に絞る」前提が、初めてテストで固定された。
 - Policy:
   - なし
 - Unproven:
   - なし
 - Noise:
-  - 未修正（Round 1 の 2 件のまま）
+  - なし — `.pi/extensions/consult/tool/consult.test.ts:718`、`731` の重複した `not.toContain`（4・5 件目の `fixed:`）は、いずれも直前の `toBe('no subagents running in this session')` の後にあって削除され、いまは 717 と 729 の `toBe` が 1 つずつ残るだけになった。文面全体を `toBe` が決める以上、`contains` の否定は同じことを二度言っていた。理由: 主張が 1 つに戻り、失敗の意味が読みやすくなった。
 - Doubts:
-  - 修正が入ったら、`fixed:` の行だけを見て Round 2 をやり直す必要がある。
+  - Round 1 の Doubts の `.pi/extensions/consult/index.test.ts:350`（説明文の literal 固定）には `fixed:` が付かず、今回も変わっていない。ADR が決めた値なので finding にはしないが、未決のまま残っている。
+  - `.pi/extensions/consult/tool/consult.test.ts:708-718` の「終わった記録だけ」は、Round 1 が挙げた「開始行＋終わりの行の 2 行の組」ではなく、1 行に `ended` を足した形のまま。順序の担保は `listText` 側の新しいテストが持つので finding にはしないが、コマンド経由で 2 行の組を通る道は誰も見ていない。
+  - この Round 2 はコードの読みで判定し、テストは実行していない（この役割では `pnpm` を走らせられない）。`rowsOf` の順序を入れ替えたときに新しいテストが赤になることは、`rowsOf` と `isRunning`/`isWaiting` の定義をたどって確かめた。
 
 ## Acceptance
 
-- Goal:
+- Goal: 達成している。`/consult-status` が、このセッションで動いているサブエージェントの一覧を `info` で出す。記録は `readRuns` と `listText(..., 'running')` から作り、`consult_subagents` の list と同じ整形を使う。
 - Ran:
-- Findings:
+  - `pnpm test:run`: 66 files, 871 tests passed。
+  - `pnpm typecheck`: `root: ok`、`.pi: ok`。
+  - `pnpm lint`: 指摘なし。
+  - `pnpm format:check`: すべて整っている。
+  - 壊して赤を確かめた: `rowsOf` の `running` の絞り込みを外す → 4 件赤。`commands.status` の `'running'` を外す → 4 件赤。`/consult-status` の登録を外す → 1 件赤。3 つとも戻した。
+- Findings: なし
 - Doubts:
+  - `.pi/extensions/consult/index.test.ts:350` の説明文が literal で固定されている。ADR の決定値なので finding にしないが、文言を変えるときはテストも直す必要がある。
+  - 「終わった記録だけ」のコマンド経由のケースは、開始行と終わりの行の 2 行の組ではなく 1 行に `ended` を足した形のまま。`latest` の後に絞る順序は `listText` 側の新しいテストが持つ。
