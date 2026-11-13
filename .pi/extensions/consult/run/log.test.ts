@@ -298,8 +298,9 @@ describe('parseRun', () => {
     expect(parseRun('{"subagent":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
   });
 
-  it('旧形の行（child 欄だけを持つ JSON）は捨てる', () => {
-    expect(parseRun('{"session":"s","child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
+  it('parseRun: (error) subagent がない行 → undefined', () => {
+    const row = aRunRecord({ session: 's', role: 'r', pid: 1, started: 2 });
+    expect(parseRun(JSON.stringify({ ...row, subagent: undefined }))).toBeUndefined();
   });
 
   it('token 付きの開始行 → token が返る（往復）', () => {

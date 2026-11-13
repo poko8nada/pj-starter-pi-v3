@@ -329,13 +329,13 @@ function aBudgetPi(
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: c8dfe6a
 - Stopped:
 
 ### Slice 5: log の古い文言
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
