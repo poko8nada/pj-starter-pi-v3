@@ -44,7 +44,7 @@
   - `<plan id>`
 - Result: <OK / 見つかったもの / しない — 理由>
 - Change: <OK / 見つかったもの / しない — 理由>
-- Fixed: <変更内容を簡潔に説明> (<commit>)
+- Fixed: <変更内容を簡潔に説明> (<commit>) / なし
 ```
 
 ## Collected
