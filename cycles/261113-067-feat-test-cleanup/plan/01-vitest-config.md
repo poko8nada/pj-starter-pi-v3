@@ -105,6 +105,11 @@ vitest.config.ts
 - Commit: f5429ae
 - Stopped:
 
+### Cleanup: 定数確認の削除後に残るテストの見直し
+
+- Findings: なし — `vitest.config.test.ts` は残る 1 本（happy: TEST_VERBOSE の有無で reporters が切り替わる → 一致する）のみで、重複・消えた振る舞い・作らなくなった分岐・型が保証する前提の再現・隠れた前提・共有すべき前提のいずれにも当たらないため、削るものも直すものもない。`scripts/product-ready/index.test.ts` は Files に印がなく対象外。`pnpm test:run` は 66 files / 872 tests 合格で緑を保つ。
+- Unplanned: なし
+
 ## Work Review
 
 ### Round 1
