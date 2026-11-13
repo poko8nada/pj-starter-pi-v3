@@ -217,26 +217,26 @@ view/      the finished message: the collapsed line, the expanded details, and t
 pnpm test:run .pi/extensions/consult
 ```
 
-| Test                     | Covers                                                                                                                  |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                                                   |
-| `sub/budget.test.ts`     | when the subagent is nudged to report                                                                                   |
-| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                                 |
-| `policy/types.test.ts`   | the role policy                                                                                                         |
-| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file, `onModelEvent`                   |
-| `run/run.test.ts`        | the fallback: the condition, the attempt record, the switch                                                             |
-| `run/worktree.test.ts`   | the place, the branch and the removal                                                                                   |
-| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                                         |
-| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                                   |
-| `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level)            |
-| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                                                  |
-| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window                                  |
-| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion row (no `sendMessage`), the retry/switch warnings           |
-| `tool/sound.test.ts`     | the sound: `playSound`, the player swap, nothing while off (the timer lives in `index.ts`)                              |
-| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block, `compose`'s reason, the retry/switch lines |
-| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                               |
-| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                                       |
-| `view/notice.test.ts`    | the message view: the collapsed line and the expanded details                                                           |
+| Test                     | Covers                                                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                                                       |
+| `sub/budget.test.ts`     | when the subagent is nudged to report                                                                                       |
+| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                                     |
+| `policy/types.test.ts`   | the role policy                                                                                                             |
+| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file, `onModelEvent`                       |
+| `run/run.test.ts`        | the fallback: the condition, the attempt record, the switch                                                                 |
+| `run/worktree.test.ts`   | the place, the branch and the removal                                                                                       |
+| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                                             |
+| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                                       |
+| `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level)                |
+| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                                                      |
+| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window                                      |
+| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion row (no `sendMessage`), `modelNotifier`'s retry/switch warnings |
+| `tool/sound.test.ts`     | the sound: `playSound`, the player swap, nothing while off (the timer lives in `index.ts`)                                  |
+| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block, `compose`'s reason, the retry/switch lines     |
+| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                                   |
+| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                                           |
+| `view/notice.test.ts`    | the message view: the collapsed line and the expanded details                                                               |
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 

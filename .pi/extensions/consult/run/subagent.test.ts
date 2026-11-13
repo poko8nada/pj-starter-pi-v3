@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
 import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
 import type { ModelEvent } from '../sub/spec.ts';
@@ -76,12 +76,17 @@ const capturedOptions = vi.hoisted(
 );
 
 /** runPi が返す stdout。乗り換えを起こさない生成ありのメッセージから始める */
-const piState = vi.hoisted(() => ({
-  stdout: JSON.stringify({
+const piState = vi.hoisted(() => {
+  const defaultStdout = JSON.stringify({
     type: 'message_end',
     message: { role: 'assistant', content: [], usage: { input: 1, output: 1 } },
-  }),
-}));
+  });
+  return { defaultStdout, stdout: defaultStdout };
+});
+
+afterEach(() => {
+  piState.stdout = piState.defaultStdout;
+});
 
 vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();

@@ -544,12 +544,27 @@ export function modelNotifier(
 ### Round 2
 
 - Stale:
+  - `.pi/extensions/consult/run/run.ts:84` の「1 回目の失敗はトークンを消費しない」の行は消えている。残る文は生成 0 と末尾エラーだけを説明し、費用に触れないため、規則との矛盾は解消した。
+  - `.pi/extensions/consult/README.md:236` の `tool/render.test.ts` の Covers に `compose` の失敗理由と retry/switch の文面が入った。`render.test.ts` の `compose`・`retryStartLine`・`retryEndLine`・`fallbackLine` のケースと対応する。
+  - `.pi/extensions/consult/README.md:234` の `tool/consult.test.ts` の Covers に retry/switch の警告が入り、新しい通知の配線テストと対応する。関数名 `modelNotifier` は出さない（Doubts 参照）。
 - Unlisted:
+  - なし。`fixed:` の行が名指す変更は、計画にないファイルを増やしていない。
 - Gaps:
+  - 3 か所の配線はどれもテストが付いた。`run/run.test.ts` は偽の `spawn` で `runPi` に `data` を流して `live.onModelEvent`（`run.ts:313-315`）を、`run/subagent.test.ts` は `hooks.onFallback` の転送（`subagent.ts:155`）を、`tool/consult.test.ts` は `consult()` が `modelNotifier` の 2 つのコールバックを `runOneSubagent` に渡すことを試す。消せば赤になる位置を押さえている。
+  - `maxAttempts === 0 ? event.attempt : maxAttempts` は消え、`retryEndLine(..., maxAttempts, ...)` に一本化された。計画の署名（同じく `maxAttempts` を渡す）とも合う。
+  - `sub/spec.test.ts:223-249` に `attempt`・`maxAttempts`・`delayMs` が数値でない `retry-start` と、`success` が真偽値でない `retry-end` のケースが入り、`modelEventFrom`（`spec.ts:221-242`）の 4 つの型検査をそれぞれ通る。
 - Policy:
+  - なし
 - Unproven:
+  - なし（ただし実行はできていない。Doubts 参照）
 - Noise:
+  - `run/run.test.ts` の `applyEvent` の `toBeUndefined()` は消え、`lastModel` の断言だけが残った。`modelEventFrom` 側の「他のイベント → undefined」と重複しない。
+  - `render.test.ts` の retry の断言は `attempt`・`maxAttempts`・`delayMs` から、`consult.test.ts` の retry の断言も同じく入力から組む形になった。直書きの `2`・`3`・`4s` は消えた。
 - Doubts:
+  - subagent-guard で `pnpm test`／`typecheck`／`lint` を実行できず、緑は読解での確認に留まる。特に `run.test.ts` の `node:child_process` の偽装と `consult.test.ts` の `runOneSubagent` の偽装は、実際に走らせて確かめる必要がある。
+  - `README.md:234` の Covers は `modelNotifier` という名前を出さず「the retry/switch warnings」とだけ書く。Round 1 は名前を挙げることを求め、同じ表の `run/subagent.test.ts` は `onModelEvent` を名指すため、揃えるかは owner の判断。
+  - `consult.ts:246` の `maxAttempts` の初期値 0 は残る。`retry-start` が型不正で捨てられ、続く `retry-end` だけが通ると `retry N/0` を出す。Round 1 は「start なしは起きない」として削除を許したが、型不正の start は新しいケースとして作れるため、`/0` を許すかは owner の判断。
+  - `run/subagent.test.ts:151` が `piState.stdout` を `''` にしたまま戻さない。いまは後続が `sessionFile` だけで害はないが、テストの順序に依存する。戻すかは owner の判断。
 
 ## Acceptance
 
