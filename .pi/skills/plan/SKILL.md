@@ -124,7 +124,7 @@ Notes:
 Steps:
 
 1. List what making the slices and the steps found: what the ADR does not decide, and what file the work would touch that the affected does not name.
-2. Report them to the owner before the reviews and the proofread, with `なし` when there is nothing.
+2. Report them to the owner before the reviews and the proofread, with `なし` when there is nothing. For each, say what you would do with it and why.
 3. Wait for the owner's answer, and follow it before going on.
 
 Notes:
@@ -132,6 +132,7 @@ Notes:
 - The owner's answer decides what the plan carries.
 - A file the affected does not name is not touched without the owner's report.
 - The whole is confirmed here once before the review.
+- The opinion's ground is YAGNI, KISS, DRY and SOLID.
 
 ### 6. Research the lines the plan cannot write
 
