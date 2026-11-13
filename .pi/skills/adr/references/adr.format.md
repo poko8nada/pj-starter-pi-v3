@@ -114,7 +114,6 @@ The range the entry decides, in `In` and `Out`.
 
 - `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <what is done>`.
 - `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <what is not done>（理由）`.
-- When a kind is `Out`, carry its reason.
 - When a kind needs a revisit condition, put it on that kind.
 - A Simple entry's body is `_omission_`.
 
