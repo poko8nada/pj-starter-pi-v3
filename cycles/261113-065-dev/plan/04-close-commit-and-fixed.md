@@ -207,16 +207,23 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
 ### Round 2
 
 - Stale:
+  - なし — `fixed:` のとおり、`.pi/skills/close/references/format.md:149` は「変更内容と commit、無ければ `なし`」の一つの規則になり、`written only when the function or the change did not work` は消えている（`git diff HEAD~1`）。同じ行の中で「修正があったときだけ書く」と「無ければ `なし`」が並ぶ矛盾は解消した。
 - Unlisted:
+  - なし
 - Gaps:
+  - なし — `.pi/skills/close/SKILL.md:162` と `:168` の `stays wip` は `is wip` に変わり、`### 7. Roadmap` が close の途中で `_todo_` を `wip` にした場合も条件が真になる。`stays wip` と旧 `written only when...` は `.pi/` 内に残っていない（grep）。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - なし
 - Doubts:
+  - `.pi/skills/close/references/format.md:47` の `## Shape` は `- Fixed: <変更内容を簡潔に説明> (<commit>)` のままで `なし` を示さない。Fields（`:149`）が `なし` を明記しているため誤読はしないが、`Result` / `Change` が Shape に選択肢を並べているのとは形が揃っていない。規則の矛盾ではないので finding にはしない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: roadmap の status が wip のとき、close のコミットが `close.md` だけを含み、`## Verified` の `Fixed` が変更内容と commit を持つようになる — 達成している（`### 8.` の Step 1 と Note が `is wip` で `close.md` だけにし、`Fixed` の Shape・Fields・`### 6.` の step 4・Note が変更内容と commit を持つ）
+- Ran: `pnpm test:run`（65 files / 830 tests）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、変更した `close/SKILL.md` の `### 8.` と `### 6.`、`close/references/format.md` の `## Shape` と `### Fields` の読み直し
+- Findings: なし
+- Doubts: なし
