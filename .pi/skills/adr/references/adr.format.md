@@ -108,7 +108,7 @@ The range the entry decides, in `In` and `Out`.
 | other         | Is there a concern that none of the above covers?                                                                                                 |
 
 - Judge each kind on its own; several kinds may be `In` at the same time.
-- Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes all 14 kinds.
+- Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
 - When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
 - When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
 
