@@ -1,13 +1,13 @@
 /**
  * サブエージェント pi の起動と後片付け。
  *
- * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI 版は SIGINT で finally が走らず worktree を残した。
+ * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI バージョンは SIGINT で finally が走らず worktree を残した。
  */
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { accountEvent, parseEvents, ranFrom, type Spent } from '../sub/spec.ts';
+import { accountEvent, failureFrom, parseEvents, ranFrom, type Spent } from '../sub/spec.ts';
 import type { Limits } from '../policy/types.ts';
 import { git } from '../../../../lib/git-env.mjs';
 
@@ -63,7 +63,9 @@ export function modelAttempts(models: readonly string[]): (string | undefined)[]
 /**
  * 候補を順に試す。
  *
- * サブエージェントが何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID がない、鍵がない、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない。
+ * サブエージェントが何も生成せずに終わったら、または最後のメッセージがエラーで終わったら、次の候補でやり直す。
+ * 生成が 0 ならモデルが使えなかった（ID がない、鍵がない、レート制限）。末尾がエラーなら、そのモデルでの実行が失敗した。どちらも次の候補に任せる。
+ * 1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない。
  *
  * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後にメインエージェントと同じ設定で走る。
  */
@@ -77,11 +79,14 @@ export async function runWithFallback(
   async function tryAt(index: number): Promise<RunResult> {
     const run = await runOnce(attempts[index]);
     const next = index + 1;
-    // 最後の試行（メインエージェントと同じ）はどのみち返す。
-    if (next >= attempts.length || run.aborted || ranFrom(parseEvents(run.stdout))) {
+    // 最後の試行（メインエージェントと同じ）、中断、ターン上限は、いずれもそのまま返す。
+    if (next >= attempts.length || run.aborted || run.stopped !== undefined) {
       return run;
     }
-    return tryAt(next);
+    const events = parseEvents(run.stdout);
+    // 生成が 0、または最後のメッセージがエラーなら、次の候補へ進む。
+    const moveOn = !ranFrom(events) || failureFrom(events).failed;
+    return moveOn ? tryAt(next) : run;
   }
 
   return tryAt(0);
