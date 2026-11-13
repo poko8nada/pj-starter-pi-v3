@@ -151,16 +151,16 @@ ROADMAP.md
 
 ### Slice 1: Scope の問いの表と判定の規則
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dee9699
 - Stopped:
 
 ### Slice 2: Decision の Details の規則
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a95294d
 - Stopped:
 
 ## Work Review
