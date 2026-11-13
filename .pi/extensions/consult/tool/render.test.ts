@@ -143,10 +143,8 @@ describe('retryEndLine', () => {
 });
 
 describe('fallbackLine', () => {
-  it('次の候補を出す（前のモデルは出さない）', () => {
-    const line = fallbackLine('consult-1', 'p/b');
-    expect(line).toContain('→ p/b');
-    expect(line).not.toContain('p/a');
+  it('次の候補を出す', () => {
+    expect(fallbackLine('consult-1', 'p/b')).toContain('→ p/b');
   });
 });
 

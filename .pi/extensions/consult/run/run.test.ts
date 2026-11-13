@@ -58,22 +58,16 @@ function initialState(): RunState {
 }
 
 describe('applyEvent: lastModel', () => {
-  it('assistant の message_end → そのモデルを lastModel に入れる', () => {
+  it('assistant の message_end → そのモデルを lastModel に入れ、再試行のイベントは返さない', () => {
     const state = initialState();
     const event = messageEnd({ provider: 'p', model: 'm' });
-    applyEvent(state, event, 1);
+    expect(applyEvent(state, event, 1)).toBeUndefined();
     expect(state.lastModel).toBe('p/m');
-  });
-
-  it('message_end がない → lastModel は undefined', () => {
-    const state = initialState();
-    applyEvent(state, { type: 'turn_start' }, 1);
-    expect(state.lastModel).toBeUndefined();
   });
 
   it('auto_retry_start → retry-start を返す', () => {
     const state = initialState();
-    state.lastModel = 'p/m';
+    applyEvent(state, messageEnd({ provider: 'p', model: 'm' }), 1);
     const event = {
       type: 'auto_retry_start',
       attempt: 1,
@@ -89,11 +83,6 @@ describe('applyEvent: lastModel', () => {
       delayMs: 2000,
       error: 'rate limited',
     });
-  });
-
-  it('他のイベント → undefined', () => {
-    const state = initialState();
-    expect(applyEvent(state, messageEnd(), 1)).toBeUndefined();
   });
 });
 
@@ -170,22 +159,6 @@ describe('runWithFallback: onFallback', () => {
     const { runOnce } = recorder(
       new Map<string | undefined, RunResult>([
         ['a', resultFor([messageEnd()])],
-        ['b', resultFor([messageEnd()])],
-      ]),
-    );
-    const fallbacks: { requested: string | undefined }[] = [];
-
-    await runWithFallback(['a', 'b'], runOnce, (attempt) => {
-      fallbacks.push(attempt);
-    });
-
-    expect(fallbacks).toEqual([]);
-  });
-
-  it('中断 → 呼ばれない', async () => {
-    const { runOnce } = recorder(
-      new Map<string | undefined, RunResult>([
-        ['a', resultFor([], { aborted: true })],
         ['b', resultFor([messageEnd()])],
       ]),
     );

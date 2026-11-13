@@ -123,13 +123,7 @@ describe('runOneSubagent: onModelEvent', () => {
       aConsultOptions({
         type: 'review',
         task: 'x',
-        policy: aTypePolicy({
-          name: 'review',
-          tools: ['read'],
-          isolated: false,
-          continueByDefault: false,
-          models: [candidate],
-        }),
+        policy: { ...policy(false), models: [candidate] },
       }),
       { task: 'x', token: 'job-token-1', signal: undefined },
       { onModelEvent: (event) => received.push(event) },

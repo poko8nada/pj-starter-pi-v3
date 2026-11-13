@@ -100,20 +100,13 @@ function fakeConsultContext(): {
   return { ctx, notices };
 }
 
-/** ui.notify を記録する偽のコマンド文脈 */
+/** ui.notify を記録する偽のコマンド文脈。通知の記録は consult 文脈と同じ形を使う */
 function fakeCommandContext(): {
   ctx: CommandContext;
   notices: { message: string; type?: 'info' | 'warning' | 'error' }[];
 } {
-  const notices: { message: string; type?: 'info' | 'warning' | 'error' }[] = [];
-  const ctx: CommandContext = {
-    ui: {
-      notify: (message: string, type?: 'info' | 'warning' | 'error') => {
-        notices.push({ message, type });
-      },
-    },
-  };
-  return { ctx, notices };
+  const { ctx, notices } = fakeConsultContext();
+  return { ctx: { ui: ctx.ui }, notices };
 }
 
 /** 完了をテストが決めるサブエージェント。signal と resolve を記録する */
@@ -558,18 +551,7 @@ describe('modelNotifier: retry-start', () => {
 });
 
 describe('modelNotifier: retry-end', () => {
-  it('warning で 1 回出す', () => {
-    const { ctx, notices } = fakeConsultContext();
-    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
-
-    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
-
-    expect(notices).toHaveLength(1);
-    expect(notices[0]?.type).toBe('warning');
-    expect(notices[0]?.message).toContain('retry 1/1 ok');
-  });
-
-  it('retry-start が覚えた maxAttempts を分母に使う', () => {
+  it('retry-start が覚えた maxAttempts を分母に使い、warning で出す', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onModelEvent } = modelNotifier(ctx, 'consult-1');
 
@@ -583,6 +565,8 @@ describe('modelNotifier: retry-end', () => {
     });
     onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
 
+    expect(notices).toHaveLength(2);
+    expect(notices[1]?.type).toBe('warning');
     expect(notices[1]?.message).toContain('retry 1/3 ok');
   });
 });
