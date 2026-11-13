@@ -35,7 +35,7 @@ async function assertNoExclusion(code: number): Promise<void> {
 }
 
 describe('toRelative', () => {
-  it('cwd からの相対を返し、空なら元のパスを返す', () => {
+  it('cwd からの相対を返す', () => {
     const cwd = '/repo';
     const name = 'src/a.ts';
     const absolute = join(cwd, name);

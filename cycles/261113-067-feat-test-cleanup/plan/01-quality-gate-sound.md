@@ -420,36 +420,43 @@ export interface RecordingPi {
 
 ### Slice 2: sound-notify の前提
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: compact テストの局所 `recordingPi` が導入した `recordingPi()` を隠していたため `lint` が落ちた。`compactPi` に改名した。断言は変えていない。
+- Commit: 46768e3ad295a76abe4cf34194eaa9c57e9350d8
 - Stopped:
 
 ### Slice 3: 希少な入力と定数の確認の削除
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 削除で空行が残り `format:check` が落ちたため、`isCommitResult` の末尾の空行を消した。断言は変えていない。
+- Commit: 85217afb4c006962853505a927d563a6e56f7914
 - Stopped:
 
 ### Slice 4: テストの説明
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dd9a08fa8bc5cfa0459d3b21ca9197181bd44266
 - Stopped:
+
+### Cleanup: テストの重複と前提の見直し
+
+- Findings: なし — `gate/checks.test.ts` 9 件、`gate/report.test.ts` 6 件、`gate/targets.test.ts` 4 件、`sound-notify/index.test.ts` 17 件を全件保持した。同じ振る舞いの重複、消えた振る舞い、plan が止めた分岐、型・定数が保証する前提だけの確認はいずれもなかった。
+- Unplanned: なし — 前提を隠す組み立てはなく、`checksSetup()` と `recordingPi()` の共有は可変の前提を各テストで作り直す形で方針通りだったため、移動も共有化もしていない。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `it` の表題が削除済みの空パス分岐を今も名指ししている。本文は happy の相対パスだけを確かめており、`toRelative(cwd, cwd)` の空パス断言は Slice 3 の手順で削除済みのため、表題後半「空なら元のパスを返す」は試していない範囲を約束する。理由: 計画が削除を決めた振る舞いを表題だけが残す形は Stale であり、表題を happy のみに直す（例: `cwd からの相対を返す`）。（.pi/extensions/quality-gate/gate/checks.test.ts:38)
+    - fixed: 表題を `cwd からの相対を返す` に直した。本文の断言は変えていない。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
