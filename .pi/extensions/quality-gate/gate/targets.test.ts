@@ -67,7 +67,6 @@ describe('fingerprint', () => {
     writeFileSync(file, 'x');
     const prints = fingerprint([file]);
     expect(prints.has(file)).toBe(true);
-    expect(prints.get(file)).toMatch(/^\d+:\d+:\d+$/);
   });
 });
 

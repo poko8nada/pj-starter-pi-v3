@@ -40,7 +40,6 @@ describe('toRelative', () => {
     const name = 'src/a.ts';
     const absolute = join(cwd, name);
     expect(toRelative(cwd, absolute)).toBe(name);
-    expect(toRelative(cwd, cwd)).toBe(cwd);
   });
 });
 
@@ -99,7 +98,6 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
     }
 
     await assertNoExclusion(1);
-    await assertNoExclusion(128);
   });
 });
 

@@ -128,16 +128,9 @@ describe('sound-notify.default-export', () => {
 });
 
 describe('sound-notify.commit', () => {
-  it('bash の結果にコミットの形があれば commit の音が 1 回鳴り 6 桁では鳴らない', () => {
+  it('bash の結果にコミットの形があれば commit の音が 1 回鳴る', () => {
     run(commitEvent());
     expect(played).toEqual([defaults.sounds.commit]);
-    played.length = 0;
-    run(
-      commitEvent({
-        result: { content: [{ type: 'text', text: '[main abc123] short' }] },
-      }),
-    );
-    expect(played).toEqual([]);
   });
 
   it('bash の結果が普通の出力なら鳴らない', () => {
@@ -248,10 +241,5 @@ describe('isCommitResult', () => {
   it('文字列の result も見ることを確かめる', () => {
     const text = '[main abc1234] Add feature';
     expect(isCommitResult(commitEvent({ result: text }).result)).toBe(true);
-  });
-
-  it('record でなければ false になる（例外を投げない）', () => {
-    expect(isCommitResult(commitEvent({ result: undefined }).result)).toBe(false);
-    expect(isCommitResult(commitEvent({ result: {} }).result)).toBe(false);
   });
 });

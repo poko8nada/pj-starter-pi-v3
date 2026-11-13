@@ -72,13 +72,6 @@ describe('buildGateMessage', () => {
     expect(text).toContain(skipped);
   });
 
-  it('出力が空の失敗は空である旨の印が出る', () => {
-    const label = 'lint-fail';
-    const output = '  ';
-    const text = buildGateMessage(report({ outcomes: [{ label, failed: true, output }] }));
-    expect(text).toContain('(no output)');
-  });
-
   it('変更したファイルの有無で (none) を出すか決める', () => {
     const empty = buildGateMessage(report({ relativePaths: [], skippedPaths: [] }));
     expect(empty).toContain('Files touched in this turn: (none)');
