@@ -118,6 +118,11 @@ interface AssistantMessage {
 interface JsonlEvent {
   type?: string;
   message?: AssistantMessage;
+  attempt?: unknown;
+  maxAttempts?: unknown;
+  delayMs?: unknown;
+  errorMessage?: unknown;
+  success?: unknown;
 }
 
 function asEvent(event: unknown): JsonlEvent {
@@ -192,6 +197,52 @@ export function usageFrom(events: unknown[]): Usage {
 export type Failure =
   | { readonly failed: false }
   | { readonly failed: true; readonly message: string };
+
+/** 再試行のイベント。pi の `auto_retry_start` と `auto_retry_end` から作る */
+export type ModelEvent =
+  | {
+      readonly kind: 'retry-start';
+      readonly model: string | undefined;
+      readonly attempt: number;
+      readonly maxAttempts: number;
+      readonly delayMs: number;
+      readonly error: string;
+    }
+  | {
+      readonly kind: 'retry-end';
+      readonly model: string | undefined;
+      readonly attempt: number;
+      readonly success: boolean;
+    };
+
+/** 再試行のイベントだけを取り出し、それ以外は undefined を返す */
+export function modelEventFrom(event: unknown, model: string | undefined): ModelEvent | undefined {
+  const { type, attempt, maxAttempts, delayMs, errorMessage, success } = asEvent(event);
+  if (type === 'auto_retry_start') {
+    if (
+      typeof attempt !== 'number' ||
+      typeof maxAttempts !== 'number' ||
+      typeof delayMs !== 'number'
+    ) {
+      return undefined;
+    }
+    return {
+      kind: 'retry-start',
+      model,
+      attempt,
+      maxAttempts,
+      delayMs,
+      error: typeof errorMessage === 'string' ? errorMessage : '',
+    };
+  }
+  if (type === 'auto_retry_end') {
+    if (typeof attempt !== 'number' || typeof success !== 'boolean') {
+      return undefined;
+    }
+    return { kind: 'retry-end', model, attempt, success };
+  }
+  return undefined;
+}
 
 /** 最後の assistant メッセージがエラーで終わったかどうかと、その理由 */
 export function failureFrom(events: unknown[]): Failure {

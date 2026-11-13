@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { compose, reportBlock, usageLine, type SubagentReport } from './render.ts';
+import {
+  compose,
+  fallbackLine,
+  reportBlock,
+  retryEndLine,
+  retryStartLine,
+  usageLine,
+  type SubagentReport,
+} from './render.ts';
 import type { RunResult } from '../run/run.ts';
 
 // メインエージェントに届く形（本文と塊）を試す。サブエージェントを走らせないので、イベントと結果を自分で作る。
@@ -109,6 +117,38 @@ function messageEnd(overrides: Record<string, unknown> = {}) {
     },
   };
 }
+
+describe('retryStartLine', () => {
+  it('モデル・回数・1 行の理由・待ち時間を出す', () => {
+    const label = 'consult-1';
+    const model = 'p/m';
+    const line = retryStartLine(label, model, 2, 3, 'rate limited\nmore detail', 4000);
+    expect(line).toContain(label);
+    expect(line).toContain(model);
+    expect(line).toContain('retry 2/3');
+    expect(line).toContain('rate limited');
+    expect(line).not.toContain('more detail');
+    expect(line).toContain('in 4s');
+  });
+});
+
+describe('retryEndLine', () => {
+  it('成功 → ok', () => {
+    expect(retryEndLine('consult-1', 'p/m', 2, 3, true)).toContain('retry 2/3 ok');
+  });
+
+  it('失敗 → failed', () => {
+    expect(retryEndLine('consult-1', 'p/m', 2, 3, false)).toContain('retry 2/3 failed');
+  });
+});
+
+describe('fallbackLine', () => {
+  it('次の候補を出す（前のモデルは出さない）', () => {
+    const line = fallbackLine('consult-1', 'p/b');
+    expect(line).toContain('→ p/b');
+    expect(line).not.toContain('p/a');
+  });
+});
 
 describe('compose', () => {
   it('本文が空で最後がエラー → その理由を出す', () => {

@@ -4,6 +4,7 @@ import {
   buildPiArgs,
   failureFrom,
   finalTextFrom,
+  modelEventFrom,
   modelFrom,
   needsIsolation,
   parseEvents,
@@ -181,6 +182,42 @@ describe('modelFrom', () => {
     const model = 'm';
     const event = messageEnd({ provider, model });
     expect(modelFrom([event])).toBe(`${provider}/${model}`);
+  });
+});
+
+describe('modelEventFrom', () => {
+  it('auto_retry_start → retry-start と回数・待ち・理由', () => {
+    const model = 'p/m';
+    const event = {
+      type: 'auto_retry_start',
+      attempt: 2,
+      maxAttempts: 3,
+      delayMs: 4000,
+      errorMessage: 'rate limited',
+    };
+    expect(modelEventFrom(event, model)).toEqual({
+      kind: 'retry-start',
+      model,
+      attempt: 2,
+      maxAttempts: 3,
+      delayMs: 4000,
+      error: 'rate limited',
+    });
+  });
+
+  it('auto_retry_end → retry-end と成否', () => {
+    const model = 'p/m';
+    const event = { type: 'auto_retry_end', attempt: 2, success: true };
+    expect(modelEventFrom(event, model)).toEqual({
+      kind: 'retry-end',
+      model,
+      attempt: 2,
+      success: true,
+    });
+  });
+
+  it('他のイベント → undefined', () => {
+    expect(modelEventFrom({ type: 'message_end' }, 'p/m')).toBeUndefined();
   });
 });
 

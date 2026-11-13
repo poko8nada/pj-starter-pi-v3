@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
 import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
+import type { ModelEvent } from '../sub/spec.ts';
 import { branchFor } from './worktree.ts';
 import type { Worktree } from './worktree.ts';
 
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
-const CONTEXT = { cwd: '/tmp/base' } as const;
+const CONTEXT = { cwd: '/tmp/base', ui: { notify: () => {} } } as const;
 
 function policy(isolated: boolean) {
   return aTypePolicy({
@@ -65,14 +66,31 @@ describe('subagentEnv', () => {
 });
 
 const capturedPiArgs = vi.hoisted(() => [] as string[][]);
+const capturedOptions = vi.hoisted(
+  () =>
+    [] as {
+      readonly piArgs: readonly string[];
+      readonly onModelEvent?: (event: ModelEvent) => void;
+    }[],
+);
+
+/** 生成ありの assistant メッセージ。乗り換えを起こさない */
+const SUCCESS_STDOUT = JSON.stringify({
+  type: 'message_end',
+  message: { role: 'assistant', content: [], usage: { input: 1, output: 1 } },
+});
 
 vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    runPi: async (options: { readonly piArgs: readonly string[] }) => {
+    runPi: async (options: {
+      readonly piArgs: readonly string[];
+      readonly onModelEvent?: (event: ModelEvent) => void;
+    }) => {
       capturedPiArgs.push([...options.piArgs]);
-      return { stdout: '', stderr: '', code: 0, aborted: false, ended: false };
+      capturedOptions.push(options);
+      return { stdout: SUCCESS_STDOUT, stderr: '', code: 0, aborted: false, ended: false };
     },
   };
 });
@@ -92,6 +110,42 @@ describe('runOneSubagent: token', () => {
     expect(index).toBeGreaterThan(-1);
     expect(args[index + 1]).toBe(jobToken);
     expect(args).not.toContain(optionsToken);
+  });
+});
+
+describe('runOneSubagent: onModelEvent', () => {
+  it('runPi に onModelEvent を渡し、model が undefined なら要求した候補で埋める', async () => {
+    capturedOptions.length = 0;
+    const candidate = 'p/candidate';
+    const received: ModelEvent[] = [];
+    await runOneSubagent(
+      CONTEXT,
+      aConsultOptions({
+        type: 'review',
+        task: 'x',
+        policy: aTypePolicy({
+          name: 'review',
+          tools: ['read'],
+          isolated: false,
+          continueByDefault: false,
+          models: [candidate],
+        }),
+      }),
+      { task: 'x', token: 'job-token-1', signal: undefined },
+      { onModelEvent: (event) => received.push(event) },
+    );
+
+    const onModelEvent = capturedOptions[0]?.onModelEvent;
+    expect(typeof onModelEvent).toBe('function');
+    onModelEvent?.({
+      kind: 'retry-start',
+      model: undefined,
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+    expect(received[0]?.model).toBe(candidate);
   });
 });
 

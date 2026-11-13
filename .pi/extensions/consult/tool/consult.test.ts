@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   controlSubagent,
   createRuntime,
+  modelNotifier,
   type CommandContext,
   type ConsultContext,
   type ConsultMessage,
@@ -30,9 +31,9 @@ import { placeFor, type Place } from '../run/place.ts';
 /** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
 
-// 道具の文脈は cwd だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
+// 道具の文脈は cwd と通知の窓口だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
 // 一時ものを本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の保存場所を指す。
-const toolCtx: ConsultContext = { cwd: process.cwd() };
+const toolCtx: ConsultContext = { cwd: process.cwd(), ui: { notify: () => {} } };
 
 beforeEach(() => {
   setSoundEnabled(true);
@@ -80,6 +81,23 @@ function fakePi(): {
     },
   };
   return { pi, calls };
+}
+
+/** ui.notify を記録する偽の consult 文脈。通知だけを見る */
+function fakeConsultContext(): {
+  ctx: ConsultContext;
+  notices: { message: string; type?: 'info' | 'warning' | 'error' }[];
+} {
+  const notices: { message: string; type?: 'info' | 'warning' | 'error' }[] = [];
+  const ctx: ConsultContext = {
+    cwd: '/tmp/base',
+    ui: {
+      notify: (message: string, type?: 'info' | 'warning' | 'error') => {
+        notices.push({ message, type });
+      },
+    },
+  };
+  return { ctx, notices };
 }
 
 /** ui.notify を記録する偽のコマンド文脈 */
@@ -516,6 +534,94 @@ describe('controlSubagent: cancel (startToken)', () => {
     );
     expect(kills).toEqual([11]);
     expect(outcome.details).toMatchObject({ cancelled: true });
+  });
+});
+
+describe('modelNotifier: retry-start', () => {
+  it('warning で 1 回出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('warning');
+    expect(notices[0]?.message).toContain('retry 1/3');
+  });
+});
+
+describe('modelNotifier: retry-end', () => {
+  it('warning で 1 回出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('warning');
+    expect(notices[0]?.message).toContain('retry 1/1 ok');
+  });
+
+  it('retry-start が覚えた maxAttempts を分母に使う', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
+
+    expect(notices[1]?.message).toContain('retry 1/3 ok');
+  });
+});
+
+describe('modelNotifier: 乗り換え', () => {
+  it('warning で 1 回出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onFallback } = modelNotifier(ctx, 'consult-1');
+
+    onFallback({ requested: 'p/b' });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('warning');
+    expect(notices[0]?.message).toContain('→ p/b');
+  });
+
+  it('requested が undefined → → main', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onFallback } = modelNotifier(ctx, 'consult-1');
+
+    onFallback({ requested: undefined });
+
+    expect(notices[0]?.message).toContain('→ main');
+  });
+
+  it('model が undefined → (model unknown) を含む', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: undefined,
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+
+    expect(notices[0]?.message).toContain('(model unknown)');
   });
 });
 

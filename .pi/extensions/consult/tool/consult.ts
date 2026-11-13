@@ -30,26 +30,39 @@ import {
   parseRunRequest,
   type RunRequest,
 } from './run.ts';
-import { changedFiles, reasonOf, stateOf, worktreeGit } from '../run/run.ts';
+import { changedFiles, reasonOf, stateOf, worktreeGit, type Fallback } from '../run/run.ts';
 import { readStartToken, type PsRun } from '../run/proc.ts';
-import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
+import { parseEvents, usageFrom, type ConsultOptions, type ModelEvent } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
-import { compose, reportBlock, result, usageLine, type SubagentReport } from './render.ts';
+import {
+  compose,
+  fallbackLine,
+  reportBlock,
+  result,
+  retryEndLine,
+  retryStartLine,
+  usageLine,
+  type SubagentReport,
+} from './render.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 
 /** 設定の場所。拡張の隣（`tool/` から 1 つ上）に置く */
 const EXTENSION_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 
-/** consult_subagents が使う ctx の面。cwd だけ見れば足りる（テストはこれをそのまま渡せる） */
+/** 通知の窓口。`CommandContext` と `ConsultContext` で同じ形 */
+export interface NotifyUI {
+  notify(message: string, type?: 'info' | 'warning' | 'error'): void;
+}
+
+/** consult_subagents が使う ctx の面。cwd と通知の窓口を見れば足りる（テストはこれをそのまま渡せる） */
 export interface ConsultContext {
   readonly cwd: string;
+  readonly ui: NotifyUI;
 }
 
 /** コマンドが使う ctx の面。通知だけ見る */
 export interface CommandContext {
-  readonly ui: {
-    notify(message: string, type?: 'info' | 'warning' | 'error'): void;
-  };
+  readonly ui: NotifyUI;
 }
 
 /** consult_run の引数。params は consult_run のもの */
@@ -218,13 +231,65 @@ export function completionMessage(
   };
 }
 
+/**
+ * モデルの再試行と乗り換えを通知する。失敗しても実行を止めない
+ *
+ * `retry-start` の `maxAttempts` を覚え、`retry-end` の行に使う。行は `warning` で出す（`info` は直前の status 行を置き換えるため）。
+ */
+export function modelNotifier(
+  ctx: ConsultContext,
+  label: string,
+): {
+  readonly onModelEvent: (event: ModelEvent) => void;
+  readonly onFallback: (attempt: Fallback) => void;
+} {
+  let maxAttempts = 0;
+  const notify = (line: string): void => {
+    try {
+      ctx.ui.notify(line, 'warning');
+    } catch {
+      // 通知に失敗しても、サブエージェントの実行は止めない。記録にも残さない。
+    }
+  };
+  return {
+    onModelEvent: (event) => {
+      const model = event.model ?? '(model unknown)';
+      if (event.kind === 'retry-start') {
+        maxAttempts = event.maxAttempts;
+        notify(
+          retryStartLine(
+            label,
+            model,
+            event.attempt,
+            event.maxAttempts,
+            event.error,
+            event.delayMs,
+          ),
+        );
+        return;
+      }
+      // start を見ていないときも、行の分母が 0 にならないようにする。
+      const total = maxAttempts === 0 ? event.attempt : maxAttempts;
+      notify(retryEndLine(label, model, event.attempt, total, event.success));
+    },
+    onFallback: (attempt) => {
+      notify(fallbackLine(label, attempt.requested ?? 'main'));
+    },
+  };
+}
+
 /** サブエージェント 1 体を走らせて、メインエージェントに届ける本文と診断にする */
 async function consult(
   ctx: ConsultContext,
   options: ConsultOptions,
   job: SubagentJob,
 ): Promise<ConsultOutcome> {
-  const { run, install } = await runOneSubagent(ctx, options, job);
+  const { run, install } = await runOneSubagent(
+    ctx,
+    options,
+    job,
+    modelNotifier(ctx, job.id ?? 'consult'),
+  );
   const events = parseEvents(run.stdout);
   const usage = usageFrom(events);
   const state = stateOf(run);

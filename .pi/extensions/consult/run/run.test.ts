@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { runWithFallback, type RunResult } from './run.ts';
+import { applyEvent, runWithFallback, type RunResult, type RunState } from './run.ts';
+import { aTypePolicy } from '../consult.fixture.ts';
 
 // 乗り換えの判定だけを試す。実際の pi は起こさず、偽の runOnce がイベントの JSONL から結果を作る。
 
@@ -42,6 +43,59 @@ function recorder(results: Map<string | undefined, RunResult>): {
     },
   };
 }
+
+/** イベントを 1 つずつ反映するための、まっさらな走行状態 */
+function initialState(): RunState {
+  return {
+    stdout: '',
+    stderr: '',
+    buffered: '',
+    aborted: false,
+    spent: { turns: 0, output: 0 },
+    limits: aTypePolicy().limits,
+    lastOutputAt: 0,
+  };
+}
+
+describe('applyEvent: lastModel', () => {
+  it('assistant の message_end → そのモデルを lastModel に入れる', () => {
+    const state = initialState();
+    const event = messageEnd({ provider: 'p', model: 'm' });
+    applyEvent(state, event, 1);
+    expect(state.lastModel).toBe('p/m');
+  });
+
+  it('message_end がない → lastModel は undefined', () => {
+    const state = initialState();
+    applyEvent(state, { type: 'turn_start' }, 1);
+    expect(state.lastModel).toBeUndefined();
+  });
+
+  it('auto_retry_start → retry-start を返す', () => {
+    const state = initialState();
+    state.lastModel = 'p/m';
+    const event = {
+      type: 'auto_retry_start',
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      errorMessage: 'rate limited',
+    };
+    expect(applyEvent(state, event, 1)).toEqual({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+  });
+
+  it('他のイベント → undefined', () => {
+    const state = initialState();
+    expect(applyEvent(state, messageEnd(), 1)).toBeUndefined();
+  });
+});
 
 describe('runWithFallback: 生成が 0', () => {
   it('何も生成せずに終わる → 次の候補を試す', async () => {
@@ -92,6 +146,56 @@ describe('runWithFallback: 末尾メッセージの失敗', () => {
 
     expect(calls).toEqual(['a']);
     expect(run).toBe(first);
+  });
+});
+
+describe('runWithFallback: onFallback', () => {
+  it('乗り換え → 次の候補で呼ばれる', async () => {
+    const { runOnce } = recorder(
+      new Map<string | undefined, RunResult>([
+        ['a', resultFor([])],
+        ['b', resultFor([messageEnd()])],
+      ]),
+    );
+    const fallbacks: { requested: string | undefined }[] = [];
+
+    await runWithFallback(['a', 'b'], runOnce, (attempt) => {
+      fallbacks.push(attempt);
+    });
+
+    expect(fallbacks).toEqual([{ requested: 'b' }]);
+  });
+
+  it('乗り換えない → 呼ばれない', async () => {
+    const { runOnce } = recorder(
+      new Map<string | undefined, RunResult>([
+        ['a', resultFor([messageEnd()])],
+        ['b', resultFor([messageEnd()])],
+      ]),
+    );
+    const fallbacks: { requested: string | undefined }[] = [];
+
+    await runWithFallback(['a', 'b'], runOnce, (attempt) => {
+      fallbacks.push(attempt);
+    });
+
+    expect(fallbacks).toEqual([]);
+  });
+
+  it('中断 → 呼ばれない', async () => {
+    const { runOnce } = recorder(
+      new Map<string | undefined, RunResult>([
+        ['a', resultFor([], { aborted: true })],
+        ['b', resultFor([messageEnd()])],
+      ]),
+    );
+    const fallbacks: { requested: string | undefined }[] = [];
+
+    await runWithFallback(['a', 'b'], runOnce, (attempt) => {
+      fallbacks.push(attempt);
+    });
+
+    expect(fallbacks).toEqual([]);
   });
 });
 

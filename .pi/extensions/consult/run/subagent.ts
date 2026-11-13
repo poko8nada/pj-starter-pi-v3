@@ -11,15 +11,27 @@ import {
   installDependencies,
   runPi,
   runWithFallback,
+  type Fallback,
   type InstallOutcome,
   type RunResult,
 } from './run.ts';
 import { gitEnv } from '../../../../lib/git-env.mjs';
-import { buildPiArgs, joinPrompt, needsIsolation } from '../sub/spec.ts';
-import type { ConsultOptions } from '../sub/spec.ts';
+import {
+  buildPiArgs,
+  joinPrompt,
+  needsIsolation,
+  type ConsultOptions,
+  type ModelEvent,
+} from '../sub/spec.ts';
 import type { TypePolicy } from '../policy/types.ts';
 import type { Worktree } from './worktree.ts';
 import type { ConsultContext } from '../tool/consult.ts';
+
+/** `runOneSubagent` が受け取る通知の窓口 */
+export interface SubagentHooks {
+  readonly onModelEvent?: (event: ModelEvent) => void;
+  readonly onFallback?: (attempt: Fallback) => void;
+}
 
 /** サブエージェント 1 体分の走らせ方 */
 export interface SubagentJob {
@@ -32,7 +44,7 @@ export interface SubagentJob {
   readonly worktree?: Worktree;
   /** 同じ worktree の会話の続きから始めるか */
   readonly continueSession?: boolean;
-  /** メインエージェントが振った id。塊に載せて、メインエージェントがどのサブエージェントか見分けられるようにする */
+  /** メインエージェントが振った id。塊に載せて、メインエージェントがどのサブエージェントか区別できるようにする */
   readonly id?: string;
   /** サブエージェントのプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための関数 */
   readonly onStarted?: (pid: number) => void;
@@ -98,6 +110,7 @@ export async function runOneSubagent(
   ctx: ConsultContext,
   options: ConsultOptions,
   job: SubagentJob,
+  hooks: SubagentHooks = {},
 ): Promise<SubagentResult> {
   const { task, signal, worktree, continueSession } = job;
   const prepared = prepare(ctx, options, worktree);
@@ -113,21 +126,33 @@ export async function runOneSubagent(
       ? sessionFile(prepared.worktree, options.type)
       : undefined;
   // 候補を順に試す。試行ごとに models を 1 つにした policy を渡す（空ならメインエージェントと同じ）。
-  const run = await runWithFallback(options.policy.models, (model) =>
-    runPi({
-      piArgs: buildPiArgs({
-        ...options,
-        token: job.token,
-        policy: { ...options.policy, models: model === undefined ? [] : [model] },
-        ...(sessionPath === undefined ? {} : { sessionPath }),
-      }),
-      stdin: joinPrompt(task),
-      cwd: prepared.cwd,
-      signal,
-      env: { ...gitEnv(), ...subagentEnv(options.policy) },
-      limits: options.policy.limits,
-      ...(job.onStarted === undefined ? {} : { onStarted: job.onStarted }),
-    }),
+  const run = await runWithFallback(
+    options.policy.models,
+    (model) => {
+      // 実際のモデルがイベントにないときは、要求した候補で埋める。
+      const onModelEvent =
+        hooks.onModelEvent === undefined
+          ? undefined
+          : (event: ModelEvent) => {
+              hooks.onModelEvent?.({ ...event, model: event.model ?? model });
+            };
+      return runPi({
+        piArgs: buildPiArgs({
+          ...options,
+          token: job.token,
+          policy: { ...options.policy, models: model === undefined ? [] : [model] },
+          ...(sessionPath === undefined ? {} : { sessionPath }),
+        }),
+        stdin: joinPrompt(task),
+        cwd: prepared.cwd,
+        signal,
+        env: { ...gitEnv(), ...subagentEnv(options.policy) },
+        limits: options.policy.limits,
+        ...(job.onStarted === undefined ? {} : { onStarted: job.onStarted }),
+        ...(onModelEvent === undefined ? {} : { onModelEvent }),
+      });
+    },
+    hooks.onFallback,
   );
   return { run, ...(install === undefined ? {} : { install }) };
 }
