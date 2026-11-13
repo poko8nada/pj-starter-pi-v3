@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { aDoneRun, aPlace, aRunRecord, aWidgetUI } from './consult.fixture.ts';
+import { aDoneRun, aPiFace, aPlace, aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
 import { type Place } from './run/place.ts';
@@ -48,19 +48,13 @@ function running(found: Place, role = 'review'): void {
 
 function fakePi(fail: { next: boolean } = { next: false }): {
   pi: PiFace;
-  sent: ConsultMessage[];
+  sent: readonly ConsultMessage[];
 } {
-  const sent: ConsultMessage[] = [];
-  const pi: PiFace = {
-    sendMessage: (message) => {
-      if (fail.next) {
-        fail.next = false;
-        throw new Error('gone');
-      }
-      sent.push(message);
-    },
-  };
-  return { pi, sent };
+  const made = aPiFace();
+  if (fail.next) {
+    made.failNext();
+  }
+  return { pi: made.pi, sent: made.sent };
 }
 
 /** 呼び出しを捨てる ui。ウィジェットを見ないテストで使う */

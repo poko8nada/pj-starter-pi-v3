@@ -14,16 +14,14 @@ import {
   modelNotifier,
   type CommandContext,
   type ConsultContext,
-  type ConsultMessage,
   type ConsultOutcome,
   type ConsultRunner,
   type ConsultRuntime,
-  type ConsultSendOptions,
   type PiFace,
 } from './consult.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../consult.fixture.ts';
+import { aPiFace, aPlace, aRunRecord, START_TOKEN } from '../consult.fixture.ts';
 import { appendRun, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
@@ -73,7 +71,7 @@ function setup(
   check?: CheckRecord,
   psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
-  const place = placeFor(tempDir(), tempDir());
+  const place = aPlace();
   return {
     runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
     place,
@@ -93,17 +91,9 @@ function textOf(result: AgentToolResult<Record<string, unknown>>): string {
 }
 
 /** sendMessage の呼び出しを記録する偽の pi */
-function fakePi(): {
-  pi: PiFace;
-  calls: { message: ConsultMessage; options?: ConsultSendOptions }[];
-} {
-  const calls: { message: ConsultMessage; options?: ConsultSendOptions }[] = [];
-  const pi: PiFace = {
-    sendMessage: (message, options) => {
-      calls.push({ message, options });
-    },
-  };
-  return { pi, calls };
+function fakePi(): Pick<ReturnType<typeof aPiFace>, 'pi' | 'calls'> {
+  const made = aPiFace();
+  return { pi: made.pi, calls: made.calls };
 }
 
 /** ui.notify を記録する偽の consult 文脈。通知だけを見る */
@@ -494,7 +484,7 @@ describe('controlSubagent: cancel (startToken)', () => {
   it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
     const found = placeFor(tempDir(), tempDir());
     const id = 'consult-9';
-    const startToken = 'Wed Oct 21 12:41:12 2026';
+    const startToken = START_TOKEN;
     appendRun(
       found,
       aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
@@ -530,7 +520,7 @@ describe('controlSubagent: cancel (startToken)', () => {
   it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
     const found = placeFor(tempDir(), tempDir());
     const id = 'consult-9';
-    const startToken = 'Wed Oct 21 12:41:12 2026';
+    const startToken = START_TOKEN;
     appendRun(
       found,
       aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
@@ -871,7 +861,7 @@ describe('beginRun: startToken', () => {
   it('onStarted の開始行 → startToken が readStartToken の値と一致する（ps の偽物で固定）', async () => {
     const { pi } = fakePi();
     const pid = 4242;
-    const fixed = 'Wed Oct 21 12:41:12 2026';
+    const fixed = START_TOKEN;
     let called = 0;
     const psRun: PsRun = (args) => {
       called += 1;

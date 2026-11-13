@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../consult.fixture.ts';
+import { aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
 import { branchFor, consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
@@ -146,7 +146,11 @@ type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 /** 道具は位置で 5 つ受け取る。保存場所は cwd から決め、ここで組み立てる */
 function call(params: Record<string, unknown>, cwd: string, check?: CheckRecord): Promise<Outcome> {
   const place = placeFor(consultRoot(), topLevel(cwd));
-  return createWorktreeTool(place, check)('call-1', params, undefined, undefined, { cwd });
+  return createWorktreeTool(place, check)(...aToolCall(params, { cwd }, 'call-1'));
+}
+
+function aNewWorktree(dir: string, id = '2-b') {
+  return call({ action: 'new', id }, dir);
 }
 
 function repo(): { readonly dir: string } {
@@ -187,7 +191,7 @@ describe('consult_worktree', () => {
   it('new → id / branch / path / base を返す', async () => {
     const { dir } = repo();
     const id = '2-b';
-    const outcome = await call({ action: 'new', id }, dir);
+    const outcome = await aNewWorktree(dir, id);
     const body = text(outcome);
 
     expect(body).toContain(`id: ${id}`);
@@ -205,13 +209,13 @@ describe('consult_worktree', () => {
     const { dir } = repo();
     expect(text(await call({ action: 'list' }, dir))).toContain('ワークツリーは無い');
 
-    await call({ action: 'new', id: '2-b' }, dir);
+    await aNewWorktree(dir);
     expect(text(await call({}, dir))).toContain(branchFor('2-b'));
   });
 
   it('変更の残る worktree → list に changed、remove は dirty で断る', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
+    await aNewWorktree(dir);
     const row = findWorktree(dir, '2-b');
     makeDirty(row?.path ?? '');
 
@@ -223,7 +227,7 @@ describe('consult_worktree', () => {
 
   it('worktree remove が失敗 → 投げる', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
+    await aNewWorktree(dir);
     removeStatus = 1;
     await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
       /could not remove the worktree/,
@@ -232,7 +236,7 @@ describe('consult_worktree', () => {
 
   it('for-each-ref が失敗 → remove は投げる', async () => {
     const { dir } = repo();
-    await call({ action: 'new', id: '2-b' }, dir);
+    await aNewWorktree(dir);
     forEachRefStatus = 1;
     await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
       /could not list the orphan branches/,
@@ -242,7 +246,7 @@ describe('consult_worktree', () => {
   it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
     const id = '2-b';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     seedUnit(dir, id);
 
@@ -255,7 +259,7 @@ describe('consult_worktree', () => {
   it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
     const { dir } = repo();
     const id = '2-b';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     seedUnit(dir, id, { pid: 999_999 });
 
@@ -266,7 +270,7 @@ describe('consult_worktree', () => {
   it('終わったサブエージェントの記録だけなら、走っていない（消える）', async () => {
     const { dir } = repo();
     const id = '2-b';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     seedUnit(dir, id, { ended: 2, state: 'done' });
 
     const outcome = await call({ action: 'remove', id }, dir);
@@ -276,7 +280,7 @@ describe('consult_worktree', () => {
   it('別の session の走っているサブエージェントでも busy（ワークツリーを守る側なので session で絞らない）', async () => {
     const { dir } = repo();
     const id = '2-b';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     seedUnit(dir, id, { session: 'session-elsewhere' });
 
     const outcome = await call({ action: 'remove', id }, dir);
@@ -286,7 +290,7 @@ describe('consult_worktree', () => {
   it('list が、走っているサブエージェントの居る unit に印を付ける', async () => {
     const { dir } = repo();
     const id = '2-b';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     seedUnit(dir, id);
 
@@ -297,7 +301,7 @@ describe('consult_worktree', () => {
     const { dir } = repo();
     const id = '2-b';
     const token = 'token-9';
-    await call({ action: 'new', id }, dir);
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
     seedUnit(dir, id, { token });
@@ -310,8 +314,8 @@ describe('consult_worktree', () => {
   it('開始行だけ（startToken 付き）+ check が running の worktree → busy', async () => {
     const { dir } = repo();
     const id = '2-b';
-    const startToken = 'Wed Oct 21 12:41:12 2026';
-    await call({ action: 'new', id }, dir);
+    const startToken = START_TOKEN;
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
     seedUnit(dir, id, { pid: 11, startToken });
@@ -324,8 +328,8 @@ describe('consult_worktree', () => {
   it('開始行だけ（startToken 付き）+ check が ended の worktree → busy でない', async () => {
     const { dir } = repo();
     const id = '2-b';
-    const startToken = 'Wed Oct 21 12:41:12 2026';
-    await call({ action: 'new', id }, dir);
+    const startToken = START_TOKEN;
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
     seedUnit(dir, id, { pid: 11, startToken });
@@ -337,8 +341,8 @@ describe('consult_worktree', () => {
   it('開始行だけ（startToken 付き）+ check が unknown の worktree → busy（走っている側）', async () => {
     const { dir } = repo();
     const id = '2-b';
-    const startToken = 'Wed Oct 21 12:41:12 2026';
-    await call({ action: 'new', id }, dir);
+    const startToken = START_TOKEN;
+    await aNewWorktree(dir);
     findWorktree(dir, id);
     const place = placeFor(consultRoot(), topLevel(dir));
     seedUnit(dir, id, { pid: 11, startToken });
