@@ -57,8 +57,8 @@ Steps:
      - the owner's intent has a single reading.
      - the outline of the work is inferable, and there is one way to do it, with nothing to compare.
    - The reason names the conditions the entry meets, when the proposal is Simple.
-3. Show the owner the split, each entry's intent, and each entry's `Type`.
-4. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry.
+3. Show the owner the split, each entry's intent, each entry's `Type`, and the order of the entries with its reason.
+4. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry. When only the order is rejected, keep the split and write the order again.
 5. Add every agreed entry at once, in the split's order, with the scaffold:
    - `node .pi/skills/adr/scripts/index.mjs --add <title> [Full|Simple]` appends an entry with the title and `Type` to the end of `adr.md` and creates `affected/<NN>.md`.
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from `adr.md` and `affected/<NN>.md`, and renumbers the rest.
@@ -78,7 +78,9 @@ Notes:
 - An entry has one `Main` and may have `Sub`s.
 - A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
 - A change that needs discussion, or does not follow uniquely, is another entry.
-- The owner's answer decides the split.
+- The owner's answer decides the split and the order.
+- Basically, an entry whose decision influences a later entry comes first.
+- An order the condition does not cover is allowed.
 
 ### 4. Pre-research
 
