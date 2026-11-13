@@ -88,9 +88,9 @@ ROADMAP.md
 
 ### Slice 1: 分割の提示に順番と理由を足す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f20ff4c
 - Stopped:
 
 ## Work Review
