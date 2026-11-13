@@ -112,8 +112,8 @@ The range the entry decides, in `In` and `Out`.
 - When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
 - When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
 
-- `In:` holds one line per kind that answers yes, in `<kind>: <what is done>`.
-- `Out:` holds one line per kind that answers no, in `<kind>: <what is not done>（理由）`.
+- `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <what is done>`.
+- `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <what is not done>（理由）`.
 - When a kind is `Out`, carry its reason.
 - When a kind needs a revisit condition, put it on that kind.
 - A Simple entry's body is `_omission_`.
@@ -147,7 +147,7 @@ What the entry becomes, and what holds it.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - `#### Details` holds the concrete code and documents the discussion settled. One bullet is the title of one fence, and the fence follows it. A fence carries one item.
-- Write the concrete decision: the document, the specific name, the logic, the method, the schema, the structure. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
+- Write the specific name, the logic, the method, the schema and the structure. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
 - When `#### Details` has nothing, write `なし` under it. A Simple entry's body is `_omission_`.
 - When a field has nothing in it, write `なし`.
 
