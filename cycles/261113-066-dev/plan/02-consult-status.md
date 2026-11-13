@@ -236,6 +236,15 @@ export interface ConsultRuntime {
 - Commit: 7df4fa9
 - Stopped:
 
+### Cleanup: 一覧の絞り込みのテスト
+
+- Findings: なし
+- Unplanned:
+  - `tool/subagents.test.ts` の「all で記録がない」を落とした。「記録がなければそう言う」が同じ既定（`all`）の空文面をすでに見ている。
+  - 同ファイルの「記録が空 → 空の一覧」を落とした。`listText` の空文面のテストが同じ空の記録で `rowsOf` の空をすでに通る。
+  - 同ファイルの `runningAndDone` を切り出し、「running」と「all」の 2 つのテストで共有した。同じ記録で `where` だけを変える前提を各テストが持っていた。
+  - `tool/consult.test.ts` の「task を持つ記録 → 行に task を出さない」を落とした。`RunRecord` に `task` の欄がないことを型が決めており、記録の JSONL に紛れ込ませる前提は型がすでに否定している。
+
 ## Work Review
 
 ### Round 1
