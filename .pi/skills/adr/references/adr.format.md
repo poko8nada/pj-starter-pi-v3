@@ -90,24 +90,30 @@ The entry's way of working.
 
 The range the entry decides, in `In` and `Out`.
 
-| kind                | what it is                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| behaviour           | what the product does; the actions a user takes, and what the product returns                     |
-| refactor            | the shape of the code or the document, without changing what the product does                     |
-| dependency          | a package, a library, or an external contract the product relies on                               |
-| naming              | the name of a section, field, file, or identifier in the product                                  |
-| format              | the section order, headings, table shape, and fences of a product document                        |
-| prose               | the wording, sentence structure, and voice of a product document                                  |
-| speed               | the time or the resources the work takes                                                          |
-| security            | secrets, permissions, or exposure in the product                                                  |
-| compatibility       | an existing reference, a past record, or another part of the product that names the changed thing |
-| errors              | a check, a test, a validation, or a failure the product must keep                                 |
-| deploy              | the distribution or release of the product                                                        |
-| migration           | an existing record or an installed version of the product that must be moved                      |
-| logs and monitoring | the records or signals the product leaves                                                         |
+| kind          | question (yes → in)                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| result        | Does what can be observed from outside change? (what is returned, written, or emitted; side effects; what a reader receives)                      |
+| logic         | Do the decisions, steps, or rules that produce the result change? (conditions, order, algorithms, constraints, instructions a reader must follow) |
+| structure     | Does how things are divided, ordered, nested, or placed change? (module split, schema shape, section layout, file placement)                      |
+| expression    | Does the surface notation change? (names, wording, tone, formatting, spelling)                                                                    |
+| upstream      | Is an external thing the product relies on added, updated, or removed? (package, library, external contract, data source, cited source)           |
+| downstream    | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other documents, documents that describe it)           |
+| existing      | Must an existing entity be moved or fixed? (stored data, installed versions, already-distributed documents, past records)                         |
+| cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
+| safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
+| failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
+| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed?                                                       |
+| observability | Do the records or signals the product leave change? (logs, metrics, audit records)                                                                |
+| release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
+| other         | Is there a concern that none of the above covers?                                                                                                 |
 
-- `In:` holds one line per kind in scope, in `<kind>: <what is done>`.
-- `Out:` holds one line per kind out of scope, in `<kind>: <what is not done>（理由）`.
+- Judge each kind on its own; several kinds may be `In` at the same time.
+- Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes all 14 kinds.
+- When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
+- When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
+
+- `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <what is done>`.
+- `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <what is not done>（理由）`.
 - When a kind is `Out`, carry its reason.
 - When a kind needs a revisit condition, put it on that kind.
 - A Simple entry's body is `_omission_`.
@@ -141,6 +147,7 @@ What the entry becomes, and what holds it.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - `#### Details` holds the concrete code and documents the discussion settled. One bullet is the title of one fence, and the fence follows it. A fence carries one item.
+- Write the specific name, the logic, the method, the schema and the structure. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
 - When `#### Details` has nothing, write `なし` under it. A Simple entry's body is `_omission_`.
 - When a field has nothing in it, write `なし`.
 
