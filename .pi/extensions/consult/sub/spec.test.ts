@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   accountEvent,
   buildPiArgs,
-  errorFrom,
+  failureFrom,
   finalTextFrom,
   modelFrom,
   needsIsolation,
@@ -211,11 +211,23 @@ describe('usageFrom', () => {
   });
 });
 
-describe('errorFrom', () => {
-  it('errorMessage があれば返す', () => {
+describe('failureFrom', () => {
+  it('前のエラーがあっても、最後が成功なら失敗ではない', () => {
+    const events = [
+      messageEnd({ stopReason: 'error', errorMessage: 'rate limited' }),
+      messageEnd({ stopReason: 'stop' }),
+    ];
+    expect(failureFrom(events)).toEqual({ failed: false });
+  });
+
+  it('最後が error で終わった → その理由を返す', () => {
     const reason = 'rate limited';
-    const event = messageEnd({ errorMessage: reason });
-    expect(errorFrom([event])).toBe(reason);
+    const event = messageEnd({ stopReason: 'error', errorMessage: reason });
+    expect(failureFrom([event])).toEqual({ failed: true, message: reason });
+  });
+
+  it('assistant の message_end がない → 失敗ではない', () => {
+    expect(failureFrom([{ type: 'turn_start' }])).toEqual({ failed: false });
   });
 });
 

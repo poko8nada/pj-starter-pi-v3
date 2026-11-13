@@ -112,6 +112,7 @@ interface AssistantMessage {
   provider?: string;
   model?: string;
   errorMessage?: string;
+  stopReason?: string;
 }
 
 interface JsonlEvent {
@@ -142,9 +143,9 @@ export function finalTextFrom(events: unknown[]): string {
 }
 
 /**
- * サブエージェントがモデルから何かを生成したか。乗り換えの判定に使う。
+ * サブエージェントがモデルから何かを生成したか。
  *
- * assistant の `message_end` があっても、モデルが動いたとは限らない。存在しないモデル ID では pi が警告を出して API が失敗し、出力 0 のまま exit 0 で終わる。生成が 0 なら、そのモデルは動いていない。
+ * エラーを出さずに終わった失敗（存在しないモデル ID など）を拾うために使う。
  */
 export function ranFrom(events: unknown[]): boolean {
   return usageFrom(events).output > 0;
@@ -187,15 +188,23 @@ export function usageFrom(events: unknown[]): Usage {
   return total;
 }
 
-/** サブエージェントが異常終了した理由。エラーイベントが残っていれば拾う */
-export function errorFrom(events: unknown[]): string {
+/** サブエージェントの末尾メッセージ。失敗したか、失敗したならその理由 */
+export type Failure =
+  | { readonly failed: false }
+  | { readonly failed: true; readonly message: string };
+
+/** 最後の assistant メッセージがエラーで終わったかどうかと、その理由 */
+export function failureFrom(events: unknown[]): Failure {
   for (let i = events.length - 1; i >= 0; i -= 1) {
-    const message = asEvent(events[i]).message;
-    if (message?.role === 'assistant' && message.errorMessage) {
-      return message.errorMessage;
+    const event = asEvent(events[i]);
+    if (event.type !== 'message_end' || event.message?.role !== 'assistant') {
+      continue;
     }
+    return event.message.stopReason === 'error'
+      ? { failed: true, message: event.message.errorMessage ?? '' }
+      : { failed: false };
   }
-  return '';
+  return { failed: false };
 }
 
 export interface Spent {

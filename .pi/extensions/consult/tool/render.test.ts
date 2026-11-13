@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { reportBlock, usageLine, type SubagentReport } from './render.ts';
+import { compose, reportBlock, usageLine, type SubagentReport } from './render.ts';
+import type { RunResult } from '../run/run.ts';
 
 // メインエージェントに届く形（本文と塊）を試す。サブエージェントを走らせないので、イベントと結果を自分で作る。
 describe('usageLine', () => {
@@ -85,5 +86,43 @@ describe('usageLine: cost', () => {
       },
     });
     expect(usageLine([JSON.parse(event)])).toContain(`$${total.toFixed(4)}`);
+  });
+});
+
+/** 本文のない実行結果。終了コードは 0 にする */
+const EMPTY_RUN: RunResult = {
+  stdout: '',
+  stderr: '',
+  code: 0,
+  aborted: false,
+  ended: true,
+};
+
+function messageEnd(overrides: Record<string, unknown> = {}) {
+  return {
+    type: 'message_end',
+    message: {
+      role: 'assistant',
+      content: [],
+      usage: { input: 1, output: 1 },
+      ...overrides,
+    },
+  };
+}
+
+describe('compose', () => {
+  it('本文が空で最後がエラー → その理由を出す', () => {
+    const reason = 'rate limited';
+    const events = [messageEnd({ stopReason: 'error', errorMessage: reason })];
+    expect(compose(events, { ...EMPTY_RUN, stderr: 'boom' })).toContain(reason);
+  });
+
+  it('本文が空で前のエラーだけ → stderr を出す', () => {
+    const stderr = 'boom';
+    const events = [
+      messageEnd({ stopReason: 'error', errorMessage: 'old failure' }),
+      messageEnd({ stopReason: 'stop' }),
+    ];
+    expect(compose(events, { ...EMPTY_RUN, stderr })).toContain(stderr);
   });
 });

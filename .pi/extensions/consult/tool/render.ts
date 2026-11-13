@@ -5,7 +5,7 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { errorFrom, finalTextFrom, modelFrom, usageFrom } from '../sub/spec.ts';
+import { failureFrom, finalTextFrom, modelFrom, usageFrom } from '../sub/spec.ts';
 import type { SubagentState, RunResult } from '../run/run.ts';
 
 /** 道具の戻り値。details は必須なので、必ず埋める */
@@ -97,10 +97,10 @@ export function compose(events: unknown[], run: RunResult, retry?: RetrySummary)
   const text = finalTextFrom(events);
   if (text !== '') {
     lines.push(text);
-  } else if (run.code !== 0) {
-    lines.push(errorFrom(events) || run.stderr.trim() || '(the subagent produced no text)');
   } else {
-    lines.push('(the subagent produced no text)');
+    const failure = failureFrom(events);
+    const reason = failure.failed ? failure.message : '';
+    lines.push(reason || run.stderr.trim() || '(the subagent produced no text)');
   }
   return lines.join('\n');
 }
