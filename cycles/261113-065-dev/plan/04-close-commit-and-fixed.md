@@ -170,10 +170,10 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
 
 ### Slice 1: wip のときの close のコミット
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: b2c18de
+- Stopped: なし
 
 ### Slice 2: Fixed の形
 
