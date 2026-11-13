@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   accountEvent,
   buildPiArgs,
-  errorFrom,
+  failureFrom,
   finalTextFrom,
+  modelEventFrom,
   modelFrom,
   needsIsolation,
   parseEvents,
@@ -184,6 +185,70 @@ describe('modelFrom', () => {
   });
 });
 
+describe('modelEventFrom', () => {
+  it('auto_retry_start → retry-start と回数・待ち・理由', () => {
+    const model = 'p/m';
+    const event = {
+      type: 'auto_retry_start',
+      attempt: 2,
+      maxAttempts: 3,
+      delayMs: 4000,
+      errorMessage: 'rate limited',
+    };
+    expect(modelEventFrom(event, model)).toEqual({
+      kind: 'retry-start',
+      model,
+      attempt: 2,
+      maxAttempts: 3,
+      delayMs: 4000,
+      error: 'rate limited',
+    });
+  });
+
+  it('auto_retry_end → retry-end と成否', () => {
+    const model = 'p/m';
+    const event = { type: 'auto_retry_end', attempt: 2, success: true };
+    expect(modelEventFrom(event, model)).toEqual({
+      kind: 'retry-end',
+      model,
+      attempt: 2,
+      success: true,
+    });
+  });
+
+  it('他のイベント → undefined', () => {
+    expect(modelEventFrom({ type: 'message_end' }, 'p/m')).toBeUndefined();
+  });
+
+  it('retry-start の数値でない項目 → undefined', () => {
+    const model = 'p/m';
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: '1', maxAttempts: 3, delayMs: 2000 },
+        model,
+      ),
+    ).toBeUndefined();
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: 1, maxAttempts: '3', delayMs: 2000 },
+        model,
+      ),
+    ).toBeUndefined();
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: 1, maxAttempts: 3, delayMs: '2000' },
+        model,
+      ),
+    ).toBeUndefined();
+  });
+
+  it('retry-end の真偽値でない success → undefined', () => {
+    expect(
+      modelEventFrom({ type: 'auto_retry_end', attempt: 1, success: 'yes' }, 'p/m'),
+    ).toBeUndefined();
+  });
+});
+
 describe('ranFrom', () => {
   it('生成があれば true（モデルが動いた）', () => {
     expect(ranFrom([messageEnd()])).toBe(true);
@@ -211,11 +276,23 @@ describe('usageFrom', () => {
   });
 });
 
-describe('errorFrom', () => {
-  it('errorMessage があれば返す', () => {
+describe('failureFrom', () => {
+  it('前のエラーがあっても、最後が成功なら失敗ではない', () => {
+    const events = [
+      messageEnd({ stopReason: 'error', errorMessage: 'rate limited' }),
+      messageEnd({ stopReason: 'stop' }),
+    ];
+    expect(failureFrom(events)).toEqual({ failed: false });
+  });
+
+  it('最後が error で終わった → その理由を返す', () => {
     const reason = 'rate limited';
-    const event = messageEnd({ errorMessage: reason });
-    expect(errorFrom([event])).toBe(reason);
+    const event = messageEnd({ stopReason: 'error', errorMessage: reason });
+    expect(failureFrom([event])).toEqual({ failed: true, message: reason });
+  });
+
+  it('assistant の message_end がない → 失敗ではない', () => {
+    expect(failureFrom([{ type: 'turn_start' }])).toEqual({ failed: false });
   });
 });
 

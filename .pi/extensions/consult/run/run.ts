@@ -1,13 +1,22 @@
 /**
  * サブエージェント pi の起動と後片付け。
  *
- * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI 版は SIGINT で finally が走らず worktree を残した。
+ * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI バージョンは SIGINT で finally が走らず worktree を残した。
  */
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { accountEvent, parseEvents, ranFrom, type Spent } from '../sub/spec.ts';
+import {
+  accountEvent,
+  failureFrom,
+  modelEventFrom,
+  modelFrom,
+  parseEvents,
+  ranFrom,
+  type ModelEvent,
+  type Spent,
+} from '../sub/spec.ts';
 import type { Limits } from '../policy/types.ts';
 import { git } from '../../../../lib/git-env.mjs';
 
@@ -51,6 +60,13 @@ export interface RunOptions {
   }) => void;
   /** 完了のフック。待たずに結果を受け取る関数で、返す promise より先に呼ぶ */
   readonly onDone?: (result: RunResult) => void;
+  /** 再試行のイベントが届いたときに呼ぶ */
+  readonly onModelEvent?: (event: ModelEvent) => void;
+}
+
+/** 乗り換えの行き先。最後の試行（メインエージェントの設定）は undefined */
+export interface Fallback {
+  readonly requested: string | undefined;
 }
 
 /**
@@ -63,13 +79,15 @@ export function modelAttempts(models: readonly string[]): (string | undefined)[]
 /**
  * 候補を順に試す。
  *
- * サブエージェントが何も生成せずに終わったら、次の候補でやり直す。モデルが使えなかった（ID がない、鍵がない、レート制限）のか、タスクが失敗したのかを、生成の有無で分ける。喋ってから失敗したならタスクの問題なので乗り換えない。1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない。
+ * サブエージェントが何も生成せずに終わったら、または最後のメッセージがエラーで終わったら、次の候補でやり直す。
+ * 生成が 0 ならモデルが使えなかった（ID がない、鍵がない、レート制限）。末尾がエラーなら、そのモデルでの実行が失敗した。どちらも次の候補に任せる。
  *
  * 中断は乗り換えない。止めたのに別のモデルで走り直すのは逆。候補を使い切ったら、最後にメインエージェントと同じ設定で走る。
  */
 export async function runWithFallback(
   models: readonly string[],
   runOnce: (model: string | undefined) => Promise<RunResult>,
+  onFallback?: (attempt: Fallback) => void,
 ): Promise<RunResult> {
   const attempts = modelAttempts(models);
 
@@ -77,10 +95,17 @@ export async function runWithFallback(
   async function tryAt(index: number): Promise<RunResult> {
     const run = await runOnce(attempts[index]);
     const next = index + 1;
-    // 最後の試行（メインエージェントと同じ）はどのみち返す。
-    if (next >= attempts.length || run.aborted || ranFrom(parseEvents(run.stdout))) {
+    // 最後の試行（メインエージェントと同じ）、中断、ターン上限は、いずれもそのまま返す。
+    if (next >= attempts.length || run.aborted || run.stopped !== undefined) {
       return run;
     }
+    const events = parseEvents(run.stdout);
+    // 生成が 0、または最後のメッセージがエラーなら、次の候補へ進む。
+    const moveOn = !ranFrom(events) || failureFrom(events).failed;
+    if (!moveOn) {
+      return run;
+    }
+    onFallback?.({ requested: attempts[next] });
     return tryAt(next);
   }
 
@@ -206,6 +231,8 @@ export interface RunState {
   endedAt?: number;
   /** 最後に出力があった時刻。初期値は起動の時刻 */
   lastOutputAt: number;
+  /** 直近の assistant メッセージのモデル。再試行の行に使う */
+  lastModel?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -218,29 +245,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * 壊れた入力（record でないもの）は無視する。上限で止まった後のイベントは数えない。
  * `agent_end`（`type === 'agent_end'`）を見たら `endedAt` を入れる。有効なイベントのたびに `lastOutputAt` を進める。
  * 報告後の出力は時計だけ進め、上限には数えない（`ended` を `done` で閉じるため）。
+ * assistant の `message_end` で `lastModel` を更新し、再試行のイベントならそれを返す。
  */
-export function applyEvent(state: RunState, event: unknown, now: number): void {
+export function applyEvent(state: RunState, event: unknown, now: number): ModelEvent | undefined {
   if (state.stopped !== undefined) {
-    return;
+    return undefined;
   }
   if (!isRecord(event)) {
-    return;
+    return undefined;
   }
   state.lastOutputAt = now;
   if (event.type === 'agent_end') {
     if (state.endedAt === undefined) {
       state.endedAt = now;
     }
-    return;
+    return undefined;
   }
   if (state.endedAt !== undefined) {
-    return;
+    return undefined;
+  }
+  if (event.type === 'message_end') {
+    const model = modelFrom([event]);
+    if (model !== undefined) {
+      state.lastModel = model;
+    }
   }
   const reason = accountEvent(state.spent, event, state.limits);
-  if (reason === undefined) {
-    return;
+  if (reason !== undefined) {
+    state.stopped = reason;
+    return undefined;
   }
-  state.stopped = reason;
+  return modelEventFrom(event, state.lastModel);
 }
 
 /**
@@ -261,16 +296,11 @@ export function watchdogDue(
 }
 
 /** 1 行を数える。上限を超えたら理由を記録し、サブエージェントを殺す */
-function consumeLine(
-  line: string,
-  state: RunState,
-  child: ReturnType<typeof spawn>,
-  now: number,
-): void {
+function consumeLine(line: string, live: LiveRun, now: number): void {
   if (line.trim() === '') {
     return;
   }
-  if (state.stopped !== undefined) {
+  if (live.state.stopped !== undefined) {
     return;
   }
   let event: unknown;
@@ -279,11 +309,14 @@ function consumeLine(
   } catch {
     return; // 解析できない行はイベントではない。
   }
-  applyEvent(state, event, now);
-  if (state.stopped === undefined) {
+  const modelEvent = applyEvent(live.state, event, now);
+  if (modelEvent !== undefined) {
+    live.onModelEvent?.(modelEvent);
+  }
+  if (live.state.stopped === undefined) {
     return;
   }
-  killChild(child);
+  killChild(live.child);
 }
 
 const DEFAULT_WATCHDOG_MS = 30000;
@@ -320,6 +353,7 @@ interface LiveRun {
   readonly child: ReturnType<typeof spawn>;
   readonly quietMs: number;
   readonly onProgress?: RunOptions['onProgress'];
+  readonly onModelEvent?: RunOptions['onModelEvent'];
   settled: boolean;
   watchdog?: NodeJS.Timeout;
 }
@@ -365,7 +399,7 @@ function consumeStdout(live: LiveRun, input: { text: string; now: number }): voi
   const lines = live.state.buffered.split('\n');
   live.state.buffered = lines.pop() ?? '';
   for (const line of lines) {
-    consumeLine(line, live.state, live.child, input.now);
+    consumeLine(line, live, input.now);
   }
   armWatchdog(live);
 }
@@ -406,6 +440,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
       child,
       quietMs: options.watchdogMs ?? DEFAULT_WATCHDOG_MS,
       ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
+      ...(options.onModelEvent === undefined ? {} : { onModelEvent: options.onModelEvent }),
       settled: false,
     };
     const onAbort = () => {

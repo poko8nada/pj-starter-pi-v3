@@ -269,7 +269,7 @@ export interface RunState {
 
 export interface RunOptions {
   // ...
-  /** 再試行のイベント。サブエージェントの出力が届くたびに呼ぶ */
+  /** 再試行のイベントが届いたときに呼ぶ */
   readonly onModelEvent?: (event: ModelEvent) => void;
 }
 
@@ -466,57 +466,114 @@ export function modelNotifier(
 
 ### Slice 1: 末尾メッセージの判定
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 3941d24
 - Stopped:
 
 ### Slice 2: 乗り換えの継続条件
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `.pi/extensions/consult/run/run.ts` の冒頭コメントで `CLI` の後ろの語を `バージョン` に直した。ja-check がこのファイルを変えた commit で既存の行をエラーにし、commit が止まるため。
+- Commit: 492e95b
 - Stopped:
 
 ### Slice 3: 再試行と乗り換えの通知
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `.pi/extensions/consult/tool/render.ts` の `retryStartLine` と `retryEndLine` に `eslint-disable-next-line max-params` を理由付きで足した。plan の署名が 6 個・5 個の引数を持ち、`pnpm lint` の上限 4 を超えるため。
+  - `.pi/extensions/consult/run/subagent.ts` の既存コメントで、サブエージェントを識別する語を `区別` に直した。ja-check がこのファイルを変えた commit で既存の行をエラーにし、commit が止まるため。
+  - `.pi/extensions/consult/tool/consult.test.ts` の既存コメントを、ctx が cwd と通知の窓口を持つ形に合わせた。
+- Commit: 5a3db14
 - Stopped:
 
 ### Slice 4: ドキュメント
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 9775fbd
 - Stopped:
+
+### Cleanup: 再試行と乗り換えの通知のテスト
+
+- Findings: なし
+- Unplanned:
+  - `run/run.test.ts` の「message_end がない → lastModel は undefined」を落とした。型と初期状態で決まる前提で、壊れても誰も気づかないため。
+  - `run/run.test.ts` の「他のイベント → undefined」を落とし、`message_end` が再試行のイベントを返さない断言を lastModel のテストに統合した。`modelEventFrom` 側の同じケースと重複するため。
+  - `run/run.test.ts` の `onFallback` の「中断 → 呼ばれない」を落とした。中断で乗り換えないことは `runWithFallback` 側ですでに同じ振る舞いを試しているため。
+  - `run/run.test.ts` の `auto_retry_start` で `lastModel` を直接書くのをやめ、assistant の `message_end` を `applyEvent` に通してから再試行を渡すようにした。振る舞いが使う前提をテストの中で作るため。
+  - `tool/consult.test.ts` の `retry-end` の単独テストを落とし、`retry-start` から `retry-end` への通常の順序で `warning` と `maxAttempts` を確かめる形に統合した。start なしの分母の分岐は実運用で起きず、重複していたため。
+  - `tool/consult.test.ts` の `fakeCommandContext` が `fakeConsultContext` の通知の記録を共有するようにした。同じ偽の窓口を 2 つ持たないため。
+  - `run/subagent.test.ts` の `onModelEvent` の policy を、既存の `policy(false)` に `models` だけを上書きする形にした。共有できる前提を各テストで組み直さないため。
+  - `tool/render.test.ts` の `fallbackLine` から `p/a` を出さない断言を外した。引数に前のモデルがなく、型がすでに保証している前提のため。テスト名も出力だけに合わせた。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/run.ts:84` 「1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない」が新しい規則と矛盾する。末尾メッセージがエラーで乗り換える場合は生成済み（`usage.output > 0`）で、トークンは消費されているため。スライス 2 の Step 3（「コメントを新しい規則に直す」）がこの 1 行に届いていない。
+    - fixed: `runWithFallback` の doc comment から「1 回目の失敗はトークンを消費しない」の 1 行を消した。
+  - `.pi/extensions/consult/README.md:236` `tool/render.test.ts` の Covers が「the result, the usage line, the report block」のままで、今回足した `compose`（失敗理由）と 3 つの文面（retry の始まり・終わり、乗り換え）を挙げていない。
+    - fixed: README の `tool/render.test.ts` の Covers に `compose` の失敗理由と retry/switch の文面を足した。
+  - `.pi/extensions/consult/README.md:234` `tool/consult.test.ts` の Covers も `modelNotifier` を挙げていない。同じ表の中で `run/subagent.test.ts` の行だけ `onModelEvent` を足しており、表全体として片手落ちになっている。
+    - fixed: README の `tool/consult.test.ts` の Covers に retry/switch の警告を足した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/consult/run/run.ts:313` の `live.onModelEvent?.(modelEvent)` と `.pi/extensions/consult/tool/consult.ts:287-292` の `modelNotifier(...)` → `runOneSubagent` の `hooks` は、どのチェックも通らない。`tool/consult.test.ts` は必ず偽の `run` を `createRuntime` に渡すので `consult()` が走らず、`runPi`／`consumeLine` を試すテストもない。この 2 か所を消しても全テストが緑のままなので、Goal の「再試行と乗り換えがその場で警告として見える」が証明されていない。`run/subagent.ts:150` の `hooks.onFallback` 転送も同様に未試。
+    - fixed: `run/run.test.ts` に偽の spawn で `runPi` の `onModelEvent` 配線を、`run/subagent.test.ts` に `hooks.onFallback` の転送を、`tool/consult.test.ts` に `consult()` が `modelNotifier` の 2 つのコールバックを `runOneSubagent` へ渡すことを試すテストを足した。
+  - `.pi/extensions/consult/tool/consult.ts:265` の `maxAttempts === 0 ? event.attempt : maxAttempts` は、cleanup で「start なしの分母」のケースを落としたため、誰も通らない分岐として残っている。plan の Step 5.2 は「覚えた `maxAttempts` を使う」だけで、この分岐は plan にもケースにもない（残すならケースが要り、要らないならコードを消す）。
+    - fixed: `maxAttempts === 0 ? event.attempt : maxAttempts` の分岐を消し、覚えた `maxAttempts` をそのまま `retryEndLine` に渡すようにした。
+  - `.pi/extensions/consult/sub/spec.ts:211-233` の `modelEventFrom` の型検査（`attempt`・`maxAttempts`・`delayMs` が数値でない、`success` が真偽値でない → `undefined`）は、plan が「壊れた値で行を出さないため」と理由を書いた振る舞いなのに、ケースが 3 つだけで一度も通らない。`delayMs` が文字列のまま通ると `in NaNs` の警告が出る。
+    - fixed: `sub/spec.test.ts` に `attempt`・`maxAttempts`・`delayMs` が数値でない `retry-start` と、`success` が真偽値でない `retry-end` のケースを足した。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - `.pi/extensions/consult/run/run.test.ts:64` の `expect(applyEvent(state, event, 1)).toBeUndefined()` は、`message_end` が再試行のイベントを返さないことを `modelEventFrom` の「他のイベント → undefined」（`sub/spec.test.ts:222`）がすでに決めているため、`applyEvent` 側だけで壊れることがない。
+    - fixed: `run/run.test.ts` の `applyEvent` が `undefined` を返す断言を消した。
+  - `.pi/extensions/consult/tool/render.test.ts:113-118` と `.pi/extensions/consult/tool/consult.test.ts:551` の断言が、入力に与えた `2`・`3`・`4s` を literal で書き直している（同じファイルの `usageLine` は `$${total.toFixed(4)}` と入力から導いている）。design.md の「断言に魔法の数や直書きの文字列を持たせない」に反する。
+    - fixed: `render.test.ts` と `consult.test.ts` の retry の断言を、入力に与えた `attempt`・`maxAttempts`・`delayMs` から組むようにした。
 - Doubts:
+  - `.pi/extensions/consult/run/run.ts:64` の `onModelEvent` のコメント「サブエージェントの出力が届くたびに呼ぶ」と、実際の呼び出し（`run.ts:313-315` は再試行のイベントが返ったときだけ）が食い違う。plan の Types も同じ文なので、コードかコメントのどちらを直すかは owner の判断。
+  - `.pi/extensions/consult/tool/consult.ts:291` の `job.id ?? 'consult'` は plan の Step 5.3 が `job.id` とだけ書く形から外れ、`'consult'` という文言も plan が決めていない。`beginRun` は必ず id を入れるので今のところこの既定値は届かない（残すか落とすかは owner の判断）。
 
 ### Round 2
 
 - Stale:
+  - `.pi/extensions/consult/run/run.ts:84` の「1 回目の失敗はトークンを消費しない」の行は消えている。残る文は生成 0 と末尾エラーだけを説明し、費用に触れないため、規則との矛盾は解消した。
+  - `.pi/extensions/consult/README.md:236` の `tool/render.test.ts` の Covers に `compose` の失敗理由と retry/switch の文面が入った。`render.test.ts` の `compose`・`retryStartLine`・`retryEndLine`・`fallbackLine` のケースと対応する。
+  - `.pi/extensions/consult/README.md:234` の `tool/consult.test.ts` の Covers に retry/switch の警告が入り、新しい通知の配線テストと対応する。関数名 `modelNotifier` は出さない（Doubts 参照）。
 - Unlisted:
+  - なし。`fixed:` の行が名指す変更は、計画にないファイルを増やしていない。
 - Gaps:
+  - 3 か所の配線はどれもテストが付いた。`run/run.test.ts` は偽の `spawn` で `runPi` に `data` を流して `live.onModelEvent`（`run.ts:313-315`）を、`run/subagent.test.ts` は `hooks.onFallback` の転送（`subagent.ts:155`）を、`tool/consult.test.ts` は `consult()` が `modelNotifier` の 2 つのコールバックを `runOneSubagent` に渡すことを試す。消せば赤になる位置を押さえている。
+  - `maxAttempts === 0 ? event.attempt : maxAttempts` は消え、`retryEndLine(..., maxAttempts, ...)` に一本化された。計画の署名（同じく `maxAttempts` を渡す）とも合う。
+  - `sub/spec.test.ts:223-249` に `attempt`・`maxAttempts`・`delayMs` が数値でない `retry-start` と、`success` が真偽値でない `retry-end` のケースが入り、`modelEventFrom`（`spec.ts:221-242`）の 4 つの型検査をそれぞれ通る。
 - Policy:
+  - なし
 - Unproven:
+  - なし（ただし実行はできていない。Doubts 参照）
 - Noise:
+  - `run/run.test.ts` の `applyEvent` の `toBeUndefined()` は消え、`lastModel` の断言だけが残った。`modelEventFrom` 側の「他のイベント → undefined」と重複しない。
+  - `render.test.ts` の retry の断言は `attempt`・`maxAttempts`・`delayMs` から、`consult.test.ts` の retry の断言も同じく入力から組む形になった。直書きの `2`・`3`・`4s` は消えた。
 - Doubts:
+  - subagent-guard で `pnpm test`／`typecheck`／`lint` を実行できず、緑は読解での確認に留まる。特に `run.test.ts` の `node:child_process` の偽装と `consult.test.ts` の `runOneSubagent` の偽装は、実際に走らせて確かめる必要がある。
+  - `README.md:234` の Covers は `modelNotifier` という名前を出さず「the retry/switch warnings」とだけ書く。Round 1 は名前を挙げることを求め、同じ表の `run/subagent.test.ts` は `onModelEvent` を名指すため、揃えるかは owner の判断。
+  - `consult.ts:246` の `maxAttempts` の初期値 0 は残る。`retry-start` が型不正で捨てられ、続く `retry-end` だけが通ると `retry N/0` を出す。Round 1 は「start なしは起きない」として削除を許したが、型不正の start は新しいケースとして作れるため、`/0` を許すかは owner の判断。
+  - `run/subagent.test.ts:151` が `piState.stdout` を `''` にしたまま戻さない。いまは後続が `sessionFile` だけで害はないが、テストの順序に依存する。戻すかは owner の判断。
 
 ## Acceptance
 
-- Goal:
+- Goal: 達成している。乗り換えの判定は、生成が 0 の場合と末尾メッセージが失敗した場合の両方で次の候補へ進む。モデルの再試行と乗り換えは、起きたその場で `warning` の行として出る。
 - Ran:
-- Findings:
-- Doubts:
+  - `pnpm test:run`: 66 files, 862 tests passed。
+  - `pnpm typecheck`: `root: ok`、`.pi: ok`。
+  - `pnpm lint`: 指摘なし。
+  - `pnpm format:check`: すべて整っている。
+  - 壊して赤を確かめた: `moveOn` から `failureFrom` を外す → 1 件赤。`run.stopped !== undefined` を外す → 1 件赤。`ctx.ui.notify` の型を `warning` から `info` に変える → 4 件赤。3 つとも戻した。
+- Findings: なし
+- Doubts: `maxAttempts` が 0 のままの `retry-end` は `retry N/0` と出る。型不正の `retry-start` が捨てられた後に `retry-end` が来た場合だけで、実運用では start が先に来る。plan の「覚えた `maxAttempts` を使う」に従った扱いである。

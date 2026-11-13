@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { reportBlock, usageLine, type SubagentReport } from './render.ts';
+import {
+  compose,
+  fallbackLine,
+  reportBlock,
+  retryEndLine,
+  retryStartLine,
+  usageLine,
+  type SubagentReport,
+} from './render.ts';
+import type { RunResult } from '../run/run.ts';
 
 // メインエージェントに届く形（本文と塊）を試す。サブエージェントを走らせないので、イベントと結果を自分で作る。
 describe('usageLine', () => {
@@ -85,5 +94,88 @@ describe('usageLine: cost', () => {
       },
     });
     expect(usageLine([JSON.parse(event)])).toContain(`$${total.toFixed(4)}`);
+  });
+});
+
+/** 本文のない実行結果。終了コードは 0 にする */
+const EMPTY_RUN: RunResult = {
+  stdout: '',
+  stderr: '',
+  code: 0,
+  aborted: false,
+  ended: true,
+};
+
+function messageEnd(overrides: Record<string, unknown> = {}) {
+  return {
+    type: 'message_end',
+    message: {
+      role: 'assistant',
+      content: [],
+      usage: { input: 1, output: 1 },
+      ...overrides,
+    },
+  };
+}
+
+describe('retryStartLine', () => {
+  it('モデル・回数・1 行の理由・待ち時間を出す', () => {
+    const label = 'consult-1';
+    const model = 'p/m';
+    const attempt = 2;
+    const maxAttempts = 3;
+    const reason = 'rate limited';
+    const error = `${reason}\nmore detail`;
+    const delayMs = 4000;
+    const line = retryStartLine(label, model, attempt, maxAttempts, error, delayMs);
+    expect(line).toContain(label);
+    expect(line).toContain(model);
+    expect(line).toContain(`retry ${attempt}/${maxAttempts}`);
+    expect(line).toContain(reason);
+    expect(line).not.toContain('more detail');
+    expect(line).toContain(`in ${delayMs / 1000}s`);
+  });
+});
+
+describe('retryEndLine', () => {
+  it('成功 → ok', () => {
+    const attempt = 2;
+    const maxAttempts = 3;
+    const success = true;
+    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
+      `retry ${attempt}/${maxAttempts} ok`,
+    );
+  });
+
+  it('失敗 → failed', () => {
+    const attempt = 2;
+    const maxAttempts = 3;
+    const success = false;
+    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
+      `retry ${attempt}/${maxAttempts} failed`,
+    );
+  });
+});
+
+describe('fallbackLine', () => {
+  it('次の候補を出す', () => {
+    expect(fallbackLine('consult-1', 'p/b')).toContain('→ p/b');
+  });
+});
+
+describe('compose', () => {
+  it('本文が空で最後がエラー → その理由を出す', () => {
+    const reason = 'rate limited';
+    const events = [messageEnd({ stopReason: 'error', errorMessage: reason })];
+    expect(compose(events, { ...EMPTY_RUN, stderr: 'boom' })).toContain(reason);
+  });
+
+  it('本文が空で前のエラーだけ → stderr を出す', () => {
+    const stderr = 'boom';
+    const events = [
+      messageEnd({ stopReason: 'error', errorMessage: 'old failure' }),
+      messageEnd({ stopReason: 'stop' }),
+    ];
+    expect(compose(events, { ...EMPTY_RUN, stderr })).toContain(stderr);
   });
 });

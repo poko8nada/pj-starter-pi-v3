@@ -146,9 +146,11 @@ Each role lists its models in the order to try. The last attempt is the agent's 
 1st candidate → 2nd candidate → the agent's settings
 ```
 
-The subagent moves to the next candidate when it produced nothing at all (`usage.output` is 0). That covers a model that cannot be used: an unknown id, a missing key, a rate limit. pi does not fail on an unknown id — it warns, the API call fails, and the subagent still exits 0, so the exit code cannot be the signal.
+The subagent moves to the next candidate when it produced nothing at all (`usage.output` is 0), or when its last assistant message ended with `stopReason: "error"`. The first covers a model that cannot be used: an id that matches no provider, or an id whose provider exists but whose catalog has no such model; a missing key; a rate limit. pi does not fail on an unknown id — it warns, the API call fails, and the subagent still exits 0, so the exit code cannot be the signal. The second covers a model that ran and then failed. It does not move on when the call was cancelled, or when a turn limit stopped it.
 
-It does not move on when the subagent produced something and then failed: that is a task failure, not a model failure. It does not move on when the call was cancelled.
+pi retries a transient error itself before consult sees the failure (`retry.maxRetries`, with 2 s, 4 s and 8 s backoff). The wait before a candidate is given up is the sum of that backoff, and after the candidates are exhausted the last attempt runs once with the agent's own settings, so the worst case adds one more run and its retries.
+
+The subagent reports a retry and a switch as a `warning` line as it happens: the start of a retry (model, attempt, reason and delay), its end (`ok` or `failed`), and the switch to the next model. The switch line does not repeat the error; the retry lines carry it.
 
 ## Trust
 
@@ -215,25 +217,26 @@ view/      the finished message: the collapsed line, the expanded details, and t
 pnpm test:run .pi/extensions/consult
 ```
 
-| Test                     | Covers                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                                        |
-| `sub/budget.test.ts`     | when the subagent is nudged to report                                                                        |
-| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                      |
-| `policy/types.test.ts`   | the role policy                                                                                              |
-| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file                        |
-| `run/worktree.test.ts`   | the place, the branch and the removal                                                                        |
-| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                              |
-| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                        |
-| `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level) |
-| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                                       |
-| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window                       |
-| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion row (no `sendMessage`)                           |
-| `tool/sound.test.ts`     | the sound: `playSound`, the player swap, nothing while off (the timer lives in `index.ts`)                   |
-| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block                                  |
-| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                    |
-| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                            |
-| `view/notice.test.ts`    | the message view: the collapsed line and the expanded details                                                |
+| Test                     | Covers                                                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `sub/spec.test.ts`       | pi argument assembly, JSONL parsing, spend accounting                                                                       |
+| `sub/budget.test.ts`     | when the subagent is nudged to report                                                                                       |
+| `sub/guard.test.ts`      | the secret guard: resolved paths, refused calls, the role's permissions                                                     |
+| `policy/types.test.ts`   | the role policy                                                                                                             |
+| `run/subagent.test.ts`   | one subagent's wiring without starting it: `prepare`, `subagentEnv`, the session file, `onModelEvent`                       |
+| `run/run.test.ts`        | the fallback: the condition, the attempt record, the switch                                                                 |
+| `run/worktree.test.ts`   | the place, the branch and the removal                                                                                       |
+| `run/log.test.ts`        | the record: appending, reading it back, a broken line, liveness                                                             |
+| `run/place.test.ts`      | the record place: the project key, the day, the 2-day window, 30 days                                                       |
+| `run/delivery.test.ts`   | delivery: `pendingReports` and `appendDelivered` (pending rows, the mark row, the old cursor as water level)                |
+| `tool/commit.test.ts`    | the commit face with a replaced git: its three answers                                                                      |
+| `tool/subagents.test.ts` | the list and the cancel: rows (`elapsed`, `lost`), the session filter, the read window                                      |
+| `tool/consult.test.ts`   | the background face with a fake API: the id, the completion row (no `sendMessage`), `modelNotifier`'s retry/switch warnings |
+| `tool/sound.test.ts`     | the sound: `playSound`, the player swap, nothing while off (the timer lives in `index.ts`)                                  |
+| `tool/render.test.ts`    | the shape handed to the agent: the result, the usage line, the report block, `compose`'s reason, the retry/switch lines     |
+| `tool/run.test.ts`       | only the params check (`parseRunRequest`)                                                                                   |
+| `tool/worktree.test.ts`  | the worktree face: make, list, remove, a running subagent refused                                                           |
+| `view/notice.test.ts`    | the message view: the collapsed line and the expanded details                                                               |
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 

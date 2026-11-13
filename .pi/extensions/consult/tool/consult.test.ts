@@ -7,10 +7,11 @@
  */
 
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   controlSubagent,
   createRuntime,
+  modelNotifier,
   type CommandContext,
   type ConsultContext,
   type ConsultMessage,
@@ -26,13 +27,36 @@ import { aRunRecord } from '../consult.fixture.ts';
 import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
+import type { SubagentHooks, SubagentJob } from '../run/subagent.ts';
+import type { ConsultOptions } from '../sub/spec.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
 
-// 道具の文脈は cwd だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
+/** consult() が runOneSubagent に渡した hooks */
+const capturedHooks = vi.hoisted(() => [] as SubagentHooks[]);
+
+vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    runOneSubagent: async (
+      _ctx: ConsultContext,
+      _options: ConsultOptions,
+      _job: SubagentJob,
+      hooks?: SubagentHooks,
+    ) => {
+      if (hooks !== undefined) {
+        capturedHooks.push(hooks);
+      }
+      return { run: { stdout: '', stderr: '', code: 0, aborted: false, ended: true } };
+    },
+  };
+});
+
+// 道具の文脈は cwd と通知の窓口だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
 // 一時ものを本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の保存場所を指す。
-const toolCtx: ConsultContext = { cwd: process.cwd() };
+const toolCtx: ConsultContext = { cwd: process.cwd(), ui: { notify: () => {} } };
 
 beforeEach(() => {
   setSoundEnabled(true);
@@ -82,13 +106,14 @@ function fakePi(): {
   return { pi, calls };
 }
 
-/** ui.notify を記録する偽のコマンド文脈 */
-function fakeCommandContext(): {
-  ctx: CommandContext;
+/** ui.notify を記録する偽の consult 文脈。通知だけを見る */
+function fakeConsultContext(): {
+  ctx: ConsultContext;
   notices: { message: string; type?: 'info' | 'warning' | 'error' }[];
 } {
   const notices: { message: string; type?: 'info' | 'warning' | 'error' }[] = [];
-  const ctx: CommandContext = {
+  const ctx: ConsultContext = {
+    cwd: '/tmp/base',
     ui: {
       notify: (message: string, type?: 'info' | 'warning' | 'error') => {
         notices.push({ message, type });
@@ -96,6 +121,15 @@ function fakeCommandContext(): {
     },
   };
   return { ctx, notices };
+}
+
+/** ui.notify を記録する偽のコマンド文脈。通知の記録は consult 文脈と同じ形を使う */
+function fakeCommandContext(): {
+  ctx: CommandContext;
+  notices: { message: string; type?: 'info' | 'warning' | 'error' }[];
+} {
+  const { ctx, notices } = fakeConsultContext();
+  return { ctx: { ui: ctx.ui }, notices };
 }
 
 /** 完了をテストが決めるサブエージェント。signal と resolve を記録する */
@@ -516,6 +550,130 @@ describe('controlSubagent: cancel (startToken)', () => {
     );
     expect(kills).toEqual([11]);
     expect(outcome.details).toMatchObject({ cancelled: true });
+  });
+});
+
+describe('modelNotifier: retry-start', () => {
+  it('warning で 1 回出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+    const attempt = 1;
+    const maxAttempts = 3;
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt,
+      maxAttempts,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('warning');
+    expect(notices[0]?.message).toContain(`retry ${attempt}/${maxAttempts}`);
+  });
+});
+
+describe('modelNotifier: retry-end', () => {
+  it('retry-start が覚えた maxAttempts を分母に使い、warning で出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+    const attempt = 1;
+    const maxAttempts = 3;
+    const success = true;
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt,
+      maxAttempts,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt, success });
+
+    expect(notices).toHaveLength(2);
+    expect(notices[1]?.type).toBe('warning');
+    expect(notices[1]?.message).toContain(`retry ${attempt}/${maxAttempts} ok`);
+  });
+});
+
+describe('modelNotifier: 乗り換え', () => {
+  it('warning で 1 回出す', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onFallback } = modelNotifier(ctx, 'consult-1');
+    const next = 'p/b';
+
+    onFallback({ requested: next });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('warning');
+    expect(notices[0]?.message).toContain(`→ ${next}`);
+  });
+
+  it('requested が undefined → → main', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onFallback } = modelNotifier(ctx, 'consult-1');
+
+    onFallback({ requested: undefined });
+
+    expect(notices[0]?.message).toContain('→ main');
+  });
+
+  it('model が undefined → (model unknown) を含む', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({
+      kind: 'retry-start',
+      model: undefined,
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+
+    expect(notices[0]?.message).toContain('(model unknown)');
+  });
+});
+
+describe('consult: 通知の配線', () => {
+  it('modelNotifier の 2 つのコールバックを runOneSubagent の hooks に渡す', async () => {
+    capturedHooks.length = 0;
+    const { pi } = fakePi();
+    const { ctx, notices } = fakeConsultContext();
+    const runtime = createRuntime(pi, placeFor(tempDir(), tempDir()), undefined, () => SESSION);
+
+    await runtime.run('call', { role: 'review', task: 'x' }, undefined, undefined, ctx);
+    await flush();
+
+    const hooks = capturedHooks.at(-1);
+    if (hooks === undefined) {
+      throw new Error('runOneSubagent was not called');
+    }
+    const attempt = 1;
+    const maxAttempts = 3;
+    const next = 'p/b';
+    hooks.onModelEvent?.({
+      kind: 'retry-start',
+      model: 'p/m',
+      attempt,
+      maxAttempts,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+    hooks.onFallback?.({ requested: next });
+
+    expect(
+      notices.some(
+        (notice) =>
+          notice.type === 'warning' && notice.message.includes(`retry ${attempt}/${maxAttempts}`),
+      ),
+    ).toBe(true);
+    expect(
+      notices.some((notice) => notice.type === 'warning' && notice.message.includes(`→ ${next}`)),
+    ).toBe(true);
   });
 });
 

@@ -1,12 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { subagentEnv, prepare, sessionFile, runOneSubagent } from './subagent.ts';
 import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
+import type { ModelEvent } from '../sub/spec.ts';
 import { branchFor } from './worktree.ts';
 import type { Worktree } from './worktree.ts';
 
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
-const CONTEXT = { cwd: '/tmp/base' } as const;
+const CONTEXT = { cwd: '/tmp/base', ui: { notify: () => {} } } as const;
+const JOB_ID = 'consult-1';
 
 function policy(isolated: boolean) {
   return aTypePolicy({
@@ -65,14 +67,38 @@ describe('subagentEnv', () => {
 });
 
 const capturedPiArgs = vi.hoisted(() => [] as string[][]);
+const capturedOptions = vi.hoisted(
+  () =>
+    [] as {
+      readonly piArgs: readonly string[];
+      readonly onModelEvent?: (event: ModelEvent) => void;
+    }[],
+);
+
+/** runPi が返す stdout。乗り換えを起こさない生成ありのメッセージから始める */
+const piState = vi.hoisted(() => {
+  const defaultStdout = JSON.stringify({
+    type: 'message_end',
+    message: { role: 'assistant', content: [], usage: { input: 1, output: 1 } },
+  });
+  return { defaultStdout, stdout: defaultStdout };
+});
+
+afterEach(() => {
+  piState.stdout = piState.defaultStdout;
+});
 
 vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    runPi: async (options: { readonly piArgs: readonly string[] }) => {
+    runPi: async (options: {
+      readonly piArgs: readonly string[];
+      readonly onModelEvent?: (event: ModelEvent) => void;
+    }) => {
       capturedPiArgs.push([...options.piArgs]);
-      return { stdout: '', stderr: '', code: 0, aborted: false, ended: false };
+      capturedOptions.push(options);
+      return { stdout: piState.stdout, stderr: '', code: 0, aborted: false, ended: false };
     },
   };
 });
@@ -85,13 +111,63 @@ describe('runOneSubagent: token', () => {
     await runOneSubagent(
       CONTEXT,
       aConsultOptions({ type: 'review', task: 'x', policy: policy(false), token: optionsToken }),
-      { task: 'x', token: jobToken, signal: undefined },
+      { task: 'x', token: jobToken, id: JOB_ID, signal: undefined },
     );
     const args = capturedPiArgs[0] ?? [];
     const index = args.indexOf('--name');
     expect(index).toBeGreaterThan(-1);
     expect(args[index + 1]).toBe(jobToken);
     expect(args).not.toContain(optionsToken);
+  });
+});
+
+describe('runOneSubagent: onModelEvent', () => {
+  it('runPi に onModelEvent を渡し、model が undefined なら要求した候補で埋める', async () => {
+    capturedOptions.length = 0;
+    const candidate = 'p/candidate';
+    const received: ModelEvent[] = [];
+    await runOneSubagent(
+      CONTEXT,
+      aConsultOptions({
+        type: 'review',
+        task: 'x',
+        policy: { ...policy(false), models: [candidate] },
+      }),
+      { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
+      { onModelEvent: (event) => received.push(event) },
+    );
+
+    const onModelEvent = capturedOptions[0]?.onModelEvent;
+    expect(typeof onModelEvent).toBe('function');
+    onModelEvent?.({
+      kind: 'retry-start',
+      model: undefined,
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      error: 'rate limited',
+    });
+    expect(received[0]?.model).toBe(candidate);
+  });
+});
+
+describe('runOneSubagent: onFallback', () => {
+  it('乗り換えを onFallback に渡す', async () => {
+    piState.stdout = '';
+    const next = 'p/next';
+    const fallbacks: { requested: string | undefined }[] = [];
+    await runOneSubagent(
+      CONTEXT,
+      aConsultOptions({
+        type: 'review',
+        task: 'x',
+        policy: { ...policy(false), models: ['p/candidate', next] },
+      }),
+      { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
+      { onFallback: (attempt) => fallbacks.push(attempt) },
+    );
+
+    expect(fallbacks).toEqual([{ requested: next }, { requested: undefined }]);
   });
 });
 
