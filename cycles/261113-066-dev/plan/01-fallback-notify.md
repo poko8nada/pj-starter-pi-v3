@@ -513,12 +513,33 @@ export function modelNotifier(
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/run.ts:84` 「1 回目の失敗はトークンを消費しないので、乗り換えの費用はほぼない」が新しい規則と矛盾する。末尾メッセージがエラーで乗り換える場合は生成済み（`usage.output > 0`）で、トークンは消費されているため。スライス 2 の Step 3（「コメントを新しい規則に直す」）がこの 1 行に届いていない。
+    - fixed: `runWithFallback` の doc comment から「1 回目の失敗はトークンを消費しない」の 1 行を消した。
+  - `.pi/extensions/consult/README.md:236` `tool/render.test.ts` の Covers が「the result, the usage line, the report block」のままで、今回足した `compose`（失敗理由）と 3 つの文面（retry の始まり・終わり、乗り換え）を挙げていない。
+    - fixed: README の `tool/render.test.ts` の Covers に `compose` の失敗理由と retry/switch の文面を足した。
+  - `.pi/extensions/consult/README.md:234` `tool/consult.test.ts` の Covers も `modelNotifier` を挙げていない。同じ表の中で `run/subagent.test.ts` の行だけ `onModelEvent` を足しており、表全体として片手落ちになっている。
+    - fixed: README の `tool/consult.test.ts` の Covers に retry/switch の警告を足した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/consult/run/run.ts:313` の `live.onModelEvent?.(modelEvent)` と `.pi/extensions/consult/tool/consult.ts:287-292` の `modelNotifier(...)` → `runOneSubagent` の `hooks` は、どのチェックも通らない。`tool/consult.test.ts` は必ず偽の `run` を `createRuntime` に渡すので `consult()` が走らず、`runPi`／`consumeLine` を試すテストもない。この 2 か所を消しても全テストが緑のままなので、Goal の「再試行と乗り換えがその場で警告として見える」が証明されていない。`run/subagent.ts:150` の `hooks.onFallback` 転送も同様に未試。
+    - fixed: `run/run.test.ts` に偽の spawn で `runPi` の `onModelEvent` 配線を、`run/subagent.test.ts` に `hooks.onFallback` の転送を、`tool/consult.test.ts` に `consult()` が `modelNotifier` の 2 つのコールバックを `runOneSubagent` へ渡すことを試すテストを足した。
+  - `.pi/extensions/consult/tool/consult.ts:265` の `maxAttempts === 0 ? event.attempt : maxAttempts` は、cleanup で「start なしの分母」のケースを落としたため、誰も通らない分岐として残っている。plan の Step 5.2 は「覚えた `maxAttempts` を使う」だけで、この分岐は plan にもケースにもない（残すならケースが要り、要らないならコードを消す）。
+    - fixed: `maxAttempts === 0 ? event.attempt : maxAttempts` の分岐を消し、覚えた `maxAttempts` をそのまま `retryEndLine` に渡すようにした。
+  - `.pi/extensions/consult/sub/spec.ts:211-233` の `modelEventFrom` の型検査（`attempt`・`maxAttempts`・`delayMs` が数値でない、`success` が真偽値でない → `undefined`）は、plan が「壊れた値で行を出さないため」と理由を書いた振る舞いなのに、ケースが 3 つだけで一度も通らない。`delayMs` が文字列のまま通ると `in NaNs` の警告が出る。
+    - fixed: `sub/spec.test.ts` に `attempt`・`maxAttempts`・`delayMs` が数値でない `retry-start` と、`success` が真偽値でない `retry-end` のケースを足した。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - `.pi/extensions/consult/run/run.test.ts:64` の `expect(applyEvent(state, event, 1)).toBeUndefined()` は、`message_end` が再試行のイベントを返さないことを `modelEventFrom` の「他のイベント → undefined」（`sub/spec.test.ts:222`）がすでに決めているため、`applyEvent` 側だけで壊れることがない。
+    - fixed: `run/run.test.ts` の `applyEvent` が `undefined` を返す断言を消した。
+  - `.pi/extensions/consult/tool/render.test.ts:113-118` と `.pi/extensions/consult/tool/consult.test.ts:551` の断言が、入力に与えた `2`・`3`・`4s` を literal で書き直している（同じファイルの `usageLine` は `$${total.toFixed(4)}` と入力から導いている）。design.md の「断言に魔法の数や直書きの文字列を持たせない」に反する。
+    - fixed: `render.test.ts` と `consult.test.ts` の retry の断言を、入力に与えた `attempt`・`maxAttempts`・`delayMs` から組むようにした。
 - Doubts:
+  - `.pi/extensions/consult/run/run.ts:64` の `onModelEvent` のコメント「サブエージェントの出力が届くたびに呼ぶ」と、実際の呼び出し（`run.ts:313-315` は再試行のイベントが返ったときだけ）が食い違う。plan の Types も同じ文なので、コードかコメントのどちらを直すかは owner の判断。
+  - `.pi/extensions/consult/tool/consult.ts:291` の `job.id ?? 'consult'` は plan の Step 5.3 が `job.id` とだけ書く形から外れ、`'consult'` という文言も plan が決めていない。`beginRun` は必ず id を入れるので今のところこの既定値は届かない（残すか落とすかは owner の判断）。
 
 ### Round 2
 

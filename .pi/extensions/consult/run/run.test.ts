@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { applyEvent, runWithFallback, type RunResult, type RunState } from './run.ts';
+import type { EventEmitter } from 'node:events';
+import { describe, expect, it, vi } from 'vitest';
+import { applyEvent, runPi, runWithFallback, type RunResult, type RunState } from './run.ts';
+import type { ModelEvent } from '../sub/spec.ts';
 import { aTypePolicy } from '../consult.fixture.ts';
 
 // 乗り換えの判定だけを試す。実際の pi は起こさず、偽の runOnce がイベントの JSONL から結果を作る。
@@ -44,6 +46,42 @@ function recorder(results: Map<string | undefined, RunResult>): {
   };
 }
 
+/** spawn が返す偽の子プロセス。stdout と close をテストが動かす */
+interface FakeChild {
+  readonly stdout: EventEmitter;
+  readonly stderr: EventEmitter;
+  readonly stdin: { end(text: string): void };
+  readonly pid: number;
+  readonly killed: boolean;
+  kill(signal: string): void;
+  emit(event: string, ...args: unknown[]): boolean;
+}
+
+const spawnedChildren = vi.hoisted(() => [] as FakeChild[]);
+
+vi.mock('node:child_process', async (importOriginal: () => Promise<Record<string, unknown>>) => {
+  const actual = await importOriginal();
+  const { EventEmitter: Emitter } = await import('node:events');
+  class FakeChildProcess extends Emitter {
+    readonly stdout = new Emitter();
+    readonly stderr = new Emitter();
+    readonly stdin = { end: () => {} };
+    readonly pid = 123;
+    killed = false;
+    kill() {
+      this.killed = true;
+    }
+  }
+  return {
+    ...actual,
+    spawn: () => {
+      const child = new FakeChildProcess();
+      spawnedChildren.push(child);
+      return child;
+    },
+  };
+});
+
 /** イベントを 1 つずつ反映するための、まっさらな走行状態 */
 function initialState(): RunState {
   return {
@@ -58,10 +96,10 @@ function initialState(): RunState {
 }
 
 describe('applyEvent: lastModel', () => {
-  it('assistant の message_end → そのモデルを lastModel に入れ、再試行のイベントは返さない', () => {
+  it('assistant の message_end → そのモデルを lastModel に入れる', () => {
     const state = initialState();
     const event = messageEnd({ provider: 'p', model: 'm' });
-    expect(applyEvent(state, event, 1)).toBeUndefined();
+    applyEvent(state, event, 1);
     expect(state.lastModel).toBe('p/m');
   });
 
@@ -83,6 +121,52 @@ describe('applyEvent: lastModel', () => {
       delayMs: 2000,
       error: 'rate limited',
     });
+  });
+});
+
+describe('runPi: onModelEvent', () => {
+  it('再試行のイベントを onModelEvent に流す', async () => {
+    spawnedChildren.length = 0;
+    const received: ModelEvent[] = [];
+    const promise = runPi({
+      piArgs: [],
+      stdin: '',
+      cwd: '/tmp/base',
+      env: {},
+      limits: aTypePolicy().limits,
+      onModelEvent: (event) => received.push(event),
+    });
+    const child = spawnedChildren[0];
+    if (child === undefined) {
+      throw new Error('runPi did not spawn');
+    }
+    const message = messageEnd({ provider: 'p', model: 'm' });
+    const retry = {
+      type: 'auto_retry_start',
+      attempt: 1,
+      maxAttempts: 3,
+      delayMs: 2000,
+      errorMessage: 'rate limited',
+    };
+    child.stdout.emit(
+      'data',
+      Buffer.from(`${JSON.stringify(message)}\n${JSON.stringify(retry)}\n`),
+    );
+    child.emit('close', 0);
+
+    const run = await promise;
+
+    expect(run.code).toBe(0);
+    expect(received).toEqual([
+      {
+        kind: 'retry-start',
+        model: 'p/m',
+        attempt: 1,
+        maxAttempts: 3,
+        delayMs: 2000,
+        error: 'rate limited',
+      },
+    ]);
   });
 });
 

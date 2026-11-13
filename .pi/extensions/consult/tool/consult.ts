@@ -268,9 +268,7 @@ export function modelNotifier(
         );
         return;
       }
-      // start を見ていないときも、行の分母が 0 にならないようにする。
-      const total = maxAttempts === 0 ? event.attempt : maxAttempts;
-      notify(retryEndLine(label, model, event.attempt, total, event.success));
+      notify(retryEndLine(label, model, event.attempt, maxAttempts, event.success));
     },
     onFallback: (attempt) => {
       notify(fallbackLine(label, attempt.requested ?? 'main'));

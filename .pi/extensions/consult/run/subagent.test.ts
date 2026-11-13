@@ -74,11 +74,13 @@ const capturedOptions = vi.hoisted(
     }[],
 );
 
-/** 生成ありの assistant メッセージ。乗り換えを起こさない */
-const SUCCESS_STDOUT = JSON.stringify({
-  type: 'message_end',
-  message: { role: 'assistant', content: [], usage: { input: 1, output: 1 } },
-});
+/** runPi が返す stdout。乗り換えを起こさない生成ありのメッセージから始める */
+const piState = vi.hoisted(() => ({
+  stdout: JSON.stringify({
+    type: 'message_end',
+    message: { role: 'assistant', content: [], usage: { input: 1, output: 1 } },
+  }),
+}));
 
 vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
@@ -90,7 +92,7 @@ vi.mock('./run.ts', async (importOriginal: () => Promise<Record<string, unknown>
     }) => {
       capturedPiArgs.push([...options.piArgs]);
       capturedOptions.push(options);
-      return { stdout: SUCCESS_STDOUT, stderr: '', code: 0, aborted: false, ended: false };
+      return { stdout: piState.stdout, stderr: '', code: 0, aborted: false, ended: false };
     },
   };
 });
@@ -140,6 +142,26 @@ describe('runOneSubagent: onModelEvent', () => {
       error: 'rate limited',
     });
     expect(received[0]?.model).toBe(candidate);
+  });
+});
+
+describe('runOneSubagent: onFallback', () => {
+  it('乗り換えを onFallback に渡す', async () => {
+    piState.stdout = '';
+    const next = 'p/next';
+    const fallbacks: { requested: string | undefined }[] = [];
+    await runOneSubagent(
+      CONTEXT,
+      aConsultOptions({
+        type: 'review',
+        task: 'x',
+        policy: { ...policy(false), models: ['p/candidate', next] },
+      }),
+      { task: 'x', token: 'job-token-1', signal: undefined },
+      { onFallback: (attempt) => fallbacks.push(attempt) },
+    );
+
+    expect(fallbacks).toEqual([{ requested: next }, { requested: undefined }]);
   });
 });
 

@@ -122,23 +122,38 @@ describe('retryStartLine', () => {
   it('モデル・回数・1 行の理由・待ち時間を出す', () => {
     const label = 'consult-1';
     const model = 'p/m';
-    const line = retryStartLine(label, model, 2, 3, 'rate limited\nmore detail', 4000);
+    const attempt = 2;
+    const maxAttempts = 3;
+    const reason = 'rate limited';
+    const error = `${reason}\nmore detail`;
+    const delayMs = 4000;
+    const line = retryStartLine(label, model, attempt, maxAttempts, error, delayMs);
     expect(line).toContain(label);
     expect(line).toContain(model);
-    expect(line).toContain('retry 2/3');
-    expect(line).toContain('rate limited');
+    expect(line).toContain(`retry ${attempt}/${maxAttempts}`);
+    expect(line).toContain(reason);
     expect(line).not.toContain('more detail');
-    expect(line).toContain('in 4s');
+    expect(line).toContain(`in ${delayMs / 1000}s`);
   });
 });
 
 describe('retryEndLine', () => {
   it('成功 → ok', () => {
-    expect(retryEndLine('consult-1', 'p/m', 2, 3, true)).toContain('retry 2/3 ok');
+    const attempt = 2;
+    const maxAttempts = 3;
+    const success = true;
+    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
+      `retry ${attempt}/${maxAttempts} ok`,
+    );
   });
 
   it('失敗 → failed', () => {
-    expect(retryEndLine('consult-1', 'p/m', 2, 3, false)).toContain('retry 2/3 failed');
+    const attempt = 2;
+    const maxAttempts = 3;
+    const success = false;
+    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
+      `retry ${attempt}/${maxAttempts} failed`,
+    );
   });
 });
 

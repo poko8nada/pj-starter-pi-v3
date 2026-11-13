@@ -219,6 +219,34 @@ describe('modelEventFrom', () => {
   it('他のイベント → undefined', () => {
     expect(modelEventFrom({ type: 'message_end' }, 'p/m')).toBeUndefined();
   });
+
+  it('retry-start の数値でない項目 → undefined', () => {
+    const model = 'p/m';
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: '1', maxAttempts: 3, delayMs: 2000 },
+        model,
+      ),
+    ).toBeUndefined();
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: 1, maxAttempts: '3', delayMs: 2000 },
+        model,
+      ),
+    ).toBeUndefined();
+    expect(
+      modelEventFrom(
+        { type: 'auto_retry_start', attempt: 1, maxAttempts: 3, delayMs: '2000' },
+        model,
+      ),
+    ).toBeUndefined();
+  });
+
+  it('retry-end の真偽値でない success → undefined', () => {
+    expect(
+      modelEventFrom({ type: 'auto_retry_end', attempt: 1, success: 'yes' }, 'p/m'),
+    ).toBeUndefined();
+  });
 });
 
 describe('ranFrom', () => {
