@@ -3,8 +3,9 @@
     {
       "name": "research",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:high",
-        "opencode-go/deepseek-v4.1-flash:high"
+        "opencode-go/deepseek-v4.1-flash:low",
+        "opencode-go/longcat-2.5-free:high",
+        "opencode-go/muse-spark-1.3-contributor:high"
       ],
       "tools": [
         "read",
@@ -29,8 +30,9 @@
     {
       "name": "review",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:high",
-        "opencode-go/deepseek-v4.1-flash:high"
+        "opencode-go/deepseek-v4.1-flash:low",
+        "opencode-go/longcat-2.5-free:high",
+        "opencode-go/muse-spark-1.3-contributor:high"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "web_search", "quick_edit", "target_edit"],
       "isolated": false,
@@ -43,8 +45,9 @@
     {
       "name": "proofreader",
       "models": [
+        "opencode-go/deepseek-v4.1-flash:low",
+        "opencode-go/longcat-2.5-free:high",
         "opencode-go/muse-spark-1.3-contributor:high",
-        "opencode-go/beam-free:max",
         "opencode-go/mimo-v2.6-flash:high"
       ],
       "tools": ["read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write", "bash"],
@@ -58,8 +61,8 @@
     {
       "name": "trial",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:xhigh",
-        "opencode-go/deepseek-v4.1-flash:high"
+        "opencode-go/deepseek-v4.1-flash:high",
+        "opencode-go/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write"],
       "isolated": true,
@@ -72,8 +75,8 @@
     {
       "name": "code",
       "models": [
-        "opencode-go/muse-spark-1.3-contributor:xhigh",
-        "opencode-go/deepseek-v4.1-flash:high"
+        "opencode-go/deepseek-v4.1-flash:low",
+        "opencode-go/muse-spark-1.3-contributor:xhigh"
       ],
       "tools": ["bash", "read", "ls", "find", "grep", "edit", "quick_edit", "target_edit", "write"],
       "isolated": true,
