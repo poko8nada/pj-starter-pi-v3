@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../consult.fixture.ts';
+import { aPlace, aRunRecord } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
-import { placeFor, type Place } from '../run/place.ts';
+import { type Place } from '../run/place.ts';
 import {
   USAGE,
   createSubagentsTool,
@@ -14,12 +14,8 @@ import {
   type SubagentsArgs,
 } from './subagents.ts';
 
-// 保存場所を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
+// 保存場所を偽物にするテストは、`aPlace()` で作る（記録を読む側）。
 // サブエージェントは起こさない（記録と、runtime の偽物だけで試す）。
-
-function place(): Place {
-  return placeFor(tempDir(), tempDir());
-}
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
   return aRunRecord({ pid: 999_999, ...extra });
@@ -27,7 +23,7 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
 
 /** 記録を保存場所に書き、その保存場所を返す。`at` を渡せばその日の file に入る */
 function withLog(records: readonly RunRecord[] = [record()], at?: Date): Place {
-  const found = place();
+  const found = aPlace();
   for (const run of records) {
     appendRun(found, run, at);
   }
@@ -322,7 +318,7 @@ describe('createSubagentsTool', () => {
     const subagent = 'consult-long';
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ subagent, pid: process.pid }), threeDaysAgo);
     appendRun(found, record({ subagent, pid: process.pid, ended: 2000, state: 'done' }));
     const { host } = fakeHost(found);

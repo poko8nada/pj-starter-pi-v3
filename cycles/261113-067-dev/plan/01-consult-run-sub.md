@@ -306,8 +306,8 @@ function aBudgetPi(
 
 ### Slice 1: fixture の共通前提
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

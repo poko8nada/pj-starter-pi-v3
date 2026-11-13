@@ -1,21 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../consult.fixture.ts';
+import { aAt, aDoneRun, aPlace } from '../consult.fixture.ts';
 import { appendDelivered, CURSOR_FILE, pendingReports, readCursor } from './delivery.ts';
 import { appendRun, type RunRecord } from './log.ts';
-import { placeFor, type Place } from './place.ts';
+import { type Place } from './place.ts';
 
 // サブエージェントは起こさない。使い捨ての保存場所だけで試す。
-
-function place(): Place {
-  return placeFor(tempDir(), tempDir());
-}
-
-function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return aRunRecord({ ended: 2000, state: 'done', ...extra });
-}
 
 /** 一覧の欄を直接書く。`writeCursor` はないので、file を書く */
 function writeCursorFile(found: Place, entries: Record<string, number>): void {
@@ -29,19 +20,19 @@ function writeCursorFile(found: Place, entries: Record<string, number>): void {
 
 /** その日に通知つきの行を書く。`ended` は呼び側が決める */
 function notice(found: Place, at: Date, extra: Partial<RunRecord> = {}): RunRecord {
-  const run = record({ notice: 'できた', ...extra });
+  const run = aDoneRun({ notice: 'できた', ...extra });
   appendRun(found, run, at);
   return run;
 }
 
 describe('readCursor', () => {
   it('欄がなければ undefined', () => {
-    expect(readCursor(place(), 'session-a')).toBeUndefined();
+    expect(readCursor(aPlace(), 'session-a')).toBeUndefined();
   });
 
   it('壊れている（JSON でない）→ undefined（全部返す側に倒れる）', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const subagent = 'consult-1';
     notice(found, at, { ended: 2000, subagent });
     writeCursorFile(found, { 'session-a': 9999 });
@@ -55,8 +46,8 @@ describe('readCursor', () => {
 
 describe('pendingReports', () => {
   it('印のない完了の行 → その行を返す', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const subagent = 'consult-1';
     notice(found, at, { ended: 2000, subagent });
     expect(pendingReports(found, { at, session: 'session-a' }).map((run) => run.subagent)).toEqual([
@@ -65,8 +56,8 @@ describe('pendingReports', () => {
   });
 
   it('appendDelivered の後 → 返さない', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const done = notice(found, at, { ended: 2000, subagent: 'consult-1' });
     expect(pendingReports(found, { at, session: 'session-a' })).toHaveLength(1);
     appendDelivered(found, done, at);
@@ -74,8 +65,8 @@ describe('pendingReports', () => {
   });
 
   it('古い一覧 { ended: 2000 }、ended: 2000 の完了 → 返さない。ended: 2001 → 返す', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const kept = 'consult-2';
     notice(found, at, { ended: 2000, subagent: 'consult-1' });
     notice(found, at, { ended: 2001, subagent: kept });
@@ -86,8 +77,8 @@ describe('pendingReports', () => {
   });
 
   it('印のない完了が 2 行（started: 1000、2000）→ 古い順に 2 行返す', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const first = 'consult-1';
     const second = 'consult-2';
     notice(found, at, { started: 2000, ended: 2100, subagent: second });
@@ -99,8 +90,8 @@ describe('pendingReports', () => {
   });
 
   it('印のない完了が別の session に 1 行 → scope.session の行だけ返す', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
+    const found = aPlace();
+    const at = aAt();
     const wanted = 'consult-a';
     notice(found, at, { session: 'session-b', ended: 2000, subagent: 'consult-b' });
     notice(found, at, { session: 'session-a', ended: 3000, subagent: wanted });
@@ -111,10 +102,10 @@ describe('pendingReports', () => {
   });
 
   it('開始行（ended なし）と、notice のない終わりの行 → どちらも返さない', () => {
-    const found = place();
-    const at = new Date(2026, 9, 10, 12, 0);
-    appendRun(found, record({ subagent: 'consult-start', ended: undefined }), at);
-    appendRun(found, record({ subagent: 'consult-plain', ended: 1500 }), at);
+    const found = aPlace();
+    const at = aAt();
+    appendRun(found, aDoneRun({ subagent: 'consult-start', ended: undefined }), at);
+    appendRun(found, aDoneRun({ subagent: 'consult-plain', ended: 1500 }), at);
     expect(pendingReports(found, { at, session: 'session-a' })).toEqual([]);
   });
 });
