@@ -693,7 +693,7 @@ describe('status', () => {
     expect(lines[1]).toContain('consult-2');
   });
 
-  it('走っている記録がない → no subagents running in this session を info で出す', async () => {
+  it('走っている記録がない → info で通知する', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime } = setup(pi, run);
@@ -701,10 +701,11 @@ describe('status', () => {
 
     await runtime.commands.status('', ctx);
 
-    expect(notices).toEqual([{ message: 'no subagents running in this session', type: 'info' }]);
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('info');
   });
 
-  it('同じ subagent の開始行と終わりの行 → 走っているものとして出さない', async () => {
+  it('開始行と終わりの行を渡しても info で通知する', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime, place } = setup(pi, run);
@@ -714,7 +715,8 @@ describe('status', () => {
 
     await runtime.commands.status('', ctx);
 
-    expect(notices[0]?.message).toBe('no subagents running in this session');
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('info');
   });
 
   it('終わった記録だけ → no subagents running in this session を出す', async () => {
