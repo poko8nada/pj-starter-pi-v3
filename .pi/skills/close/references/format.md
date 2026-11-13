@@ -44,7 +44,7 @@
   - `<plan id>`
 - Result: <OK / 見つかったもの / しない — 理由>
 - Change: <OK / 見つかったもの / しない — 理由>
-- Fixed: `_ex-change_` (<commit>)
+- Fixed: <変更内容を簡潔に説明> (<commit>)
 ```
 
 ## Collected
@@ -146,7 +146,7 @@ The Units of the cycle and what the owner answered for each.
 - `Result` is `しない` with the reason on the same line when they will not check.
 - `Change` is `OK` when the owner checked what the plans changed and it is as intended, and what they found when it is not.
 - `Change` is `しない` with the reason on the same line when they will not check.
-- `Fixed` is the `_ex-change_` and the commit it made, written only when the function or the change did not work, and it takes the place of the `done <commit>` a `## Triage` line carries.
+- `Fixed` is a short description of the change and the commit it made, written only when the function or the change did not work, and it takes the place of the `done <commit>` a `## Triage` line carries. When there was no fix, write `なし`.
 - The close resumes at its verification step for that Unit.
 - The check has two parts: the Unit's function, and the change the plans made.
 - The acceptance saw the plan's work; this check sees the Unit after the merge.
