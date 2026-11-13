@@ -103,12 +103,15 @@ ROADMAP.md
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `.pi/skills/adr/SKILL.md:81` — `The owner's answer decides the split.` は、この変更の前は分割だけが提示物だったため足りていた。変更後は Step 4 が「順番だけの却下」を扱い、ADR C7 と計画の `Policy` が「分割と順番はオーナーが決める」と定めるのに、Note は分割しか名指さない。同じ文書が Step 4 で `split` と `order` を別物として扱っているため、この1文だけを読むと順番はエージェントが決めてよいと読め、`Policy` の Forbidden（オーナーの承認なしに順番を決めない）と食い違う。`The owner's answer decides the split and the order.` へ広げる必要がある。
+    fixed: `.pi/skills/adr/SKILL.md` の Note を `The owner's answer decides the split and the order.` に広げた。
+- Unlisted: なし — 差分の2ファイルのうち `.pi/skills/adr/SKILL.md` は `Files` で `update`、計画 md は作業の記録そのもので、`Files` が名指す `close`、`yolo`、`ROADMAP.md` には変更がないため。
+- Gaps: なし — 変更は文書の文面だけで、ADR の `Scope` の `failure: 検査を足さない（順番の理由は読んで確かめる）` と `Verify` の `Added: なし` が検査を足さないことを決めており、Step 3、Step 4、Note 2本は `Steps` の文面と一致しているため。
+- Policy: なし — Allowed の2件（順番の理由を同じ提示に含める、条件に当てはまらない並びを許す）は Step 3 と Note 2本で満たし、Forbidden の4件（順番の独断、分割単位の変更、`close`／`yolo` への写し、`plan` への写し）はいずれも差分に触れていないため。
+- Unproven: なし — テストを足しておらず（`Added: なし`）、`SKILL.md` の文面を検査するテストはこの変更の前から無いため、緑のまま残るテストは増えていない。
+- Noise: なし — テストの追加がないため、型・スキーマ・DB 制約が決めるケースや、マジックナンバー・固定文字列を含むケースもない。
 - Doubts:
+  - `.pi/skills/adr/SKILL.md:61` — `When only the order is rejected, keep the split and write the order again.` は、どこへ書くのか（エントリは Step 5 で初めて書かれる）と、Step 3 の「理由つきで示す」をやり直すのかを示さない。計画の `Steps` がこの文面を指定しているため差分は正しいが、`show the order again with its reason` とすべきかはオーナーの判断。
 
 ### Round 2
 

@@ -78,7 +78,7 @@ Notes:
 - An entry has one `Main` and may have `Sub`s.
 - A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
 - A change that needs discussion, or does not follow uniquely, is another entry.
-- The owner's answer decides the split.
+- The owner's answer decides the split and the order.
 - Basically, an entry whose decision influences a later entry comes first.
 - An order the condition does not cover is allowed.
 
