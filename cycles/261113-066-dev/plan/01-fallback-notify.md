@@ -269,7 +269,7 @@ export interface RunState {
 
 export interface RunOptions {
   // ...
-  /** 再試行のイベント。サブエージェントの出力が届くたびに呼ぶ */
+  /** 再試行のイベントが届いたときに呼ぶ */
   readonly onModelEvent?: (event: ModelEvent) => void;
 }
 

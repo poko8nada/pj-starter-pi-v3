@@ -8,6 +8,7 @@ import type { Worktree } from './worktree.ts';
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
 
 const CONTEXT = { cwd: '/tmp/base', ui: { notify: () => {} } } as const;
+const JOB_ID = 'consult-1';
 
 function policy(isolated: boolean) {
   return aTypePolicy({
@@ -105,7 +106,7 @@ describe('runOneSubagent: token', () => {
     await runOneSubagent(
       CONTEXT,
       aConsultOptions({ type: 'review', task: 'x', policy: policy(false), token: optionsToken }),
-      { task: 'x', token: jobToken, signal: undefined },
+      { task: 'x', token: jobToken, id: JOB_ID, signal: undefined },
     );
     const args = capturedPiArgs[0] ?? [];
     const index = args.indexOf('--name');
@@ -127,7 +128,7 @@ describe('runOneSubagent: onModelEvent', () => {
         task: 'x',
         policy: { ...policy(false), models: [candidate] },
       }),
-      { task: 'x', token: 'job-token-1', signal: undefined },
+      { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
       { onModelEvent: (event) => received.push(event) },
     );
 
@@ -157,7 +158,7 @@ describe('runOneSubagent: onFallback', () => {
         task: 'x',
         policy: { ...policy(false), models: ['p/candidate', next] },
       }),
-      { task: 'x', token: 'job-token-1', signal: undefined },
+      { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
       { onFallback: (attempt) => fallbacks.push(attempt) },
     );
 

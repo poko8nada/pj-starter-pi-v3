@@ -60,7 +60,7 @@ export interface RunOptions {
   }) => void;
   /** 完了のフック。待たずに結果を受け取る関数で、返す promise より先に呼ぶ */
   readonly onDone?: (result: RunResult) => void;
-  /** 再試行のイベント。サブエージェントの出力が届くたびに呼ぶ */
+  /** 再試行のイベントが届いたときに呼ぶ */
   readonly onModelEvent?: (event: ModelEvent) => void;
 }
 

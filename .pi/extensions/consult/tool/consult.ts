@@ -282,12 +282,7 @@ async function consult(
   options: ConsultOptions,
   job: SubagentJob,
 ): Promise<ConsultOutcome> {
-  const { run, install } = await runOneSubagent(
-    ctx,
-    options,
-    job,
-    modelNotifier(ctx, job.id ?? 'consult'),
-  );
+  const { run, install } = await runOneSubagent(ctx, options, job, modelNotifier(ctx, job.id));
   const events = parseEvents(run.stdout);
   const usage = usageFrom(events);
   const state = stateOf(run);
@@ -300,7 +295,7 @@ async function consult(
     turns: usage.turns,
     turnsLimit: options.policy.limits.turns,
     spend: `${usage.cost.toFixed(4)} usd`,
-    ...(job.id === undefined ? {} : { id: job.id }),
+    id: job.id,
     ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
     ...(reason === undefined ? {} : { reason }),
   };

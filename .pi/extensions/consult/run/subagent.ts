@@ -45,7 +45,7 @@ export interface SubagentJob {
   /** 同じ worktree の会話の続きから始めるか */
   readonly continueSession?: boolean;
   /** メインエージェントが振った id。塊に載せて、メインエージェントがどのサブエージェントか区別できるようにする */
-  readonly id?: string;
+  readonly id: string;
   /** サブエージェントのプロセスが起きた直後に呼ばれる。実行の記録（`run/log.ts`）に pid を書くための関数 */
   readonly onStarted?: (pid: number) => void;
 }
