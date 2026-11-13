@@ -460,17 +460,20 @@ export interface RecordingPi {
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 の `fixed:` 1 件（`checks.test.ts:38` の表題を `cwd からの相対を返す` に修正）を現物で確認し、本文は happy の相対パスの断言のみで空パス分岐を約束していないため、Stale は解消している。理由: 表題と本文が一致し、削除済みの振る舞いを約束していない。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: quality-gate のファイルが `gate/` に集まり、quality-gate と sound-notify のテストが前提を fixture から受け取り、説明と希少な確認が整理される — 達成した。
+- Ran: `pnpm test:related`（3 files / 19 tests）、`pnpm test:run`（66 files / 871 tests）、`pnpm typecheck`（root ok、.pi ok）、`pnpm lint`、`pnpm format:check`、変えたファイルと名指すファイルの読み直し — すべて成功した。
+- Findings: なし
 - Doubts:
+  - `toRelative(cwd, cwd)` の空の相対パスは ADR 04 が希少な入力として削除を決めた。happy の相対パスだけを残す。
+  - `README.md` の `Tests` セクションの説明（`filterByExtensions` の省略）は、オーナーが残すと決めた。この plan はパスだけを `gate/targets.test.ts` に直した。
+  - `gate/checks.fixture.ts` は `quality-gate/` のルートではなく `gate/` に置いた（ADR 01 の決定。design.md の feature root は Unit のルートを指すが、この Unit の関心の単位は `gate/` である）。
