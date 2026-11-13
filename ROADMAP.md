@@ -4,6 +4,7 @@
 
 | No  | Ver   | status | cycles | priority | title                         |
 | --- | ----- | ------ | ------ | -------- | ----------------------------- |
+|     | 1.0.2 | _todo_ |        | mid      | yoloの拡張機能化              |
 |     | 1.0.1 | _todo_ |        | mid      | quality-gateの例外追加        |
 |     | 1.0.1 | _todo_ |        | mid      | tmpファイルの即時削除拡張機能 |
 |     | 1.0.1 | _todo_ |        | high     | pi 1.5.0への対応              |
@@ -21,6 +22,7 @@
 
 | No  | Ver   | status | cycles       | priority | title                                     |
 | --- | ----- | ------ | ------------ | -------- | ----------------------------------------- |
+| 031 | 0.9.6 | _todo_ |              | low      | スキルの追加修正                          |
 | 030 | 0.9.6 | done   | 063-d, 064-d | mid      | スキルの修正                              |
 | 029 | 0.9.6 | _todo_ |              | mid      | プリンシプルに違反しているコードの修正    |
 | 028 | 0.9.6 | _todo_ |              | mid      | 不要テストの整理                          |
@@ -51,6 +53,45 @@
 | 003 | 0.9.1 | done   | 045-d        | mid      | planスキル、ゴールフォーマットと導出変更  |
 | 002 | 0.9.1 | done   | 045-d        | low      | sound-notifyの設定値json化                |
 | 001 | 0.9.0 | done   | 044-d        | high     | ロードマップの初版の基盤整備              |
+
+### 0.9.6 031
+
+- description:
+  - スキルを一部更新したい
+- ideas:
+  - adr
+    - scopeのテーブルが、エージェントごとに解釈がぶれるまたは、MECEでないので、下に改める。
+    - 分類と、テーブルに書くことは問いに変更
+    - in: このセッションで変更する、または整合を確認する作業対象になる
+    - out: 作業対象にならない。理由を1行書く
+    - それぞれ独立に判定し、同時に in になってよい（ただし、各項目は必ずin outのどちらか1つに属する）
+    - 指示文のように読み手の振る舞いを決める文書では、expression だけの変更でも、読み手の振る舞いが変わるなら result と logic も in にする
+    - result と logic の境は、logic を変更し、成果物が変わるなら result も in。両方 in でいい。
+    ```md
+    | kind          | question (yes → in)                                                                                                                               |
+    | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | result        | Does what can be observed from outside change? (what is returned, written, or emitted; side effects; what a reader receives)                      |
+    | logic         | Do the decisions, steps, or rules that produce the result change? (conditions, order, algorithms, constraints, instructions a reader must follow) |
+    | structure     | Does how things are divided, ordered, nested, or placed change? (module split, schema shape, section layout, file placement)                      |
+    | expression    | Does the surface notation change? (names, wording, tone, formatting, spelling)                                                                    |
+    | upstream      | Is an external thing the product relies on added, updated, or removed? (package, library, external contract, data source, cited source)           |
+    | downstream    | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other documents, documents that describe it)           |
+    | existing      | Must an existing entity be moved or fixed? (stored data, installed versions, already-distributed documents, past records)                         |
+    | cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
+    | safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
+    | failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
+    | verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed?                                                       |
+    | observability | Do the records or signals the product leaves change? (logs, metrics, audit records)                                                               |
+    | release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
+    | other         | Is there a concern that none of the above covers?                                                                                                 |
+    ```
+    - エントリの分割に加えて、議論する順番の条件も決める。基本的に、先に決めた結果が後のエントリに影響を与えるものが先。エントリの分割提案時点で、順番いついても説明させる
+    - detailsに、全文、全ロジックは書かない。plan作成時に具体化できるように、適宜省略して表現することと明記。
+  - plan
+    - 5.  Confirm what the plan leaves openは、報告するのではなく、エージェントのプリンシプルを基準とした意見を言わせて、それにオーナーが回答する形にする
+  - close
+    - コミットは、roadmapがwipの場合は、close.mdだけ行うと明記
+    - verifyedのFixedは修正があった場合、右のように変更する Fixed: <変更内容を簡潔に説明> (<commit>)
 
 ### 0.9.6 030
 
@@ -115,9 +156,7 @@
 - description:
   - プリンシプル違反のコードがあれば、修正したい。
 - ideas:
-  - pi.fixtureはもう共通で使われてない。コメントも古い
-  - consultのモックのpiはそのままでいいのか。
-  - これ以外で、何があるかは現在不明である。リサーチする必要がある。ない場合はないままでよい。
+  - 何があるかは現在不明である。リサーチする必要がある。ない場合はないままでよい。
   - 基本的に振る舞いは変えない。ただし、バグになり得る実装であれば修正も検討する。
   - 不要な引数が残ったままでないか
 
@@ -131,6 +170,7 @@
   - 同じ振る舞いを確認するテストが2つ以上ないか
   - 同じ前提を共有すべきテストが、それぞれで前提を持っていないか
   - 不要な引数が残ったままではないか
+  - pi.fixtureはもう共通で使われてない。コメントも古い
 
 ### 0.9.6 027
 
