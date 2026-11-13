@@ -413,9 +413,9 @@ export interface RecordingPi {
 
 ### Slice 1: quality-gate の置き場所と前提
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b409eee6ec559e82ab2a6f41224c56b79b9a4c50
 - Stopped:
 
 ### Slice 2: sound-notify の前提

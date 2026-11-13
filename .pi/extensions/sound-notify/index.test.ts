@@ -6,6 +6,8 @@
  * pi と ctx は必要な窓口だけの偽物で足りる。入口の配線は `registerSoundHandlers` に
  * 設定を直接渡し、実 FS の `settings.json` に依存させない。既定 export の結線だけは
  * 一時ディレクトリの実ファイルで確かめる。
+ *
+ * 偽の `pi` は `index.fixture.ts` の `recordingPi()` が組み立てる。
  */
 
 import { writeFileSync } from 'node:fs';
@@ -19,9 +21,9 @@ import entry, {
   registerSoundHandlers,
   setPlayer,
   type CtxPort,
-  type EntryPiPort,
   type PiPort,
 } from './index.ts';
+import { recordingPi, type RecordingPi } from './index.fixture.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
 import { defaultSettings, type Settings } from './settings/schema.ts';
 
@@ -61,78 +63,39 @@ function commitEvent(overrides: Partial<ToolExecutionEndEvent> = {}): ToolExecut
   };
 }
 
-function isHandler(value: unknown): value is (...args: unknown[]) => unknown {
-  return typeof value === 'function';
-}
-
-function createEntry(config: Settings = defaults): {
-  handlers: Map<string, (...args: unknown[]) => unknown>;
-  calls: Array<{ command: string; args: string[] }>;
-} {
-  const handlers = new Map<string, (...args: unknown[]) => unknown>();
-  const calls: Array<{ command: string; args: string[] }> = [];
-  const recordingPi: EntryPiPort = {
-    on: (...args: unknown[]) => {
-      const [event, handler] = args;
-      if (typeof event === 'string' && isHandler(handler)) {
-        handlers.set(event, handler);
-      }
-      return () => undefined;
-    },
-    exec: async (command: string, args: string[]) => {
-      calls.push({ command, args });
-      return undefined;
-    },
-  };
-  registerSoundHandlers(recordingPi, config);
-  return { handlers, calls };
+function createEntry(config: Settings = defaults): RecordingPi {
+  const recording = recordingPi();
+  registerSoundHandlers(recording.pi, config);
+  return recording;
 }
 
 /** 既定 export を一時ディレクトリの実ファイルで走らせる。dir も返す。 */
-function entryWithFile(document: unknown): {
-  dir: string;
-  handlers: Map<string, (...args: unknown[]) => unknown>;
-  calls: Array<{ command: string; args: string[] }>;
-} {
+function entryWithFile(document: unknown): RecordingPi & { dir: string } {
   const dir = tempDir();
   writeFileSync(
     join(dir, 'settings.json'),
     typeof document === 'string' ? document : JSON.stringify(document),
   );
-  const handlers = new Map<string, (...args: unknown[]) => unknown>();
-  const calls: Array<{ command: string; args: string[] }> = [];
-  const recordingPi: EntryPiPort = {
-    on: (...args: unknown[]) => {
-      const [event, handler] = args;
-      if (typeof event === 'string' && isHandler(handler)) {
-        handlers.set(event, handler);
-      }
-      return () => undefined;
-    },
-    exec: async (command: string, args: string[]) => {
-      calls.push({ command, args });
-      return undefined;
-    },
-  };
-  entry(recordingPi, dir);
-  return { dir, handlers, calls };
+  const recording = recordingPi();
+  entry(recording.pi, dir);
+  return { ...recording, dir };
 }
 
+const played: string[] = [];
+let restorePlayer: () => void;
+
+beforeEach(() => {
+  played.length = 0;
+  restorePlayer = setPlayer(async (_pi, soundName) => {
+    played.push(soundName);
+  });
+});
+
+afterEach(() => {
+  restorePlayer();
+});
+
 describe('sound-notify.settings', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('enabled が false ではハンドラが鳴らない', async () => {
     const disabled: Settings = { ...defaults, enabled: false };
     const { handlers } = createEntry(disabled);
@@ -153,20 +116,6 @@ describe('sound-notify.settings', () => {
 });
 
 describe('sound-notify.default-export', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('登録後の書き換えでも古い音のままである（起動時の 1 回だけ読む）', async () => {
     const { dir, handlers } = entryWithFile(withSounds({ commit: CUSTOM_SOUND }));
     writeFileSync(
@@ -179,20 +128,6 @@ describe('sound-notify.default-export', () => {
 });
 
 describe('sound-notify.commit', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('bash の結果にコミットの形があれば commit の音が 1 回鳴り 6 桁では鳴らない', () => {
     run(commitEvent());
     expect(played).toEqual([defaults.sounds.commit]);
@@ -231,29 +166,15 @@ describe('sound-notify.commit', () => {
 });
 
 describe('sound-notify.compact', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('圧縮が終われば cmux の exec は呼ばれない', async () => {
     const calls: Array<{ command: string; args: string[] }> = [];
-    const recordingPi: PiPort = {
+    const compactPi: PiPort = {
       exec: async (command, args) => {
         calls.push({ command, args });
         return undefined;
       },
     };
-    handleSessionCompact(recordingPi, ctx, defaults);
+    handleSessionCompact(compactPi, ctx, defaults);
     await Promise.resolve();
     expect(calls).toEqual([]);
     expect(played).toEqual([defaults.sounds.compact]);
@@ -266,20 +187,6 @@ describe('sound-notify.compact', () => {
 });
 
 describe('sound-notify.guard', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('hasUI が false なら commit でも compact でも鳴らない', () => {
     const noUI: CtxPort = { hasUI: false };
     handleToolExecutionEnd(pi, noUI, commitEvent(), defaults);
@@ -289,20 +196,6 @@ describe('sound-notify.guard', () => {
 });
 
 describe('sound-notify.prompt', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('title が permission を含めば permission の音が鳴る', async () => {
     const { handlers } = createEntry(defaults);
     await handlers.get('ui_prompt_start')?.({ title: PERMISSION_TITLE }, ctx);
@@ -342,20 +235,6 @@ describe('sound-notify.prompt', () => {
 });
 
 describe('sound-notify.entry', () => {
-  const played: string[] = [];
-  let restorePlayer: () => void;
-
-  beforeEach(() => {
-    played.length = 0;
-    restorePlayer = setPlayer(async (_pi, soundName) => {
-      played.push(soundName);
-    });
-  });
-
-  afterEach(() => {
-    restorePlayer();
-  });
-
   it('session_compact を登録しそのハンドラを呼ぶと compact が 1 回鳴る', async () => {
     const { handlers } = createEntry(defaults);
     const handler = handlers.get('session_compact');
