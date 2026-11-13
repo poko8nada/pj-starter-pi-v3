@@ -222,16 +222,18 @@ export interface ConsultRuntime {
 
 ### Slice 2: コマンドの登録と通知
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `.pi/extensions/consult/tool/consult.test.ts` の `seedRunning` の引数を `Partial<RunRecord>` に広げた。終わった記録を開始行に `ended` と `state` を足して作るために要る。
+  - 同テストの「task を持つ記録」は、`RunRecord` に `task` の欄がないため、記録の JSONL に `task` を紛れ込ませて一覧に出ないことを見る形にした。`rowOf` と `readRuns` は `task` を読まない。
+- Commit: 2197bd5
 - Stopped:
 
 ### Slice 3: ドキュメント
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7df4fa9
 - Stopped:
 
 ## Work Review
