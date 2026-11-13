@@ -27,7 +27,7 @@
 | 030 | 0.9.6 | done   | 063-d, 064-d | mid      | スキルの修正                              |
 | 029 | 0.9.6 | _todo_ |              | mid      | プリンシプルに違反しているコードの修正    |
 | 028 | 0.9.6 | _todo_ |              | mid      | 不要テストの整理                          |
-| 027 | 0.9.6 | wip    |              | mid      | consultの改修                             |
+| 027 | 0.9.6 | done   | 066-d        | mid      | consultの改修                             |
 | 026 | 0.9.6 | done   | 062-d        | mid      | vitest, harness, product-readyの改修      |
 | 025 | 0.9.5 | done   | 060-d        | mid      | スキルの修正                              |
 | 024 | 0.9.5 | done   | 058-d, 059-d | mid      | スキルの見直し                            |
