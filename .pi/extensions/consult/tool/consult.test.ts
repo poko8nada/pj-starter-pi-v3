@@ -634,6 +634,15 @@ describe('modelNotifier: 乗り換え', () => {
 
     expect(notices[0]?.message).toContain('(model unknown)');
   });
+
+  it('start を見ていない retry-end → 何も出さない', () => {
+    const { ctx, notices } = fakeConsultContext();
+    const { onModelEvent } = modelNotifier(ctx, 'consult-1');
+
+    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
+
+    expect(notices).toEqual([]);
+  });
 });
 
 describe('consult: 通知の配線', () => {

@@ -268,6 +268,9 @@ export function modelNotifier(
         );
         return;
       }
+      if (maxAttempts === 0) {
+        return;
+      }
       notify(retryEndLine(label, model, event.attempt, maxAttempts, event.success));
     },
     onFallback: (attempt) => {
