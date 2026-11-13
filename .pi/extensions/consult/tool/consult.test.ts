@@ -24,7 +24,7 @@ import {
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { aRunRecord } from '../consult.fixture.ts';
-import { appendRun, readRuns, type CheckRecord } from '../run/log.ts';
+import { appendRun, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import type { SubagentHooks, SubagentJob } from '../run/subagent.ts';
@@ -156,18 +156,16 @@ function flush(): Promise<void> {
   });
 }
 
-/** 走っている行を 1 本書く。pid が生きている間だけ述語は true */
-function seedRunning(
-  place: Place,
-  extra: { session?: string; subagent?: string; pid?: number } = {},
-) {
+/** 走っている行を 1 本書く。pid が生きている間だけ述語は true。`extra` で終わりの欄も足せる */
+function seedRunning(place: Place, extra: Partial<RunRecord> = {}) {
   appendRun(
     place,
     aRunRecord({
       session: extra.session ?? SESSION,
       subagent: extra.subagent ?? 'consult-9',
       pid: extra.pid ?? process.pid,
-      started: Date.now(),
+      started: extra.started ?? Date.now(),
+      ...extra,
     }),
   );
 }
@@ -674,6 +672,85 @@ describe('consult: 通知の配線', () => {
     expect(
       notices.some((notice) => notice.type === 'warning' && notice.message.includes(`→ ${next}`)),
     ).toBe(true);
+  });
+});
+
+describe('status', () => {
+  it('走っている記録が 2 件 → 1 回の通知に 2 行、info で出す', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime, place } = setup(pi, run);
+    seedRunning(place, { subagent: 'consult-1' });
+    seedRunning(place, { subagent: 'consult-2' });
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]?.type).toBe('info');
+    const lines = notices[0]?.message.split('\n') ?? [];
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain('consult-1');
+    expect(lines[1]).toContain('consult-2');
+  });
+
+  it('走っている記録がない → no subagents running in this session を info で出す', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime } = setup(pi, run);
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices).toEqual([{ message: 'no subagents running in this session', type: 'info' }]);
+  });
+
+  it('終わった記録だけ → no subagents running in this session を出す', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime, place } = setup(pi, run);
+    seedRunning(place, { subagent: 'consult-1', ended: Date.now(), state: 'done' });
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices[0]?.message).toBe('no subagents running in this session');
+    expect(notices[0]?.message).not.toContain('consult-1');
+  });
+
+  it('別セッションの走っている記録 → 出さない', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime, place } = setup(pi, run);
+    seedRunning(place, { subagent: 'consult-9', session: 'other-session' });
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices[0]?.message).toBe('no subagents running in this session');
+    expect(notices[0]?.message).not.toContain('consult-9');
+  });
+
+  it('task を持つ記録 → 行に task を出さない', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime, place } = setup(pi, run);
+    const task = 'ひみつの依頼';
+    const started = aRunRecord({
+      session: SESSION,
+      subagent: 'consult-1',
+      pid: process.pid,
+      started: Date.now(),
+    });
+    // RunRecord は task を持たない。記録の JSONL に task が紛れていても、一覧に出さないことを見る
+    const withTask = { ...started, task };
+    appendRun(place, withTask);
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices[0]?.message).toContain('consult-1');
+    expect(notices[0]?.message).not.toContain(task);
   });
 });
 

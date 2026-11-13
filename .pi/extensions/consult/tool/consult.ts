@@ -4,7 +4,7 @@
  * サブエージェントを起こすのは `consult_run`（`tool/run.ts` の面）から。1 呼び出し = 1 体で、行き先の worktree と、続きを使うかをメインエージェントが指す。
  * 設定（モデル・ツール・isolated・paths・bash・続きの既定・上限・役割）は types.json が持ち、上書きする窓口は作らない。設定は呼び出しごとに読むので、変えたら次から効く。
  *
- * 起こしたらすぐ `started: <id>` を返し、メインエージェントは待たない。サブエージェントごとの完了で `pi.sendMessage` に本文を渡す。走っているサブエージェントの一覧と停止は、道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
+ * 起こしたらすぐ `started: <id>` を返し、メインエージェントは待たない。サブエージェントごとの完了で `pi.sendMessage` に本文を渡す。走っているサブエージェントの一覧は同じ記録と整形（`listText`）から読み、停止は道具の `action` とスラッシュコマンドの両方から同じ `control` を呼ぶ。
  */
 
 import { dirname } from 'node:path';
@@ -23,7 +23,7 @@ import {
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
-import { latest } from './subagents.ts';
+import { latest, listText } from './subagents.ts';
 import {
   type PARAMETERS as RUN_PARAMETERS,
   USAGE as RUN_USAGE,
@@ -498,6 +498,7 @@ export interface ConsultRuntime {
   run(...args: RunExecuteArgs): Promise<AgentToolResult<Record<string, unknown>>>;
   control(action: ControlAction, session: string): ControlOutcome;
   commands: {
+    status(args: string, ctx: CommandContext): Promise<void>;
     cancel(args: string, ctx: CommandContext): Promise<void>;
     sound(args: string, ctx: CommandContext): Promise<void>;
   };
@@ -540,6 +541,11 @@ export function createRuntime(
     control: (action, session) =>
       controlSubagent(action, state.subagents, state.place, session, undefined, check),
     commands: {
+      status: async (_args, ctx) => {
+        const records = readRuns(state.place, { session: state.sessionNow() });
+        const text = listText(records, Date.now(), state.check, 'running');
+        ctx.ui.notify(text, 'info');
+      },
       cancel: async (args, ctx) => {
         const id = args.trim();
         if (id === '') {

@@ -1,7 +1,7 @@
 /**
  * consult 拡張の入口であり、道具、スラッシュコマンド、完了報告のレンダラーの登録を行う。
  *
- * 走っているサブエージェントの管理は `tool/consult.ts` の `createRuntime` が 1 か所で持つ。道具の `action` とコマンドは同じ `control` を呼ぶ。
+ * 走っているサブエージェントの管理は `tool/consult.ts` の `createRuntime` が 1 か所で持つ。一覧は同じ記録と整形（`listText`）から読み、停止は道具の `action` とコマンドが同じ `control` を呼ぶ。
  * 保存場所（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは保存場所を一時ディレクトリに逃がせる。
  */
 
@@ -196,8 +196,12 @@ function announceRunningSubagents(
   );
 }
 
-/** 人が使う入口である。サブエージェントの停止と、音の切り替えを受け付ける */
+/** 人が使う入口である。サブエージェントの一覧と停止、音の切り替えを受け付ける */
 function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
+  pi.registerCommand('consult-status', {
+    description: 'List the running consult subagents of this session',
+    handler: (args, ctx) => consult.commands.status(args, ctx),
+  });
   pi.registerCommand('consult-cancel', {
     description: 'Stop a running consult subagent (usage: /consult-cancel <id>)',
     handler: (args, ctx) => consult.commands.cancel(args, ctx),
