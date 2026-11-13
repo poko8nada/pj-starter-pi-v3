@@ -215,9 +215,9 @@ export interface ConsultRuntime {
 
 ### Slice 1: 一覧の絞り込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 830a74e
 - Stopped:
 
 ### Slice 2: コマンドの登録と通知
