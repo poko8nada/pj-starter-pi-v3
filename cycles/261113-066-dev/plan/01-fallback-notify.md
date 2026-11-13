@@ -473,9 +473,9 @@ export function modelNotifier(
 
 ### Slice 2: 乗り換えの継続条件
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `.pi/extensions/consult/run/run.ts` の冒頭コメントで `CLI` の後ろの語を `バージョン` に直した。ja-check がこのファイルを変えた commit で既存の行をエラーにし、commit が止まるため。
+- Commit: 492e95b
 - Stopped:
 
 ### Slice 3: 再試行と乗り換えの通知
