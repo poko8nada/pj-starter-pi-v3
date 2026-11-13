@@ -94,9 +94,8 @@ describe('readStartToken', () => {
     expect(readStartToken(123, run)).toBeUndefined();
   });
 
-  it('status 0 で出力が空・空白だけ → undefined', () => {
+  it('readStartToken: (empty) 出力が空 → undefined', () => {
     expect(readStartToken(123, ps({ status: 0, stdout: '', stderr: '' }))).toBeUndefined();
-    expect(readStartToken(123, ps({ status: 0, stdout: '   \n  ', stderr: '' }))).toBeUndefined();
   });
 });
 
@@ -126,10 +125,8 @@ describe('ps の引数', () => {
       called += 1;
       return { status: 0, stdout: `${START}\n`, stderr: '' };
     };
-    expect(checkPid(0, START, run)).toBe('ended');
     expect(checkPid(-5, START, run)).toBe('ended');
     expect(checkPid(3.5, START, run)).toBe('ended');
-    expect(readStartToken(0, run)).toBeUndefined();
     expect(readStartToken(-5, run)).toBeUndefined();
     expect(readStartToken(3.5, run)).toBeUndefined();
     expect(called).toBe(0);

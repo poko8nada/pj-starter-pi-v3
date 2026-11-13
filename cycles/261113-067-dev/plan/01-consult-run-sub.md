@@ -322,13 +322,13 @@ function aBudgetPi(
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: b747acd
 - Stopped:
 
 ### Slice 4: 到達しない入力と同じ分岐の整理
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
