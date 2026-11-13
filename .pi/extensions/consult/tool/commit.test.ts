@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { commitInWorktree, commitMessage, compose, parseCommitRequest } from './commit.ts';
 import type { GitRun } from '../run/run.ts';
 
-// worktree とリポジトリを実際に作る検査はここでは扱わない（`consult_worktree` の検査と、最後のメインエージェントの `use` 検証が実もので見る）。
+// worktree とリポジトリを実際に作る検査はここでは扱わない（`consult_worktree` の検査が実もので見る）。
 // ここは「3 つの結果」と「メッセージの型」と「引数の面」を、差し替えた git で試す。
 
 /** 状態を持つ偽 git。呼ばれた引数を覚えて、決めた出力を返す */
