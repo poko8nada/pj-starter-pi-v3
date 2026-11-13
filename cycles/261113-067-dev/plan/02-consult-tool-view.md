@@ -385,16 +385,25 @@ export function aWidgetUI(): {
 ### Round 2
 
 - Stale:
+  - OK — `.pi/extensions/consult/index.test.ts:320` は「入口を呼ぶ → consult のレンダラーが 1 件登録される」になっており、本文は `received` の長さ 1 だけを見る（`:320-323`）。`renderNotice` の import・参照はなく、題名と確認が一致する。理由: 具体名を落として長さだけの確認と一致させるという `fixed:` の内容どおりになり、古さが解消されたため。
+  - OK — `.pi/extensions/consult/index.test.ts:325` は「consult-status を登録する → 説明文を持つ」になっており、本文は `commands.get('consult-status')` と `description` だけを見る（`:325-329`）。`notices`・`ctx`・ハンドラ呼び出しはなく、題名と確認が一致する。理由: 呼び出しと通知の約束を落とすという `fixed:` の内容どおりになり、古さが解消されたため。
+  - OK — `.pi/extensions/consult/index.test.ts:274` は「同じ印で tick を進める → 送り 1 回、音 1 回、2 回目は送らない」になっており、本文は `sent` と `played` の 3 断言だけを見る（`:283-287`）。`rowsOf` の import・参照はなく、一覧の running→done の文言は題名にない。理由: 一覧を落として通知と音だけに絞るという `fixed:` の内容どおりになり、古さが解消されたため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 3 件は題名どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: consult の `tool`、`view`、`index`、`policy` のテストが、各テスト固有の事実だけを残し、同じ事実をレイヤーごとに1回確認する形になる。達成した。
+- Ran: `pnpm test:run`（66 ファイル、869 件成功）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、plan の Always の読合わせ。
+- Findings: なし。
+- Doubts: cleanup で 3 件減（重複する番号・文面・短名と USAGE 断言）。plan の見込みは 2 件増だったが、cleanup 後は base より 1 件少ない 869 件。
