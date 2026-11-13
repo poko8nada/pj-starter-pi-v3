@@ -191,16 +191,23 @@ ROADMAP.md
 ### Round 2
 
 - Stale:
-- Unlisted:
+  - なし（`.pi/skills/adr/references/adr.format.md:150` の fixed を確認した。第1文から `the document` と `concrete` が消え、`:149` の「具体物を書く」の言い直しではなくなっている。149 はセクションが何を持つか、150 は書く要素の列挙で、役割が分かれた）
+- Unlisted: なし（修正の差分 `ef1a49b` は `adr.format.md` の2箇所と本 plan の `## Notes`・Round 1、および Slice 1 step 3 のフェンスのみで、`## Files` の他のパスは触っていない。plan md は `## Files` に無い作業文書）
 - Gaps:
+  - なし（`.pi/skills/adr/references/adr.format.md:115-116` の fixed を確認した。`In:` に「what this session changes, or checks for consistency」、`Out:` に「not a target, with the reason on the line」が入り、問いの yes/no が何を意味するか読めるようになった。031 の in/out の意味と一致する）
 - Policy:
-- Unproven:
-- Noise:
+  - なし（修正は Slice 1 の Allowed の範囲で、`13種を残さない`・`過去の adr.md を書き換えない`・`In:`/`Out:` の入れ子の形を変えない、の3つの Forbidden に触れていない。`:117` を変えなかったのも Slice 1 step 3 の「以降の3本は変えない」に従っている）
+- Unproven: なし（fixed の2点は文書の文言だけで、テストで決まる挙動を持たない。`Added: なし` の計画どおり新しいテストは無い）
+- Noise: なし（修正は2行の文言と plan のフェンスの同期だけで、テスト・型・スキーマ・DB 制約に触れていない）
 - Doubts:
+  - `.pi/skills/adr/references/adr.format.md:116` の `with the reason on the line` は `:117` の `When a kind is Out, carry its reason.` と同じことを言う。Round 1 で `left` として記録済みで、Slice 1 の Policy に従った結果なので finding にしない。
+  - 本 plan の Slice 1 step 3 のフェンスを「031 の in/out の意味に合わせた」に広げている。Round 1 の Gaps は「plan が決めた範囲との衝突はオーナーの判断が要る」としていたので、この拡張にオーナーの承認があるかは修正の記録からは分からない。
+  - `:149` と `:150` はどちらも `#### Details` に何を置くかに触れる。149 はセクションの役割、150 は書く要素の列挙で役割が違うと読んだが、重なりが残ると読む余地はある。
+  - この役では `pnpm test:related` / `typecheck` / `lint` / `format:check` を実行できない（subagent-guard で `git diff`/`status`/`log` 以外が打てない）。長くなった `:115-116` が prettier の整形に合うかは未確認。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: adr の `Scope` が14の問いへの yes/no で決まり、`#### Details` が決めた具体物を適宜持つようになる — 達成している（`## Scope` に14種の表と4本の規則、`In:`/`Out:` の意味、`## Decision` の `#### Details` に具体物の規則が入っている）
+- Ran: `pnpm test:run`（65 files / 830 tests）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、変更した `adr.format.md` の `## Scope` と `## Decision` の読み直し
+- Findings: なし
+- Doubts: なし
