@@ -53,7 +53,7 @@ consult_run({ role: "code", task: "Fix the failing check in run/log.ts", worktre
 
 **One call is one subagent.** Two subagents mean two calls; both run at once, and each finishes into its own message. There is no `input` parameter: the subagent reads what it needs, and the path goes in `task`.
 
-The call returns `started: <id>` with what is running at that moment. `id` is what `consult_subagents` and the commands take.
+The call returns `started: <id>` with what is running at that moment. `id` is what `consult_subagents` and `/consult-cancel` take; `/consult-status` and `/consult-sound` take no id.
 
 The task reaches the subagent on stdin, not as an argument, so a task that begins with `-` or `@` stays text.
 
@@ -179,12 +179,12 @@ Above the editor, consult shows one line for the running subagents of this sessi
 
 **Esc does not stop a subagent.** The tool call has already returned, so there is no call left to cancel. Use `consult_subagents{action: "cancel", id}` (or `/consult-cancel <id>`).
 
-There are two faces for stopping a subagent, and one implementation behind them:
+There are two faces for a subagent, one for listing and one for stopping, and each has one implementation behind it — the list reads the same record and formatting, and stopping calls the same `control`:
 
-| Who       | How                                                              |
-| --------- | ---------------------------------------------------------------- |
-| The user  | `/consult-cancel <id>` stops one                                 |
-| The agent | the `consult_subagents` tool with `action: "cancel"` and an `id` |
+| Who       | How                                                                                   |
+| --------- | ------------------------------------------------------------------------------------- |
+| The user  | `/consult-status` lists the running ones; `/consult-cancel <id>` stops one            |
+| The agent | the `consult_subagents` tool with `action: "list"`, or `action: "cancel"` and an `id` |
 
 An unknown id is refused with a reason, and nothing is stopped. A subagent this instance holds is stopped through its `AbortSignal`; a subagent from before a reload is stopped by sending SIGTERM to the pid in the record — only when it is still running (no end row for that subagent and its `startToken` still matches its pid's `lstart`), since the end row is written by the side that held that subagent, and where that side is already gone the row stays `lost` and its worktree is left in place (with its changes) so the agent can decide. A start with an end row, or with a `startToken` that no longer matches, is refused as already finished or lost and nothing is killed.
 

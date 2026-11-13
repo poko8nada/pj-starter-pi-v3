@@ -215,50 +215,92 @@ export interface ConsultRuntime {
 
 ### Slice 1: 一覧の絞り込み
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 830a74e
 - Stopped:
 
 ### Slice 2: コマンドの登録と通知
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `.pi/extensions/consult/tool/consult.test.ts` の `seedRunning` の引数を `Partial<RunRecord>` に広げた。終わった記録を開始行に `ended` と `state` を足して作るために要る。
+  - 同テストの「task を持つ記録」は、`RunRecord` に `task` の欄がないため、記録の JSONL に `task` を紛れ込ませて一覧に出ないことを見る形にした。`rowOf` と `readRuns` は `task` を読まない。
+- Commit: 2197bd5
 - Stopped:
 
 ### Slice 3: ドキュメント
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7df4fa9
 - Stopped:
+
+### Cleanup: 一覧の絞り込みのテスト
+
+- Findings: なし
+- Unplanned:
+  - `tool/subagents.test.ts` の「all で記録がない」を落とした。「記録がなければそう言う」が同じ既定（`all`）の空文面をすでに見ている。
+  - 同ファイルの「記録が空 → 空の一覧」を落とした。`listText` の空文面のテストが同じ空の記録で `rowsOf` の空をすでに通る。
+  - 同ファイルの `runningAndDone` を切り出し、「running」と「all」の 2 つのテストで共有した。同じ記録で `where` だけを変える前提を各テストが持っていた。
+  - `tool/consult.test.ts` の「task を持つ記録 → 行に task を出さない」を落とした。`RunRecord` に `task` の欄がないことを型が決めており、記録の JSONL に紛れ込ませる前提は型がすでに否定している。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/index.test.ts:336` — コメント「このテストが確かめるのは配線だけ」が、`fakeEntry` に切り出して 2 つのテスト（342、347）が共有する形になった後も 1 つのテストを指したまま。理由: 読む者が「このテスト」の範囲を取り違え、偽物の前提（4 つの入口だけを持つ）がどれに掛かるかを誤解する。
+    - fixed: コメントを「入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す」に直し、共有する `fakeEntry` 全体を指す形にした。
+  - `.pi/extensions/consult/README.md:56` — 「`/consult-status` and `/consult-sound` take none」は引数を取らないとも読めるが、`/consult-sound` は `on|off` を取る（`.pi/extensions/consult/index.ts:210`）。プランの「id を取らない」が英語で落ちている。理由: `/consult-sound on` を読んだ人が「引数は無効」と誤解する。`take no id` に直すべき。
+    - fixed: `take none` を `take no id` に直した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/consult/tool/subagents.test.ts:160` — `running` のケースが別 id の 2 体（`runningAndDone`）だけで、同じ subagent に開始行と終わりの行が並ぶ組を見ていない。プラン slice 1 step 1.2 の「`latest` の後に絞る（先に絞ると同じ subagent の終わりの行が `running` 側に残る）」前提を逆にしても全テストが緑のまま。理由: 実際の終了は開始行＋終わりの行の 2 行で残るので、順序を逆にすると `/consult-status` に終わった subagent が running として出るのに、どのチェックも落ちない。`consult.test.ts:712` も終わりの欄を開始行に足した 1 本だけで、2 行の組を確かめていない。「`running` で、同じ id に開始行と終わりの行 → 出さない」1 ケースを足すべき。
+    - fixed: `listText` の `running` に「同じ subagent に開始行と終わりの行 → 出さない」ケースを足した。`latest` の前に絞ると開始行が残って running と出るため、このテストは順序を固定する。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - `.pi/extensions/consult/tool/consult.test.ts:718` — 直前の 717 の `toBe('no subagents running in this session')` が文面全体を決めており、`not.toContain('consult-1')` は同じことを二度言っている。理由: 二重の主張は失敗の意味を増やさず、テストの意図を読みにくくする。
+    - fixed: 重複する `not.toContain('consult-1')` を落とした。
+  - `.pi/extensions/consult/tool/consult.test.ts:731` — 同様に 730 の `toBe` の後の `not.toContain('consult-9')` が重複している。理由: 同上。
+    - fixed: 重複する `not.toContain('consult-9')` を落とした。
 - Doubts:
+  - `.pi/extensions/consult/index.test.ts:350` はコマンドの説明文を literal で固定している。ADR が決めた値なので指摘にしないが、文言を変える予定があるなら、テストを落とすか説明文を 1 か所から取る形にするかをオーナーに決めてほしい。
 
 ### Round 2
 
 - Stale:
+  - なし — `.pi/extensions/consult/index.test.ts:336`（1 件目の `fixed:`）: コメントは「入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す」に変わり、「このテスト」が消えた。この行は `fakeEntry`（320-340）の中にあり、342 と 347 が共有する関数全体を指す。偽物の入口は `on`、`registerTool`、`registerCommand`、`registerMessageRenderer` の 4 つで、数も合う。理由: 読む者が指す範囲を取り違える余地が消えた。
+  - なし — `.pi/extensions/consult/README.md:56`（2 件目の `fixed:`）: `take none` は `take no id` になった。`/consult-sound` は `on|off` を取り（`.pi/extensions/consult/tool/consult.ts:569-571`、`.pi/extensions/consult/index.ts:210`）、`/consult-status` は id を読まない。理由: 「引数を取らない」ではなく「id を取らない」というプランの意図どおりになった。
 - Unlisted:
+  - なし
 - Gaps:
+  - なし — `.pi/extensions/consult/tool/subagents.test.ts:195-202`（3 件目の `fixed:`）: 同じ `consult-1` に開始行（`ended` なし、`pid: 4242`）と終わりの行（`ended: 2000`、`notice` なし）を並べ、`running` で `no subagents running in this session` を期待する。`rowsOf` は `latest` の後に `alive || waiting` で絞る（`.pi/extensions/consult/tool/subagents.ts:176-183`）ため、`latest` は終わりの行を選び、`isRunning` は `ended !== undefined` で偽、`isWaiting` は `notice` なしで偽になり、行が残らない。逆に `latest` の前に絞ると開始行だけが残り `consult-1` の行が出るので、このテストは赤になる。理由: プラン slice 1 step 1.2 の「`latest` の後に絞る」前提が、初めてテストで固定された。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - なし — `.pi/extensions/consult/tool/consult.test.ts:718`、`731` の重複した `not.toContain`（4・5 件目の `fixed:`）は、いずれも直前の `toBe('no subagents running in this session')` の後にあって削除され、いまは 717 と 729 の `toBe` が 1 つずつ残るだけになった。文面全体を `toBe` が決める以上、`contains` の否定は同じことを二度言っていた。理由: 主張が 1 つに戻り、失敗の意味が読みやすくなった。
 - Doubts:
+  - Round 1 の Doubts の `.pi/extensions/consult/index.test.ts:350`（説明文の literal 固定）には `fixed:` が付かず、今回も変わっていない。ADR が決めた値なので finding にはしないが、未決のまま残っている。
+  - `.pi/extensions/consult/tool/consult.test.ts:708-718` の「終わった記録だけ」は、Round 1 が挙げた「開始行＋終わりの行の 2 行の組」ではなく、1 行に `ended` を足した形のまま。順序の担保は `listText` 側の新しいテストが持つので finding にはしないが、コマンド経由で 2 行の組を通る道は誰も見ていない。
+  - この Round 2 はコードの読みで判定し、テストは実行していない（この役割では `pnpm` を走らせられない）。`rowsOf` の順序を入れ替えたときに新しいテストが赤になることは、`rowsOf` と `isRunning`/`isWaiting` の定義をたどって確かめた。
 
 ## Acceptance
 
-- Goal:
+- Goal: 達成している。`/consult-status` が、このセッションで動いているサブエージェントの一覧を `info` で出す。記録は `readRuns` と `listText(..., 'running')` から作り、`consult_subagents` の list と同じ整形を使う。
 - Ran:
-- Findings:
+  - `pnpm test:run`: 66 files, 871 tests passed。
+  - `pnpm typecheck`: `root: ok`、`.pi: ok`。
+  - `pnpm lint`: 指摘なし。
+  - `pnpm format:check`: すべて整っている。
+  - 壊して赤を確かめた: `rowsOf` の `running` の絞り込みを外す → 4 件赤。`commands.status` の `'running'` を外す → 4 件赤。`/consult-status` の登録を外す → 1 件赤。3 つとも戻した。
+- Findings: なし
 - Doubts:
+  - `.pi/extensions/consult/index.test.ts:350` の説明文が literal で固定されている。ADR の決定値なので finding にしないが、文言を変えるときはテストも直す必要がある。
+  - 「終わった記録だけ」のコマンド経由のケースは、開始行と終わりの行の 2 行の組ではなく 1 行に `ended` を足した形のまま。`latest` の後に絞る順序は `listText` 側の新しいテストが持つ。

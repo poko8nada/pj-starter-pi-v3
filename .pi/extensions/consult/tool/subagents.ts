@@ -155,31 +155,47 @@ function stateOf(record: RunRecord): string {
   return record.ended === undefined ? 'lost' : (record.state ?? 'done');
 }
 
+/** 一覧に出す範囲。`running` は動いている（生きているか渡し待ち）記録だけ */
+export type ListWhere = 'all' | 'running';
+
 /**
  * 全行から行にする。印の集合は全行から作り、印だけの行は除いて `latest` で 1 体 1 行にまとめる。
  *
  * 生きているかは `check`（既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`）で決め、
  * 渡し待ちかは `deliveredKeys` と `isWaiting` で決める。記録を絞るのは呼び出し側の仕事（一覧は session で絞る）。
+ * `where` が `running` なら、`latest` の後に動いている記録だけを残す（先に絞ると、同じ subagent の
+ * 終わりの行が残るため）。
  */
 export function rowsOf(
   records: readonly RunRecord[],
   check: CheckRecord | undefined,
   now: number,
-): string[] {
+  where: ListWhere = 'all',
+): readonly string[] {
   const delivered = deliveredKeys(records);
   const shown = latest(
     records.filter((record) => record.delivered === undefined || record.ended !== undefined),
-  );
-  return shown.map((record) =>
-    rowOf(record, { alive: isRunning(record, check), waiting: isWaiting(record, delivered) }, now),
-  );
+  ).map((record) => ({
+    record,
+    state: { alive: isRunning(record, check), waiting: isWaiting(record, delivered) },
+  }));
+  const kept =
+    where === 'running' ? shown.filter(({ state }) => state.alive || state.waiting) : shown;
+  return kept.map(({ record, state }) => rowOf(record, state, now));
 }
 
-/** 一覧の本文。見せる行がなければそう言う */
-export function listText(records: readonly RunRecord[], now: number, check?: CheckRecord): string {
-  const rows = rowsOf(records, check, now);
+/** 一覧の本文。見せる行がなければそう言う（範囲で文面を変える） */
+export function listText(
+  records: readonly RunRecord[],
+  now: number,
+  check?: CheckRecord,
+  where: ListWhere = 'all',
+): string {
+  const rows = rowsOf(records, check, now, where);
   if (rows.length === 0) {
-    return 'no subagents in this project yet';
+    return where === 'running'
+      ? 'no subagents running in this session'
+      : 'no subagents in this session yet';
   }
   return rows.join('\n');
 }

@@ -19,7 +19,7 @@ import { renderNotice } from './view/notice.ts';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { rowsOf } from './tool/subagents.ts';
-import type { ConsultMessage, PiFace } from './tool/consult.ts';
+import type { ConsultMessage, CommandContext, PiFace } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
 vi.mock('./run/worktree.ts', async (importOriginal) => {
@@ -311,19 +311,54 @@ describe('reload', () => {
 });
 
 describe('entry wiring', () => {
-  it('入口を呼ぶ → consult のレンダラーとして renderNotice が登録される', () => {
+  type FakeCommand = {
+    readonly description: string;
+    readonly handler: (args: string, ctx: CommandContext) => unknown;
+  };
+
+  /** 入口の配線だけを見る偽の ExtensionAPI。登録されたコマンドとレンダラーを記録する */
+  function fakeEntry(): {
+    commands: Map<string, FakeCommand>;
+    received: Array<[string, unknown]>;
+  } {
+    const commands = new Map<string, FakeCommand>();
     const received: Array<[string, unknown]> = [];
     const fake = {
       on: () => () => {},
       registerTool: () => {},
-      registerCommand: () => {},
+      registerCommand: (name: string, options: FakeCommand) => {
+        commands.set(name, options);
+      },
       registerMessageRenderer: (customType: string, renderer: unknown) => {
         received.push([customType, renderer]);
       },
     };
-    // ExtensionAPI は 30 以上のメンバーを持つため、すべてを偽物で用意する価値がない。このテストが確かめるのは配線だけなので、使う 4 つの入口だけを持つ偽物を渡す。
+    // ExtensionAPI は 30 以上のメンバーを持つため、すべてを偽物で用意する価値がない。入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す。
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     entry(fake as unknown as ExtensionAPI);
+    return { commands, received };
+  }
+
+  it('入口を呼ぶ → consult のレンダラーとして renderNotice が登録される', () => {
+    const { received } = fakeEntry();
     expect(received).toEqual([['consult', renderNotice]]);
+  });
+
+  it('consult-status を登録し、handler を呼ぶと commands.status が info で通知する', async () => {
+    const { commands } = fakeEntry();
+    const command = commands.get('consult-status');
+    expect(command?.description).toBe('List the running consult subagents of this session');
+
+    const notices: { message: string; type?: string }[] = [];
+    const ctx: CommandContext = {
+      ui: {
+        notify: (message: string, type?: 'info' | 'warning' | 'error') => {
+          notices.push({ message, type });
+        },
+      },
+    };
+    await command?.handler('', ctx);
+
+    expect(notices).toEqual([{ message: 'no subagents running in this session', type: 'info' }]);
   });
 });
