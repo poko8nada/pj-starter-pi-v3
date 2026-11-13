@@ -57,4 +57,4 @@ Three consecutive failures. Beyond that the agent is told to stop and report wha
 pnpm test:run .pi/extensions/quality-gate
 ```
 
-`targets.test.ts` covers the porcelain parsing — including renames, where git appends the original path — and the fingerprint diff. The checks shell out to `pnpm` and the rest is event wiring; both need a real pi session to exercise.
+`gate/targets.test.ts` covers the porcelain parsing — including renames, where git appends the original path — and the fingerprint diff. The checks shell out to `pnpm` and the rest is event wiring; both need a real pi session to exercise.

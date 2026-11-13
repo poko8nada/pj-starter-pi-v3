@@ -413,57 +413,67 @@ export interface RecordingPi {
 
 ### Slice 1: quality-gate の置き場所と前提
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b409eee6ec559e82ab2a6f41224c56b79b9a4c50
 - Stopped:
 
 ### Slice 2: sound-notify の前提
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: compact テストの局所 `recordingPi` が導入した `recordingPi()` を隠していたため `lint` が落ちた。`compactPi` に改名した。断言は変えていない。
+- Commit: 46768e3ad295a76abe4cf34194eaa9c57e9350d8
 - Stopped:
 
 ### Slice 3: 希少な入力と定数の確認の削除
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 削除で空行が残り `format:check` が落ちたため、`isCommitResult` の末尾の空行を消した。断言は変えていない。
+- Commit: 85217afb4c006962853505a927d563a6e56f7914
 - Stopped:
 
 ### Slice 4: テストの説明
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dd9a08fa8bc5cfa0459d3b21ca9197181bd44266
 - Stopped:
+
+### Cleanup: テストの重複と前提の見直し
+
+- Findings: なし — `gate/checks.test.ts` 9 件、`gate/report.test.ts` 6 件、`gate/targets.test.ts` 4 件、`sound-notify/index.test.ts` 17 件を全件保持した。同じ振る舞いの重複、消えた振る舞い、plan が止めた分岐、型・定数が保証する前提だけの確認はいずれもなかった。
+- Unplanned: なし — 前提を隠す組み立てはなく、`checksSetup()` と `recordingPi()` の共有は可変の前提を各テストで作り直す形で方針通りだったため、移動も共有化もしていない。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `it` の表題が削除済みの空パス分岐を今も名指ししている。本文は happy の相対パスだけを確かめており、`toRelative(cwd, cwd)` の空パス断言は Slice 3 の手順で削除済みのため、表題後半「空なら元のパスを返す」は試していない範囲を約束する。理由: 計画が削除を決めた振る舞いを表題だけが残す形は Stale であり、表題を happy のみに直す（例: `cwd からの相対を返す`）。（.pi/extensions/quality-gate/gate/checks.test.ts:38)
+    - fixed: 表題を `cwd からの相対を返す` に直した。本文の断言は変えていない。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 の `fixed:` 1 件（`checks.test.ts:38` の表題を `cwd からの相対を返す` に修正）を現物で確認し、本文は happy の相対パスの断言のみで空パス分岐を約束していないため、Stale は解消している。理由: 表題と本文が一致し、削除済みの振る舞いを約束していない。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: quality-gate のファイルが `gate/` に集まり、quality-gate と sound-notify のテストが前提を fixture から受け取り、説明と希少な確認が整理される — 達成した。
+- Ran: `pnpm test:related`（3 files / 19 tests）、`pnpm test:run`（66 files / 871 tests）、`pnpm typecheck`（root ok、.pi ok）、`pnpm lint`、`pnpm format:check`、変えたファイルと名指すファイルの読み直し — すべて成功した。
+- Findings: なし
 - Doubts:
+  - `toRelative(cwd, cwd)` の空の相対パスは ADR 04 が希少な入力として削除を決めた。happy の相対パスだけを残す。
+  - `README.md` の `Tests` セクションの説明（`filterByExtensions` の省略）は、オーナーが残すと決めた。この plan はパスだけを `gate/targets.test.ts` に直した。
+  - `gate/checks.fixture.ts` は `quality-gate/` のルートではなく `gate/` に置いた（ADR 01 の決定。design.md の feature root は Unit のルートを指すが、この Unit の関心の単位は `gate/` である）。
