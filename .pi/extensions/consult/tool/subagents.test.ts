@@ -192,6 +192,15 @@ describe('listText', () => {
     );
   });
 
+  it('running で同じ subagent に開始行と終わりの行 → 出さない（latest の後に絞る）', () => {
+    const subagent = 'consult-1';
+    const start = record({ subagent, pid: 4242 });
+    const done = record({ subagent, ended: 2000, state: 'done' });
+    expect(listText([start, done], 0, runningCheck, 'running')).toBe(
+      'no subagents running in this session',
+    );
+  });
+
   it('running で ended と notice があり delivered がない記録 → running として出る', () => {
     const waiting = record({
       subagent: 'consult-2',

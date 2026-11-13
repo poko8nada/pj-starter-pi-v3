@@ -53,7 +53,7 @@ consult_run({ role: "code", task: "Fix the failing check in run/log.ts", worktre
 
 **One call is one subagent.** Two subagents mean two calls; both run at once, and each finishes into its own message. There is no `input` parameter: the subagent reads what it needs, and the path goes in `task`.
 
-The call returns `started: <id>` with what is running at that moment. `id` is what `consult_subagents` and `/consult-cancel` take; `/consult-status` and `/consult-sound` take none.
+The call returns `started: <id>` with what is running at that moment. `id` is what `consult_subagents` and `/consult-cancel` take; `/consult-status` and `/consult-sound` take no id.
 
 The task reaches the subagent on stdin, not as an argument, so a task that begins with `-` or `@` stays text.
 

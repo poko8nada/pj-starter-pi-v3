@@ -715,7 +715,6 @@ describe('status', () => {
     await runtime.commands.status('', ctx);
 
     expect(notices[0]?.message).toBe('no subagents running in this session');
-    expect(notices[0]?.message).not.toContain('consult-1');
   });
 
   it('別セッションの走っている記録 → 出さない', async () => {
@@ -728,7 +727,6 @@ describe('status', () => {
     await runtime.commands.status('', ctx);
 
     expect(notices[0]?.message).toBe('no subagents running in this session');
-    expect(notices[0]?.message).not.toContain('consult-9');
   });
 });
 

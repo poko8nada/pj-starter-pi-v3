@@ -250,22 +250,45 @@ export interface ConsultRuntime {
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/index.test.ts:336` — コメント「このテストが確かめるのは配線だけ」が、`fakeEntry` に切り出して 2 つのテスト（342、347）が共有する形になった後も 1 つのテストを指したまま。理由: 読む者が「このテスト」の範囲を取り違え、偽物の前提（4 つの入口だけを持つ）がどれに掛かるかを誤解する。
+    - fixed: コメントを「入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す」に直し、共有する `fakeEntry` 全体を指す形にした。
+  - `.pi/extensions/consult/README.md:56` — 「`/consult-status` and `/consult-sound` take none」は引数を取らないとも読めるが、`/consult-sound` は `on|off` を取る（`.pi/extensions/consult/index.ts:210`）。プランの「id を取らない」が英語で落ちている。理由: `/consult-sound on` を読んだ人が「引数は無効」と誤解する。`take no id` に直すべき。
+    - fixed: `take none` を `take no id` に直した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/consult/tool/subagents.test.ts:160` — `running` のケースが別 id の 2 体（`runningAndDone`）だけで、同じ subagent に開始行と終わりの行が並ぶ組を見ていない。プラン slice 1 step 1.2 の「`latest` の後に絞る（先に絞ると同じ subagent の終わりの行が `running` 側に残る）」前提を逆にしても全テストが緑のまま。理由: 実際の終了は開始行＋終わりの行の 2 行で残るので、順序を逆にすると `/consult-status` に終わった subagent が running として出るのに、どのチェックも落ちない。`consult.test.ts:712` も終わりの欄を開始行に足した 1 本だけで、2 行の組を確かめていない。「`running` で、同じ id に開始行と終わりの行 → 出さない」1 ケースを足すべき。
+    - fixed: `listText` の `running` に「同じ subagent に開始行と終わりの行 → 出さない」ケースを足した。`latest` の前に絞ると開始行が残って running と出るため、このテストは順序を固定する。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - `.pi/extensions/consult/tool/consult.test.ts:718` — 直前の 717 の `toBe('no subagents running in this session')` が文面全体を決めており、`not.toContain('consult-1')` は同じことを二度言っている。理由: 二重の主張は失敗の意味を増やさず、テストの意図を読みにくくする。
+    - fixed: 重複する `not.toContain('consult-1')` を落とした。
+  - `.pi/extensions/consult/tool/consult.test.ts:731` — 同様に 730 の `toBe` の後の `not.toContain('consult-9')` が重複している。理由: 同上。
+    - fixed: 重複する `not.toContain('consult-9')` を落とした。
 - Doubts:
+  - `.pi/extensions/consult/index.test.ts:350` はコマンドの説明文を literal で固定している。ADR が決めた値なので指摘にしないが、文言を変える予定があるなら、テストを落とすか説明文を 1 か所から取る形にするかをオーナーに決めてほしい。
 
 ### Round 2
 
+`fixed:` の付いた行はまだないため、修正の確認はできない。Round 1 の指摘は未修正のまま。
+
 - Stale:
+  - 未修正（Round 1 の 2 件のまま）
 - Unlisted:
+  - なし
 - Gaps:
+  - 未修正（Round 1 の 1 件のまま）
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - 未修正（Round 1 の 2 件のまま）
 - Doubts:
+  - 修正が入ったら、`fixed:` の行だけを見て Round 2 をやり直す必要がある。
 
 ## Acceptance
 
