@@ -114,7 +114,7 @@ Steps:
 1. Take one Unit at a time: propose how to check its function, and how to check what the plans that cut it changed — the command to run and what to see, or the place to read and what to look for, and the result that means it works.
 2. Explain what changed, in the same message: what every plan in `Plans:` changed, and where.
 3. Wait for the owner's answer, and hold it in the chat before the next Unit.
-4. Give a Unit whose function or change does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write the commit in `## Verified`'s `Fixed`.
+4. Give a Unit whose function or change does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write a short description of the change and the commit in `## Verified`'s `Fixed`.
 5. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
 6. Write `Result:` and `Change:` from what they answered, in `## Verified`, after step 5's repair, which sits after `## Triage`.
 
@@ -130,7 +130,7 @@ Notes:
 - The Units are as `references/format.md` says.
 - The check has two parts: the Unit's function, and the change the plans made.
 - A Unit they will not check carries `しない` and the reason on the same line.
-- The `Fixed` is the `_ex-change_` and the commit.
+- The `Fixed` is a short description of the change and the commit.
 - The gate is the owner's word.
 
 ### 7. Roadmap
@@ -159,13 +159,13 @@ Notes:
 
 Steps:
 
-1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`).
+1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status is `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
 2. End here when no `**proposed**` line is left; otherwise go to step 9.
 
 Notes:
 
 - The worktrees are clean: the work skill's merge step removes each plan's worktree.
-- The roadmap is written before it: the roadmap step says so.
+- The roadmap is written before it: the roadmap step says so. When the item is `wip`, it is written but stays out of this commit.
 - An `_ex-change_` and its work are committed at its own commit; this commit does not carry them.
 - The `**proposed**` files are after this commit, and are not committed.
 
