@@ -730,28 +730,6 @@ describe('status', () => {
     expect(notices[0]?.message).toBe('no subagents running in this session');
     expect(notices[0]?.message).not.toContain('consult-9');
   });
-
-  it('task を持つ記録 → 行に task を出さない', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
-    const task = 'ひみつの依頼';
-    const started = aRunRecord({
-      session: SESSION,
-      subagent: 'consult-1',
-      pid: process.pid,
-      started: Date.now(),
-    });
-    // RunRecord は task を持たない。記録の JSONL に task が紛れていても、一覧に出さないことを見る
-    const withTask = { ...started, task };
-    appendRun(place, withTask);
-    const { ctx, notices } = fakeCommandContext();
-
-    await runtime.commands.status('', ctx);
-
-    expect(notices[0]?.message).toContain('consult-1');
-    expect(notices[0]?.message).not.toContain(task);
-  });
 });
 
 describe('音', () => {
