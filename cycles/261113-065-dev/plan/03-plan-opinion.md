@@ -90,8 +90,8 @@ ROADMAP.md
 
 ### Slice 1: 未決定の点への意見と回答
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
