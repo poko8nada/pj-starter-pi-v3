@@ -177,10 +177,10 @@ roadmap が wip のときは、close のコミットに `close.md` だけを含�
 
 ### Slice 2: Fixed の形
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 829ede7
+- Stopped: なし
 
 ## Work Review
 
