@@ -705,6 +705,19 @@ describe('status', () => {
     expect(notices).toEqual([{ message: 'no subagents running in this session', type: 'info' }]);
   });
 
+  it('同じ subagent の開始行と終わりの行 → 走っているものとして出さない', async () => {
+    const { pi } = fakePi();
+    const { run } = deferredRunner();
+    const { runtime, place } = setup(pi, run);
+    seedRunning(place, { subagent: 'consult-1', started: 1000 });
+    seedRunning(place, { subagent: 'consult-1', started: 2000, ended: 3000, state: 'done' });
+    const { ctx, notices } = fakeCommandContext();
+
+    await runtime.commands.status('', ctx);
+
+    expect(notices[0]?.message).toBe('no subagents running in this session');
+  });
+
   it('終わった記録だけ → no subagents running in this session を出す', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
