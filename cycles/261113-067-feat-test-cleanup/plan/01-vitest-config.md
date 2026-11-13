@@ -100,8 +100,8 @@ vitest.config.ts
 
 ### Slice 1: 定数確認の削除
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
