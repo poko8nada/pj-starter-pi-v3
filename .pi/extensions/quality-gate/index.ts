@@ -4,10 +4,10 @@ import type {
   ExtensionAPI,
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent';
-import { runChecks, toRelative } from './checks.ts';
-import type { CheckRun } from './report.ts';
-import { buildGateMessage } from './report.ts';
-import { changedSince, snapshot } from './targets.ts';
+import { runChecks, toRelative } from './gate/checks.ts';
+import type { CheckRun } from './gate/report.ts';
+import { buildGateMessage } from './gate/report.ts';
+import { changedSince, snapshot } from './gate/targets.ts';
 
 /**
  * 1 ターンで自動チェックをやり直せる回数の上限である。
