@@ -495,6 +495,19 @@ export function modelNotifier(
 - Commit: 9775fbd
 - Stopped:
 
+### Cleanup: 再試行と乗り換えの通知のテスト
+
+- Findings: なし
+- Unplanned:
+  - `run/run.test.ts` の「message_end がない → lastModel は undefined」を落とした。型と初期状態で決まる前提で、壊れても誰も気づかないため。
+  - `run/run.test.ts` の「他のイベント → undefined」を落とし、`message_end` が再試行のイベントを返さない断言を lastModel のテストに統合した。`modelEventFrom` 側の同じケースと重複するため。
+  - `run/run.test.ts` の `onFallback` の「中断 → 呼ばれない」を落とした。中断で乗り換えないことは `runWithFallback` 側ですでに同じ振る舞いを試しているため。
+  - `run/run.test.ts` の `auto_retry_start` で `lastModel` を直接書くのをやめ、assistant の `message_end` を `applyEvent` に通してから再試行を渡すようにした。振る舞いが使う前提をテストの中で作るため。
+  - `tool/consult.test.ts` の `retry-end` の単独テストを落とし、`retry-start` から `retry-end` への通常の順序で `warning` と `maxAttempts` を確かめる形に統合した。start なしの分母の分岐は実運用で起きず、重複していたため。
+  - `tool/consult.test.ts` の `fakeCommandContext` が `fakeConsultContext` の通知の記録を共有するようにした。同じ偽の窓口を 2 つ持たないため。
+  - `run/subagent.test.ts` の `onModelEvent` の policy を、既存の `policy(false)` に `models` だけを上書きする形にした。共有できる前提を各テストで組み直さないため。
+  - `tool/render.test.ts` の `fallbackLine` から `p/a` を出さない断言を外した。引数に前のモデルがなく、型がすでに保証している前提のため。テスト名も出力だけに合わせた。
+
 ## Work Review
 
 ### Round 1
