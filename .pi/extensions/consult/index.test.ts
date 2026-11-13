@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { aRunRecord, aWidgetUI } from './consult.fixture.ts';
+import { aDoneRun, aPlace, aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
-import { placeFor, type Place } from './run/place.ts';
+import { type Place } from './run/place.ts';
 import entry, {
   flushPending,
   roleOrder,
@@ -32,12 +32,8 @@ vi.mock('./run/worktree.ts', async (importOriginal) => {
   };
 });
 
-function place(): Place {
-  return placeFor(tempDir(), tempDir());
-}
-
 function record(extra: Partial<RunRecord> = {}): RunRecord {
-  return aRunRecord({ ended: 2000, state: 'done', notice: 'できた', ...extra });
+  return aDoneRun({ notice: 'できた', ...extra });
 }
 
 /** 記録は「いま」の日付ファイルに書く。読み取り側も同じテストの時計を見るので、日付は固定しない */
@@ -107,7 +103,7 @@ afterEach(() => {
 
 describe('flushPending', () => {
   it('0 件 → 0 を返す。送らない', () => {
-    const found = place();
+    const found = aPlace();
     const { pi, sent } = fakePi();
 
     expect(flushPending(portFor(found, pi))).toBe(0);
@@ -117,7 +113,7 @@ describe('flushPending', () => {
 
 describe('startTick / stopTick', () => {
   it('印のない完了の行、startTick、5 秒進める → 送り 1 回、印 1 本、音 1 回', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
@@ -133,7 +129,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
-    const found = place();
+    const found = aPlace();
     running(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
@@ -145,7 +141,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('何もない → 5 秒進めても、送らず鳴らさない', () => {
-    const found = place();
+    const found = aPlace();
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
 
@@ -156,7 +152,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('音が off、印のない完了 → 鳴らさず、送る', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     setSoundEnabled(false);
     const { pi, sent } = fakePi();
@@ -169,7 +165,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('sendMessage が投げる → 印を書かない。次の tick で送り直す', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     const fail = { next: true };
     const { pi, sent } = fakePi(fail);
@@ -183,7 +179,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('startTick を 2 回呼ぶ → タイマーは 1 本。5 秒で送信 1 回、音 1 回', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     const { pi, sent } = fakePi();
     const port = portFor(found, pi, 'session-a');
@@ -197,7 +193,7 @@ describe('startTick / stopTick', () => {
   });
 
   it('stopTick の後、10 秒進める → 送らず鳴らさない', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     const { pi, sent } = fakePi();
     startTick(portFor(found, pi, 'session-a'));
@@ -212,7 +208,7 @@ describe('startTick / stopTick', () => {
 
 describe('widget', () => {
   it('走っている review が 1 体 → consult-running に [rev:1] をセットする', () => {
-    const found = place();
+    const found = aPlace();
     running(found);
     const { pi } = fakePi();
     const { ui, calls } = aWidgetUI();
@@ -224,7 +220,7 @@ describe('widget', () => {
   });
 
   it('何も走っていない → consult-running に undefined をセットする', () => {
-    const found = place();
+    const found = aPlace();
     const { pi } = fakePi();
     const { ui, calls } = aWidgetUI();
     startTick({ ...portFor(found, pi, 'session-a'), ui });
@@ -235,7 +231,7 @@ describe('widget', () => {
   });
 
   it('setWidget が投げる → 音は鳴り、完了報告の送信は続く', () => {
-    const found = place();
+    const found = aPlace();
     pending(found);
     const { pi, sent } = fakePi();
     const ui: WidgetUI = {
@@ -254,7 +250,7 @@ describe('widget', () => {
 
 describe('showRunningOnce', () => {
   it('走っている記録 → consult-running に [rev:1] をセットする', () => {
-    const found = place();
+    const found = aPlace();
     running(found);
     const { ui, calls } = aWidgetUI();
     showRunningOnce(ui, found, 'session-a');
@@ -263,7 +259,7 @@ describe('showRunningOnce', () => {
   });
 
   it('記録がない → consult-running に undefined をセットする', () => {
-    const found = place();
+    const found = aPlace();
     const { ui, calls } = aWidgetUI();
     showRunningOnce(ui, found, 'session-a');
 
@@ -284,7 +280,7 @@ describe('roleOrder', () => {
 
 describe('reload', () => {
   it('同じ印で一覧は running から done へ、音は鳴る状態から鳴らない状態へ', () => {
-    const found = place();
+    const found = aPlace();
     const subagent = 'consult-9';
     appendRun(found, record({ subagent }), new Date());
 

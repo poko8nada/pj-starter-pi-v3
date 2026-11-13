@@ -103,7 +103,7 @@ describe('applyEvent: lastModel', () => {
     expect(state.lastModel).toBe('p/m');
   });
 
-  it('auto_retry_start → retry-start を返す', () => {
+  it('applyEvent: (happy) 直前の message_end のモデル → retry-start に model を載せる', () => {
     const state = initialState();
     applyEvent(state, messageEnd({ provider: 'p', model: 'm' }), 1);
     const event = {
@@ -113,19 +113,12 @@ describe('applyEvent: lastModel', () => {
       delayMs: 2000,
       errorMessage: 'rate limited',
     };
-    expect(applyEvent(state, event, 1)).toEqual({
-      kind: 'retry-start',
-      model: 'p/m',
-      attempt: 1,
-      maxAttempts: 3,
-      delayMs: 2000,
-      error: 'rate limited',
-    });
+    expect(applyEvent(state, event, 1)).toMatchObject({ kind: 'retry-start', model: 'p/m' });
   });
 });
 
 describe('runPi: onModelEvent', () => {
-  it('再試行のイベントを onModelEvent に流す', async () => {
+  it('runPi: (happy) auto_retry_start の行 → onModelEvent に retry-start', async () => {
     spawnedChildren.length = 0;
     const received: ModelEvent[] = [];
     const promise = runPi({
@@ -157,16 +150,8 @@ describe('runPi: onModelEvent', () => {
     const run = await promise;
 
     expect(run.code).toBe(0);
-    expect(received).toEqual([
-      {
-        kind: 'retry-start',
-        model: 'p/m',
-        attempt: 1,
-        maxAttempts: 3,
-        delayMs: 2000,
-        error: 'rate limited',
-      },
-    ]);
+    expect(received).toHaveLength(1);
+    expect(received[0]).toMatchObject({ kind: 'retry-start' });
   });
 });
 

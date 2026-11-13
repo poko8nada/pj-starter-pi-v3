@@ -6,34 +6,41 @@ import budgetDefault, {
   nudge,
   registerBudget,
   turnsFrom,
+  type BudgetPiPort,
 } from './budget.ts';
 
 // ここは「いつ促すか」だけを試す。サブエージェントを実際に走らせるのはメインエージェントの役目（consult の道具の検査が扱う）。
 
+function aBudgetPi(
+  register: (pi: BudgetPiPort) => void,
+): () => ((event: { turnIndex: number }) => TurnEndEventResult) | undefined {
+  let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
+  const pi = {
+    on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
+      handler = next;
+    },
+  };
+  register(pi);
+  return () => handler;
+}
+
 describe('lastTurn', () => {
-  it('有効な上限 → 上限-2 番（40→38、最小の2→0）', () => {
+  it('有効な上限 → 上限-2 番', () => {
     expect(lastTurn(40)).toBe(38);
-    expect(lastTurn(2)).toBe(0);
   });
 
-  it('上限がない・1 以下・数でない → 何もしない', () => {
+  it('lastTurn: (boundary) 上限なし・1 → 何もしない', () => {
     expect(lastTurn(undefined)).toBeUndefined();
     expect(lastTurn(1)).toBeUndefined();
-    expect(lastTurn(0)).toBeUndefined();
-    expect(lastTurn(Number.NaN)).toBeUndefined();
-    expect(lastTurn(2.5)).toBeUndefined();
   });
 });
 
 describe('turnsFrom', () => {
-  it('空・数でない・0 以下 → undefined（促さない）', () => {
+  it('turnsFrom: (empty) 空・数でない・0 以下 → undefined', () => {
     expect(turnsFrom(undefined)).toBeUndefined();
     expect(turnsFrom('')).toBeUndefined();
-    expect(turnsFrom('  ')).toBeUndefined();
     expect(turnsFrom('たくさん')).toBeUndefined();
     expect(turnsFrom('0')).toBeUndefined();
-    expect(turnsFrom('-5')).toBeUndefined();
-    expect(turnsFrom('2.5')).toBeUndefined();
   });
 });
 
@@ -58,43 +65,27 @@ describe('nudge', () => {
 });
 
 describe('registerBudget', () => {
-  it('促しの番号で 1 度だけ促す（2 度目の turn_end では出さない）', () => {
+  it('registerBudget: (happy) 促しの番号 → 1 度だけ促す', () => {
     const turns = 40;
     const limit = turns - 2;
-    let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
-    const pi = {
-      on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
-        handler = next;
-      },
-    };
-    registerBudget(pi, turns);
-    const first = handler?.({ turnIndex: limit });
-    expect(first && 'continue' in first ? first.continue : undefined).toBe(true);
-    expect(first && 'entries' in first ? first.entries : undefined).toHaveLength(1);
-    expect(first && 'entries' in first ? first.entries?.[0] : undefined).toMatchObject({
-      type: 'custom_message',
-      customType: 'consult-budget',
-      content: LAST_TURN_MESSAGE,
-      display: true,
+    const getHandler = aBudgetPi((pi) => {
+      registerBudget(pi, turns);
     });
-    const second = handler?.({ turnIndex: limit });
+    const first = getHandler()?.({ turnIndex: limit });
+    expect(first).toEqual(nudge(limit, false, limit));
+    const second = getHandler()?.({ turnIndex: limit });
     expect(second).toEqual({});
   });
 
   it('37 の後に 38 が来ても促す（37 は sent を消費しない）', () => {
     const turns = 40;
     const limit = turns - 2;
-    let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
-    const pi = {
-      on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
-        handler = next;
-      },
-    };
-    registerBudget(pi, turns);
-    expect(handler?.({ turnIndex: limit - 1 })).toEqual({});
-    const result = handler?.({ turnIndex: limit });
-    expect(result && 'continue' in result ? result.continue : undefined).toBe(true);
-    expect(result && 'entries' in result ? result.entries : undefined).toHaveLength(1);
+    const getHandler = aBudgetPi((pi) => {
+      registerBudget(pi, turns);
+    });
+    expect(getHandler()?.({ turnIndex: limit - 1 })).toEqual({});
+    const result = getHandler()?.({ turnIndex: limit });
+    expect(result).toEqual(nudge(limit, false, limit));
   });
 });
 
@@ -105,16 +96,11 @@ describe('budget: env から促しまで', () => {
     const before = process.env.CONSULT_TURNS;
     process.env.CONSULT_TURNS = String(turns);
     try {
-      let handler: ((event: { turnIndex: number }) => TurnEndEventResult) | undefined;
-      const pi = {
-        on(_event: 'turn_end', next: (event: { turnIndex: number }) => TurnEndEventResult) {
-          handler = next;
-        },
-      };
-      budgetDefault(pi);
-      const result = handler?.({ turnIndex: limit });
-      expect(result && 'continue' in result ? result.continue : undefined).toBe(true);
-      expect(result && 'entries' in result ? result.entries : undefined).toHaveLength(1);
+      const getHandler = aBudgetPi((pi) => {
+        budgetDefault(pi);
+      });
+      const result = getHandler()?.({ turnIndex: limit });
+      expect(result).toEqual(nudge(limit, false, limit));
     } finally {
       if (before === undefined) {
         delete process.env.CONSULT_TURNS;

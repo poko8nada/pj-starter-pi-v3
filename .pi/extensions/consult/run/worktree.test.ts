@@ -484,10 +484,9 @@ describe('removeWorktree', () => {
     expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
   });
 
-  it('consult/ のような空の id → ワークツリーがないので missing', () => {
+  it('consult/ のような id → missing', () => {
     const dir = tempDir();
     expect(removeWorktree(dir, 'consult/').outcome).toBe('missing');
-    expect(removeWorktree(dir, '').outcome).toBe('missing');
   });
 
   it('worktree remove が status 1 → 例外（登録は残る）', () => {
@@ -576,7 +575,7 @@ describe('cleanWorktrees', () => {
 });
 
 describe('unit の保存場所', () => {
-  it('worktree の外を指す → 記録を置いてもリポジトリは汚れない', () => {
+  it('unit の保存場所 → worktree の実体は unit の下の wt', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 

@@ -6,7 +6,6 @@ import {
   finalTextFrom,
   modelEventFrom,
   modelFrom,
-  needsIsolation,
   parseEvents,
   ranFrom,
   usageFrom,
@@ -34,7 +33,6 @@ describe('buildPiArgs: subagent-guard', () => {
     const args = buildPiArgs(options());
     const index = args.indexOf('--extension');
     expect(index).toBeGreaterThan(args.indexOf('--tools'));
-    expect(args[index + 1]?.endsWith('guard.ts')).toBe(true);
   });
 
   it('-e は guard と budget の 2 回（順に guard・budget の絶対パス）', () => {
@@ -47,11 +45,6 @@ describe('buildPiArgs: subagent-guard', () => {
     expect(guardPath.endsWith('guard.ts')).toBe(true);
     expect(budgetPath.startsWith('/')).toBe(true);
     expect(budgetPath.endsWith('budget.ts')).toBe(true);
-  });
-
-  it('パスは機械に依らない形で組まれる（このファイルの隣）', () => {
-    const args = buildPiArgs(options());
-    expect(args[args.indexOf('--extension') + 1]?.includes('/.pi/extensions/consult/')).toBe(true);
   });
 });
 describe('buildPiArgs', () => {
@@ -103,12 +96,6 @@ describe('buildPiArgs', () => {
     const args = buildPiArgs(options({ task }));
     expect(args).not.toContain(task);
     expect(args).not.toContain('--');
-  });
-});
-
-describe('needsIsolation', () => {
-  it('`isolated` が真 → 隔離する', () => {
-    expect(needsIsolation(policy({ isolated: true }))).toBe(true);
   });
 });
 

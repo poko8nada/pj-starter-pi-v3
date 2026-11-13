@@ -1,9 +1,8 @@
 import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tempDir } from '../../../../test/temp-dir.ts';
-import { aRunRecord } from '../consult.fixture.ts';
-import { dayFile, placeFor, type Place } from './place.ts';
+import { aAt, aPlace, aRunRecord } from '../consult.fixture.ts';
+import { dayFile } from './place.ts';
 import {
   appendRun,
   closeOrphans,
@@ -21,12 +20,8 @@ import {
 } from './log.ts';
 import type { PsRun } from './proc.ts';
 
-// 保存場所を偽物にするテストは、`tempDir()` と `placeFor` で作る（記録を読む側）。
+// 保存場所を偽物にするテストは、`aPlace()` で作る（記録を読む側）。
 // 実ものの /tmp/pi-consult を触らない。
-
-function place(): Place {
-  return placeFor(tempDir(), tempDir());
-}
 
 function record(extra: Partial<RunRecord> = {}): RunRecord {
   return aRunRecord({ pid: process.pid, ...extra });
@@ -34,29 +29,28 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
 
 describe('appendRun / readRuns', () => {
   it('1 行足して読む → その 1 行がそのまま返る', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     const run = record({ worktree: '2-a', turns: 12, spend: '0.01 usd' });
     appendRun(found, run, at);
     expect(readRuns(found, { at })).toEqual([run]);
-    expect(readFileSync(dayFile(found, at), 'utf8').trim().split('\n')).toHaveLength(1);
   });
 
   it('同じ run を 2 回足す → 2 行になる（追記で、上書きしない）', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ started: 1 }), at);
     appendRun(found, record({ started: 1 }), at);
     expect(readRuns(found, { at })).toHaveLength(2);
   });
 
   it('保存場所がない → 空の配列', () => {
-    expect(readRuns(place())).toEqual([]);
+    expect(readRuns(aPlace())).toEqual([]);
   });
 
   it('壊れた行（JSON でない）→ その行だけ飛ばし、他は読める', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ started: 1 }), at);
     const file = dayFile(found, at);
     writeFileSync(file, `${readFileSync(file, 'utf8')}これは JSON ではない\n`);
@@ -65,21 +59,21 @@ describe('appendRun / readRuns', () => {
   });
 
   it('形が違う行（必須欄がない）も飛ばす', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ started: 1 }), at);
     const file = dayFile(found, at);
-    // subagent がない行と session がない行の 2 種類。どちらも parseRun が落とす
+    // subagent がない行。parseRun が落とすことは単体で見る。ここでは読み飛ばすことだけを見る
     writeFileSync(
       file,
-      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n{"subagent":"consult-9","role":"review","pid":1,"started":3}\n`,
+      `${readFileSync(file, 'utf8')}{"session":"session-a","role":"review","pid":1,"started":2}\n`,
     );
     expect(readRuns(found, { at }).map((run) => run.started)).toEqual([1]);
   });
 
   it('始まった順に返す', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     const first = record({ started: 1000, subagent: 'consult-1' });
     const second = record({ started: 2000, subagent: 'consult-2' });
     appendRun(found, second, at);
@@ -91,8 +85,8 @@ describe('appendRun / readRuns', () => {
   });
 
   it('終わりの欄を持つ行はそのまま返る（state と reason）', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(
       found,
       record({
@@ -111,7 +105,7 @@ describe('appendRun / readRuns', () => {
   });
 
   it('日をまたぐサブエージェントの開始と終わりは別の file に 1 行ずつ', () => {
-    const found = place();
+    const found = aPlace();
     const start = record({ subagent: 'consult-1', started: 1 });
     const end = { ...start, ended: 2, state: 'done' as const };
     appendRun(found, start, new Date(2026, 9, 9, 23, 59));
@@ -125,14 +119,14 @@ describe('appendRun / readRuns', () => {
   });
 
   it('at を渡さない appendRun は今日の file に書く', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record());
     expect(readRuns(found).map((run) => run.subagent)).toEqual(['consult-1']);
   });
 
   it('session で絞る → その session だけ。省けば両方', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1' }), at);
     appendRun(found, record({ session: 'B', subagent: 'consult-2' }), at);
     expect(readRuns(found, { at, session: 'A' }).map((run) => run.subagent)).toEqual(['consult-1']);
@@ -145,10 +139,9 @@ describe('pidAlive', () => {
     expect(pidAlive(process.pid)).toBe(true);
   });
 
-  it('ありえない pid と 0 以下 → 死んでいる扱い', () => {
+  it('ありえない pid と負の pid → 死んでいる扱い', () => {
     // macOS の pid は 5 桁まで。6 桁は存在しない
     expect(pidAlive(999999)).toBe(false);
-    expect(pidAlive(0)).toBe(false);
     expect(pidAlive(-1)).toBe(false);
   });
 });
@@ -207,8 +200,8 @@ describe('defaultCheck', () => {
 
 describe('runningRuns', () => {
   it('session で絞り、走っている行だけ返す', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-live', pid: process.pid }), at);
     appendRun(
       found,
@@ -229,8 +222,8 @@ describe('runningRuns', () => {
   });
 
   it('check を通す → running だけ残る', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }), at);
     appendRun(found, record({ session: 'A', subagent: 'consult-2', pid: 22, token: 'b' }), at);
     const seen: string[] = [];
@@ -243,8 +236,8 @@ describe('runningRuns', () => {
   });
 
   it('同じ subagent に開始行と終了行があり、pid が生きている → 走っていない（事故の形）', () => {
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }), at);
     appendRun(
       found,
@@ -261,7 +254,7 @@ describe('runningRuns', () => {
   });
 
   it('終了行が新しい日のファイル、開始行が古い日のファイル → 走っていない', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(
       found,
       record({ session: 'A', subagent: 'consult-1', pid: process.pid, started: 1 }),
@@ -279,7 +272,7 @@ describe('runningRuns', () => {
       }),
       new Date(2026, 9, 10, 0, 1),
     );
-    const at = new Date(2026, 9, 10, 12, 0);
+    const at = aAt();
     expect(runningRuns(found, { at, session: 'A', days: 2 }, () => 'running')).toEqual([]);
   });
 });
@@ -303,43 +296,27 @@ describe('parseRun', () => {
     expect(parseRun('{"subagent":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
   });
 
-  it('旧形の行（child 欄だけを持つ JSON）は捨てる', () => {
-    expect(parseRun('{"session":"s","child":"c","role":"r","pid":1,"started":2}')).toBeUndefined();
+  it('parseRun: (error) subagent がない行 → undefined', () => {
+    const row = aRunRecord({ session: 's', role: 'r', pid: 1, started: 2 });
+    expect(parseRun(JSON.stringify({ ...row, subagent: undefined }))).toBeUndefined();
   });
 
   it('token 付きの開始行 → token が返る（往復）', () => {
     const token = 'token-1';
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ token }), at);
     expect(readRuns(found, { at })[0]).toMatchObject({ token });
-    expect(
-      parseRun(
-        JSON.stringify({ session: 's', subagent: 'c', role: 'r', pid: 1, started: 2, token }),
-      ),
-    ).toMatchObject({ token });
   });
 
   it('startToken 付きの開始行 → 往復して同じ文字列が返る', () => {
     const startToken = 'Wed Oct 21 12:41:12 2026';
-    const at = new Date(2026, 9, 10, 12, 0);
-    const found = place();
+    const at = aAt();
+    const found = aPlace();
     appendRun(found, record({ startToken }), at);
     expect(readRuns(found, { at })[0]).toMatchObject({
       startToken,
     });
-    expect(
-      parseRun(
-        JSON.stringify({
-          session: 's',
-          subagent: 'c',
-          role: 'r',
-          pid: 1,
-          started: 2,
-          startToken,
-        }),
-      ),
-    ).toMatchObject({ startToken });
   });
 
   it('数値の startToken と数値でない delivered の行 → どちらも捨てて、行は読める', () => {
@@ -365,7 +342,7 @@ describe('parseRun', () => {
 
 describe('closeOrphans', () => {
   it('終了行のない開始行で token が合わない → state: error の終了行が 1 行増え、runningRuns が空になる', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
     const before = readRuns(found, { session: 'A' });
     expect(before).toHaveLength(1);
@@ -377,14 +354,14 @@ describe('closeOrphans', () => {
   });
 
   it('終了行のない開始行で token が合う → 行は増えない', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
     expect(closeOrphans(found, 'A', () => 'running')).toEqual([]);
     expect(readRuns(found, { session: 'A' })).toHaveLength(1);
   });
 
   it('token なしの古い行で pid が死んでいる → 終了行を書く', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 999_999 }));
     const closed = closeOrphans(found, 'A');
     expect(closed).toHaveLength(1);
@@ -392,7 +369,7 @@ describe('closeOrphans', () => {
   });
 
   it('終了行が既にある → 新しい行を書かない', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }));
     appendRun(
       found,
@@ -409,7 +386,7 @@ describe('closeOrphans', () => {
   });
 
   it('appendRun が投げる → 例外はそのまま（呼ぶ側の index.ts が握る）', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
     const file = dayFile(found, new Date());
     chmodSync(file, 0o444);
@@ -421,7 +398,7 @@ describe('closeOrphans', () => {
   });
 
   it('check が unknown → 終了行を書かない（走っている側）', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(
       found,
       record({
@@ -437,19 +414,10 @@ describe('closeOrphans', () => {
   });
 
   it('token なし + pidAlive が true → 閉じない', () => {
-    const found = place();
+    const found = aPlace();
     appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: process.pid }));
     expect(closeOrphans(found, 'A')).toEqual([]);
     expect(readRuns(found, { session: 'A' })).toHaveLength(1);
-  });
-
-  it('閉じた行 → ended が数値、reason が空でない文字列', () => {
-    const found = place();
-    appendRun(found, record({ session: 'A', subagent: 'consult-1', pid: 11, token: 'a' }));
-    const closed = closeOrphans(found, 'A', () => 'ended');
-    expect(typeof closed[0]?.ended).toBe('number');
-    expect(typeof closed[0]?.reason).toBe('string');
-    expect((closed[0]?.reason ?? '').length).toBeGreaterThan(0);
   });
 });
 

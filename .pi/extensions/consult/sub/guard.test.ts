@@ -96,7 +96,6 @@ describe('judgeToolCall', () => {
 describe('parseLimits', () => {
   it('何も渡されていない → 制限なし', () => {
     expect(parseLimits(undefined)).toEqual({ state: 'open' });
-    expect(parseLimits('  ')).toEqual({ state: 'open' });
   });
 
   it('メインエージェントが渡した JSON → その値', () => {

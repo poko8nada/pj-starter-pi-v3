@@ -306,69 +306,91 @@ function aBudgetPi(
 
 ### Slice 1: fixture の共通前提
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: d48bc33
 - Stopped:
 
 ### Slice 2: budget の重複断言と入力
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `budget.test.ts` の `aBudgetPi` 呼び出し 3 か所を `{ }` 付きの arrow にした。plan の `(pi) => registerBudget(pi, turns)` の形だと `lint` の `no-confusing-void-expression` に触れて `Verify` が通らないため、ここで直した。
+- Commit: f50b2cf
 - Stopped:
 
 ### Slice 3: retry-start を単体と配線に分ける
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b747acd
 - Stopped:
 
 ### Slice 4: 到達しない入力と同じ分岐の整理
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: c8dfe6a
 - Stopped:
 
 ### Slice 5: log の古い文言
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4421eac
 - Stopped:
 
 ### Cleanup: consult のテスト
 
 - Findings:
+  - `delivery.test.ts` の壊れテストから `pendingReports` の断言を落とした。`pendingReports` の happy が同じ行の返却をすでに見ている。
+  - `log.test.ts` の `closeOrphans` の型だけのテストを落とした。`ended` が数値で `reason` が空でない文字列であることは型が決めており、設計の `Test cases` が書かない前提である。
+  - `log.test.ts` の `token` と `startToken` の往復テストから `parseRun` 部分の断言を落とした。欄の素通しは単体が持ち、配線は保存からの読み返しだけを見る。
+  - `log.test.ts` の `pidAlive(0)` を落とした。`-1` と同じ `<=0` の分岐に入る（`proc` の slice 4 と同じ整理）。
+  - `budget.test.ts` の `lastTurn(2)` を落とした。`40` と同じ `turns - 2` の分岐で、境界値だけの確認は書かない。
+  - `budget.test.ts` の `turnsFrom('2.5')` を落とした。題名の分類にない行である。
+  - `spec.test.ts` の 1 つ目の guard テストから `guard.ts` の断言を落とした。2 つ目のテストが 2 つの拡張の絶対パスをすでに見ている。
+  - `proc.test.ts`、`run.test.ts`、`guard.test.ts`、`tool/subagents.test.ts`、`index.test.ts`、`consult.fixture.ts` は重複なし。触っていない（`index` の配線の絞りは 02 の仕事のため）。
+  - 66 ファイル、870 件のテストが成功（1 件減）。`pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` が通る。
 - Unplanned:
+  - `delivery.test.ts` の壊れテストの死んだ前提を直した。壊れた JSON の上書きで消える `writeCursorFile` の 1 行を落とした。
+  - `log.test.ts` の不良行テストの前提を `subagent` なしの 1 行に直した。`session` なし行の読み飛ばしは `parseRun` の単体が持つ。
+  - `log.test.ts` の保存テストの前提を `readRuns` の 1 断言に直した。日ごとの文件の行数は同じ保存を 2 回見ていた。
+  - `worktree.test.ts` の `unit の保存場所` の表題を直した。記録を置く前提が本文になかったため、本文の向き（`unit` の下の `wt`）に合わせた。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/extensions/consult/consult.fixture.ts:7` の「テストの外から読まれても、何も起きずに止まらない（副作用を持たない）」が古い。`aPlace()` が `tempDir()` で一時ディレクトリを作り、読み込み時に `test/temp-dir.ts:29` の `afterEach` 登録を引き込むため、何も起きない・副作用なしという説明と矛盾する。理由: 変更が前提（FS を開かない）を変えたのに文書の 3 行目が残ったため。なお冒頭 2 行目の文言自体は plan の Steps 1.1.3 が決めた値のため finding にしない。
+    - fixed: 7 行目を「読むだけでは作らず（`temp-dir.ts` の `afterEach` 登録だけ引き込む）、作るのは `aPlace()` を呼んだとき」に直した。読むだけの引き込みと呼んだときの作成を分けて書いた。
+- Unlisted: なし。理由: diff が触った 11 ファイル（fixture・delivery・log・proc・run・worktree・budget・guard・spec・subagents・index の各 test と fixture）はすべて `## Files` の `update` 名指し内であり、`delivery.ts`・`log.ts`・`place.ts`・`proc.ts`・`run.ts`・`subagent.ts`・`worktree.ts`・`budget.ts`・`guard.ts`・`spec.ts`・`subagents.ts`・`index.ts`・`test/temp-dir.ts` に変更はないため。
+- Gaps: なし。理由: 落とした断言は同分岐・到達不能（ADR F12-F17）に沿い、残すべき内容は他レイヤーが持つ（促し内容は `nudge` 単体、変換全文は `spec.test.ts:176` の `modelEventFrom`、保存の読み返しは `readRuns`）。配線に残る重複（`index` の文面・widget 内容等）は Notes が 02 送りと明記した範囲のため 01 の対象外とする。
+- Policy: なし。理由: 製品コードと consult 実装の変更はなく、失敗経路（`readCursor` の undefined、`sendMessage` 投げ、`appendRun` 投げ等）は残り、新たに到達不能・言い換え・bool 写像の確認を足していないため。`Allowed` の削除・統合・fixture 移動・文言修正の範囲内であるため。
+- Unproven: なし。理由: 配線の絞り（`run.test.ts:116` の kind+model、`run.test.ts:153-154` の kind のみ、`budget.test.ts:75` の `nudge` 比較等）は plan の Steps 2-3 が決めたレイヤー分割であり、内容が壊れれば `nudge` 単体や `modelEventFrom` 単体が赤くなるため、単体で見れば見逃さないため。
+- Noise: なし。理由: 残る数値・文字列（`lastTurn(40)→38`、`p/m`、`START`、`999999` 等）は plan/ADR が残すと決めた値かファクトリへの入力であり、断言自体は変数から取り、型が決める確認や魔数・直書き断言の新設はないため。
+- Doubts: なし。
 
 ### Round 2
 
 - Stale:
+  - OK — `.pi/extensions/consult/consult.fixture.ts:7` は「テストの外から読んでも止まらない。読むだけでは作らず（`temp-dir.ts` の `afterEach` 登録だけ引き込む）、作るのは `aPlace()` を呼んだとき。」になっており、Round 1 が指摘した「何も起きない・副作用なし」の文言は消えた。`consult.fixture.ts:16` が `test/temp-dir.ts` を読むと `temp-dir.ts:29` の `afterEach` 登録だけが走り、`mkdtempSync` は走らないこと、`aPlace()`（`:67-69`）を呼んだときに `tempDir()` が 2 回走ることと一致する。理由: 読むだけの引き込みと呼んだときの作成を分けて書くという `fixed:` の内容どおりになり、矛盾が解消されたため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 1 件は文言どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: consult の `run` と `sub` のテストが、各テスト固有の事実だけを残し、同じ事実をレイヤーごとに1回確認する形になる。達成した。
+- Ran: `pnpm test:run`（66 ファイル、870 件成功）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、plan の Always の読合わせ。
+- Findings: なし。
+- Doubts: cleanup で plan の見込みより 1 件多くテストを削除した（plan の 2 件 + cleanup の 1 件 = 3 件減、870 件）。
