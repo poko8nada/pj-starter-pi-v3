@@ -164,7 +164,48 @@ describe('latest', () => {
 describe('listText', () => {
   it('記録がなければそう言う（空行を返さない）', () => {
     const text = listText([], 0);
-    expect(text).toBe('no subagents in this project yet');
+    expect(text).toBe('no subagents in this session yet');
+  });
+
+  it('running → 走っている記録の行だけを出す', () => {
+    const running = record({ subagent: 'consult-1', pid: 4242 });
+    const done = record({ subagent: 'consult-2', ended: 2000, state: 'done' });
+    const text = listText([running, done], 0, runningCheck, 'running');
+    expect(text).toContain('consult-1');
+    expect(text).not.toContain('consult-2');
+    expect(text.split('\n')).toHaveLength(1);
+  });
+
+  it('all → 同じ記録で 2 行を出す', () => {
+    const running = record({ subagent: 'consult-1', pid: 4242 });
+    const done = record({ subagent: 'consult-2', ended: 2000, state: 'done' });
+    const text = listText([running, done], 0, runningCheck, 'all');
+    expect(text).toContain('consult-1');
+    expect(text).toContain('consult-2');
+    expect(text.split('\n')).toHaveLength(2);
+  });
+
+  it('running で走っている記録がない → no subagents running in this session', () => {
+    const done = record({ subagent: 'consult-2', ended: 2000, state: 'done' });
+    expect(listText([done], 0, runningCheck, 'running')).toBe(
+      'no subagents running in this session',
+    );
+  });
+
+  it('all で記録がない → no subagents in this session yet', () => {
+    expect(listText([], 0, runningCheck, 'all')).toBe('no subagents in this session yet');
+  });
+
+  it('running で ended と notice があり delivered がない記録 → running として出る', () => {
+    const waiting = record({
+      subagent: 'consult-2',
+      ended: 2000,
+      state: 'done',
+      notice: 'できた',
+    });
+    const text = listText([waiting], 0, runningCheck, 'running');
+    expect(text).toContain('consult-2');
+    expect(text).toContain('running');
   });
 });
 
