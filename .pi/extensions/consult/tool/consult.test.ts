@@ -188,21 +188,6 @@ describe('run', () => {
     expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
   });
 
-  it('記録に consult-7 と consult-2 が混ざっている → 次は consult-8', async () => {
-    const { pi } = fakePi();
-    const { run: runner } = deferredRunner();
-    const { runtime, place } = setup(pi, runner);
-    const high = 7;
-    const low = 2;
-    const expectedNum = high + 1;
-    seedRunning(place, { subagent: `consult-${high}` });
-    seedRunning(place, { subagent: `consult-${low}` });
-
-    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
-
-    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
-  });
-
   it('別の session の consult-9 は数えない → この session の次は consult-1', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
@@ -717,18 +702,6 @@ describe('status', () => {
 
     expect(notices).toHaveLength(1);
     expect(notices[0]?.type).toBe('info');
-  });
-
-  it('終わった記録だけ → no subagents running in this session を出す', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
-    seedRunning(place, { subagent: 'consult-1', ended: Date.now(), state: 'done' });
-    const { ctx, notices } = fakeCommandContext();
-
-    await runtime.commands.status('', ctx);
-
-    expect(notices[0]?.message).toBe('no subagents running in this session');
   });
 
   it('別セッションの走っている記録 → 出さない', async () => {

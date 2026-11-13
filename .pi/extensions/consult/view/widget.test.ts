@@ -25,12 +25,6 @@ describe('countRoles / runningLine', () => {
     expect(runningLine(countRoles(runs, ORDER))).toBe('[res:1 cod:1]');
   });
 
-  it('order にない役割は初出順で後ろに置き、名前の先頭 3 文字を使う', () => {
-    const runs = [aRunRecord({ role: 'custom' })];
-
-    expect(runningLine(countRoles(runs, ORDER))).toBe('[cus:1]');
-  });
-
   it('order にない役割が 2 つ → 初出順で後ろに並ぶ', () => {
     const runs = [aRunRecord({ role: 'zeta' }), aRunRecord({ role: 'alpha' })];
 

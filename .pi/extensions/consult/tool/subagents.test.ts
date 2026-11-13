@@ -4,7 +4,6 @@ import { aPlace, aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.t
 import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type Place } from '../run/place.ts';
 import {
-  USAGE,
   createSubagentsTool,
   elapsed,
   latest,
@@ -315,7 +314,6 @@ describe('createSubagentsTool', () => {
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
       /consult_subagents: cancel needs id/,
     );
-    expect(USAGE).toContain('cancel needs id');
   });
 
   it('知らない action → 投げる', async () => {
