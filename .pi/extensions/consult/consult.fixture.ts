@@ -4,6 +4,7 @@
  * 何をするものか
  * - `types.json` の 1 つの type、サブエージェントの依頼、記録の 1 行を組み立てる。
  * - 値と文字列を組み立てる。`aPlace()` は `tempDir()` で一時ディレクトリを作り、後始末は `temp-dir.ts` がする。`aAt()` は毎回新しい Date を返す。
+ * - 偽 `PiFace` は `aPiFace()`、5 要素タプルは `aToolCall()`、開始時刻は `START_TOKEN` で作る。
  * - テストの外から読んでも止まらない。読むだけでは作らず（`temp-dir.ts` の `afterEach` 登録だけ引き込む）、作るのは `aPlace()` を呼んだとき。
  *
  * どう呼ぶか
@@ -12,6 +13,7 @@
 
 import type { TypePolicy } from './policy/types.ts';
 import type { ConsultOptions } from './sub/spec.ts';
+import type { ConsultMessage, ConsultSendOptions, PiFace } from './tool/consult.ts';
 import { placeFor, type Place } from './run/place.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
 import type { RunRecord } from './run/log.ts';
@@ -91,3 +93,48 @@ export function aWidgetUI(): {
   };
   return { ui, calls };
 }
+
+/** 送ったメッセージを記録する偽の pi。`failNext()` の後の 1 回だけ投げてから記録する */
+export function aPiFace(): {
+  readonly pi: PiFace;
+  readonly sent: readonly ConsultMessage[];
+  readonly calls: ReadonlyArray<{
+    readonly message: ConsultMessage;
+    readonly options?: ConsultSendOptions;
+  }>;
+  readonly failNext: () => void;
+} {
+  const sent: ConsultMessage[] = [];
+  const calls: Array<{ message: ConsultMessage; options?: ConsultSendOptions }> = [];
+  let fail = false;
+  const pi: PiFace = {
+    sendMessage: (message, options) => {
+      if (fail) {
+        fail = false;
+        throw new Error('gone');
+      }
+      sent.push(message);
+      calls.push({ message, options });
+    },
+  };
+  return {
+    pi,
+    sent,
+    calls,
+    failNext: () => {
+      fail = true;
+    },
+  };
+}
+
+/** 道具の 5 要素タプルを作る */
+export function aToolCall<T, C>(
+  params: T,
+  ctx: C,
+  id = 'call',
+): [string, T, undefined, undefined, C] {
+  return [id, params, undefined, undefined, ctx];
+}
+
+/** ps の開始時刻の固定値 */
+export const START_TOKEN = 'Wed Oct 21 12:41:12 2026';

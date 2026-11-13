@@ -323,62 +323,87 @@ export function aWidgetUI(): {
 
 ### Slice 1: fixture のモックとタプル
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `tool/consult.test.ts` の `placeFor` の import を残した。`setup()` 以外に 17 か所が `placeFor(tempDir(), tempDir())` を使っており、落とすと `typecheck` が通らないため。`setup()` の 1 か所だけ `aPlace()` にした。
+  - `tool/consult.test.ts` の `beginRun` の `fixed` も `START_TOKEN` にした。plan の 2 か所に加えた 3 か所目で、同じ値を残すと重複になるため。
+  - `tool/consult.test.ts` の `fakePi()` の戻りを `Pick<ReturnType<typeof aPiFace>, 'pi' | 'calls'>` にした。`ConsultMessage` と `ConsultSendOptions` の import を落としても型が通るため。
+  - `index.test.ts` の `fakePi()` の `sent` を `readonly ConsultMessage[]` にした。`aPiFace()` の `sent` が readonly のため。
+- Commit: 58eb583
 - Stopped:
 
 ### Slice 2: 登録と status のレイヤー
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 78fb31f
 - Stopped:
 
 ### Slice 3: ウィジェットのレイヤー
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1c30c25
 - Stopped:
 
 ### Slice 4: 古い文言
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7fd8bb4
 - Stopped:
 
-### Cleanup: consult のテスト
+### Cleanup: 重複する番号・文面・短名とUSAGE断言
 
 - Findings:
+  - `tool/consult.test.ts` の `記録に consult-7 と consult-2 が混ざっている → 次は consult-8` を落とした。`記録に consult-3 がある → consult-4` と同じ最大+1を見ており、`high` が先頭のため最大の証明にもならないため。`consult-3` の reload、`別 session`、`連続 2 体`、`終わった番号` は残す。
+  - `tool/consult.test.ts` の `終わった記録だけ → no subagents running in this session を出す` を落とした。配線の `info` は `走っている記録がない` が持ち、文面は `tool/subagents.test.ts` の `running で走っている記録がない` が持つため。`別セッション` の絞りは残す。
+  - `view/widget.test.ts` の `order にない役割は初出順で後ろに置き` の `custom` 1 件を落とした。`zeta` と `alpha` の 2 件が未知の配置と初出順と短名をすでに見ているため。
+  - `tool/subagents.test.ts` の `expect(USAGE).toContain('cancel needs id')` を落とした。直前の `rejects.toThrow` と同じ文を見ており、`USAGE` の自己言及のため。投げる側の確認は残す。
+  - 66 ファイル、869 件のテストが成功（3 件減）。`pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` が通る。
 - Unplanned:
+  - `tool/subagents.test.ts` の `USAGE` の import を落とした。断言を落とした後に未使用となり、`typecheck` が通らないため。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/extensions/consult/index.test.ts:320` の題名「入口を呼ぶ → consult のレンダラーとして renderNotice が登録される」が古い。テストは `received` の長さだけを見て何が登録されたかを確認していないのに、題名だけが具体名 `renderNotice` を残しているため。理由: 変更が中身の確認を `view/notice.test.ts:202` に移したのに題名が残ったため。
+    - fixed: 題名から具体名 `renderNotice` を落とし「入口を呼ぶ → consult のレンダラーが 1 件登録される」に直した。長さだけを見る確認と一致させたため。
+  - `.pi/extensions/consult/index.test.ts:325` の題名「consult-status を登録し、handler を呼ぶと commands.status が info で通知する」が古い。テストは `commands.get` と `description` だけを見て `notices`・`ctx`・ハンドラ呼び出しを消しているのに、題名が呼び出しと通知を約束しているため。理由: plan の Steps 2.1.2 が確認を登録と説明文だけに絞ったのに題名が旧いままのため。
+    - fixed: 題名を「consult-status を登録する → 説明文を持つ」に直し、呼び出しと通知の約束を落とした。`get` と `description` だけを見る確認と一致させたため。
+  - `.pi/extensions/consult/index.test.ts:274` の題名「同じ印で一覧は running から done へ、音は鳴る状態から鳴らない状態へ」が古い。テストは `sent` と `played` の 3 断言だけを残し `rowsOf` の before/after を落としているのに、題名が一覧の running→done をうたっているため。理由: plan の Steps 2.1.3 が配線を通知と音だけに絞ったのに題名が旧いままのため。
+    - fixed: 題名を「同じ印で tick を進める → 送り 1 回、音 1 回、2 回目は送らない」に直し、一覧の running→done を落とした。`sent` と `played` だけを見る確認と一致させたため。
+- Unlisted: なし。理由: diff が触った 7 ファイル（fixture・index.test・consult.test・subagents.test・worktree.test・widget.test・commit.test）はすべて `## Files` の `update` 名指し内であり、製品コード・`policy`・`README` 等に変更はないため。
+- Gaps: なし。理由: 落とした断言は同分岐・到達不能・重複であり、文面は `tool/subagents.test.ts:183` と `:190` の `listText`、内容は `view/widget.test.ts` の `runningLine` と `showRunning`、登録内容は `view/notice.test.ts:202` が持つため。Goal の「同じ事実をレイヤーごとに1回」が保たれているため。
+- Policy: なし。理由: 製品コードと consult 実装の変更はなく、配線はキー・型・件数だけを見て同じ値の二重確認をしていないため。失敗経路（`sendMessage` 投げ・`setWidget` 投げ・`cancel` 投げ等）は残り、`policy` のテスト変更もないため。`Allowed` の削除・統合・移動・文言修正の範囲内のため。
+- Unproven: なし。理由: 長さだけ・キーだけ・型だけの配線の絞りは plan の Steps 2〜3 が決めたレイヤー分割であり、中身が壊れれば `registerNotice`・`listText`・`runningLine`・`showRunning` の単体が赤くなるため、単体で見れば見逃さないため。
+- Noise: なし。理由: 残る値（`START_TOKEN`・`'call'`・`'gone'`・`review` 等）は plan・ADR が残すと決めた値かファクトリへの入力であり、断言自体は変数から取り、型が決める確認や魔数・直書き断言の新設はないため。
+- Doubts: なし。
 
 ### Round 2
 
 - Stale:
+  - OK — `.pi/extensions/consult/index.test.ts:320` は「入口を呼ぶ → consult のレンダラーが 1 件登録される」になっており、本文は `received` の長さ 1 だけを見る（`:320-323`）。`renderNotice` の import・参照はなく、題名と確認が一致する。理由: 具体名を落として長さだけの確認と一致させるという `fixed:` の内容どおりになり、古さが解消されたため。
+  - OK — `.pi/extensions/consult/index.test.ts:325` は「consult-status を登録する → 説明文を持つ」になっており、本文は `commands.get('consult-status')` と `description` だけを見る（`:325-329`）。`notices`・`ctx`・ハンドラ呼び出しはなく、題名と確認が一致する。理由: 呼び出しと通知の約束を落とすという `fixed:` の内容どおりになり、古さが解消されたため。
+  - OK — `.pi/extensions/consult/index.test.ts:274` は「同じ印で tick を進める → 送り 1 回、音 1 回、2 回目は送らない」になっており、本文は `sent` と `played` の 3 断言だけを見る（`:283-287`）。`rowsOf` の import・参照はなく、一覧の running→done の文言は題名にない。理由: 一覧を落として通知と音だけに絞るという `fixed:` の内容どおりになり、古さが解消されたため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - なし — `fixed:` 3 件は題名どおりに直っており、所見に至らない疑義も残らなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: consult の `tool`、`view`、`index`、`policy` のテストが、各テスト固有の事実だけを残し、同じ事実をレイヤーごとに1回確認する形になる。達成した。
+- Ran: `pnpm test:run`（66 ファイル、869 件成功）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、plan の Always の読合わせ。
+- Findings: なし。
+- Doubts: cleanup で 3 件減（重複する番号・文面・短名と USAGE 断言）。plan の見込みは 2 件増だったが、cleanup 後は base より 1 件少ない 869 件。

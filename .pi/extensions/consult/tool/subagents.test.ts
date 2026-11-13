@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { aPlace, aRunRecord } from '../consult.fixture.ts';
+import { aPlace, aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type Place } from '../run/place.ts';
 import {
-  USAGE,
   createSubagentsTool,
   elapsed,
   latest,
@@ -218,13 +217,7 @@ describe('createSubagentsTool', () => {
       record({ subagent, worktree, ended: 2000, state: 'done', turns: 3, spend: '0.002 usd' }),
     ]);
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     const out = await createSubagentsTool(host)(...args);
     const text = textOf(out);
     expect(text).toContain(subagent);
@@ -236,7 +229,7 @@ describe('createSubagentsTool', () => {
     const subagent = 'consult-1';
     const found = withLog([record({ subagent, ended: 2000, state: 'done' })]);
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = ['call', {}, undefined, undefined, { cwd: tempDir() }];
+    const args: SubagentsArgs = aToolCall({}, { cwd: tempDir() });
     const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain(subagent);
   });
@@ -244,16 +237,10 @@ describe('createSubagentsTool', () => {
   it('list の check の関数が効く（running と ended を返す差し替えで一覧の状態が変わる）', async () => {
     const subagent = 'consult-1';
     const pid = 11;
-    const startToken = 'Wed Oct 21 12:41:12 2026';
+    const startToken = START_TOKEN;
     const start = record({ session: 'session-a', subagent, pid, startToken });
     const runningFound = withLog([start]);
-    const runningArgs: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const runningArgs: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     expect(
       textOf(
         await createSubagentsTool(fakeHost(runningFound, 'session-a', runningCheck).host)(
@@ -262,13 +249,7 @@ describe('createSubagentsTool', () => {
       ),
     ).toContain('running');
     const endedFound = withLog([start]);
-    const endedArgs: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const endedArgs: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     const endedText = textOf(
       await createSubagentsTool(fakeHost(endedFound, 'session-a', endedCheck).host)(...endedArgs),
     );
@@ -284,13 +265,7 @@ describe('createSubagentsTool', () => {
       record({ session: 'session-b', subagent: second, ended: 2000, state: 'done' }),
     ]);
     const { host } = fakeHost(found, 'session-a');
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain(first);
     expect(text).not.toContain(second);
@@ -303,13 +278,7 @@ describe('createSubagentsTool', () => {
     // 2 日より長く走るサブエージェントは窓の外に出る（受け入れる限界）
     const found = withLog([record({ subagent, pid: process.pid })], threeDaysAgo);
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).not.toContain(subagent);
   });
@@ -322,13 +291,7 @@ describe('createSubagentsTool', () => {
     appendRun(found, record({ subagent, pid: process.pid }), threeDaysAgo);
     appendRun(found, record({ subagent, pid: process.pid, ended: 2000, state: 'done' }));
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'list' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
     const text = textOf(await createSubagentsTool(host)(...args));
     expect(text).toContain(subagent);
     expect(text).toContain('done');
@@ -338,13 +301,7 @@ describe('createSubagentsTool', () => {
     const id = 'consult-1';
     const found = withLog();
     const { host, cancelled } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'cancel', id },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'cancel', id }, { cwd: tempDir() });
     const out = await createSubagentsTool(host)(...args);
     expect(textOf(out)).toContain(`stopped: ${id}`);
     expect(cancelled).toEqual([id]);
@@ -353,29 +310,16 @@ describe('createSubagentsTool', () => {
   it('{action: cancel}（id なし）→ 使い方つきで投げる', async () => {
     const found = withLog();
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'cancel' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'cancel' }, { cwd: tempDir() });
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
       /consult_subagents: cancel needs id/,
     );
-    expect(USAGE).toContain('cancel needs id');
   });
 
   it('知らない action → 投げる', async () => {
     const found = withLog();
     const { host } = fakeHost(found);
-    const args: SubagentsArgs = [
-      'call',
-      { action: 'stop' },
-      undefined,
-      undefined,
-      { cwd: tempDir() },
-    ];
+    const args: SubagentsArgs = aToolCall({ action: 'stop' }, { cwd: tempDir() });
     await expect(createSubagentsTool(host)(...args)).rejects.toThrow(
       /consult_subagents: action is list or cancel/,
     );
