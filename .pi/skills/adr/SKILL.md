@@ -5,13 +5,11 @@ description: Use when the owner names an unfinished ROADMAP.md item or asks for 
 
 # adr
 
-One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It records the cycle's decisions about `DEFINITION.md`.
+One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It records the cycle's decisions about `DEFINITION.md`. `slug` is automatically determined from the branch.
 
-The ADR records what the picture becomes. A plan writes the change from `DEFINITION.md`. The plan and the work are written from `DEFINITION.md`, and none of them argues.
+The ADR records what the project will be. A plan writes the change from `DEFINITION.md`. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
 The procedure has two stages. The cycle stage settles the intent, the roadmap item and the entries. The entry stage runs once per entry.
-
-The entry's question, the intent and the split are the owner's. The procedure writes them down, and the owner's answer is the decision.
 
 ## Cycle
 
@@ -25,7 +23,10 @@ Steps:
 
 View: the intent is the only measure of what follows.
 
-Note: do not start the research before the intent is settled. The target would be wrong.
+Note:
+
+- do not start the research before the intent is settled. The target would be wrong.
+- The "intent" represents the overall policy; it is not something that is asked about in the entries.
 
 ### 2. Roadmap
 
@@ -48,7 +49,10 @@ View:
 
 Steps:
 
-1. Split the cycle into entries. One entry has one `Main`.
+1. Split the cycle into entries.
+   - The general rule is one entry per topic of main interest.
+   - Group interests that are subordinate to a main interest into a single entry.
+   - An entry title should be a `topic` rather than necessarily a `question`.
 2. Propose each entry's `Type` with its reason, in the split's order, and show it with the split:
    - `Type` is `_Full_` or `_Simple_`.
    - A Simple proposal meets all of these:
@@ -56,7 +60,6 @@ Steps:
      - it crosses no Unit, as merging functions would.
      - the owner's intent has a single reading.
      - the outline of the work is inferable, and there is one way to do it, with nothing to compare.
-   - The reason names the conditions the entry meets, when the proposal is Simple.
 3. Show the owner the split, each entry's intent, each entry's `Type`, and the order of the entries with its reason.
 4. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry. When only the order is rejected, keep the split and write the order again with its reason.
 5. Add every agreed entry at once, in the split's order, with the scaffold:
@@ -64,19 +67,8 @@ Steps:
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from `adr.md` and `affected/<NN>.md`, and renumbers the rest.
    - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title> [Full|Simple]` replaces the title of entry `NN` in `adr.md` and `affected/<NN>.md`. When the `Type` is given, it also writes the `Type:` line, `Scope` and `#### Details` in `adr.md` in that `Type`'s shape; when it is omitted, the `Type` stays.
 
-View:
-
-| case                                                                               | the entry     |
-| ---------------------------------------------------------------------------------- | ------------- |
-| the main concern                                                                   | one `Main`    |
-| a change that follows the `Main`'s change or addition uniquely, without discussion | one `Sub`     |
-| a change that needs discussion, or does not follow uniquely                        | another entry |
-
 Notes:
 
-- Write what the chat settled at once. Do not keep an agreement only in the chat.
-- An entry has one `Main` and may have `Sub`s.
-- A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
 - A change that needs discussion, or does not follow uniquely, is another entry.
 - The owner's answer decides the split and the order.
 - Basically, an entry whose decision influences a later entry comes first.
@@ -140,7 +132,7 @@ Note: write what is settled. A guess stays in the chat.
 
 The entry stage runs once per entry, in the order the split gave. An entry is `_Full_` or `_Simple_`. A Simple entry keeps `Scope` and `#### Details` as `_omission_` and skips `### 1. Scope` and `### 3. Discussion Loop`. A Full entry walks the steps below.
 
-### 0. Type
+### 1. Type
 
 Steps:
 
@@ -152,12 +144,13 @@ Notes:
 - The owner decides the `Type`; the agent writes it.
 - A Full entry does not become Simple after the entry stage starts.
 
-### 1. Scope
+### 2. Scope
 
 Steps:
 
 1. Read the `## Scope` section of `references/adr.format.md`.
 2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
+   - The scope is determined by answering the "questions" found in the table.
 3. Let the owner correct the list.
 4. Write the result to the entry's `Scope` as `In:` and `Out:`.
 
@@ -166,7 +159,7 @@ Notes:
 - The scope is of this entry. The other entries keep their own scope.
 - The first `Scope` is a guess. Rewrite it in `Discussion Loop` with the owner.
 
-### 2. The opening proposal
+### 3. The opening proposal
 
 Steps:
 
@@ -182,20 +175,32 @@ Steps:
 Notes:
 
 - The proposal is in adr.md, not only in the chat.
-- The facts serve the opening proposal.
-- A fact that is still missing stops the entry. It is looked up here, not in the decision.
+- The proposal must be based on the initially agreed-upon intent.
+- An entry has one `Main` and may have `Sub`s.
+- A `Sub` is allowed only when its change follows uniquely from the `Main`'s change or addition, without discussion.
 - When the holding point is a fact nobody has, a `trial` subagent may try it in a worktree, with the owner's agreement. Read the `Try it` section of `references/tasks.md` before running.
 
-### 3. Discussion Loop
+View:
+
+| case                                                        | the entry     |
+| ----------------------------------------------------------- | ------------- |
+| the main concern                                            | one `Main`    |
+| a change that follows the `Main`'s change                   | one `Sub`     |
+| a change that needs discussion, or does not follow uniquely | another entry |
+
+### 4. Discussion Loop
 
 Steps:
 
-1. Start from the opening proposal in `Decision`.
-2. Take the `In` items of `Scope`, in their order.
-3. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
-4. Show one point at a time, and discuss it until it is settled.
-5. Write what is settled where the View gives, at the moment it is settled.
-6. Repeat until the owner moves the entry to the decision. **Agent does not have the right.**
+2. Start from the opening proposal in `Decision`.
+3. Take the `In` items of `Scope`, in their order.
+4. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
+5. Show one point at a time, and discuss it until it is settled.
+   - There is no need for anyone to overturn or call into question the initial intent.
+6. Write what is settled where the View gives, at the moment it is settled.
+   - If needed, write an added `Context` item as `C<n>`, after the existing numbers.
+   - If needed, write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
+7. Repeat until the owner moves the entry to the decision. **Agent does not have the right.**
 
 View:
 
@@ -209,17 +214,15 @@ View:
 
 Notes:
 
-- Write an added `Context` item as `C<n>`, after the existing numbers.
-- Write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
-- The opening proposal is in `Decision`. A point and its proposal stay in the chat until the owner settles it.
 - When a finding shows a premise is wrong, correct the item, and keep the finding in `Research & Trial` with its source.
 - When a finding serves no item, add the item.
 - When the research is short, add it. When a finding changes the scope, propose the change and agree it.
+- Do not include every detail in the `Details`
+  - Instead, focus on key points, providing specific prose and code while omitting less essential parts as appropriate.
 - When the loop needs a fact nobody has, a trial may run as in section 2, with the owner's agreement.
-- Only the owner moves the entry to the decision. The agent has no right to do so. This step cannot be skipped.
 - When the decision sends the entry back, discuss how to fill the missing part, or whether to remove it from `Context` or `Research & Trial`.
 
-### 4. Decision
+### 5. Decision
 
 Steps:
 
@@ -235,7 +238,7 @@ Steps:
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
 
-### 5. Definition
+### 6. Definition
 
 Steps:
 
@@ -259,25 +262,19 @@ Notes:
 - A Unit that `rules/definition.rules.md` does not allow is not a Unit.
 - A rejected entry adopts nothing. Its `Definition` carries only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
 
-### 6. Affected
+### 7. Affected
 
 Steps:
 
 1. Read the `Look at the affected` section of `references/tasks.md` and `references/affected.format.md`.
 2. Run one `research` subagent to write the entry's affected to `affected/<NN>.md` in the shape `references/affected.format.md` gives, including the `Keywords` list.
+3. Go to the next entry in the split's order.
 
 Notes:
 
-- Do not wait for its result. Do not fix it. There is no procedure for it here.
+- Do not fix affected.md. You can check them after.
 - It runs in parallel with the next entry.
-
-### 7. Next entry
-
-Steps:
-
-1. Go to the next entry in the split's order.
-
-Note: the affected research runs at the same time. Do not wait for it.
+- the affected research runs at the same time. Do not wait for it.
 
 ## Japanese Proofread
 
@@ -317,12 +314,9 @@ An entry decided here is not work done. The plan cuts it, the plan writes it, an
 
 This skill keeps its own business — the entry and the decision — and does not do theirs.
 
-## How not to write this
+## How not to do this
 
 - Before the owner's answer: do not decide. The ADR writes the adopted change after the discussion, and the owner's answer there is the decision.
-- When you write an entry: do not write the work. Files, steps and checks belong to the plan.
 - When the cycle ends: do not leave an entry undecided. A cycle decides every entry it raises.
 - When you write the `Definition`: do not write `DEFINITION.md` itself. The `Definition` carries the new lines, and a plan writes them into the file.
 - Before the intent is settled: do not look up. The target would be wrong, and the time and the money go with it.
-- When you write the intent: do not leave it in the agent's words. An intent the owner did not correct is a guess.
-- When you write an entry: do not skip the scope. An entry without a scope cannot be weighed.

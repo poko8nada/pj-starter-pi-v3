@@ -5,8 +5,6 @@ description: Use when every plan of a cycle is done or dropped. It collects what
 
 # close
 
-Each plan carries its own acceptance, and every merge runs the whole suite, so the inside of a plan and the combination of them are both looked at. What no plan looks at is the cycle itself: a change an entry decided that no plan carried, and the holes the plans left behind.
-
 This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
 
 ## Procedure
@@ -61,17 +59,14 @@ View:
 
 | destination    | the leftover                                                |
 | -------------- | ----------------------------------------------------------- |
-| `_ex-change_`  | one code place, one test or documents only, worth doing now |
 | `**proposed**` | a possible obvious bug, or a debt that would grow large     |
+| `_ex-change_`  | one code place, one test or documents only, worth doing now |
 | `_roadmap_`    | a future consideration                                      |
 | `dropped`      | the rest                                                    |
 
 Notes:
 
 - The proposal order is in `references/format.md`.
-- The destinations are all in `## Triage` already. Do not show `## Collected` to the owner before this point.
-- A missing line comes back.
-- A rejection sends the agent back to the step it came from: the collect for a collected line, the exclusion for a resolved one, the proposal for a destination, the verification for a Unit.
 - The `dropped` line is explained too: the owner sees why it is dropped.
 - The gate is the owner's word.
 
@@ -111,19 +106,25 @@ Notes:
 
 Steps:
 
-1. Take one Unit at a time: propose how to check its function, and how to check what the plans that cut it changed — the command to run and what to see, or the place to read and what to look for, and the result that means it works.
-2. Explain what changed, in the same message: what every plan in `Plans:` changed, and where.
-3. Wait for the owner's answer, and hold it in the chat before the next Unit.
-4. Give a Unit whose function or change does not work an `_ex-change_`: make it in the base, commit it as `base(ex-change): <subject>`, and write a short description of the change and the commit in `## Verified`'s `Fixed`.
-5. Run this step again for that Unit when it is done; say in the chat which Unit is still open.
-6. Write `Result:` and `Change:` from what they answered, in `## Verified`, after step 5's repair, which sits after `## Triage`.
+1. Take one Unit at a time:
+   - propose how to check its function, and how to check what the plans that cut it changed
+   - the command to run and what to see, or the place to read and what to look for, and the result that means it works.
+   - explain what changed, in the same message: what every plan in `Plans:` changed, and where.
+2. Wait for the owner's answer, and hold it in the chat before the next Unit.
+3. If needed, an `_ex-change_` work:
+   - conditions: unit does not work, change does not work, the owner’s point is valid
+   1. Explan how it change to rework.
+   2. Do it in the base and commit it as `base(ex-change): <subject>`,
+   3. Write a short description of the change and the commit in `## Verified`'s `Fixed`.
+4. Write `Result:` and `Change:` from what they answered, in `## Verified`.
+5. Move to the next Unit.
 
 View:
 
-| the Unit                                            | the check                                               |
-| --------------------------------------------------- | ------------------------------------------------------- |
-| a line under `Users can do`                         | its function, and the change the plans that cut it made |
-| a `####` heading, `Product`, `What`, `Who`, `Stack` | not a Unit                                              |
+| the Unit                            | the check                                    |
+| ----------------------------------- | -------------------------------------------- |
+| a line under `Users can do`         | its function, and the change that plans made |
+| a `Product`, `What`, `Who`, `Stack` | not a Unit                                   |
 
 Notes:
 
@@ -133,14 +134,17 @@ Notes:
 - The `Fixed` is a short description of the change and the commit.
 - The gate is the owner's word.
 
-### 7. Roadmap
+### 7. Roadmap & Commit
 
 Steps:
 
 1. Write the cycle into `ROADMAP.md`, with their word.
 2. Append this cycle's number to the item's `cycles`; keep a number that is already there.
 3. Ask the owner whether the item is finished; set its `status` to `done` only on their word, and leave it `wip` when they say it is not, or when they do not say.
-4. Show the `_roadmap_` lines to the owner; they decide later whether to put them into `ROADMAP.md`. The close writes none of them.
+4. Commit `close.md` with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name (`261104-054-dev` gives `dev`).
+   - If `ROADMAP.md` status is `done`, commit together
+   - If `ROADMAP.md` status is still `wip`. Leave it.
+5. End here when no `**proposed**` line is left; otherwise go to step 9.
 
 View:
 
@@ -151,25 +155,12 @@ View:
 
 Notes:
 
-- The shape and the rules of the table are in `rules/roadmap.md`.
-- The `_roadmap_` lines end in `## Triage`; the close gives them no destination.
-- The gate is the owner's word.
-
-### 8. Commit
-
-Steps:
-
-1. Commit `close.md` and `ROADMAP.md` in one, with `close: NNN-<suffix>'s close and roadmap`; `<suffix>` is the part right of the number in the cycle folder name, as in work step 2 (`261104-054-dev` gives `dev`). When the roadmap's status is `wip`, commit `close.md` alone, with `close: NNN-<suffix>'s close`, and leave `ROADMAP.md` in the working tree.
-2. End here when no `**proposed**` line is left; otherwise go to step 9.
-
-Notes:
-
 - The worktrees are clean: the work skill's merge step removes each plan's worktree.
 - The roadmap is written before it: the roadmap step says so. When the item is `wip`, it is written but stays out of this commit.
 - An `_ex-change_` and its work are committed at its own commit; this commit does not carry them.
 - The `**proposed**` files are after this commit, and are not committed.
 
-### 9. Proposed
+### 9. Proposed (only if `**proposed**`)
 
 Steps:
 
@@ -188,16 +179,13 @@ View:
 
 Notes:
 
-- The intent is omitted; this is not the normal ADR.
+- The intent is omitted; because we already got it. This is not the normal ADR.
 - The next cycle's `adr.md` and `affected/*.md` are written by the adr skill's scaffold and the pre-research.
 - The next session starts at the entry's `Type`.
 - The files are not committed.
 
-## How not to write this
+## How not to do this
 
-- When the owner verifies a Unit: do not run the plan's checks again. The acceptance ran them, and the merge gate held, and the verification is of the Unit's function and the change, in `## Verified`.
 - When you find a hole: do not fix it silently, and do not write the fix into `DEFINITION.md` or a plan. It goes in the `## Triage`.
 - When you close the cycle: do not leave a leftover without a line in the `## Triage`. The cycle closes only when every one of them has a destination, and every `_ex-change_` line in the `## Triage` has its `done`.
-- When you implement an `_ex-change_`: do not batch. One change, one commit, and its `done <commit>`.
-- When you write the `**proposed**`: do not fill the `Scope`, and do not commit the next cycle's files. The next session starts there.
 - After every rerun of the script: do not skip the resolved exclusion. What the wording shows is already closed is deleted by the agent, and re-filtered.

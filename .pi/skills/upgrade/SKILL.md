@@ -9,7 +9,9 @@ A package is updated in two parts: inside the declared range, and past it. The f
 
 The work has two stops, and the owner answers at both: the report, where they pick the packages; and the audit, where they say the leftovers are as expected.
 
-This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no affected and no plan. Its record is the commits: one package, one commit, with the checks that passed. When an update forces a decision the product owns — a behavior, a line of `DEFINITION.md`, a choice between two ways — the agent stops the upgrade, and opens a cycle for that part.
+This skill is routine: it keeps the ground the product stands on, and it does not decide what the product becomes. It writes no ADR, no affected and no plan.
+
+When an update forces a decision the product owns — a behavior, a line of `DEFINITION.md`, a choice between two ways — stops the upgrade, and opens a cycle for that part.
 
 `references/report.md` holds the shape of the report the owner reads. `references/tasks.md` holds the text handed to a `research` subagent that looks one package up.
 
@@ -24,7 +26,6 @@ Steps:
 Notes:
 
 - It writes the range in `package.json` and moves `pnpm-lock.yaml`.
-- The agent says so and goes on when nothing moves.
 
 ### 2. Find what is out of range
 
@@ -48,7 +49,6 @@ Notes:
 - A package is out of range when `latest !== wanted`.
 - `peerDependencies` are not checked.
 - `pnpm outdated` does not see them.
-- The agent says that in the report.
 - The number is `minimumReleaseAge` minutes.
 - It is 1440 when it is not there.
 - Prereleases are not counted.
@@ -100,11 +100,11 @@ Steps:
 
 View:
 
-- the test
-- the typecheck
-- the lint
-- the format check
-- the build when `package.json` has one
+- test
+- typecheck
+- lint
+- format check
+- build when `package.json` has one
 
 Notes:
 
@@ -123,8 +123,8 @@ Steps:
 Notes:
 
 - `minimumReleaseAgeExclude` holds lines such as `package@1.2.3`.
-- The agent keeps a line only while it names a version that is installed.
-- The agent never rewrites a version in that list.
+- Keeps a line only while it names a version that is installed.
+- Never rewrites a version in that list.
 - A rewritten line allows a younger version.
 - That is the opposite of what the list is for.
 - A line that `pnpm audit --fix=update` wrote stays while its version is installed.
@@ -152,13 +152,13 @@ View:
 Notes:
 
 - The level is not raised and not lowered.
-- The exit code tells the two apart.
-- The agent runs `--fix` and `--ignore` in no same audit.
-- The agent calls no advisory closed before the audit says it is gone.
+- exit code tells the two apart.
+- Agent runs `--fix` and `--ignore` in no same audit.
+- Agent calls no advisory closed before the audit says it is gone.
 - `override` is the last step.
-- The work ends when the owner reads the leftovers and says they are as expected.
+- Work ends when the owner reads the leftovers and says they are as expected.
 
-## How not to write this
+## How not to do this
 
 - When the owner has not picked a package: do not apply it.
 - When you write this procedure: do not put a version or a number of minutes in it. Both are read from the project.

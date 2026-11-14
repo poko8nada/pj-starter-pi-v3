@@ -11,39 +11,28 @@ It is written from the ADR and the affected. The work is done from it. A subagen
 
 ## Procedure
 
-### 1. Read the ADR's entries
+### 1. Read the ADR's entries & the affected
 
 Steps:
 
 1. Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`.
-2. Read every accepted entry in full.
-3. Write the entry numbers the plan carries at the top of the plan md as `No`.
-
-Notes:
-
-- Each entry's `Definition` is the scope boundary.
-- The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
-
-### 2. Read the affected
-
-Steps:
-
-1. Read `cycles/<YYMMDD>-<NNN>-<slug>/affected/<NN>.md` for each entry.
-2. Read the shape in `.pi/skills/adr/references/affected.format.md`.
+2. Read `cycles/<YYMMDD>-<NNN>-<slug>/affected/<NN>.md` for each entry.
 
 View:
 
-| part           | what it holds                             |
+| afeccted part  | what it holds                             |
 | -------------- | ----------------------------------------- |
 | `Path` block   | one `Path` with its `Kind` and its `Edge` |
 | `### External` | the `### External` items                  |
 
 Notes:
 
+- Each entry's `Definition` is the scope boundary.
+- The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - The affected is the impact map.
 - `### Keywords` is the search range, not the impact map.
 
-### 3. Cut, and present
+### 2. Cut and present
 
 Steps:
 
@@ -60,25 +49,21 @@ Notes:
 - The `Goal` is one line, and `Goal` and `Summary` both stay.
 - The owner agrees before any plan md is written.
 
-### 4. Write the plan md from the affected
+### 3. Write the plan md from the affected
 
 Steps:
 
 1. Read `references/format.md` and `references/design.md` before writing.
 2. Create the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> --place <worktree|base> --entries <NN[,NN...]>`. Take the plan id, the order, the place and the entries from the cut.
-3. Read the map's every path whole.
-4. Read each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
-5. Decide each path's mark: `add`, `update`, `drop`, or no mark.
-6. Write `## Goal` above `## Design` as one line.
-7. Answer the four questions in `## Design` of `references/format.md`.
-8. Decide the slices by the concern the change carries.
-9. Name the concern in the slice's heading, and say it in one sentence on the slice's first line.
-10. Order the slices by dependency.
-11. Put a slice that reads another slice's output after it.
-12. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
-13. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
-14. Leave a line the plan cannot write with its name and an empty field.
-15. Stop when a boundary has no answer.
+3. Read the map's every path. And read deeply each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
+4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
+5. Write `## Goal` above `## Design` as one line.
+6. Answer the four questions in `## Design` of `references/format.md`.
+7. Decide and order the slices by the concern the change carries
+8. Name the concern in the slice's heading as one sentence.
+9. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
+10. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
+11. Stop when a boundary has no answer.
 
 View:
 
@@ -114,12 +99,14 @@ Notes:
 - The `Design` answers the four questions before the slices are written.
 - When the plan's `Files` has neither `add` nor `drop`, write in the `Steps` how the update is built into the existing, and in the `Design` how the whole is redesigned.
 - A change of `Who`, `Stack` or `What` in the `Definition` is written as steps on `DEFINITION.md`.
-- A boundary with no answer is a hole in the plan.
-- A `Verify` that cannot run as written is a hole too.
-- A `Verify` that is red with the change in place is a hole too.
-- The agent says why a hole does not apply.
+- When you write `Steps`: do not write one line per file. Write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`.
+- `Verify`
+  - It cannot run as written is a hole too.
+  - It is red with the change in place is a hole too.
+  - Do not invent a check. `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
+- When you write a test case: do not write a case the type, the schema or the DB settles. It is noise, and the reviewer takes it out.
 
-### 5. Confirm what the plan leaves open
+### 4. Confirm what the plan leaves open
 
 Steps:
 
@@ -134,39 +121,7 @@ Notes:
 - The whole is confirmed here once before the review.
 - The opinion's ground is YAGNI, KISS, DRY and SOLID.
 
-### 6. Research the lines the plan cannot write
-
-Steps:
-
-1. Run one `research` subagent for a line the plan cannot write. The task is in `references/tasks.md`.
-2. Write the fact where the View gives.
-3. When the four kinds do not cover the missing fact, write the line as `Stopped` in `## Notes`' `### Slice N`, with the line, the question and the reason.
-
-View:
-
-| the kind                                | what it answers                   |
-| --------------------------------------- | --------------------------------- |
-| the code's present shape                | how the file is now               |
-| the contract of the thing it calls      | what the call expects and returns |
-| the library's or the package's practice | how it is used elsewhere          |
-| the shape of the test double            | how the double is built           |
-
-| the fact         | where it goes |
-| ---------------- | ------------- |
-| a path or a mark | `Files`       |
-| a declaration    | `Types`       |
-| a behavior       | `Steps`       |
-
-Notes:
-
-- The agent researches only the lines that block the plan.
-- A line that can wait is a `Stopped` line.
-- The agent sets the threshold for the question.
-- The agent skips what is already in hand.
-- The research is not a ritual at every plan.
-- The review reads the `Stopped` line.
-
-### 7. Review the plan for a first-time subagent
+### 5. Review the plan for a first-time subagent
 
 Steps:
 
@@ -177,7 +132,7 @@ Steps:
 
 Note: the first review asks whether a subagent with only the plan md can implement each substep. It does not check the ADR.
 
-### 8. Review the plan against the ADR
+### 6. Review the plan against the ADR
 
 Steps:
 
@@ -208,7 +163,7 @@ Notes:
 - When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
 - With two or more plans, while that review runs, write the next plan file. A plan that is fixed from its review does not wait for the others.
 
-### 9. Japanese Proofread
+### 7. Japanese Proofread
 
 Steps:
 
@@ -231,7 +186,7 @@ Notes:
 - The report says `fixed: <what>`, or `left: <why>`.
 - One round. The repaired file does not go through the subagent again.
 
-### 10. Show the owner
+### 8. Show the owner
 
 Steps:
 
@@ -254,14 +209,10 @@ Notes:
 - The plan md's `Boundary Plans` is written in step 4 from the cut's order.
 - It is edited when a pair is cut again, and git holds that diff too.
 
-## How not to write this
+## How not to do this
 
-- When you write a slice: do not leave its concern to the name alone. The heading names it, and the first line says it in one sentence.
-- When you write a slice: do not leave its `Policy` out. Copy the ADR's `Policy` without omission and without `C`/`F`.
-- When you write a step: do not copy the ADR. Name it where it bites, and write what the reader has to do.
-- When you write `Steps`: do not write one line per file. Write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`.
-- When you write a `Verify`: do not invent a check. `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
-- When you write a test case: do not write a case the type, the schema or the DB settles. It is noise, and the reviewer takes it out.
-- When you write a plan: do not leave a hole. A boundary with no answer stops the work.
-- When you write a plan: do not write one that only replaces words. A plan writes the change, not the wording.
-- When you touch a file the affected does not name: do not go on without reporting it to the owner in step 5.
+- The agent says why a hole does not apply.
+- A boundary with no answer is a hole in the plan.
+- When you write a plan:
+  - do not leave a hole. A boundary with no answer stops the work.
+  - do not write one that only replaces words. A plan writes the change, not the wording.

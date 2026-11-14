@@ -145,7 +145,10 @@ What the entry becomes, and what holds it.
 - `Add` is what grows, `Update` is what changes, and `Drop` is what disappears.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
-- `#### Details` holds the concrete code and documents the discussion settled: the specific name, the logic, the method, the schema and the structure. One bullet is the title of one fence, and the fence follows it. A fence carries one item. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
+- `#### Details`
+  - It holds the concrete code and documents the discussion settled: the specific name, the logic, the method, the schema and the structure
+  - One bullet is the title of one fence, and the fence follows it.
+  - A fence carries one item. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
 - When `#### Details` has nothing, write `なし` under it. A Simple entry's body is `_omission_`.
 - When a field has nothing in it, write `なし`.
 
