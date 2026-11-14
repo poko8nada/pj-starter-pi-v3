@@ -41,7 +41,7 @@ export function detailsBody(type) {
  * @returns {string}
  */
 export function entrySkeleton(nnn, title, type = 'Full') {
-  const q = title === undefined ? '<問い>' : title;
+  const q = title === undefined ? '<トピック>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
 ${typeLine(type)}

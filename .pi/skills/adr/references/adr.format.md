@@ -9,7 +9,7 @@ Section and field names are English; the content is Japanese.
 ````md
 # ADR <NNN>
 
-## <NN>: <問い>
+## <NN>: <トピック>
 
 Type: _Full_
 
@@ -70,7 +70,7 @@ Type: _Full_
 
 The entries the ADR holds.
 
-- `## <NN>: <問い>` holds one question, and its number runs from `01`.
+- `## <NN>: <トピック>` holds one question, and its number runs from `01`.
 - The sections run `Context`, `Research & Trial`, `Scope`, `Decision`, `Definition`.
 - `Definition` is the last section the entry leaves.
 - One bullet is one rule.

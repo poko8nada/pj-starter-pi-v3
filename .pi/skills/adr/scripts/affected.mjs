@@ -5,7 +5,7 @@
  * @returns {string}
  */
 export function affectedEntrySkeleton(nnn, title) {
-  const q = title === undefined ? '<問い>' : title;
+  const q = title === undefined ? '<トピック>' : title;
   return `## ${String(nnn).padStart(2, '0')}: ${q}
 
 ### Keywords

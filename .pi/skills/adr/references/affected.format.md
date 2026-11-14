@@ -7,7 +7,7 @@ Section and field names are English; the content is Japanese.
 ## Shape
 
 ```md
-## <NN>: <問い>
+## <NN>: <トピック>
 
 ### Keywords
 
@@ -30,7 +30,7 @@ Section and field names are English; the content is Japanese.
 
 The entries the affected covers.
 
-- `## <NN>: <問い>` holds one entry; its file is `<NN>.md`, and its number is the ADR's.
+- `## <NN>: <トピック>` holds one entry; its file is `<NN>.md`, and its number is the ADR's.
 - `### Keywords` holds the words the search covers, one line per keyword.
 - `### Code` holds the paths the change relates to, one block per path.
 - `### External` holds what the change reaches outside the product: a contract it calls, an event it listens to, a value it reads from the environment, a store or a message it uses, a path it opens, or a limit it must stay within.

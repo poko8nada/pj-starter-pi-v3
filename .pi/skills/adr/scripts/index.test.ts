@@ -244,7 +244,7 @@ describe('entrySkeleton', () => {
       .split('\n')
       .filter((line) => line.startsWith('#'));
     const expected = [
-      '## 01: <問い>',
+      '## 01: <トピック>',
       '### Context',
       '### Research & Trial',
       '### Scope',
@@ -275,7 +275,7 @@ const entry = (
   const { details = '- 例\n  ```text\n  何か\n  ```', scope = '- In:\n  - format: 何か' } = bodies;
   return `# ADR 001
 
-## 01: <問い>
+## 01: <トピック>
 
 Type: _Full_
 
@@ -457,7 +457,7 @@ describe('lastEntryNumber', () => {
   });
 
   it('壊れた見出し → 理由付きで投げる', () => {
-    const cases = ['# ADR 007\n\n## 1: <問い>\n', '# ADR 007\n\n## 01 <問い>\n'];
+    const cases = ['# ADR 007\n\n## 1: <トピック>\n', '# ADR 007\n\n## 01 <トピック>\n'];
     for (const markdown of cases) {
       expect(() => lastEntryNumber(markdown)).toThrow(/## NN:/);
     }
@@ -499,7 +499,7 @@ describe('setEntryTitle', () => {
     const next = setEntryTitle(markdown, 2, '新');
     expect(next).toContain('## 02: 新');
     expect(next).not.toContain('旧');
-    expect(next).toContain('## 01: <問い>');
+    expect(next).toContain('## 01: <トピック>');
   });
 
   it('ない番号 → 投げる', () => {
@@ -605,7 +605,7 @@ describe('affectedEntrySkeleton', () => {
   it('affected.format.md の見出しとブロックを持つ', () => {
     const skeleton = affectedEntrySkeleton(1);
     const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
-    expect(headings).toEqual(['## 01: <問い>', '### Keywords', '### Code', '### External']);
+    expect(headings).toEqual(['## 01: <トピック>', '### Keywords', '### Code', '### External']);
     expect(skeleton).toContain('- `<キーワード>`');
     expect(skeleton).toContain('- Path: `');
     expect(skeleton).toContain('- Kind: `module` | `test` | `doc` | `config` | `artifact` | `dir`');

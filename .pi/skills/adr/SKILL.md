@@ -50,10 +50,10 @@ View:
 Steps:
 
 1. Split the cycle into entries.
-   - The general rule is one entry per topic of main interest.
-   - Group interests that are subordinate to a main interest into a single entry.
+   - The general rule is one entry per topic of main concern.
+   - Group concerns that are subordinate to a main concern into a single entry.
    - An entry title should be a `topic` rather than necessarily a `question`.
-2. Propose each entry's `Type` with its reason, in the split's order, and show it with the split:
+2. Think each entry's `Type` and its reason, in the split's order.
    - `Type` is `_Full_` or `_Simple_`.
    - A Simple proposal meets all of these:
      - the change is reversible with git.
