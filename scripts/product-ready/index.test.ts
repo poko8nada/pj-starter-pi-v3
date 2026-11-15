@@ -1,15 +1,17 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ONLY_FLAG,
   RUN_FLAG,
   configLine,
   countLine,
+  fakeRoot,
   testExcludeLine,
+  writeFile,
+  writeJson,
 } from '../../test/scripts.fixture.ts';
-import { tempDir } from '../../test/temp-dir.ts';
 
 // 入口は子プロセスで直に呼ぶ。`.mjs` を import すると底の 1 行がそのまま走るので、ここでは読まない。
 
@@ -46,21 +48,17 @@ const SKELETON_WITHOUT_PRODUCT = [
   '',
 ].join('\n');
 
-function writeFile(path: string): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, 'x\n');
-}
-
-function writeText(root: string, rel: string, text: string): void {
-  const path = join(root, rel);
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, text);
-}
+type Tree = { readonly root: string; readonly cycleA: string };
+type RunOut = { readonly status: number; readonly output: string; readonly errors: string };
+type Before = {
+  readonly pkg: string;
+  readonly config: string;
+  readonly exclude: string | null;
+  readonly targets: readonly string[];
+};
 
 function writePackageJson(root: string, scripts: Record<string, string>): void {
-  const file = join(root, 'package.json');
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify({ name: 't', private: true, scripts }, null, 2)}\n`);
+  writeJson(root, 'package.json', { name: 't', private: true, scripts });
 }
 
 function baseScripts(): Record<string, string> {
@@ -76,10 +74,9 @@ function makeCycleNames(): readonly string[] {
 }
 
 function writeVitestConfig(root: string): void {
-  const file = join(root, VITEST_CONFIG_AT);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(
-    file,
+  writeFile(
+    root,
+    VITEST_CONFIG_AT,
     [
       "import { configDefaults, defineConfig } from 'vitest/config';",
       '',
@@ -104,14 +101,12 @@ function writeVitestConfig(root: string): void {
 }
 
 function writeTestExclude(root: string, entries: readonly string[] = TEST_EXCLUDE_ENTRIES): void {
-  const file = join(root, TEST_EXCLUDE_AT);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(entries, null, 2)}\n`);
+  writeJson(root, TEST_EXCLUDE_AT, entries);
 }
 
 function writeRules(root: string): void {
   for (const name of RULE_FILES) {
-    writeText(root, join('rules', name), readFileSync(join(RULES, name), 'utf8'));
+    writeFile(root, join('rules', name), readFileSync(join(RULES, name), 'utf8'));
   }
 }
 
@@ -141,18 +136,18 @@ function sourceReadme(paragraphs: readonly string[]): string {
 }
 
 function writeReplaceTargets(root: string): void {
-  writeText(
+  writeFile(
     root,
     'ROADMAP.md',
     '# Roadmap\n\n## 1.x.x\n\n| No | Ver | cycles | priority | title |\n| --- | --- | --- | --- | --- |\n| 001 | 1.0.0 | | high | old |\n',
   );
-  writeText(
+  writeFile(
     root,
     'DEFINITION.md',
     '# DEFINITION\n\n## Product\n\nold name\n\n### What\n\nold what\n\n### Who\n\n- owner: x\n\n### Users can do\n\n- reader: x\n\n## Stack\n\n| a | b | c |\n',
   );
-  writeText(root, 'README.md', sourceReadme(SOURCE_PARAGRAPHS_EN));
-  writeText(root, 'README.ja.md', sourceReadme(SOURCE_PARAGRAPHS_JA));
+  writeFile(root, 'README.md', sourceReadme(SOURCE_PARAGRAPHS_EN));
+  writeFile(root, 'README.ja.md', sourceReadme(SOURCE_PARAGRAPHS_JA));
   writeRules(root);
 }
 
@@ -162,14 +157,11 @@ function readTargets(root: string): readonly string[] {
   );
 }
 
-function makeTree(): {
-  readonly root: string;
-  readonly cycleA: string;
-} {
+function makeTree(): Tree {
   const names = makeCycleNames();
-  const root = tempDir();
+  const root = fakeRoot();
   for (const name of names) {
-    writeFile(join(root, CYCLES_LABEL, name, 'note.txt'));
+    writeFile(root, join(CYCLES_LABEL, name, 'note.txt'));
   }
   writePackageJson(root, baseScripts());
   writeVitestConfig(root);
@@ -178,26 +170,53 @@ function makeTree(): {
   return { root, cycleA: join(root, CYCLES_LABEL, names[0]) };
 }
 
-function run(
-  script: string,
-  args: readonly string[],
-  cwd: string,
-): { readonly status: number; readonly output: string; readonly errors: string } {
+function run(script: string, args: readonly string[], cwd: string): RunOut {
   const result = spawnSync('node', [script, ...args], { encoding: 'utf8', cwd });
   return { status: result.status ?? 1, output: result.stdout ?? '', errors: result.stderr ?? '' };
 }
 
+function runOnTree(
+  args: readonly string[],
+  setup?: (tree: Tree) => void,
+): { tree: Tree; before: Before; result: RunOut } {
+  const tree = makeTree();
+  setup?.(tree);
+  const before = snapshot(tree);
+  const result = run(INDEX, args, tree.root);
+  return { tree, before, result };
+}
+
+function readExclude(tree: Tree): string | null {
+  const at = join(tree.root, TEST_EXCLUDE_AT);
+  return existsSync(at) ? readFileSync(at, 'utf8') : null;
+}
+
+function snapshot(tree: Tree): Before {
+  return {
+    pkg: readFileSync(join(tree.root, 'package.json'), 'utf8'),
+    config: readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8'),
+    exclude: readExclude(tree),
+    targets: readTargets(tree.root),
+  };
+}
+
+function expectUnchanged(tree: Tree, before: Before): void {
+  expect(existsSync(tree.cycleA)).toBe(true);
+  expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(before.pkg);
+  expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+  expect(readExclude(tree)).toBe(before.exclude);
+  expect(readTargets(tree.root)).toEqual(before.targets);
+}
+
 describe('product-ready index', () => {
   it('happy: --run → 目印の間に7件が入り、JSON が残る', () => {
-    const tree = makeTree();
+    const { tree, before, result } = runOnTree([RUN_FLAG]);
     const names = makeCycleNames();
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
     expect(result.status).toBe(0);
     for (const name of names) {
       expect(existsSync(join(tree.root, CYCLES_LABEL, name))).toBe(false);
     }
-    const beforeLines = beforeConfig.split('\n');
+    const beforeLines = before.config.split('\n');
     const start = beforeLines.findIndex((line) =>
       line.includes('product-ready: test-exclude start'),
     );
@@ -213,33 +232,29 @@ describe('product-ready index', () => {
   });
 
   it('(empty) 空配列の JSON で --run → 目印の間が空のまま終わる', () => {
-    const tree = makeTree();
-    writeTestExclude(tree.root, []);
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeTestExclude(t.root, []);
+    });
     expect(result.status).toBe(0);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
     expect(JSON.parse(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8'))).toEqual([]);
   });
 
   it('error: JSON が壊れている → 1行で exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeTargets = readTargets(tree.root);
-    writeFileSync(join(tree.root, TEST_EXCLUDE_AT), '{not json');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, TEST_EXCLUDE_AT, '{not json');
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readTargets(tree.root)).toEqual(beforeTargets);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('--run → ROADMAP.md が rules/roadmap.md のテンプレートに置き換わる', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const roadmap = readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8');
     expect(roadmap).not.toContain('old');
@@ -248,8 +263,7 @@ describe('product-ready index', () => {
   });
 
   it('--run → DEFINITION.md の Product と What だけが入れ替わる', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const definition = readFileSync(join(tree.root, 'DEFINITION.md'), 'utf8');
     expect(definition).not.toContain('old name');
@@ -263,8 +277,7 @@ describe('product-ready index', () => {
   });
 
   it('--run → README.md と README.ja.md がそれぞれのテンプレートに置き換わる', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const readme = readFileSync(join(tree.root, 'README.md'), 'utf8');
     const readmeJa = readFileSync(join(tree.root, 'README.ja.md'), 'utf8');
@@ -276,8 +289,7 @@ describe('product-ready index', () => {
   });
 
   it('--run → README.md と README.ja.md の ## What is in it の下に ### Product と ### Default がこの順で並ぶ', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     for (const name of ['README.md', 'README.ja.md']) {
       const text = readFileSync(join(tree.root, name), 'utf8');
@@ -291,30 +303,19 @@ describe('product-ready index', () => {
   });
 
   it('--run なし → 表示だけで、ツリーは変わらない', () => {
-    const tree = makeTree();
+    const { tree, before, result } = runOnTree([]);
     const names = makeCycleNames();
-    const beforePkg = readFileSync(join(tree.root, 'package.json'), 'utf8');
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeExclude = readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8');
-    const beforeRoadmap = readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8');
-    const result = run(INDEX, [], tree.root);
     expect(result.status).toBe(0);
-    const realRoot = realpathSync(tree.root);
-    expect(result.output).toContain(testExcludeLine(join(realRoot, TEST_EXCLUDE_AT)));
-    expect(result.output).toContain(configLine(join(realRoot, VITEST_CONFIG_AT)));
+    expect(result.output).toContain(testExcludeLine(join(tree.root, TEST_EXCLUDE_AT)));
+    expect(result.output).toContain(configLine(join(tree.root, VITEST_CONFIG_AT)));
     expect(result.output).toContain(countLine(CYCLES_LABEL, names.length));
     expect(result.output).toContain(countLine(REPLACE_LABEL, 4));
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(beforePkg);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8')).toBe(beforeExclude);
-    expect(readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8')).toBe(beforeRoadmap);
+    expectUnchanged(tree, before);
   });
 
   it('--only cycles 付き --run → cycles だけ消える', () => {
-    const tree = makeTree();
+    const { tree, result } = runOnTree([RUN_FLAG, ONLY_FLAG, CYCLES_LABEL]);
     const names = makeCycleNames();
-    const result = run(INDEX, [RUN_FLAG, ONLY_FLAG, CYCLES_LABEL], tree.root);
     expect(result.status).toBe(0);
     expect(result.output).toContain(countLine(CYCLES_LABEL, names.length));
     for (const name of names) {
@@ -324,20 +325,19 @@ describe('product-ready index', () => {
   });
 
   it('(error) 一度 --run した後の同じツリーでもう一度 --run する → 終了コード 1、エラー 1 行のみ、README は変わらない', () => {
-    const tree = makeTree();
-    expect(run(INDEX, [RUN_FLAG], tree.root).status).toBe(0);
-    const before = readTargets(tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
+    expect(result.status).toBe(0);
+    const before = snapshot(tree);
     const second = run(INDEX, [RUN_FLAG], tree.root);
     expect(second.status).toBe(1);
     expect(second.errors).toContain('no paragraph under');
     expect(second.errors.trim().split('\n')).toHaveLength(1);
     expect(second.output).not.toContain('headings:');
-    expect(readTargets(tree.root)).toEqual(before);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('(happy) 1 回目の --run で、表示の `headings:` 行と `### Default` の下の箇条書きの見出しが同じ順で並ぶ', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const line = result.output.split('\n').find((entry) => entry.startsWith('headings: '));
     expect(line).toBeDefined();
@@ -355,23 +355,20 @@ describe('product-ready index', () => {
   });
 
   it('(empty) `--only cycles` の dry-run → 差し替えの仕事が無いので`headings:` 行が出ない', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [ONLY_FLAG, CYCLES_LABEL], tree.root);
+    const { result } = runOnTree([ONLY_FLAG, CYCLES_LABEL]);
     expect(result.status).toBe(0);
     expect(result.output).not.toContain('headings:');
   });
 
   it('--only に値が無い → exit 1', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [ONLY_FLAG], tree.root);
+    const { tree, result } = runOnTree([ONLY_FLAG]);
     expect(result.status).toBe(1);
     expect(existsSync(tree.cycleA)).toBe(true);
   });
 
   it('未知の引数 → exit 1', () => {
-    const tree = makeTree();
     const unknown = '--bogus';
-    const result = run(INDEX, [unknown], tree.root);
+    const { tree, result } = runOnTree([unknown]);
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe(`unknown argument: ${unknown}`);
@@ -379,7 +376,7 @@ describe('product-ready index', () => {
   });
 
   it('差し替える対象が 1 つも無い → 何も書かずに exit 0 で終わる', () => {
-    const root = tempDir();
+    const root = fakeRoot();
     writePackageJson(root, baseScripts());
     writeVitestConfig(root);
     writeTestExclude(root);
@@ -389,94 +386,84 @@ describe('product-ready index', () => {
   });
 
   it('テンプレートのファイルが無い → 1行のエラーで exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const before = readTargets(tree.root);
-    rmSync(join(tree.root, 'rules/roadmap.md'));
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      rmSync(join(t.root, 'rules/roadmap.md'));
+    });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual(before);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('テンプレートのブロックに ## Product が無い → 1行のエラーで exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const before = readTargets(tree.root);
-    writeText(tree.root, 'rules/definition.format.md', SKELETON_WITHOUT_PRODUCT);
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, join('rules', 'definition.format.md'), SKELETON_WITHOUT_PRODUCT);
+    });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(readTargets(tree.root)).toEqual(before);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 });
+
 describe('product-ready index exclude errors', () => {
   it('(error) 目印が無い config で --run → エラー1行で exit 1、cycles は残る', () => {
-    const tree = makeTree();
-    writeText(
-      tree.root,
-      VITEST_CONFIG_AT,
-      "import { configDefaults, defineConfig } from 'vitest/config';\nexport default defineConfig({ test: { exclude: [...configDefaults.exclude] } });\n",
-    );
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeTargets = readTargets(tree.root);
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(
+        t.root,
+        VITEST_CONFIG_AT,
+        "import { configDefaults, defineConfig } from 'vitest/config';\nexport default defineConfig({ test: { exclude: [...configDefaults.exclude] } });\n",
+      );
+    });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('no test exclude markers:');
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readTargets(tree.root)).toEqual(beforeTargets);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('(error) JSON が無い → 1行で exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeTargets = readTargets(tree.root);
-    rmSync(join(tree.root, TEST_EXCLUDE_AT));
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      rmSync(join(t.root, TEST_EXCLUDE_AT));
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readTargets(tree.root)).toEqual(beforeTargets);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('(error) JSON が配列でない → 1行で exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeTargets = readTargets(tree.root);
-    writeFileSync(join(tree.root, TEST_EXCLUDE_AT), '{"exclude": []}\n');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, TEST_EXCLUDE_AT, '{"exclude": []}\n');
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readTargets(tree.root)).toEqual(beforeTargets);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('(error) 要素が文字列でない → 1行で exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const beforeConfig = readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8');
-    const beforeTargets = readTargets(tree.root);
-    writeFileSync(join(tree.root, TEST_EXCLUDE_AT), '[".pi", 1]\n');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, TEST_EXCLUDE_AT, '[".pi", 1]\n');
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(beforeConfig);
-    expect(readTargets(tree.root)).toEqual(beforeTargets);
+    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 });
 describe('product-ready defaults', () => {
   it('--run → README.md の ### Default の下に - <見出し名>: <説明> の5行が並ぶ', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const lines = readFileSync(join(tree.root, 'README.md'), 'utf8').split('\n');
     const fallback = lines.findIndex((line) => line === '### Default');
@@ -490,8 +477,7 @@ describe('product-ready defaults', () => {
   });
 
   it('--run → 日本語の README.ja.md でも --run → 同じ5行が並び、見出し名は英語で説明文は日本語', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const lines = readFileSync(join(tree.root, 'README.ja.md'), 'utf8').split('\n');
     const fallback = lines.findIndex((line) => line === '### Default');
@@ -505,25 +491,18 @@ describe('product-ready defaults', () => {
   });
 
   it('## What is in it を持たない README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const before = readTargets(tree.root);
-    writeText(tree.root, 'README.md', '# old\n\n## Getting started\n\nx\n');
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const brokenReadme = '# old\n\n## Getting started\n\nx\n';
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, 'README.md', brokenReadme);
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual([
-      before[0],
-      before[1],
-      '# old\n\n## Getting started\n\nx\n',
-      before[3],
-    ]);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('### の直後に段落がない README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const before = readTargets(tree.root);
     const broken = [
       '# old',
       '',
@@ -548,18 +527,17 @@ describe('product-ready defaults', () => {
       'CI paragraph.',
       '',
     ].join('\n');
-    writeText(tree.root, 'README.md', broken);
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, 'README.md', broken);
+    });
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual([before[0], before[1], broken, before[3]]);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('### が1つだけの README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
-    const tree = makeTree();
-    const before = readTargets(tree.root);
     const broken = [
       '# old',
       '',
@@ -570,17 +548,17 @@ describe('product-ready defaults', () => {
       'Direction stays traceable.',
       '',
     ].join('\n');
-    writeText(tree.root, 'README.md', broken);
-    const result = run(INDEX, [RUN_FLAG], tree.root);
+    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
+      writeFile(t.root, 'README.md', broken);
+    });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual([before[0], before[1], broken, before[3]]);
+    expect(readTargets(tree.root)).toEqual(before.targets);
   });
 
   it('--run なしの表示 → headings: <見出しの並び> の行が出る', () => {
-    const tree = makeTree();
-    const result = run(INDEX, [], tree.root);
+    const { result } = runOnTree([]);
     expect(result.status).toBe(0);
     expect(result.output).toContain(`headings: ${SOURCE_HEADINGS.join(', ')}`);
   });

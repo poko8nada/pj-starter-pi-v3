@@ -55,10 +55,11 @@ type RunOut = { readonly status: number; readonly output: string; readonly error
 type Before = {
   readonly pkg: string;
   readonly config: string;
-  readonly exclude: string;
+  readonly exclude: string | null;
   readonly targets: readonly string[];
 };
 function readTargets(root: string): readonly string[];
+function readExclude(tree: Tree): string | null;
 function runOnTree(
   args: readonly string[],
   setup?: (tree: Tree) => void,
@@ -91,14 +92,19 @@ function expectUnchanged(tree: Tree, before: Before): void;
       }
       ```
 
-   8. add: `snapshot` を足す。
+   8. add: `readExclude` と `snapshot` を足す。
 
       ```ts
+      function readExclude(tree: Tree): string | null {
+        const at = join(tree.root, TEST_EXCLUDE_AT);
+        return existsSync(at) ? readFileSync(at, 'utf8') : null;
+      }
+
       function snapshot(tree: Tree): Before {
         return {
           pkg: readFileSync(join(tree.root, 'package.json'), 'utf8'),
           config: readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8'),
-          exclude: readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8'),
+          exclude: readExclude(tree),
           targets: readTargets(tree.root),
         };
       }
@@ -111,12 +117,12 @@ function expectUnchanged(tree: Tree, before: Before): void;
         expect(existsSync(tree.cycleA)).toBe(true);
         expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(before.pkg);
         expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-        expect(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8')).toBe(before.exclude);
+        expect(readExclude(tree)).toBe(before.exclude);
         expect(readTargets(tree.root)).toEqual(before.targets);
       }
       ```
 
-   10. update: 26 本の `makeTree()` と `run(INDEX, args, tree.root)` を `const { tree, result } = runOnTree(args)` に置き換える。前提を書き換える 11 本は第 2 引数の `setup` で書き換える。実行の前に読んでいた `beforeConfig`、`beforePkg`、`beforeExclude`、`beforeRoadmap`、`beforeTargets` は戻り値の `before` に置き換える。JSON の形の 2 本は slice 2 で 1 本にまとめるので、ここでは 26 本のまま置き換える。`setup` の中では `writeFile`、`writeTestExclude`、`rmSync` を使う（`writeFileSync` は使わない）。
+   10. update: 26 本の `makeTree()` と `run(INDEX, args, tree.root)` を `const { tree, result } = runOnTree(args)` に置き換える。前提を書き換える 11 本は第 2 引数の `setup` で書き換える。実行の前に読んでいた `beforeConfig`、`beforePkg`、`beforeExclude`、`beforeRoadmap`、`beforeTargets` は戻り値の `before` に置き換える。戻り値は使う分だけ取る（`result` だけの本は `const { result } = runOnTree(...)`）。`setup` はブロック本体 `(t) => { writeFile(t.root, ...); }` で書く。`setup` の中では `writeFile`、`writeTestExclude`、`rmSync` を使い、`writeFileSync` は使わない。JSON の形の 2 本は slice 2 で 1 本にまとめるので、ここでは 26 本のまま置き換える。
 
        ```text
        (empty) 空配列の JSON で --run                 setup: writeTestExclude(tree.root, [])
@@ -141,9 +147,16 @@ function expectUnchanged(tree: Tree, before: Before): void;
   - `index.test.ts` の `runOnTree`、`snapshot`、`expectUnchanged` を使う。
   - 共有 `fakeRoot`、`writeFile`、`writeJson` を使う。
   - `targets.test.ts` は `tempDir()` のままにする。
+  - 基準外のテストを削除する。
+  - 順序・有無の断言のうち、出力の表示内容を確認するもの（`## What is in it` < `### Product` < `### Default`、`headings` の順序と不在、`### Default` の 5 行、`no replace to replace`）は残す。
+  - `cli.test.ts` の `parseArgs` と `index` の子プロセスの `exit 1` は、観測点が違うため両方残す。
 - Forbidden:
   - `scripts/product-ready/*.mjs` と `test-exclude.json` の振る舞いを変えること - このエントリはテストの整理である。
   - テストを走らせる手段（vitest、`pnpm test`、lefthook）を変えること - `verification` は `Out` である。
+  - `cycles/` の過去の記録を参照すること - オーナーの指示である。
+  - 01 と 02 の領域のテストをこのエントリで変えること - それぞれの範囲である。
+  - `rules/` のテンプレートと `vitest.config.ts` の目印を変えること - テストの前提である。
+  - `blocks.mjs` の専用テストを追加すること - このエントリは整理であり、追加は範囲外である。
 
 ### Verify
 
@@ -200,7 +213,7 @@ function expectUnchanged(tree: Tree, before: Before): void;
       未知の引数 → exit 1
       ```
 
-   3. update: 「(error) 一度 --run した後の同じツリーでもう一度 --run する」は、1 回目の実行を `const { tree, before } = runOnTree([RUN_FLAG])` にし、2 回目を `run(INDEX, [RUN_FLAG], tree.root)` のまま残す。1 回目の実行で cycles が消えているため `expectUnchanged` は使えない。2 回目の後に `expect(readTargets(tree.root)).toEqual(before.targets)` で比べる。
+   3. update: 「(error) 一度 --run した後の同じツリーでもう一度 --run する」は、1 回目の実行を `const { tree } = runOnTree([RUN_FLAG])` にし、その後に `const before = snapshot(tree);` を取る。2 回目を `run(INDEX, [RUN_FLAG], tree.root)` のまま残し、`expect(readTargets(tree.root)).toEqual(before.targets)` で比べる。1 回目の実行で cycles が消えているため `expectUnchanged` は使わない。
 
 ### Policy
 
@@ -407,8 +420,10 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 ### Slice 1: index の setup helper と共有 helper を使う
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - snapshot が存在しない test-exclude.json で投げる穴を `readExclude(tree): string | null` で塞いだ。`Before.exclude` を `string | null` にし、`snapshot` と `expectUnchanged` を `readExclude` 経由にしたので、`(error) JSON が無い` を `runOnTree` の `setup`（`rmSync`）で扱える。計画の修正を取り込んだ形であり、振る舞いは変えない。
+  - 二重 `--run` の `before` 取得タイミングの穴を塞いだ。1 回目の `runOnTree` の戻り値 `before`（1 回目の実行前）ではなく、1 回目の実行後に `snapshot(tree)` を取り直すので、2 回目の後の `readTargets` 比較が実行後の状態と合う。Slice 2 の手順 3 が正式な形を決める。
 - Commit:
 - Stopped:
 
