@@ -102,7 +102,7 @@ The range the entry decides, in `In` and `Out`.
 | cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
 | safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
 | failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
-| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed?                                                       |
+| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed? (It is a means, not the test itself.)                 |
 | observability | Do the records or signals the product leave change? (logs, metrics, audit records)                                                                |
 | release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
 | other         | Is there a concern that none of the above covers?                                                                                                 |

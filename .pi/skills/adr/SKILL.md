@@ -25,6 +25,7 @@ View: the intent is the only measure of what follows.
 
 Note:
 
+- Intents are broken down into entries, and entries are broken down into scopes.
 - do not start the research before the intent is settled. The target would be wrong.
 - The "intent" represents the overall policy; it is not something that is asked about in the entries.
 
@@ -145,6 +146,9 @@ Notes:
 - A Full entry does not become Simple after the entry stage starts.
 
 ### 2. Scope
+
+A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
+**Ensure that you answer the questions in the table and categorize items appropriately.**
 
 Steps:
 
