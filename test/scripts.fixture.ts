@@ -1,17 +1,23 @@
 /**
- * `scripts/` のテストが使う表示の印と旗。
+ * `scripts/` のテストが使う表示の印と旗、一時ツリーの helper。
  *
  * 何をする物か
  * - 表示行の印（`ok`、`failed`）と区画の名（`copy`、`missing`、`same`）と旗（`--run`、`--only`）を 1 か所に集める。
+ * - 一時ツリーのルートと、その下への書き込み（`fakeRoot`、`writeFile`、`writeJson`）を 1 か所に集める。
  * - 断言はここから取り、`'root: ok'` のような行を各所に書かない。パスと名と件数はテストが渡した値から取る。
  *
  * どう使うか
  * - `statusLine(name, OK)` で `root: ok` の形、`countLine(COPY, n)` で `copy (n):` の形、`indented(rel)` で `  <rel>` の形を作る。
  * - `RUN_FLAG` と `ONLY_FLAG`（と `onlyEquals`）で引数を組み立てる。`INVALID_LIST_LINE` で一覧の壊れの理由を見る。
+ * - `fakeRoot()` で一時ディレクトリの実体をルートにし、`writeFile(root, rel, content)` と `writeJson(root, rel, data)` でその下に書く。
  *
  * 何をしないか
- * - 定数と小さな組み立てだけ。プロセスも FS も開かない。テストの外で読まれても、何も起きずに止まらない。
+ * - 書き込むのはテストが渡されたルートの下だけ。プロセスは開かない。テストの外で読まれても、待ち続けずに返る。
  */
+
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { tempDir } from './temp-dir.ts';
 
 /** 表示の印: 成功 */
 export const OK = 'ok';
@@ -80,4 +86,22 @@ export function pushLine(from: string, to: string): string {
 /** `same: <target>` の形を作る */
 export function sameLine(target: string): string {
   return `${SAME}: ${target}`;
+}
+
+/** 一時ツリーのルート（実体解決済み） */
+export function fakeRoot(): string {
+  return realpathSync(tempDir());
+}
+
+/** ルートの下にファイルを書き、絶対パスを返す */
+export function writeFile(root: string, rel: string, content = 'x\n'): string {
+  const file = join(root, rel);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, content);
+  return file;
+}
+
+/** ルートの下に JSON を書く */
+export function writeJson(root: string, rel: string, data: unknown): void {
+  writeFile(root, rel, `${JSON.stringify(data, null, 2)}\n`);
 }
