@@ -474,69 +474,85 @@ function writeScopes(root: string, scopes: readonly string[]): void;
 
 ### Slice 1: checks の fixture に tsc と scopes の helper を置く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8b6d6f8eb2b68b3d38747ce072bb473329b5db67
 - Stopped:
 
 ### Slice 2: ja-check の重複した確認を統合する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8f5295cf50dc554eed61aef27fbf31e32eecd351
 - Stopped:
 
 ### Slice 3: typecheck の空と不在を 1 本にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dc90880c1280e59a1f3f351c1f2d35d2f1eac7e0
 - Stopped:
 
 ### Slice 4: typecheck-staged の定数の写しを削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4f8af7df0f53d29693795c238fe917c5ae860d05
 - Stopped:
 
 ### Slice 5: 先頭コメントを共有 helper に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b6645a8d132b7fcafa1504380adccd22599f9cac
 - Stopped:
 
 ### Cleanup: 重複した helper と定数確認
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - `scripts/checks/ja-check.test.ts` の「cycles配下のerror語 → 報告する」: 「md内のerror語 → error行を出してexit 1」と同じ振る舞い（走査対象の error 語を報告し exit 1）の確認であり、パスの違い（`cycles/` 配下）は `isExcluded` の分岐を変えないため、その場で削った。断言の種類（header、`[error]`、切り詰め、件数）は残る本がすべて持つ。
+  - `scripts/checks/ja-check.test.ts` の「キーや値の型が誤った設定 → exit 1」: 2 つの root を順に作る前提を、誤った設定値 2 件のループに変えた（断言は変わらない）。同じ前提作りを 2 回書くと片方だけ変わる恐れがあるため、その場で直した。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし（各ヘッダは Slice 5 の fence 通り。`stub -p は下のスタブ` の文言は計画が決めた通りのため指摘としない。未使用 import の残りもない）
 - Unlisted:
+  - なし（差分が触る 4 件はいずれも `## Files` に名指しあり。`*.mjs`、`*.json`、`test/scripts.fixture.ts`、`test/temp-dir.ts` の変更はない）
 - Gaps:
+  - なし（共有 helper と `checks.fixture.ts` への置換、重複確認のループ化、`codeExtensions()` の削除は `## Goal` 通り。削除した件は計画が明示に決めたため指摘としない）
 - Policy:
+  - なし（`Forbidden` の 4 行を保つ。`staged` の `STUB_FAIL: ''` は Slice 4 Steps 通り。Cleanup の 2 件は Notes で理由付け済みの `Allowed` 範囲）
 - Unproven:
+  - なし（各ループは反復ごとに fresh root を作り、共有前提を持たない。一方を壊したらその反復が落ちる）
 - Noise:
+  - なし（`'relative'`、`'empty'`、`0o755` 等は Steps の fence が決めた値のため指摘としない。新規のマジックナンバー・硬直文字列の断言はない）
 - Doubts:
+  - なし
 
 ### Round 2
 
 - Stale:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。差分再読でも新規の stale なし）
 - Unlisted:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`## Files` 外の変更なし）
 - Gaps:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`## Goal` の穴なし）
 - Policy:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`Forbidden` 違反なし）
 - Unproven:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。壊したら落ちる構成のまま）
 - Noise:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。新規の雑音なし）
 - Doubts:
+  - なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: checks のテストが、共有 helper と checks の helper を使い、重複した確認と実装の定数の写しを削った形になる。達成した（`scripts/checks/checks.fixture.ts` に `stubTsc` と `writeScopes` を置き、3 ファイルが 01 の共有 helper と `checks.fixture.ts` を使い、ja-check 33→25・typecheck 6→5・typecheck-staged 4 のまま、`codeExtensions()` の写しを削った）。
+- Ran: `pnpm test:related scripts/checks/ja-check.test.ts scripts/checks/typecheck.test.ts scripts/checks/typecheck-staged.test.ts`（3 ファイル、34 件）・`pnpm test:run`（66 ファイル、841 件）・`pnpm typecheck`（`root: ok`、`.pi: ok`）・`pnpm lint`・`pnpm format:check`、および diff の通読。
+- Findings: なし
+- Doubts: なし
