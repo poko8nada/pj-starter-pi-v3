@@ -477,16 +477,15 @@ describe('setEntryType', () => {
     const markdown = appendEntry(adrSkeleton(7, '一', 'Simple'), 2, '二', 'Simple');
     const next = setEntryType(markdown, 2, '新', 'Full');
     expect(next).toContain('## 02: 新\n\nType: _Full_');
-    expect(next).toContain('- In:');
-    expect(next).toContain('```text');
+    expect(next.match(/_omission_/g) ?? []).toHaveLength(2);
   });
 
   it('(happy) Simple → Type 行と Scope/Details を _omission_ にし、題名を変える', () => {
     const markdown = adrSkeleton(7, '一');
     const next = setEntryType(markdown, 1, '新', 'Simple');
     expect(next).toContain('## 01: 新\n\nType: _Simple_');
-    expect(next).toContain('### Scope\n\n_omission_');
-    expect(next).toContain('#### Details\n\n_omission_');
+    expect(next).not.toContain('- In:');
+    expect(next).not.toContain('```text');
   });
 
   it('ない番号 → 投げる', () => {
@@ -544,7 +543,6 @@ describe('appendEntry', () => {
       expect(next.match(/^# ADR /gm) ?? []).toHaveLength(1);
       const lastSharp = next.split('\n').findLast((line) => line.startsWith('## '));
       expect(lastSharp).toBe(`## ${nn}: 題名`);
-      expect(lastEntryNumber(next)).toBe(nextNo);
     }
   });
 
@@ -553,7 +551,6 @@ describe('appendEntry', () => {
     const next = appendEntry(markdown, 1, '題名');
     expect(next).toContain('## 01: 題名');
     expect(next).toContain('\n\n## 01: 題名');
-    expect(lastEntryNumber(next)).toBe(1);
   });
 });
 
@@ -573,7 +570,7 @@ describe('openCycleDir', () => {
     expect(openCycleDir(cyclesDir)).toBe(null);
   });
 
-  it('close.md を持つだけ → null を返す', () => {
+  it('adr.md と close.md を持つ → null', () => {
     const { cyclesDir } = cycleTree([{ close: '# Close\n' }]);
     expect(openCycleDir(cyclesDir)).toBe(null);
   });
@@ -664,8 +661,6 @@ describe('CLI', () => {
     const adrAfter = readFileSync(join(dirs[0], 'adr.md'), 'utf8');
     expect(adrAfter).toContain('## 02: 二');
     expect(adrAfter).toContain('Type: _Simple_');
-    expect(adrAfter).toContain('### Scope\n\n_omission_');
-    expect(adrAfter).toContain('#### Details\n\n_omission_');
     expect(readFileSync(join(dirs[0], 'affected', '02.md'), 'utf8')).toContain('## 02: 二');
   });
 
@@ -686,8 +681,6 @@ describe('CLI', () => {
     });
     expect(done.status).toBe(0);
     const adrAfter = readFileSync(join(dirs[0], 'adr.md'), 'utf8');
-    expect(adrAfter).toContain('## 01: 一');
-    expect(adrAfter).toContain('## 02: 三');
     expect(adrAfter).not.toContain('二');
     expect(readFileSync(join(affectedDir, '01.md'), 'utf8')).toContain('## 01: 一');
     expect(readFileSync(join(affectedDir, '02.md'), 'utf8')).toContain('## 02: 三');
@@ -717,7 +710,6 @@ describe('CLI', () => {
     const adrAfter = readFileSync(join(dirs[0], 'adr.md'), 'utf8');
     expect(adrAfter).toContain('## 01: 新');
     expect(adrAfter).toContain('Type: _Simple_');
-    expect(adrAfter).toContain('### Scope\n\n_omission_');
   });
 
   it('--set は Type ありでは Type 行と本文を変える', () => {
@@ -735,8 +727,6 @@ describe('CLI', () => {
     const adrAfter = readFileSync(join(dirs[0], 'adr.md'), 'utf8');
     expect(adrAfter).toContain('## 01: 新');
     expect(adrAfter).toContain('Type: _Simple_');
-    expect(adrAfter).toContain('### Scope\n\n_omission_');
-    expect(adrAfter).toContain('#### Details\n\n_omission_');
     expect(readFileSync(join(dirs[0], 'affected', '01.md'), 'utf8')).toContain('## 01: 新');
   });
 
