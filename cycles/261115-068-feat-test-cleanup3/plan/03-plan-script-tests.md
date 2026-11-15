@@ -164,13 +164,14 @@ test/
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
+- Stale: なし — `.pi/skills/plan/scripts/index.mjs:4` と `.pi/skills/plan/SKILL.md:57` が計画の新 usage 文言で一致し、旧 usage の残存や冗長化した記述は grep で確認できなかったため。
+- Unlisted: なし — 差分の 4 件は `Files` の update 3 件（`index.mjs`、`index.test.ts`、`SKILL.md`）と計画 md の記録欄のみで、`Files` 外の製品変更はないため。
+- Gaps: なし — `Goal` の 3 点（usage の `--root`/`-w`/`-b`、重複排除、同じ事実の 1 か所確認）は残存テスト（補間・見出し順・ファイルと Files ツリー・エラーと停止）と `Verify` の grep で exercised され、外れた空・ルート file・base は `Steps` の drop 指示どおりのため finding にしない。
+- Policy: なし — 両 usage 修正・出力とエラーとファイル形の不変・`parseArgs` のエラーと CLI の停止の残存・指示範囲内の削除のみ・同一値の二重断言なし・整理のための実装変更なしを差分で確認したため。
+- Unproven: なし — 残存テストは名指す行為が壊れれば落ちる（見出し順と補間 `.pi/skills/plan/scripts/index.test.ts:95`、ツリー `:82` と `:157`、`-w`/`-b` `:26`、停止 `:180`）。usage はテストではなく `Verify` の grep 対象のため該当なし。
+- Noise: なし — 残存の固定文字列は計画が残すと決めた値（`# PLAN`・`No`・`Place`・フェンス・見出し 10 件・CLI の Files ツリー）と変換結果で、型や制約が保証する前提の再現・単独 boundary・誰も気づかない行為の新設はなく、新 fixture を作らない指示どおりのため。
 - Doubts:
+  - `cycles/261115-068-feat-test-cleanup3/plan/03-plan-script-tests.md:140` の Added「`-b` のケースがない」は字面どおりの `grep` では通らない（`.pi/skills/plan/scripts/index.test.ts:28,73` に `-w`/`-b` 単体の断言が残る）。意図が Slice 2 の `Steps` 5（CLI「place が base」削除）なら差分は `Steps` どおりで直し不要だが、`Verify` の文言を `place が base` 等に限定するかは所有者の判断が必要。
 
 ### Round 2
 
@@ -184,7 +185,7 @@ test/
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: plan のテストが同じ事実を 1 か所で確認する形になり、`index.mjs` と `SKILL.md` の usage が `--root` と `-w`/`-b` を書き、単体と CLI の重複が消える — 達成した。
+- Ran: `pnpm test:run`（863 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`grep`（`filesTree([])`、`- Boundary Plans:`、`place が base` がないこと）。
+- Findings: なし
+- Doubts: なし
