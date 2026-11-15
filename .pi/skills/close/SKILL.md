@@ -15,7 +15,7 @@ Steps:
 
 1. Run `node .pi/skills/close/scripts/collect.mjs cycles/<YYMMDD>-<NNN>-<slug>`; it writes `close.md` and its `## Collected`, and creates the file.
 2. Read the heading, the plan id and the line's shape in `references/format.md`.
-3. Fill every `未特定` as `references/format.md` says.
+3. Fill every `未特定` as `references/format.md` says, if you have them.
 4. Add the holes from the read as lines by hand, under a heading naming the ADR entry, as `references/format.md` says.
 5. Do not copy by hand what the script collects: a line left out is a hole nobody finds again.
 

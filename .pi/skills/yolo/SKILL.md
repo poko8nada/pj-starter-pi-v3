@@ -8,42 +8,18 @@ disable-model-invocation: true
 
 One cycle, walked without the owner's confirmations. The owner starts it; the agent cannot choose it.
 
-## When it runs
+## Specific Skip
 
-View:
-
-| case                                                     | does it run                                                                            |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| the owner starts it, after the entries' scaffold is made | it runs                                                                                |
-| started before that                                      | it does not run: nothing runs, and it says so                                          |
-| a stage the cycle has passed                             | that stage is not walked again                                                         |
-| the ADR's entry stage                                    | walked here: the agent settles each entry by the checks `When a step cannot run` gives |
-
-## Procedure
-
-Note: The cycle's four stages run in their order. Each keeps its work. Each loses only its look at the owner.
+The cycle's four stages run in their order. **Each keeps its work. Each loses only its look at the owner.**
 
 ### 1. adr
 
-Steps:
-
-1. Walk the adr skill's cycle stage and entry stage, in its order, from where the cycle stands: the pre-research, every entry's `Context`, its `Scope`, the opening proposal, the discussion, the decision, and its `Definition`. A `_Simple_` entry skips its `Scope` and the discussion. A stage the cycle has passed is not walked again.
-2. Give each entry's affected to a `research` subagent, and go on without waiting for it.
-3. Go on to the plan.
-
 Notes:
 
-- The agent takes the owner's place for the entry: it proposes, settles, and moves the entry to the decision.
+- The agent takes the owner's place for the each entry: it proposes, settles, and moves the entry to the decision.
 - skips: the Japanese proofread, and the owner's look at every step of the entry stage.
 
 ### 2. plan
-
-Steps:
-
-1. Write every plan md: its goal, its files, its slices, the types, the steps, the policy, the verify and the record.
-2. Run the research for the lines the plan cannot write, and write a `Stopped` line for what the four kinds do not cover.
-3. Read the plans together, and review each plan on the five viewpoints: `Goal`, `Design`, `Files`, `Slice`, `Other`.
-4. Confirm as the agent what the plan step 5 would ask the owner, and go on to the work.
 
 Notes:
 
@@ -51,32 +27,17 @@ Notes:
 
 ### 3. work
 
-Steps:
-
-1. Commit the cycle's files, and run the plans in the order the cut gives.
-2. A plan: its slices, the test cleanup, the review, the acceptance, the owner confirmation is passed, and the merge with the base's dependencies set again.
-3. A `base` plan is not used: every plan is a worktree, and the `Added` owner look (front cmux-browser, base slice) is passed.
-4. Go on to the close.
-
 Notes:
 
 - skips: the report to the owner, and the owner confirmation before the merge.
 
 ### 4. close
 
-Steps:
-
-1. Check the trigger, read the cycle, collect the leftovers, and exclude what the wording shows is already resolved.
-2. Give every leftover a destination, in this order: the cycle's own concern → `_ex-change_`; a small change outside it → `_ex-change_`; a possible obvious bug or a large debt → `**proposed**`; a future consideration → `_roadmap_`; the rest → `dropped`, each with its `Fact:` / `Why:` / `Then:`.
-3. Complete `close.md`: `## Collected` holds the inventory, `## Triage` holds the proposal, and `## Verified` stays empty at the completion (and that is normal).
-4. Run the Japanese proofread here, so the `close.md` at the stop is what the owner can read.
-5. It ends here: before the owner's judgement on the triage, with the proposal complete and proofread.
-
 Notes:
 
-- skips: the owner's judgement on the triage, the `_ex-change_` implementations, and the verification of what the cycle delivered.
-
-Note: What comes after that judgement — the confirmed triage, the `_ex-change_` implementations, the verification, the commit that closes the cycle — is not this skill's work. The order from the completion of `close.md` to the verification is the same as the close skill's.
+- STOP before explaining leftovers.
+- What comes after that judgement — the confirmed triage, the `_ex-change_` implementations, the verification, the commit that closes the cycle — **They are NOT this yolo skill's work.**
+- The order from the completion of `close.md` to the verification is the same as the close skill's.
 
 ## When a step cannot run
 
@@ -107,9 +68,6 @@ View:
 
 Note: a hole the run finds and fixes in the plan's own files is not one of these: the slice's `Unplanned` holds it, and the run goes on.
 
-## How not to write this
+## How not to do this
 
-- When you walk the cycle: do not decide a change the ADR did not accept.
-- When you run a stage: do not call the other skills. Each stage keeps its own rules, and the flow above is the order it walks them.
 - When you run the cycle: do not change a stage or the stop point.
-- When you walk the entry stage: do not skip a step of it, except the steps a `_Simple_` entry skips by its `Type`. The steps are walked, and only their look at the owner is lost.
