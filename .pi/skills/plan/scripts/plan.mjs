@@ -125,7 +125,7 @@ export function planSkeleton({ id, entries, place, files }) {
 
 ## Goal
 
-## Design
+## Refactor
 
 - Inside:
   - Modules:
@@ -143,6 +143,8 @@ ${files}
 ## Slices
 
 ## Notes
+
+### Cleanup: <what it cleaned>
 
 ## Work Review
 

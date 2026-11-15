@@ -22,14 +22,6 @@ Steps:
 
 1. Read the whole plan md: `cycles/<YYMMDD>-<NNN>-<slug>/plan/<NN>-<plan id>.md`.
 
-View:
-
-| record          | state       |
-| --------------- | ----------- |
-| `Commit` filled | done        |
-| `Stopped`       | interrupted |
-| neither         | not started |
-
 Notes:
 
 - Work writes no file of its own. It writes into the plan md: the slices' records under `## Notes`, and `## Work Review` and `## Acceptance`.
@@ -71,11 +63,10 @@ Steps:
 
 View:
 
-| case                                              | answer                                |
-| ------------------------------------------------- | ------------------------------------- |
-| only because the run ended, and the work is sound | continue it without calling the owner |
-| the run disproves a premise                       | triage it here with the owner         |
-| what work cannot absorb                           | the owner decides                     |
+| case                        | answer                        |
+| --------------------------- | ----------------------------- |
+| the run disproves a premise | triage it here with the owner |
+| what work cannot absorb     | the owner decides             |
 
 When the plan is dropped:
 
@@ -95,21 +86,18 @@ Steps:
 
 1. Work the cleanup:
    - _Worktree_: continue the `code` subagent that ran the slices.
-   - _Base_: do it yourself in the base.
+   - _Base_: do it by the main agent in the base.
 2. Read the plan md and the test files the plan's `Files` updates.
 3. Drop the tests the View gives, fix the premises it gives, and keep the suite green.
 4. Write the record in `## Notes` as `### Cleanup: <what it cleaned>`, with `Findings` and `Unplanned`. A fixed premise goes in `Unplanned`. It has no `Commit` and no `Stopped`.
 
-View:
-
-Drop:
+View of the tests to drop:
 
 - two or more tests that check the same behavior
 - a test for a behavior that is gone
 - a test for a branch this plan's change stops making
-- a test `.pi/skills/plan/references/design.md`'s `## Test cases` would not write
 
-Fix:
+View of the tests to fix:
 
 - a test that hides the premise the behavior needs: move the premise into the test, and leave only the values that do not affect the behavior in the setup.
 - a test that builds a premise another test already shares: share it when nobody changes it, and keep a mutable premise in each test.
@@ -119,7 +107,6 @@ Notes:
 - The task is in the `Clean the tests` section of `references/tasks.md`.
 - A premise a type, a schema or a DB constraint already settles, a test nobody would notice, and an `Add`, `Update` or `Drop` line with no case are the ones the plan would not write.
 - The cleanup is not a slice. What went stale is known only after the change.
-- A slice carries a `Verify` of its own.
 
 ### 6. Review
 
@@ -148,72 +135,36 @@ Notes:
 - The reviewer writes under the each viewpoints and `Doubts`. A doubt or a note that is not a finding goes under `- Doubts:` in the round it came from, and nowhere else.
 - The reviewer reads the test steps' cases by `.pi/skills/plan/references/design.md`'s `## Test cases`.
 - The reviewer reads each `Verify` by what it proves.
-- The fixer reads the plan md, and writes a `fixed:` line for what it adopts and a `left:` line for what it leaves, under each Round 1 finding. The fixer is the fixing `code` subagent for a worktree, and the agent for a base.
+- The fixer reads the plan md, and writes a `fixed:` line for what it adopts and a `left:` line for what it leaves, under each Round 1 finding.
   - _Worktree_: committed by the `code` subagent as `consult(<plan id>): round <N> fixes`.
   - _Base_: commits with `base(<plan id>): round <N> fixes`.
 - A Round 1 that finds nothing ends the review. Round 2 is the last look; the review ends there; no third round.
 - The fixer writes what it cannot fix as `left: <why>` under the Round 1 finding in the same plan md. The close reads it as a leftover.
 
-### 7. Acceptance
+### 7. Acceptance & Commit
 
 Steps:
 
 1. Run the plan's checks the agent can run, in the place the plan runs.
-2. For a plan that adds behavior, break the code that carries two or three of the behaviors, run the plan's executable check, confirm it goes red, and restore it.
-3. For a plan that adds no behavior, read what it changed.
-4. Say whether the implementation achieves the plan's `Goal`.
-5. Write `## Acceptance` with `Goal`, `Ran`, `Findings` and `Doubts`. The field says `なし` when there is nothing.
+2. Acceptance methods:
+   - Plan that adds behavior: break the code that carries more than 2 of the main concern behaviors, run the plan's executable check, confirm it goes red, and restore it.
+   - Plan that adds no behavior, read what it changed.
+3. Say whether the implementation achieves the plan's `Goal`.
+4. Write `## Acceptance` with `Goal`, `Ran`, `Findings` and `Doubts`. The field says `なし` when there is nothing.
+5. If something in `Findings`
+   - _Worktree_: with the fixing subagent.
+   - _Base_: yourself.
 6. Commit it:
    - _Worktree_: in the worktree, with `consult(<plan id>): acceptance`.
    - _Base_: in the base, with `base(<plan id>): acceptance`.
 7. When a finding is fixed, run the acceptance again and write it again in the same plan md.
 
-View:
-
-| check                                  | who closes it |
-| -------------------------------------- | ------------- |
-| `Always` and the executable `Added`    | the agent     |
-| the plan's `Goal`                      | the agent     |
-| the whole typecheck and test           | the agent     |
-| the broken-and-restored behavior check | the agent     |
-| the front in cmux-browser              | the owner     |
-| a `base` plan's look after each slice  | the owner     |
-
 Notes:
 
 - `Goal` is the plan's `Goal`. A gap between the `Goal` and the implementation is a `Findings` line.
 - A check that is red with the change in place is a `Findings` line, not a note. A check that stays green with the behavior removed is a finding.
-- The executable `Added` is DB, auth and other. A plan that adds no behavior is a document or a setting.
-- An owner's look is not broken and restored; their OK is the check. A `yolo` plan passes that look; the agent's check stays in `Acceptance` for it.
-- The merge's commit is not written there.
-  - _Worktree_: the acceptance is committed before the merge.
-  - _Base_: it is committed before the report.
-- A `Findings` line is a fix instruction for a `code` subagent. The subagent writes `fixed:` or `left:` under the line it was handed, in the same plan md.
+- A `Findings` line is a fix instruction. The fixer writes `fixed:` or `left:` under the line it was handed, in the same plan md.
 - The task is in the `Acceptance's findings` section of `references/tasks.md`.
-
-### 8. The owner's confirmation
-
-Steps:
-
-1. Show the owner the `## Acceptance`'s `Goal`, `Ran`, `Findings` and `Doubts`.
-2. Wait for their OK:
-   - _Worktree_: before the merge.
-   - _Base_: before the report. There is no merge.
-3. A `yolo` plan passes this confirmation: the agent's acceptance check is the confirmation.
-
-View:
-
-| case           | who closes it |
-| -------------- | ------------- |
-| the owner's OK | the owner     |
-| a `yolo` plan  | the agent     |
-
-Notes:
-
-- The owner's word closes it.
-  - _Worktree_: the merge does not start before it.
-  - _Base_: there is no merge; the report follows it.
-- A `yolo` plan passes this confirmation.
 
 ### 9. Merge
 
@@ -230,15 +181,12 @@ _Worktree_:
 
 _Base_:
 
-- なし. A base plan has nothing to merge.
+1. Nothing. A base plan has nothing to merge.
 
 Notes:
 
-- The agent takes no merge the acceptance did not pass.
 - A plan that waits for another has not merged yet. The plan md's `Boundary Plans` names the wait. Nothing else fixes the order.
 - A done plan merges when it is done.
-- The command follows the lockfile. A `pnpm-lock.yaml` means `pnpm install`.
-- The merge counts as done only when they are green. Red means the combination is broken; green means done.
 
 ### 10. Report
 
@@ -251,6 +199,5 @@ Steps:
 - When the plan is dropped:
   - _Worktree_: do not author its plan md; it is copied as it is.
   - _Base_: write `Stopped` and the reason in the base's plan md.
-- When you clean the tests: do not drop a test that hides its premise. Move the premise into the test; the test itself is right.
 - When you fix a hole, do not do it silently. It goes in the record.
 - When you run the slices, do not drop the plan's `Policy` and `Goal`.

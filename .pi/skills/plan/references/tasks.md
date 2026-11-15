@@ -46,7 +46,7 @@ Answer one question: can this plan achieve its Goal, and do the Steps and the Po
    - When the entry is Simple, its `Scope` and `#### Details` are `_omission_`. Read the omission as the entry not recording them, not as an empty scope. The plan's range is held by `Definition`.
 2. Answer under these viewpoints:
    - `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
-   - `Design` — the four questions.
+   - `Refactor` — the four questions.
    - `Files` — the files the affected names, and a file it does not name.
    - `Slice` — `Types` (a declaration the code uses but `Types` does not name, and one against the type rules), `Steps` (the target files from the affected or `External`, and the ADR's `Add`/`Update`/`Drop` without omission), `Policy` (the ADR's `Policy` without omission), `Verify` (one that does not run as written, one red with the change, and one green with the behavior removed), and `Cases` (the test steps' cases against `design.md`'s `## Test cases`).
    - `Other` — a contradiction, a circular flow, a duplication, an omission.
@@ -55,7 +55,7 @@ Answer one question: can this plan achieve its Goal, and do the Steps and the Po
    ### <slice name>
 
    - Goal: なし, or `<file>:<line>` — what is wrong
-   - Design: ...
+   - Refactor: ...
    - Files: ...
    - Slice: ...
    - Other: ...

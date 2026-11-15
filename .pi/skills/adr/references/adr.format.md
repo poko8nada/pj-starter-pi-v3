@@ -81,7 +81,6 @@ The entries the ADR holds.
 
 The entry's way of working.
 
-- The line sits under the entry's heading, before `Context`: `Type: _Full_` or `Type: _Simple_`.
 - `_Full_` walks every step of the entry stage.
 - `_Simple_` keeps `Scope` and `#### Details` as `_omission_`, does not walk the `Scope` step or the Discussion Loop, and settles the `Decision` with the owner directly.
 - `_omission_` means the entry does not record the item because of its type. `なし` means the item has nothing to record. A Full entry uses `なし`; a Simple entry uses `_omission_`.
@@ -99,34 +98,29 @@ The range the entry decides, in `In` and `Out`.
 
 What limits the entry: a fact, and the owner's intent or will.
 
-- An item is one line, `C<n>: <the item>`.
 - The number runs from `C1`, in the order the items were settled.
-- A code or a document does not go here; it goes under `Decision`'s `#### Details`.
-- The cycle stage writes the items while the pre-research runs; the discussion adds the rest.
-- When the decision does not weigh an item, remove its `C<n>:` label and keep the item here as a plain bullet.
+- When the decision does not weigh an item, remove its `C<n>:` label
 
 ## Research & Trial
 
 The facts the entry holds, with their sources.
 
-- A fact is one line, `F<n>: <the fact>。出所: <the source>`.
-- The source follows `出所: `, one item per fact.
-- The pre-research writes the facts here before the entry stage.
-- When the decision does not weigh a fact, remove its `F<n>:` label and keep the fact here as a plain bullet.
+- The number runs from `F1`, in the order the items were settled.
+- When the decision does not weigh an item, remove its `F<n>:` label
 
 ## Decision
 
 What the entry becomes, and what holds it.
 
-- `Status` is empty before the decision; after it, `accepted`, or `rejected` with its reason in parentheses on the same line.
-- `Main` is one per entry, with its `Add`, `Update` and `Drop` under it. `Sub` is zero or more, with its `Add`, `Update` and `Drop` under it. A rejected entry leaves them empty.
+- `Status` is empty ,`accepted`, or `rejected` with its reason in parentheses on the same line.
+- `Main` is one per entry.
+- `Sub` is from 0 to multiple.
 - `Add` is what grows, `Update` is what changes, and `Drop` is what disappears.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
 - A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - `#### Details`
   - It holds the concrete code and documents the discussion settled: the specific name, the logic, the method, the schema and the structure
   - One bullet is the title of one fence, and the fence follows it.
-  - A fence carries one item. A whole text or a whole logic is written when it is the decision. The plan concretizes what is not decided.
 - When `#### Details` has nothing, write `なし` under it. A Simple entry's body is `_omission_`.
 - When a field has nothing in it, write `なし`.
 
@@ -135,11 +129,7 @@ What the entry becomes, and what holds it.
 How the lines of `DEFINITION.md` move, one line per name.
 
 - A line is `<name>(<operation>): <value>`.
-- The name is how `DEFINITION.md` calls it:
-  - `Unit.<name>` — a line under `Users can do`; a `####` heading is not a Unit
-  - `Who.<name>` — a role
-  - `Stack.<group>` / `Stack.<group>.<role>`
-  - `Product` / `What`
+- The name is how `DEFINITION.md` calls it
 - The operation is one of:
 
 | operation   | what the value holds       |
@@ -148,9 +138,3 @@ How the lines of `DEFINITION.md` move, one line per name.
 | `(updated)` | the new line               |
 | `(kept)`    | the reason the line stands |
 | `(dropped)` | nothing                    |
-
-- When the entry is rejected, carry only `(kept)` for the parts that stand, or `なし（採用しなかった）`.
-
-## Writing
-
-- The exchange is not recorded. Only the organized `Context` and `Decision` stay.

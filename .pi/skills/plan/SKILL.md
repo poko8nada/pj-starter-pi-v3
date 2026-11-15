@@ -18,16 +18,8 @@ Steps:
 1. Read `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`.
 2. Read `cycles/<YYMMDD>-<NNN>-<slug>/affected/<NN>.md` for each entry.
 
-View:
-
-| afeccted part  | what it holds                             |
-| -------------- | ----------------------------------------- |
-| `Path` block   | one `Path` with its `Kind` and its `Edge` |
-| `### External` | the `### External` items                  |
-
 Notes:
 
-- Each entry's `Definition` is the scope boundary.
 - The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - The affected is the impact map.
 - `### Keywords` is the search range, not the impact map.
@@ -39,31 +31,26 @@ Steps:
 1. Read `references/cut.md` before cutting.
 2. Cut the work into plans by what it reads, not by where it lives.
 3. Decide the split, the place of each plan, the order, and the boundary. Propose the place with the reason. When unsure of the place, propose worktree.
-4. Present them to the owner in the fence `references/cut.md` gives.
+4. Present them to the owner in the format `references/cut.md` gives.
 5. Wait for the owner's agreement. On disagreement, revise and present again until they agree.
-
-Notes:
-
-- The owner's answer decides the place.
-- The `Why` reads the `Kind` and the `Edge`. It says what those mean and why the entries make one plan. The field names alone are not enough.
-- The `Goal` is one line, and `Goal` and `Summary` both stay.
-- The owner agrees before any plan md is written.
 
 ### 3. Write the plan md from the affected
 
 Steps:
 
 1. Read `references/format.md` and `references/design.md` before writing.
-2. Create the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> (--place <worktree|base> | -w | -b) --entries <NN[,NN...]> [--root <dir>]`. Take the plan id, the order, the place and the entries from the cut.
-3. Read the map's every path. And read deeply each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
-4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
-5. Write `## Goal` above `## Design` as one line.
-6. Answer the four questions in `## Design` of `references/format.md`.
-7. Decide and order the slices by the concern the change carries
-8. Name the concern in the slice's heading as one sentence.
-9. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
-10. Write `### Policy` between the `Steps` and the `Verify`, copying the ADR's `Policy` that the slice needs without omission and without `C`/`F`.
-11. Stop when a boundary has no answer.
+2. Create all the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> (--place <worktree|base> | -w | -b) --entries <NN[,NN...]> [--root <dir>]`. Take the plan id, the order, the place and the entries from the cut.
+
+Steps for each plan:
+
+0. Write `Boundary Plans:` that is already confirmd in cut step.
+1. Write `## Goal` and `## Refactor`.
+2. Read each file that the map has. Those paths directly name: what it imports, what it re-exports, and the tests beside it.
+3. Decide each path's mark: `add`, `update`, `drop`, or no mark.
+4. Decide and order the slices by the concern the change carries
+5. Name the concern in the slice's heading as one sentence.
+6. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
+7. Write `### Policy` copying the ADR's `Policy` that the slice needs.
 
 View:
 
@@ -96,15 +83,12 @@ View:
 
 Notes:
 
-- The `Design` answers the four questions before the slices are written.
-- When the plan's `Files` has neither `add` nor `drop`, write in the `Steps` how the update is built into the existing, and in the `Design` how the whole is redesigned.
 - A change of `Who`, `Stack` or `What` in the `Definition` is written as steps on `DEFINITION.md`.
 - When you write `Steps`: do not write one line per file. Write one change per substep line, carrying the ADR's `Add`, `Update` and `Drop`.
 - `Verify`
   - It cannot run as written is a hole too.
   - It is red with the change in place is a hole too.
-  - Do not invent a check. `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
-- When you write a test case: do not write a case the type, the schema or the DB settles. It is noise, and the reviewer takes it out.
+  - `Always` holds the checks `references/format.md` lists, and `Added` holds the ones the change decides.
 
 ### 4. Confirm what the plan leaves open
 
@@ -127,7 +111,7 @@ Steps:
 
 1. Read the `First review of a plan` section of `references/tasks.md`.
 2. Send one plan md to one `review` subagent. Give it the plan md only: no ADR, no affected, no chat, no `design.md`. The codebase is readable.
-3. Read the report. For every `迷うが実装できる` and `実装できない`, fix the plan from the ADR. When the ADR does not hold it, decide the supplement by your own principles, and write it in the existing format: the substep line, a fence under it, the `Design`, or the `Types`.
+3. Read the report. For every `迷うが実装できる` and `実装できない`, fix the plan from the ADR. When the ADR does not hold it, decide the supplement by your own principles, and write it in the existing format.
 4. Do not send the fixed plan to the first review again.
 
 Note: the first review asks whether a subagent with only the plan md can implement each substep. It does not check the ADR.
@@ -144,7 +128,7 @@ Steps:
 View:
 
 - `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
-- `Design` — the four questions.
+- `Refactor` — the four questions.
 - `Files` — the files the affected names, and a file it does not name.
 - `Slice` — the slice whose concern its heading names, and whose closure its `Verify` proves.
   - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules.
@@ -160,8 +144,7 @@ Notes:
 - One subagent per plan.
 - One round. The fixed plan is not reviewed again.
 - The report says `fixed: <what was done>` for one it adopted, and `left: <why>` for one it did not.
-- When a fix changes another plan's boundary, `Files` or order, update that plan before its review. A plan already reviewed goes through review again.
-- With two or more plans, while that review runs, write the next plan file. A plan that is fixed from its review does not wait for the others.
+- With two or more plans, while that review runs, fix the other plan that is reviewd.
 
 ### 7. Japanese Proofread
 
@@ -173,15 +156,8 @@ Steps:
 4. Put the file back to `references/format.md`'s shape in your own words when the meaning changed or a name moved.
 5. Say in your report to the owner what you repaired.
 
-View:
-
-- a slice's `Steps`, a `Verify` line, a test case or a field name that changed meaning
-- a section or field name that moved
-
 Notes:
 
-- The role's policy is in `.pi/extensions/consult/types.json`.
-- It edits only the Japanese wording of the plan md, and does not change record fields.
 - The wording of a quoted passage is not a change of meaning. Keep that correction.
 - The report says `fixed: <what>`, or `left: <why>`.
 - One round. The repaired file does not go through the subagent again.
@@ -201,13 +177,6 @@ View:
 | -------------------- | -------------------------------------------------- |
 | a fix to the cut     | step 3, and the affected plans are presented again |
 | a fix to the content | step 4, and through review and proofread again     |
-
-Notes:
-
-- The owner answers approval or fixes.
-- The agent edits the plan to match the owner's answers, and git holds the diff.
-- The plan md's `Boundary Plans` is written in step 4 from the cut's order.
-- It is edited when a pair is cut again, and git holds that diff too.
 
 ## How not to do this
 

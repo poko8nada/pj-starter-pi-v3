@@ -17,7 +17,7 @@ Section and field names are English; the content is Japanese.
 
 <何が> が <どうなる>、1 行。
 
-## Design
+## Refactor
 
 - Inside:
   - Modules: <統合・分割するファイルやモジュール。答えと、なぜその形なのか。なければ なし>
@@ -129,11 +129,11 @@ Section and field names are English; the content is Japanese.
 
 What the plan achieves, in one line.
 
-- `## Goal` sits above `## Design`, in one line.
+- `## Goal` in one line.
 - The plan's `Goal` comes from the `Main` lines of the entries it carries, composed into one line.
 - The cut's `Goal` and its `Summary` both stay.
 
-## Design
+## Refactor
 
 The four questions the plan answers about shape, and why that shape.
 
@@ -163,9 +163,7 @@ What the plan changes, and what follows the change.
 - The map's paths are the candidates for the tree.
 - The dirs the plan makes or leaves carry `add` or `drop` on the tree's dir line.
 
-The code rules for the paths are in `design.md`.
-
-## Slices
+## Slices & Steps
 
 How the work is cut into slices, one concern per slice.
 
@@ -174,13 +172,8 @@ How the work is cut into slices, one concern per slice.
 - A file step names the file, and each substep is one change in one line.
 - A substep starts with `add:`, `update:` or `drop:`.
 - The content the ADR or the chat decided goes in a fence under the file step.
-- The language is `ts`, `md`, `json` or the like.
-- The content is copied as it was decided, markdown or code.
 - A step that meets the outside carries `2. Outside: <the affected/<NN>.md ### External item>` with its substeps.
 - A test step keeps its case lines, and the fence goes under them.
-- The cases of a test file follow `design.md`'s `## Test cases`.
-- A plan with no test file has no test step.
-- The steps are numbered in the order of the work.
 
 ## Types
 
@@ -192,16 +185,12 @@ The declarations the slice moves.
 - `なし` when nothing moves.
 - The behaviour is written in the step that does it, not here.
 
-The declaration rules are in `design.md`'s `## Type rules`.
-
 ## Policy
 
 What holds the slice's decision.
 
 - `### Policy` sits between the `Steps` and the `Verify` in each slice.
-- It copies the ADR's `Policy` that the slice needs without omission, and repetition across slices is allowed.
 - A policy that hits only one slice goes only there.
-- It carries no `C`/`F` reference.
 
 ## Verify
 
@@ -210,38 +199,31 @@ The proof that the slice is closed.
 - It holds what has to pass, and the read-through that proves it.
 - It is not what to test.
 - It has two fields.
-- `Always` is the same in every slice.
-- `Added` is what the change decides.
-- Each `Add`, `Update` and `Drop` line's result is one of the related tests.
-- A step that goes past the `Scope` is not written.
-- A step that does what the `Policy`'s `Forbidden` says not to do is not written.
-- The review reads it.
-- A module for the plan's questions 3 and 4 is written even past the `Scope`.
-- The reason is in `## Design`.
-- `Always:` — the bullets below, and nothing else.
-  - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
-  - `pnpm typecheck`
-  - `pnpm lint`
-  - `pnpm format:check`
-  - the read-through: read every changed file whole, and every file it names whole.
-  - Follow the procedure in the order the file gives, as the one who acts on it.
-  - Check the number, the path, the name and the shape at each place against what it points to.
-  - Fix any inconsistency, and write the fix in `Unplanned`.
-- `Added:` — what the change decides.
-- One bullet per check that applies.
-- `なし` when nothing does.
-  - DB — rows are written into the store and read back.
-  - DB — a migration runs forward and back.
-  - front (a component, and what it shows) — the agent reports in the chat what to open.
-  - front — the owner starts the server and looks in cmux-browser.
-  - front — their OK in the chat closes it.
-  - auth — the library's sandbox or test environment shows the behaviour that was intended.
-  - a `base` plan's look — the owner reads the slice's change.
-  - Their OK closes it.
-  - a proofread — the Japanese document this slice amends, not a file whose body is not Japanese.
-  - other — a check the ADR's scope names that the checks above do not cover, by a throwaway script or a shell command.
-- A check that counts a string says what it compares.
-- A string the file carried before the change is counted in the diff, not in the file.
+  - `Always` is the same in every slice.
+    - the tests related to this slice, the ones it writes included (`pnpm test:related <changed files>`; `pnpm test:run` when nothing is related)
+    - `pnpm typecheck`
+    - `pnpm lint`
+    - `pnpm format:check`
+    - the read-through: read every changed file whole, and every file it names whole.
+  - `Added` is what the change decides. Here is expamle below.
+    - Backend:
+      - api — the endpoint is called and returns the expected response.
+      - DB — rows are written into the store and read back. A migration runs forward and back.
+    - Auth — the library's sandbox or test environment shows the behaviour that was intended.
+    - Frontend:
+      - a component, single behavior that can not test.
+      - looks and act in browser.
+    - A proofread — the ONLY Japanese document this slice amends.
+    - A check that counts a string says what it compares.
+    - A string the file carried before the change is counted in the diff, not in the file.
+    - Other — the checks above do not cover, sometimes using throwaway script or a shell command.
+    - `なし` when nothing does.
+
+## Cleanup
+
+Cleanup them that are still old or not needed.
+
+- It is not a slice. because it is not a change.
 
 ## Notes
 
@@ -256,12 +238,11 @@ The work's record.
 
 - `Findings`: one bullet per hole the work could not close — the place, the state, what closes it.
 - Under it, `left: <why>` says why it could not be closed here.
-- `なし` when there is none.
 - `Unplanned`: a hole found and fixed here — the place, what changed, and why it could not wait.
 - `Commit`: the slice's commit hash.
-- `なし（理由）` when the slice changed nothing.
 - `Stopped`: only for a slice that stopped, or for a line the plan cannot write.
 - The review reads it.
+- `なし` when there is none.
 
 ### Stop
 
@@ -298,43 +279,18 @@ The work's review record, not the plan's review.
   - `Policy` — a `Policy` line the diff does not keep: an `Allowed` it forbids, or a `Forbidden` it does
   - `Unproven` — a test that would stay green if the behavior it names were removed
   - `Noise` — a test step a type, a schema or a DB constraint already settles, or one nobody would notice
-- `Doubts` — a note that is not a finding, and still worth keeping: one bullet each.
-- The reviewer writes it under `- Doubts:` in the round it came from.
-- Nothing fixes it, and the close reads it as a leftover.
-- `なし` when there is none.
-- A finding is one bullet.
+  - `Doubts` — a note that is not a finding, and still worth keeping: one bullet each.
 - What the fixing subagent did with it is a bullet under it: `fixed: <what was done>` for one it adopted, `left: <why>` for one it left.
-- The close reads the `left` lines.
-- `なし` when the viewpoint found nothing.
-- A note may follow it (`なし — 何を確かめたか`).
-- The close reads only the leftovers, so the note does not become one.
-- A Round 1 that finds nothing ends the review.
-- What the final fix cannot close, the fixing subagent writes as `left:`, and the close reads it.
-
-### Round 1
-
-### Round 2
+- `なし` when there is none.
 
 ## Acceptance
 
 The acceptance's record.
 
 - `Goal` holds the plan's `Goal` and whether the implementation achieves it.
-- A gap between the `Goal` and the implementation is a `Findings` line.
+  - If a gap between the `Goal` and the implementation is a `Findings` line.
 - `Ran` holds the checks that were run.
+  - If a check was not run, it is a `Findings` line.
 - `Findings` holds one bullet per finding, and under it `fixed: <what was done>` or `left: <why>`.
-- `なし` when there is nothing.
-- The merge's commit is not written here.
-- The acceptance is committed before the merge.
-- Git holds the merge.
 - `Doubts` — the same as the review's: a note that is not a finding.
-- The agent writes the Acceptance's `Doubts`.
-- The close reads it as a leftover.
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.
-- The tree, the steps and the checks use the same name.
-- Keep a table short: a wide one breaks with long text.
-- A field whose content cannot be written yet keeps its name and stays empty.
+- `なし` when there is nothing.

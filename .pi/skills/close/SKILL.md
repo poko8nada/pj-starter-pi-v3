@@ -19,17 +19,7 @@ Steps:
 4. Add the holes from the read as lines by hand, under a heading naming the ADR entry, as `references/format.md` says.
 5. Do not copy by hand what the script collects: a line left out is a hole nobody finds again.
 
-View:
-
-| the heading                     | what it holds          |
-| ------------------------------- | ---------------------- |
-| `### <NN> <plan id> (ADR <NN>)` | the plan's leftovers   |
-| `### (ADR <NN>)`                | a hole no plan carries |
-
-Notes:
-
-- The script writes `## Collected`; the agent adds the hole no plan carries.
-- Do not show `## Collected` to the owner here: the proposal comes first.
+Notes: The script writes `## Collected`; the agent adds the hole no plan carries.
 
 ### 2. Exclude what is already resolved
 
@@ -37,12 +27,6 @@ Steps:
 
 1. Read the plan md, the diff and the close context for each collected line.
 2. Delete the line the wording shows is already closed.
-3. Re-filter after every rerun of `collect.mjs`.
-
-Notes:
-
-- The script does not judge this.
-- A line the wording shows is closed is deleted; the rest stays.
 
 ### 3. Triage and explain
 
@@ -53,26 +37,25 @@ Steps:
    - If the facts are unknown, should first verify the contents directly.
 3. Explain one leftover at a time in the chat:
    - what it is, which stage it came from and why, what is wrong now, how to fix it
-     - Assuming the owner is not familiar with the contents, explain it thoroughly.
-     - Focusing on the facts that you verify, rather than comment that is collected.
-     - Offer proposals based on your own principles.
+     1. Assuming the owner is not familiar with the contents, explain it thoroughly.
+     2. Focusing on the facts that you verify, rather than comment that is collected.
+     3. Offer proposals based on your own principles.
 4. Wait for their answer on that one before the next.
 5. When the last one is answered, let them read the whole `close.md` as the final check.
 
 View:
 
-| destination    | the leftover                                                |
-| -------------- | ----------------------------------------------------------- |
-| `**proposed**` | a possible obvious bug, or a debt that would grow large     |
-| `_ex-change_`  | one code place, one test or documents only, worth doing now |
-| `_roadmap_`    | a future consideration                                      |
-| `dropped`      | the rest                                                    |
+| destination    | the leftover                                                               |
+| -------------- | -------------------------------------------------------------------------- |
+| `**proposed**` | A possible obvious bug, or a debt that would grow large if it stays        |
+| `_ex-change_`  | A change of one code place, one test, or doc only, that is worth doing     |
+| `_roadmap_`    | A future implementation or change worth considering, outside the two above |
+| `dropped`      | the rest                                                                   |
 
 Notes:
 
 - The proposal order is in `references/format.md`.
 - The `dropped` line is explained too: the owner sees why it is dropped.
-- The gate is the owner's word.
 
 ### 4. Ex-change
 
@@ -84,25 +67,18 @@ Steps:
 4. Append `: done <commit>` to its `## Triage` line.
 5. Go to the next `_ex-change_`; two changes do not share one commit.
 
-Notes:
-
-- The `_ex-change_` is one code place, one test or documents only.
-- It is the close's own work; no `code` subagent and no plan.
-- The commit is in the base.
-- The `## Triage` line carries the `done` hash.
-
 ### 5. Japanese Proofread
 
 Steps:
 
+0. If close.md is `なし`, skip this step.
 1. Run one `proofreader` subagent with `cycles/<YYMMDD>-<NNN>-<slug>/close.md`.
-2. Have it read `.pi/skills/close/references/format.md`; the role's policy is in `.pi/extensions/consult/types.json`; it edits only `## Collected` and `## Triage`.
+2. Read `.pi/skills/close/references/format.md`
 3. Read its report and `git diff` after the answers of step 4 are in the chat.
 4. Put `## Collected` and `## Triage` back to `references/format.md`'s shape, in your own words, when a line or a destination changed meaning, or a section or field name moved.
 
 Notes:
 
-- The verification conversations in step 6 run while it runs; `## Verified` is written after the repair.
 - An empty `## Verified` is normal at the proofread's start and at the repair: do not fill it, and remove what the subagent filled there.
 - One round: the repaired file does not go through the subagent again.
 
@@ -117,9 +93,9 @@ Steps:
 2. Wait for the owner's answer, and hold it in the chat before the next Unit.
 3. If needed, an `_ex-change_` work:
    - conditions: unit does not work, change does not work, the owner’s point is valid
-   1. Explan how it change to rework.
-   2. Do it in the base and commit it as `base(ex-change): <subject>`,
-   3. Write a short description of the change and the commit in `## Verified`'s `Fixed`.
+     1. Explan how it change to rework.
+     2. Do it in the base and commit it as `base(ex-change): <subject>`,
+     3. Write a short description of the change and the commit in `## Verified`'s `Fixed`.
 4. Write `Result:` and `Change:` from what they answered, in `## Verified`.
 5. Move to the next Unit.
 
@@ -134,9 +110,6 @@ Notes:
 
 - The Units are as `references/format.md` says.
 - The check has two parts: the Unit's function, and the change the plans made.
-- A Unit they will not check carries `しない` and the reason on the same line.
-- The `Fixed` is a short description of the change and the commit.
-- The gate is the owner's word.
 
 ### 7. Roadmap & Commit
 
@@ -192,4 +165,3 @@ Notes:
 
 - When you find a hole: do not fix it silently, and do not write the fix into `DEFINITION.md` or a plan. It goes in the `## Triage`.
 - When you close the cycle: do not leave a leftover without a line in the `## Triage`. The cycle closes only when every one of them has a destination, and every `_ex-change_` line in the `## Triage` has its `done`.
-- After every rerun of the script: do not skip the resolved exclusion. What the wording shows is already closed is deleted by the agent, and re-filtered.

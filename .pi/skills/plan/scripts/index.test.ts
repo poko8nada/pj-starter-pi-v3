@@ -107,10 +107,11 @@ describe('planSkeleton', () => {
     expect(headings).toEqual([
       '# PLAN `xxx-update`',
       '## Goal',
-      '## Design',
+      '## Refactor',
       '## Files',
       '## Slices',
       '## Notes',
+      '### Cleanup: <what it cleaned>',
       '## Work Review',
       '### Round 1',
       '### Round 2',

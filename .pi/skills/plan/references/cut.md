@@ -35,12 +35,10 @@ What the work reads decides how the plans are cut.
 - Order the two when one reads the output of the other, or when the cut takes out a shared path.
 - A description never merges before the behaviour it describes.
 
-### Asking of a split
+### Asking yourself of your cut
 
 - Does a half leave the branch failing lint, typecheck or test? Then keep it together.
 - Is a half not usable on its own? Then keep it together.
-- Do the two touch the same path? Then they are one plan, unless the parts they change are clearly different.
-- Does a piece depend on more than one plan? Then it is its own plan, after all of them, or before them when it holds a shared `config` or `doc`.
 
 ## Present
 
@@ -80,14 +78,11 @@ How the cut is shown to the owner, one block per plan in a fence.
 
 Where the plan runs.
 
-| `Place`    | what it means                              |
-| ---------- | ------------------------------------------ |
-| `worktree` | the default                                |
-| `base`     | the plan whose work needs the owner's eyes |
+| `Place`    | what it means                                |
+| ---------- | -------------------------------------------- |
+| `worktree` | the default                                  |
+| `base`     | needs the owner's eyes or main agent context |
 
 - A worktree plan is a branch, a subagent and a merge.
-- A base plan runs in the agent's own tree: the changes land as they are made, and it has no branch and no merge.
+- A base plan runs in the agent's own tree: it has no branch and no merg
 - The owner's eyes are a browser, a screen, or a look.
-- A yolo plan is worktree, so the base condition does not apply.
-- A base plan lands in the agent's tree as it goes, so a plan that follows it stands on its changes.
-- Keep the files apart, or order the two.
