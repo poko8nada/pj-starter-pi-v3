@@ -500,6 +500,27 @@ describe('onAgentSettled', () => {
     });
     expect(first.options).toMatchObject({ triggerTurn: true });
   });
+  it('aborted が false なら何も送らない', () => {
+    const sent: string[] = [];
+    const wiring = scrubWiring({ followUp: (content) => sent.push(content) });
+    const fake = fakeCmdCtx();
+    wiring.onMessageUpdate(
+      messageUpdate(
+        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
+      ),
+      fake.ctx,
+    );
+    expect(fake.aborts()).toBe(1);
+    wiring.onAgentSettled(agentSettled(false));
+    expect(sent).toHaveLength(0);
+  });
+
+  it('aborted が true でも pending がなければ何も送らない', () => {
+    const sent: string[] = [];
+    const wiring = scrubWiring({ followUp: (content) => sent.push(content) });
+    wiring.onAgentSettled(agentSettled(true));
+    expect(sent).toHaveLength(0);
+  });
 });
 
 describe('onBeforeAgentStart', () => {

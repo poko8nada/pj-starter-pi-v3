@@ -105,13 +105,14 @@ export function scrubWiring(
   options: {
     readonly settingsDir?: string;
     readonly readSettings?: () => SettingsRead;
+    readonly followUp?: (content: string) => void;
   } = {},
 ): ScrubWiring {
   const dir = options.settingsDir ?? settingsDirWith({});
   return createScrubWiring({
     settingsDir: dir,
     now: () => 7,
-    followUp: () => undefined,
+    followUp: options.followUp ?? (() => undefined),
     readSettings: options.readSettings ?? (() => readSettings(dir)),
   });
 }
