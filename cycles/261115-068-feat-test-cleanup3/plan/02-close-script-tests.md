@@ -144,8 +144,8 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 
 ### Slice 1: 一時ツリーの前提を cycleTree に集める
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
