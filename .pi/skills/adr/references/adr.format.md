@@ -90,28 +90,6 @@ The entry's way of working.
 
 The range the entry decides, in `In` and `Out`.
 
-| kind          | question (yes → in)                                                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| result        | Does what can be observed from outside change? (what is returned, written, or emitted; side effects; what a reader receives)                      |
-| logic         | Do the decisions, steps, or rules that produce the result change? (conditions, order, algorithms, constraints, instructions a reader must follow) |
-| structure     | Does how things are divided, ordered, nested, or placed change? (module split, schema shape, section layout, file placement)                      |
-| expression    | Does the surface notation change? (names, wording, tone, formatting, spelling)                                                                    |
-| upstream      | Is an external thing the product relies on added, updated, or removed? (package, library, external contract, data source, cited source)           |
-| downstream    | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other documents, documents that describe it)           |
-| existing      | Must an existing entity be moved or fixed? (stored data, installed versions, already-distributed documents, past records)                         |
-| cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
-| safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
-| failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
-| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed? (It is a means, not the test itself.)                 |
-| observability | Do the records or signals the product leave change? (logs, metrics, audit records)                                                                |
-| release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
-| other         | Is there a concern that none of the above covers?                                                                                                 |
-
-- Judge each kind on its own; several kinds may be `In` at the same time.
-- Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
-- When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
-- When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
-
 - `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <what is done>`.
 - `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <what is not done>（理由）`.
 - When a kind needs a revisit condition, put it on that kind.

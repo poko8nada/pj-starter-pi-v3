@@ -17,15 +17,18 @@ The procedure has two stages. The cycle stage settles the intent, the roadmap it
 
 Steps:
 
-1. Write what you understood first.
-2. Let the owner correct it.
-3. Repeat until no point is left in dispute.
+1. Gather info from docs and codes to grab owner's context.
+2. Write what you understood first.
+3. Let the owner correct it.
+4. Repeat until no point is left in dispute.
 
-View: the intent is the only measure of what follows.
+View:
+
+- the intent is the only measure of what follows.
+- Intents are broken down into entries, and entries are broken down into scopes.
 
 Note:
 
-- Intents are broken down into entries, and entries are broken down into scopes.
 - do not start the research before the intent is settled. The target would be wrong.
 - The "intent" represents the overall policy; it is not something that is asked about in the entries.
 
@@ -147,21 +150,43 @@ Notes:
 
 ### 2. Scope
 
-A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
-**Ensure that you answer the questions in the table and categorize items appropriately.**
-
 Steps:
 
 1. Read the `## Scope` section of `references/adr.format.md`.
 2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
-   - The scope is determined by answering the "questions" found in the table.
+   - Ensure that you answer the questions in the table and categorize items appropriately.
+   - Judge each kind on its own; several kinds may be `In` at the same time.
+   - Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
+   - When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
+   - When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
 3. Let the owner correct the list.
 4. Write the result to the entry's `Scope` as `In:` and `Out:`.
+
+View:
+
+- A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
+
+| kind          | question (yes → in)                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| result        | Does what can be observed from outside change? (what is returned, written, or emitted; side effects; what a reader receives)                      |
+| logic         | Do the decisions, steps, or rules that produce the result change? (conditions, order, algorithms, constraints, instructions a reader must follow) |
+| structure     | Does how things are divided, ordered, nested, or placed change? (module split, schema shape, section layout, file placement)                      |
+| expression    | Does the surface notation change? (names, wording, tone, formatting, spelling)                                                                    |
+| upstream      | Is an external thing the product relies on added, updated, or removed? (package, library, external contract, data source, cited source)           |
+| downstream    | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other documents, documents that describe it)           |
+| existing      | Must an existing entity be moved or fixed? (stored data, installed versions, already-distributed documents, past records)                         |
+| cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
+| safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
+| failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
+| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed? (It is a means, not the test itself.)                 |
+| observability | Do the records or signals the product leave change? (logs, metrics, audit records)                                                                |
+| release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
+| other         | Is there a concern that none of the above covers?                                                                                                 |
 
 Notes:
 
 - The scope is of this entry. The other entries keep their own scope.
-- The first `Scope` is a guess. Rewrite it in `Discussion Loop` with the owner.
+- Rewrite it in `Discussion Loop` with the owner, if needed.
 
 ### 3. The opening proposal
 
