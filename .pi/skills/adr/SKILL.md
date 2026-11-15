@@ -286,7 +286,7 @@ Notes:
 
 Steps:
 
-1. After every entry is decided, run one `proofreader` subagent with the cycle's `adr.md` for the Japanese proofread of the whole file.
+1. Run one `proofreader` subagent with the cycle's `adr.md` for the Japanese proofread of the whole file. (Typically, initiated at the same time as the final `affected` step.)
 2. Have it read `references/adr.format.md`. The role's policy is in `.pi/extensions/consult/types.json`. It edits only `adr.md`.
 3. Read its report and the `git diff` of the file.
 4. Put the file back to the shape `references/adr.format.md` gives, in your own words, when a decision, a reason, a number, a name, a `Scope` line or a fence changed meaning, or a section or field name moved.
@@ -306,8 +306,9 @@ Steps:
    - a path an affected file lacks
    - an item an entry lacks, entry by entry
    - what is too much
-4. When the check leaves nothing to add, read the decided entries together, settle a contradiction, and read the `Definition` lines together. The owner's answer closes the entries' decisions.
-5. When the owner agrees to add an item to an entry, go back to that entry's Discussion Loop. The next pass of this section starts again from step 1.
+4. Changes are performed directly by the agent, even `affected.md`.
+5. When the check leaves nothing to add, read the decided entries together, settle a contradiction, and read the `Definition` lines together. The owner's answer closes the entries' decisions.
+6. When the owner agrees to add an item to an entry, go back to that entry's Discussion Loop. The next pass of this section starts again from step 1.
 
 Notes:
 

@@ -50,10 +50,14 @@ Steps:
 
 1. Write one destination per leftover in `## Triage`, in the order and the shape `references/format.md` gives.
 2. Carry `Fact:` / `Why:` / `Then:` under each line.
-3. Give a leftover that needs facts nobody has to a `research` subagent; the task is in the `Look it up` section of `references/tasks.md`.
-4. Explain one leftover at a time in the chat: what it is, which stage it came from and why, what is wrong now, how to fix it, and how wide the fix is; in words that hold without the reference files.
-5. Wait for their answer on that one before the next.
-6. When the last one is answered, let them read the whole `close.md` as the final check.
+   - If the facts are unknown, should first verify the contents directly.
+3. Explain one leftover at a time in the chat:
+   - what it is, which stage it came from and why, what is wrong now, how to fix it
+     - Assuming the owner is not familiar with the contents, explain it thoroughly.
+     - Focusing on the facts that you verify, rather than comment that is collected.
+     - Offer proposals based on your own principles.
+4. Wait for their answer on that one before the next.
+5. When the last one is answered, let them read the whole `close.md` as the final check.
 
 View:
 
