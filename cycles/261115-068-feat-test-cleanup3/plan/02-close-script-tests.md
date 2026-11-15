@@ -146,13 +146,13 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 5ea350ff
 - Stopped:
 
 ### Slice 2: 同じ事実を 1 か所で確認する
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
