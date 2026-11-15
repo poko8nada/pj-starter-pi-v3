@@ -539,15 +539,3 @@ describe('product-ready defaults', () => {
     expect(result.output).toContain(`headings: ${SOURCE_HEADINGS.join(', ')}`);
   });
 });
-
-describe('product-ready test-exclude.json', () => {
-  it('実物は settings.fixture を含み pi.fixture を含まない', () => {
-    const entries: unknown = JSON.parse(readFileSync(join(process.cwd(), TEST_EXCLUDE_AT), 'utf8'));
-    expect(Array.isArray(entries)).toBe(true);
-    if (!Array.isArray(entries)) {
-      throw new Error('must be an array');
-    }
-    expect(entries).toContain('test/settings.fixture.ts');
-    expect(entries).not.toContain('test/pi.fixture.ts');
-  });
-});

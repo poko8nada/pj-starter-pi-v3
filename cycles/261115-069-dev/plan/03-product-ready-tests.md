@@ -431,13 +431,13 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 7cb01c725a551057a777aedd7941a6f25cbfd3a0
 - Stopped:
 
 ### Slice 3: 実物 test-exclude.json の確認を削る
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
