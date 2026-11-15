@@ -54,19 +54,21 @@ View:
 Steps:
 
 1. Split the cycle into entries.
+   - An entry extracts concern from the intent and breaks it down.
    - The general rule is one entry per topic of main concern.
    - Group concerns that are subordinate to a main concern into a single entry.
    - An entry title should be a `topic` rather than necessarily a `question`.
-2. Think each entry's `Type` and its reason, in the split's order.
+2. Verify that the split entries cover the full scope of the intended meaning.
+3. Think each entry's `Type` and its reason, in the split's order.
    - `Type` is `_Full_` or `_Simple_`.
    - A Simple proposal meets all of these:
      - the change is reversible with git.
      - it crosses no Unit, as merging functions would.
      - the owner's intent has a single reading.
      - the outline of the work is inferable, and there is one way to do it, with nothing to compare.
-3. Show the owner the split, each entry's intent, each entry's `Type`, and the order of the entries with its reason.
-4. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry. When only the order is rejected, keep the split and write the order again with its reason.
-5. Add every agreed entry at once, in the split's order, with the scaffold:
+4. Show the owner the split, each entry's intent, each entry's `Type`, and the order of the entries with its reason.
+5. Rewrite a rejected split, and show it again. When only a `Type` is rejected, keep the split, and write the owner's `Type` for that entry. When only the order is rejected, keep the split and write the order again with its reason.
+6. Add every agreed entry at once, in the split's order, with the scaffold:
    - `node .pi/skills/adr/scripts/index.mjs --add <title> [Full|Simple]` appends an entry with the title and `Type` to the end of `adr.md` and creates `affected/<NN>.md`.
    - `node .pi/skills/adr/scripts/index.mjs --delete <NN>` deletes entry `NN` from `adr.md` and `affected/<NN>.md`, and renumbers the rest.
    - `node .pi/skills/adr/scripts/index.mjs --set <NN> <title> [Full|Simple]` replaces the title of entry `NN` in `adr.md` and `affected/<NN>.md`. When the `Type` is given, it also writes the `Type:` line, `Scope` and `#### Details` in `adr.md` in that `Type`'s shape; when it is omitted, the `Type` stays.
