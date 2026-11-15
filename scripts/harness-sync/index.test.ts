@@ -1,27 +1,29 @@
 /**
  * `scripts/harness-sync/index.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
- * fake の 2 つのツリー（元と先）を `tempDir()` で作り、
+ * fake の 2 つのツリー（元と先）を `fakeRoot()` で作り、
  * `node scripts/harness-sync/index.mjs` を子プロセスで呼ぶ。
  * 通し（copy、missing、終了コード、3 種のエラー、same、`--run`）だけを見る。
  * 細かい分岐は `path`、`collect`、`diff`、`display` の単体で見る。
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, sep } from 'node:path';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   COPY,
   MISSING,
   RUN_FLAG,
   countLine,
+  fakeRoot,
   indented,
   pullLine,
   pushLine,
   sameLine,
+  writeFile,
+  writeJson,
 } from '../../test/scripts.fixture.ts';
-import { tempDir } from '../../test/temp-dir.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'harness-sync', 'index.mjs');
 
@@ -40,34 +42,23 @@ function run(args: readonly string[], cwd?: string, env?: Record<string, string>
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
-/** symlink の据え（`typecheck.test.ts` と同じ理由） */
-function fakeRoot(): string {
-  return realpathSync(tempDir());
-}
-
-function writeFile(abs: string, content = 'x\n'): void {
-  mkdirSync(dirname(abs), { recursive: true });
-  writeFileSync(abs, content);
-}
-
-function writeJson(abs: string, data: unknown): void {
-  writeFile(abs, `${JSON.stringify(data, null, 2)}\n`);
-}
-
 function writeList(
   root: string,
   starter: string,
   copy: readonly string[] = ['.pi'],
   push: readonly string[] = ['.pi'],
 ): void {
-  writeJson(join(root, 'scripts', 'harness-sync', 'setting.json'), { starter, copy, push });
+  writeJson(root, 'scripts/harness-sync/setting.json', { starter, copy, push });
 }
 
 /** 元と先の 2 つを作り、先に一覧と相手のパスを置く */
-function pair(): { readonly origin: string; readonly local: string } {
+function pair(
+  copy: readonly string[] = ['.pi'],
+  push: readonly string[] = ['.pi'],
+): { readonly origin: string; readonly local: string } {
   const origin = fakeRoot();
   const local = fakeRoot();
-  writeList(local, origin);
+  writeList(local, origin, copy, push);
   return { origin, local };
 }
 
@@ -100,8 +91,8 @@ describe('harness main', () => {
   it('中身違いの同じパス → copy に出て exit 0', () => {
     const { origin, local } = pair();
     const rel = '.pi/a.ts';
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(origin, '.pi/a.ts', 'B\n');
+    writeFile(local, '.pi/a.ts', 'A\n');
     const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stderr).toBe('');
@@ -112,10 +103,8 @@ describe('harness main', () => {
   });
 
   it('元に無いパス → missing に出て exit 1', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
     const rel = '.pi/a.ts';
-    writeList(local, origin, [rel], [rel]);
+    const { local } = pair([rel], [rel]);
     const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toContain(countLine(MISSING, [rel].length));
@@ -124,9 +113,7 @@ describe('harness main', () => {
   });
 
   it('両側のパスが空 → copy は 0 行で exit 0', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
-    writeList(local, origin, ['.pi'], ['.pi']);
+    const { origin, local } = pair();
     mkdirSync(join(origin, '.pi'), { recursive: true });
     mkdirSync(join(local, '.pi'), { recursive: true });
     const out = run(['pull'], local);
@@ -136,20 +123,16 @@ describe('harness main', () => {
   });
 
   it('pull は copy を読み、push は push を読む', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
-    writeList(local, origin, ['.pi/a.ts'], ['.pi/b.ts']);
-    writeFile(join(origin, '.pi', 'a.ts'), 'a\n');
-    writeFile(join(origin, '.pi', 'b.ts'), 'b\n');
+    const { origin, local } = pair(['.pi/a.ts'], ['.pi/b.ts']);
+    writeFile(origin, '.pi/a.ts', 'a\n');
+    writeFile(origin, '.pi/b.ts', 'b\n');
     const pullOut = run(['pull'], local);
     expect(pullOut.status).toBe(0);
     expect(pullOut.stdout).toContain(indented('.pi/a.ts'));
     expect(pullOut.stdout).not.toContain(indented('.pi/b.ts'));
-    const pushLocal = fakeRoot();
-    const pushOrigin = fakeRoot();
-    writeList(pushLocal, pushOrigin, ['.pi/a.ts'], ['.pi/b.ts']);
-    writeFile(join(pushLocal, '.pi', 'a.ts'), 'a\n');
-    writeFile(join(pushLocal, '.pi', 'b.ts'), 'b\n');
+    const { local: pushLocal } = pair(['.pi/a.ts'], ['.pi/b.ts']);
+    writeFile(pushLocal, '.pi/a.ts', 'a\n');
+    writeFile(pushLocal, '.pi/b.ts', 'b\n');
     const pushOut = run(['push'], pushLocal);
     expect(pushOut.status).toBe(0);
     expect(pushOut.stdout).toContain(indented('.pi/b.ts'));
@@ -161,7 +144,7 @@ describe('harness errors', () => {
   it('copy が配列でない → 1 行で exit 1', () => {
     const origin = fakeRoot();
     const local = fakeRoot();
-    writeJson(join(local, 'scripts', 'harness-sync', 'setting.json'), {
+    writeJson(local, 'scripts/harness-sync/setting.json', {
       starter: origin,
       copy: 'x',
       push: [],
@@ -175,7 +158,7 @@ describe('harness errors', () => {
   it('starter の指すパスが無い → 1 行で exit 1', () => {
     const local = fakeRoot();
     writeList(local, join(local, 'no-such-starter'));
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    writeFile(local, '.pi/a.ts', 'A\n');
     const out = run(['pull'], local);
     expect(out.status).toBe(1);
     expect(out.stdout).toBe('');
@@ -196,8 +179,8 @@ describe('harness starter', () => {
     const local = fakeRoot();
     const origin = fakeRoot();
     writeList(local, local);
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    writeFile(local, '.pi/a.ts', 'A\n');
+    writeFile(origin, '.pi/a.ts', 'B\n');
     const beforeLocal = snapTree(local);
     const beforeOrigin = snapTree(origin);
     const out = run(['pull'], local);
@@ -211,13 +194,11 @@ describe('harness starter', () => {
 
 describe('harness apply (--run)', () => {
   it('pull --run → 写す', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
     const rels = ['.pi/a.ts', '.pi/extra.ts'];
-    writeList(local, origin, rels, rels);
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
-    writeFile(join(origin, '.pi', 'extra.ts'), 'extra\n');
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
+    const { origin, local } = pair(rels, rels);
+    writeFile(origin, '.pi/a.ts', 'B\n');
+    writeFile(origin, '.pi/extra.ts', 'extra\n');
+    writeFile(local, '.pi/a.ts', 'A\n');
     const out = run(['pull', RUN_FLAG], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(countLine(COPY, rels.length));
@@ -227,12 +208,10 @@ describe('harness apply (--run)', () => {
   });
 
   it('push --run → 逆の向きで同じ結果になる', () => {
-    const origin = fakeRoot();
-    const local = fakeRoot();
-    writeList(local, origin, ['.pi/a.ts'], ['.pi/a.ts', '.pi/extra.ts']);
-    writeFile(join(local, '.pi', 'a.ts'), 'A\n');
-    writeFile(join(local, '.pi', 'extra.ts'), 'extra\n');
-    writeFile(join(origin, '.pi', 'a.ts'), 'B\n');
+    const { origin, local } = pair(['.pi/a.ts'], ['.pi/a.ts', '.pi/extra.ts']);
+    writeFile(local, '.pi/a.ts', 'A\n');
+    writeFile(local, '.pi/extra.ts', 'extra\n');
+    writeFile(origin, '.pi/a.ts', 'B\n');
     const out = run(['push', RUN_FLAG], local);
     expect(out.status).toBe(0);
     expect(out.stdout).toContain(pushLine(local, origin));
