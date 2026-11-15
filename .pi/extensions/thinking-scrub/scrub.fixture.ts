@@ -3,12 +3,31 @@
  *
  * thinking の本文と印と assistant メッセージを作る。
  * 退化した thinking が既定の本文である（形はホスト、中身は機能）。
- * pi の `usage` と型は `test/pi.fixture.ts` から読む。同じものを作らない。
+ * pi の `usage` と型はここで作る。同じものを作らない。
  *
- * 値と文字列を組み立てるだけで、プロセスも FS も開かない。
+ * 値と文字列を組み立てるが、`scrubWiring` は `settingsDirWith` で一時ファイルを開く。
  * テストの外から読まれても、何も起きずに止まらない。
  */
-import { piUsage, type PiAssistantMessage } from '../../../test/pi.fixture.ts';
+import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
+import { settingsDirWith } from '../../../test/settings.fixture.ts';
+import { createScrubWiring, type ScrubWiring } from './index.ts';
+import { emptyGuard, observe, type GuardStep } from './live/guard.ts';
+import { readSettings } from './settings/read.ts';
+import { defaultSettings, type SettingsRead, type Tuning } from './settings/schema.ts';
+
+export type PiAssistantMessage = MessageEndEvent['message'];
+
+/** pi の `usage` を作る */
+export function piUsage() {
+  return {
+    input: 1,
+    output: 1,
+    cacheRead: 0,
+    cacheWrite: 0,
+    totalTokens: 2,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+  };
+}
 
 /** 退化の前後の印である。`degenerate()` と期待値を同じ値から組む。 */
 export const DEGENERATE_PREFIX = 'foo';
@@ -63,14 +82,13 @@ export function assistantMessage(overrides: Record<string, unknown> = {}): PiAss
   return { ...base, ...overrides } as unknown as PiAssistantMessage;
 }
 
-/** 通知と指示の印を 1 か所に集める。製品の文言が変わればここだけ直す。 */
+/** テストが期待する文言を 1 箇所に集める。製品の文言は実装側にもあるため、変えるときは両方を修正する。 */
 export const SCRUB_PREFIX = 'thinking-scrub:';
 export const SCRUB_REMOVED_MARK = 'thinking-scrub: removed';
 export const SCRUB_OFF_LINE = 'thinking-scrub: off';
 export const SCRUB_ON_LINE = 'thinking-scrub: on';
 export const SCRUB_SHOW_LINE = 'thinking-scrub: show';
 export const SCRUB_HIDE_LINE = 'thinking-scrub: hide';
-export const SCRUB_USAGE_MARK = 'usage';
 export const SCRUB_USAGE_LINE = 'thinking-scrub usage: /thinking-scrub [on|off|show|hide]';
 export const SCRUB_SHOW_ON = 'show: on';
 export const SCRUB_SHOW_OFF = 'show: off';
@@ -81,4 +99,29 @@ export const SCRUB_LAST_NONE = 'last: まだない';
 export const FOLLOWUP_REPEATING = 'repeating';
 export const FOLLOWUP_DO_NOT = 'Do not repeat';
 export const FOLLOWUP_CONTINUE = 'Continue';
-export const FOLLOWUP_SAMPLE_HEADING = 'Repeating sample:';
+
+/** 配線を作る。既定は空の設定の一時ディレクトリと固定時刻で動く。 */
+export function scrubWiring(
+  options: {
+    readonly settingsDir?: string;
+    readonly readSettings?: () => SettingsRead;
+  } = {},
+): ScrubWiring {
+  const dir = options.settingsDir ?? settingsDirWith({});
+  return createScrubWiring({
+    settingsDir: dir,
+    now: () => 7,
+    followUp: () => undefined,
+    readSettings: options.readSettings ?? (() => readSettings(dir)),
+  });
+}
+
+/** 既定のガードで thinking を 1 回見る。 */
+export function observeIn(thinking: string, tuning: Tuning = defaultSettings()): GuardStep {
+  return observe(emptyGuard(), thinking, tuning, () => true);
+}
+
+/** 削除の通知の 1 行を作る。 */
+export function removedLine(runs: number, chars: number): string {
+  return `${SCRUB_REMOVED_MARK} ${runs} (${chars} chars)`;
+}

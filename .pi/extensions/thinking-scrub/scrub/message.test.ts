@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
-import { piUsage, type PiAssistantMessage } from '../../../../test/pi.fixture.ts';
 import {
   DEGENERATE_PREFIX,
   DEGENERATE_REPEATS,
@@ -9,6 +8,8 @@ import {
   assistantMessage,
   degenerate,
   degenerateExpected,
+  piUsage,
+  type PiAssistantMessage,
 } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { detectRuns } from './detect.ts';

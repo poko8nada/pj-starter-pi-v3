@@ -17,10 +17,13 @@ import {
   assistantMessage,
   degenerate,
   degenerateExpected,
+  removedLine,
+  scrubWiring,
   thinkingWithRun,
 } from './scrub.fixture.ts';
+import { settingsDirWith } from '../../../test/settings.fixture.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
-import { createScrubWiring, registerScrub, type PiPort } from './index.ts';
+import { registerScrub, type PiPort } from './index.ts';
 import { readSettings } from './settings/read.ts';
 import { defaultSettings, type SettingsRead } from './settings/schema.ts';
 
@@ -167,10 +170,6 @@ function degenerateChars(): number {
   return degenerate().length - degenerateExpected().length;
 }
 
-function removedLine(runs: number, chars: number): string {
-  return `${SCRUB_REMOVED_MARK} ${runs} (${chars} chars)`;
-}
-
 describe('registerScrub', () => {
   it("on が 5 件の順序で registerCommand('thinking-scrub') が 1 回呼ばれる", () => {
     const fake = fakePi();
@@ -193,12 +192,7 @@ describe('registerScrub', () => {
 
 describe('onMessageEnd', () => {
   it('退化のない assistant なら undefined になる', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const message = assistantMessage({
       content: [
         {
@@ -212,12 +206,7 @@ describe('onMessageEnd', () => {
   });
 
   it('role が assistant 以外と対象でない署名の assistant はどちらも undefined になる', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const user: AgentMessage = {
       role: 'user',
       content: [{ type: 'text', text: degenerate() }],
@@ -231,27 +220,15 @@ describe('onMessageEnd', () => {
   });
 
   it('設定が enabled が false なら undefined になる', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith({ enabled: false });
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
     expect(wiring.getStatus().removed).toBe(0);
   });
 
   it('設定が壊れていれば既定で差し替えが返り状態の failures は増えない', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), '{');
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith('{');
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
     expect(result).toBeDefined();
     expect(wiring.getStatus().failures).toBe(0);
@@ -259,12 +236,7 @@ describe('onMessageEnd', () => {
   });
 
   it('2 回まとめれば状態の removed が 2 回分の合計になる', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.getStatus().removed).toBe(2);
@@ -272,12 +244,7 @@ describe('onMessageEnd', () => {
   });
 
   it('okSettings と message_end なら 3 グループの既定値で差し替える', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
     expect(result).toBeDefined();
     if (result?.message?.role !== 'assistant') {
@@ -299,12 +266,7 @@ describe('onMessageEnd', () => {
       },
     };
     expect(degenerate().length).toBe(66);
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => strict,
-    });
+    const wiring = scrubWiring({ readSettings: () => strict });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
     expect(wiring.getStatus().removed).toBe(0);
   });
@@ -313,10 +275,7 @@ describe('onMessageEnd', () => {
 describe('onMessageUpdate', () => {
   it('作成時に 1 回読み minThinking 未満では読まない', () => {
     let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
+    const wiring = scrubWiring({
       readSettings: () => {
         calls += 1;
         return okSettings();
@@ -338,10 +297,7 @@ describe('onMessageUpdate', () => {
 
   it('差分が scanEvery 未満なら読まないことを確かめる', () => {
     let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
+    const wiring = scrubWiring({
       readSettings: () => {
         calls += 1;
         return okSettings();
@@ -365,10 +321,7 @@ describe('onMessageUpdate', () => {
 
   it('差分が scanEvery 以上なら 1 回読みランがあれば止まる', () => {
     let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
+    const wiring = scrubWiring({
       readSettings: () => {
         calls += 1;
         return okSettings();
@@ -388,10 +341,7 @@ describe('onMessageUpdate', () => {
 
   it('live.maxAborts に達したら読まず scanned が進む', () => {
     let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
+    const wiring = scrubWiring({
       readSettings: () => {
         calls += 1;
         return okSettings();
@@ -432,10 +382,7 @@ describe('onMessageUpdate', () => {
 
   it('無効のときは間隔ごとに 1 回だけ読み scanned が進む', () => {
     let calls = 0;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
+    const wiring = scrubWiring({
       readSettings: (): SettingsRead => {
         calls += 1;
         return { kind: 'ok', settings: { ...defaultSettings(), enabled: false } };
@@ -467,10 +414,8 @@ describe('onMessageUpdate', () => {
   it('command の off の後、次の更新でキャッシュが効いて止まらない', () => {
     const dir = tempDir();
     let calls = 0;
-    const wiring = createScrubWiring({
+    const wiring = scrubWiring({
       settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
       readSettings: () => {
         calls += 1;
         return readSettings(dir);
@@ -503,17 +448,14 @@ describe('onMessageUpdate', () => {
   });
 
   it('message_end の後はキャッシュが新しい設定になる', () => {
-    const dir = tempDir();
     const custom = {
       ...defaultSettings(),
       live: { ...defaultSettings().live, minThinking: 5000 },
     };
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify(custom));
+    const dir = settingsDirWith(custom);
     let calls = 0;
-    const wiring = createScrubWiring({
+    const wiring = scrubWiring({
       settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
       readSettings: () => {
         calls += 1;
         return readSettings(dir);
@@ -533,12 +475,7 @@ describe('onMessageUpdate', () => {
   });
 
   it('署名のない thinking でもランがあれば中断する', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const fake = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(assistantThinking(thinkingWithRun(defaultSettings().live.minThinking))),
@@ -596,14 +533,7 @@ describe('onAgentSettled', () => {
 
   it('aborted が false なら何も送らない', () => {
     const sent: string[] = [];
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: (content) => {
-        sent.push(content);
-      },
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const fake = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
@@ -618,14 +548,7 @@ describe('onAgentSettled', () => {
 
   it('aborted が true でも pending がなければ何も送らない', () => {
     const sent: string[] = [];
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: (content) => {
-        sent.push(content);
-      },
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     wiring.onAgentSettled(agentSettled(true));
     expect(sent).toHaveLength(0);
   });
@@ -633,12 +556,7 @@ describe('onAgentSettled', () => {
 
 describe('onBeforeAgentStart', () => {
   it(`user で戻れば ${defaultSettings().live.maxAborts} 回の後もまた止まれる。custom では戻らない`, () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const first = fakeCmdCtx();
     wiring.onMessageUpdate(
       messageUpdate(
@@ -700,12 +618,7 @@ describe('onBeforeAgentStart', () => {
 
 describe('onAgentEnd', () => {
   it('退化の message_end が 2 回ありそのあと agent_end なら notify が 1 回呼ばれ文は回数から作る', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     const { notified, levels, ctx } = fakeCmdCtx();
@@ -718,26 +631,15 @@ describe('onAgentEnd', () => {
   });
 
   it('何も消していない状態で agent_end なら notify が呼ばれない', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
     expect(notified).toHaveLength(0);
   });
 
   it('show が false のとき message_end のあと agent_end なら notify が呼ばれない', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: false }));
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith({ enabled: true, show: false });
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
@@ -745,12 +647,7 @@ describe('onAgentEnd', () => {
   });
 
   it('notify のあと再度 agent_end なら 2 回目は呼ばれない', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     wiring.onMessageEnd(messageEnd(assistantMessage()));
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
@@ -760,12 +657,7 @@ describe('onAgentEnd', () => {
   });
 
   it('notify のあとに message_end と agent_end があればもう一度 1 回呼ばれその実行の分だけになる', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     wiring.onMessageEnd(messageEnd(assistantMessage()));
     wiring.onMessageEnd(messageEnd(assistantMessage()));
     const { notified, ctx } = fakeCmdCtx();
@@ -779,12 +671,7 @@ describe('onAgentEnd', () => {
   });
 
   it('message_end で例外があれば failures が 1 増えそのあとの agent_end は notify を呼ばない', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const evil: Record<string, unknown> = {};
     Object.defineProperty(evil, 'role', {
       get() {
@@ -808,12 +695,7 @@ describe('integration', () => {
     const doubleReturn = '\n\n';
     const thinking = `${prefix}${`${doubleReturn}${DEGENERATE_UNIT}`.repeat(5)}${suffix}`;
     const expectedThinking = `${prefix}${doubleReturn}${suffix}`;
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const result = wiring.onMessageEnd(
       messageEnd(
         assistantMessage({
@@ -839,12 +721,7 @@ describe('integration', () => {
 
   it('短い繰り返し 2 回なら message_end が undefined になり agent_end でも notify が呼ばれない', () => {
     const thinking = DEGENERATE_UNIT.repeat(2);
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     expect(
       wiring.onMessageEnd(
         messageEnd(
@@ -863,12 +740,7 @@ describe('integration', () => {
 describe('onCommand', () => {
   it('コマンドの off なら settings.json の enabled が false になり次の message_end は undefined になる', () => {
     const dir = tempDir();
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     wiring.onCommand('off', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
       ...defaultSettings(),
@@ -878,14 +750,8 @@ describe('onCommand', () => {
   });
 
   it('壊れたファイルに command の on があれば既定の 3 グループとパッチを持つ完全なファイルができる', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), '{');
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith('{');
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     wiring.onCommand('on', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
       ...defaultSettings(),
@@ -894,26 +760,15 @@ describe('onCommand', () => {
   });
 
   it('コマンドの on ならその後の message_end が差し替えを返す', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: false }));
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith({ enabled: false });
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
     wiring.onCommand('on', fakeCmdCtx().ctx);
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
   });
 
   it('コマンドが引数なしなら通知が 1 回呼ばれ runCommand の行が渡る', () => {
-    const wiring = createScrubWiring({
-      settingsDir: tempDir(),
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => okSettings(),
-    });
+    const wiring = scrubWiring();
     const { notified, ctx } = fakeCmdCtx();
     wiring.onCommand('', ctx);
     expect(notified).toHaveLength(1);
@@ -922,14 +777,8 @@ describe('onCommand', () => {
   });
 
   it('コマンドの hide なら settings.json の show が false になり enabled はそのままである', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: true, show: true }));
-    const wiring = createScrubWiring({
-      settingsDir: dir,
-      now: () => 7,
-      followUp: () => undefined,
-      readSettings: () => readSettings(dir),
-    });
+    const dir = settingsDirWith({ enabled: true, show: true });
+    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
     wiring.onCommand('hide', fakeCmdCtx().ctx);
     expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
       ...defaultSettings(),
@@ -943,14 +792,8 @@ describe('onCommand', () => {
       ['off', false],
       ['on', true],
     ] as const) {
-      const dir = tempDir();
-      writeFileSync(join(dir, 'settings.json'), JSON.stringify({ enabled: !enabled, show: false }));
-      const wiring = createScrubWiring({
-        settingsDir: dir,
-        now: () => 7,
-        followUp: () => undefined,
-        readSettings: () => readSettings(dir),
-      });
+      const dir = settingsDirWith({ enabled: !enabled, show: false });
+      const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
       wiring.onCommand(command, fakeCmdCtx().ctx);
       expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
         ...defaultSettings(),
@@ -965,17 +808,8 @@ describe('onCommand', () => {
       ['off', false],
       ['on', true],
     ] as const) {
-      const dir = tempDir();
-      writeFileSync(
-        join(dir, 'settings.json'),
-        JSON.stringify({ customTop: 'kept', live: { customLive: 'kept' } }),
-      );
-      const wiring = createScrubWiring({
-        settingsDir: dir,
-        now: () => 7,
-        followUp: () => undefined,
-        readSettings: () => readSettings(dir),
-      });
+      const dir = settingsDirWith({ customTop: 'kept', live: { customLive: 'kept' } });
+      const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
       wiring.onCommand(command, fakeCmdCtx().ctx);
       expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8'))).toEqual({
         ...defaultSettings(),

@@ -6,7 +6,7 @@
     "lib",
     ".github/workflows",
     "test/temp-dir.ts",
-    "test/pi.fixture.ts",
+    "test/settings.fixture.ts",
     "test/scripts.fixture.ts",
     "AGENTS.md",
     "lefthook.yaml",
@@ -28,7 +28,7 @@
     "scripts/harness-sync/*/*.mjs",
     "scripts/harness-sync/*/*.test.ts",
     "test/temp-dir.ts",
-    "test/pi.fixture.ts",
+    "test/settings.fixture.ts",
     "test/scripts.fixture.ts"
   ]
 }

@@ -227,6 +227,13 @@ export function removedLine(runs: number, chars: number): string;
 
 ## Notes
 
+### Slice 1: 前提を fixture に集める
+
+- Findings: なし
+- Unplanned: なし
+- Commit:
+- Stopped:
+
 ## Work Review
 
 ### Round 1
