@@ -216,7 +216,7 @@ function appliedChat(before: number, after: number): string {
 
 describe('precompact wiring', () => {
   it('flush が実行中のパスを待つと prepared ができ、status が ready になる', async () => {
-    const { branch } = sessionWithTurns(3);
+    const { branch } = sessionWithTurns();
     const { ctx } = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     const wiring = wiringWith();
     await wiring.onTurnEnd(ctx);

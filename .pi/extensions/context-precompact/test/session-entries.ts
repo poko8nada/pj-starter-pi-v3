@@ -140,7 +140,7 @@ export function createSessionFixture(): SessionFixture {
   };
 }
 
-/** セッションと 3 ターン分の branch を作る。 */
+/** セッションと branch を作る。既定は 3 ターン分。 */
 export function sessionWithTurns(count = 3): {
   readonly session: SessionFixture;
   readonly branch: readonly SessionEntry[];

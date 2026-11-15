@@ -33,7 +33,7 @@ context-precompact のテストが、同じ事実を 1 箇所で確認し、前�
         gate.test.ts
         gate.ts
       prepare/
-        compare.test.ts
+        compare.test.ts      update
         compare.ts
         copied.test.ts       update
         copied.ts
@@ -117,12 +117,12 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
    3. add: `modelFake(contextWindow = 200_000)` と `registryFake(auth = { ok: true, apiKey: 'k', headers: {}, env: {} })` を置く。`modelFake` は `ExtensionContext['model']` を返し、`registryFake` は `getApiKeyAndHeaders: async () => auth` を持つ `ExtensionContext['modelRegistry']` を返す。`index.test.ts` は `modelFake(CONTEXT_WINDOW)`、`run/ports.test.ts` は `modelFake()` と `registryFake(auth)` を使う。
 2. `.pi/extensions/context-precompact/test/session-entries.ts`
    1. add: `sessionWithTurns(count = 3)` を置く。`createSessionFixture()` と `turns(count)` を組み、`{ session, branch }` を返す。
-   2. drop: `SessionFixture` の `assistant` と `project` の欄、および未使用になる `assistant` の実装（`assistantEntry`）を削除する。`projectEntries` は `prepare/copied.test.ts`、`prepare/prepare.test.ts`、`index.test.ts` が使うため残す。
+   2. drop: `SessionFixture` の `assistant` と `project` の欄を削除する。`turns` が内部で使う `assistantEntry` は残す（未使用になるのは公開の `assistant` 欄のみ）。`projectEntries` は `prepare/copied.test.ts`、`prepare/prepare.test.ts`、`index.test.ts` が使うため残す。
    3. update: `llmUsage` を `test/prepared.fixture.ts` からインポートし、ローカルの `llmUsage` を削除する。
 3. `.pi/extensions/context-precompact/index.test.ts`
-   1. update: `llmUsage`、`preparedCompaction`、`modelFake`、`registryFake` を fixture からインポートし、ローカルの定義を削除する。
+   1. update: `llmUsage`、`modelFake`、`registryFake` を fixture からインポートし、ローカルの定義を削除する。（`preparedCompaction` を使う箇所はないため入れない）
    2. update: `okResult(preparation)` を 1 つ残し、`compactOk()` を `async (preparation) => okResult(preparation)` にする。`okResult` は `Parameters<SummaryCtx['compactFn']>[0]` を受け、`Awaited<ReturnType<SummaryCtx['compactFn']>>` を返す。
-   3. update: `nowSetup(compactFn = compactOk())` を async にし、`onCommand('now', lead.ctx)` と `flush` まで行って `{ branch, wiring, dir, setPiEnabled, ready }` を返す。`preparedNow(setup)` を削除し、呼び出しを `const setup = await nowSetup(); const ready = setup.ready;` に直す。
+   3. update: `nowSetup(compactFn = compactOk())` を async にし、`onCommand('now', lead.ctx)` と `flush` まで行って `{ branch, wiring, dir, setPiEnabled, ready }` を返す。`preparedNow(setup)` を削除し、呼び出しを `const setup = await nowSetup(); const ready = setup.ready;` に直す。実行中の完了を待つ `deferred` 系と初回失敗の `onceFails` 系（および error/session-reset の一部）は `ready` を持たないため手動配線のままとする。
    4. update: `const { session, branch } = sessionWithTurns(3);` とし、`branch` だけ使う箇所は `const { branch } = sessionWithTurns(3);` にする。`session.compaction('new')` など `session` を使う箇所は `session` を残す。
    5. update: ローカルの `settingsDirWith` と `defaultSettingsDir` を削除し、`test/settings.fixture.ts` の `settingsDirWith` をインポートする。`defaultSettingsDir()` の呼び出しを `settingsDirWith(settingsDocument())` に置き換える。`settingsDocument` は残す。
 4. `.pi/extensions/context-precompact/apply/draft.test.ts`
@@ -137,6 +137,8 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
    1. update: `const { session, branch } = sessionWithTurns(3);` とし、`makeInput(session, { branch, ... })` に渡す。`makeInput` の `branch` の既定を `session.turns(3)` から受け取った `branch` に変える。
 9. `.pi/extensions/context-precompact/settings/read.test.ts`
    1. update: 有効な JSON を書く箇所（13-17 行目）を `settingsDirWith(settings)` に置き換える。壊れた JSON を書く箇所（30-33 行目）は `tempDir()` と `writeFileSync(..., truncatedJson())` のまま残す。`mkdirSync` とファイルなしの箇所も残す。
+10. `.pi/extensions/context-precompact/prepare/compare.test.ts`
+    1. update: `base()` を `preparedCompaction()` に寄せ、`previousSummary: 'prev'`、`messagesToSummarize: [messageOf()]`、`fileOps.read: ['a.ts']`、`reserveTokens: 16384` は `overrides` で渡す。`messageOf()` と `fileOpsOf()` は単体固有の形のため残す。
 
 ### Policy
 
@@ -217,6 +219,8 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
   - `deferred`/`onceFails` 系の 6 箇所は新しい `nowSetup` を使わず手動配線にした。新 `nowSetup` は `onCommand('now')`+`flush` まで行うため、解放待ちの `deferred` ではデッドロックし、初回失敗の `onceFails` では `ready` がなく wiring を失うため。振る舞いは変えず、準備の作り方だけ分割した。
   - `index.test.ts` の `deferredCompact` の戻りを `okResult(preparation)` に寄せた。`compactOk` との重複を 1 箇所にするため。
   - `index.test.ts` では `preparedCompaction` を import していない。使う箇所がなく、未使用 import で lint が落ちるため。
+  - Round 1 対応で `compare.test.ts` の `base()` を `preparedCompaction()`＋`overrides` に寄せた。手順 1.2 が例示する上書き経路が他で使われず、`...overrides` の結合が検証されなかったため。`Files` に `update` を記入し、手順 1 に 10 を追加した。
+  - Round 1 対応で `index.test.ts` の先頭の配線テスト 1 件を `sessionWithTurns()`（引数なし）に変え、既定値の経路を実行するようにした。
 - Commit: be1d92ff
 - Stopped:
 
@@ -229,17 +233,37 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
 - Commit: f79ba89f
 - Stopped:
 
+### Cleanup: makeInput の隠れた branch 既定の除去
+
+- Findings:
+  - なし
+- Unplanned:
+  - `prepare.test.ts` の `makeInput` から死んだ `branch` 既定（`overrides.branch ?? session.turns(3)`）を除去し、`branch` を必須にして未使用の `session` 引数を削った。全呼び出しが既に明示の `branch` を渡しており、既定は到達不能だった。残すと将来の呼び出しが気づかず余計な `turns(3)` を作る隠れた前提になるため。`...overrides` が `branch` を供給するため重複指定の TS2783 を避けて明示の `branch` 行を削った。
+
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/context-precompact/test/session-entries.ts:143` — `/** セッションと 3 ターン分の branch を作る。 */` が `3` に固定され、引数 `count = 3`（`.pi/extensions/context-precompact/prepare/copied.test.ts:43` の `sessionWithTurns(0)`、`56` の `sessionWithTurns(1)` など）と矛盾する。コメントが古い。
+    fixed: コメントを「セッションと branch を作る。既定は 3 ターン分。」に直した。
 - Unlisted:
+  - なし
 - Gaps:
+  - `.pi/extensions/context-precompact/test/prepared.fixture.ts:24` — `preparedCompaction(overrides)` の `previousSummary`／`messagesToSummarize`／`fileOps.read`／`reserveTokens: 16384` の上書き経路（手順 1.2 が例示）が更新後のテストで使われない。使っているのは `.pi/extensions/context-precompact/apply/draft.test.ts:35` の `tokensBefore` のみで、`.pi/extensions/context-precompact/prepare/compare.test.ts:23` は依然ローカル `base()` を持つ。`...overrides` の浅い結合（特に `fileOps`／`settings` の置換え方）が検証されない。
+    fixed: `compare.test.ts` の `base()` を `preparedCompaction()`＋`overrides` に寄せた（手順 1 に 10 を追加、`Files` に `update` を記入）。`messageOf()` と `fileOpsOf()` は単体固有の形のため残した。
+  - `.pi/extensions/context-precompact/test/session-entries.ts:144` — `sessionWithTurns(count = 3)` の既定値（引数なし）を呼ぶ箇所がなく、全呼び出しが `sessionWithTurns(3/1/0)` の明示値である。既定値の振る舞いが検証されない。
+    fixed: `index.test.ts` の先頭の配線テスト 1 件を `sessionWithTurns()`（引数なし）に変え、既定値の経路を実行するようにした。
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - なし
 - Doubts:
+  - `.pi/extensions/context-precompact/index.test.ts:21` — 手順 3.1 は `preparedCompaction` の import を求めるが、使う箇所がなく lint が落ちるため現状 import していない（Notes 記載）。手順文言の修正が必要か、所有者の判断を求める。
+  - `.pi/extensions/context-precompact/test/session-entries.ts:41` — `assistantEntry` を残す判断（Notes 記載）は `turns` が内部利用するためで妥当だが、手順 2.2 の「`assistantEntry` を削除」と矛盾する。手順を「公開 `assistant` 欄のみ削除」に直すか、所有者の判断を求める。
+  - `.pi/extensions/context-precompact/index.test.ts:670`、`.pi/extensions/context-precompact/index.test.ts:696` — `deferred`／`onceFails` の 2 箇所を `nowSetup` 外の手動配線にした（Notes 記載）。重複を避けるため `nowSetup` に選択肢を足すか、現状の分割を許容するか、所有者の判断を求める。
 
 ### Round 2
 
