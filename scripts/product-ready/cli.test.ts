@@ -1,3 +1,8 @@
+/**
+ * `scripts/product-ready/cli.mjs` の `switchLines`、`planLines`、`parseArgs` の振る舞いを試す。
+ *
+ * 子プロセスは開かない。表示の行は `test/scripts.fixture.ts` の `countLine`、`indented`、`configLine`、`testExcludeLine` から組み立てる。
+ */
 import { describe, expect, it } from 'vitest';
 import {
   ONLY_FLAG,
@@ -11,17 +16,16 @@ import {
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 
 describe('switchLines', () => {
-  it('happy: JSON のパスと config のパス → test-exclude と config の2行', () => {
-    const exclude = 'scripts/product-ready/test-exclude.json';
-    const config = 'vitest.config.ts';
-    expect(switchLines({ exclude, config })).toEqual([
-      testExcludeLine(exclude),
-      configLine(config),
-    ]);
-  });
-
-  it('empty: exclude と config が空 → test-exclude: と config: の2行', () => {
-    expect(switchLines({ exclude: '', config: '' })).toEqual([testExcludeLine(''), configLine('')]);
+  it('happy: JSON のパス、または空 → test-exclude と config の 2 行', () => {
+    for (const value of [
+      { exclude: 'scripts/product-ready/test-exclude.json', config: 'vitest.config.ts' },
+      { exclude: '', config: '' },
+    ]) {
+      expect(switchLines(value)).toEqual([
+        testExcludeLine(value.exclude),
+        configLine(value.config),
+      ]);
+    }
   });
 });
 

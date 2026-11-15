@@ -55,10 +55,11 @@ type RunOut = { readonly status: number; readonly output: string; readonly error
 type Before = {
   readonly pkg: string;
   readonly config: string;
-  readonly exclude: string;
+  readonly exclude: string | null;
   readonly targets: readonly string[];
 };
 function readTargets(root: string): readonly string[];
+function readExclude(tree: Tree): string | null;
 function runOnTree(
   args: readonly string[],
   setup?: (tree: Tree) => void,
@@ -91,14 +92,19 @@ function expectUnchanged(tree: Tree, before: Before): void;
       }
       ```
 
-   8. add: `snapshot` を足す。
+   8. add: `readExclude` と `snapshot` を足す。
 
       ```ts
+      function readExclude(tree: Tree): string | null {
+        const at = join(tree.root, TEST_EXCLUDE_AT);
+        return existsSync(at) ? readFileSync(at, 'utf8') : null;
+      }
+
       function snapshot(tree: Tree): Before {
         return {
           pkg: readFileSync(join(tree.root, 'package.json'), 'utf8'),
           config: readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8'),
-          exclude: readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8'),
+          exclude: readExclude(tree),
           targets: readTargets(tree.root),
         };
       }
@@ -111,12 +117,12 @@ function expectUnchanged(tree: Tree, before: Before): void;
         expect(existsSync(tree.cycleA)).toBe(true);
         expect(readFileSync(join(tree.root, 'package.json'), 'utf8')).toBe(before.pkg);
         expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-        expect(readFileSync(join(tree.root, TEST_EXCLUDE_AT), 'utf8')).toBe(before.exclude);
+        expect(readExclude(tree)).toBe(before.exclude);
         expect(readTargets(tree.root)).toEqual(before.targets);
       }
       ```
 
-   10. update: 26 本の `makeTree()` と `run(INDEX, args, tree.root)` を `const { tree, result } = runOnTree(args)` に置き換える。前提を書き換える 11 本は第 2 引数の `setup` で書き換える。実行の前に読んでいた `beforeConfig`、`beforePkg`、`beforeExclude`、`beforeRoadmap`、`beforeTargets` は戻り値の `before` に置き換える。JSON の形の 2 本は slice 2 で 1 本にまとめるので、ここでは 26 本のまま置き換える。`setup` の中では `writeFile`、`writeTestExclude`、`rmSync` を使う（`writeFileSync` は使わない）。
+   10. update: 26 本の `makeTree()` と `run(INDEX, args, tree.root)` を `const { tree, result } = runOnTree(args)` に置き換える。前提を書き換える 11 本は第 2 引数の `setup` で書き換える。実行の前に読んでいた `beforeConfig`、`beforePkg`、`beforeExclude`、`beforeRoadmap`、`beforeTargets` は戻り値の `before` に置き換える。戻り値は使う分だけ取る（`result` だけの本は `const { result } = runOnTree(...)`）。`setup` はブロック本体 `(t) => { writeFile(t.root, ...); }` で書く。`setup` の中では `writeFile`、`writeTestExclude`、`rmSync` を使い、`writeFileSync` は使わない。JSON の形の 2 本は slice 2 で 1 本にまとめるので、ここでは 26 本のまま置き換える。
 
        ```text
        (empty) 空配列の JSON で --run                 setup: writeTestExclude(tree.root, [])
@@ -141,9 +147,16 @@ function expectUnchanged(tree: Tree, before: Before): void;
   - `index.test.ts` の `runOnTree`、`snapshot`、`expectUnchanged` を使う。
   - 共有 `fakeRoot`、`writeFile`、`writeJson` を使う。
   - `targets.test.ts` は `tempDir()` のままにする。
+  - 基準外のテストを削除する。
+  - 順序・有無の断言のうち、出力の表示内容を確認するもの（`## What is in it` < `### Product` < `### Default`、`headings` の順序と不在、`### Default` の 5 行、`no replace to replace`）は残す。
+  - `cli.test.ts` の `parseArgs` と `index` の子プロセスの `exit 1` は、観測点が違うため両方残す。
 - Forbidden:
   - `scripts/product-ready/*.mjs` と `test-exclude.json` の振る舞いを変えること - このエントリはテストの整理である。
   - テストを走らせる手段（vitest、`pnpm test`、lefthook）を変えること - `verification` は `Out` である。
+  - `cycles/` の過去の記録を参照すること - オーナーの指示である。
+  - 01 と 02 の領域のテストをこのエントリで変えること - それぞれの範囲である。
+  - `rules/` のテンプレートと `vitest.config.ts` の目印を変えること - テストの前提である。
+  - `blocks.mjs` の専用テストを追加すること - このエントリは整理であり、追加は範囲外である。
 
 ### Verify
 
@@ -200,7 +213,7 @@ function expectUnchanged(tree: Tree, before: Before): void;
       未知の引数 → exit 1
       ```
 
-   3. update: 「(error) 一度 --run した後の同じツリーでもう一度 --run する」は、1 回目の実行を `const { tree, before } = runOnTree([RUN_FLAG])` にし、2 回目を `run(INDEX, [RUN_FLAG], tree.root)` のまま残す。1 回目の実行で cycles が消えているため `expectUnchanged` は使えない。2 回目の後に `expect(readTargets(tree.root)).toEqual(before.targets)` で比べる。
+   3. update: 「(error) 一度 --run した後の同じツリーでもう一度 --run する」は、1 回目の実行を `const { tree } = runOnTree([RUN_FLAG])` にし、その後に `const before = snapshot(tree);` を取る。2 回目を `run(INDEX, [RUN_FLAG], tree.root)` のまま残し、`expect(readTargets(tree.root)).toEqual(before.targets)` で比べる。1 回目の実行で cycles が消えているため `expectUnchanged` は使わない。
 
 ### Policy
 
@@ -407,69 +420,71 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 ### Slice 1: index の setup helper と共有 helper を使う
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - snapshot が存在しない test-exclude.json で投げる穴を `readExclude(tree): string | null` で塞いだ。`Before.exclude` を `string | null` にし、`snapshot` と `expectUnchanged` を `readExclude` 経由にしたので、`(error) JSON が無い` を `runOnTree` の `setup`（`rmSync`）で扱える。計画の修正を取り込んだ形であり、振る舞いは変えない。
+  - 二重 `--run` の `before` 取得タイミングの穴を塞いだ。1 回目の `runOnTree` の戻り値 `before`（1 回目の実行前）ではなく、1 回目の実行後に `snapshot(tree)` を取り直すので、2 回目の後の `readTargets` 比較が実行後の状態と合う。Slice 2 の手順 3 が正式な形を決める。
+- Commit: 040664a568a0aa2134b4700d16c2ae92d7ef0864
 - Stopped:
 
 ### Slice 2: index の同じエラー経路を統合する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7cb01c725a551057a777aedd7941a6f25cbfd3a0
 - Stopped:
 
 ### Slice 3: 実物 test-exclude.json の確認を削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 282de81b222a7a3cb2af0860eb76ca2fa4cdfd19
 - Stopped:
 
 ### Slice 4: targets と cli の順序・定数の確認を削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a8b0eb07febfc3999c44c5116355d22162205c7e
 - Stopped:
 
 ### Slice 5: 先頭コメントを足し、題名を残す断言に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f43ddcb59aadb67274d31d17e612819a1e3b7918
 - Stopped:
 
 ### Cleanup: 順序・定数・重複したエラー経路
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。先頭コメント3件（scripts/product-ready/index.test.ts:1-8、scripts/product-ready/cli.test.ts:1-5、scripts/product-ready/targets.test.ts:1-5）は新 helper・表示行・tempDir の実態と一致し、残る `.mjs` 直呼び注意（scripts/product-ready/index.test.ts:24）やテンプレート写し注意（scripts/product-ready/index.test.ts:43）も有効で、冗長化した記述はない。削った3件（実物 test-exclude.json、labels 2本、昇順2つ目）は Steps の drop 指示どおり。
+- Unlisted: なし。diff の製品変更3件はすべて `## Files` で `update` 指定のもの（scripts/product-ready/index.test.ts、scripts/product-ready/cli.test.ts、scripts/product-ready/targets.test.ts）であり、他は計画 md の記録欄のみで、`Files` 外の `.mjs`・`rules/`・`vitest.config.ts`・`test/*.fixture.ts` への変更はない。
+- Gaps: なし。Goal の3点（setup・共有 helper 化、順序・定数確認の整理、重複エラー経路の統合）は Steps 通りに実施され（`runOnTree`・`snapshot`・`expectUnchanged` の追加と25か所置換、labels・昇順重複・実物確認の削除、JSON 形・switchLines の統合）、残す指定の表示断言（`## What is in it` 順 scripts/product-ready/index.test.ts:297-309、`headings` 順と不在 scripts/product-ready/index.test.ts:344-360・362-366、`### Default` 5行 scripts/product-ready/index.test.ts:452-478、`no replace to replace` scripts/product-ready/index.test.ts:383-391）は残存。`Verify` の `Added` は全 slice なしが決めており、決めた値以外に漏れた振る舞いはない。
+- Policy: なし。Forbidden 6件（`*.mjs`・test-exclude.json の振る舞い変更、検証手段変更、`cycles/` 参照、01・02領域変更、`rules/`・vitest.config.ts の目印変更、`blocks.mjs` 追加）のいずれにも触れず、Allowed の範囲内（振る舞いを変えない整理、`runOnTree`・`snapshot`・`expectUnchanged` と共有 `fakeRoot`・`writeFile`・`writeJson` の使用、`targets.test.ts` の `tempDir()` 維持、基準外削除、表示断言残置、`parseArgs` と子プロセスの `exit 1` の両残し scripts/product-ready/cli.test.ts:107-143・scripts/product-ready/index.test.ts:368-381）に収まる。
+- Unproven: なし。残る断言は感度を持つ（例: JSON 形統合 scripts/product-ready/index.test.ts:438-449 は片方の形だけ正しくても他方で赤になる、昇順 scripts/product-ready/targets.test.ts:63-77 は逆順返却で赤になる、`switchLines` scripts/product-ready/cli.test.ts:19-29 は片方の値の崩れで赤になる、`expectUnchanged` 使用の12本は status・行数・文言と併せて見ており helper が常に真でも status 側で赤になる）。
+- Noise: なし。残る直書き（`'{"exclude": []}\n'`・`'[\".pi\", 1]\n'` scripts/product-ready/index.test.ts:439、`switchLines` の2値 scripts/product-ready/cli.test.ts:21-22、`'--bogus'` scripts/product-ready/index.test.ts:375、`toHaveLength(1)`、`SKELETON_WITHOUT_PRODUCT`・`SOURCE_*` 定数 scripts/product-ready/index.test.ts:44-57・121-137 等）は plan の Steps・Types が残すと決めた値または前提構築に必要な入力であり、指摘対象外。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。Round 1 で指摘なしのため `fixed:` 行は存在せず、再確認対象なし（以下同）。
+- Unlisted: なし（同上）。
+- Gaps: なし（同上）。
+- Policy: なし（同上）。
+- Unproven: なし（同上）。
+- Noise: なし（同上）。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: product-ready のテストが、setup helper と共有 helper を使い、順序・定数の確認と重複したエラー経路を削った形になる。達成した（`runOnTree`・`snapshot`・`readExclude`・`expectUnchanged` を置き 25 本を `runOnTree` 化し、JSON の形を 1 本に、実物 `test-exclude.json` の 1 本と `labels` の 2 本と at 昇順の重複断言を削り、`switchLines` を 1 本にした。index 28→26、cli 14→13、targets 13→11）。
+- Ran: `pnpm test:related scripts/product-ready/index.test.ts scripts/product-ready/cli.test.ts scripts/product-ready/targets.test.ts`（3 ファイル、50 件）・`pnpm test:run`（66 ファイル、845 件）・`pnpm typecheck`（`root: ok`、`.pi: ok`）・`pnpm lint`・`pnpm format:check`、および diff の通読。
+- Findings: なし
+- Doubts: なし
