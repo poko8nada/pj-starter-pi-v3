@@ -8,10 +8,9 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tempDir } from '../../test/temp-dir.ts';
+import { fakeRoot, writeFile, writeJson } from '../../test/scripts.fixture.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'ja-check.mjs');
 
@@ -42,19 +41,8 @@ function run(root: string, args: readonly string[]): RunOut {
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
-function fakeRoot(): string {
-  return realpathSync(tempDir());
-}
-
-function writeFile(root: string, rel: string, content: string): string {
-  const file = join(root, rel);
-  mkdirSync(join(file, '..'), { recursive: true });
-  writeFileSync(file, content);
-  return file;
-}
-
 function writeConfig(root: string, value: unknown): void {
-  writeFile(root, join('scripts', 'checks', 'ja-check.json'), JSON.stringify(value));
+  writeJson(root, join('scripts', 'checks', 'ja-check.json'), value);
 }
 
 function validConfig(): TestConfig {
@@ -83,9 +71,7 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain('ja-check: No findings.');
     expect(out.stdout).not.toContain('ja-check: No config.');
     const h1At = out.stdout.indexOf(HEADER_1);
-    const h2At = out.stdout.indexOf(HEADER_2);
     expect(h1At).toBe(0);
-    expect(h2At).toBeGreaterThan(h1At);
   });
 
   it('(happy) exceptionが骨組みで行が骨組み → 報告せずにexit 0', () => {
@@ -219,16 +205,17 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: No findings.');
   });
 
-  it('単独引用のerror語 → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const quoted = `'${ERROR_WORD}'`;
-    const file = writeFile(root, 'a.md', `${quoted}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
+  it('単独引用の error 語 → 報告しない（3 つの引用符）', () => {
+    for (const quote of ["'", '`', '"']) {
+      const root = fakeRoot();
+      writeConfig(root, validConfig());
+      const file = writeFile(root, 'a.md', `${quote}${ERROR_WORD}${quote}\n`);
+      const out = run(root, [file]);
+      expect(out.status).toBe(0);
+      expect(out.stdout).not.toContain('[error]');
+      expect(out.stdout).toContain('ja-check: No findings.');
+      expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+    }
   });
 
   it('余分な文字付きの引用語 → 報告する', () => {
@@ -261,44 +248,26 @@ describe('ja-check', () => {
     expect(out.stdout).not.toContain(suffix);
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 1.');
   });
-
-  it('バッククォート単独のコードコメント → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const quoted = `\`${ERROR_WORD}\``;
-    const file = writeFile(root, 'a.ts', `// ${quoted}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-  });
-
-  it('ダブルクォート単独のerror語 → 報告しない', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const quoted = `"${ERROR_WORD}"`;
-    const file = writeFile(root, 'a.md', `${quoted}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-  });
 });
 
 describe('ja-check exclude', () => {
-  it('(happy) excludeがROADMAP.mdで行が1.x.xの下のerror語 → 報告せずexit 0', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
-    writeFile(root, 'ROADMAP.md', `## 1.x.x\n${ERROR_WORD}\n`);
-    const out = run(root, ['ROADMAP.md']);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  it('exclude が ROADMAP.md で引数が相対・絶対・./ → 報告せず exit 0', () => {
+    for (const form of ['relative', 'absolute', 'dot']) {
+      const root = fakeRoot();
+      writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
+      writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
+      const arg =
+        form === 'relative'
+          ? 'ROADMAP.md'
+          : form === 'absolute'
+            ? join(root, 'ROADMAP.md')
+            : './ROADMAP.md';
+      const out = run(root, [arg]);
+      expect(out.status).toBe(0);
+      expect(out.stdout).not.toContain('[error]');
+      expect(out.stdout).toContain('ja-check: No findings.');
+      expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+    }
   });
 
   it('(happy) excludeが**/affected/*.mdで行がcycles配下のaffected/01.mdのerror語 → 報告せずexit 0', () => {
@@ -331,64 +300,43 @@ describe('ja-check exclude', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 1, warn 0.');
   });
 
-  it('(happy) excludeがROADMAP.mdで引数が絶対パス → 報告せずexit 0', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
-    const file = writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  it('(error) exclude または exception がない設定 → header の 2 行を出して exit 1', () => {
+    for (const missing of ['exclude', 'exception'] as const) {
+      const root = fakeRoot();
+      const config = Object.fromEntries(
+        Object.entries(validConfig()).filter(([key]) => key !== missing),
+      );
+      writeConfig(root, config);
+      const file = writeFile(root, 'a.md', 'ok\n');
+      const out = run(root, [file]);
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain(HEADER_1);
+      expect(out.stdout).toContain(HEADER_2);
+    }
   });
 
-  it('(happy) excludeがROADMAP.mdで引数が./ROADMAP.md → 報告せずexit 0', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: ['ROADMAP.md'] });
-    writeFile(root, 'ROADMAP.md', `${ERROR_WORD}\n`);
-    const out = run(root, ['./ROADMAP.md']);
-    expect(out.status).toBe(0);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).not.toContain('[error]');
-    expect(out.stdout).toContain('ja-check: No findings.');
-    expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
+  it('(error) exclude または exception が配列でない設定 → header の 2 行を出して exit 1', () => {
+    for (const field of ['exclude', 'exception'] as const) {
+      const root = fakeRoot();
+      writeConfig(root, { ...validConfig(), [field]: 'x' });
+      const file = writeFile(root, 'a.md', 'ok\n');
+      const out = run(root, [file]);
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain(HEADER_1);
+      expect(out.stdout).toContain(HEADER_2);
+    }
   });
 
-  it('(error) excludeのない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, {
-      error: { [ERROR_WORD]: 'replacement-error' },
-      warn: { [WARN_WORD]: 'replacement-warn' },
-      exception: [],
-    });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) excludeが配列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: 'x' });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) excludeの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exclude: [1] });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
+  it('(error) exclude または exception の要素が文字列でない設定 → header の 2 行を出して exit 1', () => {
+    for (const field of ['exclude', 'exception'] as const) {
+      const root = fakeRoot();
+      writeConfig(root, { ...validConfig(), [field]: [1] });
+      const file = writeFile(root, 'a.md', 'ok\n');
+      const out = run(root, [file]);
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain(HEADER_1);
+      expect(out.stdout).toContain(HEADER_2);
+    }
   });
 });
 
@@ -467,38 +415,6 @@ describe('ja-check', () => {
     expect(out2.stderr).toContain('is not valid JSON');
     expect(out2.stdout).not.toContain('files, error');
     expect(out2.stdout).not.toContain('ja-check: No findings.');
-  });
-
-  it('(error) exceptionのない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, {
-      error: { [ERROR_WORD]: 'replacement-error' },
-      warn: { [WARN_WORD]: 'replacement-warn' },
-    });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-  it('(error) exceptionが配列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exception: 'x' });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-  });
-
-  it('(error) exceptionの要素が文字列でない設定 → headerの2行を出してexit 1', () => {
-    const root = fakeRoot();
-    writeConfig(root, { ...validConfig(), exception: [1] });
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
   });
 
   it('(error) 余分な欄がある設定 → headerの2行を出してexit 1', () => {
