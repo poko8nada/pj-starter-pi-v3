@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CompactionResult, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import { createSummaryPorts, NO_MODEL_REASON, type SummaryCtx } from './ports.ts';
-import type { PreparedCompaction } from '../prepare/types.ts';
-import { RESERVE_TOKENS } from '../settings/constants.ts';
+import { modelFake, preparedCompaction, registryFake } from '../test/prepared.fixture.ts';
 
 const SESSION_ID = 'sess-1';
 const OTHER_SESSION_ID = 'sess-9';
@@ -15,19 +14,6 @@ function signalOf(): AbortSignal {
   return new AbortController().signal;
 }
 
-function preparedOf(): PreparedCompaction {
-  return {
-    firstKeptEntryId: 'kept-1',
-    messagesToSummarize: [],
-    turnPrefixMessages: [],
-    isSplitTurn: false,
-    tokensBefore: 100,
-    previousSummary: undefined,
-    fileOps: { read: new Set(), written: new Set(), edited: new Set() },
-    settings: { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens: 2000 },
-  };
-}
-
 function resultOf(): CompactionResult {
   return {
     summary: 'summary',
@@ -38,18 +24,6 @@ function resultOf(): CompactionResult {
   };
 }
 
-function modelOf(): ExtensionContext['model'] {
-  const model = { provider: 'test', id: 'm1', maxTokens: 8000, contextWindow: 200_000 };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- 使うモデルの偽物
-  return model as unknown as ExtensionContext['model'];
-}
-
-function registryOf(auth: unknown): ExtensionContext['modelRegistry'] {
-  const registry = { getApiKeyAndHeaders: async () => auth };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- modelRegistry の使う関数だけを持つ偽物
-  return registry as unknown as ExtensionContext['modelRegistry'];
-}
-
 function sessionManagerOf(sessionId: string): ExtensionContext['sessionManager'] {
   const manager = { getSessionId: () => sessionId };
   // eslint-disable-next-line typescript/no-unsafe-type-assertion -- sessionManager の使う関数だけを持つ偽物
@@ -58,8 +32,8 @@ function sessionManagerOf(sessionId: string): ExtensionContext['sessionManager']
 
 function ctxOf(overrides: Partial<SummaryCtx>): SummaryCtx {
   return {
-    model: modelOf(),
-    modelRegistry: registryOf({ ok: true, apiKey: API_KEY }),
+    model: modelFake(),
+    modelRegistry: registryFake({ ok: true, apiKey: API_KEY }),
     thinkingLevel: THINKING_LEVEL,
     sessionManager: sessionManagerOf(SESSION_ID),
     compactFn: async () => resultOf(),
@@ -71,16 +45,16 @@ describe('createSummaryPorts', () => {
   it('compactFn が結果を返せばその結果になる', async () => {
     const expected = resultOf();
     const ports = createSummaryPorts(ctxOf({ compactFn: async () => expected }));
-    await expect(ports.compact({ preparation: preparedOf(), signal: signalOf() })).resolves.toEqual(
-      expected,
-    );
+    await expect(
+      ports.compact({ preparation: preparedCompaction(), signal: signalOf() }),
+    ).resolves.toEqual(expected);
   });
 
   it('compactFn に 12 引数が渡り null ヘッダが取り除かれる', async () => {
     const captured: (readonly unknown[])[] = [];
-    const prepared = preparedOf();
+    const prepared = preparedCompaction();
     const signal = signalOf();
-    const model = modelOf();
+    const model = modelFake();
     const compactFn: SummaryCtx['compactFn'] = async (...args) => {
       captured.push(args);
       return resultOf();
@@ -88,7 +62,7 @@ describe('createSummaryPorts', () => {
     const ports = createSummaryPorts(
       ctxOf({
         model,
-        modelRegistry: registryOf({ ok: true, apiKey: API_KEY, headers: HEADERS, env: ENV }),
+        modelRegistry: registryFake({ ok: true, apiKey: API_KEY, headers: HEADERS, env: ENV }),
         sessionManager: sessionManagerOf(OTHER_SESSION_ID),
         compactFn,
       }),
@@ -114,10 +88,10 @@ describe('createSummaryPorts', () => {
 
   it('getApiKeyAndHeaders が失敗すれば例外が投げられる', async () => {
     const ports = createSummaryPorts(
-      ctxOf({ modelRegistry: registryOf({ ok: false, error: 'no key' }) }),
+      ctxOf({ modelRegistry: registryFake({ ok: false, error: 'no key' }) }),
     );
     await expect(
-      ports.compact({ preparation: preparedOf(), signal: signalOf() }),
+      ports.compact({ preparation: preparedCompaction(), signal: signalOf() }),
     ).rejects.toThrow();
   });
 

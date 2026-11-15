@@ -4,7 +4,7 @@ import { formatCount } from './count.ts';
 const THOUSAND = 1_000;
 const MILLION = 1_000_000;
 
-/** 区切りの仕様はプラットフォームの書式から取る。 */
+/** 期待値は en-US の書式で組み立てる。実装は 3 桁ごとのカンマを固定で入れる。 */
 function grouped(value: number): string {
   return value.toLocaleString('en-US');
 }

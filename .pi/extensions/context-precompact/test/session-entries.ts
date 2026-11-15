@@ -5,6 +5,7 @@
  */
 import { sessionEntryToContextMessages, type SessionEntry } from '@earendil-works/pi-coding-agent';
 import type { ProjectedEntry } from '../prepare/types.ts';
+import { llmUsage } from './prepared.fixture.ts';
 
 /** 1 メッセージの本文。約 1000 トークンになる長さ */
 const TURN_TEXT = 'x'.repeat(4_000);
@@ -17,27 +18,14 @@ export interface CompactionOptions {
 
 export interface SessionFixture {
   readonly user: (text: string) => SessionEntry;
-  readonly assistant: (text: string) => SessionEntry;
   readonly toolCall: (name: string, path: string) => SessionEntry;
   readonly compaction: (summary: string, options?: CompactionOptions) => SessionEntry;
-  readonly project: (entries: readonly SessionEntry[]) => ProjectedEntry[];
   readonly turns: (count: number) => SessionEntry[];
 }
 
 interface Ids {
   readonly id: string;
   readonly parentId: string | null;
-}
-
-function llmUsage() {
-  return {
-    input: 1,
-    output: 1,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 2,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-  };
 }
 
 function userEntry(ids: Ids, at: number, text: string): SessionEntry {
@@ -129,7 +117,6 @@ export function createSessionFixture(): SessionFixture {
   }
 
   const user = (text: string): SessionEntry => userEntry(nextIds(), seq, text);
-  const assistant = (text: string): SessionEntry => assistantEntry(nextIds(), seq, text);
   const toolCall = (name: string, path: string): SessionEntry =>
     toolCallEntry(nextIds(), seq, name, path);
   const compaction = (summary: string, options: CompactionOptions = {}): SessionEntry => {
@@ -141,16 +128,24 @@ export function createSessionFixture(): SessionFixture {
   };
   return {
     user,
-    assistant,
     toolCall,
     compaction,
-    project: projectEntries,
     turns: (count) => {
       const entries: SessionEntry[] = [];
       for (let turn = 0; turn < count; turn++) {
-        entries.push(user(TURN_TEXT), assistant(TURN_TEXT));
+        entries.push(user(TURN_TEXT), assistantEntry(nextIds(), seq, TURN_TEXT));
       }
       return entries;
     },
   };
+}
+
+/** セッションと branch を作る。既定は 3 ターン分。 */
+export function sessionWithTurns(count = 3): {
+  readonly session: SessionFixture;
+  readonly branch: readonly SessionEntry[];
+} {
+  const session = createSessionFixture();
+  const branch = session.turns(count);
+  return { session, branch };
 }

@@ -30,7 +30,6 @@ describe('statusText', () => {
   it('failed に理由を渡すと文面はあり理由は入らない', () => {
     const reason = reasonOf();
     const footer = statusText({ kind: 'failed', reason });
-    expect(footer).toBeDefined();
     expect(footer).not.toContain(reason);
   });
 

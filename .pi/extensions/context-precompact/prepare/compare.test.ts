@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compare } from './compare.ts';
 import type { PreparedCompaction } from './types.ts';
+import { preparedCompaction } from '../test/prepared.fixture.ts';
 
 interface FileOpsInput {
   readonly read?: readonly string[];
@@ -21,16 +22,12 @@ function messageOf(): PreparedCompaction['messagesToSummarize'][number] {
 }
 
 function base(): PreparedCompaction {
-  return {
-    firstKeptEntryId: 'kept-1',
+  return preparedCompaction({
     messagesToSummarize: [messageOf()],
-    turnPrefixMessages: [],
-    isSplitTurn: false,
-    tokensBefore: 100,
     previousSummary: 'prev',
     fileOps: fileOpsOf({ read: ['a.ts'] }),
     settings: { enabled: true, reserveTokens: 16_384, keepRecentTokens: 2000 },
-  };
+  });
 }
 
 describe('compare', () => {

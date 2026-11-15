@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { settingsDirWith } from '../../../../test/settings.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { readSettings, writeEnabled } from './read.ts';
 import { defaultSettings } from './schema.ts';
@@ -11,8 +12,7 @@ describe('readSettings', () => {
   });
 
   it('有効な JSON ならその値になる', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), '{"enabled":false}');
+    const dir = settingsDirWith({ enabled: false });
     const read = readSettings(dir);
     expect(read.kind).toBe('ok');
     if (read.kind !== 'ok') {
