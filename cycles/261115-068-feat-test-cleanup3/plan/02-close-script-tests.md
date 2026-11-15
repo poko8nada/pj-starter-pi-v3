@@ -153,13 +153,13 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 2f78eeb6
 - Stopped:
 
 ### Cleanup: close スクリプトのテストの整理
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
