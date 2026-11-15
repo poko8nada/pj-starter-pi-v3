@@ -183,17 +183,17 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 の `fixed:` は Gaps の 1 件のみで、Stale に `fixed:` はないため対象外。
+- Unlisted: なし — 同上、Unlisted に `fixed:` はないため対象外。
+- Gaps: なし — Round 1 の `fixed:` 1 件（`cycleTree({ close: body })` が `close.md` にそのまま書く 1 件で文字列分岐を検証）は現物で確認した。`collect.test.ts:121-127` に `describe('cycleTree')` があり、`body = '# Close 001\n\n## Collected\n\ncustom\n\n## Triage\n\nなし\n'` を `cycleTree({ close: body })` に渡し、`readFileSync(join(cycle, 'close.md'), 'utf8')` が `toBe(body)` で一字一句の一致を確かめる。`cycle.fixture.ts:31-34` は `close === null` なら作らず、それ以外は `spec?.close ?? defaultClose` を書くため、このテストは文字列分岐だけを通る。既存の 6 件（既定と `close: null`）と合わせて 3 通りがそろった。理由: 文字列を既定に戻すなどの破壊はこの `toBe` を赤にするため、無検証の分岐は残らない。
+- Policy: なし — Round 1 の `fixed:` は Gaps の 1 件のみで、Policy に `fixed:` はないため対象外。
+- Unproven: なし — 同上、Unproven に `fixed:` はないため対象外。
+- Noise: なし — 同上、Noise に `fixed:` はないため対象外。
+- Doubts: この Round 2 は読み取りでの確認に留まり、`pnpm test:related` を実行していない（実行が許可されていないため）。`toBe(body)` が緑になることは読み取りで確かめたが、実走での緑は未確認。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: close スクリプトのテストが、同じ事実を 1 か所で確認する形になり、一時ツリーの前提が `cycleTree` に集まり、配線に重ねた単体の断言が消える — 達成した。
+- Ran: `pnpm test:run`（868 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:related .pi/skills/close/scripts/collect.test.ts`（12 件）。
+- Findings: なし
+- Doubts: なし
