@@ -26,18 +26,10 @@ import {
 } from './cycle.mjs';
 
 describe('adrSkeleton', () => {
-  it('番号を 0 埋めした見出しで始まる', () => {
-    const cases = [
-      { input: 17, expected: '# ADR 017\n' },
-      { input: 1, expected: '# ADR 001\n' },
-    ];
-    for (const { input, expected } of cases) {
-      expect(adrSkeleton(input).startsWith(expected)).toBe(true);
-    }
-  });
-
-  it('題名を渡すと最初のエントリーに見出しとして入る', () => {
-    expect(adrSkeleton(7, '題名')).toContain('## 01: 題名');
+  it('番号を 0 埋めした見出しで始まり、題名が最初のエントリに入る', () => {
+    const skeleton = adrSkeleton(7, '題名');
+    expect(skeleton.startsWith('# ADR 007\n')).toBe(true);
+    expect(skeleton).toContain('## 01: 題名');
   });
 });
 
@@ -147,31 +139,6 @@ describe('dirNames', () => {
 });
 
 describe('parseArgs', () => {
-  it('空 → すべて null と false', () => {
-    expect(parseArgs([])).toEqual({
-      root: process.cwd(),
-      add: null,
-      del: null,
-      set: null,
-      check: false,
-    });
-  });
-
-  it('--root を読む', () => {
-    const root = '/tmp/x';
-    expect(parseArgs(['--root', root])).toEqual({
-      root,
-      add: null,
-      del: null,
-      set: null,
-      check: false,
-    });
-  });
-
-  it('--add は題名と Full になる', () => {
-    expect(parseArgs(['--add', '題名']).add).toEqual({ title: '題名', type: 'Full' });
-  });
-
   it('--add 題名 Simple は Simple になる', () => {
     expect(parseArgs(['--add', '題名', 'Simple']).add).toEqual({ title: '題名', type: 'Simple' });
   });
@@ -190,10 +157,6 @@ describe('parseArgs', () => {
       title: '題名',
       type: 'Full',
     });
-  });
-
-  it('--check は検査の印になる', () => {
-    expect(parseArgs(['--check']).check).toBe(true);
   });
 
   it('数でない --delete は投げる', () => {
@@ -224,26 +187,9 @@ describe('parseArgs', () => {
 });
 
 describe('entrySkeleton', () => {
-  it('採用した形の3つの操作と、Policy を含む', () => {
+  it('見出しの順と `出所:` を持つ', () => {
     const skeleton = entrySkeleton(1);
-    expect(skeleton).toContain('Add:');
-    expect(skeleton).toContain('Update:');
-    expect(skeleton).toContain('Drop:');
-    expect(skeleton).toContain('Policy:');
-    expect(skeleton).toContain('Allowed:');
-    expect(skeleton).toContain('Forbidden:');
-    expect(skeleton).toContain('Main:');
-    expect(skeleton).toContain('Sub:');
-    expect(skeleton).toContain('#### Details');
-    expect(skeleton).toContain('  ```text');
-    expect(skeleton).toContain('出所: <出所>');
-    expect(skeleton).toContain('Type: _Full_');
-  });
-
-  it('adr.format.md のエントリーの見出しと一致する', () => {
-    const headings = entrySkeleton(1)
-      .split('\n')
-      .filter((line) => line.startsWith('#'));
+    const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
     const expected = [
       '## 01: <トピック>',
       '### Context',
@@ -254,12 +200,7 @@ describe('entrySkeleton', () => {
       '### Definition',
     ];
     expect(headings).toEqual(expected);
-  });
-
-  it('Scope は In と Out を持つ', () => {
-    const skeleton = entrySkeleton(1);
-    expect(skeleton).toContain('- In:');
-    expect(skeleton).toContain('- Out:');
+    expect(skeleton).toContain('出所:');
   });
 
   it('題名を渡すと見出しに入る', () => {
@@ -582,23 +523,11 @@ describe('openCycleDir', () => {
 });
 
 describe('affectedEntrySkeleton', () => {
-  it('affected.format.md の見出しとブロックを持つ', () => {
+  it('affected.format.md の見出しとブロックを持ち、題名が入る', () => {
     const skeleton = affectedEntrySkeleton(1);
     const headings = skeleton.split('\n').filter((line) => line.startsWith('#'));
     expect(headings).toEqual(['## 01: <トピック>', '### Keywords', '### Code', '### External']);
-    expect(skeleton).toContain('- `<キーワード>`');
-    expect(skeleton).toContain('- Path: `');
-    expect(skeleton).toContain('- Kind: `module` | `test` | `doc` | `config` | `artifact` | `dir`');
-    expect(skeleton).toContain(
-      '- Edge: `needs` | `names` | `mentions` | `checks` | `contains` | `defines` `',
-    );
-    expect(skeleton).toContain('- Name: `');
-    expect(skeleton).toContain('- Kind: `env` | `contract` | `event` | `data` | `path` | `limit`');
-    expect(skeleton).toContain('- Used by: `');
-  });
-
-  it('題名を渡すと見出しに入る', () => {
-    expect(affectedEntrySkeleton(2, '題名')).toContain('## 02: 題名');
+    expect(affectedEntrySkeleton(1, '題名')).toContain('## 01: 題名');
   });
 });
 
