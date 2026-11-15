@@ -510,7 +510,9 @@ function writeScopes(root: string, scopes: readonly string[]): void;
 ### Cleanup: 重複した helper と定数確認
 
 - Findings: なし
-- Unplanned: なし
+- Unplanned:
+  - `scripts/checks/ja-check.test.ts` の「cycles配下のerror語 → 報告する」: 「md内のerror語 → error行を出してexit 1」と同じ振る舞い（走査対象の error 語を報告し exit 1）の確認であり、パスの違い（`cycles/` 配下）は `isExcluded` の分岐を変えないため、その場で削った。断言の種類（header、`[error]`、切り詰め、件数）は残る本がすべて持つ。
+  - `scripts/checks/ja-check.test.ts` の「キーや値の型が誤った設定 → exit 1」: 2 つの root を順に作る前提を、誤った設定値 2 件のループに変えた（断言は変わらない）。同じ前提作りを 2 回書くと片方だけ変わる恐れがあるため、その場で直した。
 
 ## Work Review
 

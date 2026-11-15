@@ -176,19 +176,6 @@ describe('ja-check', () => {
     expect(out.stdout).toContain('ja-check: 1 files, error 0, warn 0.');
   });
 
-  it('cycles配下のerror語 → 報告する', () => {
-    const root = fakeRoot();
-    writeConfig(root, validConfig());
-    const file = writeFile(root, join('cycles', '999-test', 'a.md'), `${ERROR_WORD}\n`);
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stdout).toContain('[error]');
-    expect(out.stdout).toContain(`(…[${ERROR_WORD}]…)`);
-    expect(out.stdout).toContain('ja-check: 1 files, error 1, warn 0.');
-  });
-
   it('ja-check.json自体のerror語 → 報告しない', () => {
     const root = fakeRoot();
     writeConfig(root, {
@@ -386,34 +373,21 @@ describe('ja-check', () => {
   });
 
   it('キーや値の型が誤った設定 → exit 1', () => {
-    const root = fakeRoot();
-    writeFile(
-      root,
-      join('scripts', 'checks', 'ja-check.json'),
-      JSON.stringify({ error: 'x', warn: {} }),
-    );
-    const file = writeFile(root, 'a.md', 'ok\n');
-    const out = run(root, [file]);
-    expect(out.status).toBe(1);
-    expect(out.stdout).toContain(HEADER_1);
-    expect(out.stdout).toContain(HEADER_2);
-    expect(out.stderr).toContain('is not valid JSON');
-    expect(out.stdout).not.toContain('files, error');
-    expect(out.stdout).not.toContain('ja-check: No findings.');
-    const root2 = fakeRoot();
-    writeFile(
-      root2,
-      join('scripts', 'checks', 'ja-check.json'),
-      JSON.stringify({ error: { a: 1 }, warn: {}, extra: {} }),
-    );
-    const file2 = writeFile(root2, 'a.md', 'ok\n');
-    const out2 = run(root2, [file2]);
-    expect(out2.status).toBe(1);
-    expect(out2.stdout).toContain(HEADER_1);
-    expect(out2.stdout).toContain(HEADER_2);
-    expect(out2.stderr).toContain('is not valid JSON');
-    expect(out2.stdout).not.toContain('files, error');
-    expect(out2.stdout).not.toContain('ja-check: No findings.');
+    for (const bad of [
+      { error: 'x', warn: {} },
+      { error: { a: 1 }, warn: {}, extra: {} },
+    ]) {
+      const root = fakeRoot();
+      writeFile(root, join('scripts', 'checks', 'ja-check.json'), JSON.stringify(bad));
+      const file = writeFile(root, 'a.md', 'ok\n');
+      const out = run(root, [file]);
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain(HEADER_1);
+      expect(out.stdout).toContain(HEADER_2);
+      expect(out.stderr).toContain('is not valid JSON');
+      expect(out.stdout).not.toContain('files, error');
+      expect(out.stdout).not.toContain('ja-check: No findings.');
+    }
   });
 
   it('(error) 余分な欄がある設定 → headerの2行を出してexit 1', () => {
