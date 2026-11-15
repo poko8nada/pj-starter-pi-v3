@@ -146,7 +146,10 @@ describe('detectUnitRuns', () => {
       `${second} ${third}`,
     ].join('\n');
     const units = unitsFromText(text);
-    expect(units.some((unit) => unit.opaque)).toBe(true);
+    const table = units.find((unit) => unit.text === '| a | b |');
+    const diff = units.find((unit) => unit.text === 'diff --git a/foo b/foo');
+    expect(table?.opaque).toBe(true);
+    expect(diff?.opaque).toBe(true);
     expect(detectUnitRuns(units, baseSentence)).toHaveLength(0);
   });
 
