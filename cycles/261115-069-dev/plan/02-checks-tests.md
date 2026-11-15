@@ -519,26 +519,40 @@ function writeScopes(root: string, scopes: readonly string[]): void;
 ### Round 1
 
 - Stale:
+  - なし（各ヘッダは Slice 5 の fence 通り。`stub -p は下のスタブ` の文言は計画が決めた通りのため指摘としない。未使用 import の残りもない）
 - Unlisted:
+  - なし（差分が触る 4 件はいずれも `## Files` に名指しあり。`*.mjs`、`*.json`、`test/scripts.fixture.ts`、`test/temp-dir.ts` の変更はない）
 - Gaps:
+  - なし（共有 helper と `checks.fixture.ts` への置換、重複確認のループ化、`codeExtensions()` の削除は `## Goal` 通り。削除した件は計画が明示に決めたため指摘としない）
 - Policy:
+  - なし（`Forbidden` の 4 行を保つ。`staged` の `STUB_FAIL: ''` は Slice 4 Steps 通り。Cleanup の 2 件は Notes で理由付け済みの `Allowed` 範囲）
 - Unproven:
+  - なし（各ループは反復ごとに fresh root を作り、共有前提を持たない。一方を壊したらその反復が落ちる）
 - Noise:
+  - なし（`'relative'`、`'empty'`、`0o755` 等は Steps の fence が決めた値のため指摘としない。新規のマジックナンバー・硬直文字列の断言はない）
 - Doubts:
+  - なし
 
 ### Round 2
 
 - Stale:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。差分再読でも新規の stale なし）
 - Unlisted:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`## Files` 外の変更なし）
 - Gaps:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`## Goal` の穴なし）
 - Policy:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。`Forbidden` 違反なし）
 - Unproven:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。壊したら落ちる構成のまま）
 - Noise:
+  - なし（Round 1 の指摘なしのため `fixed:` 行なし。新規の雑音なし）
 - Doubts:
+  - なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: checks のテストが、共有 helper と checks の helper を使い、重複した確認と実装の定数の写しを削った形になる。達成した（`scripts/checks/checks.fixture.ts` に `stubTsc` と `writeScopes` を置き、3 ファイルが 01 の共有 helper と `checks.fixture.ts` を使い、ja-check 33→25・typecheck 6→5・typecheck-staged 4 のまま、`codeExtensions()` の写しを削った）。
+- Ran: `pnpm test:related scripts/checks/ja-check.test.ts scripts/checks/typecheck.test.ts scripts/checks/typecheck-staged.test.ts`（3 ファイル、34 件）・`pnpm test:run`（66 ファイル、841 件）・`pnpm typecheck`（`root: ok`、`.pi: ok`）・`pnpm lint`・`pnpm format:check`、および diff の通読。
+- Findings: なし
+- Doubts: なし
