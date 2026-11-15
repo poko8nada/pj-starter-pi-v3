@@ -202,28 +202,30 @@ export function cycleTree(cycles?: readonly CycleSpec[]): {
 ### Slice 1: 一時ツリーの前提を cycleTree に集める
 
 - Findings:
-- Unplanned:
-- Commit:
+  - Verify の Added（`node .pi/skills/adr/scripts/index.mjs --check` の手動実行）ができない。
+    - left: bash から当該スクリプトを直接叩くと subagent-guard に止められるため。この cycle では閉じない。同じ経路は CLI の `--check` テスト（vitest 内の spawn）が通り、suite 全体も緑。
+- Unplanned: なし
+- Commit: fd3c62e5
 - Stopped:
 
 ### Slice 2: 同じ事実を 1 か所で確認する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e2eff5fa
 - Stopped:
 
 ### Slice 3: primitive・定数の確認を整理する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: eb776a46
 - Stopped:
 
 ### Cleanup: adr スクリプトのテストの整理
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
