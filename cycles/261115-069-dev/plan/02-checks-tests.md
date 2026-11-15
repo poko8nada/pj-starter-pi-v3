@@ -474,43 +474,43 @@ function writeScopes(root: string, scopes: readonly string[]): void;
 
 ### Slice 1: checks の fixture に tsc と scopes の helper を置く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8b6d6f8eb2b68b3d38747ce072bb473329b5db67
 - Stopped:
 
 ### Slice 2: ja-check の重複した確認を統合する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8f5295cf50dc554eed61aef27fbf31e32eecd351
 - Stopped:
 
 ### Slice 3: typecheck の空と不在を 1 本にする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: dc90880c1280e59a1f3f351c1f2d35d2f1eac7e0
 - Stopped:
 
 ### Slice 4: typecheck-staged の定数の写しを削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4f8af7df0f53d29693795c238fe917c5ae860d05
 - Stopped:
 
 ### Slice 5: 先頭コメントを共有 helper に合わせる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b6645a8d132b7fcafa1504380adccd22599f9cac
 - Stopped:
 
 ### Cleanup: 重複した helper と定数確認
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
