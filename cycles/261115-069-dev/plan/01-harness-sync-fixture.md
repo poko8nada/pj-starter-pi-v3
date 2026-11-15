@@ -288,8 +288,11 @@ function writeList(
 
 ### Cleanup: 重複した helper と基準外のテスト
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - `scripts/harness-sync/collect/index.test.ts` の「一覧の項目がコピー元にだけある」: 書き込む前提を直書きの `'.pi/a.ts'` から手元の `rel` に変えた（既定の中身 `'x\n'` は変わらない）。断言の値と前提がずれると気づけないため、その場で直した。
+  - `scripts/harness-sync/collect/index.test.ts` の「同じパスが 2 つの項目から出る」: `rel` を置き、書き込みと一覧と断言をそこから作るようにした。理由は同じ。
+  - `scripts/harness-sync/index.test.ts` の「中身違いの同じパス」: 両側への書き込みを直書きの `'.pi/a.ts'` から手元の `rel` に変えた。理由は同じ。
 
 ## Work Review
 

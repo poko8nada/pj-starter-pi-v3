@@ -91,8 +91,8 @@ describe('harness main', () => {
   it('中身違いの同じパス → copy に出て exit 0', () => {
     const { origin, local } = pair();
     const rel = '.pi/a.ts';
-    writeFile(origin, '.pi/a.ts', 'B\n');
-    writeFile(local, '.pi/a.ts', 'A\n');
+    writeFile(origin, rel, 'B\n');
+    writeFile(local, rel, 'A\n');
     const out = run(['pull'], local);
     expect(out.status).toBe(0);
     expect(out.stderr).toBe('');

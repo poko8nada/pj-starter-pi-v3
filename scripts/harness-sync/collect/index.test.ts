@@ -15,7 +15,7 @@ describe('collect', () => {
   it('一覧の項目がコピー元にだけある → paths にそのパスが入る', () => {
     const root = fakeRoot();
     const rel = '.pi/a.ts';
-    writeFile(root, '.pi/a.ts', 'x\n');
+    writeFile(root, rel);
     const got = collect(root, [rel]);
     expect(got.paths).toEqual([rel]);
     expect(got.missing).toEqual([]);
@@ -59,9 +59,10 @@ describe('collect', () => {
 
   it('同じパスが 2 つの項目から出る → paths で 1 つになる', () => {
     const root = fakeRoot();
-    writeFile(root, '.pi/a.ts', 'x\n');
-    const got = collect(root, ['.pi/a.ts', '.pi/*.ts']);
-    expect(got.paths).toEqual(['.pi/a.ts']);
+    const rel = '.pi/a.ts';
+    writeFile(root, rel);
+    const got = collect(root, [rel, '.pi/*.ts']);
+    expect(got.paths).toEqual([rel]);
     expect(got.missing).toEqual([]);
   });
 });
