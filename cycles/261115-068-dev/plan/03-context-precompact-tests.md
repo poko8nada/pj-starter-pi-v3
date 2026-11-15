@@ -217,7 +217,16 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
   - `deferred`/`onceFails` 系の 6 箇所は新しい `nowSetup` を使わず手動配線にした。新 `nowSetup` は `onCommand('now')`+`flush` まで行うため、解放待ちの `deferred` ではデッドロックし、初回失敗の `onceFails` では `ready` がなく wiring を失うため。振る舞いは変えず、準備の作り方だけ分割した。
   - `index.test.ts` の `deferredCompact` の戻りを `okResult(preparation)` に寄せた。`compactOk` との重複を 1 箇所にするため。
   - `index.test.ts` では `preparedCompaction` を import していない。使う箇所がなく、未使用 import で lint が落ちるため。
-- Commit: 43235d7b
+- Commit: be1d92ff
+- Stopped:
+
+### Slice 2: 重複と前提の削除
+
+- Findings:
+  - なし
+- Unplanned:
+  - なし
+- Commit: 36e0c59e
 - Stopped:
 
 ## Work Review

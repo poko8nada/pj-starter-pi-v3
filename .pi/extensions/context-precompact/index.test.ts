@@ -291,54 +291,28 @@ describe('precompact wiring', () => {
   });
 
   it('turn_end の apply で stale なら draft がなくフォールバックを通知する', async () => {
-    const { session, branch } = sessionWithTurns(3);
-    const last = branch.at(-1);
-    if (last === undefined) {
-      throw new Error('branch must have leaf');
-    }
-    const variants: {
-      readonly name: string;
-      readonly branch: SessionEntry[];
-      readonly sessionId: string;
-    }[] = [
-      { name: 'session', branch: [...branch], sessionId: OTHER_SESSION_ID },
-      { name: 'leaf', branch: branch.slice(0, -1), sessionId: SESSION_ID },
-      {
-        name: 'firstKept',
-        branch: [...branch.slice(0, 4), ...branch.slice(5)],
-        sessionId: SESSION_ID,
-      },
-      {
-        name: 'compaction',
-        branch: [...branch, session.compaction('new')],
-        sessionId: SESSION_ID,
-      },
-    ];
-    for (const variant of variants) {
-      const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: settingsDirWith(settingsDocument()),
-        now: () => 0,
-        compactFn: compactOk(),
-      });
-      // eslint-disable-next-line no-await-in-loop -- stale の 4 分岐を順に確かめる
-      await wiring.onTurnEnd(lead.ctx);
-      // eslint-disable-next-line no-await-in-loop -- stale の 4 分岐を順に確かめる
-      await wiring.flush();
-      const hot = fakeCtx({
-        branch: variant.branch,
-        sessionId: variant.sessionId,
-        usage: contextUsageOf(THRESHOLD_TOKENS),
-      });
-      // eslint-disable-next-line no-await-in-loop -- stale の 4 分岐を順に確かめる
-      const outcome = await wiring.onTurnEnd(hot.ctx);
-      expect(outcome, variant.name).toBeUndefined();
-      expect(hot.notified, variant.name).toContainEqual({
-        message: FALLBACK_TEXT,
-        type: 'warning',
-      });
-    }
+    const { branch } = sessionWithTurns(3);
+    const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: settingsDirWith(settingsDocument()),
+      now: () => 0,
+      compactFn: compactOk(),
+    });
+    await wiring.onTurnEnd(lead.ctx);
+    await wiring.flush();
+    const hot = fakeCtx({
+      branch: [...branch],
+      sessionId: OTHER_SESSION_ID,
+      usage: contextUsageOf(THRESHOLD_TOKENS),
+    });
+    const outcome = await wiring.onTurnEnd(hot.ctx);
+    expect(outcome).toBeUndefined();
+    expect(wiring.getState().prepared).toBeUndefined();
+    expect(hot.notified).toContainEqual({
+      message: FALLBACK_TEXT,
+      type: 'warning',
+    });
   });
 
   it('session_before_compact で一致すれば compaction を返し tokensBefore が現在値になる', async () => {
