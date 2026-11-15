@@ -268,16 +268,25 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
 ### Round 2
 
 - Stale:
+  - OK — `.pi/extensions/context-precompact/test/session-entries.ts:143` は「セッションと branch を作る。既定は 3 ターン分。」になっており、Round 1 が指摘した「3 に固定」の文言は消えた。`sessionWithTurns(count = 3)`（`:144`）の既定値と一致し、`sessionWithTurns(0)`（`prepare/copied.test.ts:43`）や `sessionWithTurns(1)`（同`:56` 前後）との矛盾は解消された。理由: コメントが固定値を断言せず既定値の説明になり、引数と呼び出しの実態と一致したため。
 - Unlisted:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Gaps:
+  - OK — `.pi/extensions/context-precompact/prepare/compare.test.ts:24-31` の `base()` は `preparedCompaction({ messagesToSummarize: [messageOf()], previousSummary: 'prev', fileOps: fileOpsOf({ read: ['a.ts'] }), settings: { enabled: true, reserveTokens: 16_384, keepRecentTokens: 2000 } })` になっており、ローカル定義は消えた。手順 1.2 が例示する 4 つの上書き経路がすべて実行され、`prepared.fixture.ts:36` の `...overrides` の結合を通る。`messageOf()` と `fileOpsOf()` が残るのは `fixed:` が予告した単体固有の形の範囲内である。理由: 上書き経路が未使用という指摘の内容どおりに使用され、迂回路が残っていないため。
+  - OK — `.pi/extensions/context-precompact/index.test.ts:219` は `const { branch } = sessionWithTurns();`（引数なし）になっており、全呼び出しが明示値だった状態は解消された。他の呼び出しは `sessionWithTurns(3)` のまま残り、先頭の配線テストだけが既定値の経路を実行する。理由: 既定値を呼ぶ箇所がないという指摘に対し、`fixed:` が予告した 1 件の引数なし呼び出しが現物にあり、既定値の経路が実行される形になったため。
 - Policy:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Unproven:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Noise:
+  - 確認対象なし — `fixed:` の指定がないため見ない。
 - Doubts:
+  - `index.test.ts:219` の引数なし呼び出しは既定値の経路を実行するが、`branch` の長さが 3 ターン分であること自体は断言していない。既定値を変えてもこのテストは赤になるとは限らないため、既定値 `3` の厳密な保証までは確認していない。理由: `fixed:` の約束は「既定値の経路を実行する」までであり、値の断言までは含まないため、所見にはせず疑義として残す。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: context-precompact のテストが、同じ事実を 1 箇所で確認し、前提を fixture に集めた形になる。実装は達成している。95 件のまま。
+- Ran: `pnpm test:run`（66 ファイル、860 テスト成功）、`pnpm typecheck`（root と .pi とも ok）、`pnpm lint`、`pnpm format:check`、`pnpm test:related`（13 ファイル、79 テスト）、変更したファイルの読み通し。
+- Findings: なし
 - Doubts:
+  - `index.test.ts:219` の引数なし `sessionWithTurns()` は既定値の経路を実行するが、`branch` が 3 ターン分であることは断言していない。既定値 `3` の厳密な保証は残る。
