@@ -207,6 +207,19 @@ async function nowSetup(compactFn?: SummaryCtx['compactFn']): Promise<{
 
 ## Notes
 
+### Slice 1: 前提を fixture に集める
+
+- Findings:
+  - なし
+- Unplanned:
+  - `llmUsage()` の戻りを `NonNullable<CompactionResult['usage']>` にした。`CompactionResult['usage']` のままだと `session-entries.ts` の assistant/toolCall の `usage` に渡せず typecheck が落ちるため。由来は `CompactionResult` のままにし、具体型を直書きしない。
+  - `assistantEntry` を残した。`turns` が内部で使うため、プランの削除指示では振る舞いが壊れる。公開の `assistant` 欄だけ削り、未使用の公開実装として整理した。
+  - `deferred`/`onceFails` 系の 6 箇所は新しい `nowSetup` を使わず手動配線にした。新 `nowSetup` は `onCommand('now')`+`flush` まで行うため、解放待ちの `deferred` ではデッドロックし、初回失敗の `onceFails` では `ready` がなく wiring を失うため。振る舞いは変えず、準備の作り方だけ分割した。
+  - `index.test.ts` の `deferredCompact` の戻りを `okResult(preparation)` に寄せた。`compactOk` との重複を 1 箇所にするため。
+  - `index.test.ts` では `preparedCompaction` を import していない。使う箇所がなく、未使用 import で lint が落ちるため。
+- Commit: 43235d7b
+- Stopped:
+
 ## Work Review
 
 ### Round 1

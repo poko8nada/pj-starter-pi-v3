@@ -2,23 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { CompactionResult } from '@earendil-works/pi-coding-agent';
 import { summarize } from './summarize.ts';
 import type { SummaryPorts } from './ports.ts';
-import type { PreparedCompaction } from '../prepare/types.ts';
-import { RESERVE_TOKENS } from '../settings/constants.ts';
+import { preparedCompaction } from '../test/prepared.fixture.ts';
 
 const FAILURE = 'boom';
-
-function preparedOf(): PreparedCompaction {
-  return {
-    firstKeptEntryId: 'kept-1',
-    messagesToSummarize: [],
-    turnPrefixMessages: [],
-    isSplitTurn: false,
-    tokensBefore: 100,
-    previousSummary: undefined,
-    fileOps: { read: new Set(), written: new Set(), edited: new Set() },
-    settings: { enabled: true, reserveTokens: RESERVE_TOKENS, keepRecentTokens: 2000 },
-  };
-}
 
 function resultOf(): CompactionResult {
   return {
@@ -34,7 +20,12 @@ describe('summarize', () => {
   it('fake の port が結果を返せば done で結果をそのまま返す', async () => {
     const expected = resultOf();
     const ports: SummaryPorts = { compact: async () => expected };
-    const outcome = await summarize(ports, preparedOf(), new AbortController().signal, Date.now);
+    const outcome = await summarize(
+      ports,
+      preparedCompaction(),
+      new AbortController().signal,
+      Date.now,
+    );
     if (outcome.kind !== 'done') {
       throw new Error('must be done');
     }
@@ -47,7 +38,12 @@ describe('summarize', () => {
         throw new Error(FAILURE);
       },
     };
-    const outcome = await summarize(ports, preparedOf(), new AbortController().signal, Date.now);
+    const outcome = await summarize(
+      ports,
+      preparedCompaction(),
+      new AbortController().signal,
+      Date.now,
+    );
     expect(outcome).toEqual({ kind: 'failed', reason: FAILURE });
   });
 
@@ -61,7 +57,7 @@ describe('summarize', () => {
     };
     const controller = new AbortController();
     controller.abort();
-    const outcome = await summarize(ports, preparedOf(), controller.signal, Date.now);
+    const outcome = await summarize(ports, preparedCompaction(), controller.signal, Date.now);
     expect(outcome).toEqual({ kind: 'failed', reason: 'aborted' });
     expect(called).toBe(false);
   });

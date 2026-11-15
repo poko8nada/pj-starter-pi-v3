@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { prepare } from './prepare.ts';
 import type { PrepareInput } from './types.ts';
 import { defaultSettings } from '../settings/schema.ts';
-import {
-  createSessionFixture,
-  projectEntries,
-  type SessionFixture,
-} from '../test/session-entries.ts';
+import { projectEntries, sessionWithTurns, type SessionFixture } from '../test/session-entries.ts';
 
 const KEEP_RECENT_TOKENS = 1_500;
 const TOKENS_BEFORE = 6_000;
@@ -28,26 +24,24 @@ function makeInput(session: SessionFixture, overrides: Partial<PrepareInput> = {
 
 describe('prepare', () => {
   it('fromHook の details があるときだけ read と edited に path が入る', () => {
-    const session = createSessionFixture();
+    const { session, branch: turns } = sessionWithTurns(3);
     const prev = session.compaction('prev', {
       fromHook: true,
       details: { readFiles: [READ_PATH], modifiedFiles: [EDITED_PATH] },
     });
-    const prepared = prepare(makeInput(session, { branch: [prev, ...session.turns(3)] }));
+    const prepared = prepare(makeInput(session, { branch: [prev, ...turns] }));
     expect(prepared?.compaction.fileOps.read.has(READ_PATH)).toBe(true);
     expect(prepared?.compaction.fileOps.edited.has(EDITED_PATH)).toBe(true);
 
-    const emptySession = createSessionFixture();
+    const { session: emptySession, branch: emptyTurns } = sessionWithTurns(3);
     const emptyPrev = emptySession.compaction('prev');
-    const emptyPrepared = prepare(
-      makeInput(emptySession, { branch: [emptyPrev, ...emptySession.turns(3)] }),
-    );
+    const emptyPrepared = prepare(makeInput(emptySession, { branch: [emptyPrev, ...emptyTurns] }));
     expect(emptyPrepared).toBeDefined();
     expect(emptyPrepared?.compaction.fileOps.read.size).toBe(0);
     expect(emptyPrepared?.compaction.fileOps.written.size).toBe(0);
     expect(emptyPrepared?.compaction.fileOps.edited.size).toBe(0);
 
-    const hookFalseSession = createSessionFixture();
+    const { session: hookFalseSession, branch: hookFalseTurns } = sessionWithTurns(3);
     const hookFalseOld = hookFalseSession.compaction('old');
     const hookFalsePrev = hookFalseSession.compaction('prev', {
       fromHook: false,
@@ -55,7 +49,7 @@ describe('prepare', () => {
     });
     const hookFalsePrepared = prepare(
       makeInput(hookFalseSession, {
-        branch: [hookFalseOld, hookFalsePrev, ...hookFalseSession.turns(3)],
+        branch: [hookFalseOld, hookFalsePrev, ...hookFalseTurns],
       }),
     );
     expect(hookFalsePrepared?.compaction.fileOps.read.size).toBe(0);
@@ -63,26 +57,26 @@ describe('prepare', () => {
   });
 
   it('details が配列でなければ例外を投げずに無視する', () => {
-    const session = createSessionFixture();
+    const { session, branch: turns } = sessionWithTurns(3);
     const prev = session.compaction('prev', {
       fromHook: true,
       details: { readFiles: READ_PATH, modifiedFiles: READ_PATH.length },
     });
-    const input = makeInput(session, { branch: [prev, ...session.turns(3)] });
+    const input = makeInput(session, { branch: [prev, ...turns] });
     expect(() => prepare(input)).not.toThrow();
     expect(prepare(input)?.compaction.fileOps.read.size).toBe(0);
   });
 
   it('いずれかが無効なら undefined になる', () => {
-    const session = createSessionFixture();
+    const { session, branch } = sessionWithTurns(3);
     const settings = {
       ...defaultSettings(),
       keepRecentTokens: KEEP_RECENT_TOKENS,
       enabled: false,
     };
-    expect(prepare(makeInput(session, { settings }))).toBeUndefined();
+    expect(prepare(makeInput(session, { branch, settings }))).toBeUndefined();
 
-    const piSession = createSessionFixture();
-    expect(prepare(makeInput(piSession, { piEnabled: false }))).toBeUndefined();
+    const { session: piSession, branch: piBranch } = sessionWithTurns(3);
+    expect(prepare(makeInput(piSession, { branch: piBranch, piEnabled: false }))).toBeUndefined();
   });
 });
