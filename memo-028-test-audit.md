@@ -220,14 +220,14 @@
 
 ## 6. 実施状況
 
-|  順 | サイクル                                | 状態    | 結果                                                                                                                                                                                              |
-| --: | --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|   1 | `261113-067-dev`（067-d）               | done    | `consult-run-sub` と `consult-tool-view` の 2 plan。close `2398da9`。close 時のテストは 869 件。                                                                                                  |
-|   2 | 未着手                                  | pending | 次の候補。文脈系 2 Unit。                                                                                                                                                                         |
-|   3 | 未着手                                  | pending | リポジトリスクリプト。                                                                                                                                                                            |
-|   4 | 未着手                                  | pending | スキルスクリプト。                                                                                                                                                                                |
-|   5 | `261113-067-feat-test-cleanup`（067-f） | done    | ADR 4 エントリ、`quality-gate-sound` と `vitest-config` の 2 plan。plan の `Ran` は 871 件と 872 件。close `7058fd6`、merge `3352935`。`_ex-change_` は `2bd8dba`（`passWithNoTests` のガード）。 |
+|  順 | サイクル                                 | 状態    | 結果                                                                                                                                                                                              |
+| --: | ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   1 | `261113-067-dev`（067-d）                | done    | `consult-run-sub` と `consult-tool-view` の 2 plan。close `2398da9`。close 時のテストは 869 件。                                                                                                  |
+|   2 | 未着手                                   | pending | 次の候補。文脈系 2 Unit。                                                                                                                                                                         |
+|   3 | 未着手                                   | pending | リポジトリスクリプト。                                                                                                                                                                            |
+|   4 | `261115-068-feat-test-cleanup3`（068-f） | done    | ADR 3 エントリ（adr / close / plan のスクリプト）、`adr-script-tests`・`close-script-tests`・`plan-script-tests` の 3 plan。close `076f9a59`。close 時のテストは 856 件。                         |
+|   5 | `261113-067-feat-test-cleanup`（067-f）  | done    | ADR 4 エントリ、`quality-gate-sound` と `vitest-config` の 2 plan。plan の `Ran` は 871 件と 872 件。close `7058fd6`、merge `3352935`。`_ex-change_` は `2bd8dba`（`passWithNoTests` のガード）。 |
 
-- 現在の base は 66 ファイル・867 件成功、typecheck ok。
-- `ROADMAP.md` の 028 は `cycles: 067-d,067-f`、`status: wip`。
-- 5 番目は計画の順番より先に、feat ブランチで実施された。残りは 2 → 3 → 4 の順。次の 068 は 2（文脈系 2 Unit）。
+- 現在の base は 66 ファイル・856 件成功、typecheck ok。
+- `ROADMAP.md` の 028 は `cycles: 067-d,067-f`、`status: wip`。030 は `cycles: 068-f`、`status: done`。
+- 5 番目は計画の順番より先に、feat ブランチで実施された。4 番目（スキルスクリプト）も先に 068-f として実施された。残りは 2 → 3 の順。次のサイクルは 2（文脈系 2 Unit）。
