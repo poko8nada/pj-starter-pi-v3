@@ -267,23 +267,23 @@ function writeList(
 
 ### Slice 1: 共有 fixture に一時ツリーの helper を置く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ae7258b9b1b5881aaae9f2e135178771450e6c70
 - Stopped:
 
 ### Slice 2: harness-sync のテストが共有 helper を使う
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a83cb66f89599e3b2c9f47978c53090c89df2c40
 - Stopped:
 
 ### Slice 3: 重複した確認と基準外のテストを削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1ec3a42e18f6cf8b46a1ebce82522c0cc355edc0
 - Stopped:
 
 ### Cleanup: 重複した helper と基準外のテスト
