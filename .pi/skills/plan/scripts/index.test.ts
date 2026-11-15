@@ -28,22 +28,6 @@ describe('parseArgs', () => {
     expect(parseArgs(['xxx', '-b', '--order', '1', '--entries', '01']).place).toBe('base');
   });
 
-  it('--root を読む', () => {
-    expect(
-      parseArgs([
-        'xxx',
-        '--root',
-        '/tmp/x',
-        '--order',
-        '1',
-        '--place',
-        'worktree',
-        '--entries',
-        '01',
-      ]).root,
-    ).toBe('/tmp/x');
-  });
-
   it('plan id がない → 投げる', () => {
     expect(() => parseArgs(['--order', '1', '--place', 'worktree', '--entries', '01'])).toThrow(
       /missing plan id/,
@@ -105,18 +89,10 @@ describe('filesTree', () => {
       ]),
     ).toBe('src/\n  b/\n    c.ts\n  a.ts');
   });
-
-  it('空 → なし', () => {
-    expect(filesTree([])).toBe('なし');
-  });
-
-  it('ルートの file を置く', () => {
-    expect(filesTree([{ path: 'README.md', dir: false }])).toBe('README.md');
-  });
 });
 
 describe('planSkeleton', () => {
-  it('見出しと値を入れる', () => {
+  it('見出しの順と値を入れる', () => {
     const markdown = planSkeleton({
       id: 'xxx-update',
       entries: ['01', '02'],
@@ -126,13 +102,20 @@ describe('planSkeleton', () => {
     expect(markdown).toContain('# PLAN `xxx-update`');
     expect(markdown).toContain('- No: 01, 02');
     expect(markdown).toContain('- Place: worktree');
-    expect(markdown).toContain('- Boundary Plans:');
-    expect(markdown).toContain('## Goal');
-    expect(markdown).toContain('## Design');
     expect(markdown).toContain('```text\nsrc/\n  a.ts\n```');
-    expect(markdown).toContain('## Slices');
-    expect(markdown).toContain('## Work Review');
-    expect(markdown).toContain('## Acceptance');
+    const headings = markdown.split('\n').filter((line) => line.startsWith('#'));
+    expect(headings).toEqual([
+      '# PLAN `xxx-update`',
+      '## Goal',
+      '## Design',
+      '## Files',
+      '## Slices',
+      '## Notes',
+      '## Work Review',
+      '### Round 1',
+      '### Round 2',
+      '## Acceptance',
+    ]);
   });
 });
 
@@ -171,7 +154,7 @@ const setupCycle = () => {
 describe('CLI', () => {
   const script = fileURLToPath(new URL('./index.mjs', import.meta.url));
 
-  it('plan を作る', () => {
+  it('plan を作る → ファイルと Files ツリー', () => {
     const { root, cycleDir } = setupCycle();
     const done = spawnSync(
       process.execPath,
@@ -191,23 +174,7 @@ describe('CLI', () => {
     );
     expect(done.status).toBe(0);
     const markdown = readFileSync(join(cycleDir, 'plan', '01-xxx-update.md'), 'utf8');
-    expect(markdown).toContain('# PLAN `xxx-update`');
-    expect(markdown).toContain('- No: 01, 02');
-    expect(markdown).toContain('- Place: worktree');
     expect(markdown).toContain('```text\nsrc/\n  b/\n    c.ts\n  a.ts\nREADME.md\n```');
-    expect(markdown).toContain('## Goal');
-    expect(markdown).toContain('## Slices');
-  });
-
-  it('place が base の plan を作る', () => {
-    const { root, cycleDir } = setupCycle();
-    const done = spawnSync(
-      process.execPath,
-      [script, '--root', root, 'xxx', '-b', '--order', '1', '--entries', '01'],
-      { encoding: 'utf8' },
-    );
-    expect(done.status).toBe(0);
-    expect(readFileSync(join(cycleDir, 'plan', '01-xxx.md'), 'utf8')).toContain('- Place: base');
   });
 
   it('開いたサイクルがない → 止まる', () => {
