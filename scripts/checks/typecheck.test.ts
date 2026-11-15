@@ -1,7 +1,7 @@
 /**
  * `scripts/checks/typecheck.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
- * fake root にツリーを作り、`node_modules/.bin/tsc` にスタブを置く。
+ * fake root は共有の `fakeRoot()`、tsconfig は共有の `writeFile`、スタブは `checks.fixture.ts` の `stubTsc()` で作る。
  * スタブは渡された `-p` を出して、`STUB_FAIL` に含まれる所だけ exit 1 で落とす。
  * これで、回した所の名前・渡された `-p` のパス・exit を stdout で見る。
  * 表示の行は `test/scripts.fixture.ts` から組み立てる。

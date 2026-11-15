@@ -1,10 +1,9 @@
 /**
- * ja-check behavior, run as a child process.
+ * `scripts/checks/ja-check.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
- * fake root holds temp files and a config.
- * WARN_WORD lives in warn, ERROR_WORD lives in error. Quoted alone is skipped.
- * Paths matching exclude are skipped without reading.
- * 例外の語に一致するヒットを報告しない。
+ * fake root は共有の `fakeRoot()`、ファイルと設定は共有の `writeFile` と `writeJson` で作る。
+ * WARN_WORD は warn に、ERROR_WORD は error に入る。引用符で囲まれた語だけなら報告しない。
+ * exclude に一致するパスは読まずに飛ばす。例外の語に一致するヒットも報告しない。
  */
 
 import { spawnSync } from 'node:child_process';

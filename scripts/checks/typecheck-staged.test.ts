@@ -1,7 +1,8 @@
 /**
  * `scripts/checks/typecheck-staged.mjs` の振る舞いを、子プロセスとして実行して試す。
  *
- * fake root の `node_modules/.bin/tsc` にスタブを置く（渡された `-p` を出す）。
+ * fake root は共有の `fakeRoot()`、ファイルは共有の `writeFile`、スタブは `checks.fixture.ts` の `stubTsc()` で作る。
+ * staged は `STUB_FAIL` を空にして走らせるので、スタブは常に exit 0 である。
  * これで、どの `tsconfig` が使われたかを見る。スタブに渡るのは一時 tsconfig
  * （`.typecheck-staged-*.json`）で、元の `tsconfig.json` と同じ所に置かれる。
  * だから `-p` のパスに `.pi` が入るかで、`.pi` の group か root の group かが分かる。
