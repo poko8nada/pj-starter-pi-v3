@@ -128,16 +128,25 @@ export function resetOnUser(): Guard;
 ### Round 2
 
 - Stale:
+  - なし。`fixed:` の行は Gaps・Noise だけに付き、Stale の指摘は Round 1 からなく、新たな stale（残った `at`／`guard` 参照や矛盾するコメント）も読む限りない。
 - Unlisted:
+  - なし。`fixed:` の行が名指す変更は 2 つの test ファイル内の追加・題名修正だけであり、計画外の製品ファイルの変更はない。
 - Gaps:
+  - `.pi/extensions/thinking-scrub/command/scrub.test.ts:144-148` と `.pi/extensions/thinking-scrub/live/guard.test.ts:187-191` に `describe('signature')` があり、`Parameters<typeof runCommand>` を `[CommandPort, ScrubCommand]` に、`Parameters<typeof resetOnUser>` を `[]` に `toEqualTypeOf` で固定している。実装（`command/scrub.ts:50` の 2 引数、`live/guard.ts:27` の 0 引数）と一致し、`at?` や `guard?` の復活は型検査で落ちる形になっているため、arity 未固定の指摘は閉じた。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:51-60` に閾値の半分（tuning 由来）の `empty` ケース「閾値より十分短い thinking なら idle で見た位置が進まない」があり、`idle` であることと `step.guard` が `emptyGuard()` と等しいこと（`scanned` 据え置き）を直接確かめている。`live/guard.ts:60-61` の短文 idle 分岐に対応し、空席の指摘は閉じた。
 - Policy:
+  - なし。`fixed:` の行は Policy に触れず、署名固定・短文 idle・題名修正のいずれも `Allowed` の範囲で `sep` 削除などの `Forbidden` に当たらない。
 - Unproven:
+  - なし。`fixed:` の行は Unproven に付いておらず、新たに追加された 3 件のテスト（署名 2 件・短文 idle 1 件）はいずれも対象の振る舞いを反転させれば赤になる位置を押さえている。
 - Noise:
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:36` の題名は「既定の live と閾値の長さのランなら stop で見本つきになる」になり、直値 `20000` は題名から消えた。本文が `tuning.live.minThinking` 由来であることと整合し、題名だけ直値の指摘は閉じた。
 - Doubts:
+  - subagent-guard で `pnpm test`／`typecheck` を実行できず、緑・赤の確認は読解に留まる。特に `fixed:` が述べる「`at?` 復活で typecheck が落ちることを一時的復活で確かめた」は本 Round では再演できておらず、実行での裏付けは誰も取っていない。
+  - `.pi/extensions/thinking-scrub/command/scrub.test.ts:91` の題名「3 グループの SettingsRead と status...」の「3 グループ」は Round 1 のまま残り、`fakePort()` 簡略化後の題名が正しいかは依然として所有者の判断が要る（直さず閉じるか、題名を実態に合わせるか）。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: thinking-scrub の実装から読まれない引数が消える。実装は達成している。
+- Ran: `pnpm test:run`（66 ファイル、866 テスト成功）、`pnpm typecheck`（root と .pi とも ok）、`pnpm lint`、`pnpm format:check`、`pnpm test:related`（対象 5 ファイル、55 テスト）、変更したファイルの読み通し。
+- Findings: なし
+- Doubts: `command/scrub.test.ts:91` の題名の「3 グループ」は既定設定の live、sentence、char を指すと読む。`fakePort()` の簡略化後も題名は合うと判断したが、所有者の確認を残す。レビューは subagent-guard で `pnpm test` と `pnpm typecheck` を実行できなかったが、受け入れで全チェックを実行し、成功を確認した。
