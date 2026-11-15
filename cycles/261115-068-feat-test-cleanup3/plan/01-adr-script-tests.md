@@ -232,12 +232,20 @@ export function cycleTree(cycles?: readonly CycleSpec[]): {
 ### Round 1
 
 - Stale:
+  - なし。理由：未使用 import は残っていない（`writeFileSync` を外し、`mkdirSync`・`tempDir` は `createLeafDir`・`dirNames`・「操作なし」・「サイクルなし」で使用中）。改名 4 件以外のテスト名は plan が変えないと決めた範囲で、重複文も生んでいない。
 - Unlisted:
+  - なし。理由：変更は `cycle.fixture.ts`（add）と `index.test.ts`（update）のみで `## Files` の通り。plan md の Notes/Commit 追記は作業記録であり `Files` の対象外。
 - Gaps:
+  - なし。理由：13 か所（`openCycleDir` 4＋CLI 9）はすべて `cycleTree` 化され、`tempDir` 残しは Steps 1.2.4 の通り。削減（`lastEntryNumber`・`_omission_`・`Kind/Edge` 全文等）は Steps と Allowed の通りで、Goal の 3 点に穴はない。
 - Policy:
+  - なし。理由：製品ファイル無変更で出力・形不変、error 系テストは全残し、新規の重複断言なし、実装変更なし。残存の `Type` 断言等は Steps が残すと決めた範囲。
 - Unproven:
+  - なし。理由：弱めた CLI（`--delete` の `not 二` のみ等）は Steps 2.4 の「判断は単体・配線は経路」の設計通りで、値は単体（`deleteEntry`・`setEntryTitle`・`entrySkeleton の Type`）が押さえている。`setEntryType` Full の `_omission_` 計数は題名・Type 断言と組み合わせており変換漏れを検出できる。
 - Noise:
+  - なし。理由：`'# Close\n'`・`'261011'`・`'一/旧/新'` 等は plan Steps が指定した値であり、plan 決定値は finding にしない。`toHaveLength(2)` の `2` は残る Simple 1 件の Scope＋Details から導ける数である。
 - Doubts:
+  - Added の手動 `node .pi/skills/adr/scripts/index.mjs --check` が未実行のまま（Notes Slice1）。CLI `--check` テスト＋suite 緑で代用とあるが、実データでの確認を close 時に行うか残すかは owner の判断が必要。
+  - Verify Always（`pnpm test:run`・`typecheck`・`lint`・`format:check`＋読み合わせ）の実行記録が Notes にない（Slice1 は suite 緑のみ、Slice2・3 は記載なし）。本 role は git のみ許可のため未実行。close 時に実行し Acceptance に記録する要あり。
 
 ### Round 2
 
@@ -251,7 +259,7 @@ export function cycleTree(cycles?: readonly CycleSpec[]): {
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: adr スクリプトのテストが、同じ事実を 1 か所で確認する形になり、一時ツリーの前提が `cycleTree` に集まり、プリンシプルの外にある primitive・定数の確認が消える — 達成した。
+- Ran: `pnpm test:run`（859 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node .pi/skills/adr/scripts/index.mjs --check`。
+- Findings: なし
+- Doubts: なし
