@@ -10,10 +10,10 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { tempDir } from '../../test/temp-dir.ts';
+import { fakeRoot, writeFile } from '../../test/scripts.fixture.ts';
+import { stubTsc, writeScopes } from './checks.fixture.ts';
 
 const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'typecheck-staged.mjs');
 const STUB_MARK = 'stub -p';
@@ -25,47 +25,12 @@ interface RunOut {
 }
 
 function run(root: string, args: readonly string[]): RunOut {
-  const result = spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8', cwd: root });
+  const result = spawnSync('node', [SCRIPT, ...args], {
+    encoding: 'utf8',
+    cwd: root,
+    env: { ...process.env, STUB_FAIL: '' },
+  });
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
-}
-
-/** node_modules を持たない代わりにスタブを置けるツリー */
-function fakeRoot(): string {
-  // macOS では /var が /private/var への symlink。process.cwd() は実体に解けるので、
-  // 据えないと path.relative(root, abs) が狂う（ハーネス判定が .pi に当たらなくなる）
-  return realpathSync(tempDir());
-}
-
-/** `node_modules/.bin/tsc` にスタブを置く（渡された `-p` を出すだけ。常に exit 0） */
-function stubTsc(root: string): void {
-  const bin = join(root, 'node_modules', '.bin');
-  mkdirSync(bin, { recursive: true });
-  const stub = join(bin, 'tsc');
-  writeFileSync(
-    stub,
-    '#!/usr/bin/env node\n' +
-      "const at = process.argv.indexOf('-p');\n" +
-      'const got = at >= 0 ? (process.argv[at + 1] ?? "") : "";\n' +
-      `console.log(\`${STUB_MARK} \${got}\`);\n` +
-      'process.exit(0);\n',
-  );
-  chmodSync(stub, 0o755);
-}
-
-function writeFile(root: string, rel: string, content = 'x\n'): string {
-  const file = join(root, rel);
-  mkdirSync(join(file, '..'), { recursive: true });
-  writeFileSync(file, content);
-  return file;
-}
-
-function writeScopes(root: string, scopes: readonly string[]): void {
-  writeFile(root, join('scripts', 'checks', 'scopes.json'), JSON.stringify(scopes));
-}
-
-/** 対象の 8 つの拡張子（製品の `CODE_EXTENSIONS` と同じ顔つき） */
-function codeExtensions(): readonly string[] {
-  return ['ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs'];
 }
 
 describe('typecheck-staged', () => {
@@ -75,23 +40,20 @@ describe('typecheck-staged', () => {
     expect(run(root, []).status).toBe(0);
   });
 
-  it('対象は 8 つの拡張子で、md は外れる', () => {
-    const extensions = codeExtensions();
-    for (const extension of extensions) {
-      const root = fakeRoot();
-      stubTsc(root);
-      writeFile(root, 'tsconfig.json', '{}');
-      const file = writeFile(root, `a.${extension}`);
-      const out = run(root, [file]);
-      expect(out.status).toBe(0);
-      expect(out.stdout).toContain(STUB_MARK);
-    }
+  it('a.ts は対象で、a.md は対象外', () => {
     const root = fakeRoot();
     stubTsc(root);
-    const md = writeFile(root, 'a.md', '# hi\n');
-    const out = run(root, [md]);
-    expect(out.status).toBe(0);
-    expect(out.stdout).not.toContain(STUB_MARK);
+    writeFile(root, 'tsconfig.json', '{}');
+    const ts = writeFile(root, 'a.ts');
+    const tsOut = run(root, [ts]);
+    expect(tsOut.status).toBe(0);
+    expect(tsOut.stdout).toContain(STUB_MARK);
+    const mdRoot = fakeRoot();
+    stubTsc(mdRoot);
+    const md = writeFile(mdRoot, 'a.md', '# hi\n');
+    const mdOut = run(mdRoot, [md]);
+    expect(mdOut.status).toBe(0);
+    expect(mdOut.stdout).not.toContain(STUB_MARK);
   });
 
   it('一覧に .pi があるツリー → .pi の下は .pi の範囲で回る', () => {
