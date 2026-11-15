@@ -424,13 +424,13 @@ function expectUnchanged(tree: Tree, before: Before): void;
 - Unplanned:
   - snapshot が存在しない test-exclude.json で投げる穴を `readExclude(tree): string | null` で塞いだ。`Before.exclude` を `string | null` にし、`snapshot` と `expectUnchanged` を `readExclude` 経由にしたので、`(error) JSON が無い` を `runOnTree` の `setup`（`rmSync`）で扱える。計画の修正を取り込んだ形であり、振る舞いは変えない。
   - 二重 `--run` の `before` 取得タイミングの穴を塞いだ。1 回目の `runOnTree` の戻り値 `before`（1 回目の実行前）ではなく、1 回目の実行後に `snapshot(tree)` を取り直すので、2 回目の後の `readTargets` 比較が実行後の状態と合う。Slice 2 の手順 3 が正式な形を決める。
-- Commit:
+- Commit: 040664a568a0aa2134b4700d16c2ae92d7ef0864
 - Stopped:
 
 ### Slice 2: index の同じエラー経路を統合する
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

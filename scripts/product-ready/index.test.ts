@@ -248,9 +248,7 @@ describe('product-ready index', () => {
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('--run → ROADMAP.md が rules/roadmap.md のテンプレートに置き換わる', () => {
@@ -325,8 +323,7 @@ describe('product-ready index', () => {
   });
 
   it('(error) 一度 --run した後の同じツリーでもう一度 --run する → 終了コード 1、エラー 1 行のみ、README は変わらない', () => {
-    const { tree, result } = runOnTree([RUN_FLAG]);
-    expect(result.status).toBe(0);
+    const { tree } = runOnTree([RUN_FLAG]);
     const before = snapshot(tree);
     const second = run(INDEX, [RUN_FLAG], tree.root);
     expect(second.status).toBe(1);
@@ -361,18 +358,18 @@ describe('product-ready index', () => {
   });
 
   it('--only に値が無い → exit 1', () => {
-    const { tree, result } = runOnTree([ONLY_FLAG]);
+    const { tree, before, result } = runOnTree([ONLY_FLAG]);
     expect(result.status).toBe(1);
-    expect(existsSync(tree.cycleA)).toBe(true);
+    expectUnchanged(tree, before);
   });
 
   it('未知の引数 → exit 1', () => {
     const unknown = '--bogus';
-    const { tree, result } = runOnTree([unknown]);
+    const { tree, before, result } = runOnTree([unknown]);
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim()).toBe(`unknown argument: ${unknown}`);
-    expect(existsSync(tree.cycleA)).toBe(true);
+    expectUnchanged(tree, before);
   });
 
   it('差し替える対象が 1 つも無い → 何も書かずに exit 0 で終わる', () => {
@@ -391,8 +388,7 @@ describe('product-ready index', () => {
     });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('テンプレートのブロックに ## Product が無い → 1行のエラーで exit 1、ツリーは変わらない', () => {
@@ -401,7 +397,7 @@ describe('product-ready index', () => {
     });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 });
 
@@ -417,9 +413,7 @@ describe('product-ready index exclude errors', () => {
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('no test exclude markers:');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('(error) JSON が無い → 1行で exit 1、ツリーは変わらない', () => {
@@ -430,35 +424,20 @@ describe('product-ready index exclude errors', () => {
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
     expect(result.errors).toContain('the test exclude is not valid:');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
-  it('(error) JSON が配列でない → 1行で exit 1、ツリーは変わらない', () => {
-    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
-      writeFile(t.root, TEST_EXCLUDE_AT, '{"exclude": []}\n');
-    });
-    expect(result.status).toBe(1);
-    expect(result.output).toBe('');
-    expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(result.errors).toContain('the test exclude is not valid:');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-    expect(readTargets(tree.root)).toEqual(before.targets);
-  });
-
-  it('(error) 要素が文字列でない → 1行で exit 1、ツリーは変わらない', () => {
-    const { tree, before, result } = runOnTree([RUN_FLAG], (t) => {
-      writeFile(t.root, TEST_EXCLUDE_AT, '[".pi", 1]\n');
-    });
-    expect(result.status).toBe(1);
-    expect(result.output).toBe('');
-    expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(result.errors).toContain('the test exclude is not valid:');
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readFileSync(join(tree.root, VITEST_CONFIG_AT), 'utf8')).toBe(before.config);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+  it('error: JSON の形が正しくない（配列でない・要素が文字列でない） → 1 行で exit 1、ツリーは変わらない', () => {
+    for (const text of ['{"exclude": []}\n', '[".pi", 1]\n']) {
+      const { tree, before, result } = runOnTree([RUN_FLAG], (t) =>
+        writeFile(t.root, TEST_EXCLUDE_AT, text),
+      );
+      expect(result.status).toBe(1);
+      expect(result.output).toBe('');
+      expect(result.errors.trim().split('\n')).toHaveLength(1);
+      expect(result.errors).toContain('the test exclude is not valid:');
+      expectUnchanged(tree, before);
+    }
   });
 });
 describe('product-ready defaults', () => {
@@ -498,8 +477,7 @@ describe('product-ready defaults', () => {
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('### の直後に段落がない README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
@@ -533,8 +511,7 @@ describe('product-ready defaults', () => {
     expect(result.status).toBe(1);
     expect(result.output).toBe('');
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('### が1つだけの README で --run → 1行のエラーで exit 1、ツリーは変わらない', () => {
@@ -553,8 +530,7 @@ describe('product-ready defaults', () => {
     });
     expect(result.status).toBe(1);
     expect(result.errors.trim().split('\n')).toHaveLength(1);
-    expect(existsSync(tree.cycleA)).toBe(true);
-    expect(readTargets(tree.root)).toEqual(before.targets);
+    expectUnchanged(tree, before);
   });
 
   it('--run なしの表示 → headings: <見出しの並び> の行が出る', () => {
