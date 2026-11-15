@@ -1,3 +1,11 @@
+/**
+ * `scripts/product-ready/index.mjs` の振る舞いを、子プロセスとして実行して試す。
+ *
+ * `runOnTree(args, setup)` で一時ツリーを作り、`setup` で前提を書き換え、実行の前の `snapshot` を取ってから走らせる。
+ * 実行の前にツリーを書き換える本は `setup` に、読み取る本は戻り値の `before` に寄せる。
+ * エラー時と dry-run の「ツリーは変わらない」は `expectUnchanged(tree, before)` で見る。
+ * 共有の `fakeRoot`、`writeFile`、`writeJson` は `test/scripts.fixture.ts` から取る。
+ */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

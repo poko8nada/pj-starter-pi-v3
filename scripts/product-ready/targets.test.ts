@@ -1,3 +1,8 @@
+/**
+ * `scripts/product-ready/targets.mjs` の `plan`、`skeletonFor`、`remove` の振る舞いを試す。
+ *
+ * ツリーは `tempDir()` で作り、テンプレートは `x\n` の中身で置く。
+ */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -55,7 +60,7 @@ describe('plan', () => {
     expect(plan(root)).toEqual([]);
   });
 
-  it('at の昇順（作った順が逆でも）', () => {
+  it('at の昇順（作った順が逆でも） → plan が昇順で返す', () => {
     const names = ['b', 'a'];
     const root = tempDir();
     for (const name of names) {

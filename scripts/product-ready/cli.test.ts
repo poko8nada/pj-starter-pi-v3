@@ -1,3 +1,8 @@
+/**
+ * `scripts/product-ready/cli.mjs` の `switchLines`、`planLines`、`parseArgs` の振る舞いを試す。
+ *
+ * 子プロセスは開かない。表示の行は `test/scripts.fixture.ts` の `countLine`、`indented`、`configLine`、`testExcludeLine` から組み立てる。
+ */
 import { describe, expect, it } from 'vitest';
 import {
   ONLY_FLAG,

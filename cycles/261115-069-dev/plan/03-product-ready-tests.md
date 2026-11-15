@@ -445,13 +445,13 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: a8b0eb07febfc3999c44c5116355d22162205c7e
 - Stopped:
 
 ### Slice 5: 先頭コメントを足し、題名を残す断言に合わせる
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
