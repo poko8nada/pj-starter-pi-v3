@@ -267,55 +267,58 @@ function writeList(
 
 ### Slice 1: 共有 fixture に一時ツリーの helper を置く
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ae7258b9b1b5881aaae9f2e135178771450e6c70
 - Stopped:
 
 ### Slice 2: harness-sync のテストが共有 helper を使う
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: a83cb66f89599e3b2c9f47978c53090c89df2c40
 - Stopped:
 
 ### Slice 3: 重複した確認と基準外のテストを削る
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1ec3a42e18f6cf8b46a1ebce82522c0cc355edc0
 - Stopped:
 
 ### Cleanup: 重複した helper と基準外のテスト
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - `scripts/harness-sync/collect/index.test.ts` の「一覧の項目がコピー元にだけある」: 書き込む前提を直書きの `'.pi/a.ts'` から手元の `rel` に変えた（既定の中身 `'x\n'` は変わらない）。断言の値と前提がずれると気づけないため、その場で直した。
+  - `scripts/harness-sync/collect/index.test.ts` の「同じパスが 2 つの項目から出る」: `rel` を置き、書き込みと一覧と断言をそこから作るようにした。理由は同じ。
+  - `scripts/harness-sync/index.test.ts` の「中身違いの同じパス」: 両側への書き込みを直書きの `'.pi/a.ts'` から手元の `rel` に変えた。理由は同じ。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。先頭コメント4件（scripts/harness-sync/collect/index.test.ts:4、scripts/harness-sync/diff/index.test.ts:4、scripts/harness-sync/list/index.test.ts:4、scripts/harness-sync/index.test.ts:4）と fixture 説明（test/scripts.fixture.ts:1-16）は新 helper に合わせて直されており、残る `tempDir` 直参照（path、display）は plan が更新対象外としているため陳腐化ではない。
+- Unlisted: なし。diff が触る6ファイルはすべて `## Files` で `update` 指定のもの（collect/diff/list/path/index の各 index.test.ts、test/scripts.fixture.ts）であり、指定外の `.mjs`・`setting.json`・`temp-dir.ts`・`display` への変更はない。
+- Gaps: なし。Goal の3点（共有 helper 化、重複確認の削除、基準外テストの削除）は Steps 通りに実施され、`collect` の `missing: []`／`paths: []` と `display` の行順は単体に残っている（ADR 01 の残す指定通り）。
+- Policy: なし。Forbidden 4件（`index.mjs` 変更、検証手段変更、`cycles/` 参照、02・03領域変更）のいずれにも触れず、Allowed の範囲内（振る舞いを変えない整理・共有 helper 配置・基準外削除・`pair()` 残置）に収まる。
+- Unproven: なし。削った2件は冗長な確認であり、残る断言は感度を持つ（例: diff の異同2本 scripts/harness-sync/diff/index.test.ts:16-32 は `sameFile` の常時真／偽で一方が赤になる、`path` の残る2断言 scripts/harness-sync/path/index.test.ts:63-64 は非 throw 時に赤になる）。
+- Noise: なし。残る直書き（`'.pi/a.ts'`、既定 `'x\n'`、`toBe(0/1)`、`toHaveLength(1)`、`'no files missing'` 等）は plan の Steps／Types または ADR 01（F6・F7・Decision）が残すと決めた値であり、指摘対象外。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。Round 1 で指摘なしのため `fixed:` 行は存在せず、再確認対象なし（以下同）。
+- Unlisted: なし（同上）。
+- Gaps: なし（同上）。
+- Policy: なし（同上）。
+- Unproven: なし（同上）。
+- Noise: なし（同上）。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: harness-sync のテストが、共有 helper を使い、重複した確認と基準外のテストを削った形になる。達成した（`test/scripts.fixture.ts` に `fakeRoot`・`writeFile`・`writeJson` が入り、collect・diff・list・index の 4 ファイルが共有 helper を使い、list の基準外 1 本と path の重複した断言 1 行を削った）。
+- Ran: `pnpm test:related scripts/harness-sync/collect/index.test.ts scripts/harness-sync/diff/index.test.ts scripts/harness-sync/list/index.test.ts scripts/harness-sync/index.test.ts scripts/harness-sync/path/index.test.ts`（5 ファイル、30 件）・`pnpm test:run`（66 ファイル、850 件）・`pnpm typecheck`（`root: ok`、`.pi: ok`）・`pnpm lint`・`pnpm format:check`、および diff の通読。
+- Findings: なし
+- Doubts: なし

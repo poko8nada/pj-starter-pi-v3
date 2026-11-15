@@ -62,6 +62,5 @@ describe('resolveStarter', () => {
     }
     expect(message).toContain(missing);
     expect(message.trim().split('\n')).toHaveLength(1);
-    expect(() => resolveStarter(local, missing)).toThrow();
   });
 });
