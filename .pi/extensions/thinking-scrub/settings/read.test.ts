@@ -1,6 +1,7 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { settingsDirWith } from '../../../../test/settings.fixture.ts';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { readSettings } from './read.ts';
 import { defaultSettings } from './schema.ts';
@@ -11,9 +12,8 @@ function truncatedJson(): string {
 
 describe('readSettings', () => {
   it('3 グループを持つファイルなら ok になる', () => {
-    const dir = tempDir();
     const settings = defaultSettings();
-    writeFileSync(join(dir, 'settings.json'), JSON.stringify(settings));
+    const dir = settingsDirWith(settings);
     expect(readSettings(dir)).toEqual({ kind: 'ok', settings });
   });
 
@@ -28,8 +28,7 @@ describe('readSettings', () => {
   });
 
   it('途中で切れた JSON を書いたファイルなら broken になる', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'settings.json'), truncatedJson());
+    const dir = settingsDirWith(truncatedJson());
     expect(readSettings(dir).kind).toBe('broken');
   });
 });

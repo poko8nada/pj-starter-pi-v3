@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { MessageEndEvent } from '@earendil-works/pi-coding-agent';
-import { piUsage, type PiAssistantMessage } from '../../../../test/pi.fixture.ts';
 import {
   DEGENERATE_PREFIX,
   DEGENERATE_REPEATS,
@@ -9,6 +8,8 @@ import {
   assistantMessage,
   degenerate,
   degenerateExpected,
+  piUsage,
+  type PiAssistantMessage,
 } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { detectRuns } from './detect.ts';
@@ -22,9 +23,10 @@ function thinkingMessage(thinking: string, signature: string): PiAssistantMessag
   });
 }
 
+const tuning = defaultSettings();
+
 describe('scrubMessage', () => {
   it('既定の設定と署名付きのループは差し替える', () => {
-    const tuning = defaultSettings();
     const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
@@ -46,23 +48,20 @@ describe('scrubMessage', () => {
   });
 
   it('thinkingSignature が reasoning と reasoning_text なら対象になる', () => {
-    const tuning = defaultSettings();
     const reasoning = thinkingMessage(degenerate(), 'reasoning');
     expect(scrubMessage(reasoning, tuning)).toBeDefined();
     const reasoningText = thinkingMessage(degenerate(), 'reasoning_text');
     expect(scrubMessage(reasoningText, tuning)).toBeDefined();
   });
 
-  it('char.minLength を 100 にした設定で 66 文字の退化は差し替えない', () => {
-    const tuning = defaultSettings();
-    expect(degenerate().length).toBe(66);
+  it('char.minLength を 100 にした設定で退化は差し替えない', () => {
     const strict = { ...tuning, char: { ...tuning.char, minLength: 100 } };
+    expect(degenerate().length).toBeLessThan(strict.char.minLength);
     const message = thinkingMessage(degenerate(), 'reasoning_content');
     expect(scrubMessage(message, strict)).toBeUndefined();
   });
 
   it('署名のないループは差し替えない', () => {
-    const tuning = defaultSettings();
     const message = assistantMessage({
       content: [{ type: 'thinking', thinking: degenerate() }],
     });
@@ -70,7 +69,6 @@ describe('scrubMessage', () => {
   });
 
   it('thinkingSignature が JSON 文字列なら undefined になる', () => {
-    const tuning = defaultSettings();
     const signature = '{"reasoning_details":[]}';
     const message = assistantMessage({
       content: [
@@ -85,14 +83,12 @@ describe('scrubMessage', () => {
   });
 
   it('対象ブロックがない配列なら undefined になる', () => {
-    const tuning = defaultSettings();
     const text = 'hi';
     const message = assistantMessage({ content: [{ type: 'text', text }] });
     expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('redacted が true なら undefined になる', () => {
-    const tuning = defaultSettings();
     const message = assistantMessage({
       content: [
         {
@@ -107,14 +103,12 @@ describe('scrubMessage', () => {
   });
 
   it('role が assistant 以外なら undefined になる', () => {
-    const tuning = defaultSettings();
     // assistant なら差し替わる本文である（happy test と同じ）。role のため undefined になる。
     const message = assistantMessage({ role: 'user' });
     expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('content が配列でない assistant は undefined になる', () => {
-    const tuning = defaultSettings();
     // Set は iterable だが配列でない。ガードがなければ thinking を検出して defined になる。
     const blocks = new Set([
       { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
@@ -124,7 +118,6 @@ describe('scrubMessage', () => {
   });
 
   it('2 ブロックのうち 1 つだけ退化すればその 1 つだけ書き換わる', () => {
-    const tuning = defaultSettings();
     const fresh = 'normal thinking here';
     const message = assistantMessage({
       content: [
@@ -156,7 +149,6 @@ describe('scrubMessage', () => {
   });
 
   it('差し替え後も thinkingSignature と usage と stopReason と timestamp が同じ値になる', () => {
-    const tuning = defaultSettings();
     const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message, tuning);
     expect(scrubbed).toBeDefined();
@@ -189,14 +181,12 @@ describe('scrubMessage', () => {
   });
 
   it('本文が 1 つの区間だけなら undefined になる', () => {
-    const tuning = defaultSettings();
     const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
     const message = thinkingMessage(fullRun, 'reasoning_content');
     expect(scrubMessage(message, tuning)).toBeUndefined();
   });
 
   it('2 ブロックのうち片方が全部区間なら片方は元のままで removed はまとめた分だけになる', () => {
-    const tuning = defaultSettings();
     const fullRun = DEGENERATE_UNIT.repeat(DEGENERATE_REPEATS);
     const middle = 'hello';
     const charBlock = 'abcd'.repeat(15);
@@ -235,7 +225,6 @@ describe('scrubMessage', () => {
 
 describe('scrubMessage chars', () => {
   it('chars は元の長さからまとめた長さを引いた値になる', () => {
-    const tuning = defaultSettings();
     const thinking = degenerate();
     const message: AgentMessage = assistantMessage();
     const scrubbed = scrubMessage(message, tuning);

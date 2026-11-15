@@ -51,6 +51,7 @@ scripts/
   harness-sync/
     setting.json             update
   product-ready/
+    index.test.ts            update
     test-exclude.json        update
 test/
   pi.fixture.ts              drop
@@ -142,6 +143,9 @@ export function removedLine(runs: number, chars: number): string;
    1. update: `emptyGuard()` と `() => true` を渡す `observe` の呼び出しだけを `observeIn(thinking, tuning)` に置き換える。`first.guard` を渡す呼び出しと、カスタムの `enabled` を渡す呼び出しはそのままにする。`observeIn` を `scrub.fixture.ts` からインポートする。
 9. `.pi/extensions/thinking-scrub/settings/read.test.ts`
    1. update: `writeFileSync(join(dir, 'settings.json'), ...)` の 2 箇所を `settingsDirWith(document)` に置き換える。`mkdirSync` でディレクトリを作る箇所と、ファイルを作らない箇所はそのままにする。`settingsDirWith` を `test/settings.fixture.ts` からインポートする。
+10. `scripts/product-ready/index.test.ts`
+    1. update: `TEST_EXCLUDE_ENTRIES` の `test/pi.fixture.ts` を `test/settings.fixture.ts` に置き換える。
+    2. add: 実物の `test-exclude.json` が `test/settings.fixture.ts` を含み `test/pi.fixture.ts` を含まないことを断言するテストを足す。
 
 ### Policy
 
@@ -227,31 +231,92 @@ export function removedLine(runs: number, chars: number): string;
 
 ## Notes
 
+### Cleanup: 空振りと重複の断言を削る
+
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「aborted が false なら何も送らない」を削除した。`scrubWiring()` の `followUp` は noop のため `sent` 断言が空振りで、中断の断言は `onMessageUpdate` の「差分が scanEvery 以上なら 1 回読みランがあれば止まる」が担う。送信経路は `registerScrub` の陽性テストが担う。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「aborted が true でも pending がなければ何も送らない」を削除した。観測できる振る舞いがなく、有無の確認はプリンシプルに反する。送信しない分岐は陽性テストの裏返しで、欠けた理由はそれである。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の integration「短い繰り返し 2 回なら message_end が undefined になり agent_end でも notify が呼ばれない」を削除した。配線の 2 分岐は「退化のない assistant なら undefined になる」と「何も消していない状態で agent_end なら notify が呼ばれない」が担い、短い繰り返しの単位は `scrub/message.test.ts` の「本文が 1 つの区間だけなら undefined になる」が担う。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「コマンドが引数なしなら通知が 1 回呼ばれる」（旧名「〜 runCommand の行が渡る」）から内容の 2 断言を削り、通知 1 回の経路だけ残した。内容は `command/scrub.test.ts` の使い方テストが担う。名前に合わせて題名を直し、不要になった `SCRUB_PREFIX` と `SCRUB_REMOVED_LABEL` の import を外した。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の `registerScrub` テストを順序に依存しない集合比較に直し、題名の「順序で」を「で」に直した。登録順に振る舞いはなく、5 件の存在と `thinking-scrub` 登録が経路である。
+- Findings: `.pi/extensions/thinking-scrub/live/guard.test.ts` の `resetOnUser` テストから `expect(reset).toEqual(emptyGuard())` を削った。実装の写しであり、振る舞いは直後の「また止まる」断言が担う。
+- Unplanned: なし
+
+### Slice 2: 重複と前提の削除
+
+- Findings: なし
+- Unplanned: `.pi/extensions/thinking-scrub/scrub/units.test.ts` の「表の行と diff --git の行は不透明になる」テスト全体を削除した。指示の 89-92 行削除では両方の for 文が壊れて空のテストと未使用変数が残り lint が通らないため、断言が全て前提だった当該テストを落とした。表と diff の不透明分岐は柵のテストと同一経路で担保される。
+- Unplanned: `.pi/extensions/thinking-scrub/live/guard.test.ts` の入力長前提は 5 番号のうち現ファイルに存在する 3 件（`minThinking`、`tail * 2`、`longSample`）を削除した。残り番号は旧リビジョンのもので該当行がなく、内容基準で満たした。
+- Unplanned: `.pi/extensions/thinking-scrub/scrub/units.test.ts` のモジュール先頭 `sentence` を `baseSentence` に改名した。loop 変数と `minRunChars` テストのローカル `sentence` が衝突し `no-shadow` で lint が落ちるため。参照 19 件を付け替え、ローカル 2 件は残した。
+- Commit: 3af53c4a7723edd23f8d6e97bf03e473fdc0532f
+- Stopped:
+
+### Slice 1: 前提を fixture に集める
+
+- Findings: なし
+- Unplanned: Round 1 の Stale と Gaps（実物断言なし）のため、`scripts/product-ready/index.test.ts` が `Files` にないファイルとして必要になった。`Files` とスライス 1 の手順 10 に追加し、定数の置き換えと実物断言テストを実施した。レビュー対応のため待てなかった。
+- Commit: 887e226136db7ce4d2dafa36d52f874b228cca53
+- Stopped:
+
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `scripts/product-ready/index.test.ts:29` — `TEST_EXCLUDE_ENTRIES` が削除済みの `test/pi.fixture.ts` を名指し続けている。実物の `scripts/product-ready/test-exclude.json:7` は `test/settings.fixture.ts` に置き換え済みで、この定数は実物とずれたまま自己完結するため緑のまま古くなる。
+    - fixed: 定数を `test/settings.fixture.ts` に直し、実物の有無を断言するテストを足した。`Files` とスライス 1 の手順 10 に追加し、Unplanned に記した。
 - Unlisted:
+  - なし（`9864f60..HEAD` の変更ファイルはすべて `## Files` に名指しあり。plan md 自体の Notes 追記は記録のため対象外）
 - Gaps:
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:53` — `isTableRow` / `isDiffLine` 分岐（`units.ts:38-48`）を通る行を残るテストが一つも与えない。代替とされた柵のテスト（`units.test.ts:58`）は `isFenceLine` 分岐だけを通るため、Notes の「同一経路で担保」は成り立たず、表・diff 行の不透明化が無検証になっている。
+    - fixed: 表と diff の行を含む繰り返しはランがないテストを `units.test.ts` に足し、振る舞い（ランなし）で両分岐を通した。
+  - `.pi/extensions/thinking-scrub/scrub.fixture.ts:120` — `observeIn` の既定引数 `tuning = defaultSettings()` を使う呼び出しがない（`guard.test.ts` の全呼び出しが `tuning` を明示）。既定分岐は検証されていない。
+    - fixed: 閾値テストの 1 呼び出しを `observeIn(thinking)` にし、既定引数で同じ振る舞いになることを検証した。
+  - `.pi/extensions/thinking-scrub/scrub.fixture.ts:115` — `settingsDir` だけを渡して `readSettings` を既定（`readSettings(dir)`）に落とす呼び出しがない（`index.test.ts` の `settingsDir` 渡しはすべて `readSettings` を併記）。フォールバック分岐は検証されていない。
+    - fixed: enabled-false テストを `scrubWiring({ settingsDir: dir })` にし、既定の `readSettings` で同じ振る舞いになることを検証した。
+  - `scripts/product-ready/test-exclude.json:7` — 置き換え後の `test/settings.fixture.ts` 行をリポジトリ実物で断言するテストがない。`Verify` の `scripts/product-ready/index.test.ts` は独自定数（上記 Stale）で一時ツリーを作るだけで実物を読みに行かない。
+    - fixed: 実物を読み、有無を断言するテストを `scripts/product-ready/index.test.ts` に足した（Stale 対応と同一ファイル）。
 - Policy:
+  - なし
 - Unproven:
+  - `.pi/extensions/thinking-scrub/index.test.ts:180` — `registerScrub` の断言を `new Set(...)` 比較に変えたため、同じイベントの二重登録があっても集合が一致して緑になる（順序の除去は正当だが重複の検出まで落としている。順序だけ外すならソート済み配列の比較で足りる）。
+    - fixed: ソート済み配列の比較に直し、順序を無視し重複を検出する形にした。
 - Noise:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:179` — `expect(text.length).toBeGreaterThanOrEqual(240)` の `240` がマジックナンバーで、前提（`:176` の `minRunChars: 200` との関係）が読み取れない。構成が保証する長さの再確認であり、名前のある値から導く形にしていない。
+    - fixed: `sentence.minRunChars` との比較に直し、題名の `240 文字` を `200 文字超` に直した。
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:57` — 題名の `66 文字` がハードコードのまま、根拠の `expect(degenerate().length).toBe(66)` が削除されて裏付けがどこにもない（`degenerate` の長さを断言する箇所は残存ゼロ）。
+    - fixed: 題名から `66 文字` を外し、入力が閾値を下回る関係を `degenerate().length < strict.char.minLength` の前提としてテスト内に置いた。
 - Doubts:
+  - `scripts/product-ready/index.test.ts:29` — Stale の定数をこの plan で直すか。直すなら `## Files` に名指しがなく `Unlisted` の扱いになるため所有者判断が要る（02 で `Files` を足して直すか、別エントリに回すか）。
 
 ### Round 2
 
 - Stale:
+  - `scripts/product-ready/index.test.ts:23-31` の `TEST_EXCLUDE_ENTRIES` は `test/pi.fixture.ts` を含まず `test/settings.fixture.ts` を含む形になり、実物の `scripts/product-ready/test-exclude.json:7` と一致するため、定数と実物のずれの指摘は閉じた。`scripts/product-ready/index.test.ts:589-598` が実物を読み `toContain('test/settings.fixture.ts')` と `not.toContain('test/pi.fixture.ts')` を断言するため、実物の有無の指摘も同じ箇所で閉じた。
 - Unlisted:
+  - なし — `fixed:` の行は既存の `Files` 内の置き換えと断言追加だけを指し、計画外の製品ファイルの変更を名指していない。
 - Gaps:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:137-151` に表行（`| a | b |`）と diff 行（`diff --git ...`）の両方を含む繰り返しが `ランがない` テストとしてあり、`units.ts:38-48` の `isTableRow`／`isDiffLine` の両分岐（`isOpaqueLine` 経由）を通して `runs` が `0` になることを確かめるため、表・diff 行の無検証の指摘は閉じた。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:41` が `observeIn(thinking)` と既定引数なしで呼び、`stop` と見本・`aborts`・`scanned` を確かめるため、`scrub.fixture.ts:120` の既定 `tuning` 分岐の未検証の指摘は閉じた。
+  - `.pi/extensions/thinking-scrub/index.test.ts:220-224` が `scrubWiring({ settingsDir: dir })` と `readSettings` なしで呼び、`enabled: false` の実設定を既定読みで読んで `undefined` と `removed: 0` になることを確かめるため、`scrub.fixture.ts:115` のフォールバック未検証の指摘は閉じた。
+  - Stale と同一の `scripts/product-ready/index.test.ts:589-598` が実物の `test-exclude.json` を直読し有無を断言するため、実物断言なしの指摘は閉じた。
 - Policy:
+  - なし — `fixed:` の行は Policy に触れず、追加・変更はいずれも振る舞いを変えないテスト整理の範囲で `sep` 削除などの `Forbidden` に当たらない。
 - Unproven:
+  - `.pi/extensions/thinking-scrub/index.test.ts:180-187` が `fake.events.toSorted()` とソート済み配列の `toEqual` 比較になり、順序を無視し件数の過不足（重複登録）では落ちる形のため、集合比較で重複を見落とす指摘は閉じた。
 - Noise:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:191-196` の題名は `sentence.minRunChars を 200 にした設定で 200 文字超` になり、本文は `sentence.minRunChars` 由来の比較（`toBeGreaterThanOrEqual`／`toBeLessThan`）のため、直値 `240` の由来不明の指摘は閉じた。
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:57-62` の題名から `66 文字` が消え、本文に `expect(degenerate().length).toBeLessThan(strict.char.minLength)` の前提が置かれたため、裏付けなしハードコードの指摘は閉じた。
 - Doubts:
+  - テストを実行して赤・緑を確認していない。`fixed:` が述べる振る舞いの一致は読み取りでの確認に留まる。
+  - `units.test.ts:149` は `some(opaque)` であり、表行と diff 行のどちらが不透明化に寄与したかを個別には断言しない。両行とも `isOpaqueLine` を通るため Gaps の閉鎖としては足りると判断したが、片方の分岐だけが壊れた場合の検出感度は読み取りでは確かめていない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
+- Goal: thinking-scrub のテストが、同じ事実を 1 箇所で確認し、前提を fixture に集めた形になる。実装は達成している。件数は 132 から 126（計画の 128 に対して、整理で `onAgentSettled` の no-send 2 件と integration 1 件を追加で削除し、表/diff 1 件を復元した）。
+- Ran: `pnpm test:run`（66 ファイル、860 テスト成功）、`pnpm typecheck`（root と .pi とも ok）、`pnpm lint`、`pnpm format:check`、`pnpm test:related`（130 テスト）、変更したファイルの読み通し。
 - Findings:
+  - 計画の件数 128 に対し 126。`onAgentSettled` の no-send 2 件と integration 1 件を整理の判断で削除した。
+    - left: 件数は計画の見積もりであり、削除は整理の View に沿うため、戻さない。
 - Doubts:
+  - レビューは subagent-guard で `pnpm test` と `pnpm typecheck` を実行できなかったが、受け入れで全チェックを実行し、成功を確認した。
+  - 表/diff の復元テストは `some(opaque)` の粒度で、両分岐を直接は分けていない。

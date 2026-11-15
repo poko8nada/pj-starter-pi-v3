@@ -4,6 +4,6 @@
   "scripts/checks",
   "scripts/product-ready",
   "test/temp-dir.ts",
-  "test/pi.fixture.ts",
+  "test/settings.fixture.ts",
   "test/scripts.fixture.ts"
 ]
