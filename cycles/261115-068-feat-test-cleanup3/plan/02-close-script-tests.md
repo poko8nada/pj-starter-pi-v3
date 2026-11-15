@@ -166,12 +166,20 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 ### Round 1
 
 - Stale:
+  - なし（`setupCycle` への残存参照はなく、`PlanDocOptions` の export 削除に対する外部参照もない。fixture のヘッダコメントは現状と一致している）
 - Unlisted:
+  - なし（変更は `collect.fixture.ts`・`collect.test.ts`・`cycle.fixture.ts` のみで、`Files` の `update`/`add` 指定と一致し、`collect.mjs`・`format.md`・`SKILL.md`・`test/temp-dir.ts` に変更はない）
 - Gaps:
+  - `cycle.fixture.ts:13`・`cycle.fixture.ts:34` — `CloseCycleSpec.close` が文字列の場合（`close.md` にその文字列を書く分岐）は、どのテストからも呼ばれていない（`collect.test.ts` の `cycleTree` 呼び出し 6 件は既定か `close: null` のみ：`collect.test.ts:30,38,46,64,71,85`）。`Steps` が文字列分岐を定めているのに検証がなく、helper 自体の振る舞いが 1 分岐だけ無検証で残る。
+    fixed: `collect.test.ts` に `describe('cycleTree')` を足し、`cycleTree({ close: body })` が `close.md` にそのまま書く 1 件を追加して文字列分岐を検証した。
 - Policy:
+  - なし（`collect.mjs` 不変。単体の finding/place は `collect.test.ts:62-63` に残し、配線は `collect.test.ts:66-67` で見出しと番号行のみにして同じ値の重複なし。エラー分岐の削除なし）
 - Unproven:
+  - なし（`collect.test.ts:50-51,92-93` は `toBeDefined` が先に落ちるため早期 return では緑にならず、各断言は対応する破壊で赤になる）
 - Noise:
+  - なし（`beta` の直書きは plan が `betaId` を内部化し test の import 対象外と決めた所与であり、`1.`/`2.` は通し番号という仕様の確認である）
 - Doubts:
+  - なし
 
 ### Round 2
 

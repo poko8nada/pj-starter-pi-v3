@@ -117,3 +117,11 @@ describe('collectPlan with Policy', () => {
     expect(items.map((item) => item.finding)).toContain('a policy hole');
   });
 });
+
+describe('cycleTree', () => {
+  it('(happy) close 文字列を渡す → close.md に書く', () => {
+    const body = '# Close 001\n\n## Collected\n\ncustom\n\n## Triage\n\nなし\n';
+    const cycle = cycleTree({ close: body });
+    expect(readFileSync(join(cycle, 'close.md'), 'utf8')).toBe(body);
+  });
+});
