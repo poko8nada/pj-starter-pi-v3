@@ -47,12 +47,7 @@ export interface CommandPort {
 }
 
 /** 引数を実行し、表示する行を返す。 */
-export function runCommand(
-  port: CommandPort,
-  command: ScrubCommand,
-  at: number,
-): readonly string[] {
-  void at;
+export function runCommand(port: CommandPort, command: ScrubCommand): readonly string[] {
   if (command.kind === 'set') {
     port.writeEnabled(command.enabled);
     return [command.enabled ? 'thinking-scrub: on' : 'thinking-scrub: off'];

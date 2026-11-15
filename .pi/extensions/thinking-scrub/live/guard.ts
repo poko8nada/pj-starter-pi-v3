@@ -24,8 +24,7 @@ export function emptyGuard(): Guard {
 }
 
 /** 新しい user の合図で論理的なランをやり直す。 */
-export function resetOnUser(guard: Guard): Guard {
-  void guard;
+export function resetOnUser(): Guard {
   return emptyGuard();
 }
 

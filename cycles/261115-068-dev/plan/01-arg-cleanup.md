@@ -83,6 +83,13 @@ export function resetOnUser(): Guard;
 
 ## Notes
 
+### Slice 1: 読まれない引数の削除
+
+- Findings: なし
+- Unplanned: なし
+- Commit:
+- Stopped:
+
 ## Work Review
 
 ### Round 1

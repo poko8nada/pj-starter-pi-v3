@@ -141,7 +141,7 @@ describe('resetOnUser', () => {
     if (second.kind !== 'stop') {
       throw new Error('second must stop');
     }
-    const reset = resetOnUser(second.guard);
+    const reset = resetOnUser();
     expect(reset).toEqual(emptyGuard());
     const again = observe(reset, thinkingWithRun(tuning.live.minThinking), tuning, () => true);
     expect(again.kind).toBe('stop');

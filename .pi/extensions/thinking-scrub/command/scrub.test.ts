@@ -54,29 +54,29 @@ function fakePort(
 describe('runCommand', () => {
   it('on と off は writeEnabled を 1 回呼び、その行を返す', () => {
     const offPort = fakePort();
-    expect(runCommand(offPort.port, parseCommand('off'), 100)).toEqual([SCRUB_OFF_LINE]);
+    expect(runCommand(offPort.port, parseCommand('off'))).toEqual([SCRUB_OFF_LINE]);
     expect(offPort.written).toEqual([false]);
     expect(offPort.shown).toEqual([]);
     const onPort = fakePort();
-    expect(runCommand(onPort.port, parseCommand('on'), 100)).toEqual([SCRUB_ON_LINE]);
+    expect(runCommand(onPort.port, parseCommand('on'))).toEqual([SCRUB_ON_LINE]);
     expect(onPort.written).toEqual([true]);
     expect(onPort.shown).toEqual([]);
   });
 
   it('show と hide は writeShow を 1 回呼び、writeEnabled を呼ばない', () => {
     const showPort = fakePort();
-    expect(runCommand(showPort.port, parseCommand('show'), 100)).toEqual([SCRUB_SHOW_LINE]);
+    expect(runCommand(showPort.port, parseCommand('show'))).toEqual([SCRUB_SHOW_LINE]);
     expect(showPort.shown).toEqual([true]);
     expect(showPort.written).toEqual([]);
     const hidePort = fakePort();
-    expect(runCommand(hidePort.port, parseCommand('hide'), 100)).toEqual([SCRUB_HIDE_LINE]);
+    expect(runCommand(hidePort.port, parseCommand('hide'))).toEqual([SCRUB_HIDE_LINE]);
     expect(hidePort.shown).toEqual([false]);
     expect(hidePort.written).toEqual([]);
   });
 
   it('foo ならどちらも呼ばれず使い方の 1 行が返る', () => {
     const { port, written, shown } = fakePort();
-    const lines = runCommand(port, parseCommand('foo'), 100);
+    const lines = runCommand(port, parseCommand('foo'));
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
     expect(lines).toEqual([SCRUB_USAGE_LINE]);
@@ -92,7 +92,7 @@ describe('runCommand', () => {
     const lastAt = 456;
     const removed = 2;
     const { port } = fakePort({ status: { removed, lastAt, failures: 0 } });
-    const lines = runCommand(port, parseCommand(''), 100);
+    const lines = runCommand(port, parseCommand(''));
     expect(lines.join('\n')).toContain(String(lastAt));
     expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
   });
@@ -102,7 +102,7 @@ describe('runCommand', () => {
       settings: { kind: 'ok', settings: defaultSettings() },
       status: { removed: 0, lastAt: null, failures: 0 },
     });
-    const lines = runCommand(port, parseCommand(''), 100);
+    const lines = runCommand(port, parseCommand(''));
     expect(lines).toEqual([
       SCRUB_ON_LINE,
       SCRUB_SHOW_ON,
@@ -118,7 +118,7 @@ describe('runCommand', () => {
       settings: { kind: 'ok', settings: { ...defaultSettings(), enabled: false } },
       status: { removed, lastAt, failures: 0 },
     });
-    const lines = runCommand(port, parseCommand(''), 100);
+    const lines = runCommand(port, parseCommand(''));
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
     expect(lines).toEqual([
@@ -134,7 +134,7 @@ describe('runCommand', () => {
       settings: { kind: 'ok', settings: { ...defaultSettings(), show: false } },
       status: { removed: 1, lastAt: null, failures: 0 },
     });
-    const lines = runCommand(port, parseCommand(''), 100);
+    const lines = runCommand(port, parseCommand(''));
     expect(lines.join('\n')).toContain(SCRUB_SHOW_OFF);
   });
 
@@ -143,7 +143,7 @@ describe('runCommand', () => {
       settings: { kind: 'broken', reason: 'not JSON' },
       status: { removed: 1, lastAt: null, failures: 0 },
     });
-    const lines = runCommand(port, parseCommand(''), 100);
+    const lines = runCommand(port, parseCommand(''));
     expect(written).toEqual([]);
     expect(shown).toEqual([]);
     expect(lines.join('\n')).toContain(SCRUB_BROKEN_MARK);
@@ -156,7 +156,7 @@ describe('runCommand', () => {
     const { port, written, shown } = fakePort({
       settings: { kind: 'broken', reason: 'not JSON' },
     });
-    const lines = runCommand(port, parseCommand('off'), 100);
+    const lines = runCommand(port, parseCommand('off'));
     expect(written).toEqual([false]);
     expect(shown).toEqual([]);
     expect(lines).toEqual([SCRUB_OFF_LINE]);
