@@ -167,23 +167,23 @@ Steps:
 View:
 
 - A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
-
-| kind          | question (yes → in)                                                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| result        | Does what can be observed from outside change? (what is returned, written, or emitted; side effects; what a reader receives)                      |
-| logic         | Do the decisions, steps, or rules that produce the result change? (conditions, order, algorithms, constraints, instructions a reader must follow) |
-| structure     | Does how things are divided, ordered, nested, or placed change? (module split, schema shape, section layout, file placement)                      |
-| expression    | Does the surface notation change? (names, wording, tone, formatting, spelling)                                                                    |
-| upstream      | Is an external thing the product relies on added, updated, or removed? (package, library, external contract, data source, cited source)           |
-| downstream    | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other documents, documents that describe it)           |
-| existing      | Must an existing entity be moved or fixed? (stored data, installed versions, already-distributed documents, past records)                         |
-| cost          | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                   |
-| safety        | Does it touch secrets, permissions, exposure, or personal data?                                                                                   |
-| failure       | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                  |
-| verification  | Must the means of confirming correctness (tests, checks, review steps) be added or changed? (It is a means, not the test itself.)                 |
-| observability | Do the records or signals the product leave change? (logs, metrics, audit records)                                                                |
-| release       | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                                |
-| other         | Is there a concern that none of the above covers?                                                                                                 |
+- Scope table:
+  | **question (yes → in)**                                                                                            | Kinds         |
+  | ------------------------------------------------------------------------------------------------------------------ | ------------- |
+  | Does what can be observed from outside change? (what is returned, written, or emitted; side effects)               | result        |
+  | Do the steps or rules that produce the result change? (conditions, order, algorithms, constraints, instructions)   | logic         |
+  | Does how things are divided, ordered, nested, or placed change? (module, schema, section, layout, files and dirs)  | structure     |
+  | Does the surface notation change? (names, wording, tone, formatting, spelling)                                     | expression    |
+  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)  | upstream      |
+  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)             | downstream    |
+  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)       | existing      |
+  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                    | cost          |
+  | Does it touch secrets, permissions, exposure, or personal data?                                                    | safety        |
+  | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?   | failure       |
+  | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.** | verification  |
+  | Do the records or signals the product leave change? (logs, metrics, audit records)                                 | observability |
+  | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                 | release       |
+  | Is there a concern that none of the above covers?                                                                  | other         |
 
 Notes:
 
@@ -223,17 +223,17 @@ View:
 
 Steps:
 
-2. Start from the opening proposal in `Decision`.
-3. Take the `In` items of `Scope`, in their order.
-4. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
-5. Show one point at a time, and discuss it until it is settled.
-   - There is no need for anyone to overturn or call into question the initial intent.
+1. Start from the opening proposal in `Decision`.
+2. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
+   - No need to overturn or call into question the initial intent.
    - From the `In` items select ONLY points that could serve as subjects for discussion.
-   - Limit these points to "matters to be decided with the owner". Confirming is not the point at issue.
-6. Write what is settled where the View gives, at the moment it is settled.
+     1. Limit these points to "matters that should be decided with the owner".
+     2. Just confirming is not the issue point. These will be presented together at the end.
+3. Show one point at a time, and discuss it until it is settled.
+4. Write what is settled where the View gives, at the moment it is settled.
    - If needed, write an added `Context` item as `C<n>`, after the existing numbers.
    - If needed, write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
-7. Repeat until the owner moves the entry to the decision. **Agent does not have the right.**
+5. Repeat until the owner moves the entry to the decision. **Agent does not have the right.**
 
 View:
 
