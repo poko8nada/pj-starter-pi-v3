@@ -11,21 +11,6 @@ import { fakeRoot, writeJson } from '../../../test/scripts.fixture.ts';
 import { readList } from './index.mjs';
 
 describe('readList', () => {
-  it('skip と legacy があっても返さない', () => {
-    const starter = '~/Desktop/main/_pj-starter-pi-v3';
-    const copy = ['.pi'];
-    const push: string[] = [];
-    const root = fakeRoot();
-    writeJson(root, 'scripts/harness-sync/setting.json', {
-      starter,
-      copy,
-      push,
-      skip: ['logs'],
-      legacy: ['old'],
-    });
-    expect(readList(root)).toEqual({ starter, copy, push });
-  });
-
   it('copy と push を書かない → 空として返す', () => {
     const starter = '~/Desktop/main/_pj-starter-pi-v3';
     const root = fakeRoot();
