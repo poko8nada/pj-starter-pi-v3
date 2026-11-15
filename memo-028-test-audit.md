@@ -206,7 +206,7 @@
 |  順 | 作業名（仮）         | 状態          | 対象                                                | ファイル | テスト | テスト行 | 主な内容                                                                                                     |
 | --: | -------------------- | ------------- | --------------------------------------------------- | -------: | -----: | -------: | ------------------------------------------------------------------------------------------------------------ |
 |   1 | consult              | done（067-d） | run、sub、tool、view、index、policy                 |       21 |    355 |    5,435 | `place()`、`record()`、`fakePi()` の共有、単体と配線の重複の整理、固定日時の定数化                           |
-|   2 | 文脈系 2 Unit        | pending       | thinking-scrub、context-precompact                  |       23 |    227 |    4,251 | 実装の死んだ引数の削除、単体と配線の重複の整理、fixture の統合、`pi.fixture` の統合                          |
+|   2 | 文脈系 2 Unit        | done（068-d） | thinking-scrub、context-precompact                  |       23 |    227 |    4,251 | 実装の死んだ引数の削除、単体と配線の重複の整理、fixture の統合、`pi.fixture` の統合                          |
 |   3 | リポジトリスクリプト | pending       | checks、harness-sync、product-ready                 |       12 |    131 |    2,216 | 一時ツリーと実行の helper 化、消えた key の確認の削除                                                        |
 |   4 | スキルスクリプト     | pending       | adr、plan、close                                    |        3 |    110 |    1,211 | 一時ツリーの helper 化、同型の確認の統合、usage の修正（029 には回さない）                                   |
 |   5 | 小さな Unit          | done（067-f） | quality-gate、sound-notify、`vitest.config.test.ts` |        7 |     49 |    1,011 | 前提の統合、文言修正、定数確認テストの削除（067-f では `gate/` への移動と `passWithNoTests` のガードを含む） |
@@ -220,14 +220,14 @@
 
 ## 6. 実施状況
 
-|  順 | サイクル                                | 状態    | 結果                                                                                                                                                                                              |
-| --: | --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|   1 | `261113-067-dev`（067-d）               | done    | `consult-run-sub` と `consult-tool-view` の 2 plan。close `2398da9`。close 時のテストは 869 件。                                                                                                  |
-|   2 | 未着手                                  | pending | 次の候補。文脈系 2 Unit。                                                                                                                                                                         |
-|   3 | 未着手                                  | pending | リポジトリスクリプト。                                                                                                                                                                            |
-|   4 | 未着手                                  | pending | スキルスクリプト。                                                                                                                                                                                |
-|   5 | `261113-067-feat-test-cleanup`（067-f） | done    | ADR 4 エントリ、`quality-gate-sound` と `vitest-config` の 2 plan。plan の `Ran` は 871 件と 872 件。close `7058fd6`、merge `3352935`。`_ex-change_` は `2bd8dba`（`passWithNoTests` のガード）。 |
+|  順 | サイクル                                | 状態    | 結果                                                                                                                                                                                                                                           |
+| --: | --------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   1 | `261113-067-dev`（067-d）               | done    | `consult-run-sub` と `consult-tool-view` の 2 plan。close `2398da9`。close 時のテストは 869 件。                                                                                                                                               |
+|   2 | `261115-068-dev`（068-d）               | done    | ADR 3 エントリ、`arg-cleanup` と `thinking-scrub-tests` と `context-precompact-tests` の 3 plan。plan の `Ran` は 866 件と 860 件と 860 件。close はこの commit。close 時のテストは 862 件。`_ex-change_` は `45d5be4`、`6dc0e21`、`48f07a0`。 |     |
+|   3 | 未着手                                  | pending | リポジトリスクリプト。                                                                                                                                                                                                                         |
+|   4 | 未着手                                  | pending | スキルスクリプト。                                                                                                                                                                                                                             |
+|   5 | `261113-067-feat-test-cleanup`（067-f） | done    | ADR 4 エントリ、`quality-gate-sound` と `vitest-config` の 2 plan。plan の `Ran` は 871 件と 872 件。close `7058fd6`、merge `3352935`。`_ex-change_` は `2bd8dba`（`passWithNoTests` のガード）。                                              |
 
-- 現在の base は 66 ファイル・867 件成功、typecheck ok。
-- `ROADMAP.md` の 028 は `cycles: 067-d,067-f`、`status: wip`。
-- 5 番目は計画の順番より先に、feat ブランチで実施された。残りは 2 → 3 → 4 の順。次の 068 は 2（文脈系 2 Unit）。
+- 現在の base は 66 ファイル・862 件成功、typecheck ok。
+- `ROADMAP.md` の 028 は `cycles: 067-d,067-f`、`status: done`。029 は `cycles: 068-d`、`status: wip`。
+- 5 番目は計画の順番より先に、feat ブランチで実施された。残りは 3 → 4 の順。次の 069 は 3（リポジトリスクリプト）。
