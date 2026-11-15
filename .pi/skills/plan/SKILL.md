@@ -54,7 +54,7 @@ Notes:
 Steps:
 
 1. Read `references/format.md` and `references/design.md` before writing.
-2. Create the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> --place <worktree|base> --entries <NN[,NN...]>`. Take the plan id, the order, the place and the entries from the cut.
+2. Create the plan file with the scaffold: `node .pi/skills/plan/scripts/index.mjs <plan id> --order <NN> (--place <worktree|base> | -w | -b) --entries <NN[,NN...]> [--root <dir>]`. Take the plan id, the order, the place and the entries from the cut.
 3. Read the map's every path. And read deeply each file those paths directly name: what it imports, what it re-exports, and the tests beside it.
 4. Decide each path's mark: `add`, `update`, `drop`, or no mark.
 5. Write `## Goal` above `## Design` as one line.
