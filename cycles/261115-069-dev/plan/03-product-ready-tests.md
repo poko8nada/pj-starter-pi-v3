@@ -438,7 +438,7 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 282de81b222a7a3cb2af0860eb76ca2fa4cdfd19
 - Stopped:
 
 ### Slice 4: targets と cli の順序・定数の確認を削る
