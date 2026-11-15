@@ -201,6 +201,8 @@ Steps:
 4. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
 5. Show one point at a time, and discuss it until it is settled.
    - There is no need for anyone to overturn or call into question the initial intent.
+   - From the `In` items select ONLY points that could serve as subjects for discussion.
+   - Limit these points to "matters to be decided with the owner". Confirming is not the point at issue.
 6. Write what is settled where the View gives, at the moment it is settled.
    - If needed, write an added `Context` item as `C<n>`, after the existing numbers.
    - If needed, write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
