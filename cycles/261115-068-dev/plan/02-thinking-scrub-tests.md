@@ -227,11 +227,20 @@ export function removedLine(runs: number, chars: number): string;
 
 ## Notes
 
+### Slice 2: 重複と前提の削除
+
+- Findings: なし
+- Unplanned: `.pi/extensions/thinking-scrub/scrub/units.test.ts` の「表の行と diff --git の行は不透明になる」テスト全体を削除した。指示の 89-92 行削除では両方の for 文が壊れて空のテストと未使用変数が残り lint が通らないため、断言が全て前提だった当該テストを落とした。表と diff の不透明分岐は柵のテストと同一経路で担保される。
+- Unplanned: `.pi/extensions/thinking-scrub/live/guard.test.ts` の入力長前提は 5 番号のうち現ファイルに存在する 3 件（`minThinking`、`tail * 2`、`longSample`）を削除した。残り番号は旧リビジョンのもので該当行がなく、内容基準で満たした。
+- Unplanned: `.pi/extensions/thinking-scrub/scrub/units.test.ts` のモジュール先頭 `sentence` を `baseSentence` に改名した。loop 変数と `minRunChars` テストのローカル `sentence` が衝突し `no-shadow` で lint が落ちるため。参照 19 件を付け替え、ローカル 2 件は残した。
+- Commit:
+- Stopped:
+
 ### Slice 1: 前提を fixture に集める
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 887e226136db7ce4d2dafa36d52f874b228cca53
 - Stopped:
 
 ## Work Review

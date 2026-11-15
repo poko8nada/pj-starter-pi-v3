@@ -242,34 +242,6 @@ describe('onMessageEnd', () => {
     expect(wiring.getStatus().removed).toBe(2);
     expect(wiring.getStatus().lastAt).toBe(7);
   });
-
-  it('okSettings と message_end なら 3 グループの既定値で差し替える', () => {
-    const wiring = scrubWiring();
-    const result = wiring.onMessageEnd(messageEnd(assistantMessage()));
-    expect(result).toBeDefined();
-    if (result?.message?.role !== 'assistant') {
-      throw new Error('message must be assistant');
-    }
-    const first = result.message.content.at(0);
-    if (typeof first !== 'object' || first === null || !('thinking' in first)) {
-      throw new Error('first block must be thinking');
-    }
-    expect(first.thinking).toBe(degenerateExpected());
-  });
-
-  it('char.minLength を 100 にした設定と message_end なら 66 文字の退化を差し替えない', () => {
-    const strict: SettingsRead = {
-      kind: 'ok',
-      settings: {
-        ...defaultSettings(),
-        char: { ...defaultSettings().char, minLength: 100 },
-      },
-    };
-    expect(degenerate().length).toBe(66);
-    const wiring = scrubWiring({ readSettings: () => strict });
-    expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
-    expect(wiring.getStatus().removed).toBe(0);
-  });
 });
 
 describe('onMessageUpdate', () => {
@@ -662,8 +634,6 @@ describe('onAgentEnd', () => {
     wiring.onMessageEnd(messageEnd(assistantMessage()));
     const { notified, ctx } = fakeCmdCtx();
     wiring.onAgentEnd(ctx);
-    expect(notified).toHaveLength(1);
-    expect(notified.at(0)).toBe(removedLine(2, degenerateChars() * 2));
     wiring.onMessageEnd(messageEnd(assistantMessage()));
     wiring.onAgentEnd(ctx);
     expect(notified).toHaveLength(2);

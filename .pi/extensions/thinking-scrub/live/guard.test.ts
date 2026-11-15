@@ -33,11 +33,11 @@ function plainThinking(length: number): string {
   return text.slice(0, length);
 }
 
+const tuning = defaultSettings();
+
 describe('observe', () => {
   it('既定の live と閾値の長さのランなら stop で見本つきになる', () => {
-    const tuning = defaultSettings();
     const thinking = thinkingWithRun(tuning.live.minThinking);
-    expect(thinking).toHaveLength(tuning.live.minThinking);
     const step = observeIn(thinking, tuning);
     expect(step.kind).toBe('stop');
     if (step.kind !== 'stop') {
@@ -50,7 +50,6 @@ describe('observe', () => {
   });
 
   it('閾値より十分短い thinking なら idle で見た位置が進まない', () => {
-    const tuning = defaultSettings();
     const thinking = thinkingWithRun(Math.floor(tuning.live.minThinking / 2));
     const step = observeIn(thinking, tuning);
     expect(step.kind).toBe('idle');
@@ -61,17 +60,14 @@ describe('observe', () => {
   });
 
   it('2 倍の tail 文字でランが末尾のウィンドウの外なら idle になる', () => {
-    const tuning = defaultSettings();
     const firstHalf = thinkingWithRun(tuning.live.tail);
     const secondHalf = plainThinking(tuning.live.tail);
     const thinking = `${firstHalf} ${secondHalf}`.slice(0, tuning.live.tail * 2);
-    expect(thinking).toHaveLength(tuning.live.tail * 2);
     const step = observeIn(thinking, tuning);
     expect(step.kind).toBe('idle');
   });
 
   it('2 倍の minThinking 文字のあと短い thinking なら scanned が戻り既定で止まる', () => {
-    const tuning = defaultSettings();
     const long = plainThinking(tuning.live.minThinking * 2);
     const first = observeIn(long, tuning);
     expect(first.kind).toBe('idle');
@@ -82,21 +78,18 @@ describe('observe', () => {
   });
 
   it('live.maxAborts を 0 にした設定なら idle になる', () => {
-    const tuning = defaultSettings();
     const live = { ...tuning.live, maxAborts: 0 };
     const step = observeIn(thinkingWithRun(live.minThinking), { ...tuning, live });
     expect(step.kind).toBe('idle');
   });
 
   it('sentence.minRunChars を大きくした設定では既定で止まるランが idle になる', () => {
-    const tuning = defaultSettings();
     const sentence = { ...tuning.sentence, minRunChars: 100_000 };
     const step = observeIn(thinkingWithRun(tuning.live.minThinking), { ...tuning, sentence });
     expect(step.kind).toBe('idle');
   });
 
   it('間隔が来ていないときは enabled が呼ばれない', () => {
-    const tuning = defaultSettings();
     const base = thinkingWithRun(tuning.live.minThinking);
     const first = observeIn(base, tuning);
     if (first.kind !== 'stop') {
@@ -115,7 +108,6 @@ describe('observe', () => {
 
 describe('resetOnUser', () => {
   it('空に戻ればまた止まれる', () => {
-    const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
     const first = observeIn(firstThinking, tuning);
     if (first.kind !== 'stop') {
@@ -135,7 +127,6 @@ describe('resetOnUser', () => {
 
 describe('takeFollowUp', () => {
   it('2 回止めれば最新が見本で 1 回だけ取れる', () => {
-    const tuning = defaultSettings();
     const firstThinking = thinkingWithRun(tuning.live.minThinking);
     const first = observeIn(firstThinking, tuning);
     if (first.kind !== 'stop') {
@@ -168,7 +159,6 @@ describe('followUpText', () => {
     const longSample = [loopSentence(0), loopSentence(0), loopSentence(0), loopSentence(0)].join(
       ' ',
     );
-    expect(longSample.length).toBeGreaterThan(live.sampleChars);
     const cut = followUpText(longSample, live.sampleChars);
     expect(cut).toContain(longSample.slice(0, live.sampleChars));
     expect(cut).not.toContain(longSample);
