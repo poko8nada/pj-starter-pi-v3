@@ -11,8 +11,6 @@ import type {
 import {
   DEGENERATE_UNIT,
   FOLLOWUP_REPEATING,
-  SCRUB_PREFIX,
-  SCRUB_REMOVED_LABEL,
   SCRUB_REMOVED_MARK,
   assistantMessage,
   degenerate,
@@ -171,7 +169,7 @@ function degenerateChars(): number {
 }
 
 describe('registerScrub', () => {
-  it("on が 5 件の順序で registerCommand('thinking-scrub') が 1 回呼ばれる", () => {
+  it("on が 5 件で registerCommand('thinking-scrub') が 1 回呼ばれる", () => {
     const fake = fakePi();
     registerScrub(fake.pi, {
       settingsDir: tempDir(),
@@ -179,12 +177,12 @@ describe('registerScrub', () => {
       followUp: () => undefined,
       readSettings: () => okSettings(),
     });
-    expect(fake.events).toEqual([
-      'message_update',
-      'message_end',
-      'agent_settled',
+    expect(fake.events.toSorted()).toEqual([
       'agent_end',
+      'agent_settled',
       'before_agent_start',
+      'message_end',
+      'message_update',
     ]);
     expect([...fake.commands.keys()]).toEqual(['thinking-scrub']);
   });
@@ -221,7 +219,7 @@ describe('onMessageEnd', () => {
 
   it('設定が enabled が false なら undefined になる', () => {
     const dir = settingsDirWith({ enabled: false });
-    const wiring = scrubWiring({ settingsDir: dir, readSettings: () => readSettings(dir) });
+    const wiring = scrubWiring({ settingsDir: dir });
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeUndefined();
     expect(wiring.getStatus().removed).toBe(0);
   });
@@ -502,28 +500,6 @@ describe('onAgentSettled', () => {
     });
     expect(first.options).toMatchObject({ triggerTurn: true });
   });
-
-  it('aborted が false なら何も送らない', () => {
-    const sent: string[] = [];
-    const wiring = scrubWiring();
-    const fake = fakeCmdCtx();
-    wiring.onMessageUpdate(
-      messageUpdate(
-        assistantThinking(thinkingWithRun(defaultSettings().live.minThinking), 'reasoning_content'),
-      ),
-      fake.ctx,
-    );
-    expect(fake.aborts()).toBe(1);
-    wiring.onAgentSettled(agentSettled(false));
-    expect(sent).toHaveLength(0);
-  });
-
-  it('aborted が true でも pending がなければ何も送らない', () => {
-    const sent: string[] = [];
-    const wiring = scrubWiring();
-    wiring.onAgentSettled(agentSettled(true));
-    expect(sent).toHaveLength(0);
-  });
 });
 
 describe('onBeforeAgentStart', () => {
@@ -688,23 +664,6 @@ describe('integration', () => {
     expect(notified.at(0)).toContain(`${SCRUB_REMOVED_MARK} 1`);
     expect(levels.at(0)).toBe('info');
   });
-
-  it('短い繰り返し 2 回なら message_end が undefined になり agent_end でも notify が呼ばれない', () => {
-    const thinking = DEGENERATE_UNIT.repeat(2);
-    const wiring = scrubWiring();
-    expect(
-      wiring.onMessageEnd(
-        messageEnd(
-          assistantMessage({
-            content: [{ type: 'thinking', thinking, thinkingSignature: 'reasoning_content' }],
-          }),
-        ),
-      ),
-    ).toBeUndefined();
-    const { notified, ctx } = fakeCmdCtx();
-    wiring.onAgentEnd(ctx);
-    expect(notified).toHaveLength(0);
-  });
 });
 
 describe('onCommand', () => {
@@ -737,13 +696,11 @@ describe('onCommand', () => {
     expect(wiring.onMessageEnd(messageEnd(assistantMessage()))).toBeDefined();
   });
 
-  it('コマンドが引数なしなら通知が 1 回呼ばれ runCommand の行が渡る', () => {
+  it('コマンドが引数なしなら通知が 1 回呼ばれる', () => {
     const wiring = scrubWiring();
     const { notified, ctx } = fakeCmdCtx();
     wiring.onCommand('', ctx);
     expect(notified).toHaveLength(1);
-    expect(notified.at(0)).toContain(SCRUB_PREFIX);
-    expect(notified.at(0)).toContain(SCRUB_REMOVED_LABEL);
   });
 
   it('コマンドの hide なら settings.json の show が false になり enabled はそのままである', () => {

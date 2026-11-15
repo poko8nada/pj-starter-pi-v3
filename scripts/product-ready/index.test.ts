@@ -26,7 +26,7 @@ const TEST_EXCLUDE_ENTRIES: readonly string[] = [
   'scripts/checks',
   'scripts/product-ready',
   'test/temp-dir.ts',
-  'test/pi.fixture.ts',
+  'test/settings.fixture.ts',
   'test/scripts.fixture.ts',
 ];
 
@@ -583,5 +583,17 @@ describe('product-ready defaults', () => {
     const result = run(INDEX, [], tree.root);
     expect(result.status).toBe(0);
     expect(result.output).toContain(`headings: ${SOURCE_HEADINGS.join(', ')}`);
+  });
+});
+
+describe('product-ready test-exclude.json', () => {
+  it('実物は settings.fixture を含み pi.fixture を含まない', () => {
+    const entries: unknown = JSON.parse(readFileSync(join(process.cwd(), TEST_EXCLUDE_AT), 'utf8'));
+    expect(Array.isArray(entries)).toBe(true);
+    if (!Array.isArray(entries)) {
+      throw new Error('must be an array');
+    }
+    expect(entries).toContain('test/settings.fixture.ts');
+    expect(entries).not.toContain('test/pi.fixture.ts');
   });
 });

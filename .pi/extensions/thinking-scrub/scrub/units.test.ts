@@ -134,6 +134,22 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, baseSentence)).toHaveLength(0);
   });
 
+  it('表と diff の行を含む繰り返しはランがない', () => {
+    const pattern = [english(0), english(1), english(2)];
+    const first = cycleText(pattern, 1);
+    const second = cycleText(pattern, 1);
+    const third = cycleText(pattern, 1);
+    const text = [
+      `${first} ${english(0)}`,
+      '| a | b |',
+      'diff --git a/foo b/foo',
+      `${second} ${third}`,
+    ].join('\n');
+    const units = unitsFromText(text);
+    expect(units.some((unit) => unit.opaque)).toBe(true);
+    expect(detectUnitRuns(units, baseSentence)).toHaveLength(0);
+  });
+
   it('柵を含む繰り返しはランがない', () => {
     const pattern = [english(0), english(1), english(2)];
     const first = cycleText(pattern, 1);
@@ -172,11 +188,11 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, baseSentence)).toHaveLength(0);
   });
 
-  it('sentence.minRunChars を 200 にした設定で 240 文字のランは 1 つになる', () => {
+  it('sentence.minRunChars を 200 にした設定で 200 文字超のランは 1 つになる', () => {
     const sentence = { ...tuning.sentence, minRunChars: 200 };
     const pattern = [english(0), english(1)];
     const text = cycleText(pattern, sentence.minCycles);
-    expect(text.length).toBeGreaterThanOrEqual(240);
+    expect(text.length).toBeGreaterThanOrEqual(sentence.minRunChars);
     expect(text.length).toBeLessThan(tuning.sentence.minRunChars);
     const units = unitsFromText(text);
     expect(detectUnitRuns(units, tuning.sentence)).toHaveLength(0);

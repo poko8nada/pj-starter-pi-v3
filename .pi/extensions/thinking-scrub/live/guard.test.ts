@@ -38,7 +38,7 @@ const tuning = defaultSettings();
 describe('observe', () => {
   it('既定の live と閾値の長さのランなら stop で見本つきになる', () => {
     const thinking = thinkingWithRun(tuning.live.minThinking);
-    const step = observeIn(thinking, tuning);
+    const step = observeIn(thinking);
     expect(step.kind).toBe('stop');
     if (step.kind !== 'stop') {
       throw new Error('must stop');
@@ -119,7 +119,6 @@ describe('resetOnUser', () => {
       throw new Error('second must stop');
     }
     const reset = resetOnUser();
-    expect(reset).toEqual(emptyGuard());
     const again = observe(reset, thinkingWithRun(tuning.live.minThinking), tuning, () => true);
     expect(again.kind).toBe('stop');
   });

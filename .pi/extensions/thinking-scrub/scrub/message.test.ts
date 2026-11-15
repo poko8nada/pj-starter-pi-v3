@@ -54,8 +54,9 @@ describe('scrubMessage', () => {
     expect(scrubMessage(reasoningText, tuning)).toBeDefined();
   });
 
-  it('char.minLength を 100 にした設定で 66 文字の退化は差し替えない', () => {
+  it('char.minLength を 100 にした設定で退化は差し替えない', () => {
     const strict = { ...tuning, char: { ...tuning.char, minLength: 100 } };
+    expect(degenerate().length).toBeLessThan(strict.char.minLength);
     const message = thinkingMessage(degenerate(), 'reasoning_content');
     expect(scrubMessage(message, strict)).toBeUndefined();
   });

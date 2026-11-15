@@ -51,6 +51,7 @@ scripts/
   harness-sync/
     setting.json             update
   product-ready/
+    index.test.ts            update
     test-exclude.json        update
 test/
   pi.fixture.ts              drop
@@ -142,6 +143,9 @@ export function removedLine(runs: number, chars: number): string;
    1. update: `emptyGuard()` と `() => true` を渡す `observe` の呼び出しだけを `observeIn(thinking, tuning)` に置き換える。`first.guard` を渡す呼び出しと、カスタムの `enabled` を渡す呼び出しはそのままにする。`observeIn` を `scrub.fixture.ts` からインポートする。
 9. `.pi/extensions/thinking-scrub/settings/read.test.ts`
    1. update: `writeFileSync(join(dir, 'settings.json'), ...)` の 2 箇所を `settingsDirWith(document)` に置き換える。`mkdirSync` でディレクトリを作る箇所と、ファイルを作らない箇所はそのままにする。`settingsDirWith` を `test/settings.fixture.ts` からインポートする。
+10. `scripts/product-ready/index.test.ts`
+    1. update: `TEST_EXCLUDE_ENTRIES` の `test/pi.fixture.ts` を `test/settings.fixture.ts` に置き換える。
+    2. add: 実物の `test-exclude.json` が `test/settings.fixture.ts` を含み `test/pi.fixture.ts` を含まないことを断言するテストを足す。
 
 ### Policy
 
@@ -227,6 +231,16 @@ export function removedLine(runs: number, chars: number): string;
 
 ## Notes
 
+### Cleanup: 空振りと重複の断言を削る
+
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「aborted が false なら何も送らない」を削除した。`scrubWiring()` の `followUp` は noop のため `sent` 断言が空振りで、中断の断言は `onMessageUpdate` の「差分が scanEvery 以上なら 1 回読みランがあれば止まる」が担う。送信経路は `registerScrub` の陽性テストが担う。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「aborted が true でも pending がなければ何も送らない」を削除した。観測できる振る舞いがなく、有無の確認はプリンシプルに反する。送信しない分岐は陽性テストの裏返しで、欠けた理由はそれである。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の integration「短い繰り返し 2 回なら message_end が undefined になり agent_end でも notify が呼ばれない」を削除した。配線の 2 分岐は「退化のない assistant なら undefined になる」と「何も消していない状態で agent_end なら notify が呼ばれない」が担い、短い繰り返しの単位は `scrub/message.test.ts` の「本文が 1 つの区間だけなら undefined になる」が担う。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の「コマンドが引数なしなら通知が 1 回呼ばれる」（旧名「〜 runCommand の行が渡る」）から内容の 2 断言を削り、通知 1 回の経路だけ残した。内容は `command/scrub.test.ts` の使い方テストが担う。名前に合わせて題名を直し、不要になった `SCRUB_PREFIX` と `SCRUB_REMOVED_LABEL` の import を外した。
+- Findings: `.pi/extensions/thinking-scrub/index.test.ts` の `registerScrub` テストを順序に依存しない集合比較に直し、題名の「順序で」を「で」に直した。登録順に振る舞いはなく、5 件の存在と `thinking-scrub` 登録が経路である。
+- Findings: `.pi/extensions/thinking-scrub/live/guard.test.ts` の `resetOnUser` テストから `expect(reset).toEqual(emptyGuard())` を削った。実装の写しであり、振る舞いは直後の「また止まる」断言が担う。
+- Unplanned: なし
+
 ### Slice 2: 重複と前提の削除
 
 - Findings: なし
@@ -239,7 +253,7 @@ export function removedLine(runs: number, chars: number): string;
 ### Slice 1: 前提を fixture に集める
 
 - Findings: なし
-- Unplanned: なし
+- Unplanned: Round 1 の Stale と Gaps（実物断言なし）のため、`scripts/product-ready/index.test.ts` が `Files` にないファイルとして必要になった。`Files` とスライス 1 の手順 10 に追加し、定数の置き換えと実物断言テストを実施した。レビュー対応のため待てなかった。
 - Commit: 887e226136db7ce4d2dafa36d52f874b228cca53
 - Stopped:
 
@@ -248,12 +262,31 @@ export function removedLine(runs: number, chars: number): string;
 ### Round 1
 
 - Stale:
+  - `scripts/product-ready/index.test.ts:29` — `TEST_EXCLUDE_ENTRIES` が削除済みの `test/pi.fixture.ts` を名指し続けている。実物の `scripts/product-ready/test-exclude.json:7` は `test/settings.fixture.ts` に置き換え済みで、この定数は実物とずれたまま自己完結するため緑のまま古くなる。
+    - fixed: 定数を `test/settings.fixture.ts` に直し、実物の有無を断言するテストを足した。`Files` とスライス 1 の手順 10 に追加し、Unplanned に記した。
 - Unlisted:
+  - なし（`9864f60..HEAD` の変更ファイルはすべて `## Files` に名指しあり。plan md 自体の Notes 追記は記録のため対象外）
 - Gaps:
+  - `.pi/extensions/thinking-scrub/scrub/units.ts:53` — `isTableRow` / `isDiffLine` 分岐（`units.ts:38-48`）を通る行を残るテストが一つも与えない。代替とされた柵のテスト（`units.test.ts:58`）は `isFenceLine` 分岐だけを通るため、Notes の「同一経路で担保」は成り立たず、表・diff 行の不透明化が無検証になっている。
+    - fixed: 表と diff の行を含む繰り返しはランがないテストを `units.test.ts` に足し、振る舞い（ランなし）で両分岐を通した。
+  - `.pi/extensions/thinking-scrub/scrub.fixture.ts:120` — `observeIn` の既定引数 `tuning = defaultSettings()` を使う呼び出しがない（`guard.test.ts` の全呼び出しが `tuning` を明示）。既定分岐は検証されていない。
+    - fixed: 閾値テストの 1 呼び出しを `observeIn(thinking)` にし、既定引数で同じ振る舞いになることを検証した。
+  - `.pi/extensions/thinking-scrub/scrub.fixture.ts:115` — `settingsDir` だけを渡して `readSettings` を既定（`readSettings(dir)`）に落とす呼び出しがない（`index.test.ts` の `settingsDir` 渡しはすべて `readSettings` を併記）。フォールバック分岐は検証されていない。
+    - fixed: enabled-false テストを `scrubWiring({ settingsDir: dir })` にし、既定の `readSettings` で同じ振る舞いになることを検証した。
+  - `scripts/product-ready/test-exclude.json:7` — 置き換え後の `test/settings.fixture.ts` 行をリポジトリ実物で断言するテストがない。`Verify` の `scripts/product-ready/index.test.ts` は独自定数（上記 Stale）で一時ツリーを作るだけで実物を読みに行かない。
+    - fixed: 実物を読み、有無を断言するテストを `scripts/product-ready/index.test.ts` に足した（Stale 対応と同一ファイル）。
 - Policy:
+  - なし
 - Unproven:
+  - `.pi/extensions/thinking-scrub/index.test.ts:180` — `registerScrub` の断言を `new Set(...)` 比較に変えたため、同じイベントの二重登録があっても集合が一致して緑になる（順序の除去は正当だが重複の検出まで落としている。順序だけ外すならソート済み配列の比較で足りる）。
+    - fixed: ソート済み配列の比較に直し、順序を無視し重複を検出する形にした。
 - Noise:
+  - `.pi/extensions/thinking-scrub/scrub/units.test.ts:179` — `expect(text.length).toBeGreaterThanOrEqual(240)` の `240` がマジックナンバーで、前提（`:176` の `minRunChars: 200` との関係）が読み取れない。構成が保証する長さの再確認であり、名前のある値から導く形にしていない。
+    - fixed: `sentence.minRunChars` との比較に直し、題名の `240 文字` を `200 文字超` に直した。
+  - `.pi/extensions/thinking-scrub/scrub/message.test.ts:57` — 題名の `66 文字` がハードコードのまま、根拠の `expect(degenerate().length).toBe(66)` が削除されて裏付けがどこにもない（`degenerate` の長さを断言する箇所は残存ゼロ）。
+    - fixed: 題名から `66 文字` を外し、入力が閾値を下回る関係を `degenerate().length < strict.char.minLength` の前提としてテスト内に置いた。
 - Doubts:
+  - `scripts/product-ready/index.test.ts:29` — Stale の定数をこの plan で直すか。直すなら `## Files` に名指しがなく `Unlisted` の扱いになるため所有者判断が要る（02 で `Files` を足して直すか、別エントリに回すか）。
 
 ### Round 2
 
