@@ -464,27 +464,27 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。先頭コメント3件（scripts/product-ready/index.test.ts:1-8、scripts/product-ready/cli.test.ts:1-5、scripts/product-ready/targets.test.ts:1-5）は新 helper・表示行・tempDir の実態と一致し、残る `.mjs` 直呼び注意（scripts/product-ready/index.test.ts:24）やテンプレート写し注意（scripts/product-ready/index.test.ts:43）も有効で、冗長化した記述はない。削った3件（実物 test-exclude.json、labels 2本、昇順2つ目）は Steps の drop 指示どおり。
+- Unlisted: なし。diff の製品変更3件はすべて `## Files` で `update` 指定のもの（scripts/product-ready/index.test.ts、scripts/product-ready/cli.test.ts、scripts/product-ready/targets.test.ts）であり、他は計画 md の記録欄のみで、`Files` 外の `.mjs`・`rules/`・`vitest.config.ts`・`test/*.fixture.ts` への変更はない。
+- Gaps: なし。Goal の3点（setup・共有 helper 化、順序・定数確認の整理、重複エラー経路の統合）は Steps 通りに実施され（`runOnTree`・`snapshot`・`expectUnchanged` の追加と25か所置換、labels・昇順重複・実物確認の削除、JSON 形・switchLines の統合）、残す指定の表示断言（`## What is in it` 順 scripts/product-ready/index.test.ts:297-309、`headings` 順と不在 scripts/product-ready/index.test.ts:344-360・362-366、`### Default` 5行 scripts/product-ready/index.test.ts:452-478、`no replace to replace` scripts/product-ready/index.test.ts:383-391）は残存。`Verify` の `Added` は全 slice なしが決めており、決めた値以外に漏れた振る舞いはない。
+- Policy: なし。Forbidden 6件（`*.mjs`・test-exclude.json の振る舞い変更、検証手段変更、`cycles/` 参照、01・02領域変更、`rules/`・vitest.config.ts の目印変更、`blocks.mjs` 追加）のいずれにも触れず、Allowed の範囲内（振る舞いを変えない整理、`runOnTree`・`snapshot`・`expectUnchanged` と共有 `fakeRoot`・`writeFile`・`writeJson` の使用、`targets.test.ts` の `tempDir()` 維持、基準外削除、表示断言残置、`parseArgs` と子プロセスの `exit 1` の両残し scripts/product-ready/cli.test.ts:107-143・scripts/product-ready/index.test.ts:368-381）に収まる。
+- Unproven: なし。残る断言は感度を持つ（例: JSON 形統合 scripts/product-ready/index.test.ts:438-449 は片方の形だけ正しくても他方で赤になる、昇順 scripts/product-ready/targets.test.ts:63-77 は逆順返却で赤になる、`switchLines` scripts/product-ready/cli.test.ts:19-29 は片方の値の崩れで赤になる、`expectUnchanged` 使用の12本は status・行数・文言と併せて見ており helper が常に真でも status 側で赤になる）。
+- Noise: なし。残る直書き（`'{"exclude": []}\n'`・`'[\".pi\", 1]\n'` scripts/product-ready/index.test.ts:439、`switchLines` の2値 scripts/product-ready/cli.test.ts:21-22、`'--bogus'` scripts/product-ready/index.test.ts:375、`toHaveLength(1)`、`SKELETON_WITHOUT_PRODUCT`・`SOURCE_*` 定数 scripts/product-ready/index.test.ts:44-57・121-137 等）は plan の Steps・Types が残すと決めた値または前提構築に必要な入力であり、指摘対象外。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。Round 1 で指摘なしのため `fixed:` 行は存在せず、再確認対象なし（以下同）。
+- Unlisted: なし（同上）。
+- Gaps: なし（同上）。
+- Policy: なし（同上）。
+- Unproven: なし（同上）。
+- Noise: なし（同上）。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: product-ready のテストが、setup helper と共有 helper を使い、順序・定数の確認と重複したエラー経路を削った形になる。達成した（`runOnTree`・`snapshot`・`readExclude`・`expectUnchanged` を置き 25 本を `runOnTree` 化し、JSON の形を 1 本に、実物 `test-exclude.json` の 1 本と `labels` の 2 本と at 昇順の重複断言を削り、`switchLines` を 1 本にした。index 28→26、cli 14→13、targets 13→11）。
+- Ran: `pnpm test:related scripts/product-ready/index.test.ts scripts/product-ready/cli.test.ts scripts/product-ready/targets.test.ts`（3 ファイル、50 件）・`pnpm test:run`（66 ファイル、845 件）・`pnpm typecheck`（`root: ok`、`.pi: ok`）・`pnpm lint`・`pnpm format:check`、および diff の通読。
+- Findings: なし
+- Doubts: なし
