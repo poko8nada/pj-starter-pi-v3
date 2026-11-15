@@ -144,48 +144,56 @@ review の単体と配線、Policy の place が、残す側の 1 か所に寄�
 
 ### Slice 1: 一時ツリーの前提を cycleTree に集める
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5ea350ff
 - Stopped:
 
 ### Slice 2: 同じ事実を 1 か所で確認する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 2f78eeb6
 - Stopped:
 
 ### Cleanup: close スクリプトのテストの整理
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし（`setupCycle` への残存参照はなく、`PlanDocOptions` の export 削除に対する外部参照もない。fixture のヘッダコメントは現状と一致している）
 - Unlisted:
+  - なし（変更は `collect.fixture.ts`・`collect.test.ts`・`cycle.fixture.ts` のみで、`Files` の `update`/`add` 指定と一致し、`collect.mjs`・`format.md`・`SKILL.md`・`test/temp-dir.ts` に変更はない）
 - Gaps:
+  - `cycle.fixture.ts:13`・`cycle.fixture.ts:34` — `CloseCycleSpec.close` が文字列の場合（`close.md` にその文字列を書く分岐）は、どのテストからも呼ばれていない（`collect.test.ts` の `cycleTree` 呼び出し 6 件は既定か `close: null` のみ：`collect.test.ts:30,38,46,64,71,85`）。`Steps` が文字列分岐を定めているのに検証がなく、helper 自体の振る舞いが 1 分岐だけ無検証で残る。
+    fixed: `collect.test.ts` に `describe('cycleTree')` を足し、`cycleTree({ close: body })` が `close.md` にそのまま書く 1 件を追加して文字列分岐を検証した。
 - Policy:
+  - なし（`collect.mjs` 不変。単体の finding/place は `collect.test.ts:62-63` に残し、配線は `collect.test.ts:66-67` で見出しと番号行のみにして同じ値の重複なし。エラー分岐の削除なし）
 - Unproven:
+  - なし（`collect.test.ts:50-51,92-93` は `toBeDefined` が先に落ちるため早期 return では緑にならず、各断言は対応する破壊で赤になる）
 - Noise:
+  - なし（`beta` の直書きは plan が `betaId` を内部化し test の import 対象外と決めた所与であり、`1.`/`2.` は通し番号という仕様の確認である）
 - Doubts:
+  - なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 の `fixed:` は Gaps の 1 件のみで、Stale に `fixed:` はないため対象外。
+- Unlisted: なし — 同上、Unlisted に `fixed:` はないため対象外。
+- Gaps: なし — Round 1 の `fixed:` 1 件（`cycleTree({ close: body })` が `close.md` にそのまま書く 1 件で文字列分岐を検証）は現物で確認した。`collect.test.ts:121-127` に `describe('cycleTree')` があり、`body = '# Close 001\n\n## Collected\n\ncustom\n\n## Triage\n\nなし\n'` を `cycleTree({ close: body })` に渡し、`readFileSync(join(cycle, 'close.md'), 'utf8')` が `toBe(body)` で一字一句の一致を確かめる。`cycle.fixture.ts:31-34` は `close === null` なら作らず、それ以外は `spec?.close ?? defaultClose` を書くため、このテストは文字列分岐だけを通る。既存の 6 件（既定と `close: null`）と合わせて 3 通りがそろった。理由: 文字列を既定に戻すなどの破壊はこの `toBe` を赤にするため、無検証の分岐は残らない。
+- Policy: なし — Round 1 の `fixed:` は Gaps の 1 件のみで、Policy に `fixed:` はないため対象外。
+- Unproven: なし — 同上、Unproven に `fixed:` はないため対象外。
+- Noise: なし — 同上、Noise に `fixed:` はないため対象外。
+- Doubts: この Round 2 は読み取りでの確認に留まり、`pnpm test:related` を実行していない（実行が許可されていないため）。`toBe(body)` が緑になることは読み取りで確かめたが、実走での緑は未確認。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: close スクリプトのテストが、同じ事実を 1 か所で確認する形になり、一時ツリーの前提が `cycleTree` に集まり、配線に重ねた単体の断言が消える — 達成した。
+- Ran: `pnpm test:run`（868 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:related .pi/skills/close/scripts/collect.test.ts`（12 件）。
+- Findings: なし
+- Doubts: なし

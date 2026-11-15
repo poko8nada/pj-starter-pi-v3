@@ -6,7 +6,7 @@
  */
 
 /** plan md の材料。`no` を省くと `- No:` の無い形になる。 */
-export type PlanDocOptions = {
+type PlanDocOptions = {
   readonly name: string;
   readonly no?: string | null;
   readonly notes: string;
@@ -21,3 +21,11 @@ export function planDoc({ no = null, name, notes, review }: PlanDocOptions): str
   const bullets = review.map((item) => `- ${item}`).join('\n');
   return `${base}\n## Work Review\n\n### Round 1\n\n${bullets}\n`;
 }
+
+export const planId = 'alpha';
+export const adrNo = '02';
+export const planFile = '01-alpha.md';
+const betaId = 'beta';
+export const betaFile = '02-beta.md';
+export const normalPlan = planDoc({ no: adrNo, name: planId, notes: `${planId} hole` });
+export const betaPlan = planDoc({ no: adrNo, name: betaId, notes: `${betaId} hole` });
