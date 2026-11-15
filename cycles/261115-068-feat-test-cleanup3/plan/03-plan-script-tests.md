@@ -152,13 +152,13 @@ test/
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: f87406d8
 - Stopped:
 
 ### Cleanup: plan スクリプトのテストの整理
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
