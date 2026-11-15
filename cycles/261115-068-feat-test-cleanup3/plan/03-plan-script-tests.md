@@ -145,13 +145,13 @@ test/
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 23acf92c
 - Stopped:
 
 ### Slice 2: テストの重複を整理する
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
