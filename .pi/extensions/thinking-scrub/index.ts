@@ -239,7 +239,7 @@ function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent
   if (event.messageType !== 'user') {
     return;
   }
-  state.guard = resetOnUser(state.guard);
+  state.guard = resetOnUser();
 }
 
 function handleAgentEnd(state: WiringState, options: WiringOptions, ctx: CommandCtx): void {
@@ -276,7 +276,6 @@ function handleCommand(
       },
     },
     command,
-    options.now(),
   );
   state.settings = settingsOf(options.readSettings());
   ctx.ui.notify(lines.join('\n'));
