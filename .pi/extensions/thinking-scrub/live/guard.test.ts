@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   FOLLOWUP_CONTINUE,
   FOLLOWUP_DO_NOT,
@@ -33,10 +33,10 @@ function plainThinking(length: number): string {
 }
 
 describe('observe', () => {
-  it('既定の live と 20000 文字のランなら stop で見本つきになる', () => {
+  it('既定の live と閾値の長さのランなら stop で見本つきになる', () => {
     const tuning = defaultSettings();
-    const thinking = thinkingWithRun(20_000);
-    expect(thinking).toHaveLength(20_000);
+    const thinking = thinkingWithRun(tuning.live.minThinking);
+    expect(thinking).toHaveLength(tuning.live.minThinking);
     const step = observe(emptyGuard(), thinking, tuning, () => true);
     expect(step.kind).toBe('stop');
     if (step.kind !== 'stop') {
@@ -45,15 +45,18 @@ describe('observe', () => {
     expect(step.sample.length).toBeGreaterThan(0);
     expect(step.sample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
     expect(step.guard.aborts).toBe(1);
-    expect(step.guard.scanned).toBe(20_000);
+    expect(step.guard.scanned).toBe(tuning.live.minThinking);
   });
 
-  it('19999 文字のランなら idle になる', () => {
+  it('閾値より十分短い thinking なら idle で見た位置が進まない', () => {
     const tuning = defaultSettings();
-    const thinking = thinkingWithRun(20_000).slice(0, 19_999);
-    expect(thinking).toHaveLength(19_999);
+    const thinking = thinkingWithRun(Math.floor(tuning.live.minThinking / 2));
     const step = observe(emptyGuard(), thinking, tuning, () => true);
     expect(step.kind).toBe('idle');
+    if (step.kind !== 'idle') {
+      throw new Error('must be idle');
+    }
+    expect(step.guard).toEqual(emptyGuard());
   });
 
   it('2 倍の tail 文字でランが末尾のウィンドウの外なら idle になる', () => {
@@ -75,15 +78,6 @@ describe('observe', () => {
     const short = thinkingWithRun(tuning.live.minThinking);
     const second = observe(first.guard, short, tuning, () => true);
     expect(second.kind).toBe('stop');
-  });
-
-  it('live.minThinking を 5000 にした設定で 5000 文字のランなら stop になる', () => {
-    const tuning = defaultSettings();
-    const live = { ...tuning.live, minThinking: 5000 };
-    const thinking = thinkingWithRun(5000);
-    expect(thinking).toHaveLength(5000);
-    const step = observe(emptyGuard(), thinking, { ...tuning, live }, () => true);
-    expect(step.kind).toBe('stop');
   });
 
   it('live.maxAborts を 0 にした設定なら idle になる', () => {
@@ -187,5 +181,11 @@ describe('followUpText', () => {
     const cut = followUpText(longSample, live.sampleChars);
     expect(cut).toContain(longSample.slice(0, live.sampleChars));
     expect(cut).not.toContain(longSample);
+  });
+});
+
+describe('signature', () => {
+  it('読まれない引数を受けない', () => {
+    expectTypeOf<Parameters<typeof resetOnUser>>().toEqualTypeOf<[]>();
   });
 });

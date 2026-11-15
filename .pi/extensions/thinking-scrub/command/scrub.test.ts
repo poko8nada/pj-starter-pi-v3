@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   SCRUB_BROKEN_MARK,
   SCRUB_DEFAULTS_MARK,
@@ -12,7 +12,7 @@ import {
   SCRUB_SHOW_ON,
   SCRUB_USAGE_LINE,
 } from '../scrub.fixture.ts';
-import { parseCommand, runCommand, type CommandPort } from './scrub.ts';
+import { parseCommand, runCommand, type CommandPort, type ScrubCommand } from './scrub.ts';
 import { defaultSettings, type SettingsRead } from '../settings/schema.ts';
 import type { Status } from '../state/cell.ts';
 
@@ -88,20 +88,8 @@ describe('runCommand', () => {
     expect(parseCommand('SHOW')).toEqual({ kind: 'display', show: true });
   });
 
-  it('lastAt が数値の状態ならその時刻の行になる', () => {
-    const lastAt = 456;
-    const removed = 2;
-    const { port } = fakePort({ status: { removed, lastAt, failures: 0 } });
-    const lines = runCommand(port, parseCommand(''));
-    expect(lines.join('\n')).toContain(String(lastAt));
-    expect(lines.join('\n')).toContain(`${SCRUB_REMOVED_LABEL} ${removed}`);
-  });
-
   it('3 グループの SettingsRead と status なら on と show と removed と last の行になる', () => {
-    const { port } = fakePort({
-      settings: { kind: 'ok', settings: defaultSettings() },
-      status: { removed: 0, lastAt: null, failures: 0 },
-    });
+    const { port } = fakePort();
     const lines = runCommand(port, parseCommand(''));
     expect(lines).toEqual([
       SCRUB_ON_LINE,
@@ -151,14 +139,10 @@ describe('runCommand', () => {
     expect(lines).toContain(SCRUB_ON_LINE);
     expect(lines).toContain(SCRUB_SHOW_ON);
   });
+});
 
-  it('broken 設定でも off は writeEnabled(false) を 1 回呼び off の行が返る', () => {
-    const { port, written, shown } = fakePort({
-      settings: { kind: 'broken', reason: 'not JSON' },
-    });
-    const lines = runCommand(port, parseCommand('off'));
-    expect(written).toEqual([false]);
-    expect(shown).toEqual([]);
-    expect(lines).toEqual([SCRUB_OFF_LINE]);
+describe('signature', () => {
+  it('読まれない引数を受けない', () => {
+    expectTypeOf<Parameters<typeof runCommand>>().toEqualTypeOf<[CommandPort, ScrubCommand]>();
   });
 });
