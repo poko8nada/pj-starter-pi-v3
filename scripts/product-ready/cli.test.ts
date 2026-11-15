@@ -11,17 +11,16 @@ import {
 import { parseArgs, planLines, switchLines } from './cli.mjs';
 
 describe('switchLines', () => {
-  it('happy: JSON のパスと config のパス → test-exclude と config の2行', () => {
-    const exclude = 'scripts/product-ready/test-exclude.json';
-    const config = 'vitest.config.ts';
-    expect(switchLines({ exclude, config })).toEqual([
-      testExcludeLine(exclude),
-      configLine(config),
-    ]);
-  });
-
-  it('empty: exclude と config が空 → test-exclude: と config: の2行', () => {
-    expect(switchLines({ exclude: '', config: '' })).toEqual([testExcludeLine(''), configLine('')]);
+  it('happy: JSON のパス、または空 → test-exclude と config の 2 行', () => {
+    for (const value of [
+      { exclude: 'scripts/product-ready/test-exclude.json', config: 'vitest.config.ts' },
+      { exclude: '', config: '' },
+    ]) {
+      expect(switchLines(value)).toEqual([
+        testExcludeLine(value.exclude),
+        configLine(value.config),
+      ]);
+    }
   });
 });
 

@@ -443,8 +443,8 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 ### Slice 4: targets と cli の順序・定数の確認を削る
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

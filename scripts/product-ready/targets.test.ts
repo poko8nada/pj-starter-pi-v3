@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../test/temp-dir.ts';
-import { labels, plan, remove, skeletonFor } from './targets.mjs';
+import { plan, remove, skeletonFor } from './targets.mjs';
 
 function writeAt(root: string, rel: string): void {
   const path = join(root, rel);
@@ -69,7 +69,6 @@ describe('plan', () => {
         return { action: 'remove', label: 'cycles', at, path: join(root, at) };
       }),
     );
-    expect(found.map((entry) => entry.at).toSorted()).toEqual(found.map((entry) => entry.at));
   });
 });
 
@@ -118,20 +117,6 @@ describe('replace', () => {
     const root = tempDir();
     writeAt(root, 'ROADMAP.md');
     expect(() => skeletonFor(root, 'ROADMAP.md')).toThrow(/rules\/roadmap\.md/);
-  });
-});
-
-describe('labels', () => {
-  it('labels(undefined) → 消す物と差し替える物の並び', () => {
-    expect(labels(undefined)).toEqual([
-      { label: 'cycles', verb: 'remove' },
-      { label: 'replace', verb: 'replace' },
-    ]);
-  });
-
-  it("labels('cycles') → その名前と動詞", () => {
-    const only = 'cycles';
-    expect(labels(only)).toEqual([{ label: only, verb: 'remove' }]);
   });
 });
 
