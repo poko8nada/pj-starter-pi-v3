@@ -457,8 +457,8 @@ function expectUnchanged(tree: Tree, before: Before): void;
 
 ### Cleanup: 順序・定数・重複したエラー経路
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
