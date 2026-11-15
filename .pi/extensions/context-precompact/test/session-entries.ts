@@ -140,8 +140,10 @@ export function createSessionFixture(): SessionFixture {
   };
 }
 
-/** セッションと branch を作る。既定は 3 ターン分。 */
-export function sessionWithTurns(count = 3): {
+const DEFAULT_TURNS = 3;
+
+/** セッションと branch を作る。既定は `DEFAULT_TURNS` ターン分。 */
+export function sessionWithTurns(count = DEFAULT_TURNS): {
   readonly session: SessionFixture;
   readonly branch: readonly SessionEntry[];
 } {
