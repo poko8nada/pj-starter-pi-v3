@@ -1,7 +1,7 @@
 /**
  * index — plan のスキャフォールド。
  *
- *   node index.mjs <plan id> --order <NN> --place <worktree|base> --entries <NN[,NN...]>
+ *   node index.mjs <plan id> --order <NN> (--place <worktree|base> | -w | -b) --entries <NN[,NN...]> [--root <dir>]
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

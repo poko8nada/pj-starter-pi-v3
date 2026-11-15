@@ -143,8 +143,8 @@ test/
 
 ### Slice 1: usage を実装に合わせる
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
