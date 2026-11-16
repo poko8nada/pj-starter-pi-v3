@@ -38,7 +38,7 @@
 
 ## Verified
 
-### <Unit>
+### <name>
 
 - Plans:
   - `<plan id>`
@@ -122,7 +122,7 @@ The Units the cycle touched, the Subs the change touched, and what the owner ans
 ### Fields
 
 - `Plans` holds one bullet per plan that cuts an entry that names it, taken from the plan md's `No`.
-- `Result` is `OK` when the owner checked the Unit's function and it worked, and what they found when it did not.
+- `Result` is `OK` when the owner checked the Unit's or Sub's function and it worked, and what they found when it did not.
 - `Result` is `しない` with the reason on the same line when they will not check.
 - `Change` is `OK` when the owner checked what the plans changed and it is as intended, and what they found when it is not.
 - `Change` is `しない` with the reason on the same line when they will not check.

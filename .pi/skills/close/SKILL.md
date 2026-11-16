@@ -5,7 +5,7 @@ description: Use when every plan of a cycle is done or dropped. It collects what
 
 # close
 
-This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
+This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's or Sub's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
 
 ## Procedure
 
@@ -90,7 +90,7 @@ Steps:
    - propose how to check its function, and how to check what the plans that cut it changed
    - the command to run and what to see, or the place to read and what to look for, and the result that means it works.
    - explain what changed, in the same message: what every plan in `Plans:` changed, and where.
-2. Wait for the owner's answer, and hold it in the chat before the next Unit.
+2. Wait for the owner's answer, and hold it in the chat before the next Unit or Sub.
 3. If needed, an `_ex-change_` work:
    - conditions: unit does not work, change does not work, the owner’s point is valid
      1. Explan how it change to rework.
@@ -109,7 +109,7 @@ View:
 Notes:
 
 - The Units and Subs are as `references/format.md` says.
-- The check has two parts: the Unit's function, and the change the plans made.
+- The check has two parts: the Unit's or Sub's function, and the change the plans made.
 
 ### 7. Roadmap & Commit
 
