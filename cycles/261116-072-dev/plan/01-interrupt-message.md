@@ -239,17 +239,17 @@ export interface LiveTuning {
 
 ### Slice 1: 割り込みメッセージを固定文言にする
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 31abc4a7
+- Stopped: なし
 
 ### Slice 2: 見本の設定と README を外す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: README.ja.md の既存の ja-check warn 3 件を「直接編集」に言い換えて解消した
+- Commit: 2525ffa7
+- Stopped: なし
 
 ### Cleanup: なし
 
