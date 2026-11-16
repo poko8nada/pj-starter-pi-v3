@@ -146,7 +146,7 @@ View:
   | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                    | cost          |
   | Does the surface notation change? (names, wording, tone, formatting, spelling)                                     | expression    |
   | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.** | verification  |
-  | Do the **past** records or signals the product leave change? (logs, metrics, audit records)                        | observability |
+  | Do the records or signals the product leave change? (logs, metrics, audit records) For audit-related only.         | observability |
   | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                 | release       |
   | Is there a concern that none of the above covers?                                                                  | other         |
 
