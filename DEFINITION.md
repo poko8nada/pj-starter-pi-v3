@@ -48,8 +48,16 @@
 #### 文脈を整える
 
 - subagent-consult: エージェントが、サブエージェントのコンサルを走らせ、そのワークツリーと結果を扱える
+  - subagent-consult_status: オーナーまたはエージェントが、走っているサブエージェントとその進み具合を見られる
+  - subagent-consult_cancel: オーナーまたはエージェントが、走っているサブエージェントを 1 つ止められる
+  - subagent-consult_notify: オーナーが、コンサルの稼働と終了を音で気づける
 - thinking-scrub: エージェントが、ループした thinking を取り除き、次のターンに持ち越さない
+  - thinking-scrub_switch: オーナーが、ループした thinking を取り除く動作を止めたり戻したりできる
+  - thinking-scrub_status: オーナーが、いまの状態と、取り除いた量を確かめられる
 - context-precompact: エージェントが、コンパクションを待たずに、コンテキストを空けられる
+  - context-precompact_now: オーナーが、しきい値を待たずに、コンパクションの準備を始められる
+  - context-precompact_switch: オーナーが、コンパクションの準備を止めたり戻したりできる
+  - context-precompact_status: オーナーが、準備の状態と最後に適用した量を確かめられる
 
 #### ハーネスを保つ
 

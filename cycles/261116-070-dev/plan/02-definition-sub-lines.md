@@ -95,10 +95,10 @@ DEFINITION.md                update
 
 ### Slice 1: 定義書がサブの行を持つ
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <hash>
+- Stopped: なし
 
 ### Cleanup: なし
 
