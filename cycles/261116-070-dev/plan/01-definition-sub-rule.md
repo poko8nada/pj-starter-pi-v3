@@ -165,48 +165,51 @@ DEFINITION.md
 
 ### Slice 1: 規則がサブを許す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 618cdb67
+- Stopped: なし
 
 ### Slice 2: 形がサブの行を受ける
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: a2c08cf8
+- Stopped: なし
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `rules/definition.format.md:70` — `What may be a Unit, and how a Unit is named and written, is in \`rules/definition.rules.md\`.` が古い範囲のまま残り、規則の新内容（`rules/definition.rules.md:3`の`What may be a Unit or a Sub ... Units, the Subs ...`）と矛盾する。理由: diff は冒頭文・Sections・Writing を Sub 対応に変えたのに、この相互参照だけ Unit のままなので、読み手は「形の側は Unit だけを扱う」と誤読できる。
+    - fixed: `rules/definition.format.md:70` を `What may be a Unit or a Sub, and how a Unit or a Sub is named and written, is in \`rules/definition.rules.md\`.` に直し、規則の冒頭文と相互参照を一致させた。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `rules/definition.format.md:70` の fixed を確認した — 現行の 70 行目が fixed 文どおりの Unit or a Sub の表記であり、Round 1 が指摘した Unit のみの旧表記は残っていない。理由: 現物の 70 行目を読み、fixed 文の文言と一致すること、および `rules/definition.rules.md:3` の Unit or a Sub の範囲と一致し、相互参照の矛盾が解消していることを当てたため。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — 定義書の規則が、ユニットの下に、そのユニットがないと存在し得ない機能をサブとして 1 行ずつ書けるようになった。
+- Ran: `pnpm test:run`（836 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git diff 90678005..HEAD` の読み、`ja-check`（`rules/definition.rules.md`、`rules/definition.format.md`）。
+- Findings: なし
+- Doubts: なし
