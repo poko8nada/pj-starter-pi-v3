@@ -167,20 +167,20 @@ DEFINITION.md
 
 - Findings: なし
 - Unplanned: なし
-- Commit: <pending>
+- Commit: 618cdb67
 - Stopped: なし
 
 ### Slice 2: 形がサブの行を受ける
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <pending>
+- Stopped: なし
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
