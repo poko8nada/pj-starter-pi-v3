@@ -160,48 +160,64 @@ rules/
 
 ### Slice 1: adr がサブを名指す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 8d1bf1b5
+- Stopped: なし
 
 ### Slice 2: close がサブを確かめる
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 64439c84
+- Stopped: なし
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `.pi/skills/close/SKILL.md:8` — 導入文が `each Unit's function` のままで Sub に触れていない。Slice 2 の Goal（Sub も確かめる）と矛盾し、読むと Unit だけ確かめればよいと誤読できるため。
+    - fixed: 導入文を `each Unit's or Sub's function` に直し、Sub も確かめる対象であることを明示した。
+  - `.pi/skills/close/SKILL.md:93` — `before the next Unit` のままで `or Sub` がない。直下の手順 5 は `next Unit or Sub` に直したのにここだけ旧文言が残り、手順が割れるため。
+    - fixed: `before the next Unit or Sub` に直し、手順 5 の `Move to the next Unit or Sub` と揃えた。
+  - `.pi/skills/close/SKILL.md:112` — Notes が `the Unit's function` のままで Sub の検査の定義がない。表は `a Unit or a Sub` に広げたのに定義が Unit だけで、Sub の `Result` が何を指すか決まらないため。
+    - fixed: Notes を `the Unit's or Sub's function` に直し、Sub の `Result` が Sub の機能を指すことを定義した。
+  - `.pi/skills/close/references/format.md:41` — Shape 例が `### <Unit>` のままで、説明側の `### Name` / `### <name>` と食い違う。Shape を写す利用者が Unit 欄だけ作り Sub 欄を作らない恐れがあるため。
+    - fixed: Shape 例を `### <name>` に直し、説明側の `### Name` / `### <name>` と一致させた。
+  - `.pi/skills/close/references/format.md:125` — `Result` の定義が `the Unit's function` のままで Sub のセクションの合否基準がない。`Verified` が Sub のセクションを持つ新規則と矛盾し、Goal の「親と同じように確かめる」が Sub で定義不足になるため。
+    - fixed: `Result` の定義を `the Unit's or Sub's function` に直し、Sub のセクションの合否基準を Unit と同じ形で定義した。
+- Unlisted: なし — 差分は `Files` が `update` と書く 4 ファイル（adr の SKILL と format、close の SKILL と format）だけで、残りは Notes の commit 記入という定型作業のため。
+- Gaps: なし — 新しい振る舞い（Sub を名として書く・確かめる）は `Verify` の全体読みと `ja-check` が対象に含めており、手順に対応する検査がない項目はないため。残った旧文言は検査の抜けではなく実行の漏れであり、`Stale` で扱ったため。
+- Policy: なし — `Allowed`（Sub は親と別セクション、`plan` の読み方は現状維持、未変更物の不変更）を破らず、`Forbidden`（`--check` 追加なし、親行への統合なし、Sub の Unit 数えなし）をいずれも行っていないため。
+- Unproven: なし — Sub の振る舞いを名指す新規テストがなく、既存の `pnpm test:run` 等や `ja-check` も Sub の英文を名指さないため、壊れても緑になる「名指すテスト」が存在しないため。
+- Noise: なし — 新規テストがなく、型・スキーマ・DB 制約が不要に再検査される箇所も、マジックナンバーやハードコード文字列の事例もないため。
 - Doubts:
+  - `.pi/skills/adr/SKILL.md:168` / `.pi/skills/adr/references/adr.format.md:43` — ADR の `Decision` の `Main` / `Sub`（関心事の親子）と `DEFINITION.md` の `Unit` / `Sub`（名の親子）が同じ `Sub` という語で並立する。今回の差分は後者に `Sub` を足しただけで、前者と後者の呼び方の区別を決めていない。読む人が混同するか、注意書きの追記が要るかはオーナー判断が要るため。
 
 ### Round 2
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/close/SKILL.md:8` の fixed を確認した — 現行 8 行目が `each Unit's or Sub's function` であり、Round 1 が指摘した旧文言は残っていない。理由: 現物を読み、fixed 文どおりの文言であることと、Slice 2 の Goal と一致することを当てたため。
+  - `.pi/skills/close/SKILL.md:93` の fixed を確認した — 現行 93 行目が `before the next Unit or Sub` であり、手順 5 の `Move to the next Unit or Sub` と揃っている。理由: 現物を読み、fixed 文どおりであることと、手順間の文言割れが解消していることを当てたため。
+  - `.pi/skills/close/SKILL.md:112` の fixed を確認した — 現行 112 行目が `the Unit's or Sub's function` であり、表の `a Unit or a Sub` と定義が一致している。理由: 現物を読み、fixed 文どおりであることと、Sub の `Result` が指す先が決まることを当てたため。
+  - `.pi/skills/close/references/format.md:41` の fixed を確認した — 現行 41 行目が `### <name>` であり、説明側の `### Name` / `### <name>` と一致している。理由: 現物を読み、Shape 例と説明の食い違いが解消していることを当てたため。
+  - `.pi/skills/close/references/format.md:125` の fixed を確認した — 現行 125 行目が `the Unit's or Sub's function` であり、Sub の合否基準が Unit と同じ形で定義されている。理由: 現物を読み、fixed 文どおりであることと、Goal の「親と同じように確かめる」と一致することを当てたため。
+- Unlisted: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Gaps: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Policy: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Unproven: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Noise: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Doubts: なし — fixed の確認からは新たな判断事項が生じず、Round 1 の Doubts は fixed 行を持たないため確認対象外であるため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — `adr` の `Definition` と `close` の `Verified` が、サブを 1 つの名として扱い、親と同じように記録し、確かめる。
+- Ran: `pnpm test:run`（836 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git diff 9775f1cd..HEAD` の読み、`ja-check`（変更した 4 文書）。
+- Findings: なし
+- Doubts: なし

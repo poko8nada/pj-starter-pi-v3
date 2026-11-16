@@ -5,7 +5,7 @@ description: Use when every plan of a cycle is done or dropped. It collects what
 
 # close
 
-This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
+This skill collects the holes, proposes their destinations in `close.md`, and closes the cycle. After the owner's judgement, it makes each `_ex-change_`, asks the owner to verify each Unit's or Sub's function and the change the plans made, writes the roadmap, and hands the `**proposed**` items to the next cycle's ADR.
 
 ## Procedure
 
@@ -82,34 +82,34 @@ Notes:
 - An empty `## Verified` is normal at the proofread's start and at the repair: do not fill it, and remove what the subagent filled there.
 - One round: the repaired file does not go through the subagent again.
 
-### 6. Verify, by Unit
+### 6. Verify, by Unit and Sub
 
 Steps:
 
-1. Take one Unit at a time:
+1. Take one Unit the cycle touched, and one Sub the change touched, at a time:
    - propose how to check its function, and how to check what the plans that cut it changed
    - the command to run and what to see, or the place to read and what to look for, and the result that means it works.
    - explain what changed, in the same message: what every plan in `Plans:` changed, and where.
-2. Wait for the owner's answer, and hold it in the chat before the next Unit.
+2. Wait for the owner's answer, and hold it in the chat before the next Unit or Sub.
 3. If needed, an `_ex-change_` work:
    - conditions: unit does not work, change does not work, the owner’s point is valid
      1. Explan how it change to rework.
      2. Do it in the base and commit it as `base(ex-change): <subject>`,
      3. Write a short description of the change and the commit in `## Verified`'s `Fixed`.
 4. Write `Result:` and `Change:` from what they answered, in `## Verified`.
-5. Move to the next Unit.
+5. Move to the next Unit or Sub.
 
 View:
 
-| the Unit                            | the check                                    |
+| the name                            | the check                                    |
 | ----------------------------------- | -------------------------------------------- |
-| a line under `Users can do`         | its function, and the change that plans made |
-| a `Product`, `What`, `Who`, `Stack` | not a Unit                                   |
+| a Unit or a Sub under its Unit      | its function, and the change that plans made |
+| a `Product`, `What`, `Who`, `Stack` | not a name                                   |
 
 Notes:
 
-- The Units are as `references/format.md` says.
-- The check has two parts: the Unit's function, and the change the plans made.
+- The Units and Subs are as `references/format.md` says.
+- The check has two parts: the Unit's or Sub's function, and the change the plans made.
 
 ### 7. Roadmap & Commit
 
