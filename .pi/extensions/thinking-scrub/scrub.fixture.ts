@@ -96,9 +96,6 @@ export const SCRUB_REMOVED_LABEL = 'removed:';
 export const SCRUB_BROKEN_MARK = 'broken';
 export const SCRUB_DEFAULTS_MARK = 'defaults';
 export const SCRUB_LAST_NONE = 'last: まだない';
-export const FOLLOWUP_REPEATING = 'repeating';
-export const FOLLOWUP_DO_NOT = 'Do not repeat';
-export const FOLLOWUP_CONTINUE = 'Continue';
 
 /** 配線を作る。既定は空の設定の一時ディレクトリと固定時刻で動く。 */
 export function scrubWiring(

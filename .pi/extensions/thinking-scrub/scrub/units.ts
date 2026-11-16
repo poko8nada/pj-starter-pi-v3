@@ -64,7 +64,7 @@ function isJapaneseEnd(char: string): boolean {
   return char === '。' || char === '！' || char === '？';
 }
 
-/** 本文を行に分け、元の offset を付けて返す。 */
+/** 本文を行に分割し、元の offset を付けて返す。 */
 function splitLines(text: string): { readonly start: number; readonly line: string }[] {
   const lines: { readonly start: number; readonly line: string }[] = [];
   let pos = 0;
@@ -234,50 +234,4 @@ export function detectUnitRuns(
   }
   kept.sort((a, b) => a.at - b.at || a.period - b.period || a.length - b.length);
   return kept;
-}
-
-/** ランの中で最も多い 3 文の連続を返す。周期が 3 以下なら周期そのものを返す。 */
-export function sampleOf(units: readonly Unit[], run: UnitRun, sampleChars: number): string {
-  const slice = units.slice(run.at, run.at + run.length);
-  if (slice.length === 0) {
-    return '';
-  }
-  let picked: readonly Unit[];
-  if (run.period <= 3) {
-    picked = slice.slice(0, Math.min(run.period, slice.length));
-  } else {
-    const counts = new Map<
-      string,
-      { readonly count: number; readonly first: number; readonly window: readonly Unit[] }
-    >();
-    for (let index = 0; index + 3 <= slice.length; index += 1) {
-      const window = slice.slice(index, index + 3);
-      const key = window.map((unit) => unit.text).join('\u0000');
-      const existing = counts.get(key);
-      if (existing !== undefined) {
-        counts.set(key, {
-          count: existing.count + 1,
-          first: existing.first,
-          window: existing.window,
-        });
-      } else {
-        counts.set(key, { count: 1, first: index, window });
-      }
-    }
-    let best:
-      | { readonly count: number; readonly first: number; readonly window: readonly Unit[] }
-      | undefined;
-    for (const entry of counts.values()) {
-      if (
-        best === undefined ||
-        entry.count > best.count ||
-        (entry.count === best.count && entry.first < best.first)
-      ) {
-        best = entry;
-      }
-    }
-    picked = best?.window ?? slice.slice(0, Math.min(3, slice.length));
-  }
-  const joined = picked.map((unit) => unit.text).join(' ');
-  return joined.length > sampleChars ? joined.slice(0, sampleChars) : joined;
 }

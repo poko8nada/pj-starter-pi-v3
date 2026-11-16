@@ -30,8 +30,7 @@ Any other argument prints the usage instead of throwing.
     "minThinking": 20000,
     "scanEvery": 2000,
     "tail": 20000,
-    "maxAborts": 2,
-    "sampleChars": 200
+    "maxAborts": 2
   },
   "sentence": { "minCycles": 3, "minRunChars": 400, "maxPeriodUnits": 64 },
   "char": { "minPeriod": 4, "maxPeriod": 120, "minRepeats": 3, "minLength": 20 }
@@ -48,7 +47,6 @@ Missing keys fall back to the defaults above. A wrong type, an out-of-range valu
 | `scanEvery`   | Minimum new chars between two scans.         | `2000`  | Fewer reads, reaction lags up to this many chars. | Faster reaction, more reads.                       | Must stay at or below `tail`.                             |
 | `tail`        | Trailing window examined by each scan.       | `20000` | Catches widely spread runs, each scan costs more. | Cheaper scans, runs outside the window are missed. | A run fully outside the window reads as `idle`.           |
 | `maxAborts`   | Stops per user turn.                         | `2`     | More interruptions before giving up.              | Fewer interruptions; `0` disables live stopping.   | Past the limit, `scanned` still advances without reading. |
-| `sampleChars` | Follow-up sample truncation length.          | `200`   | Longer repeating sample in the follow-up.         | Shorter sample.                                    | Also bounds the stored pending sample.                    |
 
 ### `sentence`: sentence-period runs (stop and collapse)
 
@@ -95,7 +93,7 @@ The live detection reads the streaming thinking without requiring a signature. T
 
 ## Follow-up
 
-At `agent_settled`, a custom message is sent with the most frequent 3-sentence sample, then the next run starts.
+At `agent_settled`, a fixed custom message is sent, then the next run starts.
 
 ## End-of-run report
 

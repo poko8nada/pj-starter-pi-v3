@@ -239,48 +239,54 @@ export interface LiveTuning {
 
 ### Slice 1: 割り込みメッセージを固定文言にする
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 31abc4a7
+- Stopped: なし
 
 ### Slice 2: 見本の設定と README を外す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: README.ja.md の既存の ja-check warn 3 件を「直接編集」に言い換えて解消した
+- Commit: 2525ffa7
+- Stopped: なし
 
-### Cleanup: なし
+### Cleanup: 重複と無振る舞いのテスト整理
 
-- Findings:
-- Unplanned:
+- Findings: guard.test.ts の describe('signature') を落とした。引数なしの型だけを見て振る舞いがなく、型が保証し壊れても誰も気づかない。schema.test.ts の関係式の重複を落とした。char.minPeriod だけ 200 と char.maxPeriod だけ 2 は、5 と 4 の直接指定が同じ minPeriod<=maxPeriod の分岐を当て、既定値の合流は live の 3000 の happy が担う。live.tail だけ 1000 は、scanEvery だけ 30000 と同じ scanEvery<=tail の分岐を当てる。
+- Unplanned: scrub/units.ts:67 の doc の既存の言い回しを「行に分割し」に直し、pre-commit の ja-check の error を消した。フックを止めていた。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `sampleOf`/`sampleChars`/`FOLLOWUP_*`/`followUpText`への参照残りがなく、`見本`の言及もない。`scrub.fixture.ts:49`の`loopSentence`は`thinkingWithRun`経由で現役のため陳腐化ではない。
+- Unlisted: なし — 差分の`.pi`配下12件は`Files`の12件と一致する。`scrub/units.ts:67`の文言直しと`README.ja.md`の「直接編集」言い換えは`Files`命名済みファイル内の更新であり、plan md自体の記録更新は対象外。
 - Gaps:
-- Policy:
+  - `.pi/extensions/thinking-scrub/live/guard.ts:39` — `FOLLOWUP_TEXT`の文言（止めた理由を1文で述べ、次の一歩を求め、見本を含まず、回答領域で思考の続きを書かせない短さ）を確かめる検査がない。`index.test.ts`は種別・表示のみで内容を見ないため、Goalの核心が無検査のまま残る。
+    - left: 固定文言はADRの`Details`そのものであり、定数の内容検査はトートロジーになるためテストしない。`Always`の読み合わせで`FOLLOWUP_TEXT`とADRの`Details`を当てて確認する。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:35` — `observe`のstopが`pending:true`を立てることを確かめていない（`aborts`/`scanned`のみ）。`pending`が`false`のままなら`takeFollowUp`が常に`undefined`でフォローアップが送られずGoalを外すが、現行検査は緑のまま。
+    - left: `takeFollowUp`のテストが間接的に保証する。`observe`が`pending:false`のままなら`takeFollowUp(second.guard)`が`undefined`を返してテストが落ちる。boolの直接表明は同じ振る舞いの繰り返しになる。
+- Policy: なし — 固定文言は事実1文＋次の具体的一歩で短く、見本の補間・検知名乗りヘッダー・思考継続の誘いがなく、検出条件と`maxAborts`も不変で、未使用の`sampleChars`/`sampleOf`/`FOLLOWUP_*`は除去済み。
 - Unproven:
-- Noise:
-- Doubts:
+  - `.pi/extensions/thinking-scrub/index.test.ts:497` — `toMatchObject`が`content`を見ないため、誤った文言（空文字・旧見本付き・思考継続の誘い）を送っても緑のまま。2回目`settled`で1件止まりは見るが、内容の正しさは証明しない。
+    - left: 内容の表明は定数とADRの`Details`の写経になりトートロジーのためテストしない。2回目`settled`の1件止まりと読み合わせで担保する。
+- Noise: なし — 残る数値・文字列はplan決定値（例：`sampleChars:100`の互換確認）か仕様分岐（`scanEvery<=tail`等）の振る舞いを見るもので、`pending:false`や`toHaveLength(1)`は一回限りの論理を持つ。素朴な型・有無だけの検査はない。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Unlisted: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Gaps: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。Round 1 の 2 件はいずれも `left:` で残す判断であり、修正の確認対象ではないため。
+- Policy: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Unproven: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。Round 1 の 1 件は `left:` で残す判断であり、修正の確認対象ではないため。
+- Noise: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — 割り込みメッセージが固定文言になり、見本と `sampleChars` が消え、送信は 1 回だけになる。ADR の `Details` の文面と一致する。
+- Ran: `pnpm test:related`（114 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node scripts/checks/ja-check.mjs .pi/extensions/thinking-scrub/README.ja.md`（warn 0・error 0）、`takeFollowUp` を壊して `pnpm test:related .pi/extensions/thinking-scrub/live/guard.ts` が 2 件赤になることを確認して戻した。
+- Findings: なし
+- Doubts: 固定文言の内容はテストではなく、ADR の `Details` と `Always` の読み合わせで確かめる（オーナーの判断）。

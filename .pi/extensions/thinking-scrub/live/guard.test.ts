@@ -1,23 +1,12 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import {
-  FOLLOWUP_CONTINUE,
-  FOLLOWUP_DO_NOT,
-  FOLLOWUP_REPEATING,
-  loopSentence,
-  observeIn,
-  thinkingWithRun,
-} from '../scrub.fixture.ts';
+import { describe, expect, it } from 'vitest';
+import { observeIn, thinkingWithRun } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
-import { emptyGuard, followUpText, observe, resetOnUser, takeFollowUp } from './guard.ts';
+import { emptyGuard, observe, resetOnUser, takeFollowUp } from './guard.ts';
 
 // 長い thinking はファクトリで組み立てる。既定値は defaultSettings から読む。
 
 function plainSentence(index: number): string {
   return `plain note ${index} walks through a different idea about the task at hand.`;
-}
-
-function thinkingWithOtherRun(length: number): string {
-  return thinkingWithRun(length, 10);
 }
 
 function plainThinking(length: number): string {
@@ -36,15 +25,13 @@ function plainThinking(length: number): string {
 const tuning = defaultSettings();
 
 describe('observe', () => {
-  it('既定の live と閾値の長さのランなら stop で見本つきになる', () => {
+  it('既定の live と閾値の長さのランなら stop になる', () => {
     const thinking = thinkingWithRun(tuning.live.minThinking);
     const step = observeIn(thinking);
     expect(step.kind).toBe('stop');
     if (step.kind !== 'stop') {
       throw new Error('must stop');
     }
-    expect(step.sample.length).toBeGreaterThan(0);
-    expect(step.sample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
     expect(step.guard.aborts).toBe(1);
     expect(step.guard.scanned).toBe(tuning.live.minThinking);
   });
@@ -125,47 +112,25 @@ describe('resetOnUser', () => {
 });
 
 describe('takeFollowUp', () => {
-  it('2 回止めれば最新が見本で 1 回だけ取れる', () => {
-    const firstThinking = thinkingWithRun(tuning.live.minThinking);
-    const first = observeIn(firstThinking, tuning);
+  it('2 回止めれば 1 回だけ取れる', () => {
+    const first = observeIn(thinkingWithRun(tuning.live.minThinking), tuning);
     if (first.kind !== 'stop') {
       throw new Error('first must stop');
     }
-    const secondThinking = thinkingWithOtherRun(tuning.live.minThinking + tuning.live.scanEvery);
-    const second = observe(first.guard, secondThinking, tuning, () => true);
+    const second = observe(
+      first.guard,
+      thinkingWithRun(tuning.live.minThinking + tuning.live.scanEvery),
+      tuning,
+      () => true,
+    );
     if (second.kind !== 'stop') {
       throw new Error('second must stop');
     }
-    expect(second.sample).not.toBe(first.sample);
     const taken = takeFollowUp(second.guard);
-    expect(taken?.sample).toBe(second.sample);
     if (taken === undefined) {
       throw new Error('must take');
     }
-    expect(takeFollowUp(taken.guard)).toBeUndefined();
-  });
-});
-
-describe('followUpText', () => {
-  it('指示と見本を含み長い見本は切れる', () => {
-    const live = defaultSettings().live;
-    const sample = loopSentence(0);
-    const text = followUpText(sample, live.sampleChars);
-    expect(text).toContain(FOLLOWUP_REPEATING);
-    expect(text).toContain(FOLLOWUP_DO_NOT);
-    expect(text).toContain(FOLLOWUP_CONTINUE);
-    expect(text).toContain(sample);
-    const longSample = [loopSentence(0), loopSentence(0), loopSentence(0), loopSentence(0)].join(
-      ' ',
-    );
-    const cut = followUpText(longSample, live.sampleChars);
-    expect(cut).toContain(longSample.slice(0, live.sampleChars));
-    expect(cut).not.toContain(longSample);
-  });
-});
-
-describe('signature', () => {
-  it('読まれない引数を受けない', () => {
-    expectTypeOf<Parameters<typeof resetOnUser>>().toEqualTypeOf<[]>();
+    expect(taken.pending).toBe(false);
+    expect(takeFollowUp(taken)).toBeUndefined();
   });
 });

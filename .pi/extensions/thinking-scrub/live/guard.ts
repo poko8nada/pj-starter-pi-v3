@@ -2,25 +2,25 @@
  * 生成中の thinking を止めるガードである。純粋関数だけを置く。
  *
  * `observe` は末尾のウィンドウだけを見て、文の周期があれば止める。
- * `takeFollowUp` は止めた見本を 1 回だけ渡す。
+ * `takeFollowUp` は止めた後のフォローアップを 1 回だけ取り出す。
  */
 
 import type { Tuning } from '../settings/schema.ts';
-import { detectUnitRuns, sampleOf, splitUnits } from '../scrub/units.ts';
+import { detectUnitRuns, splitUnits } from '../scrub/units.ts';
 
 export interface Guard {
   readonly aborts: number;
   readonly scanned: number;
-  readonly pending: string | null;
+  readonly pending: boolean;
 }
 
 export type GuardStep =
   | { readonly kind: 'idle'; readonly guard: Guard }
-  | { readonly kind: 'stop'; readonly guard: Guard; readonly sample: string };
+  | { readonly kind: 'stop'; readonly guard: Guard };
 
 /** 何も見ていないガードである。 */
 export function emptyGuard(): Guard {
-  return { aborts: 0, scanned: 0, pending: null };
+  return { aborts: 0, scanned: 0, pending: false };
 }
 
 /** 新しい user の合図で論理的なランをやり直す。 */
@@ -28,21 +28,16 @@ export function resetOnUser(): Guard {
   return emptyGuard();
 }
 
-/** 止めた見本を 1 回だけ取り出す。 */
-export function takeFollowUp(
-  guard: Guard,
-): { readonly guard: Guard; readonly sample: string } | undefined {
-  if (guard.pending === null) {
+/** 止めた後のフォローアップを 1 回だけ取り出す。 */
+export function takeFollowUp(guard: Guard): Guard | undefined {
+  if (!guard.pending) {
     return undefined;
   }
-  return { guard: { ...guard, pending: null }, sample: guard.pending };
+  return { ...guard, pending: false };
 }
 
-/** フォローアップの文である。見本は `sampleChars` で切る。 */
-export function followUpText(sample: string, sampleChars: number): string {
-  const cut = sample.length > sampleChars ? sample.slice(0, sampleChars) : sample;
-  return `Your thinking is repeating the same sentences. Do not repeat them. Continue the task without repeating the loop.\n\nRepeating sample:\n${cut}`;
-}
+export const FOLLOWUP_TEXT =
+  'Your thinking was repeating the same sentences, so this turn was stopped. Do not continue that repetition.\n\nNext: name the next concrete step in one sentence, then do it. If you are blocked, say what is blocking you in one sentence.';
 
 /** thinking を見て、止めるかそのまま通すかを決める。 */
 export function observe(
@@ -75,14 +70,8 @@ export function observe(
   if (runs.length === 0) {
     return { kind: 'idle', guard: { ...guard, scanned: thinking.length } };
   }
-  const first = runs[0];
-  if (first === undefined) {
-    return { kind: 'idle', guard: { ...guard, scanned: thinking.length } };
-  }
-  const sample = sampleOf(units, first, live.sampleChars);
   return {
     kind: 'stop',
-    guard: { aborts: guard.aborts + 1, scanned: thinking.length, pending: sample },
-    sample,
+    guard: { aborts: guard.aborts + 1, scanned: thinking.length, pending: true },
   };
 }
