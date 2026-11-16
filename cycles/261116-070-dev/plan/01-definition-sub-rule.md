@@ -174,7 +174,7 @@ DEFINITION.md
 
 - Findings: なし
 - Unplanned: なし
-- Commit: <pending>
+- Commit: a2c08cf8
 - Stopped: なし
 
 ### Cleanup: なし
