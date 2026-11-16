@@ -135,18 +135,18 @@ View:
 - Scope table:
   | **question (yes → in)**                                                                                            | Kinds         |
   | ------------------------------------------------------------------------------------------------------------------ | ------------- |
-  | Does what can be observed from outside change? (what is returned, written, or emitted; side effects)               | result        |
-  | Do the steps or rules that produce the result change? (conditions, order, algorithms, constraints, instructions)   | logic         |
-  | Does how things are divided, ordered, nested, or placed change? (module, schema, section, layout, files and dirs)  | structure     |
-  | Does the surface notation change? (names, wording, tone, formatting, spelling)                                     | expression    |
-  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)  | upstream      |
-  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)             | downstream    |
-  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)       | existing      |
-  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                    | cost          |
   | Does it touch secrets, permissions, exposure, or personal data?                                                    | safety        |
   | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?   | failure       |
+  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)  | upstream      |
+  | Does what can be observed **from outside** change? (what is returned, written, or emitted; side effects)           | result        |
+  | Does how things are divided, ordered, nested, or placed change? (module, schema, section, layout, files and dirs)  | structure     |
+  | Do the steps or rules that produce the result change? (conditions, order, algorithms, constraints, instructions)   | logic         |
+  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)       | existing      |
+  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)             | downstream    |
+  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                    | cost          |
+  | Does the surface notation change? (names, wording, tone, formatting, spelling)                                     | expression    |
   | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.** | verification  |
-  | Do the records or signals the product leave change? (logs, metrics, audit records)                                 | observability |
+  | Do the **past** records or signals the product leave change? (logs, metrics, audit records)                        | observability |
   | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                 | release       |
   | Is there a concern that none of the above covers?                                                                  | other         |
 
@@ -158,8 +158,8 @@ Steps:
 2. Read the `Decision` section of `references/adr.format.md`.
 3. Write the opening proposal in the entry's `Decision`, with `Status` empty:
 4. Say what the facts decide and what the proposal is, and go on:
-   - Full: go to the Discussion Loop.
-   - Simple: go to the `Decision`.
+   - _Full_: go to the Discussion Loop.
+   - _Simple_: go to the `Decision`.
 
 Notes:
 
@@ -179,6 +179,8 @@ Steps:
      1. Limit these points to "matters that should be decided with the owner".
      2. Just confirming is not the issue point. These will be presented together at the end.
 3. Show one point at a time, and discuss it until it is settled.
+   - Begin by discussing elements that cannot be changed, move on to those that can be adjusted, and conclude by addressing the operational framework that encompasses everything.
+   - Here is specific scope order:safety → failure → upstream → result → structure → logic → existing → downstream → cost → expression → verification → observability → release → other
 4. Write what is settled where the View gives, at the moment it is settled.
    - If needed, write an added `Context` item as `C<n>`, after the existing numbers.
    - If needed, write a specific code or document in `Decision`'s `#### Details`, one fence per item. A bullet is the fence's title, and the fence follows it.
@@ -209,12 +211,12 @@ Steps:
 1. Check that every `C` and every `F` is carried.
    - use `node .pi/skills/adr/scripts/index.mjs --check`
 2. When a `C` is not carried:
-   - Full: explain it to the owner. When they say it no longer limits the entry, remove its `C<n>:` label and keep the item in `Context` as a plain bullet.
-   - Simple: add it to the proposal, and ask the owner again.
+   - _Full_: explain it to the owner. When they say it no longer limits the entry, remove its `C<n>:` label and keep the item in `Context` as a plain bullet.
+   - _Simple_: add it to the proposal, and ask the owner again.
 3. When an `F` is not carried, remove its `F<n>:` label and keep the fact in `Research & Trial` as a plain bullet. Do not delete the content.
 4. Wait for the owner's judgement:
-   - Full: `accepted` or `rejected`, after the discussion.
-   - Simple: `accepted` or `rejected`, on the proposal directly.
+   - _Full_: `accepted` or `rejected`, after the discussion.
+   - _Simple_: `accepted` or `rejected`, on the proposal directly.
 5. Write `Status`.
 
 Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with the reason.
@@ -285,9 +287,7 @@ Steps:
 5. When the check leaves nothing to add, read the decided entries together, settle a contradiction, and read the `Definition` lines together. The owner's answer closes the entries' decisions.
 6. When the owner agrees to add an item to an entry, go back to that entry's Discussion Loop. The next pass of this section starts again from step 1.
 
-Notes:
-
-- Two entries that touch the same name must not contradict.
+Notes: Two entries that touch the same name must not contradict.
 
 ## What comes after an entry
 

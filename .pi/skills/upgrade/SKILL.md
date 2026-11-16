@@ -23,9 +23,7 @@ Steps:
 
 1. Run `pnpm update` every time, whether or not anything is out of date.
 
-Notes:
-
-- It writes the range in `package.json` and moves `pnpm-lock.yaml`.
+Notes: It writes the range in `package.json` and moves `pnpm-lock.yaml`.
 
 ### 2. Find what is out of range
 
