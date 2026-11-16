@@ -165,10 +165,10 @@ DEFINITION.md
 
 ### Slice 1: 規則がサブを許す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <pending>
+- Stopped: なし
 
 ### Slice 2: 形がサブの行を受ける
 
