@@ -162,20 +162,20 @@ rules/
 
 - Findings: なし
 - Unplanned: なし
-- Commit: <pending>
+- Commit: 8d1bf1b5
 - Stopped: なし
 
 ### Slice 2: close がサブを確かめる
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <pending>
+- Stopped: なし
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 

@@ -107,21 +107,21 @@ Where every leftover goes.
 
 ## Verified
 
-The Units of the cycle and what the owner answered for each.
+The Units the cycle touched, the Subs the change touched, and what the owner answered for each.
 
 - At the completion of `close.md`, `## Verified` is empty, and that is normal.
 - `## Verified` sits after `## Triage`.
 
-### Unit
+### Name
 
-- `### <Unit>` holds one section per Unit this cycle touched, among the Units listed in `Users can do`.
-- A Unit is a line under `Users can do`, and a `####` heading is not a Unit.
+- `### <name>` holds one section per Unit this cycle touched, and per Sub the change touched, among the names listed in `Users can do`.
+- A Unit is a top-level line under `Users can do`; a Sub is an indented line under its Unit. A `####` heading is neither.
 - The name is copied as it is.
-- `Product` / `What` / `Who` / `Stack` are not Units and are not verified.
+- `Product` / `What` / `Who` / `Stack` are not names and are not verified.
 
 ### Fields
 
-- `Plans` holds one bullet per plan that cuts an entry the Unit is named by, taken from the plan md's `No`.
+- `Plans` holds one bullet per plan that cuts an entry that names it, taken from the plan md's `No`.
 - `Result` is `OK` when the owner checked the Unit's function and it worked, and what they found when it did not.
 - `Result` is `しない` with the reason on the same line when they will not check.
 - `Change` is `OK` when the owner checked what the plans changed and it is as intended, and what they found when it is not.
