@@ -25,7 +25,7 @@ function plainThinking(length: number): string {
 const tuning = defaultSettings();
 
 describe('observe', () => {
-  it('既定の live と閾値の長さのランなら stop になる', () => {
+  it('既定の live と閾値の長さのランなら stop になり、pending が立つ', () => {
     const thinking = thinkingWithRun(tuning.live.minThinking);
     const step = observeIn(thinking);
     expect(step.kind).toBe('stop');
