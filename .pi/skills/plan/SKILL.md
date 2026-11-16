@@ -31,7 +31,7 @@ Steps:
 1. Read `references/cut.md` before cutting.
 2. Cut the work into plans by what it reads, not by where it lives.
 3. Decide the split, the place of each plan, the order, and the boundary. Propose the place with the reason. When unsure of the place, propose worktree.
-4. Present them to the owner in the format `references/cut.md` gives.
+4. Present them as markdown (not a fence) to the owner in the format `references/cut.md` gives.
 5. Wait for the owner's agreement. On disagreement, revise and present again until they agree.
 
 ### 3. Write the plan md from the affected
@@ -100,10 +100,8 @@ Steps:
 
 Notes:
 
-- The owner's answer decides what the plan carries.
-- A file the affected does not name is not touched without the owner's report.
-- The whole is confirmed here once before the review.
-- The opinion's ground is YAGNI, KISS, DRY and SOLID.
+- The whole is confirmed here by YOU once before the review.
+- The opinion's ground is your principles. **Existing code is not the ground.**
 
 ### 5. Review the plan for a first-time subagent
 
