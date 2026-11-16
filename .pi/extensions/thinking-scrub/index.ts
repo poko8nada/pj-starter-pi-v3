@@ -20,7 +20,7 @@ import type {
 import { parseCommand, runCommand } from './command/scrub.ts';
 import {
   emptyGuard,
-  followUpText,
+  FOLLOWUP_TEXT,
   observe,
   resetOnUser,
   takeFollowUp,
@@ -231,8 +231,8 @@ function handleAgentSettled(
   if (taken === undefined) {
     return;
   }
-  state.guard = taken.guard;
-  options.followUp(followUpText(taken.sample, state.settings.live.sampleChars));
+  state.guard = taken;
+  options.followUp(FOLLOWUP_TEXT);
 }
 
 function handleBeforeAgentStart(state: WiringState, event: BeforeAgentStartEvent): void {

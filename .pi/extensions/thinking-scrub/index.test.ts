@@ -10,7 +10,6 @@ import type {
 } from '@earendil-works/pi-coding-agent';
 import {
   DEGENERATE_UNIT,
-  FOLLOWUP_REPEATING,
   SCRUB_REMOVED_MARK,
   assistantMessage,
   degenerate,
@@ -489,6 +488,8 @@ describe('onAgentSettled', () => {
     expect(aborted).toBe(1);
     settled(agentSettled(true), {});
     expect(fake.sent).toHaveLength(1);
+    settled(agentSettled(true), {});
+    expect(fake.sent).toHaveLength(1);
     const first = fake.sent.at(0);
     if (first === undefined) {
       throw new Error('must send');
@@ -496,7 +497,6 @@ describe('onAgentSettled', () => {
     expect(first.message).toMatchObject({
       customType: 'thinking-scrub',
       display: true,
-      content: expect.stringContaining(FOLLOWUP_REPEATING),
     });
     expect(first.options).toMatchObject({ triggerTurn: true });
   });

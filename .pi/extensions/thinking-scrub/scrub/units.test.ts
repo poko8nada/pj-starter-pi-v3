@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cycleText } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
-import { detectUnitRuns, sampleOf, splitUnits, type Unit, type UnitRun } from './units.ts';
+import { detectUnitRuns, splitUnits, type Unit } from './units.ts';
 
 // 繰り返しの文はファクトリで組み立てる。各 case で直接書かない。
 
@@ -201,42 +201,5 @@ describe('detectUnitRuns', () => {
     expect(detectUnitRuns(units, tuning.sentence)).toHaveLength(0);
     const runs = detectUnitRuns(units, sentence);
     expect(runs).toHaveLength(1);
-  });
-});
-
-describe('sampleOf', () => {
-  it('周期が 3 以下なら、その周期の文だけを返す', () => {
-    const three = [english(0), english(1), english(2)];
-    const cycles = tuning.sentence.minCycles + 1;
-    const threeText = cycleText(three, cycles);
-    const threeUnits = unitsFromText(threeText);
-    expect(threeUnits).toHaveLength(three.length * cycles);
-    const threeRun: UnitRun = { at: 0, length: threeUnits.length, period: three.length };
-    const threeSample = sampleOf(threeUnits, threeRun, tuning.live.sampleChars);
-    expect(threeSample).toBe(three.join(' '));
-    expect(threeSample.length).toBeLessThanOrEqual(tuning.live.sampleChars);
-    const one = [longEnglish(0)];
-    const oneText = cycleText(one, tuning.sentence.minCycles);
-    expect(oneText.length).toBeGreaterThanOrEqual(tuning.sentence.minRunChars);
-    const oneUnits = unitsFromText(oneText);
-    expect(oneUnits).toHaveLength(tuning.sentence.minCycles);
-    const oneRun: UnitRun = { at: 0, length: tuning.sentence.minCycles, period: one.length };
-    expect(sampleOf(oneUnits, oneRun, tuning.live.sampleChars)).toBe(one[0] ?? '');
-  });
-
-  it('3 文で sampleChars を超えれば切れる', () => {
-    const pattern = [longEnglish(0), longEnglish(1), longEnglish(2), longEnglish(3)];
-    const text = cycleText(pattern, tuning.sentence.minCycles);
-    const units = unitsFromText(text);
-    const run: UnitRun = {
-      at: 0,
-      length: pattern.length * tuning.sentence.minCycles,
-      period: pattern.length,
-    };
-    const sample = sampleOf(units, run, tuning.live.sampleChars);
-    expect(sample.length).toBe(tuning.live.sampleChars);
-    const expected = [longEnglish(0), longEnglish(1), longEnglish(2)].join(' ');
-    expect(expected.length).toBeGreaterThan(tuning.live.sampleChars);
-    expect(sample).toBe(expected.slice(0, tuning.live.sampleChars));
   });
 });
