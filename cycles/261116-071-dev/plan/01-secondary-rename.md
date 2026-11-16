@@ -133,10 +133,10 @@ rules/
 
 ### Slice 1: ADR が Secondary で読む
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <pending>
+- Stopped: なし
 
 ### Cleanup: なし
 

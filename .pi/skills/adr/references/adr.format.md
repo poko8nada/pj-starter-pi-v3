@@ -40,7 +40,7 @@ Type: _Full_
     - <変わるもの（何がどうなるか）>（C1）
   - Drop:
     - <消えるもの>（F1）
-- Sub: <この関心事は、何がどうなるか>
+- Secondary: <この関心事は、何がどうなるか>
   - Add:
     - <増えるもの>（C1, F2）
   - Update:
@@ -114,10 +114,10 @@ What the entry becomes, and what holds it.
 
 - `Status` is empty ,`accepted`, or `rejected` with its reason in parentheses on the same line.
 - `Main` is one per entry.
-- `Sub` is from 0 to multiple.
+- `Secondary` is from 0 to multiple.
 - `Add` is what grows, `Update` is what changes, and `Drop` is what disappears.
 - `Policy` is what holds the decision: `Allowed` is what may be done, and `Forbidden` is what must not be done, with its reason.
-- A line under `Main`, `Sub`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
+- A line under `Main`, `Secondary`, `Add`, `Update`, `Drop` or `Policy` ends with the items it settles, in parentheses: `（C1, F2）`.
 - `#### Details`
   - It holds the concrete code and documents the discussion settled: the specific name, the logic, the method, the schema and the structure
   - One bullet is the title of one fence, and the fence follows it.

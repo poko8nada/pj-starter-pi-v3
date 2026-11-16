@@ -62,11 +62,11 @@ View:
 | `### External` item  | the step's `Outside:`                   |
 | a path               | a `Files` line                          |
 
-| `Main` / `Sub` | mark     |
-| -------------- | -------- |
-| `Add`          | `add`    |
-| `Update`       | `update` |
-| `Drop`         | `drop`   |
+| `Main` / `Secondary` | mark     |
+| -------------------- | -------- |
+| `Add`                | `add`    |
+| `Update`             | `update` |
+| `Drop`               | `drop`   |
 
 | work                           | check     |
 | ------------------------------ | --------- |
@@ -121,7 +121,7 @@ Note: the first review asks whether a subagent with only the plan md can impleme
 Steps:
 
 1. Read the `Review of a plan against the ADR` section of `references/tasks.md`.
-2. Send the plan md and the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition` to one `review` subagent. The reviewer reads the files the plan names and `references/design.md`.
+2. Send the plan md and the ADR's `Main`, `Secondary`, `Policy`, `Scope` and `Definition` to one `review` subagent. The reviewer reads the files the plan names and `references/design.md`.
 3. Read the report, and fix the plan from the findings.
 4. Report to the owner what was done with each finding.
 
