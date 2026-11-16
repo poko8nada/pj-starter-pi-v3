@@ -138,3 +138,5 @@ How the lines of `DEFINITION.md` move, one line per name.
 | `(updated)` | the new line               |
 | `(kept)`    | the reason the line stands |
 | `(dropped)` | nothing                    |
+
+- A Sub is a name of its own: `Unit.<unit>_<sub>`. The parent's line stands when only the Sub's line moves.

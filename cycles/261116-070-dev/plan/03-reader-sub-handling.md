@@ -160,10 +160,10 @@ rules/
 
 ### Slice 1: adr がサブを名指す
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: <pending>
+- Stopped: なし
 
 ### Slice 2: close がサブを確かめる
 

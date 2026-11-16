@@ -226,7 +226,7 @@ Note: a rejected entry adopts nothing. Its `Status` carries `**rejected**` with 
 Steps:
 
 1. Read `rules/definition.rules.md` and `rules/definition.format.md`, and the `Definition` section of `references/adr.format.md`.
-2. Name the parts of `DEFINITION.md` the entry relates to: `Unit`, `Who`, `Stack`, `What`.
+2. Name the parts of `DEFINITION.md` the entry relates to: `Unit`, `Sub`, `Who`, `Stack`, `What`.
 3. Write each part with one operation.
 4. Explain reason why and get the owner's agreement.
 
@@ -243,7 +243,7 @@ Notes:
 
 - `(kept)` carries the reason the part stands: its main function is the same, and what changed is the route or the check that holds it up.
 - The parts are named, not summarised. A part left unnamed is a part the entry did not weigh.
-- A Unit that `rules/definition.rules.md` does not allow is not a Unit.
+- A Unit or a Sub that `rules/definition.rules.md` does not allow is not a part.
 
 ### 6. Research Affected
 
