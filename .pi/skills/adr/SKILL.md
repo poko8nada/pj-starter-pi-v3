@@ -121,11 +121,9 @@ Steps:
 
 1. Read the `## Scope` section of `references/adr.format.md`.
 2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
-   - Ensure that you answer the questions in the table and categorize items appropriately.
-   - Judge each kind on its own; several kinds may be `In` at the same time.
+   - **Ensure that you answer the questions in the table** and categorize items appropriately.
+   - Judge each kind on its own; several kinds can be `In` at the same time. Because each scope is loosely coupled with the others
    - Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
-   - When the document directs a reader's behavior, a change only in `expression` puts `result` and `logic` in too, if it changes what the reader does.
-   - When a change of `logic` changes the artifact, `result` is `In` too; both may be `In`.
 3. Let the owner correct the list.
 4. Write the result to the entry's `Scope` as `In:` and `Out:`.
 
@@ -133,22 +131,22 @@ View:
 
 - A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
 - Scope table:
-  | **question (yes → in)**                                                                                            | Kinds         |
-  | ------------------------------------------------------------------------------------------------------------------ | ------------- |
-  | Does it touch secrets, permissions, exposure, or personal data?                                                    | safety        |
-  | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?   | failure       |
-  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)  | upstream      |
-  | Does what can be observed **from outside** change? (what is returned, written, or emitted; side effects)           | result        |
-  | Does how things are divided, ordered, nested, or placed change? (module, schema, section, layout, files and dirs)  | structure     |
-  | Do the steps or rules that produce the result change? (conditions, order, algorithms, constraints, instructions)   | logic         |
-  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)       | existing      |
-  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)             | downstream    |
-  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                    | cost          |
-  | Does the surface notation change? (names, wording, tone, formatting, spelling)                                     | expression    |
-  | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.** | verification  |
-  | Do the records or signals the product leave change? (logs, metrics, audit records) For audit-related only.         | observability |
-  | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                 | release       |
-  | Is there a concern that none of the above covers?                                                                  | other         |
+  | **question (yes → in)**                                                                                                 | Kinds         |
+  | ----------------------------------------------------------------------------------------------------------------------- | ------------- |
+  | Does it touch secrets, permissions, exposure, or personal data?                                                         | safety        |
+  | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?        | failure       |
+  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)       | upstream      |
+  | Does **the kinds of observable result** change? (what kinds is returned or emitted; side effects) Not a content itsself | result        |
+  | Does how things are divided, ordered, nested, or placed change? (**module, files, dirs, schema**, layout)               | structure     |
+  | Do the steps or rules that produce the result change? (**conditions, order, algorithms, constraints, instructions**)    | logic         |
+  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)            | existing      |
+  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)                  | downstream    |
+  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                         | cost          |
+  | Does the content or notation change? (names, wording, sentences, tone, formatting, spelling)                            | expression    |
+  | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.**      | verification  |
+  | Do the records or signals the product leave change? (logs, metrics, audit records) For audit-related only.              | observability |
+  | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                      | release       |
+  | Is there a concern that none of the above covers?                                                                       | other         |
 
 ### 2. The opening proposal
 
