@@ -276,17 +276,17 @@ export interface LiveTuning {
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Unlisted: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Gaps: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。Round 1 の 2 件はいずれも `left:` で残す判断であり、修正の確認対象ではないため。
+- Policy: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Unproven: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。Round 1 の 1 件は `left:` で残す判断であり、修正の確認対象ではないため。
+- Noise: なし — `### Round 1` に `fixed:` 行がなく、確認対象がないため。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — 割り込みメッセージが固定文言になり、見本と `sampleChars` が消え、送信は 1 回だけになる。ADR の `Details` の文面と一致する。
+- Ran: `pnpm test:related`（114 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`node scripts/checks/ja-check.mjs .pi/extensions/thinking-scrub/README.ja.md`（warn 0・error 0）、`takeFollowUp` を壊して `pnpm test:related .pi/extensions/thinking-scrub/live/guard.ts` が 2 件赤になることを確認して戻した。
+- Findings: なし
+- Doubts: 固定文言の内容はテストではなく、ADR の `Details` と `Always` の読み合わせで確かめる（オーナーの判断）。
