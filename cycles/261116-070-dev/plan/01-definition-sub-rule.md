@@ -187,12 +187,14 @@ DEFINITION.md
 ### Round 1
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `rules/definition.format.md:70` — `What may be a Unit, and how a Unit is named and written, is in \`rules/definition.rules.md\`.` が古い範囲のまま残り、規則の新内容（`rules/definition.rules.md:3`の`What may be a Unit or a Sub ... Units, the Subs ...`）と矛盾する。理由: diff は冒頭文・Sections・Writing を Sub 対応に変えたのに、この相互参照だけ Unit のままなので、読み手は「形の側は Unit だけを扱う」と誤読できる。
+    - fixed: `rules/definition.format.md:70` を `What may be a Unit or a Sub, and how a Unit or a Sub is named and written, is in \`rules/definition.rules.md\`.` に直し、規則の冒頭文と相互参照を一致させた。
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
