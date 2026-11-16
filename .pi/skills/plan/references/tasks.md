@@ -42,7 +42,7 @@ When the first review is fixed.
 ```text
 Answer one question: can this plan achieve its Goal, and do the Steps and the Policy carry the ADR?
 
-1. Read the plan md, the files it names, the ADR's `Main`, `Sub`, `Policy`, `Scope` and `Definition`, and `.pi/skills/plan/references/design.md`.
+1. Read the plan md, the files it names, the ADR's `Main`, `Secondary`, `Policy`, `Scope` and `Definition`, and `.pi/skills/plan/references/design.md`.
    - When the entry is Simple, its `Scope` and `#### Details` are `_omission_`. Read the omission as the entry not recording them, not as an empty scope. The plan's range is held by `Definition`.
 2. Answer under these viewpoints:
    - `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
@@ -70,7 +70,7 @@ When the plan has a line it cannot write.
 ```text
 Answer for one line the plan cannot write, and nothing else.
 
-The task names the line, the ADR's `Main` and `Sub` and `Scope`, and what the plan holds so far.
+The task names the line, the ADR's `Main` and `Secondary` and `Scope`, and what the plan holds so far.
 
 1. Before writing, read the file the line belongs to again.
 2. Ask one question within these four kinds:

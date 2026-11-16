@@ -321,10 +321,10 @@ describe('checkEntry', () => {
     const markdown = entry(decision('  - Add:\n      - 何か'), '', '');
     expect(checkEntry(markdown)).toEqual([]);
   });
-  it('(happy) Sub の行が C を運ぶ → 抜けは空', () => {
+  it('(happy) Secondary の行が C を運ぶ → 抜けは空', () => {
     const markdown = entry(
       decision(
-        '  - Add:\n      - 何か（C1, F1）\n- Sub: 追加の関心事\n  - Add:\n      - 何か（C2）\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし',
+        '  - Add:\n      - 何か（C1, F1）\n- Secondary: 追加の関心事\n  - Add:\n      - 何か（C2）\n- Policy:\n  - Allowed:\n    - なし\n  - Forbidden:\n    - なし',
       ),
     );
     expect(checkEntry(markdown)).toEqual([]);

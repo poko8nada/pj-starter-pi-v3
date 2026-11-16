@@ -165,8 +165,8 @@ Notes:
 
 - The proposal is in adr.md, not only in the chat.
 - The proposal must be based on the initially agreed-upon intent.
-- An entry has one `Main` concern and sometimes have `Sub`s.
-- A `Sub` is only when its change follows from the `Main`'s change or addition.
+- An entry has one `Main` concern and sometimes `Secondary` concerns.
+- A `Secondary` is only when its change follows from the `Main`'s change or addition.
 
 ### 3. Discussion Loop
 
