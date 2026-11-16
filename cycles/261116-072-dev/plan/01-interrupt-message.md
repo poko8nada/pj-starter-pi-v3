@@ -251,10 +251,10 @@ export interface LiveTuning {
 - Commit: 2525ffa7
 - Stopped: なし
 
-### Cleanup: なし
+### Cleanup: 重複と無振る舞いのテスト整理
 
-- Findings:
-- Unplanned:
+- Findings: guard.test.ts の describe('signature') を落とした。引数なしの型だけを見て振る舞いがなく、型が保証し壊れても誰も気づかない。schema.test.ts の関係式の重複を落とした。char.minPeriod だけ 200 と char.maxPeriod だけ 2 は、5 と 4 の直接指定が同じ minPeriod<=maxPeriod の分岐を当て、既定値の合流は live の 3000 の happy が担う。live.tail だけ 1000 は、scanEvery だけ 30000 と同じ scanEvery<=tail の分岐を当てる。
+- Unplanned: scrub/units.ts:67 の doc の既存の言い回しを「行に分割し」に直し、pre-commit の ja-check の error を消した。フックを止めていた。
 
 ## Work Review
 

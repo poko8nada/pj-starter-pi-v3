@@ -64,7 +64,7 @@ function isJapaneseEnd(char: string): boolean {
   return char === '。' || char === '！' || char === '？';
 }
 
-/** 本文を行に分け、元の offset を付けて返す。 */
+/** 本文を行に分割し、元の offset を付けて返す。 */
 function splitLines(text: string): { readonly start: number; readonly line: string }[] {
   const lines: { readonly start: number; readonly line: string }[] = [];
   let pos = 0;

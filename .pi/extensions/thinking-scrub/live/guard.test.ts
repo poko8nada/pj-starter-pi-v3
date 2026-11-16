@@ -1,4 +1,4 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { observeIn, thinkingWithRun } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { emptyGuard, observe, resetOnUser, takeFollowUp } from './guard.ts';
@@ -132,11 +132,5 @@ describe('takeFollowUp', () => {
     }
     expect(taken.pending).toBe(false);
     expect(takeFollowUp(taken)).toBeUndefined();
-  });
-});
-
-describe('signature', () => {
-  it('読まれない引数を受けない', () => {
-    expectTypeOf<Parameters<typeof resetOnUser>>().toEqualTypeOf<[]>();
   });
 });

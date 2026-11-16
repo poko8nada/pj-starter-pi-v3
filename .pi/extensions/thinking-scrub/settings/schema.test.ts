@@ -89,39 +89,6 @@ describe('parseSettings', () => {
     expect(read.reason).toContain('live.tail');
   });
 
-  it('live.tail だけが 1000 なら broken で理由は live.scanEvery と live.tail の関係を示す', () => {
-    const input = JSON.stringify({ live: { tail: 1000 } });
-    const read = parseSettings(input);
-    expect(read.kind).toBe('broken');
-    if (read.kind !== 'broken') {
-      throw new Error('must be broken');
-    }
-    expect(read.reason).toContain('live.scanEvery');
-    expect(read.reason).toContain('live.tail');
-  });
-
-  it('char.minPeriod だけが 200 なら broken で理由は char.minPeriod と char.maxPeriod の関係を示す', () => {
-    const input = JSON.stringify({ char: { minPeriod: 200 } });
-    const read = parseSettings(input);
-    expect(read.kind).toBe('broken');
-    if (read.kind !== 'broken') {
-      throw new Error('must be broken');
-    }
-    expect(read.reason).toContain('char.minPeriod');
-    expect(read.reason).toContain('char.maxPeriod');
-  });
-
-  it('char.maxPeriod だけが 2 なら broken で理由は char.minPeriod と char.maxPeriod の関係を示す', () => {
-    const input = JSON.stringify({ char: { maxPeriod: 2 } });
-    const read = parseSettings(input);
-    expect(read.kind).toBe('broken');
-    if (read.kind !== 'broken') {
-      throw new Error('must be broken');
-    }
-    expect(read.reason).toContain('char.minPeriod');
-    expect(read.reason).toContain('char.maxPeriod');
-  });
-
   it('古い sampleChars だけなら ok で sampleChars を持たない', () => {
     const input = JSON.stringify({ live: { sampleChars: 100 } });
     const read = parseSettings(input);
