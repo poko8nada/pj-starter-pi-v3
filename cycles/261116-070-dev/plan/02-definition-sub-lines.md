@@ -97,7 +97,7 @@ DEFINITION.md                update
 
 - Findings: なし
 - Unplanned: なし
-- Commit: <hash>
+- Commit: 6cd7f6ef
 - Stopped: なし
 
 ### Cleanup: なし
