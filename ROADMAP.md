@@ -32,7 +32,7 @@
 
 | No  | Ver   | status | cycles       | priority | title                                |
 | --- | ----- | ------ | ------------ | -------- | ------------------------------------ |
-| 034 | 0.9.7 | _todo_ |              | low      | thinking-scrubの一部修正             |
+| 034 | 0.9.7 | done   | 072-d        | low      | thinking-scrubの一部修正             |
 | 033 | 0.9.7 | done   | 070-d, 071-d | high     | DEFINITONの定義一部変更              |
 | 032 | 0.9.6 | done   | 065-d        | low      | スキルの追加修正                     |
 | 031 | 0.9.6 | done   | 063-d, 064-d | mid      | スキルの修正                         |
