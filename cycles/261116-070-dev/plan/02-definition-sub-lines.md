@@ -109,27 +109,27 @@ DEFINITION.md                update
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — DEFINITION.md:51-60 の8行は ADR 02 Details が決めた文面どおりで、親行を冗長にせず、他文書のずれは ADR Scope Out（downstream は 03 が持つ）の想定内。解析コードはなく（ADR F10）、陳腐化するコメント・テストはない。
+- Unlisted: なし — 差分は DEFINITION.md の8行追加と plan md の Notes 記録のみで、Files の `DEFINITION.md update` の範囲内。plan md の記録は定常業務であり、名指し外の変更はない。
+- Gaps: なし — Goal（3ユニット下の8サブ行）の名・Who・インデント・親子並びは Verify Always の読み合わせが直接確かめる対象で、Added の ja-check が日本語を覆う。Types なしのため自動検査で覆うべき振る舞いの穴はない。
+- Policy: なし — 8行は ADR が決めた機能であり、Allowed 3件（0個可・Who 相違可・他ユニットとの重複可）を保ち、Forbidden 3件（経路・検査・主機能の重複）に当たらない。
+- Unproven: なし — 新規テストファイル・ケースがなく、振る舞いを名指すテストがないため、壊れても緑になるテストはない。
+- Noise: なし — 追加・変更されたテストケースがないため、型等で決まる重複や magic number・ハードコード文字列のケースはない。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 に指摘なしのため `fixed:` 行はなく、再確認の対象はない。
+- Unlisted: なし — 同上。
+- Gaps: なし — 同上。
+- Policy: なし — 同上。
+- Unproven: なし — 同上。
+- Noise: なし — 同上。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — `DEFINITION.md` の `Users can do` が、`subagent-consult`、`thinking-scrub`、`context-precompact` の下に 8 つのサブの行を持つ。
+- Ran: `pnpm test:run`（836 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git diff 3db5ef4d..HEAD` の読み、`ja-check DEFINITION.md`。
+- Findings: なし
+- Doubts: なし
