@@ -260,13 +260,19 @@ export interface LiveTuning {
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — `sampleOf`/`sampleChars`/`FOLLOWUP_*`/`followUpText`への参照残りがなく、`見本`の言及もない。`scrub.fixture.ts:49`の`loopSentence`は`thinkingWithRun`経由で現役のため陳腐化ではない。
+- Unlisted: なし — 差分の`.pi`配下12件は`Files`の12件と一致する。`scrub/units.ts:67`の文言直しと`README.ja.md`の「直接編集」言い換えは`Files`命名済みファイル内の更新であり、plan md自体の記録更新は対象外。
 - Gaps:
-- Policy:
+  - `.pi/extensions/thinking-scrub/live/guard.ts:39` — `FOLLOWUP_TEXT`の文言（止めた理由を1文で述べ、次の一歩を求め、見本を含まず、回答領域で思考の続きを書かせない短さ）を確かめる検査がない。`index.test.ts`は種別・表示のみで内容を見ないため、Goalの核心が無検査のまま残る。
+    - left: 固定文言はADRの`Details`そのものであり、定数の内容検査はトートロジーになるためテストしない。`Always`の読み合わせで`FOLLOWUP_TEXT`とADRの`Details`を当てて確認する。
+  - `.pi/extensions/thinking-scrub/live/guard.test.ts:35` — `observe`のstopが`pending:true`を立てることを確かめていない（`aborts`/`scanned`のみ）。`pending`が`false`のままなら`takeFollowUp`が常に`undefined`でフォローアップが送られずGoalを外すが、現行検査は緑のまま。
+    - left: `takeFollowUp`のテストが間接的に保証する。`observe`が`pending:false`のままなら`takeFollowUp(second.guard)`が`undefined`を返してテストが落ちる。boolの直接表明は同じ振る舞いの繰り返しになる。
+- Policy: なし — 固定文言は事実1文＋次の具体的一歩で短く、見本の補間・検知名乗りヘッダー・思考継続の誘いがなく、検出条件と`maxAborts`も不変で、未使用の`sampleChars`/`sampleOf`/`FOLLOWUP_*`は除去済み。
 - Unproven:
-- Noise:
-- Doubts:
+  - `.pi/extensions/thinking-scrub/index.test.ts:497` — `toMatchObject`が`content`を見ないため、誤った文言（空文字・旧見本付き・思考継続の誘い）を送っても緑のまま。2回目`settled`で1件止まりは見るが、内容の正しさは証明しない。
+    - left: 内容の表明は定数とADRの`Details`の写経になりトートロジーのためテストしない。2回目`settled`の1件止まりと読み合わせで担保する。
+- Noise: なし — 残る数値・文字列はplan決定値（例：`sampleChars:100`の互換確認）か仕様分岐（`scanEvery<=tail`等）の振る舞いを見るもので、`pending:false`や`toHaveLength(1)`は一回限りの論理を持つ。素朴な型・有無だけの検査はない。
+- Doubts: なし
 
 ### Round 2
 
