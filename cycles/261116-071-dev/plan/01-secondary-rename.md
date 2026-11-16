@@ -140,34 +140,34 @@ rules/
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — `- Sub:` は `.pi/` と `rules/` に残らず（grep で確認）、残る `Sub` は定義書用法のみ（`.pi/skills/adr/references/adr.format.md:142`、`.pi/skills/adr/SKILL.md:229,246`）で、plan の `Allowed` が残すと決めた値のため。
+- Unlisted: なし — diff は `Files` の `update` 6 件（`adr.format.md`、`adr/SKILL.md`、`plan/SKILL.md`、`plan/references/tasks.md`、`adr.mjs`、`index.test.ts`）のみで、`close/` と `rules/` は不変。plan md 自体の `Notes` 更新（`cycles/261116-071-dev/plan/01-secondary-rename.md:136-139`）は手順の記録であり、plan が決めた値のため。
+- Gaps: なし — ADR の F1 が数えた Decision 用法 12 か所はすべて `Secondary` に変わり（`git diff 4c779213..HEAD` で確認）、定義書用法（F2）は不変で、`Goal`（`Main` と `Secondary` の区別）に穴はない。`Verify` の全体読みが求める不整合確認をレビューとして再実施済みのため。
+- Policy: なし — `Allowed` 2 件（`Secondary` の関心事用法、定義書の `Sub` 継続）を保ち、`Forbidden` 2 件（Decision の `Sub` はゼロ件に、`cycles/` の過去記録は不変）も破らないため。ADR 071 自身の `- Sub: なし`（`cycles/261116-071-dev/adr.md:51`）は記録であり、直さないことが `Forbidden` の決定値のため。
+- Unproven: なし — `.pi/skills/adr/scripts/index.test.ts:324,327` の改名は plan の `Steps` 6.1/6.2 が一字一句決めた値であり、除外規定により所見にしないため。
+- Noise: なし — フィクスチャ内の固定文字列（`追加の関心事` 等）も plan の `Steps` 6.2 が残すと決めた値であり、除外規定により所見にしないため。
+- Doubts: なし
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — Round 1 で所見なしのため `fixed:` 行はなく、確認対象がないため。
+- Unlisted: なし — 同上。
+- Gaps: なし — 同上。
+- Policy: なし — 同上。
+- Unproven: なし — 同上。
+- Noise: なし — 同上。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — ADR の `Decision` の関心事が、`Main` と `Secondary` で区別して読める。
+- Ran: `pnpm test:related .pi/skills/adr/scripts/adr.mjs`（70 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`ja-check`（`adr.mjs`、`index.test.ts`）、`git diff 4c779213..HEAD` の読み。
+- Findings: なし
+- Doubts: なし
