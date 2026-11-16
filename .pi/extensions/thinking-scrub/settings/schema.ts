@@ -9,7 +9,6 @@ export interface LiveTuning {
   readonly scanEvery: number;
   readonly tail: number;
   readonly maxAborts: number;
-  readonly sampleChars: number;
 }
 
 export interface SentenceTuning {
@@ -47,7 +46,7 @@ export function defaultSettings(): Settings {
   return {
     enabled: true,
     show: true,
-    live: { minThinking: 20_000, scanEvery: 2_000, tail: 20_000, maxAborts: 2, sampleChars: 200 },
+    live: { minThinking: 20_000, scanEvery: 2_000, tail: 20_000, maxAborts: 2 },
     sentence: { minCycles: 3, minRunChars: 400, maxPeriodUnits: 64 },
     char: { minPeriod: 4, maxPeriod: 120, minRepeats: 3, minLength: 20 },
   };
@@ -86,13 +85,11 @@ function parseLive(raw: Record<string, unknown>, defaults: LiveTuning): LiveTuni
   let scanEvery = defaults.scanEvery;
   let tail = defaults.tail;
   let maxAborts = defaults.maxAborts;
-  let sampleChars = defaults.sampleChars;
   const fields: { readonly key: string; readonly label: string; readonly min: number }[] = [
     { key: 'minThinking', label: 'live.minThinking', min: 1 },
     { key: 'scanEvery', label: 'live.scanEvery', min: 1 },
     { key: 'tail', label: 'live.tail', min: 1 },
     { key: 'maxAborts', label: 'live.maxAborts', min: 0 },
-    { key: 'sampleChars', label: 'live.sampleChars', min: 1 },
   ];
   const parsed: Record<string, number> = {};
   for (const field of fields) {
@@ -116,13 +113,10 @@ function parseLive(raw: Record<string, unknown>, defaults: LiveTuning): LiveTuni
   if (parsed['maxAborts'] !== undefined) {
     maxAborts = parsed['maxAborts'] ?? maxAborts;
   }
-  if (parsed['sampleChars'] !== undefined) {
-    sampleChars = parsed['sampleChars'] ?? sampleChars;
-  }
   if (scanEvery > tail) {
     return 'thinking-scrub settings: live.scanEvery must be <= live.tail';
   }
-  return { minThinking, scanEvery, tail, maxAborts, sampleChars };
+  return { minThinking, scanEvery, tail, maxAborts };
 }
 
 function parseSentence(

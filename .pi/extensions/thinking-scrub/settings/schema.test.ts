@@ -6,7 +6,7 @@ describe('parseSettings', () => {
     const input = JSON.stringify({
       enabled: false,
       show: false,
-      live: { minThinking: 8000, scanEvery: 1000, tail: 20000, maxAborts: 1, sampleChars: 100 },
+      live: { minThinking: 8000, scanEvery: 1000, tail: 20000, maxAborts: 1 },
       sentence: { minCycles: 2, minRunChars: 350, maxPeriodUnits: 32 },
       char: { minPeriod: 4, maxPeriod: 60, minRepeats: 2, minLength: 30 },
     });
@@ -15,7 +15,7 @@ describe('parseSettings', () => {
       settings: {
         enabled: false,
         show: false,
-        live: { minThinking: 8000, scanEvery: 1000, tail: 20000, maxAborts: 1, sampleChars: 100 },
+        live: { minThinking: 8000, scanEvery: 1000, tail: 20000, maxAborts: 1 },
         sentence: { minCycles: 2, minRunChars: 350, maxPeriodUnits: 32 },
         char: { minPeriod: 4, maxPeriod: 60, minRepeats: 2, minLength: 30 },
       },
@@ -120,6 +120,17 @@ describe('parseSettings', () => {
     }
     expect(read.reason).toContain('char.minPeriod');
     expect(read.reason).toContain('char.maxPeriod');
+  });
+
+  it('古い sampleChars だけなら ok で sampleChars を持たない', () => {
+    const input = JSON.stringify({ live: { sampleChars: 100 } });
+    const read = parseSettings(input);
+    expect(read.kind).toBe('ok');
+    if (read.kind !== 'ok') {
+      throw new Error('must be ok');
+    }
+    expect(read.settings.live).toEqual(defaultSettings().live);
+    expect(read.settings.live).not.toHaveProperty('sampleChars');
   });
 
   it('壊れた JSON と配列と null は broken になる', () => {

@@ -5,8 +5,7 @@
     "minThinking": 8000,
     "scanEvery": 1000,
     "tail": 20000,
-    "maxAborts": 2,
-    "sampleChars": 200
+    "maxAborts": 2
   },
   "sentence": {
     "minCycles": 3,
