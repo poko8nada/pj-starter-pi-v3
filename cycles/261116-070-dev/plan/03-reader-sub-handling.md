@@ -203,16 +203,21 @@ rules/
 ### Round 2
 
 - Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/close/SKILL.md:8` の fixed を確認した — 現行 8 行目が `each Unit's or Sub's function` であり、Round 1 が指摘した旧文言は残っていない。理由: 現物を読み、fixed 文どおりの文言であることと、Slice 2 の Goal と一致することを当てたため。
+  - `.pi/skills/close/SKILL.md:93` の fixed を確認した — 現行 93 行目が `before the next Unit or Sub` であり、手順 5 の `Move to the next Unit or Sub` と揃っている。理由: 現物を読み、fixed 文どおりであることと、手順間の文言割れが解消していることを当てたため。
+  - `.pi/skills/close/SKILL.md:112` の fixed を確認した — 現行 112 行目が `the Unit's or Sub's function` であり、表の `a Unit or a Sub` と定義が一致している。理由: 現物を読み、fixed 文どおりであることと、Sub の `Result` が指す先が決まることを当てたため。
+  - `.pi/skills/close/references/format.md:41` の fixed を確認した — 現行 41 行目が `### <name>` であり、説明側の `### Name` / `### <name>` と一致している。理由: 現物を読み、Shape 例と説明の食い違いが解消していることを当てたため。
+  - `.pi/skills/close/references/format.md:125` の fixed を確認した — 現行 125 行目が `the Unit's or Sub's function` であり、Sub の合否基準が Unit と同じ形で定義されている。理由: 現物を読み、fixed 文どおりであることと、Goal の「親と同じように確かめる」と一致することを当てたため。
+- Unlisted: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Gaps: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Policy: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Unproven: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Noise: なし — Round 1 で指摘がなく fixed 行がないため、確認対象がないため。
+- Doubts: なし — fixed の確認からは新たな判断事項が生じず、Round 1 の Doubts は fixed 行を持たないため確認対象外であるため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: OK — `adr` の `Definition` と `close` の `Verified` が、サブを 1 つの名として扱い、親と同じように記録し、確かめる。
+- Ran: `pnpm test:run`（836 passed）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git diff 9775f1cd..HEAD` の読み、`ja-check`（変更した 4 文書）。
+- Findings: なし
+- Doubts: なし
