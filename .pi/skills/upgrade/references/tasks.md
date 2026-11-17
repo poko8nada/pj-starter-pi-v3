@@ -23,14 +23,9 @@ Target: `<name>`. Installed <A> → target <B>.
 ```
 
 - Hand it the paths to read.
-- The notes are not always a `CHANGELOG.md`.
-- A package may keep them in its releases, a migration guide or a product blog.
-- Some have no notes at all.
-- Let the subagent find where they live.
+- About Release info:
+  - The notes are not always a `CHANGELOG.md`.
+  - A package may keep them in its releases, a migration guide or a product blog.
+  - Some have no notes at all.
 - The task carries the range (`<A>` to `<B>`) and the repository's own files.
 - The answer says whether a change hits.
-
-## Writing
-
-- One bullet is one rule.
-- A file name is written from the project root.

@@ -39,14 +39,8 @@ What `upgrade` puts in front of the owner once the out-of-range packages are fou
 
 What the report's content must hold.
 
-- Write the hits in full.
-- For the rest, write one line for the count and one for the largest.
+- Write the hits in full. For the rest, write one line for the count and one for the largest.
 - An unknown says what run settles it.
-- Every fact carries its URL.
-- Every fact carries the file and line it hits.
+- Every fact carries its URL, the file and line it hits.
 - Write a number only when it was measured.
-
-## Writing
-
-- One bullet is one rule.
 - A file name is written from the project root.
