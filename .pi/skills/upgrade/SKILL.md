@@ -135,13 +135,11 @@ Notes:
 Steps:
 
 1. Run `pnpm audit --audit-level low`.
-2. Write the report in the shape `references/audit.md` gives, and say which one it was to the owner.
+2. Write the report in the shape `references/audit.md` gives, from `pnpm audit --json`'s `advisories` and `metadata`, with the failure in `Ground` or `Leftovers`, and put it as markdown in the chat.
 3. Run `pnpm audit --fix=update` once with leftovers.
 4. Run the checks and audit again.
-5. Regarding Unresoled
-   - Take `override` only with the owner's OK.
-   - Take `--ignore` and `--ignore-unfixable` only with the owner's OK.
-6. Work ends when the owner reads the leftovers and says they are as expected.
+5. Take the `override` method (`--fix=override`), `--ignore` and `--ignore-unfixable` only with the owner's OK.
+6. The work ends when the owner reads the leftovers and says they are as expected.
 
 Notes:
 
