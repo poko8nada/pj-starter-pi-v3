@@ -25,7 +25,8 @@ When an update forces a decision the product owns — a behavior, a line of `DEF
 
 Steps:
 
-1. Run `pnpm update` every time, whether or not anything is out of date.
+1. Run `git status --porcelain` and check that it is empty. When it is not empty, stop.
+2. Run `pnpm update` every time, whether or not anything is out of date.
 
 Notes: It writes the range in `package.json` and moves `pnpm-lock.yaml`.
 
@@ -89,12 +90,20 @@ Steps:
 2. Read the resolved version.
 3. Stop when it is not the target. Report first in that case.
 4. Take the breaking change the report named for that package, and change what the package forces.
-5. Run the checks the project has.
-   - test, typecheck, lint, format check
-   - build when `package.json` has one
-6. After them
-   - If the checks pass. commit it.
-   - If not, Undo the change when the checks do not pass. Tell the owner in that case.
+5. Run the checks:
+   1. `pnpm test:run` exits 0.
+   2. `pnpm typecheck` exits 0.
+   3. `pnpm lint` exits 0.
+   4. `pnpm format:check` exits 0.
+   5. The read-through finds no mismatch in a number, a path, a name or a shape.
+6. When a check fails:
+   1. Restore the files the package's update touched to HEAD (git restore --source=HEAD -- package.json pnpm-lock.yaml <the source it changed>).
+   2. Run pnpm install to restore node_modules.
+   3. Report the failed check's output and the restored files to the owner, and decide whether to go on to the next package or stop.
+7. After the fix from the read-through:
+   1. After the fix, run all four checks again (pnpm test:run, pnpm typecheck, pnpm lint, pnpm format:check).
+   2. When the four pass, commit it. When they do not, follow the undo.
+8. When the checks pass, commit it.
 
 Notes: If the resolved version is not the target. the owner decides how to proceed.
 

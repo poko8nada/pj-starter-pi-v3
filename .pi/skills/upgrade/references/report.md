@@ -27,7 +27,7 @@ What `upgrade` puts in front of the owner once the ground and the out-of-range p
 - Hits: what changed, what to change here. One line each, with its source.
 - Does not hit: the count, and the largest few. One line each.
 - Unknown: what only a run settles, and the run that settles it.
-- Check: what closes it.
+- Check: pnpm test:run, pnpm typecheck, pnpm lint, pnpm format:check. In addition, read `<file>` and check `<what>`.
 - Sources: the URLs.
 
 ## What to decide

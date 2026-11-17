@@ -29,8 +29,11 @@ Target: `<name>`. Installed <A> → target <B>.
 2. Read the breaking changes between <A> and <B>, from the changelog, the releases, or the migration guide.
 3. For each breaking change, write what changed in one sentence, whether it hits this repository (hits / does not hit / unknown) with the ground: a file and a line, what to change here in one sentence when it hits, and the source URL.
    - IF the change does not hit → write it as one line in a list.
-4. Add what only a run settles: a type, a setting, a requirement. Write it as `unknown`, with the run that settles it.
-5. Report facts and sources. Do not decide, and do not design the procedure.
+4. For each breaking change that hits, write the check that closes it here in one sentence.
+   - IF the check is a command → name the command.
+   - IF the check is a read-through → name the file and what to read.
+5. Add what only a run settles: a type, a setting, a requirement. Write it as `unknown`, with the run that settles it.
+6. Report facts and sources. Do not decide, and do not design the procedure.
    - A question you could not answer is a fact too: report it, and say what it is holding up.
 ```
 
