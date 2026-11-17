@@ -77,10 +77,18 @@ Steps:
 
 ### 6. Try the update in a worktree
 
-- When any picked package has a breaking change, try all the picked packages in one worktree.
-- When the trial fails, do not apply; report and let the owner decide.
-- Remove the worktree.
-- The trial task is in `references/tasks.md`.
+1. After the owner picks the packages, check whether any of them has a breaking change. When none has, skip the trial and go on to the apply. When at least one has, try all the picked packages in one worktree.
+2. Make one worktree for the trial: `consult_worktree new upgrade-trial`.
+3. The worktree's install runs before the subagent: `pnpm install --frozen-lockfile`.
+4. Hand the trial subagent the packages and the trial task. The task text is in `tasks.md`.
+5. When the trial reports, read it.
+6. Remove the worktree: `consult_worktree remove upgrade-trial` with `force`.
+7. Go on to the apply. When the trial failed, do not apply; report and let the owner decide.
+
+- When the trial subagent stops at the turn limit:
+  - IF its report says the trial is going well → continue the same subagent.
+  - IF its report says something cannot be resolved → treat it as a failure.
+- The owner decides: narrow the trial to a subset, or open a cycle.
 
 ### 7. Apply one package at a time
 

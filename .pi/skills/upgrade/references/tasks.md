@@ -44,3 +44,12 @@ Target: `<name>`. Installed <A> → target <B>.
   - Some have no notes at all.
 - The task carries the range (`<A>` to `<B>`) and the repository's own files.
 - The answer says whether a change hits.
+
+## Try the update in a worktree
+
+Try the update in this worktree, and report what it changes.
+
+1. Apply the packages: `pnpm update --latest <package>` for each.
+2. Run the checks: `pnpm test:run`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check`.
+3. Report the resolved versions, the failed check and its output, and the smallest change that makes it pass.
+4. Leave the worktree as it is. Do not commit.
