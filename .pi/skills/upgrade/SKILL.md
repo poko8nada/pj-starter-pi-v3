@@ -36,22 +36,21 @@ Steps:
 
 1. Run `pnpm outdated --json`.
 2. Read the number from `pnpm-workspace.yaml`.
-3. Apply with `pnpm update --latest <package>`, never with an explicit version.
 
 View:
 
-| field    | what it is                                                 |
-| -------- | ---------------------------------------------------------- |
-| `wanted` | the newest version inside the declared range               |
-| `latest` | the newest one after `minimumReleaseAge` is applied        |
-| target   | the newest stable version at least `minimumReleaseAge` old |
+| value    | what it is                                                                     |
+| -------- | ------------------------------------------------------------------------------ |
+| `wanted` | the version in the wanted lockfile                                             |
+| `latest` | the newest one after `minimumReleaseAge`                                       |
+| target   | the skill's target: the newest stable version at least `minimumReleaseAge` old |
 
 Notes:
 
 - It exits 1 when it finds something, and that is not a failure.
 - A package is out of range when `latest !== wanted`.
 - `peerDependencies` are not checked. `pnpm outdated` does not see them.
-- The number is `minimumReleaseAge` minutes. It is 1440 when it is not there.
+- The number is `minimumReleaseAge` minutes. When it is not there, pnpm's default applies.
 - The range keeps its shape.
 
 ### 4. Look each package up, all at once
@@ -59,7 +58,11 @@ Notes:
 Steps:
 
 1. Start one `research` subagent per package, all together.
-2. Hand it the files that hold the package's setting and its use in this repository.
+2. Hand it the files:
+   1. `package.json`.
+   2. `pnpm-workspace.yaml`.
+   3. The package's entry in `pnpm-lock.yaml`.
+   4. Every tracked file `git grep -l '<the package>'` returns, except `cycles/`.
 3. Wait for all of them.
 
 Notes:
@@ -94,7 +97,7 @@ Steps:
 
 Steps:
 
-1. Run `pnpm update --latest <package>`, one package at a time, in the owner's order.
+1. Run `pnpm update --latest <package>`, one package at a time, in the owner's order, never with an explicit version.
 2. Read the resolved version.
 3. Stop when it is not the target. Report first in that case.
 4. Take the breaking change the report named for that package, and change what the package forces.
@@ -113,8 +116,6 @@ Steps:
    2. When the four pass, commit it. When they do not, follow the undo.
 8. When the checks pass, commit it.
 
-Notes: If the resolved version is not the target. the owner decides how to proceed.
-
 ### 8. Keep the configuration true
 
 Steps:
@@ -124,10 +125,13 @@ Steps:
 
 Notes:
 
-- `minimumReleaseAgeExclude` holds lines such as `package@1.2.3`.
-  - Keeps a line only while it names a version that is installed.
+- `minimumReleaseAgeExclude`: a line is `package@version`, a package name, or a pattern.
+  - Keep a `package@version` line only while that version is installed.
+  - Keep a package-name or pattern line only while the package is installed.
   - Never rewrites a version in that list.
   - A rewritten line allows a younger version. That is the opposite of what the list is for.
+- `overrides`: keep a line only while its version is installed.
+- `allowBuilds`: keep a line only while the package is installed.
 - A line that `pnpm audit --fix=update` wrote stays while its version is installed.
 
 ### 9. Audit, and stop
