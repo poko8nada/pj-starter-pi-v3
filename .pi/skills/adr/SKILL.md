@@ -175,7 +175,8 @@ Steps:
    - No need to overturn or call into question the initial intent.
    - From the `In` items select ONLY points that could serve as subjects for discussion.
      1. Limit these points to "matters that should be decided with the owner".
-     2. Just confirming is not the issue point. These will be presented together at the end.
+     2. If **a proposal is determined by your principles**, then it is a matter for confirmation.
+     3. Just confirming is not the issue point. These will be presented together at the end.
 3. Show one point at a time, and discuss it until it is settled.
    - Begin by discussing elements that cannot be changed, move on to those that can be adjusted, and conclude by addressing the operational framework that encompasses everything.
    - Here is specific scope order:safety → failure → upstream → result → structure → logic → existing → downstream → cost → expression → verification → observability → release → other
@@ -225,6 +226,7 @@ Steps:
 
 1. Read `rules/definition.rules.md` and `rules/definition.format.md`, and the `Definition` section of `references/adr.format.md`.
 2. Name the parts of `DEFINITION.md` the entry relates to: `Unit`, `Sub`, `Who`, `Stack`, `What`.
+   - `Sub` is only written when they should add, update, or drop.
 3. Write each part with one operation.
 4. Explain reason why and get the owner's agreement.
 
