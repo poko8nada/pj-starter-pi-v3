@@ -504,6 +504,48 @@ vitest.config.ts
 
 ## Notes
 
+### Slice 1: 手順全体の組み直し
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 956af48c
+- Stopped: なし
+
+### Slice 2: 土台の確認
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 7a2558c4
+- Stopped: なし
+
+### Slice 3: チェックと合格条件
+
+- Findings: なし
+- Unplanned: なし
+- Commit: f9f161b7
+- Stopped: なし
+
+### Slice 4: トライアル
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 0ef67821
+- Stopped: なし
+
+### Slice 5: 監査の報告
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 3a84fc8f
+- Stopped: なし
+
+### Slice 6: 現行の矛盾点の修正
+
+- Findings: なし
+- Unplanned: なし
+- Commit: f65e0480
+- Stopped: なし
+
 ### Cleanup: <what it cleaned>
 
 ## Work Review
