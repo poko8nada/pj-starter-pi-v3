@@ -13,7 +13,14 @@ When an update forces a decision the product owns — a behavior, a line of `DEF
 
 ## Procedure
 
-### 1. Update inside the range
+### 1. Check the ground
+
+- Ask the owner whether to check. When skipped, go on to the update.
+- Read `packageManager`, `engines.node`, `node --version`, `pnpm --version`.
+- Run one research subagent for the sources.
+- Write the results in the report's `Ground`.
+
+### 2. Update inside the range
 
 Steps:
 
@@ -21,7 +28,7 @@ Steps:
 
 Notes: It writes the range in `package.json` and moves `pnpm-lock.yaml`.
 
-### 2. Find what is out of range
+### 3. Find what is out of range
 
 Steps:
 
@@ -45,7 +52,7 @@ Notes:
 - The number is `minimumReleaseAge` minutes. It is 1440 when it is not there.
 - The range keeps its shape.
 
-### 3. Look each package up, all at once
+### 4. Look each package up, all at once
 
 Steps:
 
@@ -58,7 +65,7 @@ Notes:
 - The task is in `references/tasks.md`.
 - The range it carries is `<installed>` to `<target>`.
 
-### 4. Report, and stop
+### 5. Report, and stop
 
 Steps:
 
@@ -66,7 +73,14 @@ Steps:
 2. The owner picks which packages to take, and in what order.
 3. Wait for the owner's answer.
 
-### 5. Apply one package at a time
+### 6. Try the update in a worktree
+
+- When any picked package has a breaking change, try all the picked packages in one worktree.
+- When the trial fails, do not apply; report and let the owner decide.
+- Remove the worktree.
+- The trial task is in `references/tasks.md`.
+
+### 7. Apply one package at a time
 
 Steps:
 
@@ -83,7 +97,7 @@ Steps:
 
 Notes: If the resolved version is not the target. the owner decides how to proceed.
 
-### 6. Keep the configuration true
+### 8. Keep the configuration true
 
 Steps:
 
@@ -98,12 +112,12 @@ Notes:
   - A rewritten line allows a younger version. That is the opposite of what the list is for.
 - A line that `pnpm audit --fix=update` wrote stays while its version is installed.
 
-### 7. Audit, and stop
+### 9. Audit, and stop
 
 Steps:
 
 1. Run `pnpm audit --audit-level low`.
-2. Say which one it was to the owner.
+2. Write the report in the shape `references/audit.md` gives, and say which one it was to the owner.
 3. Run `pnpm audit --fix=update` once with leftovers.
 4. Run the checks and audit again.
 5. Regarding Unresoled
