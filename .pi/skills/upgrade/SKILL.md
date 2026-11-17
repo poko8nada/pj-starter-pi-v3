@@ -15,10 +15,11 @@ When an update forces a decision the product owns — a behavior, a line of `DEF
 
 ### 1. Check the ground
 
-- Ask the owner whether to check. When skipped, go on to the update.
-- Read `packageManager`, `engines.node`, `node --version`, `pnpm --version`.
-- Run one research subagent for the sources.
-- Write the results in the report's `Ground`.
+1. Ask the owner whether to check the ground. When the owner skips, go on to the update.
+2. Read `packageManager` and `engines.node` in `package.json`.
+3. Read the running versions: `node --version` and `pnpm --version`.
+4. Run one `research` subagent for the ground. It runs before the package research.
+5. Write the results in the report's `Ground`, with the source URL of each.
 
 ### 2. Update inside the range
 

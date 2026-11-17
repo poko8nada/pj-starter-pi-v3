@@ -2,6 +2,18 @@
 
 A subagent does not read this skill. What it knows is the task, so the task carries the rules.
 
+## Check the ground
+
+Report the ground the update stands on, and nothing else.
+
+1. pnpm: the version in `packageManager`. Is there a newer patch in the same minor? Is the version deprecated?
+2. Node: the running version and the range in `engines.node`. Is there a newer patch in the same major? Is the major EOL?
+3. Read the sources:
+   - pnpm: `https://registry.npmjs.org/pnpm/<version>`, `https://data.jsdelivr.com/v1/package/npm/pnpm`, `https://api.github.com/repos/pnpm/pnpm/releases`
+   - Node: `https://nodejs.org/dist/index.json`, `https://endoflife.date/api/nodejs.json`
+4. Report one line per item, with the value and the source URL.
+   - IF a source cannot be read → write `unknown`, and write what stopped it.
+
 ## Look one package up (a `research` subagent)
 
 When the agent has a package's installed and target versions.

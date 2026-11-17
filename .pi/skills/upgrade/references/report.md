@@ -1,6 +1,6 @@
 # Report format
 
-What `upgrade` puts in front of the owner once the out-of-range packages are found. It goes to the chat, not into a file.
+What `upgrade` puts in front of the owner once the ground and the out-of-range packages are known. It goes to the chat, not into a file.
 
 ## Shape
 
@@ -9,7 +9,8 @@ What `upgrade` puts in front of the owner once the out-of-range packages are fou
 
 ## Ground
 
-- pnpm <version> / Node <version>
+- pnpm <version>: the newest patch in <minor> is <version or none>. <deprecated / not deprecated>. <source URL>
+- Node <version>: the newest patch in <major> is <version or none>. <EOL date / not EOL>. <source URL>
 - `pnpm update`: <what moved, or that nothing moved>
 - `minimumReleaseAge`: <minutes>. Each target is <its age> old, so it is <the latest, or the one before>.
 - `peerDependencies` are not checked: `pnpm outdated` does not see them.
