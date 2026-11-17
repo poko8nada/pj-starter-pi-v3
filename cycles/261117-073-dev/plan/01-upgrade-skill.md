@@ -572,17 +572,19 @@ vitest.config.ts
 
 ### Round 2
 
-- Stale:
-- Unlisted:
+- Stale: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Unlisted: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/upgrade/SKILL.md:30-40`（`### 2. Update inside the range`）— 直っている。検査5項目（`pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、読み合わせ）と失敗時戻し（HEADへ復元・`pnpm install`・報告して停止）・合格時commitがあり、計画 `01-upgrade-skill.md:98-99` の「Run the checks, then commit」「On a red check, restore and report」を満たす。理由：`git diff HEAD~1..HEAD` で同範囲の追加を確認し、現行ファイルを直接読んで手順の閉じ方を当てた。
+  - `.pi/skills/upgrade/SKILL.md:136-146`（`### 8. Keep the configuration true`）— 直っている。検査5項目と失敗時戻し（`pnpm-workspace.yaml`をHEADへ復元・`pnpm install`・報告して停止）・合格時commitがあり、計画 `01-upgrade-skill.md:125-126` の同要件を満たす。理由：差分で同範囲の追加を確認し、現行ファイルを直接読んで掃除の後に確認と記録が決まることを確かめた。
+- Policy: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Unproven: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Noise: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Doubts: なし — 今回の `fixed:` 2件の確認では、オーナー判断を要する新たな疑いは見つからなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: upgrade スキルが、土台の確認・トライアル・監査の報告と、具体化したチェックを持つ、矛盾のない 9 段階の手順になる。実装はこれを満たす。
+- Ran: `pnpm test:run`（66 ファイル、830 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`grep '^### [0-9]'` が 9 行、主要な 3 見出しを壊して 6 行、戻して 9 行、読み合わせ。
+- Findings: なし
+- Doubts: なし
