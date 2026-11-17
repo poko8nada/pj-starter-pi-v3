@@ -304,13 +304,13 @@ vitest.config.ts
 ### Steps
 
 1. `.pi/skills/upgrade/SKILL.md`
-   1. update: `## Procedure` の `### 6` の本文を、下のフェンスの 6 つの手順に置き換える（手順全体の組み直しで置いた 3 行を、詳しくする）。
+   1. update: `## Procedure` の `### 6` の本文を、下のフェンスの 7 つの手順に置き換える（手順全体の組み直しで置いた 3 行を、詳しくする）。
 
       ```text
       1. After the owner picks the packages, check whether any of them has a breaking change. When none has, skip the trial and go on to the apply. When at least one has, try all the picked packages in one worktree.
       2. Make one worktree for the trial: `consult_worktree new upgrade-trial`.
       3. The worktree's install runs before the subagent: `pnpm install --frozen-lockfile`.
-      4. Hand the trial subagent the packages and the trial task. The task text is in `tasks.md`.
+      4. Hand the trial subagent the packages and the trial task. The task text is in `references/tasks.md`.
       5. When the trial reports, read it.
       6. Remove the worktree: `consult_worktree remove upgrade-trial` with `force`.
       7. Go on to the apply. When the trial failed, do not apply; report and let the owner decide.
@@ -350,7 +350,7 @@ vitest.config.ts
   - `pnpm format:check`
   - 変えたファイル全体と、そこで名を挙げるファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す
 - Added:
-  - Other: `.pi/skills/upgrade/SKILL.md` のトライアルの段階が、`consult_worktree new/remove`、`pnpm install --frozen-lockfile`、6 つの手順、turn 上限の分岐、絞るかサイクルかの分岐を持つ。`.pi/skills/upgrade/references/tasks.md` にトライアルのタスクがある。
+  - Other: `.pi/skills/upgrade/SKILL.md` のトライアルの段階が、`consult_worktree new/remove`、`pnpm install --frozen-lockfile`、7 つの手順、turn 上限の分岐、絞るかサイクルかの分岐を持つ。`.pi/skills/upgrade/references/tasks.md` にトライアルのタスクがある。
 
 ## 5.監査の報告
 
@@ -504,33 +504,87 @@ vitest.config.ts
 
 ## Notes
 
-### Cleanup: <what it cleaned>
+### Slice 1: 手順全体の組み直し
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 956af48c
+- Stopped: なし
+
+### Slice 2: 土台の確認
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 7a2558c4
+- Stopped: なし
+
+### Slice 3: チェックと合格条件
+
+- Findings: なし
+- Unplanned: なし
+- Commit: f9f161b7
+- Stopped: なし
+
+### Slice 4: トライアル
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 0ef67821
+- Stopped: なし
+
+### Slice 5: 監査の報告
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 3a84fc8f
+- Stopped: なし
+
+### Slice 6: 現行の矛盾点の修正
+
+- Findings: なし
+- Unplanned: なし
+- Commit: f65e0480
+- Stopped: なし
+
+### Cleanup: 対象テストなし（更新対象にテストなし、830件維持）
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
+- Stale: なし — 変更が古くした文書・コメント・テストは見つからなかった。外した「build」「1440」「範囲外への適用指示」は計画の指示どおり置換・移動され、他文書に残存参照はない。
+- Unlisted: なし — 差分の技能ファイル4件（`SKILL.md` 更新、`audit.md` 追加、`report.md` 更新、`tasks.md` 更新）はいずれも `## Files` の `upgrade/` 欄に名前がある。`plan` 自体の `Notes` 追記は作業記録で対象外とした。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `.pi/skills/upgrade/SKILL.md:24`（`### 2. Update inside the range`）— 計画 `cycles/261117-073-dev/plan/01-upgrade-skill.md:98-99` のフェンスが求める「Run the checks, then commit」「On a red check, restore and report」がない。現行 28–29 行は確認と `pnpm update` だけで終わる。後のスライスで置き換えた形跡はなく（Slice 3 は確認の追加のみ、Slice 6 はこの段階に触れていない）、検査・記録・戻しの終わり方が欠ける。理由：ADR 06 も同内容を決めており、Goal の「矛盾のない 9 段階」に届かない。
+    fixed: `### 2` に検査5項目・失敗時戻し・合格時commitを追加し、Slice 1フェンスどおりに閉じた。
+  - `.pi/skills/upgrade/SKILL.md:119`（`### 8. Keep the configuration true`）— 計画同 `01-upgrade-skill.md:125-126` の「Run the checks, then commit」「On a red check, restore and report」がない。現行 121–135 行は掃除の手順と Notes の 3 欄だけで検査・記録・戻しがない。Slice 6 は Notes の加筆のみで検査・commit の置換えを指示していない。理由：掃除の後に正しさの確認と記録が決まらず、手順が閉じない。
+    fixed: `### 8` に検査5項目・失敗時戻し・合格時commitを追加し、掃除の後に確認と記録が決まるようにした。
+- Policy: なし — 各 `Policy` の `Allowed` を禁じず、`Forbidden` を行っていない。トライアルと土台のスキップは手順が定める条件分岐で、赤いままの commit はない（`SKILL.md:116-117` は合格時のみ記録し、失敗時は `110-113` の戻しに従う）。
+- Unproven: なし — 自動テストの追加はなく（`Notes` の `Cleanup: 対象テストなし` どおり）、`Added` の `grep`・存在確認は `Always` の読み合わせと対で計画が定めたもののため、単独の弱さを欠陥としない。
+- Noise: なし — 同上。新規ケースがなく、`grep` の見出し文字列は計画の `Added` が定めた値のため、`design.md` の禁則（magic number・hardcoded string）の対象としない。
 - Doubts:
+  - `.pi/skills/upgrade/SKILL.md:145` と `cycles/261117-073-dev/plan/01-upgrade-skill.md:130` 対 `同:416` — Slice 1 の 9 段階フェンスは監査に「then commit」を求めるが、Slice 5 の監査 6 手順は commit を含まない。差分は Slice 5 どおり（commit なし）で、計画内のどちらが正か自力で決められない。オーナー判断が必要（監査段階に commit を足すか、Slice 1 フェンスを直すか）。
+  - `cycles/261117-073-dev/plan/01-upgrade-skill.md:353` — Slice 4 の `Added` は「6 つの手順」と書くが、`Steps` フェンス（`同:310-316`）は 7 項目で、差分 `.pi/skills/upgrade/SKILL.md:83-89` も 7 項目ある。`Verify` の数え方の修正が要るか、オーナー判断が必要。
+  - `.pi/skills/upgrade/SKILL.md:86` 対 `同:70` — トライアルの task 参照が `` `tasks.md` `` で、調査の `` `references/tasks.md` `` と表記が割れる。計画も Slice 4 フェンス（`同:313`）は `` `tasks.md` ``、Slice 1（`同:85`）は `` `references/tasks.md` `` と割れる。実ファイルは `references/tasks.md` のため、正規の表記はオーナー判断が必要。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
+- Stale: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Unlisted: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `.pi/skills/upgrade/SKILL.md:30-40`（`### 2. Update inside the range`）— 直っている。検査5項目（`pnpm test:run`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、読み合わせ）と失敗時戻し（HEADへ復元・`pnpm install`・報告して停止）・合格時commitがあり、計画 `01-upgrade-skill.md:98-99` の「Run the checks, then commit」「On a red check, restore and report」を満たす。理由：`git diff HEAD~1..HEAD` で同範囲の追加を確認し、現行ファイルを直接読んで手順の閉じ方を当てた。
+  - `.pi/skills/upgrade/SKILL.md:136-146`（`### 8. Keep the configuration true`）— 直っている。検査5項目と失敗時戻し（`pnpm-workspace.yaml`をHEADへ復元・`pnpm install`・報告して停止）・合格時commitがあり、計画 `01-upgrade-skill.md:125-126` の同要件を満たす。理由：差分で同範囲の追加を確認し、現行ファイルを直接読んで掃除の後に確認と記録が決まることを確かめた。
+- Policy: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Unproven: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Noise: なし — `### Round 1` のこの観点に `fixed:` 行がなく、確認対象がないため。
+- Doubts: なし — 今回の `fixed:` 2件の確認では、オーナー判断を要する新たな疑いは見つからなかったため。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: upgrade スキルが、土台の確認・トライアル・監査の報告と、具体化したチェックを持つ、矛盾のない 9 段階の手順になる。実装はこれを満たす。
+- Ran: `pnpm test:run`（66 ファイル、830 件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`grep '^### [0-9]'` が 9 行、主要な 3 見出しを壊して 6 行、戻して 9 行、読み合わせ。
+- Findings: なし
+- Doubts: なし
