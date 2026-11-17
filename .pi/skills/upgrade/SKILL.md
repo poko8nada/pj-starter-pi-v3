@@ -27,6 +27,17 @@ Steps:
 
 1. Run `git status --porcelain` and check that it is empty. When it is not empty, stop.
 2. Run `pnpm update` every time, whether or not anything is out of date.
+3. Run the checks:
+   1. `pnpm test:run` exits 0.
+   2. `pnpm typecheck` exits 0.
+   3. `pnpm lint` exits 0.
+   4. `pnpm format:check` exits 0.
+   5. The read-through finds no mismatch in a number, a path, a name or a shape.
+4. When a check fails:
+   1. Restore the files the update touched to HEAD (git restore --source=HEAD -- package.json pnpm-lock.yaml).
+   2. Run pnpm install to restore node_modules.
+   3. Report the failed check's output and the restored files to the owner, and stop.
+5. When the checks pass, commit it.
 
 Notes: It writes the range in `package.json` and moves `pnpm-lock.yaml`.
 
@@ -83,7 +94,7 @@ Steps:
 1. After the owner picks the packages, check whether any of them has a breaking change. When none has, skip the trial and go on to the apply. When at least one has, try all the picked packages in one worktree.
 2. Make one worktree for the trial: `consult_worktree new upgrade-trial`.
 3. The worktree's install runs before the subagent: `pnpm install --frozen-lockfile`.
-4. Hand the trial subagent the packages and the trial task. The task text is in `tasks.md`.
+4. Hand the trial subagent the packages and the trial task. The task text is in `references/tasks.md`.
 5. When the trial reports, read it.
 6. Remove the worktree: `consult_worktree remove upgrade-trial` with `force`.
 7. Go on to the apply. When the trial failed, do not apply; report and let the owner decide.
@@ -122,6 +133,17 @@ Steps:
 
 1. Drop the lines that do not name a version that is installed.
 2. Leave a package named in `package.json` only as a peer, and add no line for it.
+3. Run the checks:
+   1. `pnpm test:run` exits 0.
+   2. `pnpm typecheck` exits 0.
+   3. `pnpm lint` exits 0.
+   4. `pnpm format:check` exits 0.
+   5. The read-through finds no mismatch in a number, a path, a name or a shape.
+4. When a check fails:
+   1. Restore the files the cleaning touched to HEAD (git restore --source=HEAD -- pnpm-workspace.yaml).
+   2. Run pnpm install to restore node_modules.
+   3. Report the failed check's output and the restored files to the owner, and stop.
+5. When the checks pass, commit it.
 
 Notes:
 
@@ -142,7 +164,7 @@ Steps:
 2. Write the report in the shape `references/audit.md` gives, from `pnpm audit --json`'s `advisories` and `metadata`, with the failure in `Ground` or `Leftovers`, and put it as markdown in the chat.
 3. Run `pnpm audit --fix=update` once with leftovers.
 4. Run the checks and audit again.
-5. Take the `override` method (`--fix=override`), `--ignore` and `--ignore-unfixable` only with the owner's OK.
+5. Take the `override` method (`--fix=override`), `--ignore` and `--ignore-unfixable` only with the owner's OK, then commit.
 6. The work ends when the owner reads the leftovers and says they are as expected.
 
 Notes:
