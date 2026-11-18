@@ -57,7 +57,10 @@ Notes:
 Steps:
 
 1. Work the slices in order, as far as you can. Do each slice's `Steps` and `Policy`, run its `Verify`, and commit it after it passes.
-   - _Worktree_: hand the plan md to one `code` subagent in the worktree. Read its report and the worktree's plan md when it stops. Continue it with `continue: true` when it stopped only because the run ended, or when it did not write the record.
+   - _Worktree_:
+     - Hand the plan md to one `code` subagent in the worktree. Read its report and the worktree's plan md when it stops.
+     - Continue it with `continue: true` when it stopped only because the run ended, or when it did not write the record.
+     - If any implementation or commits violations are discovered, **issue instructions for corrections within that slice and ensure that the correct commits are made.**
    - _Base_: do the slices yourself in the base. Show the owner after each slice, wait for their OK, and commit with `base(<plan id>): <subject>`.
 2. Write the slice's record in `## Notes` as `### Slice N: <name>`, in the shape `references/format.md` gives.
 
@@ -76,8 +79,8 @@ When the plan is dropped:
 Notes:
 
 - The task is in the `Slices` section of `references/tasks.md`.
+-
 - A `Commit` means the slice's check passed. The agent closes no slice whose check did not run.
-- The plan is not rewritten to keep going. The run is within tolerance, or it is a change the work absorbs.
 - A dropped plan is not carried to the close; the close reads its record as a dropped plan.
 
 ### 5. Clean the tests

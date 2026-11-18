@@ -47,7 +47,10 @@ Steps for each plan:
 1. Write `## Goal` and `## Refactor`.
 2. Read each file that the map has. Those paths directly name: what it imports, what it re-exports, and the tests beside it.
 3. Decide each path's mark: `add`, `update`, `drop`, or no mark.
-4. Decide and order the slices by the concern the change carries
+4. Decide and order the slices by the concern the change carries.
+   - Consider each slice should be separated individually.
+   - If separation is not appropriate, keep them grouped together.
+   - Verify that the branch does not result in failures during linting, type checking, or testing.
 5. Name the concern in the slice's heading as one sentence.
 6. Write `Steps` as a file and its substeps, one change per line, carrying the ADR's `Add`, `Update` and `Drop` without omission.
 7. Write `### Policy` copying the ADR's `Policy` that the slice needs.
@@ -97,7 +100,7 @@ Steps:
 1. List what making the slices and the steps found: what the ADR does not decide, and what file the work would touch that the affected does not name.
 2. Consider how you intend to address each of these items, along with the rationale for your approach.
    - **The approach's ground is your principles. Existing code is not the ground.**
-3. Report your findings to the owner (if there are none, please state `なし`).
+3. Report your findings to the owner (if nothing, tell them to the owner).
 4. Once approved, update the ADR, affected, or plan accordingly.
 
 Notes: Do not take shortcuts. You must face it head-on.
@@ -145,6 +148,17 @@ Notes:
 - The wording of a quoted passage is not a change of meaning. Keep that correction.
 - The report says `fixed: <what>`, or `left: <why>`.
 - One round. The repaired file does not go through the subagent again.
+
+### 8. In-depth Review by the Agent
+
+1. Once the Japanese text has been proofread, the agent will read through the entire plan again.
+   - Can it truly be said that this plan will achieve the goals intended by the ADR?
+   - Have any adjustments or revisions made during the review process caused the plan to deviate from its original intent?
+   - Are there any oversights or gaps that still need to be addressed?
+2. List them, consider how you intend to address each of these items, along with the rationale for your approach.
+   - **The approach's ground is your principles. Existing code is not the ground.**
+3. Report your findings to the owner (if nothing, tell them to the owner).
+4. Once approved, update the ADR, affected, or plan accordingly.
 
 ### 8. Show the owner
 
