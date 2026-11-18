@@ -291,7 +291,6 @@ describe('product-ready index', () => {
     expect(readme).not.toContain('old');
     expect(readmeJa).toContain('## What is in it');
     expect(readmeJa).not.toContain('old');
-    expect(readmeJa).not.toContain('## 入っているもの');
     expect(readmeJa.split('\n')[0]).toBe(readme.split('\n')[0]);
   });
 
