@@ -211,6 +211,14 @@ export function createFakeSpawn(): {
 - Commit: 294a1cd31b8d07798df45910aca062deb55d42bd
 - Stopped:
 
+### Cleanup: 偽の前提の共有と子の待ちの決定化
+
+- Findings: なし
+- Unplanned:
+  - `run/run.test.ts` の install 2件が同じ前提（pnpm の lockfile だけある directory）を2か所で組み立てていた。`dirWithLockfile()` に1つにし、両方から呼ぶ。変えるものはいない。
+  - `tool/consult.test.ts` の起動を使わない偽の `launch` が `setup` と配線テストで二重に書かれていた。`fakeLaunch()` に1つにし、両方から呼ぶ。どちらも触れたら投げる。
+  - `run/subagent.test.ts` の乗り換えは `children[n]?.emit` で子がいなくても黙って飛ばす形だった。`waitForChild(index)` にし、いるものはそのまま返し、いなければ1刻み待って、いなければ投げる。`setTimeout` の1刻みはマクロタスクで、その前にマイクロタスクの `spawn` が必ず済むため決定論的。
+
 ## Work Review
 
 ### Round 1
