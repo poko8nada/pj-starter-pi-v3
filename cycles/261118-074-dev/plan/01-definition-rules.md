@@ -201,6 +201,7 @@ rules/
   - `rules/definition.rules.md` と、それが指す `DEFINITION.md` と `rules/definition.format.md` と、affected が指す `.pi/skills/adr/SKILL.md` を読み、読む者の順にたどり、番号、パス、名前、形を当て、不整合を直す
 - Added:
   - other: `git show HEAD:rules/definition.rules.md` の各行を、新しいファイルの見出しと読み合わせ、落ちた規則がないことを確かめる
+  - other: 改名した見出しを指すファイル内参照（`` `Reach and result` ``、`` `One loss` `` を含む）を新しい見出し名と突き合わせ、古い名指しが残っていないことを確かめる
 
 ## Notes
 
@@ -220,20 +221,25 @@ rules/
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `rules/definition.rules.md:34` — `What may be a Sub` の導入が `` `Result` `` を指すが、差分後の見出しは `### Reach and result` で `Result` 単独の見出しはなく参照が古いまま残る。理由：`What may be a Unit` を 4 原理の入れ子に組み替えたため旧テスト名のまま残った。
+    - fixed: `` `Result` `` を `` `Reach and result` `` に直し、改名後の見出しと参照を一致させた。規則条件の変更ではなく、改名に伴う名指しの整合のため Policy の範囲内。
+- Unlisted: なし（差分は `rules/definition.format.md`・`rules/definition.rules.md` のみで Files の update 対象と一致し、plan md の Notes 追記は plan・ADR が決めた記録のため所見にしない）。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `cycles/261118-074-dev/plan/01-definition-rules.md:202-203`・`rules/definition.rules.md:34` — Added の `git show HEAD:...` 照合は旧行の落ちの有無だけを見て、見出し改名後のファイル内参照（`Result`→`Reach and result`）の整合を確かめない。Goal（判定・書き方・名付けをこのファイルで決められる）に必要な参照の一貫性が checks の対象外という穴。理由：Verify の Always は読む者順の不整合直しを言うだけで、改名と参照の対応付けを手順に持たない。
+    - fixed: スライス 2 の Verify/Added に、改名した見出しを指すファイル内参照を新しい見出し名と突き合わせる other 項目を足し、Stale 側の修正（`` `Result` ``→`` `Reach and result` ``）をその手順で確かめた。
+- Policy: なし（セクション統合・分割・順序変更・改名の範囲内で、規則条件の変更も `cycles/` 過去記録の修正もないため）。
+- Unproven: なし（追加・変更された自動テストがなく、Added は目視照合だけのため「緑のまま壊れるテスト」に当たるものがないため）。
+- Noise: なし（追加・変更されたテストがなく、魔数・固定文字列・型やスキーマが保証する前提の重複検証もないため）。
 - Doubts:
+  - `rules/definition.rules.md:34` の `` `Result` `` は意図的な略称か、`Reach and result` に直すべきか。直す場合は plan の Steps にない文言修正になるため owner の判断が要る。
 
 ### Round 2
 

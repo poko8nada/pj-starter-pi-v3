@@ -31,7 +31,7 @@ The kinds below are how the Units of this product happen to appear. They are exa
 
 ## What may be a Sub
 
-A Sub is one thing the `Who` can do with a Unit, below the Unit's main function. It is held to `Result` and `One loss` as a Unit is, and to these:
+A Sub is one thing the `Who` can do with a Unit, below the Unit's main function. It is held to `Reach and result` and `One loss` as a Unit is, and to these:
 
 1. **No life without the Unit** — taking the Unit away takes the Sub with it. A thing that stands without the Unit is a Unit, not a Sub.
 2. **Not the route, not a check** — the route to a function (the implementation, the steps, the command, the settings, the file layout) and the checks that hold it up do not become Subs.
