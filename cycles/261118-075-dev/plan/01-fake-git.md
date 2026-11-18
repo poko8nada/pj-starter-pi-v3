@@ -32,6 +32,7 @@ scripts/
         worktree.test.ts     update
       tool/
         worktree.test.ts     update
+        worktree.ts          update
 ```
 
 ## Slices
@@ -213,6 +214,7 @@ declare function createFakeGit(): FakeGit;
 
    4. update: 状態を準備する3箇所（`makeDirty`、`removeStatus`、`forEachRefStatus`）を、`mockGit.current!.makeDirty(...)` と `mockGit.current!.state.<名前> = ...` に変える。
    5. update: 使わなくなった import を外す（型検査と lint の指摘に従う）。
+   6. update: `removeText` のコメント1行と表示メッセージ2行（`消した<旧語>`、`残した<旧語>（未マージ）`）の旧語を `ブランチ` に揃える。旧語は ja-check の禁止語であり、テストの期待文字列と一致させるためで、振る舞いは変えない。
 
 ### Policy
 
@@ -222,7 +224,8 @@ declare function createFakeGit(): FakeGit;
 - Forbidden:
   - `vi.mock` のファクトリで `mockGit.current!.git` のように値を先に取り出す - 代入前の実行で落ちるか前のインスタンスに固定されるため。
   - `as unknown as` のキャストで偽物を取り出す - キャストを限られた場合にしか許さない規則に反するため。入れ物の `undefined as FakeGit | undefined` は、`undefined` がその型の値なので、この禁止に当たらない。
-  - `run/worktree.ts` と利用側4ファイルを変える - 次のサイクルのため。
+  - `run/worktree.ts` を変える - 次のサイクルのため。
+  - 利用側4ファイルのうち、表示の語（`枝` を `ブランチ`）以外を変える - このスライスは偽物の置き場所を変えるだけで、表示の語は ja-check の禁止語に合わせるためだけに変える。
   - テストの意味を変える - このスライスは偽物の置き場所だけを変えるため。
   - 偽物の出力を本物の git に合わせて直す - 本エントリの目的は重複と状態であり、出力を変えると既存テストの意味が変わるため。
 
@@ -248,7 +251,7 @@ declare function createFakeGit(): FakeGit;
 ### Slice 2: 2つのテストファイルが共有の偽物を使う
 
 - Findings: なし
-- Unplanned: 2件。1) 両テスト先頭に `/* eslint-disable typescript/no-non-null-assertion` を付けた。plan が `mockGit.current!` の遅延参照を決めているが、lint が `!` を禁じるため。形は変えず理由付きで抑えた。2) `枝`→`ブランチ` に8か所（run 4件のテスト名、tool 2件のテスト名＋2件の期待文字列）を置換。`scripts/checks/ja-check.json` の追加語でフックが落ちるため。期待2件は実装の出力と連動するので `tool/worktree.ts` の出力2件＋注釈1件も同語に揃え、テストの意味は変えていない。
+- Unplanned: 2件。1) 両テスト先頭に `/* eslint-disable typescript/no-non-null-assertion` を付けた。plan が `mockGit.current!` の遅延参照を決めているが、lint が `!` を禁じるため。形は変えず理由付きで抑えた。2) `枝`→`ブランチ` に8か所（run 4件のテスト名、tool 2件のテスト名＋2件の期待文字列）を置換。`scripts/checks/ja-check.json` の追加語でフックが落ちるため。期待2件は実装の出力と連動するので `tool/worktree.ts` の出力2件＋注釈1件も同語に揃え、テストの意味は変えていない。この本番の変更は、走行中に ADR 01 の C2 と計画の Policy を改めて許した（オーナーの承認）。
 - Commit: 5caf525a
 - Stopped:
 
