@@ -259,27 +259,29 @@ declare function createFakeGit(): FakeGit;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
+- Stale: なし。重複していた偽物定義と `resetFake()`/`installFake()` は両テストから消え、残る記述（ADR の C1・F1〜F6 の来歴、plan の Notes）は来歴として有効なため。冗長になった文書・コメント・テストは無い。
+- Unlisted: なし。差分の 5 ファイル（`test/fake-git.fixture.ts`、`scripts/harness-sync/setting.json`、`run/worktree.test.ts`、`tool/worktree.test.ts`、`tool/worktree.ts`）はいずれも plan の `Files` に名指しされている。`cycles/261118-075-dev/plan/01-fake-git.md` 自身の更新は走行中の計画改訂であり、対象外。
+- Gaps: なし。Goal の「1 つになること」は 33/21 の既存検査の通過で確かめられ、「状態がテストごとに分かれること」は `beforeEach` での `createFakeGit()` 新規代入という構造と、汚染に敏感な既存検査群（空一覧・dirty 判定・孤児掃除）で間接的に覆われる。`setting.json` の追加行も harness 共有の定型であり、Goal を外す hole は無い。
+- Policy: なし。改訂後の `Allowed`/`Forbidden` を守っている。遅延参照（`mockGit.current!.git`）で値を先取りせず、`undefined as FakeGit | undefined` 以外のキャスト無し、`run/worktree.ts` 不変、`tool/worktree.ts` は表示の語（`枝`→`ブランチ`）のみ、失敗経路・出力の戻り値不変、テストの意味不変のため。
+- Unproven: なし。変えた期待はいずれも振る舞いを壊せば落ちる。表示 2 件（`tool/worktree.test.ts:274,283`）は実装を旧語に戻すと失敗し、`addStatus=1` の例外・`listStatus=128` の空一覧・`removeStatus`/`forEachRefStatus` の例外・`lastAdd` の参照（`run/worktree.test.ts:121,129,134,177,342,419`）は状態設定を外すと失敗するため。
+- Noise: なし。`status` 値（1・128 等）や期待文字列（ブランチ表示等）は plan・ADR が決めた失敗経路と表示の語であり、指示により finding にしない。差分が新たに持ち込んだ magic number・hardcoded string は無い。
 - Doubts:
+  - `cycles/261118-075-dev/adr.md:10` の C2 は依然として「`run/worktree.ts` と利用側4ファイルを変える」ことを禁じる書きぶりだが、補足では ADR 01 の C2 は表示の語の変更を許す方向で改訂済みとされている。ファイル本文を改訂文言に揃えるか、承認のみで本文は残すのか、オーナーの判断が要る。diff・plan の正しさ自体には影響しないため finding にしていない。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Unlisted: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Gaps: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Policy: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Unproven: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Noise: なし。Round 1 に `fixed:` 行が無いため再確認対象が無い。
+- Doubts: なし。再確認で新たな doubt は無い（Round 1 の Doubts はオーナー判断待ちとして残る）。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 「2つのテストが持つ偽物の git が、`test/fake-git.fixture.ts` の1つになり、状態はテストごとに分かれる」— 達成した。2つのテストの偽物定義は消え、`resetFake()`、`installFake()`、モジュールスコープの `let` も消えた。各テストは `beforeEach` で新しいインスタンスを入れ、状態はテストごとに分かれる。
+- Ran: `pnpm test:related .pi/extensions/consult/run/worktree.test.ts .pi/extensions/consult/tool/worktree.test.ts`（54件）、`pnpm test:run`（66ファイル / 830件）、`pnpm typecheck`（root と .pi とも ok）、`pnpm lint`、`pnpm format:check`、`node scripts/checks/ja-check.mjs`（計画、ADR、affected とも error 0, warn 0）。
+- 赤になることの確認: `test/fake-git.fixture.ts` の `rev-parse` が `status: 1` を返すよう一時的に壊すと、2ファイルで44件が赤。復元すると54件緑。テストが共有の偽物を使っていることの証拠である。
+- Findings: なし
+- Doubts: レビュー Round 1 の Doubt（`adr.md` の C2 と「改訂済み」の整合）は、C2 が理由（ja-check の禁止語）まで書いているため整合していると判断した。
