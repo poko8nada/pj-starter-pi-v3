@@ -8,7 +8,6 @@
     "test/temp-dir.ts",
     "test/settings.fixture.ts",
     "test/scripts.fixture.ts",
-    "test/fake-git.fixture.ts",
     "AGENTS.md",
     "lefthook.yaml",
     "tsconfig.json",
@@ -30,7 +29,6 @@
     "scripts/harness-sync/*/*.test.ts",
     "test/temp-dir.ts",
     "test/settings.fixture.ts",
-    "test/scripts.fixture.ts",
-    "test/fake-git.fixture.ts"
+    "test/scripts.fixture.ts"
   ]
 }

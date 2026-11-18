@@ -1,4 +1,4 @@
-/* eslint-disable typescript/no-non-null-assertion -- plan が mockGit.current! の遅延参照を決め、テスト全体で使うため */
+import { existsSync, mkdirSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.ts';
@@ -7,13 +7,137 @@ import { placeFor } from '../run/place.ts';
 import { branchFor, consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
 import { createWorktreeTool, removeText, runningIn } from './worktree.ts';
 
-const mockGit = vi.hoisted(() => ({ current: undefined as FakeGit | undefined }));
+const mockGit = vi.hoisted(() =>
+  vi.fn((_cwd: string, _args: readonly string[]) => ({ status: 0, stdout: '', stderr: '' })),
+);
 
 vi.mock('../../../../lib/git-env.mjs', () => ({
-  git: (cwd: string, args: readonly string[]) => mockGit.current!.git(cwd, args),
+  git: (cwd: string, args: readonly string[]) => mockGit(cwd, args),
   gitEnv: (env?: NodeJS.ProcessEnv) => ({ ...env }),
 }));
-import { createFakeGit, type FakeGit } from '../../../../test/fake-git.fixture.ts';
+
+type Entry = { readonly path: string; readonly ref: string };
+
+let entries: Entry[] = [];
+const orphans = new Map<string, boolean>();
+const unmerged = new Set<string>();
+const dirtyPaths = new Set<string>();
+let listStatus = 0;
+let addStatus = 0;
+let removeStatus = 0;
+let pruneStatus = 0;
+let forEachRefStatus = 0;
+
+function resetFake(): void {
+  entries = [];
+  orphans.clear();
+  unmerged.clear();
+  dirtyPaths.clear();
+  listStatus = 0;
+  addStatus = 0;
+  removeStatus = 0;
+  pruneStatus = 0;
+  forEachRefStatus = 0;
+}
+
+function installFake(): void {
+  mockGit.mockImplementation((cwd: string, args: readonly string[]) => {
+    if (args[0] === 'rev-parse') {
+      return { status: 0, stdout: `${cwd}\n`, stderr: '' };
+    }
+    if (args[0] === 'worktree' && args[1] === 'list') {
+      if (listStatus !== 0) {
+        return { status: listStatus, stdout: '', stderr: 'not a repository' };
+      }
+      const blocks = entries.map((entry) => {
+        const prunable = !existsSync(entry.path);
+        return prunable
+          ? `worktree ${entry.path}\nbranch ${entry.ref}\nprunable`
+          : `worktree ${entry.path}\nbranch ${entry.ref}`;
+      });
+      return {
+        status: 0,
+        stdout: blocks.length > 0 ? `${blocks.join('\n\n')}\n` : '',
+        stderr: '',
+      };
+    }
+    if (args[0] === 'status') {
+      if (dirtyPaths.has(cwd)) {
+        return { status: 0, stdout: '?? dirty\n', stderr: '' };
+      }
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    if (args[0] === 'worktree' && args[1] === 'add') {
+      const branch = args[3] ?? '';
+      const path = args[4] ?? '';
+      if (branch.includes(' ') || addStatus !== 0) {
+        return { status: 1, stdout: '', stderr: 'fatal: bad branch' };
+      }
+      mkdirSync(path, { recursive: true });
+      entries.push({ path, ref: `refs/heads/${branch}` });
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    if (args[0] === 'worktree' && args[1] === 'prune') {
+      if (pruneStatus !== 0) {
+        return { status: pruneStatus, stdout: '', stderr: 'prune failed' };
+      }
+      const removed = entries.filter((entry) => !existsSync(entry.path));
+      for (const gone of removed) {
+        const short = gone.ref.replace(/^refs\/heads\//, '');
+        if (!orphans.has(short)) {
+          orphans.set(short, !unmerged.has(short));
+        }
+      }
+      entries = entries.filter((entry) => existsSync(entry.path));
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    if (args[0] === 'worktree' && args[1] === 'remove') {
+      const path = args[3] ?? '';
+      if (removeStatus !== 0) {
+        return { status: removeStatus, stdout: '', stderr: 'remove failed' };
+      }
+      const at = entries.findIndex((entry) => entry.path === path);
+      if (at >= 0) {
+        const removed = entries.splice(at, 1)[0];
+        if (removed !== undefined) {
+          const short = removed.ref.replace(/^refs\/heads\//, '');
+          if (!orphans.has(short)) {
+            orphans.set(short, !unmerged.has(short));
+          }
+        }
+      }
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    if (args[0] === 'for-each-ref') {
+      if (forEachRefStatus !== 0) {
+        return { status: forEachRefStatus, stdout: '', stderr: 'for-each-ref failed' };
+      }
+      const checkedOut = new Set(entries.map((entry) => entry.ref.replace(/^refs\/heads\//, '')));
+      const lines = [...orphans.keys()]
+        .filter((branch) => !checkedOut.has(branch))
+        .map((branch) => `refs/heads/${branch} `);
+      return { status: 0, stdout: lines.length > 0 ? `${lines.join('\n')}\n` : '', stderr: '' };
+    }
+    if (args[0] === 'branch' && (args[1] === '-d' || args[1] === '-D')) {
+      const branch = args[2] ?? '';
+      if (args[1] === '-D') {
+        orphans.delete(branch);
+        unmerged.delete(branch);
+        return { status: 0, stdout: '', stderr: '' };
+      }
+      if (unmerged.has(branch)) {
+        return { status: 1, stdout: '', stderr: 'not fully merged' };
+      }
+      orphans.delete(branch);
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  });
+}
+
+function makeDirty(path: string): void {
+  dirtyPaths.add(path);
+}
 
 const ROOT_KEY = 'CONSULT_ROOT';
 
@@ -54,7 +178,8 @@ function seedUnit(dir: string, id: string, extra: Record<string, unknown> = {}):
 }
 
 beforeEach(() => {
-  mockGit.current = createFakeGit();
+  resetFake();
+  installFake();
   vi.stubEnv(ROOT_KEY, tempDir());
 });
 
@@ -92,7 +217,7 @@ describe('consult_worktree', () => {
     const { dir } = repo();
     await aNewWorktree(dir);
     const row = findWorktree(dir, '2-b');
-    mockGit.current!.makeDirty(row?.path ?? '');
+    makeDirty(row?.path ?? '');
 
     expect(text(await call({ action: 'list' }, dir))).toContain('(changed)');
     const outcome = await call({ action: 'remove', id: '2-b' }, dir);
@@ -103,7 +228,7 @@ describe('consult_worktree', () => {
   it('worktree remove が失敗 → 投げる', async () => {
     const { dir } = repo();
     await aNewWorktree(dir);
-    mockGit.current!.state.removeStatus = 1;
+    removeStatus = 1;
     await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
       /could not remove the worktree/,
     );
@@ -112,7 +237,7 @@ describe('consult_worktree', () => {
   it('for-each-ref が失敗 → remove は投げる', async () => {
     const { dir } = repo();
     await aNewWorktree(dir);
-    mockGit.current!.state.forEachRefStatus = 1;
+    forEachRefStatus = 1;
     await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
       /could not list the orphan branches/,
     );
