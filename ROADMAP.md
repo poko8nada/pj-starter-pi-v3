@@ -32,7 +32,7 @@
 
 | No  | Ver   | status | cycles       | priority | title                                |
 | --- | ----- | ------ | ------------ | -------- | ------------------------------------ |
-| 036 | 0.9.7 | wip    |              | mid      | rules配下のファイル更新              |
+| 036 | 0.9.7 | done   | 074-d        | mid      | rules配下のファイル更新              |
 | 035 | 0.9.7 | done   | 073-d        | mid      | upgradeスキルの更新                  |
 | 034 | 0.9.7 | done   | 072-d        | low      | thinking-scrubの一部修正             |
 | 033 | 0.9.7 | done   | 070-d, 071-d | high     | DEFINITONの定義一部変更              |
