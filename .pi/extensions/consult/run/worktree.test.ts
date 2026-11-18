@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { createFakeGit, type FakeGit } from '../../../../test/fake-git.fixture.ts';
+import { createWorktreeGit, type WorktreeGit } from './worktree.fixture.ts';
 import {
   branchFor,
   cleanWorktrees,
@@ -16,11 +16,11 @@ import {
   type WorktreeDeps,
 } from './worktree.ts';
 
-let fake: FakeGit;
+let fake: WorktreeGit;
 let deps: WorktreeDeps;
 
 beforeEach(() => {
-  fake = createFakeGit();
+  fake = createWorktreeGit();
   deps = { git: fake.git, root: tempDir() };
 });
 

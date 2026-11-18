@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
-import { createFakeGit, type FakeGit } from '../../../../test/fake-git.fixture.ts';
+import { createWorktreeGit, type WorktreeGit } from '../run/worktree.fixture.ts';
 import { aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
 import { branchFor, findWorktree, topLevel, type WorktreeDeps } from '../run/worktree.ts';
 import { createWorktreeTool, removeText, runningIn } from './worktree.ts';
 
-function depsFor(fake: FakeGit): WorktreeDeps {
+function depsFor(fake: WorktreeGit): WorktreeDeps {
   return { git: fake.git, root: tempDir() };
 }
 
@@ -60,7 +60,7 @@ function seedUnit(
 describe('consult_worktree', () => {
   it('new → id / branch / path / base を返す', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     const outcome = await aNewWorktree(dir, deps, id);
@@ -74,14 +74,14 @@ describe('consult_worktree', () => {
 
   it('new で id がない → エラー', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     await expect(call({ action: 'new' }, dir, deps)).rejects.toThrow(/needs an id/);
   });
 
   it('list → 作ったものを出す。1 つもなければそう言う', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     expect(text(await call({ action: 'list' }, dir, deps))).toContain('ワークツリーは無い');
 
@@ -91,7 +91,7 @@ describe('consult_worktree', () => {
 
   it('変更の残る worktree → list に changed、remove は dirty で断る', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     await aNewWorktree(dir, deps);
     const row = findWorktree(dir, deps, '2-b');
@@ -105,7 +105,7 @@ describe('consult_worktree', () => {
 
   it('worktree remove が失敗 → 投げる', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     await aNewWorktree(dir, deps);
     fake.fail('worktree remove');
@@ -116,7 +116,7 @@ describe('consult_worktree', () => {
 
   it('for-each-ref が失敗 → remove は投げる', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     await aNewWorktree(dir, deps);
     fake.fail('for-each-ref');
@@ -127,7 +127,7 @@ describe('consult_worktree', () => {
 
   it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     await aNewWorktree(dir, deps);
@@ -142,7 +142,7 @@ describe('consult_worktree', () => {
 
   it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     await aNewWorktree(dir, deps);
@@ -155,7 +155,7 @@ describe('consult_worktree', () => {
 
   it('別の session の走っているサブエージェントでも busy（ワークツリーを守る側なので session で絞らない）', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     await aNewWorktree(dir, deps);
@@ -167,7 +167,7 @@ describe('consult_worktree', () => {
 
   it('list が、走っているサブエージェントの居る unit に印を付ける', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     await aNewWorktree(dir, deps);
@@ -179,7 +179,7 @@ describe('consult_worktree', () => {
 
   it('start と end のある unit → busy でない', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     const token = 'token-9';
@@ -195,7 +195,7 @@ describe('consult_worktree', () => {
 
   it('開始行だけ（startToken 付き）+ check が running の worktree → busy', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     const startToken = START_TOKEN;
@@ -211,7 +211,7 @@ describe('consult_worktree', () => {
 
   it('開始行だけ（startToken 付き）+ check が ended の worktree → busy でない', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     const startToken = START_TOKEN;
@@ -226,7 +226,7 @@ describe('consult_worktree', () => {
 
   it('知らない action → エラー', async () => {
     const { dir } = repo();
-    const fake = createFakeGit();
+    const fake = createWorktreeGit();
     const deps = depsFor(fake);
     await expect(call({ action: 'drop', id: '2-b' }, dir, deps)).rejects.toThrow(/unknown action/);
   });
