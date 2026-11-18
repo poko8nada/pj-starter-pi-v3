@@ -19,7 +19,7 @@ import type {
 import { Type } from 'typebox';
 import type { Static } from 'typebox';
 import { changedFiles, worktreeGit, type GitRun } from '../run/run.ts';
-import { findWorktree } from '../run/worktree.ts';
+import { findWorktree, type WorktreeDeps } from '../run/worktree.ts';
 
 /** 道具のパラメータ。worktree の id だけ */
 export const PARAMETERS = Type.Object({
@@ -102,13 +102,15 @@ export function compose(outcome: CommitResult): string {
   return `committed: ${outcome.hash}`;
 }
 
-export async function execute(...args: ExecuteArgs) {
-  const [, params, , , ctx] = args;
-  const id = parseCommitRequest(params);
-  const row = findWorktree(ctx.cwd, id);
-  if (row === undefined) {
-    throw new Error(`consult_commit: no such worktree: ${id}. ${USAGE}`);
-  }
-  const outcome = commitInWorktree(worktreeGit(row.path), row.id);
-  return result(compose(outcome), { worktree: row.id, outcome });
+export function createCommitTool(deps: WorktreeDeps) {
+  return async function execute(...args: ExecuteArgs) {
+    const [, params, , , ctx] = args;
+    const id = parseCommitRequest(params);
+    const row = findWorktree(ctx.cwd, deps, id);
+    if (row === undefined) {
+      throw new Error(`consult_commit: no such worktree: ${id}. ${USAGE}`);
+    }
+    const outcome = commitInWorktree(worktreeGit(row.path, deps.git), row.id);
+    return result(compose(outcome), { worktree: row.id, outcome });
+  };
 }

@@ -1,156 +1,31 @@
-import { existsSync, mkdirSync } from 'node:fs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
+import { createFakeGit, type FakeGit } from '../../../../test/fake-git.fixture.ts';
 import { aRunRecord, aToolCall, START_TOKEN } from '../consult.fixture.ts';
 import { appendRun, type CheckRecord } from '../run/log.ts';
 import { placeFor } from '../run/place.ts';
-import { branchFor, consultRoot, findWorktree, topLevel } from '../run/worktree.ts';
+import { branchFor, findWorktree, topLevel, type WorktreeDeps } from '../run/worktree.ts';
 import { createWorktreeTool, removeText, runningIn } from './worktree.ts';
 
-const mockGit = vi.hoisted(() =>
-  vi.fn((_cwd: string, _args: readonly string[]) => ({ status: 0, stdout: '', stderr: '' })),
-);
-
-vi.mock('../../../../lib/git-env.mjs', () => ({
-  git: (cwd: string, args: readonly string[]) => mockGit(cwd, args),
-  gitEnv: (env?: NodeJS.ProcessEnv) => ({ ...env }),
-}));
-
-type Entry = { readonly path: string; readonly ref: string };
-
-let entries: Entry[] = [];
-const orphans = new Map<string, boolean>();
-const unmerged = new Set<string>();
-const dirtyPaths = new Set<string>();
-let listStatus = 0;
-let addStatus = 0;
-let removeStatus = 0;
-let pruneStatus = 0;
-let forEachRefStatus = 0;
-
-function resetFake(): void {
-  entries = [];
-  orphans.clear();
-  unmerged.clear();
-  dirtyPaths.clear();
-  listStatus = 0;
-  addStatus = 0;
-  removeStatus = 0;
-  pruneStatus = 0;
-  forEachRefStatus = 0;
+function depsFor(fake: FakeGit): WorktreeDeps {
+  return { git: fake.git, root: tempDir() };
 }
-
-function installFake(): void {
-  mockGit.mockImplementation((cwd: string, args: readonly string[]) => {
-    if (args[0] === 'rev-parse') {
-      return { status: 0, stdout: `${cwd}\n`, stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'list') {
-      if (listStatus !== 0) {
-        return { status: listStatus, stdout: '', stderr: 'not a repository' };
-      }
-      const blocks = entries.map((entry) => {
-        const prunable = !existsSync(entry.path);
-        return prunable
-          ? `worktree ${entry.path}\nbranch ${entry.ref}\nprunable`
-          : `worktree ${entry.path}\nbranch ${entry.ref}`;
-      });
-      return {
-        status: 0,
-        stdout: blocks.length > 0 ? `${blocks.join('\n\n')}\n` : '',
-        stderr: '',
-      };
-    }
-    if (args[0] === 'status') {
-      if (dirtyPaths.has(cwd)) {
-        return { status: 0, stdout: '?? dirty\n', stderr: '' };
-      }
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'add') {
-      const branch = args[3] ?? '';
-      const path = args[4] ?? '';
-      if (branch.includes(' ') || addStatus !== 0) {
-        return { status: 1, stdout: '', stderr: 'fatal: bad branch' };
-      }
-      mkdirSync(path, { recursive: true });
-      entries.push({ path, ref: `refs/heads/${branch}` });
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'prune') {
-      if (pruneStatus !== 0) {
-        return { status: pruneStatus, stdout: '', stderr: 'prune failed' };
-      }
-      const removed = entries.filter((entry) => !existsSync(entry.path));
-      for (const gone of removed) {
-        const short = gone.ref.replace(/^refs\/heads\//, '');
-        if (!orphans.has(short)) {
-          orphans.set(short, !unmerged.has(short));
-        }
-      }
-      entries = entries.filter((entry) => existsSync(entry.path));
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'remove') {
-      const path = args[3] ?? '';
-      if (removeStatus !== 0) {
-        return { status: removeStatus, stdout: '', stderr: 'remove failed' };
-      }
-      const at = entries.findIndex((entry) => entry.path === path);
-      if (at >= 0) {
-        const removed = entries.splice(at, 1)[0];
-        if (removed !== undefined) {
-          const short = removed.ref.replace(/^refs\/heads\//, '');
-          if (!orphans.has(short)) {
-            orphans.set(short, !unmerged.has(short));
-          }
-        }
-      }
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'for-each-ref') {
-      if (forEachRefStatus !== 0) {
-        return { status: forEachRefStatus, stdout: '', stderr: 'for-each-ref failed' };
-      }
-      const checkedOut = new Set(entries.map((entry) => entry.ref.replace(/^refs\/heads\//, '')));
-      const lines = [...orphans.keys()]
-        .filter((branch) => !checkedOut.has(branch))
-        .map((branch) => `refs/heads/${branch} `);
-      return { status: 0, stdout: lines.length > 0 ? `${lines.join('\n')}\n` : '', stderr: '' };
-    }
-    if (args[0] === 'branch' && (args[1] === '-d' || args[1] === '-D')) {
-      const branch = args[2] ?? '';
-      if (args[1] === '-D') {
-        orphans.delete(branch);
-        unmerged.delete(branch);
-        return { status: 0, stdout: '', stderr: '' };
-      }
-      if (unmerged.has(branch)) {
-        return { status: 1, stdout: '', stderr: 'not fully merged' };
-      }
-      orphans.delete(branch);
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    return { status: 0, stdout: '', stderr: '' };
-  });
-}
-
-function makeDirty(path: string): void {
-  dirtyPaths.add(path);
-}
-
-const ROOT_KEY = 'CONSULT_ROOT';
 
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
 /** 道具は位置で 5 つ受け取る。保存場所は cwd から決め、ここで組み立てる */
-function call(params: Record<string, unknown>, cwd: string, check?: CheckRecord): Promise<Outcome> {
-  const place = placeFor(consultRoot(), topLevel(cwd));
-  return createWorktreeTool(place, check)(...aToolCall(params, { cwd }, 'call-1'));
+function call(
+  params: Record<string, unknown>,
+  cwd: string,
+  deps: WorktreeDeps,
+  check?: CheckRecord,
+): Promise<Outcome> {
+  const place = placeFor(deps.root, topLevel(cwd, deps));
+  return createWorktreeTool(place, deps, check)(...aToolCall(params, { cwd }, 'call-1'));
 }
 
-function aNewWorktree(dir: string, id = '2-b') {
-  return call({ action: 'new', id }, dir);
+function aNewWorktree(dir: string, deps: WorktreeDeps, id = '2-b') {
+  return call({ action: 'new', id }, dir, deps);
 }
 
 function repo(): { readonly dir: string } {
@@ -162,9 +37,14 @@ function text(outcome: { content: readonly { type: string; text?: string }[] }):
 }
 
 /** unit の記録を 1 本書く。開始行が要る検査の重複をここに集める */
-function seedUnit(dir: string, id: string, extra: Record<string, unknown> = {}): void {
+function seedUnit(
+  dir: string,
+  deps: WorktreeDeps,
+  id: string,
+  extra: Record<string, unknown> = {},
+): void {
   appendRun(
-    placeFor(consultRoot(), topLevel(dir)),
+    placeFor(deps.root, topLevel(dir, deps)),
     aRunRecord({
       session: 'session-a',
       subagent: 'consult-9',
@@ -177,21 +57,13 @@ function seedUnit(dir: string, id: string, extra: Record<string, unknown> = {}):
   );
 }
 
-beforeEach(() => {
-  resetFake();
-  installFake();
-  vi.stubEnv(ROOT_KEY, tempDir());
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('consult_worktree', () => {
   it('new → id / branch / path / base を返す', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    const outcome = await aNewWorktree(dir, id);
+    const outcome = await aNewWorktree(dir, deps, id);
     const body = text(outcome);
 
     expect(body).toContain(`id: ${id}`);
@@ -202,156 +74,186 @@ describe('consult_worktree', () => {
 
   it('new で id がない → エラー', async () => {
     const { dir } = repo();
-    await expect(call({ action: 'new' }, dir)).rejects.toThrow(/needs an id/);
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    await expect(call({ action: 'new' }, dir, deps)).rejects.toThrow(/needs an id/);
   });
 
   it('list → 作ったものを出す。1 つもなければそう言う', async () => {
     const { dir } = repo();
-    expect(text(await call({ action: 'list' }, dir))).toContain('ワークツリーは無い');
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    expect(text(await call({ action: 'list' }, dir, deps))).toContain('ワークツリーは無い');
 
-    await aNewWorktree(dir);
-    expect(text(await call({}, dir))).toContain(branchFor('2-b'));
+    await aNewWorktree(dir, deps);
+    expect(text(await call({}, dir, deps))).toContain(branchFor('2-b'));
   });
 
   it('変更の残る worktree → list に changed、remove は dirty で断る', async () => {
     const { dir } = repo();
-    await aNewWorktree(dir);
-    const row = findWorktree(dir, '2-b');
-    makeDirty(row?.path ?? '');
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    await aNewWorktree(dir, deps);
+    const row = findWorktree(dir, deps, '2-b');
+    fake.makeDirty(row?.path ?? '');
 
-    expect(text(await call({ action: 'list' }, dir))).toContain('(changed)');
-    const outcome = await call({ action: 'remove', id: '2-b' }, dir);
+    expect(text(await call({ action: 'list' }, dir, deps))).toContain('(changed)');
+    const outcome = await call({ action: 'remove', id: '2-b' }, dir, deps);
     expect(text(outcome)).toContain('変更が残っている');
     expect(outcome.details['outcome']).toBe('dirty');
   });
 
   it('worktree remove が失敗 → 投げる', async () => {
     const { dir } = repo();
-    await aNewWorktree(dir);
-    removeStatus = 1;
-    await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    await aNewWorktree(dir, deps);
+    fake.fail('worktree remove');
+    await expect(call({ action: 'remove', id: '2-b' }, dir, deps)).rejects.toThrow(
       /could not remove the worktree/,
     );
   });
 
   it('for-each-ref が失敗 → remove は投げる', async () => {
     const { dir } = repo();
-    await aNewWorktree(dir);
-    forEachRefStatus = 1;
-    await expect(call({ action: 'remove', id: '2-b' }, dir)).rejects.toThrow(
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    await aNewWorktree(dir, deps);
+    fake.fail('for-each-ref');
+    await expect(call({ action: 'remove', id: '2-b' }, dir, deps)).rejects.toThrow(
       /could not list the orphan branches/,
     );
   });
 
   it('サブエージェントが走っている unit の remove は busy で断る（記録の pid が生きている）', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    seedUnit(dir, id);
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    seedUnit(dir, deps, id);
 
-    const outcome = await call({ action: 'remove', id }, dir);
+    const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(text(outcome)).toContain('サブエージェントが走っている');
     expect(outcome.details['outcome']).toBe('busy');
-    expect(findWorktree(dir, id)).toBeDefined();
+    expect(findWorktree(dir, deps, id)).toBeDefined();
   });
 
   it('記録の pid が死んでいれば、走っていない扱いで消える', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    seedUnit(dir, id, { pid: 999_999 });
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    seedUnit(dir, deps, id, { pid: 999_999 });
 
-    const outcome = await call({ action: 'remove', id }, dir);
+    const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('終わったサブエージェントの記録だけなら、走っていない（消える）', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    await aNewWorktree(dir);
-    seedUnit(dir, id, { ended: 2, state: 'done' });
+    await aNewWorktree(dir, deps);
+    seedUnit(dir, deps, id, { ended: 2, state: 'done' });
 
-    const outcome = await call({ action: 'remove', id }, dir);
+    const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('別の session の走っているサブエージェントでも busy（ワークツリーを守る側なので session で絞らない）', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    await aNewWorktree(dir);
-    seedUnit(dir, id, { session: 'session-elsewhere' });
+    await aNewWorktree(dir, deps);
+    seedUnit(dir, deps, id, { session: 'session-elsewhere' });
 
-    const outcome = await call({ action: 'remove', id }, dir);
+    const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(outcome.details['outcome']).toBe('busy');
   });
 
   it('list が、走っているサブエージェントの居る unit に印を付ける', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    seedUnit(dir, id);
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    seedUnit(dir, deps, id);
 
-    expect(text(await call({ action: 'list' }, dir))).toContain('a subagent is running');
+    expect(text(await call({ action: 'list' }, dir, deps))).toContain('a subagent is running');
   });
 
   it('start と end のある unit → busy でない', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
     const token = 'token-9';
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    const place = placeFor(consultRoot(), topLevel(dir));
-    seedUnit(dir, id, { token });
-    seedUnit(dir, id, { ended: 2, state: 'done' });
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    seedUnit(dir, deps, id, { token });
+    seedUnit(dir, deps, id, { ended: 2, state: 'done' });
     expect(runningIn(place, id, () => 'running')).toBe(false);
-    const outcome = await call({ action: 'remove', id }, dir, () => 'running');
+    const outcome = await call({ action: 'remove', id }, dir, deps, () => 'running');
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('開始行だけ（startToken 付き）+ check が running の worktree → busy', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
     const startToken = START_TOKEN;
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    const place = placeFor(consultRoot(), topLevel(dir));
-    seedUnit(dir, id, { pid: 11, startToken });
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    seedUnit(dir, deps, id, { pid: 11, startToken });
     expect(runningIn(place, id, () => 'running')).toBe(true);
-    expect(text(await call({ action: 'remove', id }, dir, () => 'running'))).toContain(
+    expect(text(await call({ action: 'remove', id }, dir, deps, () => 'running'))).toContain(
       'サブエージェントが走っている',
     );
   });
 
   it('開始行だけ（startToken 付き）+ check が ended の worktree → busy でない', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
     const startToken = START_TOKEN;
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    const place = placeFor(consultRoot(), topLevel(dir));
-    seedUnit(dir, id, { pid: 11, startToken });
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    seedUnit(dir, deps, id, { pid: 11, startToken });
     expect(runningIn(place, id, () => 'ended')).toBe(false);
-    const outcome = await call({ action: 'remove', id }, dir, () => 'ended');
+    const outcome = await call({ action: 'remove', id }, dir, deps, () => 'ended');
     expect(outcome.details['outcome']).toBe('removed');
   });
 
   it('開始行だけ（startToken 付き）+ check が unknown の worktree → busy（走っている側）', async () => {
     const { dir } = repo();
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
     const id = '2-b';
     const startToken = START_TOKEN;
-    await aNewWorktree(dir);
-    findWorktree(dir, id);
-    const place = placeFor(consultRoot(), topLevel(dir));
-    seedUnit(dir, id, { pid: 11, startToken });
+    await aNewWorktree(dir, deps);
+    findWorktree(dir, deps, id);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    seedUnit(dir, deps, id, { pid: 11, startToken });
     expect(runningIn(place, id, () => 'unknown')).toBe(true);
   });
 
   it('知らない action → エラー', async () => {
     const { dir } = repo();
-    await expect(call({ action: 'drop', id: '2-b' }, dir)).rejects.toThrow(/unknown action/);
+    const fake = createFakeGit();
+    const deps = depsFor(fake);
+    await expect(call({ action: 'drop', id: '2-b' }, dir, deps)).rejects.toThrow(/unknown action/);
   });
 });
 

@@ -25,7 +25,6 @@ vi.mock('./run/worktree.ts', async (importOriginal) => {
   return {
     ...actual,
     topLevel: (cwd: string) => cwd,
-    consultRoot: () => '/tmp/consult-wiring-test',
     cleanWorktrees: () => ({ pruned: [], branches: [] }),
   };
 });
@@ -85,12 +84,14 @@ beforeEach(() => {
   setPlayer(() => {
     played.push('tink');
   });
+  vi.stubEnv('CONSULT_ROOT', tempDir());
 });
 
 afterEach(() => {
   stopTick();
   setSoundEnabled(true);
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe('flushPending', () => {

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
 import { runOneSubagent, type SubagentJob } from '../run/subagent.ts';
-import { findWorktree } from '../run/worktree.ts';
+import { findWorktree, type WorktreeDeps } from '../run/worktree.ts';
 import {
   appendRun,
   isRunning,
@@ -280,48 +280,58 @@ export function modelNotifier(
 }
 
 /** サブエージェント 1 体を走らせて、メインエージェントに届ける本文と診断にする */
-async function consult(
-  ctx: ConsultContext,
-  options: ConsultOptions,
-  job: SubagentJob,
-): Promise<ConsultOutcome> {
-  const { run, install } = await runOneSubagent(ctx, options, job, modelNotifier(ctx, job.id));
-  const events = parseEvents(run.stdout);
-  const usage = usageFrom(events);
-  const state = stateOf(run);
-  const reason = reasonOf(run);
-  const files = job.worktree === undefined ? [] : changedFiles(worktreeGit(job.worktree.path));
-  const report: SubagentReport = {
-    role: options.type,
-    state,
-    files,
-    turns: usage.turns,
-    turnsLimit: options.policy.limits.turns,
-    spend: `${usage.cost.toFixed(4)} usd`,
-    id: job.id,
-    ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
-    ...(reason === undefined ? {} : { reason }),
-  };
-  // 塊を先頭に置く。メインエージェントは本文の前に、どう終わったか・どこを触ったかを見る。
-  const lines = [
-    reportBlock(report),
-    '',
-    '---',
-    '',
-    compose(events, run),
-    '',
-    `[consult] ${usageLine(events)}`,
-  ];
-  return {
-    text: lines.join('\n').trimEnd(),
-    report,
-    details: {
-      type: options.type,
+export function createConsult(deps: WorktreeDeps): ConsultRunner {
+  return async (ctx, options, job) => {
+    const { run, install } = await runOneSubagent(ctx, options, job, modelNotifier(ctx, job.id));
+    const events = parseEvents(run.stdout);
+    const usage = usageFrom(events);
+    const state = stateOf(run);
+    const reason = reasonOf(run);
+    const files =
+      job.worktree === undefined ? [] : changedFiles(worktreeGit(job.worktree.path, deps.git));
+    const report: SubagentReport = {
+      role: options.type,
       state,
       files,
-      ...(install === undefined ? {} : { install }),
-    },
+      turns: usage.turns,
+      turnsLimit: options.policy.limits.turns,
+      spend: `${usage.cost.toFixed(4)} usd`,
+      id: job.id,
+      ...(job.worktree === undefined ? {} : { worktree: job.worktree.id }),
+      ...(reason === undefined ? {} : { reason }),
+    };
+    // 塊を先頭に置く。メインエージェントは本文の前に、どう終わったか・どこを触ったかを見る。
+    const lines = [
+      reportBlock(report),
+      '',
+      '---',
+      '',
+      compose(events, run),
+      '',
+      `[consult] ${usageLine(events)}`,
+    ];
+    return {
+      text: lines.join('\n').trimEnd(),
+      report,
+      details: {
+        type: options.type,
+        state,
+        files,
+        ...(install === undefined ? {} : { install }),
+      },
+    };
   };
+}
+
+/** `createRuntime` の入口。起動時に1回だけ渡す */
+export interface RuntimeInput {
+  readonly pi: PiFace;
+  readonly place: Place;
+  readonly deps: WorktreeDeps;
+  readonly run?: ConsultRunner;
+  readonly sessionNow?: () => string;
+  readonly check?: CheckRecord;
+  readonly psRun?: PsRun;
 }
 
 /** 走らせている consult の一式。道具とスラッシュコマンドが同じ subagents を見る */
@@ -439,11 +449,12 @@ function beginRun(
   state: RuntimeState,
   ctx: ConsultContext,
   request: RunRequest,
+  deps: WorktreeDeps,
 ): AgentToolResult<Record<string, unknown>> {
   const policy = resolveType(loadTypes(EXTENSION_DIR), request.role);
   // 行き先を決める。隔離するロールは worktree が要る（暗黙に作らない）。
   const worktree =
-    request.worktree === undefined ? undefined : findWorktree(ctx.cwd, request.worktree);
+    request.worktree === undefined ? undefined : findWorktree(ctx.cwd, deps, request.worktree);
   if (request.worktree !== undefined && worktree === undefined) {
     throw new Error(`consult_run: no such worktree: ${request.worktree}. ${RUN_USAGE}`);
   }
@@ -516,19 +527,13 @@ function soundStatus(): string {
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
-// eslint-disable-next-line max-params -- plan の I/O（pi, place, run, sessionNow, check, psRun の 6 つ）
-export function createRuntime(
-  pi: PiFace,
-  place: Place,
-  run: ConsultRunner = consult,
-  sessionNow: () => string = () => '',
-  check?: CheckRecord,
-  psRun?: PsRun,
-): ConsultRuntime {
+export function createRuntime(input: RuntimeInput): ConsultRuntime {
+  const { pi, place, deps, run, sessionNow = () => '', check, psRun } = input;
+  const runner = run ?? createConsult(deps);
   const state: RuntimeState = {
     pi,
     place,
-    run,
+    run: runner,
     subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,
@@ -539,7 +544,7 @@ export function createRuntime(
     subagents: state.subagents,
     run: async (...args: RunExecuteArgs) => {
       const [, params, , , ctx] = args;
-      return beginRun(state, ctx, parseRunRequest(params));
+      return beginRun(state, ctx, parseRunRequest(params), deps);
     },
     control: (action, session) =>
       controlSubagent(action, state.subagents, state.place, session, undefined, check),

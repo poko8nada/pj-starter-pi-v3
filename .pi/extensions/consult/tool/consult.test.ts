@@ -72,8 +72,9 @@ function setup(
   psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
+  const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
   return {
-    runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
+    runtime: createRuntime({ pi, place, deps, run, sessionNow: () => SESSION, check, psRun }),
     place,
   };
 }
@@ -625,7 +626,13 @@ describe('consult: 通知の配線', () => {
     capturedHooks.length = 0;
     const { pi } = fakePi();
     const { ctx, notices } = fakeConsultContext();
-    const runtime = createRuntime(pi, placeFor(tempDir(), tempDir()), undefined, () => SESSION);
+    const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+    const runtime = createRuntime({
+      pi,
+      place: placeFor(tempDir(), tempDir()),
+      deps,
+      sessionNow: () => SESSION,
+    });
 
     await runtime.run('call', { role: 'review', task: 'x' }, undefined, undefined, ctx);
     await flush();

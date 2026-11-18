@@ -15,6 +15,7 @@ import {
   listWorktrees,
   removeWorktree,
   type RemoveResult,
+  type WorktreeDeps,
   type WorktreeRow,
 } from '../run/worktree.ts';
 
@@ -165,13 +166,13 @@ export function removeText(id: string, removed: RemoveResult): string {
 /**
  * 道具を作る。保存場所は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
  */
-export function createWorktreeTool(place: Place, check?: CheckRecord) {
+export function createWorktreeTool(place: Place, deps: WorktreeDeps, check?: CheckRecord) {
   return async function execute(...args: ExecuteArgs) {
     const [, params, , , ctx] = args;
     const action = parseAction(params);
     const cwd = ctx.cwd;
     if (action.action === 'new') {
-      const made = createWorktree(cwd, action.id, action.base);
+      const made = createWorktree(cwd, deps, action.id, action.base);
       return result(
         [
           `id: ${made.id}`,
@@ -183,7 +184,7 @@ export function createWorktreeTool(place: Place, check?: CheckRecord) {
       );
     }
     if (action.action === 'remove') {
-      const removed = removeWorktree(cwd, action.id, {
+      const removed = removeWorktree(cwd, deps, action.id, {
         force: action.force,
         busy: runningIn(place, action.id, check),
       });
@@ -193,7 +194,7 @@ export function createWorktreeTool(place: Place, check?: CheckRecord) {
         cleanup: removed.cleanup,
       });
     }
-    const rows = listWorktrees(cwd);
+    const rows = listWorktrees(cwd, deps);
     if (rows.length === 0) {
       return result('ワークツリーは無い。', { action: 'list', rows });
     }
