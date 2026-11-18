@@ -121,8 +121,8 @@ Steps:
 
 1. Read the `## Scope` section of `references/adr.format.md`.
 2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
-   - **Ensure that you answer the questions in the table** and categorize items appropriately.
-   - Judge each kind on its own; several kinds can be `In` at the same time. Because each scope is loosely coupled with the others
+   - Ensure that you **answer the questions in the table** and categorize items appropriately.
+   - Answers cannot be classified as `In` simply because it is "related" to the topic.
    - Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
 3. Let the owner correct the list.
 4. Write the result to the entry's `Scope` as `In:` and `Out:`.
@@ -172,9 +172,9 @@ Steps:
 
 1. Start from the opening proposal in `Decision`.
 2. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
-   - No need to overturn or call into question the initial intent.
+   - Do not overturn or call into question the initial intent.
    - From the `In` items select ONLY points that could serve as subjects for discussion.
-     1. Limit these points to "matters that should be decided with the owner".
+     1. Limit these points to "matters involving some options that are equally compelling".
      2. If **a proposal is determined by your principles**, then it is a matter for confirmation.
      3. Just confirming is not the issue point. These will be presented together at the end.
 3. Show one point at a time, and discuss it until it is settled.

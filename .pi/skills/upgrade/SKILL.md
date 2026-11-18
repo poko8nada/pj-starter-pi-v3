@@ -50,11 +50,11 @@ Steps:
 
 View:
 
-| value    | what it is                                                                     |
-| -------- | ------------------------------------------------------------------------------ |
-| `wanted` | the version in the wanted lockfile                                             |
-| `latest` | the newest one after `minimumReleaseAge`                                       |
-| target   | the skill's target: the newest stable version at least `minimumReleaseAge` old |
+| value    | what it is                                                 |
+| -------- | ---------------------------------------------------------- |
+| `wanted` | the version in the wanted lockfile                         |
+| `latest` | the newest one after `minimumReleaseAge`                   |
+| target   | the newest stable version at least `minimumReleaseAge` old |
 
 Notes:
 
@@ -91,7 +91,9 @@ Steps:
 
 ### 6. Try the update in a worktree
 
-1. After the owner picks the packages, check whether any of them has a breaking change. When none has, skip the trial and go on to the apply. When at least one has, try all the picked packages in one worktree.
+1. After the owner picks the packages, check whether any of them has a breaking change.
+   - When none has, skip the trial and go on to the apply.
+   - When at least one has, try all the picked packages in one worktree.
 2. Make one worktree for the trial: `consult_worktree new upgrade-trial`.
 3. The worktree's install runs before the subagent: `pnpm install --frozen-lockfile`.
 4. Hand the trial subagent the packages and the trial task. The task text is in `references/tasks.md`.
@@ -109,23 +111,22 @@ Steps:
 Steps:
 
 1. Run `pnpm update --latest <package>`, one package at a time, in the owner's order, never with an explicit version.
-2. Read the resolved version.
-3. Stop when it is not the target. Report first in that case.
-4. Take the breaking change the report named for that package, and change what the package forces.
-5. Run the checks:
+2. Stop when it is not the target. Report first in that case.
+3. Take the breaking change the report named for that package, and change what the package forces.
+4. Run the checks:
    1. `pnpm test:run` exits 0.
    2. `pnpm typecheck` exits 0.
    3. `pnpm lint` exits 0.
    4. `pnpm format:check` exits 0.
    5. The read-through finds no mismatch in a number, a path, a name or a shape.
-6. When a check fails:
+5. When a check fails:
    1. Restore the files the package's update touched to HEAD (git restore --source=HEAD -- package.json pnpm-lock.yaml <the source it changed>).
    2. Run pnpm install to restore node_modules.
    3. Report the failed check's output and the restored files to the owner, and decide whether to go on to the next package or stop.
-7. After the fix from the read-through:
+6. After the fix from the read-through:
    1. After the fix, run all four checks again (pnpm test:run, pnpm typecheck, pnpm lint, pnpm format:check).
    2. When the four pass, commit it. When they do not, follow the undo.
-8. When the checks pass, commit it.
+7. When the checks pass, commit it.
 
 ### 8. Keep the configuration true
 
