@@ -4,7 +4,7 @@ import { aConsultOptions, aTypePolicy } from '../consult.fixture.ts';
 import type { ModelEvent } from '../sub/spec.ts';
 import { branchFor } from './worktree.ts';
 import type { Worktree } from './worktree.ts';
-import { createFakeSpawn } from '../../../../test/child-process.fixture.ts';
+import { createFakeSpawn, type FakeChild } from '../../../../test/child-process.fixture.ts';
 import type { LaunchPorts, PiSpawnOptions } from './run.ts';
 
 // 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
@@ -56,6 +56,20 @@ function launchWithCapture(env: NodeJS.ProcessEnv = {}): {
     env,
   };
   return { launch, calls };
+}
+
+/** `index` 番目の子が現れるまで待つ。現れなければ投げる（黙って飛ばさない） */
+async function waitForChild(index: number): Promise<FakeChild> {
+  const found = children.at(index);
+  if (found !== undefined) {
+    return found;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const grown = children.at(index);
+  if (grown === undefined) {
+    throw new Error(`child ${index} did not spawn`);
+  }
+  return grown;
 }
 
 describe('prepare', () => {
@@ -187,11 +201,9 @@ describe('runOneSubagent: onFallback', () => {
       hooks: { onFallback: (attempt) => fallbacks.push(attempt) },
       launch,
     });
-    children[0]?.emit('close', 0);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    children[1]?.emit('close', 0);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    children[2]?.emit('close', 0);
+    (await waitForChild(0)).emit('close', 0);
+    (await waitForChild(1)).emit('close', 0);
+    (await waitForChild(2)).emit('close', 0);
     await promise;
     expect(fallbacks).toEqual([{ requested: next }, { requested: undefined }]);
   });

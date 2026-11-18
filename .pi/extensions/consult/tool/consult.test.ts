@@ -26,6 +26,7 @@ import { appendRun, readRuns, type CheckRecord, type RunRecord } from '../run/lo
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
 import type { SubagentHooks, SubagentInput } from '../run/subagent.ts';
+import type { LaunchPorts } from '../run/run.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
@@ -58,6 +59,19 @@ afterEach(() => {
   setSoundEnabled(true);
 });
 
+/** 起動を使わないテストの `launch`。触れたら投げる（黙って本物を走らせない） */
+function fakeLaunch(): LaunchPorts {
+  return {
+    spawn: () => {
+      throw new Error('spawn is not used');
+    },
+    spawnSync: () => {
+      throw new Error('spawnSync is not used');
+    },
+    env: {},
+  };
+}
+
 /** runtime と保存場所を組む。session は `SESSION`。`check` を渡すと生死の照合を差し替えられる */
 function setup(
   pi: PiFace,
@@ -67,15 +81,7 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
   const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
-  const launch = {
-    spawn: () => {
-      throw new Error('spawn is not used');
-    },
-    spawnSync: () => {
-      throw new Error('spawnSync is not used');
-    },
-    env: {},
-  };
+  const launch = fakeLaunch();
   return {
     runtime: createRuntime({
       pi,
@@ -617,15 +623,7 @@ describe('consult: 通知の配線', () => {
       pi,
       place: placeFor(tempDir(), tempDir()),
       deps,
-      launch: {
-        spawn: () => {
-          throw new Error('spawn is not used');
-        },
-        spawnSync: () => {
-          throw new Error('spawnSync is not used');
-        },
-        env: {},
-      },
+      launch: fakeLaunch(),
       sessionNow: () => SESSION,
     });
 

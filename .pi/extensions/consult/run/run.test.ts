@@ -266,10 +266,16 @@ describe('runWithFallback: 乗り換えない場合', () => {
   });
 });
 
+/** pnpm の lockfile だけある directory。`installCommand` が pnpm を選ぶ前提 */
+function dirWithLockfile(): string {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+  return dir;
+}
+
 describe('installDependencies', () => {
   it('install: (happy) pnpm-lock.yaml のある directory → pnpm install --frozen-lockfile を1回走らせ、ok を返す', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+    const dir = dirWithLockfile();
     const calls: Array<{ command: string; args: readonly string[]; cwd: string }> = [];
     const outcome = installDependencies(dir, (command, args, options) => {
       calls.push({ command, args, cwd: options.cwd });
@@ -280,8 +286,7 @@ describe('installDependencies', () => {
   });
 
   it('install: (error) status 1 → failed を返し、stderr を error に入れる', () => {
-    const dir = tempDir();
-    writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+    const dir = dirWithLockfile();
     const outcome = installDependencies(dir, () => ({ status: 1, stdout: '', stderr: 'boom' }));
     expect(outcome).toEqual({
       kind: 'failed',
