@@ -7,7 +7,7 @@ import type { Worktree } from './worktree.ts';
 import { createFakeSpawn, type FakeChild } from '../../../../test/child-process.fixture.ts';
 import type { LaunchPorts, PiSpawnOptions } from './run.ts';
 
-// 実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。
+// 実行場所の決め方と、偽の起動経路で走らせる1体分の仕事を試す。本物の pi は起こさない。
 
 const CONTEXT = { cwd: '/tmp/base', ui: { notify: () => {} } } as const;
 const JOB_ID = 'consult-1';
@@ -39,23 +39,32 @@ function launchWithCapture(env: NodeJS.ProcessEnv = {}): {
     readonly args: readonly string[];
     readonly options: PiSpawnOptions;
   }>;
+  readonly stdinTexts: string[];
 } {
   const calls: Array<{
     command: string;
     args: readonly string[];
     options: PiSpawnOptions;
   }> = [];
+  const stdinTexts: string[] = [];
   const launch: LaunchPorts = {
     spawn: (command, args, options) => {
       calls.push({ command, args: [...args], options });
-      return fakeSpawn(command, args, options);
+      const child = fakeSpawn(command, args, options);
+      const stdin = child.stdin;
+      if (stdin !== null) {
+        stdin.end = (text?: string) => {
+          stdinTexts.push(text ?? '');
+        };
+      }
+      return child;
     },
     spawnSync: () => {
       throw new Error('spawnSync is not used');
     },
     env,
   };
-  return { launch, calls };
+  return { launch, calls, stdinTexts };
 }
 
 /** `index` 番目の子が現れるまで待つ。現れなければ投げる（黙って飛ばさない） */
@@ -209,15 +218,36 @@ describe('runOneSubagent: onFallback', () => {
   });
 });
 
+describe('runOneSubagent: spawn', () => {
+  it('pi を cwd・pipe の stdio で起こし、本文は stdin に流す', async () => {
+    children.length = 0;
+    const { launch, calls, stdinTexts } = launchWithCapture();
+    const promise = runOneSubagent({
+      ctx: CONTEXT,
+      options: aConsultOptions({ type: 'review', task: 'x', policy: policy(false) }),
+      job: { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
+      launch,
+    });
+    (await waitForChild(0)).emit('close', 0);
+    await promise;
+    expect(calls[0]?.command).toBe('pi');
+    expect(calls[0]?.options.cwd).toBe(CONTEXT.cwd);
+    expect(calls[0]?.options.stdio).toEqual(['pipe', 'pipe', 'pipe']);
+    expect(calls[0]?.options.detached).toBe(true);
+    expect(stdinTexts).toEqual(['x']);
+  });
+});
+
 describe('runOneSubagent: env', () => {
   it('env: (happy) 決めた env と subagentEnv(policy) が合わさり、process.env を読まない', async () => {
     children.length = 0;
     process.env.PI_TEST_ONLY = 'x';
     try {
-      const { launch, calls } = launchWithCapture({ KEEP: 'y' });
+      const base = policy(false);
+      const { launch, calls } = launchWithCapture({ KEEP: 'y', CONSULT_TURNS: 'lose' });
       const promise = runOneSubagent({
         ctx: CONTEXT,
-        options: aConsultOptions({ type: 'review', task: 'x', policy: policy(false) }),
+        options: aConsultOptions({ type: 'review', task: 'x', policy: base }),
         job: { task: 'x', token: 'job-token-1', id: JOB_ID, signal: undefined },
         launch,
       });
@@ -229,7 +259,7 @@ describe('runOneSubagent: env', () => {
       await promise;
       const env = calls[0]?.options.env ?? {};
       expect(env.KEEP).toBe('y');
-      expect(env.CONSULT_TURNS).toBeDefined();
+      expect(env.CONSULT_TURNS).toBe(String(base.limits.turns));
       expect('PI_TEST_ONLY' in env).toBe(false);
     } finally {
       delete process.env.PI_TEST_ONLY;

@@ -521,7 +521,7 @@ function soundStatus(): string {
 
 /**
  * 拡張の入口が 1 つだけ作る。道具とスラッシュコマンドは同じ subagents を共有する。
- * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
+ * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す。
  */
 export function createRuntime(input: RuntimeInput): ConsultRuntime {
   const { pi, place, deps, launch, run, sessionNow = () => '', check, psRun } = input;

@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +11,7 @@ import {
   type Git,
   type RunResult,
   type RunState,
+  type SpawnedChild,
 } from './run.ts';
 import type { ModelEvent } from '../sub/spec.ts';
 import { aTypePolicy } from '../consult.fixture.ts';
@@ -59,6 +61,19 @@ function recorder(results: Map<string | undefined, RunResult>): {
 }
 
 const { spawn: fakeSpawn, children } = createFakeSpawn();
+
+/** `stdout` のない子を返す偽の `spawn`。`runPi` の null 点検を通す */
+function nullStdoutSpawn(): SpawnedChild {
+  return {
+    stdin: { end: () => {} },
+    stdout: null,
+    stderr: new EventEmitter(),
+    pid: 123,
+    killed: false,
+    kill: () => {},
+    on: () => {},
+  };
+}
 
 /** イベントを 1 つずつ反映するための、まっさらな走行状態 */
 function initialState(): RunState {
@@ -293,6 +308,34 @@ describe('installDependencies', () => {
       command: 'pnpm install --frozen-lockfile',
       error: 'boom',
     });
+  });
+
+  it('install: (none) lockfile のない directory → none を返し、spawnSync を呼ばない', () => {
+    const dir = tempDir();
+    let called = 0;
+    const outcome = installDependencies(dir, () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    });
+    expect(outcome).toEqual({ kind: 'none' });
+    expect(called).toBe(0);
+  });
+});
+
+describe('runPi: stdio', () => {
+  it('runPi: (error) stdout が null → 投げる', async () => {
+    await expect(
+      runPi(
+        {
+          piArgs: [],
+          stdin: '',
+          cwd: '/tmp/base',
+          env: {},
+          limits: aTypePolicy().limits,
+        },
+        nullStdoutSpawn,
+      ),
+    ).rejects.toThrow('stdio pipes');
   });
 });
 

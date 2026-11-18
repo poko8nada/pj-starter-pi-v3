@@ -224,12 +224,33 @@ export function createFakeSpawn(): {
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/subagent.test.ts:10` — 冒頭コメント「実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。」は現状と矛盾する。現在は `createFakeSpawn` と本物の `runPi` で token／onModelEvent／onFallback／env を試験しており、読者が「起動は未試験」と誤読する。理由：変更前の前提を残した文は stale とみなすため。
+    - fixed: 冒頭を「実行場所の決め方と、偽の起動経路で走らせる1体分の仕事を試す。本物の pi は起こさない。」に直した。
+  - `.pi/extensions/consult/tool/consult.ts:524` — `createRuntime` の doc「テストは `pi` と `run` を差し替えて〜」は `launch` に触れない。現在 `RuntimeInput.launch` は必須で、テストは `fakeLaunch()` を渡さないと型検査が落ちるため、手順として不足し読者を誤らせる。理由：引数の必須化に追従していない文は stale とみなすため。
+    - fixed: doc に「`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す。」を足した。
 - Unlisted:
+  - なし — 差分の全変更ファイル（`run.ts`／`run.test.ts`／`subagent.ts`／`subagent.test.ts`／`tool/consult.ts`／`tool/consult.test.ts`／`index.ts`／`test/child-process.fixture.ts`／`setting.json`）は計画の `Files` に名前があり、`run.ts` の null 点検・`modelNotifier` の型整理・各テスト補助（`dirWithLockfile`／`launchWithCapture`・`waitForChild`／`fakeLaunch`）はいずれも `Files` 内ファイルの内訳で、`Notes` の `Unplanned` に記録済みのため。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:274` — 境界配線（`gitEnv(process.env)` を1回だけ読む、`spawn` の薄い包み、`createRuntime({ ..., launch })`）を確かめる検査がない。`index.ts` の既定関数を呼ぶテストがなく、環境の読み回数・包みの有無の誤りが素通りする。Goal「境界が1回だけ読む／本物に触れるのは境界だけ」の穴。理由：`Files` が `index.ts` を `update` とし `Verify: Always` が同列に挙げる以上、配線自体の裏付けが要るため。
+    - fixed: `index.test.ts` の `entry wiring` に2件足した。`createRuntime` を通すだけのモックで入力を受け、`launch.env` が起動時の写し（後の変更は伝わらず `GIT_*` が落ちる）と、`spawn` は包まれ `spawnSync` はそのまま載ることを見る。
+  - `.pi/extensions/consult/run/run.ts:480` — `runPi` の null-stdio 投げ分け（`stdin`・`stdout`・`stderr` が `null` なら throw）は `Unplanned` で振る舞いを足したのに、`error`／`empty` の `Verify` がない。`FakeChild` は常に非 null を返すため、この分岐は検査で一度も実行されない。理由：追加した失敗の形は design「失敗は状態か throw」の裏付けを要するため。
+    - fixed: `run.test.ts` に `runPi: (error) stdout が null → 投げる` を足した。`stdout: null` の偽物を渡し `stdio pipes` で reject されることを見る。
+  - `.pi/extensions/consult/run/run.ts:136` — `installDependencies` の分岐のうち `installCommand` の `none`（lockfile なし）・`npm ci` 側、`status: null`、`result.error?.message` 代替、`.trim()` のいずれも検査がない。`run.test.ts:277` の happy／error は `pnpm` のみで、空振り・別 lockfile・空白付き stderr の扱いが素通りする。理由：`Steps` が `install` の `happy` と `error` を `Added` とし、`design.md` が `error` ケースの裏付けを求めるため。
+    - fixed: `none` だけ `install: (none)` を足した。lockfile のない directory で `{ kind: 'none' }` を返し、渡した `spawnSync` を呼ばないことを見る。新しい引数の非使用の裏付けになり、安く明白なため。
+    - left: `npm ci`・`status: null`・`error.message` 代替・`.trim()` は足さない。いずれもこの計画より前からある分岐で振る舞いは変わっておらず、計画の `Goal`（値で受け取る形）でもない。注入した経路（`pnpm` の happy／error）は既存の2件が覆うため。
+  - `.pi/extensions/consult/run/subagent.test.ts:136` — `spawn` 呼び形（`command: 'pi'`、`cwd`、`stdio: ['pipe','pipe','pipe']`／`detached`、`stdin` 本文）の表明がない。token 試験は `args` の `--name` のみ、env 試験は `options.env` のみを見て、`command`・`cwd`・`stdio` の取り違えが素通りする。Goal「起動経路がプロセス起動と子の環境を値で受け取る」の配線の穴。理由：値で受け取る形にした以上、運ぶ値の中身の裏付けが要るため。
+    - fixed: `runOneSubagent: spawn` を足した。`command`・`cwd`・`stdio`・`detached` を見て、本文が `stdin` に流れる（`stdinTexts`）ことを見る。`launchWithCapture` が子の `stdin.end` を収める形にし、token／env 試験の既存表明は変えていない。
 - Policy:
+  - なし — `runPi(options, spawn)`（`run.ts:476`）・`installDependencies(cwd, spawnSync)`（`run.ts:135`）・`createConsult(deps, launch)`（`tool/consult.ts:277`）・`createRuntime` の `launch`（`tool/consult.ts:527`）はいずれも既定値なし。`vi.mock('node:child_process')` と `vi.mock('./run.ts')` の再導入はなく、`tool/consult.test.ts` の `../run/subagent.ts` モックは禁止対象外。差分内の新規 `eslint-disable`・`as`・抑えもない（既存の `consult.ts:148`・`consult.test.ts:295` のみ）。
 - Unproven:
+  - `.pi/extensions/consult/run/subagent.test.ts:230` — env 試験は合成順序を区別しない。`env: { ...launch.env, ...subagentEnv(policy) }` を逆順にしても、`KEEP: 'y'` の存在・`CONSULT_TURNS` の存在・`PI_TEST_ONLY` の不在は保たれるため緑のまま（`launch.env` に衝突する欄がなく勝ち負けが出ない）。理由：間違った順序でも通る表明は裏付けにならないため。
+    - fixed: `launch.env` に `CONSULT_TURNS: 'lose'` の衝突を入れ、期待を `String(base.limits.turns)` の一致にした。逆順では `'lose'` が残るため赤になる。`KEEP` の通過と `PI_TEST_ONLY` の不在はそのまま見る。
+  - `.pi/extensions/consult/tool/consult.test.ts:633` — 「通知の配線」試験は `launch` 転送を表明しない。モック（`.pi/extensions/consult/tool/consult.test.ts:40` 付近）は `input.launch` を無視して `input.hooks` だけ記録し、試験は通知の有無だけ見るため、`createConsult` が別物の `launch`・空の `env` を渡しても緑のまま（欠落は型検査が赤にするが、すり替えには沈黙する）。理由：結線の誤りに沈黙する試験は裏付けにならないため。
+    - fixed: モックが `input.launch` を `capturedLaunches` に積み、配線試験が `toBe(launch)` で同一物であることを見る。すり替え・作り直しは赤になる。
 - Noise:
+  - なし — `'pnpm'／'install --frozen-lockfile'`（`run.test.ts:284`）、`status: 0／1` と `'boom'`（`run.test.ts:288`）、`KEEP: 'y'`・`PI_TEST_ONLY: 'x'`（`subagent.test.ts:213`）、`pid = 123`（`child-process.fixture.ts:9`）はいずれも計画の `Types`・`Steps` が決めた値のため、design の「magic number／hardcoded string」条項の除外（計画・ADR の決定値は指摘にしない）に当たる。`toHaveLength(1)` 等の残りは既存試験か、振る舞い（件数・通知内容）を直接見る表明のため。
 - Doubts:
+  - Goal「本物の `spawn`・`spawnSync` と `process.env` に触れるのが境界だけになる」と、`run/proc.ts:9`（`spawnSync('ps', ...)`）・`tool/sound.ts:12`（`spawn`）・`sub/guard.ts:89`・`sub/budget.ts:82`（`process.env` 読み）が残る関係は意図的な対象外か、所有者の判断が要る。`Notes` は `proc.ts` の `ps` と `git` のみ対象外と明記し、`guard`／`budget`／`sound` に触れないため、今回の `Gaps` には数えていない。
 
 ### Round 2
 

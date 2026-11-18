@@ -34,6 +34,9 @@ const SESSION = 'test-session';
 /** consult() が runOneSubagent に渡した hooks */
 const capturedHooks = vi.hoisted(() => [] as SubagentHooks[]);
 
+/** consult() が runOneSubagent に渡した launch */
+const capturedLaunches = vi.hoisted(() => [] as LaunchPorts[]);
+
 vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
   return {
@@ -42,6 +45,7 @@ vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string
       if (input.hooks !== undefined) {
         capturedHooks.push(input.hooks);
       }
+      capturedLaunches.push(input.launch);
       return { run: { stdout: '', stderr: '', code: 0, aborted: false, ended: true } };
     },
   };
@@ -616,14 +620,16 @@ describe('modelNotifier: 乗り換え', () => {
 describe('consult: 通知の配線', () => {
   it('modelNotifier の 2 つのコールバックを runOneSubagent の hooks に渡す', async () => {
     capturedHooks.length = 0;
+    capturedLaunches.length = 0;
     const { pi } = fakePi();
     const { ctx, notices } = fakeConsultContext();
     const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+    const launch = fakeLaunch();
     const runtime = createRuntime({
       pi,
       place: placeFor(tempDir(), tempDir()),
       deps,
-      launch: fakeLaunch(),
+      launch,
       sessionNow: () => SESSION,
     });
 
@@ -634,6 +640,7 @@ describe('consult: 通知の配線', () => {
     if (hooks === undefined) {
       throw new Error('runOneSubagent was not called');
     }
+    expect(capturedLaunches.at(-1)).toBe(launch);
     const attempt = 1;
     const maxAttempts = 3;
     const next = 'p/b';
