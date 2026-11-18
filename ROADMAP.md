@@ -9,7 +9,6 @@
 |     | 1.0.x | _todo_ |        | mid      | quality-gateの例外追加                 |
 |     | 1.0.x | _todo_ |        | mid      | tmpファイルの即時削除拡張機能          |
 |     | 1.0.1 | _todo_ |        | high     | pi 1.5.0への対応                       |
-|     | 1.0.0 | _todo_ |        | high     | github workflowの整備                  |
 | 001 | 1.0.0 | _todo_ |        | high     | .piのモノレポ化                        |
 
 ### 1.0.x
@@ -32,7 +31,13 @@
 
 | No  | Ver   | status | cycles       | priority | title                                  |
 | --- | ----- | ------ | ------------ | -------- | -------------------------------------- |
-| 037 | 0.9.8 | wip    |              | mid      | プリンシプルに違反しているコードの修正 |
+|     | 0.9.9 | _todo_ |              | high     | github workflowの整備                  |
+|     | 0.9.9 | _todo_ |              | mid      | ミューテーションテスト手順追加         |
+|     | 0.9.9 | _todo_ |              | mid      | ミューテーションテストライブリ追加     |
+|     | 0.9.8 | _todo_ |              | high     | コードコメント、テスト説明の棚卸し     |
+|     | 0.9.8 | _todo_ |              | low      | planのdesign、cut、formatの書き直し    |
+|     | 0.9.8 | _todo_ |              | mid      | プリンシプル違反のコード修正2          |
+| 037 | 0.9.8 | done   | 075-d, 076-d | mid      | プリンシプルに違反しているコードの修正 |
 | 036 | 0.9.7 | done   | 074-d        | mid      | rules配下のファイル更新                |
 | 035 | 0.9.7 | done   | 073-d        | mid      | upgradeスキルの更新                    |
 | 034 | 0.9.7 | done   | 072-d        | low      | thinking-scrubの一部修正               |
