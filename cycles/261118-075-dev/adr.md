@@ -7,7 +7,7 @@ Type: _Full_
 ### Context
 
 - C1: いまは2つのテストファイルが、それぞれ独立した偽物の git を持つ。`run/worktree.test.ts` の偽物は16-176行、`tool/worktree.test.ts` にも同じ骨格の偽物がある。どちらも `vi.mock('../../../../lib/git-env.mjs')` と `vi.hoisted` で差し替えられ、状態はモジュールスコープの `let` と `const` に置かれ、`beforeEach` で `resetFake()` から `installFake()` の順に初期化される。
-- C2: 変えないもの。`vi.mock` の継ぎ目（`git` を引数で受け取る変更は次のサイクル）、`run/worktree.ts` と利用側4ファイル、`CONSULT_ROOT` の扱い（`vi.stubEnv` は残る）。変えるのはテストだけ。
+- C2: 変えないもの。`vi.mock` の継ぎ目（`git` を引数で受け取る変更は次のサイクル）、`run/worktree.ts`、利用側4ファイル、`CONSULT_ROOT` の扱い（`vi.stubEnv` は残る）。変えるのはテストだけ。ただし本番の変更は、`tool/worktree.ts` のコメント1行と表示メッセージ2行の語（`枝` を `ブランチ` に）だけに限る。ja-check が `枝` を禁止語に加えたため、テストの期待文字列と合わせる必要がある。
 - C3: 意図。偽物は1箇所にだけ存在し、その状態は偽物のインスタンスが持つ。モジュールスコープの `let` をなくす。
 - C4: 到達点。`vi.mock` は残したまま、偽物はファイルごとに入れ物（`vi.hoisted`）へ入れ、`beforeEach` で新しいインスタンスを作り直す。状態はテストごとに分かれ、モジュールスコープの `let`、`resetFake()`、`installFake()` は消える。
 - このサイクルはロードマップ 037（0.9.8、プリンシプルに違反しているコードの修正）の1サイクル目で、memo の関心-5（重複）と関心-3（状態の持ち方）にあたる。
@@ -35,7 +35,7 @@ Type: _Full_
   - structure: 偽物を1ファイルに集め、状態をファクトリの内側へ移す。`resetFake` と `installFake` を削除する
   - logic: 初期化を「状態のリセットと実装の差し替え」から「新しいインスタンスの代入」に変える。`vi.mock` のファクトリは入れ物を遅延参照する
   - downstream: 2つのテストファイルの取り込みと初期化を、新しい偽物に合わせる
-  - expression: 偽物のファイル名と関数名を決める
+  - expression: 偽物のファイル名と関数名、および `tool/worktree.ts` の表示メッセージとコメントの語を決める
   - verification: 2つのテストファイル、全体テスト、lint、typecheck を通すことで確かめる
 - Out:
   - safety: 秘密情報や権限に触れない（テストの偽物だけを扱う）
