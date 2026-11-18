@@ -201,53 +201,61 @@ rules/
   - `rules/definition.rules.md` と、それが指す `DEFINITION.md` と `rules/definition.format.md` と、affected が指す `.pi/skills/adr/SKILL.md` を読み、読む者の順にたどり、番号、パス、名前、形を当て、不整合を直す
 - Added:
   - other: `git show HEAD:rules/definition.rules.md` の各行を、新しいファイルの見出しと読み合わせ、落ちた規則がないことを確かめる
+  - other: 改名した見出しを指すファイル内参照（`` `Reach and result` ``、`` `One loss` `` を含む）を新しい見出し名と突き合わせ、古い名指しが残っていないことを確かめる
 
 ## Notes
 
 ### Slice 1: format の 1 行 1 Unit/Sub を 1 つにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b5a1abc0
 - Stopped:
 
 ### Slice 2: rules のセクションを組み直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e23971ab
 - Stopped:
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `rules/definition.rules.md:34` — `What may be a Sub` の導入が `` `Result` `` を指すが、差分後の見出しは `### Reach and result` で `Result` 単独の見出しはなく参照が古いまま残る。理由：`What may be a Unit` を 4 原理の入れ子に組み替えたため旧テスト名のまま残った。
+    - fixed: `` `Result` `` を `` `Reach and result` `` に直し、改名後の見出しと参照を一致させた。規則条件の変更ではなく、改名に伴う名指しの整合のため Policy の範囲内。
+- Unlisted: なし（差分は `rules/definition.format.md`・`rules/definition.rules.md` のみで Files の update 対象と一致し、plan md の Notes 追記は plan・ADR が決めた記録のため所見にしない）。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
+  - `cycles/261118-074-dev/plan/01-definition-rules.md:202-203`・`rules/definition.rules.md:34` — Added の `git show HEAD:...` 照合は旧行の落ちの有無だけを見て、見出し改名後のファイル内参照（`Result`→`Reach and result`）の整合を確かめない。Goal（判定・書き方・名付けをこのファイルで決められる）に必要な参照の一貫性が checks の対象外という穴。理由：Verify の Always は読む者順の不整合直しを言うだけで、改名と参照の対応付けを手順に持たない。
+    - fixed: スライス 2 の Verify/Added に、改名した見出しを指すファイル内参照を新しい見出し名と突き合わせる other 項目を足し、Stale 側の修正（`` `Result` ``→`` `Reach and result` ``）をその手順で確かめた。
+- Policy: なし（セクション統合・分割・順序変更・改名の範囲内で、規則条件の変更も `cycles/` 過去記録の修正もないため）。
+- Unproven: なし（追加・変更された自動テストがなく、Added は目視照合だけのため「緑のまま壊れるテスト」に当たるものがないため）。
+- Noise: なし（追加・変更されたテストがなく、魔数・固定文字列・型やスキーマが保証する前提の重複検証もないため）。
 - Doubts:
+  - `rules/definition.rules.md:34` の `` `Result` `` は意図的な略称か、`Reach and result` に直すべきか。直す場合は plan の Steps にない文言修正になるため owner の判断が要る。
 
 ### Round 2
 
 - Stale:
-- Unlisted:
+  - `rules/definition.rules.md:34` — Round 1 の `fixed:` 通りに直っていることを確認した。34 行目が `` `Reach and result` `` になり、15 行目の見出し `### Reach and result` と一致し、単独の `` `Result` `` はファイル内に残っていない。理由：改名後の見出しと参照の名指しが一致し、古い参照が解消されたため。
+- Unlisted: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `cycles/261118-074-dev/plan/01-definition-rules.md:204` — Round 1 の `fixed:` 通りに直っていることを確認した。Verify/Added に改名見出しのファイル内参照を突き合わせる other 項目が足され、`` `Reach and result` `` と `` `One loss` `` を例示して古い名指しの残存確認まで含む。理由：Round 1 が指摘した「落ちの有無だけを見て改名と参照の対応を見ない」という穴を手順が塞ぎ、Stale 側の修正がその手順で確かめられたため。
+- Policy: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Unproven: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Noise: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Doubts: なし（新たに owner の判断を要する疑いはない。Round 1 の略称かどうかの疑いは Stale の修正で解消された）。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `definition.rules.md` が、重複を `definition.format.md` に寄せた 6 セクションの規則になり、Unit と Sub の判定、行の書き方、名付けをこのファイルで決められる。達成している。6 セクションが決めた順に並び、`Who` と `Stack` の定義は format にあり、rules は判定と書き方と名付けだけを持つ。
+- Ran: `pnpm test:run`（66 ファイル、830 テスト合格）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git show 2e2483b7:rules/definition.rules.md` の各行と新しい見出しの読み合わせ。
+- Findings: なし
+- Doubts: なし
