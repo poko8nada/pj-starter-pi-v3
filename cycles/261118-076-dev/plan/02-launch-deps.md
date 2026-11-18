@@ -54,15 +54,25 @@ package.json
 ### Types
 
 ```ts
-// .pi/extensions/consult/run/run.ts（先頭の import の後に、`PiSpawnOptions` の近くに置く）
-import type { ChildProcess } from 'node:child_process';
+// .pi/extensions/consult/run/run.ts（`PiSpawnOptions` の近くに置く）
+/** `runPi` が触る範囲の子プロセス。`Spawn` が返す形 */
+export interface SpawnedChild {
+  readonly stdin: { end(data?: string): void } | null;
+  readonly stdout: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly stderr: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly pid?: number | undefined;
+  readonly killed: boolean;
+  kill(signal?: NodeJS.Signals): void;
+  on(event: 'close', listener: (code: number | null) => void): unknown;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+}
 
 /** pi を起動する。使う形だけを描く */
 export type Spawn = (
   command: string,
   args: readonly string[],
   options: PiSpawnOptions,
-) => ChildProcess;
+) => SpawnedChild;
 
 /** install を1回走らせる。使う形だけを描く */
 export type SpawnSync = (
@@ -125,11 +135,11 @@ export function createFakeSpawn(): {
 ### Steps
 
 1. `.pi/extensions/consult/run/run.ts`
-   1. add: `import type { ChildProcess } from 'node:child_process';` と `Spawn`（`Types` のとおり）。`PiSpawnOptions` の近くに置く
+   1. add: `SpawnedChild` と `Spawn`（`Types` のとおり）。`PiSpawnOptions` の近くに置く（`node:child_process` の import は要らない）
    2. add: `SpawnSync` と `LaunchPorts`（`Types` のとおり）。`Spawn` の隣に置く（`LaunchPorts` は `subagent.ts` と `tool/consult.ts` の両方が読むので、循環を作らないためにここに置く）
    3. update: `runPi(options: RunOptions)` を `runPi(options: RunOptions, spawn: Spawn): Promise<RunResult>` にし、行 437 の `spawn('pi', ...)` を引数の `spawn` にする
    4. update: `installDependencies(cwd: string)` を `installDependencies(cwd: string, spawnSync: SpawnSync): InstallOutcome` にし、行 146 の `spawnSync(file, args, ...)` を引数の `spawnSync` にする
-   5. update: `killChild(child: ReturnType<typeof spawn>)`（212行）と `LiveRun.child: ReturnType<typeof spawn>`（353行）を `ChildProcess` にする（`spawn` の import を消すため）
+   5. update: `killChild(child: ReturnType<typeof spawn>)`（212行）と `LiveRun.child: ReturnType<typeof spawn>`（353行）を `SpawnedChild` にする（`spawn` の import を消すため）
    6. drop: `import { spawn, spawnSync } from 'node:child_process';`
 2. `.pi/extensions/consult/run/subagent.ts`
    1. drop: `import { gitEnv } from '../../../../lib/git-env.mjs';`
@@ -191,36 +201,73 @@ export function createFakeSpawn(): {
 
 ### Slice 1: 起動経路がプロセス起動と環境を値で受け取る
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `run/run.ts` の `runPi` は `spawn` の戻りの `stdin`・`stdout`・`stderr` を1回読んで `null` なら投げる。`SpawnedChild` の3欄は nullable で、型検査が赤で教えた。`?.` で黙って飛ばさず、cast もしない（design の「失敗は状態か throw」）。
+  - `tool/consult.ts` の `modelNotifier` の戻りを `SubagentHooks` にし、`Fallback`・`ModelEvent` の import を消した。`pnpm lint` の max-lines 480 を1行でも超えないための型だけの整理で、振る舞いは同じ。`runOneSubagent` の呼び出しは `hooks` 変数に分けた。
+  - `tool/consult.test.ts` の `onModelEvent(...)`・`onFallback(...)` を `?.` 呼びにした。戻りが `SubagentHooks`（欄は任意）になったための連動で、意味は変えていない。
+  - `run/subagent.test.ts` の乗り換えは子を順に3回閉じる形にし、loop の待ちは `no-await-in-loop` に当たるため順次の待ちに直した。`onModelEvent` は retry-start を先・message_end を後に流し、候補補完を見つつ乗り換えを起こさない。
+  - `Spawn` は `ChildProcess` ではなく `runPi` が触る範囲だけを描く `SpawnedChild` を返す。偽物は `ChildProcess` 全体（`stdio`・`connected`・`exitCode` など）を満たせず、検査の抑え（`@ts-expect-error`）で通すのは受け入れられないため。本物との境（`index.ts`）は薄い包みで合わせる。`as` も抑えも使わない。型検査が教えた3点だけ形を寄せた。`killed` を足す（`killChild` が読む）、`pid` を任意にする（本物の `pid` は任意）、`kill` の引き数を `NodeJS.Signals` にする（本物が受け付けるのはそれだけ）。振る舞いは変えない。
+- Commit: 294a1cd31b8d07798df45910aca062deb55d42bd
 - Stopped:
+
+### Cleanup: 偽の前提の共有と子の待ちの決定化
+
+- Findings: なし
+- Unplanned:
+  - `run/run.test.ts` の install 2件が同じ前提（pnpm の lockfile だけある directory）を2か所で組み立てていた。`dirWithLockfile()` に1つにし、両方から呼ぶ。変えるものはいない。
+  - `tool/consult.test.ts` の起動を使わない偽の `launch` が `setup` と配線テストで二重に書かれていた。`fakeLaunch()` に1つにし、両方から呼ぶ。どちらも触れたら投げる。
+  - `run/subagent.test.ts` の乗り換えは `children[n]?.emit` で子がいなくても黙って飛ばす形だった。`waitForChild(index)` にし、いるものはそのまま返し、いなければ1刻み待って、いなければ投げる。`setTimeout` の1刻みはマクロタスクで、その前にマイクロタスクの `spawn` が必ず済むため決定論的。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `.pi/extensions/consult/run/subagent.test.ts:10` — 冒頭コメント「実行場所の決め方だけを試す。サブエージェントの起動は実際の pi が要るので扱わない。」は現状と矛盾する。現在は `createFakeSpawn` と本物の `runPi` で token／onModelEvent／onFallback／env を試験しており、読者が「起動は未試験」と誤読する。理由：変更前の前提を残した文は stale とみなすため。
+    - fixed: 冒頭を「実行場所の決め方と、偽の起動経路で走らせる1体分の仕事を試す。本物の pi は起こさない。」に直した。
+  - `.pi/extensions/consult/tool/consult.ts:524` — `createRuntime` の doc「テストは `pi` と `run` を差し替えて〜」は `launch` に触れない。現在 `RuntimeInput.launch` は必須で、テストは `fakeLaunch()` を渡さないと型検査が落ちるため、手順として不足し読者を誤らせる。理由：引数の必須化に追従していない文は stale とみなすため。
+    - fixed: doc に「`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す。」を足した。
 - Unlisted:
+  - なし — 差分の全変更ファイル（`run.ts`／`run.test.ts`／`subagent.ts`／`subagent.test.ts`／`tool/consult.ts`／`tool/consult.test.ts`／`index.ts`／`test/child-process.fixture.ts`／`setting.json`）は計画の `Files` に名前があり、`run.ts` の null 点検・`modelNotifier` の型整理・各テスト補助（`dirWithLockfile`／`launchWithCapture`・`waitForChild`／`fakeLaunch`）はいずれも `Files` 内ファイルの内訳で、`Notes` の `Unplanned` に記録済みのため。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:274` — 境界配線（`gitEnv(process.env)` を1回だけ読む、`spawn` の薄い包み、`createRuntime({ ..., launch })`）を確かめる検査がない。`index.ts` の既定関数を呼ぶテストがなく、環境の読み回数・包みの有無の誤りが素通りする。Goal「境界が1回だけ読む／本物に触れるのは境界だけ」の穴。理由：`Files` が `index.ts` を `update` とし `Verify: Always` が同列に挙げる以上、配線自体の裏付けが要るため。
+    - fixed: `index.test.ts` の `entry wiring` に2件足した。`createRuntime` を通すだけのモックで入力を受け、`launch.env` が起動時の写し（後の変更は伝わらず `GIT_*` が落ちる）と、`spawn` は包まれ `spawnSync` はそのまま載ることを見る。
+  - `.pi/extensions/consult/run/run.ts:480` — `runPi` の null-stdio 投げ分け（`stdin`・`stdout`・`stderr` が `null` なら throw）は `Unplanned` で振る舞いを足したのに、`error`／`empty` の `Verify` がない。`FakeChild` は常に非 null を返すため、この分岐は検査で一度も実行されない。理由：追加した失敗の形は design「失敗は状態か throw」の裏付けを要するため。
+    - fixed: `run.test.ts` に `runPi: (error) stdout が null → 投げる` を足した。`stdout: null` の偽物を渡し `stdio pipes` で reject されることを見る。
+  - `.pi/extensions/consult/run/run.ts:136` — `installDependencies` の分岐のうち `installCommand` の `none`（lockfile なし）・`npm ci` 側、`status: null`、`result.error?.message` 代替、`.trim()` のいずれも検査がない。`run.test.ts:277` の happy／error は `pnpm` のみで、空振り・別 lockfile・空白付き stderr の扱いが素通りする。理由：`Steps` が `install` の `happy` と `error` を `Added` とし、`design.md` が `error` ケースの裏付けを求めるため。
+    - fixed: `none` だけ `install: (none)` を足した。lockfile のない directory で `{ kind: 'none' }` を返し、渡した `spawnSync` を呼ばないことを見る。新しい引数の非使用の裏付けになり、安く明白なため。
+    - left: `npm ci`・`status: null`・`error.message` 代替・`.trim()` は足さない。いずれもこの計画より前からある分岐で振る舞いは変わっておらず、計画の `Goal`（値で受け取る形）でもない。注入した経路（`pnpm` の happy／error）は既存の2件が覆うため。
+  - `.pi/extensions/consult/run/subagent.test.ts:136` — `spawn` 呼び形（`command: 'pi'`、`cwd`、`stdio: ['pipe','pipe','pipe']`／`detached`、`stdin` 本文）の表明がない。token 試験は `args` の `--name` のみ、env 試験は `options.env` のみを見て、`command`・`cwd`・`stdio` の取り違えが素通りする。Goal「起動経路がプロセス起動と子の環境を値で受け取る」の配線の穴。理由：値で受け取る形にした以上、運ぶ値の中身の裏付けが要るため。
+    - fixed: `runOneSubagent: spawn` を足した。`command`・`cwd`・`stdio`・`detached` を見て、本文が `stdin` に流れる（`stdinTexts`）ことを見る。`launchWithCapture` が子の `stdin.end` を収める形にし、token／env 試験の既存表明は変えていない。
 - Policy:
+  - なし — `runPi(options, spawn)`（`run.ts:476`）・`installDependencies(cwd, spawnSync)`（`run.ts:135`）・`createConsult(deps, launch)`（`tool/consult.ts:277`）・`createRuntime` の `launch`（`tool/consult.ts:527`）はいずれも既定値なし。`vi.mock('node:child_process')` と `vi.mock('./run.ts')` の再導入はなく、`tool/consult.test.ts` の `../run/subagent.ts` モックは禁止対象外。差分内の新規 `eslint-disable`・`as`・抑えもない（既存の `consult.ts:148`・`consult.test.ts:295` のみ）。
 - Unproven:
+  - `.pi/extensions/consult/run/subagent.test.ts:230` — env 試験は合成順序を区別しない。`env: { ...launch.env, ...subagentEnv(policy) }` を逆順にしても、`KEEP: 'y'` の存在・`CONSULT_TURNS` の存在・`PI_TEST_ONLY` の不在は保たれるため緑のまま（`launch.env` に衝突する欄がなく勝ち負けが出ない）。理由：間違った順序でも通る表明は裏付けにならないため。
+    - fixed: `launch.env` に `CONSULT_TURNS: 'lose'` の衝突を入れ、期待を `String(base.limits.turns)` の一致にした。逆順では `'lose'` が残るため赤になる。`KEEP` の通過と `PI_TEST_ONLY` の不在はそのまま見る。
+  - `.pi/extensions/consult/tool/consult.test.ts:633` — 「通知の配線」試験は `launch` 転送を表明しない。モック（`.pi/extensions/consult/tool/consult.test.ts:40` 付近）は `input.launch` を無視して `input.hooks` だけ記録し、試験は通知の有無だけ見るため、`createConsult` が別物の `launch`・空の `env` を渡しても緑のまま（欠落は型検査が赤にするが、すり替えには沈黙する）。理由：結線の誤りに沈黙する試験は裏付けにならないため。
+    - fixed: モックが `input.launch` を `capturedLaunches` に積み、配線試験が `toBe(launch)` で同一物であることを見る。すり替え・作り直しは赤になる。
 - Noise:
+  - なし — `'pnpm'／'install --frozen-lockfile'`（`run.test.ts:284`）、`status: 0／1` と `'boom'`（`run.test.ts:288`）、`KEEP: 'y'`・`PI_TEST_ONLY: 'x'`（`subagent.test.ts:213`）、`pid = 123`（`child-process.fixture.ts:9`）はいずれも計画の `Types`・`Steps` が決めた値のため、design の「magic number／hardcoded string」条項の除外（計画・ADR の決定値は指摘にしない）に当たる。`toHaveLength(1)` 等の残りは既存試験か、振る舞い（件数・通知内容）を直接見る表明のため。
 - Doubts:
+  - Goal「本物の `spawn`・`spawnSync` と `process.env` に触れるのが境界だけになる」と、`run/proc.ts:9`（`spawnSync('ps', ...)`）・`tool/sound.ts:12`（`spawn`）・`sub/guard.ts:89`・`sub/budget.ts:82`（`process.env` 読み）が残る関係は意図的な対象外か、所有者の判断が要る。`Notes` は `proc.ts` の `ps` と `git` のみ対象外と明記し、`guard`／`budget`／`sound` に触れないため、今回の `Gaps` には数えていない。
+    - オーナーの判断: 意図した対象外。サイクルの前提で `.pi` の他の拡張と `sound` は置いておく。`proc` は `psRun`、`sound` は `setPlayer` の口が既にあり、`guard` の `$VAR` 展開と `budget` の `CONSULT_TURNS` は親側の設定の読み取りだから、起動経路の継ぎ目とは別である。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 2件の fixed を `git diff 3a96922c..HEAD` で確認した。`subagent.test.ts` 冒頭が「偽の起動経路で走らせる1体分〜本物の pi は起こさない」に置き換わり、`tool/consult.ts` の `createRuntime` doc に「`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す」が追加されているため。
+- Unlisted: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Gaps: なし — 4件の fixed を確認した。`index.test.ts` の env 写し（事前値の保持・事後変更の不伝播・`GIT_*` 除去）と spawn 包み（`spawn` は別物・`spawnSync` は同一物）は記述どおりに存在し、`index.ts` の `gitEnv(process.env)` による写し・薄い包みと整合する。`run.test.ts` の stdout-null（`stdio pipes` で reject）と install-none（`{ kind: 'none' }`・`spawnSync` 不呼出）は記述どおりに存在し、`run.ts` の null 点検・lockfile 不在時の早期 return と整合する。`subagent.test.ts` の spawn 形（`command`・`cwd`・`stdio`・`detached`・`stdinTexts`）は記述どおりに存在し、`spawn('pi', ..., spawnOptions(...))`・`stdin.end` の配線と整合するため。
+- Policy: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Unproven: なし — 2件の fixed を確認した。env 順序は `launch.env` に `CONSULT_TURNS: 'lose'` の衝突を入れ期待値を `String(base.limits.turns)` にしており、`{ ...launch.env, ...subagentEnv(policy) }` の逆順では赤になる形のため。launch 転送はモックが `input.launch` を `capturedLaunches` に積み配線試験が `toBe(launch)` で同一物を見るため、すり替え・作り直しは赤になるため。
+- Noise: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: 達成。`run/run.ts` は `node:child_process` を import せず、`run/subagent.ts` は `gitEnv` を読まない。`index.ts` が `spawn`・`spawnSync` と `gitEnv(process.env)` を起動時に1回組み立て、`RuntimeInput.launch` として配る。`runPi`・`installDependencies`・`runOneSubagent` はその値を受け取る。`RunResult`・`InstallOutcome`・`SubagentResult` の型と値は変えていない。
+- Ran: `pnpm test:run`（67ファイル / 840件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、pre-commit の同じ検査（`294a1cd3`・`0537019f`・`2297fcb4`・`9b0eb48b`）、`Added` の証明（`runPi` を引数1つで呼ぶと `typecheck` が赤）。
+- Findings: なし
 - Doubts:
+  - `install` の `npm ci`・`status: null`・`error.message`・`trim` の分岐は、レビューの `left:` のとおり検査していない（計画の前からあり、`Goal` ではない）。close で leftover として読む。
+  - `Spawn` の戻り値は `ChildProcess` ではなく `SpawnedChild`（`runPi` が触る欄だけ）にした。偽物が `ChildProcess` を満たせず、型検査の抑止は受け入れないため。ADR の `Details` は `ChildProcess` のままなので、ADR との差として記録する。

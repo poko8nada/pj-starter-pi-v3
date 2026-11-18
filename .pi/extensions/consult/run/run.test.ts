@@ -1,16 +1,22 @@
-import type { EventEmitter } from 'node:events';
-import { describe, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'node:events';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 import {
   applyEvent,
+  installDependencies,
   runPi,
   runWithFallback,
   worktreeGit,
   type Git,
   type RunResult,
   type RunState,
+  type SpawnedChild,
 } from './run.ts';
 import type { ModelEvent } from '../sub/spec.ts';
 import { aTypePolicy } from '../consult.fixture.ts';
+import { createFakeSpawn } from '../../../../test/child-process.fixture.ts';
+import { tempDir } from '../../../../test/temp-dir.ts';
 
 // 乗り換えの判定だけを試す。実際の pi は起こさず、偽の runOnce がイベントの JSONL から結果を作る。
 
@@ -54,41 +60,20 @@ function recorder(results: Map<string | undefined, RunResult>): {
   };
 }
 
-/** spawn が返す偽の子プロセス。stdout と close をテストが動かす */
-interface FakeChild {
-  readonly stdout: EventEmitter;
-  readonly stderr: EventEmitter;
-  readonly stdin: { end(text: string): void };
-  readonly pid: number;
-  readonly killed: boolean;
-  kill(signal: string): void;
-  emit(event: string, ...args: unknown[]): boolean;
-}
+const { spawn: fakeSpawn, children } = createFakeSpawn();
 
-const spawnedChildren = vi.hoisted(() => [] as FakeChild[]);
-
-vi.mock('node:child_process', async (importOriginal: () => Promise<Record<string, unknown>>) => {
-  const actual = await importOriginal();
-  const { EventEmitter: Emitter } = await import('node:events');
-  class FakeChildProcess extends Emitter {
-    readonly stdout = new Emitter();
-    readonly stderr = new Emitter();
-    readonly stdin = { end: () => {} };
-    readonly pid = 123;
-    killed = false;
-    kill() {
-      this.killed = true;
-    }
-  }
+/** `stdout` のない子を返す偽の `spawn`。`runPi` の null 点検を通す */
+function nullStdoutSpawn(): SpawnedChild {
   return {
-    ...actual,
-    spawn: () => {
-      const child = new FakeChildProcess();
-      spawnedChildren.push(child);
-      return child;
-    },
+    stdin: { end: () => {} },
+    stdout: null,
+    stderr: new EventEmitter(),
+    pid: 123,
+    killed: false,
+    kill: () => {},
+    on: () => {},
   };
-});
+}
 
 /** イベントを 1 つずつ反映するための、まっさらな走行状態 */
 function initialState(): RunState {
@@ -127,17 +112,20 @@ describe('applyEvent: lastModel', () => {
 
 describe('runPi: onModelEvent', () => {
   it('runPi: (happy) auto_retry_start の行 → onModelEvent に retry-start', async () => {
-    spawnedChildren.length = 0;
+    children.length = 0;
     const received: ModelEvent[] = [];
-    const promise = runPi({
-      piArgs: [],
-      stdin: '',
-      cwd: '/tmp/base',
-      env: {},
-      limits: aTypePolicy().limits,
-      onModelEvent: (event) => received.push(event),
-    });
-    const child = spawnedChildren[0];
+    const promise = runPi(
+      {
+        piArgs: [],
+        stdin: '',
+        cwd: '/tmp/base',
+        env: {},
+        limits: aTypePolicy().limits,
+        onModelEvent: (event) => received.push(event),
+      },
+      fakeSpawn,
+    );
+    const child = children[0];
     if (child === undefined) {
       throw new Error('runPi did not spawn');
     }
@@ -290,6 +278,64 @@ describe('runWithFallback: 乗り換えない場合', () => {
 
     expect(calls).toEqual(['a']);
     expect(run).toBe(stopped);
+  });
+});
+
+/** pnpm の lockfile だけある directory。`installCommand` が pnpm を選ぶ前提 */
+function dirWithLockfile(): string {
+  const dir = tempDir();
+  writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+  return dir;
+}
+
+describe('installDependencies', () => {
+  it('install: (happy) pnpm-lock.yaml のある directory → pnpm install --frozen-lockfile を1回走らせ、ok を返す', () => {
+    const dir = dirWithLockfile();
+    const calls: Array<{ command: string; args: readonly string[]; cwd: string }> = [];
+    const outcome = installDependencies(dir, (command, args, options) => {
+      calls.push({ command, args, cwd: options.cwd });
+      return { status: 0, stdout: '', stderr: '' };
+    });
+    expect(calls).toEqual([{ command: 'pnpm', args: ['install', '--frozen-lockfile'], cwd: dir }]);
+    expect(outcome).toEqual({ kind: 'ok', command: 'pnpm install --frozen-lockfile' });
+  });
+
+  it('install: (error) status 1 → failed を返し、stderr を error に入れる', () => {
+    const dir = dirWithLockfile();
+    const outcome = installDependencies(dir, () => ({ status: 1, stdout: '', stderr: 'boom' }));
+    expect(outcome).toEqual({
+      kind: 'failed',
+      command: 'pnpm install --frozen-lockfile',
+      error: 'boom',
+    });
+  });
+
+  it('install: (none) lockfile のない directory → none を返し、spawnSync を呼ばない', () => {
+    const dir = tempDir();
+    let called = 0;
+    const outcome = installDependencies(dir, () => {
+      called += 1;
+      return { status: 0, stdout: '', stderr: '' };
+    });
+    expect(outcome).toEqual({ kind: 'none' });
+    expect(called).toBe(0);
+  });
+});
+
+describe('runPi: stdio', () => {
+  it('runPi: (error) stdout が null → 投げる', async () => {
+    await expect(
+      runPi(
+        {
+          piArgs: [],
+          stdin: '',
+          cwd: '/tmp/base',
+          env: {},
+          limits: aTypePolicy().limits,
+        },
+        nullStdoutSpawn,
+      ),
+    ).rejects.toThrow('stdio pipes');
   });
 });
 

@@ -25,8 +25,8 @@ import { aPiFace, aPlace, aRunRecord, START_TOKEN } from '../consult.fixture.ts'
 import { appendRun, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
-import type { SubagentHooks, SubagentJob } from '../run/subagent.ts';
-import type { ConsultOptions } from '../sub/spec.ts';
+import type { SubagentHooks, SubagentInput } from '../run/subagent.ts';
+import type { LaunchPorts } from '../run/run.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
@@ -34,19 +34,18 @@ const SESSION = 'test-session';
 /** consult() が runOneSubagent に渡した hooks */
 const capturedHooks = vi.hoisted(() => [] as SubagentHooks[]);
 
+/** consult() が runOneSubagent に渡した launch */
+const capturedLaunches = vi.hoisted(() => [] as LaunchPorts[]);
+
 vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    runOneSubagent: async (
-      _ctx: ConsultContext,
-      _options: ConsultOptions,
-      _job: SubagentJob,
-      hooks?: SubagentHooks,
-    ) => {
-      if (hooks !== undefined) {
-        capturedHooks.push(hooks);
+    runOneSubagent: async (input: SubagentInput) => {
+      if (input.hooks !== undefined) {
+        capturedHooks.push(input.hooks);
       }
+      capturedLaunches.push(input.launch);
       return { run: { stdout: '', stderr: '', code: 0, aborted: false, ended: true } };
     },
   };
@@ -64,6 +63,19 @@ afterEach(() => {
   setSoundEnabled(true);
 });
 
+/** 起動を使わないテストの `launch`。触れたら投げる（黙って本物を走らせない） */
+function fakeLaunch(): LaunchPorts {
+  return {
+    spawn: () => {
+      throw new Error('spawn is not used');
+    },
+    spawnSync: () => {
+      throw new Error('spawnSync is not used');
+    },
+    env: {},
+  };
+}
+
 /** runtime と保存場所を組む。session は `SESSION`。`check` を渡すと生死の照合を差し替えられる */
 function setup(
   pi: PiFace,
@@ -73,8 +85,18 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
   const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+  const launch = fakeLaunch();
   return {
-    runtime: createRuntime({ pi, place, deps, run, sessionNow: () => SESSION, check, psRun }),
+    runtime: createRuntime({
+      pi,
+      place,
+      deps,
+      launch,
+      run,
+      sessionNow: () => SESSION,
+      check,
+      psRun,
+    }),
     place,
   };
 }
@@ -508,7 +530,7 @@ describe('modelNotifier: retry-start', () => {
     const attempt = 1;
     const maxAttempts = 3;
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: 'p/m',
       attempt,
@@ -531,7 +553,7 @@ describe('modelNotifier: retry-end', () => {
     const maxAttempts = 3;
     const success = true;
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: 'p/m',
       attempt,
@@ -539,7 +561,7 @@ describe('modelNotifier: retry-end', () => {
       delayMs: 2000,
       error: 'rate limited',
     });
-    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt, success });
+    onModelEvent?.({ kind: 'retry-end', model: 'p/m', attempt, success });
 
     expect(notices).toHaveLength(2);
     expect(notices[1]?.type).toBe('warning');
@@ -553,7 +575,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { onFallback } = modelNotifier(ctx, 'consult-1');
     const next = 'p/b';
 
-    onFallback({ requested: next });
+    onFallback?.({ requested: next });
 
     expect(notices).toHaveLength(1);
     expect(notices[0]?.type).toBe('warning');
@@ -564,7 +586,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onFallback } = modelNotifier(ctx, 'consult-1');
 
-    onFallback({ requested: undefined });
+    onFallback?.({ requested: undefined });
 
     expect(notices[0]?.message).toContain('→ main');
   });
@@ -573,7 +595,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onModelEvent } = modelNotifier(ctx, 'consult-1');
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: undefined,
       attempt: 1,
@@ -589,7 +611,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onModelEvent } = modelNotifier(ctx, 'consult-1');
 
-    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
+    onModelEvent?.({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
 
     expect(notices).toEqual([]);
   });
@@ -598,13 +620,16 @@ describe('modelNotifier: 乗り換え', () => {
 describe('consult: 通知の配線', () => {
   it('modelNotifier の 2 つのコールバックを runOneSubagent の hooks に渡す', async () => {
     capturedHooks.length = 0;
+    capturedLaunches.length = 0;
     const { pi } = fakePi();
     const { ctx, notices } = fakeConsultContext();
     const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+    const launch = fakeLaunch();
     const runtime = createRuntime({
       pi,
       place: placeFor(tempDir(), tempDir()),
       deps,
+      launch,
       sessionNow: () => SESSION,
     });
 
@@ -615,6 +640,7 @@ describe('consult: 通知の配線', () => {
     if (hooks === undefined) {
       throw new Error('runOneSubagent was not called');
     }
+    expect(capturedLaunches.at(-1)).toBe(launch);
     const attempt = 1;
     const maxAttempts = 3;
     const next = 'p/b';

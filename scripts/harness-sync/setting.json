@@ -9,6 +9,7 @@
     "test/settings.fixture.ts",
     "test/scripts.fixture.ts",
     "test/fake-git.fixture.ts",
+    "test/child-process.fixture.ts",
     "AGENTS.md",
     "lefthook.yaml",
     "tsconfig.json",
@@ -31,6 +32,7 @@
     "test/temp-dir.ts",
     "test/settings.fixture.ts",
     "test/scripts.fixture.ts",
-    "test/fake-git.fixture.ts"
+    "test/fake-git.fixture.ts",
+    "test/child-process.fixture.ts"
   ]
 }

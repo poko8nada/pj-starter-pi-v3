@@ -17,11 +17,18 @@ import entry, {
 import { loadTypes } from './policy/types.ts';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import type { ConsultMessage, CommandContext, PiFace } from './tool/consult.ts';
+import type {
+  ConsultMessage,
+  CommandContext,
+  ConsultRuntime,
+  PiFace,
+  RuntimeInput,
+} from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
 const seenTopLevelRoots = vi.hoisted(() => [] as string[]);
 const seenCleanRoots = vi.hoisted(() => [] as string[]);
+const seenLaunches = vi.hoisted(() => [] as Array<RuntimeInput['launch']>);
 
 vi.mock('./run/worktree.ts', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -34,6 +41,19 @@ vi.mock('./run/worktree.ts', async (importOriginal) => {
     cleanWorktrees: (_cwd: string, deps: { root: string }) => {
       seenCleanRoots.push(deps.root);
       return { pruned: [], branches: [] };
+    },
+  };
+});
+
+vi.mock('./tool/consult.ts', async (importOriginal) => {
+  const actual = await importOriginal<{
+    createRuntime: (input: RuntimeInput) => ConsultRuntime;
+  }>();
+  return {
+    ...actual,
+    createRuntime: (input: RuntimeInput) => {
+      seenLaunches.push(input.launch);
+      return actual.createRuntime(input);
     },
   };
 });
@@ -329,6 +349,37 @@ describe('entry wiring', () => {
     const expected = process.env.CONSULT_ROOT ?? '';
     fakeEntry();
     expect(seenTopLevelRoots.at(-1)).toBe(expected);
+  });
+
+  it('entry wiring: (happy) 起動時の env が launch.env に写る → 後の変更は伝わらず GIT_* が落ちる', () => {
+    seenLaunches.length = 0;
+    process.env.PI_WIRING_PROBE = 'before';
+    process.env.GIT_WIRING_PROBE = 'drop-me';
+    try {
+      fakeEntry();
+      process.env.PI_WIRING_PROBE = 'after';
+      const launch = seenLaunches.at(-1);
+      if (launch === undefined) {
+        throw new Error('createRuntime was not called');
+      }
+      expect(launch.env.PI_WIRING_PROBE).toBe('before');
+      expect('GIT_WIRING_PROBE' in launch.env).toBe(false);
+    } finally {
+      delete process.env.PI_WIRING_PROBE;
+      delete process.env.GIT_WIRING_PROBE;
+    }
+  });
+
+  it('entry wiring: (happy) spawn は包まれ、spawnSync はそのまま launch に載る', async () => {
+    seenLaunches.length = 0;
+    const { spawn, spawnSync } = await import('node:child_process');
+    fakeEntry();
+    const launch = seenLaunches.at(-1);
+    if (launch === undefined) {
+      throw new Error('createRuntime was not called');
+    }
+    expect(launch.spawn).not.toBe(spawn);
+    expect(launch.spawnSync).toBe(spawnSync);
   });
 
   it('entry wiring: (happy) session_start → cleanWorktrees の deps.root に同じ値が届く', async () => {

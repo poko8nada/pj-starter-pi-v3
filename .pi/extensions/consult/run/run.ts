@@ -4,7 +4,6 @@
  * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI バージョンは SIGINT で finally が走らず worktree を残した。
  */
 
-import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -133,7 +132,7 @@ export type InstallOutcome =
  *
  * 入っていない worktree では、サブエージェントもフックも何も確かめられない。worktree の用意の一部であって、サブエージェントの仕事ではない。失敗は環境の失敗で、設定の誤りではない。
  */
-export function installDependencies(cwd: string): InstallOutcome {
+export function installDependencies(cwd: string, spawnSync: SpawnSync): InstallOutcome {
   const command = installCommand(cwd);
   if (command === undefined) {
     return { kind: 'none' };
@@ -188,6 +187,45 @@ export function worktreeGit(path: string, git: Git): GitRun {
   };
 }
 
+/** `runPi` が触る範囲の子プロセス。`Spawn` が返す形 */
+export interface SpawnedChild {
+  readonly stdin: { end(data?: string): void } | null;
+  readonly stdout: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly stderr: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly pid?: number | undefined;
+  readonly killed: boolean;
+  kill(signal?: NodeJS.Signals): void;
+  on(event: 'close', listener: (code: number | null) => void): unknown;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+}
+
+/** pi を起動する。使う形だけを描く */
+export type Spawn = (
+  command: string,
+  args: readonly string[],
+  options: PiSpawnOptions,
+) => SpawnedChild;
+
+/** install を1回走らせる。使う形だけを描く */
+export type SpawnSync = (
+  command: string,
+  args: readonly string[],
+  options: { readonly cwd: string; readonly encoding: 'utf8' },
+) => {
+  readonly status: number | null;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly error?: Error;
+};
+
+/** 起動経路が外から受け取るもの。境界が1回だけ組み立てる */
+export interface LaunchPorts {
+  readonly spawn: Spawn;
+  readonly spawnSync: SpawnSync;
+  /** 子に渡す環境の元。GIT_* は境界で落としてある */
+  readonly env: NodeJS.ProcessEnv;
+}
+
 /** サブエージェントの起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
 export interface PiSpawnOptions {
   readonly cwd: string;
@@ -212,7 +250,7 @@ export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOption
  * 中断（signal）でサブエージェントを殺し、呼び出し側が後片付けできるように aborted を返す。上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
  */
 /** サブエージェントを殺す。SIGTERM を無視するサブエージェントがいるので、猶予の後に強制終了する */
-function killChild(child: ReturnType<typeof spawn>): void {
+function killChild(child: SpawnedChild): void {
   child.kill('SIGTERM');
   setTimeout(() => {
     if (!child.killed) {
@@ -353,7 +391,7 @@ function runOutcome(state: RunState, ending: { code: number; pid?: number }): Ru
 /** 走っているサブエージェントと見張りの時計。`settled` が立ったら何もしない。 */
 interface LiveRun {
   readonly state: RunState;
-  readonly child: ReturnType<typeof spawn>;
+  readonly child: SpawnedChild;
   readonly quietMs: number;
   readonly onProgress?: RunOptions['onProgress'];
   readonly onModelEvent?: RunOptions['onModelEvent'];
@@ -435,9 +473,13 @@ function finishLive(
   input.settle(outcome);
 }
 
-export function runPi(options: RunOptions): Promise<RunResult> {
+export function runPi(options: RunOptions, spawn: Spawn): Promise<RunResult> {
   return new Promise((settle) => {
     const child = spawn('pi', [...options.piArgs], spawnOptions(options.cwd, options.env));
+    const { stdin, stdout, stderr } = child;
+    if (stdin === null || stdout === null || stderr === null) {
+      throw new Error('pi spawn did not open stdio pipes');
+    }
     const live: LiveRun = {
       state: initialRunState(options.limits, Date.now()),
       child,
@@ -468,10 +510,10 @@ export function runPi(options: RunOptions): Promise<RunResult> {
     } else {
       options.signal?.addEventListener('abort', onAbort, { once: true });
     }
-    child.stdout.on('data', (chunk: Buffer) => {
+    stdout.on('data', (chunk: Buffer) => {
       consumeStdout(live, { text: chunk.toString(), now: Date.now() });
     });
-    child.stderr.on('data', (chunk: Buffer) => {
+    stderr.on('data', (chunk: Buffer) => {
       appendStderr(live, chunk.toString());
     });
     child.on('error', (error: Error) => {
@@ -481,7 +523,7 @@ export function runPi(options: RunOptions): Promise<RunResult> {
     child.on('close', (code: number | null) => {
       finish(code ?? 0);
     });
-    child.stdin.end(options.stdin);
+    stdin.end(options.stdin);
   });
 }
 
