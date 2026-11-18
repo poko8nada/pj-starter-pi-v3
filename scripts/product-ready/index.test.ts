@@ -282,7 +282,7 @@ describe('product-ready index', () => {
     expect(definition).toContain('- reader: x');
   });
 
-  it('--run → README.md と README.ja.md がそれぞれのテンプレートに置き換わる', () => {
+  it('--run → README.md と README.ja.md が 1 つのテンプレートに置き換わる', () => {
     const { tree, result } = runOnTree([RUN_FLAG]);
     expect(result.status).toBe(0);
     const readme = readFileSync(join(tree.root, 'README.md'), 'utf8');
@@ -292,6 +292,7 @@ describe('product-ready index', () => {
     expect(readmeJa).toContain('## What is in it');
     expect(readmeJa).not.toContain('old');
     expect(readmeJa).not.toContain('## 入っているもの');
+    expect(readmeJa.split('\n')[0]).toBe(readme.split('\n')[0]);
   });
 
   it('--run → README.md と README.ja.md の ## What is in it の下に ### Product と ### Default がこの順で並ぶ', () => {
