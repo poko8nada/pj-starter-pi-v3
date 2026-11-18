@@ -132,7 +132,7 @@ export function removeText(id: string, removed: RemoveResult): string {
     return `消さない: ${id} でサブエージェントが走っている（この unit の記録がそう言っている。止めるか、終わるのを待つ）`;
   }
   const own = removed.cleanup.branches.find((entry) => entry.branch === `consult/${id}`);
-  // `removed` のときは自分の枝の運命を前置きが言うので、掃除の内訳からは外す（二重に言わない）
+  // `removed` のときは自分のブランチの運命を前置きが言うので、掃除の内訳からは外す（二重に言わない）
   const swept =
     removed.outcome === 'removed'
       ? removed.cleanup.branches.filter((entry) => entry.branch !== `consult/${id}`)
@@ -143,11 +143,11 @@ export function removeText(id: string, removed: RemoveResult): string {
   }
   const gone = swept.filter((entry) => entry.state === 'removed').map((entry) => entry.branch);
   if (gone.length > 0) {
-    extras.push(`消した枝: ${gone.join(', ')}`);
+    extras.push(`消したブランチ: ${gone.join(', ')}`);
   }
   const kept = swept.filter((entry) => entry.state === 'kept').map((entry) => entry.branch);
   if (kept.length > 0) {
-    extras.push(`残した枝（未マージ）: ${kept.join(', ')}`);
+    extras.push(`残したブランチ（未マージ）: ${kept.join(', ')}`);
   }
   const tail = extras.length > 0 ? `（${extras.join('。')}）` : '';
   if (removed.outcome === 'missing') {
