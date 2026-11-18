@@ -83,9 +83,9 @@ describe('git contract', () => {
     expect(git(dir, ['branch', '-D', 'consult/unmerged']).status).toBe(0);
   });
 
-  it('error: 存在しない GIT_INDEX_FILE を設定した状態 → git() はそれでも一時リポジトリを見る', () => {
+  it('error: 使えない GIT_INDEX_FILE（ディレクトリ）を設定した状態 → git() はそれでも一時リポジトリを見る', () => {
     const dir = initRepo();
-    vi.stubEnv('GIT_INDEX_FILE', join(dir, '..', 'no-such-index'));
+    vi.stubEnv('GIT_INDEX_FILE', tempDir('git-contract-index-'));
     const result = git(dir, ['status', '--porcelain']);
     expect(result.status).toBe(0);
   });
