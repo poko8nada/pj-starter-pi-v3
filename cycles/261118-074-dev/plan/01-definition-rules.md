@@ -206,16 +206,16 @@ rules/
 
 ### Slice 1: format の 1 行 1 Unit/Sub を 1 つにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: b5a1abc0
 - Stopped:
 
 ### Slice 2: rules のセクションを組み直す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: e23971ab
 - Stopped:
 
 ### Cleanup: なし
