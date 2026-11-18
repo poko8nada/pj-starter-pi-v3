@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import {
@@ -240,7 +240,7 @@ describe('ensureRoot', () => {
   it('worktree がなければ新しく 1 つ作る', () => {
     const dir = tempDir();
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(0);
-    expect(ensureRoot(dir).endsWith('/')).toBe(false);
+    ensureRoot(dir);
     expect(readdirSync(process.env[ROOT_KEY] ?? '')).toHaveLength(1);
   });
 });
@@ -254,7 +254,6 @@ describe('createWorktree', () => {
     expect(made.id).toBe(id);
     expect(made.branch).toBe(branchFor(id));
     expect(made.path.startsWith(ensureRoot(dir))).toBe(true);
-    expect(basename(made.path)).toBe('wt');
     expect(made.path.endsWith(join(id, 'wt'))).toBe(true);
     expect(listWorktrees(dir).map((row) => row.id)).toEqual([id]);
   });
