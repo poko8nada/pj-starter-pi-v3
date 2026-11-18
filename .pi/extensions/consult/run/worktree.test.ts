@@ -1,3 +1,4 @@
+/* eslint-disable typescript/no-non-null-assertion -- plan が mockGit.current! の遅延参照を決め、テスト全体で使うため */
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,173 +14,18 @@ import {
   rootFor,
 } from './worktree.ts';
 
-const mockGit = vi.hoisted(() =>
-  vi.fn((_cwd: string, _args: readonly string[]) => ({ status: 0, stdout: '', stderr: '' })),
-);
+const mockGit = vi.hoisted(() => ({ current: undefined as FakeGit | undefined }));
 
 vi.mock('../../../../lib/git-env.mjs', () => ({
-  git: (cwd: string, args: readonly string[]) => mockGit(cwd, args),
+  git: (cwd: string, args: readonly string[]) => mockGit.current!.git(cwd, args),
   gitEnv: (env?: NodeJS.ProcessEnv) => ({ ...env }),
 }));
-
-type Entry = { readonly path: string; readonly ref: string };
-
-let entries: Entry[] = [];
-const orphans = new Map<string, boolean>();
-const unmerged = new Set<string>();
-const dirtyPaths = new Set<string>();
-let listStatus = 0;
-let listOverride: string | null = null;
-let addStatus = 0;
-let removeStatus = 0;
-let pruneStatus = 0;
-let forEachRefStatus = 0;
-let lastAdd: { branch: string; path: string; base: string } | null = null;
-
-function resetFake(): void {
-  entries = [];
-  orphans.clear();
-  unmerged.clear();
-  dirtyPaths.clear();
-  listStatus = 0;
-  listOverride = null;
-  addStatus = 0;
-  removeStatus = 0;
-  pruneStatus = 0;
-  forEachRefStatus = 0;
-  lastAdd = null;
-}
-
-function installFake(): void {
-  mockGit.mockImplementation((cwd: string, args: readonly string[]) => {
-    if (args[0] === 'rev-parse') {
-      return { status: 0, stdout: `${cwd}\n`, stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'list') {
-      if (listStatus !== 0) {
-        return { status: listStatus, stdout: '', stderr: 'not a repository' };
-      }
-      if (listOverride !== null) {
-        return { status: 0, stdout: listOverride, stderr: '' };
-      }
-      const blocks = entries.map((entry) => {
-        const prunable = !existsSync(entry.path);
-        return prunable
-          ? `worktree ${entry.path}\nbranch ${entry.ref}\nprunable`
-          : `worktree ${entry.path}\nbranch ${entry.ref}`;
-      });
-      return {
-        status: 0,
-        stdout: blocks.length > 0 ? `${blocks.join('\n\n')}\n` : '',
-        stderr: '',
-      };
-    }
-    if (args[0] === 'status') {
-      if (dirtyPaths.has(cwd)) {
-        return { status: 0, stdout: '?? dirty\n', stderr: '' };
-      }
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'add') {
-      const branch = args[3] ?? '';
-      const path = args[4] ?? '';
-      const base = args[5] ?? '';
-      lastAdd = { branch, path, base };
-      if (branch.includes(' ') || branch.includes('\n') || addStatus !== 0) {
-        // git が保存場所を作ってから失敗した形にする。作らなければ `createWorktree` の後始末が何も消さず、テストが空振りになる。
-        mkdirSync(path, { recursive: true });
-        return { status: 1, stdout: '', stderr: 'fatal: bad branch' };
-      }
-      mkdirSync(path, { recursive: true });
-      entries.push({ path, ref: `refs/heads/${branch}` });
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'prune') {
-      if (pruneStatus !== 0) {
-        return { status: pruneStatus, stdout: '', stderr: 'prune failed' };
-      }
-      const removed = entries.filter((entry) => !existsSync(entry.path));
-      for (const gone of removed) {
-        const short = gone.ref.replace(/^refs\/heads\//, '');
-        if (!orphans.has(short)) {
-          orphans.set(short, !unmerged.has(short));
-        }
-      }
-      entries = entries.filter((entry) => existsSync(entry.path));
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'worktree' && args[1] === 'remove') {
-      const path = args[3] ?? '';
-      if (removeStatus !== 0) {
-        return { status: removeStatus, stdout: '', stderr: 'remove failed' };
-      }
-      const at = entries.findIndex((entry) => entry.path === path);
-      if (at >= 0) {
-        const removed = entries.splice(at, 1)[0];
-        if (removed !== undefined) {
-          const short = removed.ref.replace(/^refs\/heads\//, '');
-          if (!orphans.has(short)) {
-            orphans.set(short, !unmerged.has(short));
-          }
-        }
-      }
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    if (args[0] === 'for-each-ref') {
-      if (forEachRefStatus !== 0) {
-        return { status: forEachRefStatus, stdout: '', stderr: 'for-each-ref failed' };
-      }
-      const checkedOut = new Set(entries.map((entry) => entry.ref.replace(/^refs\/heads\//, '')));
-      const lines = [...orphans.keys()]
-        .filter((branch) => !checkedOut.has(branch))
-        .map((branch) => `refs/heads/${branch} `);
-      return { status: 0, stdout: lines.length > 0 ? `${lines.join('\n')}\n` : '', stderr: '' };
-    }
-    if (args[0] === 'branch' && (args[1] === '-d' || args[1] === '-D')) {
-      const branch = args[2] ?? '';
-      if (args[1] === '-D') {
-        orphans.delete(branch);
-        unmerged.delete(branch);
-        return { status: 0, stdout: '', stderr: '' };
-      }
-      if (unmerged.has(branch)) {
-        return { status: 1, stdout: '', stderr: 'not fully merged' };
-      }
-      orphans.delete(branch);
-      return { status: 0, stdout: '', stderr: '' };
-    }
-    return { status: 0, stdout: '', stderr: '' };
-  });
-}
-
-/** その worktree を dirty にする（未コミットの変更がある扱い） */
-function makeDirty(path: string): void {
-  dirtyPaths.add(path);
-}
-
-/** 取り込み済みか未マージかを決めて孤児の枝を足す */
-function addOrphan(branch: string, merged: boolean): void {
-  orphans.set(branch, merged);
-  if (merged) {
-    unmerged.delete(branch);
-  } else {
-    unmerged.add(branch);
-  }
-}
-
-/** その枝を未マージにする（`branch -d` が断る） */
-function markUnmerged(branch: string): void {
-  unmerged.add(branch);
-  if (orphans.has(branch)) {
-    orphans.set(branch, false);
-  }
-}
+import { createFakeGit, type FakeGit } from '../../../../test/fake-git.fixture.ts';
 
 const ROOT_KEY = 'CONSULT_ROOT';
 
 beforeEach(() => {
-  resetFake();
-  installFake();
+  mockGit.current = createFakeGit();
   vi.stubEnv(ROOT_KEY, tempDir());
 });
 
@@ -272,18 +118,20 @@ describe('createWorktree', () => {
     const id = '2-b';
     const base = 'abc123';
     createWorktree(dir, id, base);
-    expect(lastAdd).toEqual(expect.objectContaining({ branch: branchFor(id), base }));
+    expect(mockGit.current!.state.lastAdd).toEqual(
+      expect.objectContaining({ branch: branchFor(id), base }),
+    );
   });
 
   it('base の既定は HEAD', () => {
     const dir = tempDir();
     createWorktree(dir, '1-a');
-    expect(lastAdd?.base).toBe('HEAD');
+    expect(mockGit.current!.state.lastAdd?.base).toBe('HEAD');
   });
 
   it('worktree add が status 1 → 例外、unit ディレクトリが残らない', () => {
     const dir = tempDir();
-    addStatus = 1;
+    mockGit.current!.state.addStatus = 1;
     expect(() => createWorktree(dir, '1-a')).toThrow(/could not create the worktree/);
     expect(listWorktrees(dir)).toHaveLength(0);
     expect(existsSync(join(ensureRoot(dir), '1-a'))).toBe(false);
@@ -315,7 +163,7 @@ describe('listWorktrees のゴースト', () => {
     const id = '1-a';
     const realPath = join(tempDir(), 'wt');
     mkdirSync(realPath, { recursive: true });
-    listOverride = [
+    mockGit.current!.state.listOverride = [
       `worktree ${realPath}\nbranch refs/heads/${branchFor(id)}`,
       'worktree /other/main\nbranch refs/heads/main',
       `worktree ${realPath}\nbranch refs/heads/${branchFor(id)}\nprunable something went away`,
@@ -326,7 +174,7 @@ describe('listWorktrees のゴースト', () => {
   });
 
   it('git が断る（status 128）→ 空の一覧', () => {
-    listStatus = 128;
+    mockGit.current!.state.listStatus = 128;
     expect(listWorktrees(tempDir())).toEqual([]);
   });
 });
@@ -338,7 +186,7 @@ describe('listWorktrees / findWorktree', () => {
     expect(findWorktree(dir, '1-a')?.dirty).toBe(false);
 
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    makeDirty(made.path);
+    mockGit.current!.makeDirty(made.path);
     expect(findWorktree(dir, '1-a')?.dirty).toBe(true);
   });
 });
@@ -381,18 +229,18 @@ describe('removeWorktree', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    makeDirty(made.path);
+    mockGit.current!.makeDirty(made.path);
 
     expect(removeWorktree(dir, '1-a').outcome).toBe('dirty');
     expect(listWorktrees(dir)).toHaveLength(1);
   });
 
-  it('変更が残っていても、孤児の枝は掃除される（ワークツリーは残す）', () => {
+  it('変更が残っていても、孤児のブランチは掃除される（ワークツリーは残す）', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    makeDirty(made.path);
-    addOrphan('consult/9-merged', true);
+    mockGit.current!.makeDirty(made.path);
+    mockGit.current!.addOrphan('consult/9-merged', true);
 
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('dirty');
@@ -405,7 +253,7 @@ describe('removeWorktree', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    makeDirty(made.path);
+    mockGit.current!.makeDirty(made.path);
 
     const result = removeWorktree(dir, '1-a', { force: true });
     expect(result.outcome).toBe('removed');
@@ -416,7 +264,7 @@ describe('removeWorktree', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    markUnmerged(branchFor('1-a'));
+    mockGit.current!.markUnmerged(branchFor('1-a'));
 
     const result = removeWorktree(dir, '1-a');
     expect(result.outcome).toBe('removed');
@@ -437,11 +285,11 @@ describe('removeWorktree', () => {
     expect(listWorktrees(dir)).toEqual([]);
   });
 
-  it('実体のない登録でも、force なら未マージの枝を捨てる', () => {
+  it('実体のない登録でも、force なら未マージのブランチを捨てる', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    markUnmerged(branchFor('1-a'));
+    mockGit.current!.markUnmerged(branchFor('1-a'));
     rmSync(made.path, { recursive: true, force: true });
 
     const kept = removeWorktree(dir, '1-a');
@@ -476,7 +324,7 @@ describe('removeWorktree', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
-    markUnmerged(branchFor('1-a'));
+    mockGit.current!.markUnmerged(branchFor('1-a'));
 
     const result = removeWorktree(dir, '1-a', { force: true });
     expect(result.outcome).toBe('removed');
@@ -491,20 +339,20 @@ describe('removeWorktree', () => {
   it('worktree remove が status 1 → 例外（登録は残る）', () => {
     const dir = tempDir();
     createWorktree(dir, '1-a');
-    removeStatus = 1;
+    mockGit.current!.state.removeStatus = 1;
     expect(() => removeWorktree(dir, '1-a')).toThrow(/could not remove the worktree/);
     expect(findWorktree(dir, '1-a')).toBeDefined();
   });
 });
 
 describe('removeWorktree の統合', () => {
-  it('ゴーストと取り込み済み・未マージの枝がある状態から remove が片付ける', () => {
+  it('ゴーストと取り込み済み・未マージのブランチがある状態から remove が片付ける', () => {
     const dir = tempDir();
     const target = createWorktree(dir, '1-t');
-    addOrphan('consult/9-merged', true);
+    mockGit.current!.addOrphan('consult/9-merged', true);
     const unmergedWorktree = createWorktree(dir, '1-u');
     writeFileSync(join(unmergedWorktree.path, 'note.md'), 'the subagent wrote this\n');
-    markUnmerged('consult/1-u');
+    mockGit.current!.markUnmerged('consult/1-u');
     rmSync(unmergedWorktree.path, { recursive: true, force: true });
     const ghost = createWorktree(dir, '1-g');
     rmSync(ghost.path, { recursive: true, force: true });
@@ -550,7 +398,7 @@ describe('cleanWorktrees', () => {
     expect(cleanWorktrees(dir)).toEqual({ pruned: [], branches: [] });
   });
 
-  it('走っているサブエージェントのワークツリー → 消さず、その枝も消さない', () => {
+  it('走っているサブエージェントのワークツリー → 消さず、そのブランチも消さない', () => {
     const dir = tempDir();
     const made = createWorktree(dir, '1-a');
 
@@ -561,14 +409,14 @@ describe('cleanWorktrees', () => {
 
   it('git が断る → 例外', () => {
     const dir = tempDir();
-    pruneStatus = 1;
+    mockGit.current!.state.pruneStatus = 1;
     expect(() => cleanWorktrees(dir)).toThrow();
   });
 
   it('for-each-ref が status 1 → 掃除が例外', () => {
     const dir = tempDir();
     createWorktree(dir, '1-a');
-    forEachRefStatus = 1;
+    mockGit.current!.state.forEachRefStatus = 1;
     expect(() => cleanWorktrees(dir)).toThrow(/could not list the orphan branches/);
   });
 });
