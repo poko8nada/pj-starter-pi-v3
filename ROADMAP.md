@@ -30,22 +30,33 @@
 
 ## 0.x.x
 
-| No  | Ver   | status | cycles       | priority | title                                |
-| --- | ----- | ------ | ------------ | -------- | ------------------------------------ |
-| 036 | 0.9.7 | done   | 074-d        | mid      | rules配下のファイル更新              |
-| 035 | 0.9.7 | done   | 073-d        | mid      | upgradeスキルの更新                  |
-| 034 | 0.9.7 | done   | 072-d        | low      | thinking-scrubの一部修正             |
-| 033 | 0.9.7 | done   | 070-d, 071-d | high     | DEFINITONの定義一部変更              |
-| 032 | 0.9.6 | done   | 065-d        | low      | スキルの追加修正                     |
-| 031 | 0.9.6 | done   | 063-d, 064-d | mid      | スキルの修正                         |
-| 030 | 0.9.6 | done   | 068-f        | mid      | 不要テストの整理 3                   |
-| 029 | 0.9.6 | done   | 068-d, 069-d | mid      | 不要テストの整理 2                   |
-| 028 | 0.9.6 | done   | 067-d, 067-f | mid      | 不要テストの整理                     |
-| 027 | 0.9.6 | done   | 066-d        | mid      | consultの改修                        |
-| 026 | 0.9.6 | done   | 062-d        | mid      | vitest, harness, product-readyの改修 |
-| 025 | 0.9.5 | done   | 060-d        | mid      | スキルの修正                         |
-| 024 | 0.9.5 | done   | 058-d, 059-d | mid      | スキルの見直し                       |
-| 023 | 0.9.5 | done   | 057-d        | mid      | スキルの文体と構造の見直し           |
+| No  | Ver   | status | cycles       | priority | title                                  |
+| --- | ----- | ------ | ------------ | -------- | -------------------------------------- |
+| 037 | 0.9.8 | wip    |              | mid      | プリンシプルに違反しているコードの修正 |
+| 036 | 0.9.7 | done   | 074-d        | mid      | rules配下のファイル更新                |
+| 035 | 0.9.7 | done   | 073-d        | mid      | upgradeスキルの更新                    |
+| 034 | 0.9.7 | done   | 072-d        | low      | thinking-scrubの一部修正               |
+| 033 | 0.9.7 | done   | 070-d, 071-d | high     | DEFINITONの定義一部変更                |
+| 032 | 0.9.6 | done   | 065-d        | low      | スキルの追加修正                       |
+| 031 | 0.9.6 | done   | 063-d, 064-d | mid      | スキルの修正                           |
+| 030 | 0.9.6 | done   | 068-f        | mid      | 不要テストの整理 3                     |
+| 029 | 0.9.6 | done   | 068-d, 069-d | mid      | 不要テストの整理 2                     |
+| 028 | 0.9.6 | done   | 067-d, 067-f | mid      | 不要テストの整理                       |
+| 027 | 0.9.6 | done   | 066-d        | mid      | consultの改修                          |
+| 026 | 0.9.6 | done   | 062-d        | mid      | vitest, harness, product-readyの改修   |
+| 025 | 0.9.5 | done   | 060-d        | mid      | スキルの修正                           |
+| 024 | 0.9.5 | done   | 058-d, 059-d | mid      | スキルの見直し                         |
+| 023 | 0.9.5 | done   | 057-d        | mid      | スキルの文体と構造の見直し             |
+
+### 0.9.8
+
+- description:
+  - プリンシプル違反のコード修正とテストしたい。
+- ideas:
+  - memo-consult-worktree-test.mdを参照。
+  - 2つのサイクル想定
+    1. 「consult の worktree テストの偽物を1つにまとめ、本物の git で契約を固定する」（関心-5・3・4）
+    2. 「consult の worktree の git と root を境界で受け取る」（関心-2）
 
 ### 0.9.7 036
 
