@@ -70,7 +70,7 @@ const SKELETONS = new Map([
     }),
   ],
   ['README.md', skeleton('rules/readme.format.md', '## Skeleton', { kind: 'whole' })],
-  ['README.ja.md', skeleton('rules/readme.format.md', '## Skeleton (ja)', { kind: 'whole' })],
+  ['README.ja.md', skeleton('rules/readme.format.md', '## Skeleton', { kind: 'whole' })],
 ]);
 
 /**
