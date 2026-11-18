@@ -255,6 +255,11 @@ declare function createFakeGit(): FakeGit;
 - Commit: 5caf525a
 - Stopped:
 
+### Cleanup: なし
+
+- Findings: なし
+- Unplanned: なし
+
 ## Work Review
 
 ### Round 1
