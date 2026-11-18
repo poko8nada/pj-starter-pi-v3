@@ -12,6 +12,7 @@ import {
   listWorktrees,
   removeWorktree,
   rootFor,
+  topLevel,
   type WorktreeDeps,
 } from './worktree.ts';
 
@@ -380,5 +381,23 @@ describe('unit の保存場所', () => {
     expect(made.path.startsWith(made.unitDir)).toBe(true);
     expect(made.path).toBe(join(made.unitDir, 'wt'));
     expect(dirname(made.unitDir)).toBe(ensureRoot(dir, deps));
+  });
+});
+
+describe('topLevel の error', () => {
+  it('topLevel: (error) git が error で失敗 → 例外文言に error を使う', () => {
+    const dir = tempDir();
+    const message = 'index lock missing';
+    const failing = {
+      git: () => ({ status: 1, stdout: '', stderr: '', error: message }),
+      root: tempDir(),
+    };
+    expect(() => topLevel(dir, failing)).toThrow(message);
+  });
+});
+
+describe('fake git', () => {
+  it('fake git: (error) 未知の命令 → 投げる', () => {
+    expect(() => fake.git(tempDir(), ['no-such-command'])).toThrow();
   });
 });

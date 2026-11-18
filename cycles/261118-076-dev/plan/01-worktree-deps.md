@@ -308,12 +308,29 @@ export function createFakeGit(): FakeGit;
 ### Round 1
 
 - Stale:
-- Unlisted:
+  - `.pi/extensions/consult/run/worktree.ts:6` — 頭注の「保存場所はリポジトリの外に固定する」は、現状の `deps.root` 注入（既定は `CONSULT_ROOT`）と矛盾する。「固定」が残ると上書き可能という継ぎ目を読み誤るため、既定値の説明に直す必要がある。
+    - fixed: 頭注を「保存場所の既定はリポジトリの外」「`deps.root` で渡し、`CONSULT_ROOT` 環境変数で上書きできる」に直した。
+  - `.pi/extensions/consult/tool/worktree.ts:167` — 「保存場所は結線の時に1回だけ渡す」は `place` のみを指し、新設の `deps` 引数（`.pi/extensions/consult/tool/worktree.ts:169`）に触れていない。読む者は `deps` の受渡し場所を見失うため、文言が古い。
+    - fixed: 文言を「保存場所と worktree の依存（`deps`）は結線の時に1回だけ渡す」に直した。
+  - `.pi/extensions/consult/index.test.ts:27` — `topLevel` の模倣が `(cwd: string) => cwd` の1引数のままで、現行の `topLevel(cwd, deps)`（`.pi/extensions/consult/run/worktree.ts:89`）と形が合わない。`deps` を無視する二重が残り、配線の検査を空振りにする。
+    - fixed: 模倣を `(cwd, deps)` の2引数にし、受けた `deps.root` を記録する形に直した。
+- Unlisted: なし — `git diff --name-only 2da1ae5f..HEAD` の13件（`index.ts`、`run/run.ts`、`run/worktree.ts`、両 `worktree.test.ts`、`tool/worktree.ts`、`tool/commit.ts`、`tool/consult.ts`、`tool/consult.test.ts`、`index.test.ts`、`test/fake-git.fixture.ts`、`scripts/harness-sync/setting.json`、計画書自体）は、計画の `Files` に列挙済みの更新・追加のみである。
 - Gaps:
-- Policy:
+  - `.pi/extensions/consult/run/run.ts:180` — `worktreeGit(path, git)` が引数の `git` を使うことの検査がない。`Verify Added` は型で継ぎ目を確かめるが、中身が本物の `git` を呼んでも型は赤にならず、`tool/commit.ts` と `tool/consult.ts` の経路の Goal が検査されない。
+    - fixed: `run/run.test.ts` に `worktreeGit: (happy)` を足し、渡した `git` がその `path` と `args` で呼ばれ結果がそのまま返ることを確かめた。
+  - `.pi/extensions/consult/run/worktree.ts:92` — `result.error` の分岐の検査がない。偽物（`test/fake-git.fixture.ts:175`）は `stderr` のみを返し `error` 欄を返さないため、`lib/git-env.mjs` が `error` で返す場合の例外文言が空振りになる。
+    - fixed: `run/worktree.test.ts` に `topLevel: (error)` を足し、`error` のみで失敗する `git` で例外文言に `error` が使われることを確かめた。
+  - `.pi/extensions/consult/index.ts:271` — `root: process.env.CONSULT_ROOT ?? CONSULT_ROOT` の配線の検査がない。`index.test.ts` は `topLevel`／`cleanWorktrees` を模倣する（`.pi/extensions/consult/index.test.ts:27-28`）ため、`stubEnv` の値が `placeFor`／`cleanWorktrees` に到達したか分からず、境界が環境を読むという Goal が検査されない。
+    - fixed: 模倣が受けた `deps.root` を記録し、`entry wiring` に2件（`topLevel` 到達と `session_start` での `cleanWorktrees` 到達）を足して `stubEnv` の値と比べた。
+- Policy: なし — `deps` に既定値はなく（`run/worktree.ts:89` ほか全関数で必須）、2つの worktree テストから `vi.mock`／`vi.stubEnv` は消え、偽物の操作は `fail`／`print`／`makeDirty` 等の振る舞いに限られる。
 - Unproven:
-- Noise:
+  - `test/fake-git.fixture.ts:67` — `commandOf` の `throw`（未知命令は投げる）の検査がない。`throw` を消して空成功にしても全テストが緑のままで、設計の「失敗は状態か throw、静かな成功にしない」に反しても赤にならない。
+    - fixed: `run/worktree.test.ts` に `fake git: (error) 未知の命令 → 投げる` を足し、未知命令で投げることを確かめた。
+  - `.pi/extensions/consult/index.test.ts:27` — `topLevel` 模倣が第2引数を捨てるため、`index.ts` が `deps` を渡し忘れても当該テストは緑のままである。壊れた振る舞いを名指す検査になっていない。
+    - fixed: 模倣を2引数化したうえで `entry wiring` の2件が `deps.root` の到達を確かめるため、`deps` を渡し忘れると当該テストが赤になる。
+- Noise: なし — 重複・境界値のみの検査は `Cleanup` で既に落とされ、残る `999_999`（死んだ `pid`）や `session-a` 等は振る舞いに効く前提の明示であり、型が保証する値の再現や利用者に届かない文言の検査はない。新規の抑止コメントもない。
 - Doubts:
+  - `cycles/261118-076-dev/plan/01-worktree-deps.md:299` — `Cleanup` での5件前後の検査削除（`index.test.ts` の空2件、`run/worktree.test.ts` の `consult/` と統合、`consult.test.ts` の2件、`tool/worktree.test.ts` の2件）は `Slices` の `Steps` に書かれていない。`Notes` の記録だけで足りるか、`Files`／`Scope` の変更として計画に追記すべきか、所有者の判断を求める。
 
 ### Round 2
 

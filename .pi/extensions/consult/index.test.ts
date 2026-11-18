@@ -20,12 +20,21 @@ import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import type { ConsultMessage, CommandContext, PiFace } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
+const seenTopLevelRoots = vi.hoisted(() => [] as string[]);
+const seenCleanRoots = vi.hoisted(() => [] as string[]);
+
 vi.mock('./run/worktree.ts', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    topLevel: (cwd: string) => cwd,
-    cleanWorktrees: () => ({ pruned: [], branches: [] }),
+    topLevel: (cwd: string, deps: { root: string }) => {
+      seenTopLevelRoots.push(deps.root);
+      return cwd;
+    },
+    cleanWorktrees: (_cwd: string, deps: { root: string }) => {
+      seenCleanRoots.push(deps.root);
+      return { pruned: [], branches: [] };
+    },
   };
 });
 
@@ -280,11 +289,16 @@ describe('entry wiring', () => {
   function fakeEntry(): {
     commands: Map<string, FakeCommand>;
     received: Array<[string, unknown]>;
+    handlers: Map<string, (event: unknown, ctx: unknown) => unknown>;
   } {
     const commands = new Map<string, FakeCommand>();
     const received: Array<[string, unknown]> = [];
+    const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>();
     const fake = {
-      on: () => () => {},
+      on: (name: string, handler: (event: unknown, ctx: unknown) => unknown) => {
+        handlers.set(name, handler);
+        return () => {};
+      },
       registerTool: () => {},
       registerCommand: (name: string, options: FakeCommand) => {
         commands.set(name, options);
@@ -296,7 +310,7 @@ describe('entry wiring', () => {
     // ExtensionAPI は 30 以上のメンバーを持つため、すべてを偽物で用意する価値がない。入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す。
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     entry(fake as unknown as ExtensionAPI);
-    return { commands, received };
+    return { commands, received, handlers };
   }
 
   it('入口を呼ぶ → consult のレンダラーが 1 件登録される', () => {
@@ -308,5 +322,30 @@ describe('entry wiring', () => {
     const { commands } = fakeEntry();
     const command = commands.get('consult-status');
     expect(command?.description).toBe('List the running consult subagents of this session');
+  });
+
+  it('entry wiring: (happy) CONSULT_ROOT の値 → topLevel の deps.root に届く', () => {
+    seenTopLevelRoots.length = 0;
+    const expected = process.env.CONSULT_ROOT ?? '';
+    fakeEntry();
+    expect(seenTopLevelRoots.at(-1)).toBe(expected);
+  });
+
+  it('entry wiring: (happy) session_start → cleanWorktrees の deps.root に同じ値が届く', async () => {
+    seenCleanRoots.length = 0;
+    const { handlers } = fakeEntry();
+    const expected = process.env.CONSULT_ROOT ?? '';
+    const handler = handlers.get('session_start');
+    if (handler === undefined) {
+      throw new Error('session_start was not registered');
+    }
+    const ctx = {
+      cwd: tempDir(),
+      ui: { notify: () => {}, setWidget: () => {} },
+      sessionManager: { getSessionId: () => 'session-a' },
+    };
+    await handler({}, ctx);
+    stopTick();
+    expect(seenCleanRoots.at(-1)).toBe(expected);
   });
 });

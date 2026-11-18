@@ -3,8 +3,9 @@
  *
  * 既定で残る。消すのは `removeWorktree` を明示的に呼んだときだけ。サブエージェントが何をしたかは worktree に残るので、diff や ref で受け渡さない。
  *
- * 保存場所はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
+ * 保存場所の既定はリポジトリの外（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
  *   `/tmp/pi-consult/<project>-<YYYYMMDD-HHMM>/<unit>/wt`
+ * 起動時に `deps.root` で渡し、`CONSULT_ROOT` 環境変数で上書きできる。
  * ブランチは `consult/<unit>`。base の既定は HEAD で、`main` を仮定しない。
  *
  * 台帳ファイルは持たない。一覧は `git worktree list` と `consult/*` ブランチから作る。

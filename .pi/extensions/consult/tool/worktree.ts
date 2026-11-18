@@ -164,7 +164,7 @@ export function removeText(id: string, removed: RemoveResult): string {
 }
 
 /**
- * 道具を作る。保存場所は結線の時に 1 回だけ渡す（`runningIn` が使う）。cwd は pi の文脈から取る。
+ * 道具を作る。保存場所と worktree の依存（`deps`）は結線の時に 1 回だけ渡す（`runningIn` は `place` を使い、worktree 操作は `deps` を使う）。cwd は pi の文脈から取る。
  */
 export function createWorktreeTool(place: Place, deps: WorktreeDeps, check?: CheckRecord) {
   return async function execute(...args: ExecuteArgs) {

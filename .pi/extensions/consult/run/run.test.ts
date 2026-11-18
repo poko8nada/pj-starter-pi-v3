@@ -1,6 +1,14 @@
 import type { EventEmitter } from 'node:events';
 import { describe, expect, it, vi } from 'vitest';
-import { applyEvent, runPi, runWithFallback, type RunResult, type RunState } from './run.ts';
+import {
+  applyEvent,
+  runPi,
+  runWithFallback,
+  worktreeGit,
+  type Git,
+  type RunResult,
+  type RunState,
+} from './run.ts';
 import type { ModelEvent } from '../sub/spec.ts';
 import { aTypePolicy } from '../consult.fixture.ts';
 
@@ -282,5 +290,21 @@ describe('runWithFallback: 乗り換えない場合', () => {
 
     expect(calls).toEqual(['a']);
     expect(run).toBe(stopped);
+  });
+});
+
+describe('worktreeGit', () => {
+  it('worktreeGit: (happy) 渡した git をその path と args で呼ぶ → 結果をそのまま返す', () => {
+    const path = '/tmp/wt-entry';
+    const args: readonly string[] = ['status', '--porcelain'];
+    const output = { status: 0, stdout: 'porcelain-out', stderr: '' };
+    const calls: Array<{ cwd: string; args: readonly string[] }> = [];
+    const git: Git = (cwd, gitArgs) => {
+      calls.push({ cwd, args: gitArgs });
+      return output;
+    };
+    const result = worktreeGit(path, git)(args);
+    expect(calls).toEqual([{ cwd: path, args }]);
+    expect(result).toEqual(output);
   });
 });
