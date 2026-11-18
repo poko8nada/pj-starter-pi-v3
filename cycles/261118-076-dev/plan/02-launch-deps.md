@@ -54,15 +54,25 @@ package.json
 ### Types
 
 ```ts
-// .pi/extensions/consult/run/run.ts（先頭の import の後に、`PiSpawnOptions` の近くに置く）
-import type { ChildProcess } from 'node:child_process';
+// .pi/extensions/consult/run/run.ts（`PiSpawnOptions` の近くに置く）
+/** `runPi` が触る範囲の子プロセス。`Spawn` が返す形 */
+export interface SpawnedChild {
+  readonly stdin: { end(data?: string): void } | null;
+  readonly stdout: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly stderr: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly pid?: number | undefined;
+  readonly killed: boolean;
+  kill(signal?: NodeJS.Signals): void;
+  on(event: 'close', listener: (code: number | null) => void): unknown;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+}
 
 /** pi を起動する。使う形だけを描く */
 export type Spawn = (
   command: string,
   args: readonly string[],
   options: PiSpawnOptions,
-) => ChildProcess;
+) => SpawnedChild;
 
 /** install を1回走らせる。使う形だけを描く */
 export type SpawnSync = (
@@ -125,11 +135,11 @@ export function createFakeSpawn(): {
 ### Steps
 
 1. `.pi/extensions/consult/run/run.ts`
-   1. add: `import type { ChildProcess } from 'node:child_process';` と `Spawn`（`Types` のとおり）。`PiSpawnOptions` の近くに置く
+   1. add: `SpawnedChild` と `Spawn`（`Types` のとおり）。`PiSpawnOptions` の近くに置く（`node:child_process` の import は要らない）
    2. add: `SpawnSync` と `LaunchPorts`（`Types` のとおり）。`Spawn` の隣に置く（`LaunchPorts` は `subagent.ts` と `tool/consult.ts` の両方が読むので、循環を作らないためにここに置く）
    3. update: `runPi(options: RunOptions)` を `runPi(options: RunOptions, spawn: Spawn): Promise<RunResult>` にし、行 437 の `spawn('pi', ...)` を引数の `spawn` にする
    4. update: `installDependencies(cwd: string)` を `installDependencies(cwd: string, spawnSync: SpawnSync): InstallOutcome` にし、行 146 の `spawnSync(file, args, ...)` を引数の `spawnSync` にする
-   5. update: `killChild(child: ReturnType<typeof spawn>)`（212行）と `LiveRun.child: ReturnType<typeof spawn>`（353行）を `ChildProcess` にする（`spawn` の import を消すため）
+   5. update: `killChild(child: ReturnType<typeof spawn>)`（212行）と `LiveRun.child: ReturnType<typeof spawn>`（353行）を `SpawnedChild` にする（`spawn` の import を消すため）
    6. drop: `import { spawn, spawnSync } from 'node:child_process';`
 2. `.pi/extensions/consult/run/subagent.ts`
    1. drop: `import { gitEnv } from '../../../../lib/git-env.mjs';`
@@ -191,9 +201,14 @@ export function createFakeSpawn(): {
 
 ### Slice 1: 起動経路がプロセス起動と環境を値で受け取る
 
-- Findings:
+- Findings: なし
 - Unplanned:
-- Commit:
+  - `run/run.ts` の `runPi` は `spawn` の戻りの `stdin`・`stdout`・`stderr` を1回読んで `null` なら投げる。`SpawnedChild` の3欄は nullable で、型検査が赤で教えた。`?.` で黙って飛ばさず、cast もしない（design の「失敗は状態か throw」）。
+  - `tool/consult.ts` の `modelNotifier` の戻りを `SubagentHooks` にし、`Fallback`・`ModelEvent` の import を消した。`pnpm lint` の max-lines 480 を1行でも超えないための型だけの整理で、振る舞いは同じ。`runOneSubagent` の呼び出しは `hooks` 変数に分けた。
+  - `tool/consult.test.ts` の `onModelEvent(...)`・`onFallback(...)` を `?.` 呼びにした。戻りが `SubagentHooks`（欄は任意）になったための連動で、意味は変えていない。
+  - `run/subagent.test.ts` の乗り換えは子を順に3回閉じる形にし、loop の待ちは `no-await-in-loop` に当たるため順次の待ちに直した。`onModelEvent` は retry-start を先・message_end を後に流し、候補補完を見つつ乗り換えを起こさない。
+  - `Spawn` は `ChildProcess` ではなく `runPi` が触る範囲だけを描く `SpawnedChild` を返す。偽物は `ChildProcess` 全体（`stdio`・`connected`・`exitCode` など）を満たせず、検査の抑え（`@ts-expect-error`）で通すのは受け入れられないため。本物との境（`index.ts`）は薄い包みで合わせる。`as` も抑えも使わない。型検査が教えた3点だけ形を寄せた。`killed` を足す（`killChild` が読む）、`pid` を任意にする（本物の `pid` は任意）、`kill` の引き数を `NodeJS.Signals` にする（本物が受け付けるのはそれだけ）。振る舞いは変えない。
+- Commit: 294a1cd31b8d07798df45910aca062deb55d42bd
 - Stopped:
 
 ## Work Review
