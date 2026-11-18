@@ -251,20 +251,23 @@ export function createFakeSpawn(): {
   - なし — `'pnpm'／'install --frozen-lockfile'`（`run.test.ts:284`）、`status: 0／1` と `'boom'`（`run.test.ts:288`）、`KEEP: 'y'`・`PI_TEST_ONLY: 'x'`（`subagent.test.ts:213`）、`pid = 123`（`child-process.fixture.ts:9`）はいずれも計画の `Types`・`Steps` が決めた値のため、design の「magic number／hardcoded string」条項の除外（計画・ADR の決定値は指摘にしない）に当たる。`toHaveLength(1)` 等の残りは既存試験か、振る舞い（件数・通知内容）を直接見る表明のため。
 - Doubts:
   - Goal「本物の `spawn`・`spawnSync` と `process.env` に触れるのが境界だけになる」と、`run/proc.ts:9`（`spawnSync('ps', ...)`）・`tool/sound.ts:12`（`spawn`）・`sub/guard.ts:89`・`sub/budget.ts:82`（`process.env` 読み）が残る関係は意図的な対象外か、所有者の判断が要る。`Notes` は `proc.ts` の `ps` と `git` のみ対象外と明記し、`guard`／`budget`／`sound` に触れないため、今回の `Gaps` には数えていない。
+    - オーナーの判断: 意図した対象外。サイクルの前提で `.pi` の他の拡張と `sound` は置いておく。`proc` は `psRun`、`sound` は `setPlayer` の口が既にあり、`guard` の `$VAR` 展開と `budget` の `CONSULT_TURNS` は親側の設定の読み取りだから、起動経路の継ぎ目とは別である。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 2件の fixed を `git diff 3a96922c..HEAD` で確認した。`subagent.test.ts` 冒頭が「偽の起動経路で走らせる1体分〜本物の pi は起こさない」に置き換わり、`tool/consult.ts` の `createRuntime` doc に「`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す」が追加されているため。
+- Unlisted: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Gaps: なし — 4件の fixed を確認した。`index.test.ts` の env 写し（事前値の保持・事後変更の不伝播・`GIT_*` 除去）と spawn 包み（`spawn` は別物・`spawnSync` は同一物）は記述どおりに存在し、`index.ts` の `gitEnv(process.env)` による写し・薄い包みと整合する。`run.test.ts` の stdout-null（`stdio pipes` で reject）と install-none（`{ kind: 'none' }`・`spawnSync` 不呼出）は記述どおりに存在し、`run.ts` の null 点検・lockfile 不在時の早期 return と整合する。`subagent.test.ts` の spawn 形（`command`・`cwd`・`stdio`・`detached`・`stdinTexts`）は記述どおりに存在し、`spawn('pi', ..., spawnOptions(...))`・`stdin.end` の配線と整合するため。
+- Policy: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Unproven: なし — 2件の fixed を確認した。env 順序は `launch.env` に `CONSULT_TURNS: 'lose'` の衝突を入れ期待値を `String(base.limits.turns)` にしており、`{ ...launch.env, ...subagentEnv(policy) }` の逆順では赤になる形のため。launch 転送はモックが `input.launch` を `capturedLaunches` に積み配線試験が `toBe(launch)` で同一物を見るため、すり替え・作り直しは赤になるため。
+- Noise: なし — Round 1 に fixed 行がなく、今回の照合対象外のため。
+- Doubts: なし
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: 達成。`run/run.ts` は `node:child_process` を import せず、`run/subagent.ts` は `gitEnv` を読まない。`index.ts` が `spawn`・`spawnSync` と `gitEnv(process.env)` を起動時に1回組み立て、`RuntimeInput.launch` として配る。`runPi`・`installDependencies`・`runOneSubagent` はその値を受け取る。`RunResult`・`InstallOutcome`・`SubagentResult` の型と値は変えていない。
+- Ran: `pnpm test:run`（67ファイル / 840件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、pre-commit の同じ検査（`294a1cd3`・`0537019f`・`2297fcb4`・`9b0eb48b`）、`Added` の証明（`runPi` を引数1つで呼ぶと `typecheck` が赤）。
+- Findings: なし
 - Doubts:
+  - `install` の `npm ci`・`status: null`・`error.message`・`trim` の分岐は、レビューの `left:` のとおり検査していない（計画の前からあり、`Goal` ではない）。close で leftover として読む。
+  - `Spawn` の戻り値は `ChildProcess` ではなく `SpawnedChild`（`runPi` が触る欄だけ）にした。偽物が `ChildProcess` を満たせず、型検査の抑止は受け入れないため。ADR の `Details` は `ChildProcess` のままなので、ADR との差として記録する。
