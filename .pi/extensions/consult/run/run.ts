@@ -18,7 +18,6 @@ import {
   type Spent,
 } from '../sub/spec.ts';
 import type { Limits } from '../policy/types.ts';
-import { git } from '../../../../lib/git-env.mjs';
 
 const KILL_GRACE_MS = 5000;
 
@@ -157,7 +156,11 @@ export interface GitOutput {
   readonly status: number;
   readonly stdout: string;
   readonly stderr: string;
+  readonly error?: string;
 }
+
+/** git を1回走らせる形 */
+export type Git = (cwd: string, args: readonly string[]) => GitOutput;
 
 export type GitRun = (args: readonly string[]) => GitOutput;
 
@@ -174,7 +177,7 @@ export function changedFiles(gitRun: GitRun): string[] {
 }
 
 /** 本番の git。worktree の中で走らせる */
-export function worktreeGit(path: string): GitRun {
+export function worktreeGit(path: string, git: Git): GitRun {
   return (args) => {
     const result = git(path, args);
     return {

@@ -22,9 +22,10 @@ import {
   type RunRecord,
 } from './run/log.ts';
 import { oldFiles, placeFor, type Place } from './run/place.ts';
-import { cleanWorktrees, consultRoot, topLevel } from './run/worktree.ts';
+import { CONSULT_ROOT, cleanWorktrees, topLevel, type WorktreeDeps } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
-import { PARAMETERS as COMMIT_PARAMETERS, execute as commitExecute } from './tool/commit.ts';
+import { PARAMETERS as COMMIT_PARAMETERS, createCommitTool } from './tool/commit.ts';
+import { git } from '../../../lib/git-env.mjs';
 import { loadTypes } from './policy/types.ts';
 import { countRoles, showRunning, type WidgetUI } from './view/widget.ts';
 import { registerNotice } from './view/notice.ts';
@@ -36,14 +37,14 @@ let session = '';
 const EXTENSION_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** cwd から保存場所を決める。頂点が取れなければ cwd 自身に落とす（読み込みで例外を投げない） */
-function placeOf(cwd: string): Place {
+function placeOf(cwd: string, deps: WorktreeDeps): Place {
   let toplevel: string;
   try {
-    toplevel = topLevel(cwd);
+    toplevel = topLevel(cwd, deps);
   } catch {
     toplevel = cwd;
   }
-  return placeFor(consultRoot(), toplevel);
+  return placeFor(deps.root, toplevel);
 }
 
 /** session_start の文脈からセッション id を読む。取れなければ今のままにする */
@@ -213,11 +214,11 @@ function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
 }
 
 /**
- * 起動の掃除を行う。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児枝を静かに 1 回片付ける。
+ * 起動の掃除を行う。古い記録のファイルと、ゴーストの登録・取り込み済みの孤児のブランチを静かに 1 回片付ける。
  *
  * 失敗は握って続ける（開始を止めない）。
  */
-function sweep(place: Place, cwd: string): void {
+function sweep(place: Place, cwd: string, deps: WorktreeDeps): void {
   try {
     for (const file of oldFiles(place, new Date(), KEEP_DAYS)) {
       rmSync(file, { force: true });
@@ -226,7 +227,7 @@ function sweep(place: Place, cwd: string): void {
     void error;
   }
   try {
-    cleanWorktrees(cwd);
+    cleanWorktrees(cwd, deps);
   } catch (error) {
     void error;
   }
@@ -267,8 +268,9 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
 }
 
 export default function (pi: ExtensionAPI) {
-  const place = placeOf(process.cwd());
-  const consult = createRuntime(pi, place, undefined, () => session);
+  const deps: WorktreeDeps = { git, root: process.env.CONSULT_ROOT ?? CONSULT_ROOT };
+  const place = placeOf(process.cwd(), deps);
+  const consult = createRuntime({ pi, place, deps, sessionNow: () => session });
 
   // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
   registerNotice(pi);
@@ -279,7 +281,7 @@ export default function (pi: ExtensionAPI) {
     closeQuietly(place, session);
     announceRunningSubagents(place, session, ctx);
     showRunningOnce(ctx.ui, place, session);
-    sweep(place, ctx.cwd);
+    sweep(place, ctx.cwd, deps);
     flushPending({ pi, place, sessionNow: () => session, ui: ctx.ui });
     pruneCursors(place, new Date(), KEEP_DAYS);
     startTick({ pi, place, sessionNow: () => session, ui: ctx.ui });
@@ -316,7 +318,7 @@ export default function (pi: ExtensionAPI) {
       'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the subagent did.',
     ],
     parameters: WORKTREE_PARAMETERS,
-    execute: createWorktreeTool(place),
+    execute: createWorktreeTool(place, deps),
   });
 
   registerCommands(pi, consult);
@@ -339,6 +341,6 @@ export default function (pi: ExtensionAPI) {
       'Take the commit into your branch yourself with git merge --no-ff <branch>; consult does not merge.',
     ],
     parameters: COMMIT_PARAMETERS,
-    execute: commitExecute,
+    execute: createCommitTool(deps),
   });
 }

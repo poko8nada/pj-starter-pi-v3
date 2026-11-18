@@ -3,8 +3,9 @@
  *
  * 既定で残る。消すのは `removeWorktree` を明示的に呼んだときだけ。サブエージェントが何をしたかは worktree に残るので、diff や ref で受け渡さない。
  *
- * 保存場所はリポジトリの外に固定する（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
+ * 保存場所の既定はリポジトリの外（macOS の `os.tmpdir()` はメインエージェントの権限から見えない）:
  *   `/tmp/pi-consult/<project>-<YYYYMMDD-HHMM>/<unit>/wt`
+ * 起動時に `deps.root` で渡し、`CONSULT_ROOT` 環境変数で上書きできる。
  * ブランチは `consult/<unit>`。base の既定は HEAD で、`main` を仮定しない。
  *
  * 台帳ファイルは持たない。一覧は `git worktree list` と `consult/*` ブランチから作る。
@@ -12,10 +13,16 @@
 
 import { mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { git } from '../../../../lib/git-env.mjs';
+import type { Git } from './run.ts';
 
 /** consult のワークツリーをまとめる場所 */
 export const CONSULT_ROOT = '/tmp/pi-consult';
+
+/** worktree の関数が使う git と保存先のルート */
+export interface WorktreeDeps {
+  readonly git: Git;
+  readonly root: string;
+}
 
 /** 1 つのワークツリー。`unitDir` は unit のディレクトリ（記録と会話ファイルをここに置く） */
 export interface Worktree {
@@ -80,8 +87,8 @@ function stamp(now: Date = new Date()): string {
 }
 
 /** リポジトリのルート。project の名前はここから取る */
-export function topLevel(cwd: string): string {
-  const result = git(cwd, ['rev-parse', '--show-toplevel']);
+export function topLevel(cwd: string, deps: WorktreeDeps): string {
+  const result = deps.git(cwd, ['rev-parse', '--show-toplevel']);
   if (result.status !== 0) {
     throw new Error(`not a git repository: ${(result.stderr || result.error || '').trim()}`);
   }
@@ -103,11 +110,12 @@ export function resolveReal(path: string): string {
  * 既に consult の worktree があれば、その実行のルートを返す。なければ `undefined`
  *（読む経路が保存場所を作ると、呼ぶたびに場所が変わり、記録を読む側が迷子になる）。
  */
-export function rootFor(cwd: string): string | undefined {
-  const base = resolveReal(consultRoot());
+export function rootFor(cwd: string, deps: WorktreeDeps): string | undefined {
+  const base = resolveReal(deps.root);
   // git は /private/tmp のように実体のパスを返す（macOS の /tmp は symlink）。文字列で比べると、
   // 同じ保存場所を別ものと見てしまう（記録を読む側が迷子になる）。
-  return parseWorktrees(cwd).find((row) => resolveReal(row.path).startsWith(`${base}/`))?.runRoot;
+  return parseWorktrees(cwd, deps).find((row) => resolveReal(row.path).startsWith(`${base}/`))
+    ?.runRoot;
 }
 
 /**
@@ -115,26 +123,21 @@ export function rootFor(cwd: string): string | undefined {
  *
  * 既に consult の worktree があれば、その実行のルートを引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。なければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここにはない。
  */
-export function ensureRoot(cwd: string): string {
-  const existing = rootFor(cwd);
+export function ensureRoot(cwd: string, deps: WorktreeDeps): string {
+  const existing = rootFor(cwd, deps);
   if (existing !== undefined) {
     return existing;
   }
-  const base = resolveReal(consultRoot());
-  const dir = join(base, `${basename(topLevel(cwd))}-${stamp()}`);
+  const base = resolveReal(deps.root);
+  const dir = join(base, `${basename(topLevel(cwd, deps))}-${stamp()}`);
   mkdirSync(dir, { recursive: true });
   // 実体のパスで持つ（git が返すパスと、そのまま比べられるように）
   return resolveReal(dir);
 }
 
-/** 保存場所の大元。テストは `CONSULT_ROOT` で自分の一時ディレクトリに逃がす */
-export function consultRoot(): string {
-  return process.env.CONSULT_ROOT ?? CONSULT_ROOT;
-}
-
 /** `git worktree list --porcelain` の 1 ブロックから、consult のものだけを拾う */
-function parseWorktrees(cwd: string): WorktreeRow[] {
-  const result = git(cwd, ['worktree', 'list', '--porcelain']);
+function parseWorktrees(cwd: string, deps: WorktreeDeps): WorktreeRow[] {
+  const result = deps.git(cwd, ['worktree', 'list', '--porcelain']);
   if (result.status !== 0) {
     return [];
   }
@@ -153,7 +156,7 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
     if (!branch.startsWith(prefix)) {
       continue;
     }
-    const status = git(path, ['status', '--porcelain']);
+    const status = deps.git(path, ['status', '--porcelain']);
     rows.push({
       id: branch.slice(prefix.length),
       branch: branch.slice('refs/heads/'.length),
@@ -169,13 +172,13 @@ function parseWorktrees(cwd: string): WorktreeRow[] {
 }
 
 /** ワークツリーの一覧。台帳は持たず、git から毎回作る */
-export function listWorktrees(cwd: string): WorktreeRow[] {
-  return parseWorktrees(cwd);
+export function listWorktrees(cwd: string, deps: WorktreeDeps): WorktreeRow[] {
+  return parseWorktrees(cwd, deps);
 }
 
 /** unit のワークツリー。なければ undefined */
-export function findWorktree(cwd: string, id: string): WorktreeRow | undefined {
-  return parseWorktrees(cwd).find((row) => row.id === id);
+export function findWorktree(cwd: string, deps: WorktreeDeps, id: string): WorktreeRow | undefined {
+  return parseWorktrees(cwd, deps).find((row) => row.id === id);
 }
 
 /**
@@ -183,15 +186,20 @@ export function findWorktree(cwd: string, id: string): WorktreeRow | undefined {
  *
  * base の既定は HEAD。`main` を仮定しない。
  */
-export function createWorktree(cwd: string, id: string, base = 'HEAD'): Worktree {
-  const existing = findWorktree(cwd, id);
+export function createWorktree(
+  cwd: string,
+  deps: WorktreeDeps,
+  id: string,
+  base = 'HEAD',
+): Worktree {
+  const existing = findWorktree(cwd, deps, id);
   if (existing !== undefined) {
     return existing;
   }
-  const runRoot = ensureRoot(cwd);
+  const runRoot = ensureRoot(cwd, deps);
   const path = join(runRoot, id, 'wt');
   const branch = branchFor(id);
-  const result = git(cwd, ['worktree', 'add', '-b', branch, path, base]);
+  const result = deps.git(cwd, ['worktree', 'add', '-b', branch, path, base]);
   if (result.status !== 0) {
     rmSync(join(runRoot, id), { recursive: true, force: true });
     throw new Error(
@@ -218,8 +226,8 @@ export function prunablePathsIn(output: string): string[] {
 }
 
 /** 実体のない登録のパス（`prune` の前後で比べる元） */
-function listPrunablePaths(cwd: string): string[] {
-  const result = git(cwd, ['worktree', 'list', '--porcelain']);
+function listPrunablePaths(cwd: string, deps: WorktreeDeps): string[] {
+  const result = deps.git(cwd, ['worktree', 'list', '--porcelain']);
   if (result.status !== 0) {
     return [];
   }
@@ -231,9 +239,9 @@ function listPrunablePaths(cwd: string): string[] {
  *
  * 失敗したら例外を投げる（`createWorktree` と同じ形。成功として扱わない）。
  */
-function pruneWorktrees(cwd: string): string[] {
-  const before = listPrunablePaths(cwd);
-  const result = git(cwd, ['worktree', 'prune']);
+function pruneWorktrees(cwd: string, deps: WorktreeDeps): string[] {
+  const before = listPrunablePaths(cwd, deps);
+  const result = deps.git(cwd, ['worktree', 'prune']);
   if (result.status !== 0) {
     throw new Error(
       `could not prune the worktrees: ${(result.stderr || result.error || '').trim()}`,
@@ -268,8 +276,8 @@ export function orphanBranchesIn(output: string): ConsultBranch[] {
 }
 
 /** どのワークツリーにも checkout されていない `consult/*`。`%(worktreepath)` が空のもの（git 2.23+） */
-function listOrphanBranches(cwd: string): ConsultBranch[] {
-  const result = git(cwd, [
+function listOrphanBranches(cwd: string, deps: WorktreeDeps): ConsultBranch[] {
+  const result = deps.git(cwd, [
     'for-each-ref',
     '--format=%(refname) %(worktreepath)',
     'refs/heads/consult/*',
@@ -283,16 +291,20 @@ function listOrphanBranches(cwd: string): ConsultBranch[] {
 }
 
 /**
- * 枝の掃除。取り込み済み → 消して `removed`、未マージ → 残して `kept` / `unmerged`。
+ * ブランチの掃除。取り込み済み → 消して `removed`、未マージ → 残して `kept` / `unmerged`。
  *
  * `forceBranch` だけは `force` の対象として捨て（`-D`）、`removed` として報告に入れる。
  * `-d` は「HEAD（または upstream）に取り込まれていなければ断る」ので、未マージの仕事をここで消さない。
  */
-function sweepBranches(cwd: string, forceBranch?: ConsultBranch): OrphanBranch[] {
+function sweepBranches(
+  cwd: string,
+  deps: WorktreeDeps,
+  forceBranch?: ConsultBranch,
+): OrphanBranch[] {
   const report: OrphanBranch[] = [];
-  for (const branch of listOrphanBranches(cwd)) {
+  for (const branch of listOrphanBranches(cwd, deps)) {
     if (forceBranch !== undefined && branch === forceBranch) {
-      const deleted = git(cwd, ['branch', '-D', branch]);
+      const deleted = deps.git(cwd, ['branch', '-D', branch]);
       if (deleted.status !== 0) {
         throw new Error(
           `could not delete the branch ${branch}: ${(deleted.stderr || deleted.error || '').trim()}`,
@@ -301,7 +313,7 @@ function sweepBranches(cwd: string, forceBranch?: ConsultBranch): OrphanBranch[]
       report.push({ state: 'removed', branch });
       continue;
     }
-    const deleted = git(cwd, ['branch', '-d', branch]);
+    const deleted = deps.git(cwd, ['branch', '-d', branch]);
     if (deleted.status === 0) {
       report.push({ state: 'removed', branch });
     } else {
@@ -321,44 +333,52 @@ function emptyCleanup(): CleanupReport {
  *
  * 実体のない登録を `prune` で落とし、どのワークツリーにも checkout されていない `consult/*` のうち
  * 取り込み済みを消す。未マージは残して報告する。走っているサブエージェントのワークツリーは checkout 中なので触らない
- * （登録も枝も残る）。git が断ったら例外にする。
+ * （登録もブランチも残る）。git が断ったら例外にする。
  */
-export function cleanWorktrees(cwd: string): CleanupReport {
-  const pruned = pruneWorktrees(cwd);
-  const branches = sweepBranches(cwd);
+export function cleanWorktrees(cwd: string, deps: WorktreeDeps): CleanupReport {
+  const pruned = pruneWorktrees(cwd, deps);
+  const branches = sweepBranches(cwd, deps);
   return { pruned, branches };
 }
 
 /**
  * ワークツリーを消す。サブエージェントが動いているときは消さない（busy）。掃除もしない。
  *
- * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。枝の掃除は
- * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児の枝は片付ける）。変更が
+ * 順序は prune → 掃除 → 登録の再確認（prune で消えた登録は `missing` になる）。ブランチの掃除は
+ * `busy` 以外のどの経路でも走る（`missing` でも `dirty` でも、孤児のブランチは片付ける）。変更が
  * 残っているときは `force` を要求する（未コミットの作業を消さない）。登録を消してから入れものを
- * 消す（順序を逆にすると登録が残る）。枝の運命は掃除が決める（この関数は自分の枝を直接消さない）。
+ * 消す（順序を逆にすると登録が残る）。ブランチの運命は掃除が決める（この関数は自分のブランチを直接消さない）。
  * `prune` と `worktree remove` の失敗は例外にする（成功として扱わない）。
  */
-export function removeWorktree(cwd: string, id: string, options: RemoveOptions = {}): RemoveResult {
+export function removeWorktree(
+  cwd: string,
+  deps: WorktreeDeps,
+  id: string,
+  options: RemoveOptions = {},
+): RemoveResult {
   if (options.busy === true) {
     return { outcome: 'busy', cleanup: emptyCleanup() };
   }
-  const pruned = pruneWorktrees(cwd);
-  // `force` はこの unit の枝だけを捨てる印。実体がなくても、枝が残っていれば効かせる
+  const pruned = pruneWorktrees(cwd, deps);
+  // `force` はこの unit のブランチだけを捨てる印。実体がなくても、ブランチが残っていれば効かせる
   const forceBranch = options.force === true ? branchFor(id) : undefined;
-  const found = findWorktree(cwd, id);
+  const found = findWorktree(cwd, deps, id);
   if (found === undefined) {
-    return { outcome: 'missing', cleanup: { pruned, branches: sweepBranches(cwd, forceBranch) } };
+    return {
+      outcome: 'missing',
+      cleanup: { pruned, branches: sweepBranches(cwd, deps, forceBranch) },
+    };
   }
   if (found.dirty && options.force !== true) {
-    return { outcome: 'dirty', cleanup: { pruned, branches: sweepBranches(cwd) } };
+    return { outcome: 'dirty', cleanup: { pruned, branches: sweepBranches(cwd, deps) } };
   }
-  const removed = git(cwd, ['worktree', 'remove', '--force', found.path]);
+  const removed = deps.git(cwd, ['worktree', 'remove', '--force', found.path]);
   if (removed.status !== 0) {
     throw new Error(
       `could not remove the worktree ${id}: ${(removed.stderr || removed.error || '').trim()}`,
     );
   }
   rmSync(found.unitDir, { recursive: true, force: true });
-  const branches = sweepBranches(cwd, forceBranch);
+  const branches = sweepBranches(cwd, deps, forceBranch);
   return { outcome: 'removed', cleanup: { pruned, branches } };
 }

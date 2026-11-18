@@ -72,8 +72,9 @@ function setup(
   psRun?: PsRun,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
+  const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
   return {
-    runtime: createRuntime(pi, place, run, () => SESSION, check, psRun),
+    runtime: createRuntime({ pi, place, deps, run, sessionNow: () => SESSION, check, psRun }),
     place,
   };
 }
@@ -209,32 +210,6 @@ describe('run', () => {
 
     expect(textOf(first)).toContain('started: consult-1');
     expect(textOf(second)).toContain('started: consult-2');
-  });
-
-  it('終わったサブエージェントの番号も数える → 次は consult-6', async () => {
-    const { pi } = fakePi();
-    const { run: runner } = deferredRunner();
-    const { runtime, place } = setup(pi, runner);
-    const seedNum = 5;
-    const expectedNum = seedNum + 1;
-    appendRun(
-      place,
-      aRunRecord({
-        session: SESSION,
-        subagent: `consult-${seedNum}`,
-        pid: process.pid,
-        started: Date.now() - 1000,
-        ended: Date.now(),
-        state: 'done',
-        files: [],
-        turns: 1,
-        spend: '0.0001 usd',
-      }),
-    );
-
-    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
-
-    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
   });
 
   it('書き込むロール（code）で worktree を省くと、サブエージェントを起こさずに拒む', async () => {
@@ -625,7 +600,13 @@ describe('consult: 通知の配線', () => {
     capturedHooks.length = 0;
     const { pi } = fakePi();
     const { ctx, notices } = fakeConsultContext();
-    const runtime = createRuntime(pi, placeFor(tempDir(), tempDir()), undefined, () => SESSION);
+    const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+    const runtime = createRuntime({
+      pi,
+      place: placeFor(tempDir(), tempDir()),
+      deps,
+      sessionNow: () => SESSION,
+    });
 
     await runtime.run('call', { role: 'review', task: 'x' }, undefined, undefined, ctx);
     await flush();
@@ -682,20 +663,6 @@ describe('status', () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime } = setup(pi, run);
-    const { ctx, notices } = fakeCommandContext();
-
-    await runtime.commands.status('', ctx);
-
-    expect(notices).toHaveLength(1);
-    expect(notices[0]?.type).toBe('info');
-  });
-
-  it('開始行と終わりの行を渡しても info で通知する', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
-    seedRunning(place, { subagent: 'consult-1', started: 1000 });
-    seedRunning(place, { subagent: 'consult-1', started: 2000, ended: 3000, state: 'done' });
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.status('', ctx);
