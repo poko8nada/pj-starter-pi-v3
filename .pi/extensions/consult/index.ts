@@ -272,7 +272,7 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
 export default function (pi: ExtensionAPI) {
   const deps: WorktreeDeps = { git, root: process.env.CONSULT_ROOT ?? CONSULT_ROOT };
   const launch: LaunchPorts = {
-    spawn: (command, args, options) => spawn(command, args, options),
+    spawn,
     spawnSync,
     env: gitEnv(process.env),
   };

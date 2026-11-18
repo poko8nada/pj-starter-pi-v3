@@ -370,7 +370,7 @@ describe('entry wiring', () => {
     }
   });
 
-  it('entry wiring: (happy) spawn は包まれ、spawnSync はそのまま launch に載る', async () => {
+  it('entry wiring: (happy) 本物の spawn と spawnSync がそのまま launch に載る', async () => {
     seenLaunches.length = 0;
     const { spawn, spawnSync } = await import('node:child_process');
     fakeEntry();
@@ -378,7 +378,7 @@ describe('entry wiring', () => {
     if (launch === undefined) {
       throw new Error('createRuntime was not called');
     }
-    expect(launch.spawn).not.toBe(spawn);
+    expect(launch.spawn).toBe(spawn);
     expect(launch.spawnSync).toBe(spawnSync);
   });
 
