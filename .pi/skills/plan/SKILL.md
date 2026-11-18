@@ -95,13 +95,12 @@ Notes:
 Steps:
 
 1. List what making the slices and the steps found: what the ADR does not decide, and what file the work would touch that the affected does not name.
-2. Report them to the owner before the reviews and the proofread, with `なし` when there is nothing. For each, say what you would do with it and why.
-3. Wait for the owner's answer, and follow it before going on.
+2. Consider how you intend to address each of these items, along with the rationale for your approach.
+   - **The approach's ground is your principles. Existing code is not the ground.**
+3. Report your findings to the owner (if there are none, please state `なし`).
+4. Once approved, update the ADR, affected, or plan accordingly.
 
-Notes:
-
-- The whole is confirmed here by YOU once before the review.
-- The opinion's ground is your principles. **Existing code is not the ground.**
+Notes: Do not take shortcuts. You must face it head-on.
 
 ### 5. Review the plan for a first-time subagent
 
