@@ -146,9 +146,9 @@ package.json
 
 ### Slice 1: Skeleton を 1 つにし、Writing を 4 つの見出しにする
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5cb37639
 - Stopped:
 
 ### Cleanup: なし
