@@ -296,6 +296,13 @@ export function createFakeGit(): FakeGit;
 - Commit: 807f90fa5d52f4a4142591b176f8f16b6b1852cd（Slice 1 と同じ。中間状態が緑にならなかったため）
 - Stopped:
 
+### Cleanup: 重複と境界値のみのテストを落とし、前提をテストに移した
+
+- Findings: なし
+- Unplanned:
+  - `tool/worktree.test.ts` の busy 系 3 件は `seedUnit` の既定 `pid: process.pid`（生きている前提）に依存していた。振る舞いに効く前提なので `seedUnit(dir, deps, id, { pid: process.pid })`（別 session 件は `session` と併記）とテスト内に明示した。
+  - `index.test.ts` の `flushPending` の `0 件` は `portFor` の既定 session と素子の既定 session の一致に依存していた。`portFor(found, pi, 'session-a')` と明示した。
+
 ## Work Review
 
 ### Round 1
