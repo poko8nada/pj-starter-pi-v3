@@ -260,9 +260,9 @@ declare function createFakeGit(): FakeGit;
 ### Round 1
 
 - Stale: なし。重複していた偽物定義と `resetFake()`/`installFake()` は両テストから消え、残る記述（ADR の C1・F1〜F6 の来歴、plan の Notes）は来歴として有効なため。冗長になった文書・コメント・テストは無い。
-- Unlisted: なし。差分の 5 ファイル（`test/fake-git.fixture.ts`、`scripts/harness-sync/setting.json`、`run/worktree.test.ts`、`tool/worktree.test.ts`、`tool/worktree.ts`）はいずれも plan の `Files` に名指しされている。`cycles/261118-075-dev/plan/01-fake-git.md` 自身の更新は走行中の計画改訂であり、対象外。
+- Unlisted: なし。差分の 5 ファイル（`test/fake-git.fixture.ts`、`scripts/harness-sync/setting.json`、`run/worktree.test.ts`、`tool/worktree.test.ts`、`tool/worktree.ts`）はいずれも plan の `Files` に挙げられている。`cycles/261118-075-dev/plan/01-fake-git.md` 自身の更新は走行中の計画改訂であり、対象外。
 - Gaps: なし。Goal の「1 つになること」は 33/21 の既存検査の通過で確かめられ、「状態がテストごとに分かれること」は `beforeEach` での `createFakeGit()` 新規代入という構造と、汚染に敏感な既存検査群（空一覧・dirty 判定・孤児掃除）で間接的に覆われる。`setting.json` の追加行も harness 共有の定型であり、Goal を外す hole は無い。
-- Policy: なし。改訂後の `Allowed`/`Forbidden` を守っている。遅延参照（`mockGit.current!.git`）で値を先取りせず、`undefined as FakeGit | undefined` 以外のキャスト無し、`run/worktree.ts` 不変、`tool/worktree.ts` は表示の語（`枝`→`ブランチ`）のみ、失敗経路・出力の戻り値不変、テストの意味不変のため。
+- Policy: なし。改訂後の `Allowed`/`Forbidden` を守っている。遅延参照（`mockGit.current!.git`）で値を先取りせず、`undefined as FakeGit | undefined` 以外のキャストなし、`run/worktree.ts` 不変、`tool/worktree.ts` は表示の語（`枝`→`ブランチ`）のみ、失敗経路・出力の戻り値不変、テストの意味不変のため。
 - Unproven: なし。変えた期待はいずれも振る舞いを壊せば落ちる。表示 2 件（`tool/worktree.test.ts:274,283`）は実装を旧語に戻すと失敗し、`addStatus=1` の例外・`listStatus=128` の空一覧・`removeStatus`/`forEachRefStatus` の例外・`lastAdd` の参照（`run/worktree.test.ts:121,129,134,177,342,419`）は状態設定を外すと失敗するため。
 - Noise: なし。`status` 値（1・128 等）や期待文字列（ブランチ表示等）は plan・ADR が決めた失敗経路と表示の語であり、指示により finding にしない。差分が新たに持ち込んだ magic number・hardcoded string は無い。
 - Doubts:
