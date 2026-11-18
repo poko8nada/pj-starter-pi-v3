@@ -12,7 +12,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { AgentToolResult, AgentToolUpdateCallback } from '@earendil-works/pi-coding-agent';
 import type { Static } from 'typebox';
-import { runOneSubagent, type SubagentJob } from '../run/subagent.ts';
+import { runOneSubagent, type SubagentHooks, type SubagentJob } from '../run/subagent.ts';
 import { findWorktree, type WorktreeDeps } from '../run/worktree.ts';
 import {
   appendRun,
@@ -30,9 +30,9 @@ import {
   parseRunRequest,
   type RunRequest,
 } from './run.ts';
-import { changedFiles, reasonOf, stateOf, worktreeGit, type Fallback } from '../run/run.ts';
+import { changedFiles, reasonOf, stateOf, worktreeGit, type LaunchPorts } from '../run/run.ts';
 import { readStartToken, type PsRun } from '../run/proc.ts';
-import { parseEvents, usageFrom, type ConsultOptions, type ModelEvent } from '../sub/spec.ts';
+import { parseEvents, usageFrom, type ConsultOptions } from '../sub/spec.ts';
 import { loadTypes, resolveType } from '../policy/types.ts';
 import {
   compose,
@@ -236,13 +236,7 @@ export function completionMessage(
  *
  * `retry-start` の `maxAttempts` を覚え、`retry-end` の行に使う。行は `warning` で出す（`info` は直前の status 行を置き換えるため）。
  */
-export function modelNotifier(
-  ctx: ConsultContext,
-  label: string,
-): {
-  readonly onModelEvent: (event: ModelEvent) => void;
-  readonly onFallback: (attempt: Fallback) => void;
-} {
+export function modelNotifier(ctx: ConsultContext, label: string): SubagentHooks {
   let maxAttempts = 0;
   const notify = (line: string): void => {
     try {
@@ -280,9 +274,10 @@ export function modelNotifier(
 }
 
 /** サブエージェント 1 体を走らせて、メインエージェントに届ける本文と診断にする */
-export function createConsult(deps: WorktreeDeps): ConsultRunner {
+export function createConsult(deps: WorktreeDeps, launch: LaunchPorts): ConsultRunner {
   return async (ctx, options, job) => {
-    const { run, install } = await runOneSubagent(ctx, options, job, modelNotifier(ctx, job.id));
+    const hooks = modelNotifier(ctx, job.id);
+    const { run, install } = await runOneSubagent({ ctx, options, job, hooks, launch });
     const events = parseEvents(run.stdout);
     const usage = usageFrom(events);
     const state = stateOf(run);
@@ -328,6 +323,7 @@ export interface RuntimeInput {
   readonly pi: PiFace;
   readonly place: Place;
   readonly deps: WorktreeDeps;
+  readonly launch: LaunchPorts;
   readonly run?: ConsultRunner;
   readonly sessionNow?: () => string;
   readonly check?: CheckRecord;
@@ -528,8 +524,8 @@ function soundStatus(): string {
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。
  */
 export function createRuntime(input: RuntimeInput): ConsultRuntime {
-  const { pi, place, deps, run, sessionNow = () => '', check, psRun } = input;
-  const runner = run ?? createConsult(deps);
+  const { pi, place, deps, launch, run, sessionNow = () => '', check, psRun } = input;
+  const runner = run ?? createConsult(deps, launch);
   const state: RuntimeState = {
     pi,
     place,

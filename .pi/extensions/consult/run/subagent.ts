@@ -13,9 +13,9 @@ import {
   runWithFallback,
   type Fallback,
   type InstallOutcome,
+  type LaunchPorts,
   type RunResult,
 } from './run.ts';
-import { gitEnv } from '../../../../lib/git-env.mjs';
 import {
   buildPiArgs,
   joinPrompt,
@@ -54,6 +54,14 @@ export interface SubagentJob {
 export interface SubagentResult {
   readonly run: RunResult;
   readonly install?: InstallOutcome;
+}
+
+export interface SubagentInput {
+  readonly ctx: ConsultContext;
+  readonly options: ConsultOptions;
+  readonly job: SubagentJob;
+  readonly hooks?: SubagentHooks;
+  readonly launch: LaunchPorts;
 }
 
 interface Prepared {
@@ -106,16 +114,15 @@ export function subagentEnv(policy: TypePolicy): NodeJS.ProcessEnv {
  * 候補のモデルを順に試し、全部落ちたら最後にメインエージェントと同じ設定で走る（`runWithFallback`）。
  * 何が残ったかは worktree を見れば分かるので、ここでは何も片付けない。
  */
-export async function runOneSubagent(
-  ctx: ConsultContext,
-  options: ConsultOptions,
-  job: SubagentJob,
-  hooks: SubagentHooks = {},
-): Promise<SubagentResult> {
+export async function runOneSubagent(input: SubagentInput): Promise<SubagentResult> {
+  const { ctx, options, job, hooks = {}, launch } = input;
   const { task, signal, worktree, continueSession } = job;
   const prepared = prepare(ctx, options, worktree);
   // 依存を入れる。ないとサブエージェントもフックも何も確かめられない。
-  const install = prepared.worktree === undefined ? undefined : installDependencies(prepared.cwd);
+  const install =
+    prepared.worktree === undefined
+      ? undefined
+      : installDependencies(prepared.cwd, launch.spawnSync);
   if (install?.kind === 'failed') {
     // 環境の失敗。setup の誤り（設定）とは区別して、このサブエージェントの状態にする。
     throw new Error(`could not install dependencies (${install.command}): ${install.error}`);
@@ -136,21 +143,24 @@ export async function runOneSubagent(
           : (event: ModelEvent) => {
               hooks.onModelEvent?.({ ...event, model: event.model ?? model });
             };
-      return runPi({
-        piArgs: buildPiArgs({
-          ...options,
-          token: job.token,
-          policy: { ...options.policy, models: model === undefined ? [] : [model] },
-          ...(sessionPath === undefined ? {} : { sessionPath }),
-        }),
-        stdin: joinPrompt(task),
-        cwd: prepared.cwd,
-        signal,
-        env: { ...gitEnv(), ...subagentEnv(options.policy) },
-        limits: options.policy.limits,
-        ...(job.onStarted === undefined ? {} : { onStarted: job.onStarted }),
-        ...(onModelEvent === undefined ? {} : { onModelEvent }),
-      });
+      return runPi(
+        {
+          piArgs: buildPiArgs({
+            ...options,
+            token: job.token,
+            policy: { ...options.policy, models: model === undefined ? [] : [model] },
+            ...(sessionPath === undefined ? {} : { sessionPath }),
+          }),
+          stdin: joinPrompt(task),
+          cwd: prepared.cwd,
+          signal,
+          env: { ...launch.env, ...subagentEnv(options.policy) },
+          limits: options.policy.limits,
+          ...(job.onStarted === undefined ? {} : { onStarted: job.onStarted }),
+          ...(onModelEvent === undefined ? {} : { onModelEvent }),
+        },
+        launch.spawn,
+      );
     },
     hooks.onFallback,
   );

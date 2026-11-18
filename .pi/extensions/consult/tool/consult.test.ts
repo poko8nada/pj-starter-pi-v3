@@ -25,8 +25,7 @@ import { aPiFace, aPlace, aRunRecord, START_TOKEN } from '../consult.fixture.ts'
 import { appendRun, readRuns, type CheckRecord, type RunRecord } from '../run/log.ts';
 import { type PsRun } from '../run/proc.ts';
 import { placeFor, type Place } from '../run/place.ts';
-import type { SubagentHooks, SubagentJob } from '../run/subagent.ts';
-import type { ConsultOptions } from '../sub/spec.ts';
+import type { SubagentHooks, SubagentInput } from '../run/subagent.ts';
 
 /** テストの session。記録に書く側と、runtime に渡す側で同じものを使う */
 const SESSION = 'test-session';
@@ -38,14 +37,9 @@ vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string
   const actual = await importOriginal();
   return {
     ...actual,
-    runOneSubagent: async (
-      _ctx: ConsultContext,
-      _options: ConsultOptions,
-      _job: SubagentJob,
-      hooks?: SubagentHooks,
-    ) => {
-      if (hooks !== undefined) {
-        capturedHooks.push(hooks);
+    runOneSubagent: async (input: SubagentInput) => {
+      if (input.hooks !== undefined) {
+        capturedHooks.push(input.hooks);
       }
       return { run: { stdout: '', stderr: '', code: 0, aborted: false, ended: true } };
     },
@@ -73,8 +67,26 @@ function setup(
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
   const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
+  const launch = {
+    spawn: () => {
+      throw new Error('spawn is not used');
+    },
+    spawnSync: () => {
+      throw new Error('spawnSync is not used');
+    },
+    env: {},
+  };
   return {
-    runtime: createRuntime({ pi, place, deps, run, sessionNow: () => SESSION, check, psRun }),
+    runtime: createRuntime({
+      pi,
+      place,
+      deps,
+      launch,
+      run,
+      sessionNow: () => SESSION,
+      check,
+      psRun,
+    }),
     place,
   };
 }
@@ -508,7 +520,7 @@ describe('modelNotifier: retry-start', () => {
     const attempt = 1;
     const maxAttempts = 3;
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: 'p/m',
       attempt,
@@ -531,7 +543,7 @@ describe('modelNotifier: retry-end', () => {
     const maxAttempts = 3;
     const success = true;
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: 'p/m',
       attempt,
@@ -539,7 +551,7 @@ describe('modelNotifier: retry-end', () => {
       delayMs: 2000,
       error: 'rate limited',
     });
-    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt, success });
+    onModelEvent?.({ kind: 'retry-end', model: 'p/m', attempt, success });
 
     expect(notices).toHaveLength(2);
     expect(notices[1]?.type).toBe('warning');
@@ -553,7 +565,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { onFallback } = modelNotifier(ctx, 'consult-1');
     const next = 'p/b';
 
-    onFallback({ requested: next });
+    onFallback?.({ requested: next });
 
     expect(notices).toHaveLength(1);
     expect(notices[0]?.type).toBe('warning');
@@ -564,7 +576,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onFallback } = modelNotifier(ctx, 'consult-1');
 
-    onFallback({ requested: undefined });
+    onFallback?.({ requested: undefined });
 
     expect(notices[0]?.message).toContain('→ main');
   });
@@ -573,7 +585,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onModelEvent } = modelNotifier(ctx, 'consult-1');
 
-    onModelEvent({
+    onModelEvent?.({
       kind: 'retry-start',
       model: undefined,
       attempt: 1,
@@ -589,7 +601,7 @@ describe('modelNotifier: 乗り換え', () => {
     const { ctx, notices } = fakeConsultContext();
     const { onModelEvent } = modelNotifier(ctx, 'consult-1');
 
-    onModelEvent({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
+    onModelEvent?.({ kind: 'retry-end', model: 'p/m', attempt: 1, success: true });
 
     expect(notices).toEqual([]);
   });
@@ -605,6 +617,15 @@ describe('consult: 通知の配線', () => {
       pi,
       place: placeFor(tempDir(), tempDir()),
       deps,
+      launch: {
+        spawn: () => {
+          throw new Error('spawn is not used');
+        },
+        spawnSync: () => {
+          throw new Error('spawnSync is not used');
+        },
+        env: {},
+      },
       sessionNow: () => SESSION,
     });
 

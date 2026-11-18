@@ -5,6 +5,7 @@
  * 保存場所（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは保存場所を一時ディレクトリに逃がせる。
  */
 
+import { spawn, spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +26,8 @@ import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { CONSULT_ROOT, cleanWorktrees, topLevel, type WorktreeDeps } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, createCommitTool } from './tool/commit.ts';
-import { git } from '../../../lib/git-env.mjs';
+import { git, gitEnv } from '../../../lib/git-env.mjs';
+import type { LaunchPorts } from './run/run.ts';
 import { loadTypes } from './policy/types.ts';
 import { countRoles, showRunning, type WidgetUI } from './view/widget.ts';
 import { registerNotice } from './view/notice.ts';
@@ -269,8 +271,9 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
 
 export default function (pi: ExtensionAPI) {
   const deps: WorktreeDeps = { git, root: process.env.CONSULT_ROOT ?? CONSULT_ROOT };
+  const launch: LaunchPorts = { spawn, spawnSync, env: gitEnv(process.env) };
   const place = placeOf(process.cwd(), deps);
-  const consult = createRuntime({ pi, place, deps, sessionNow: () => session });
+  const consult = createRuntime({ pi, place, deps, launch, sessionNow: () => session });
 
   // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
   registerNotice(pi);
