@@ -19,8 +19,6 @@ export function createFakeSpawn(): {
   readonly children: FakeChild[];
 } {
   const children: FakeChild[] = [];
-  // FakeChild は runPi が触る欄だけ持つ。ChildProcess 全体ではない。
-  // @ts-expect-error — 偽物は触る欄だけ。使う側は spawn として扱う。
   const spawn: Spawn = (_command, _args, _options) => {
     const child = new FakeChild();
     children.push(child);

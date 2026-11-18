@@ -4,7 +4,6 @@
  * 中断への備えがこのファイルの主な仕事。ツールとして呼ばれると AbortSignal が渡されるので、それに合わせてサブエージェントのプロセスを殺す。CLI バージョンは SIGINT で finally が走らず worktree を残した。
  */
 
-import type { ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -188,12 +187,24 @@ export function worktreeGit(path: string, git: Git): GitRun {
   };
 }
 
+/** `runPi` が触る範囲の子プロセス。`Spawn` が返す形 */
+export interface SpawnedChild {
+  readonly stdin: { end(data?: string): void } | null;
+  readonly stdout: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly stderr: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+  readonly pid?: number | undefined;
+  readonly killed: boolean;
+  kill(signal?: NodeJS.Signals): void;
+  on(event: 'close', listener: (code: number | null) => void): unknown;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+}
+
 /** pi を起動する。使う形だけを描く */
 export type Spawn = (
   command: string,
   args: readonly string[],
   options: PiSpawnOptions,
-) => ChildProcess;
+) => SpawnedChild;
 
 /** install を1回走らせる。使う形だけを描く */
 export type SpawnSync = (
@@ -239,7 +250,7 @@ export function spawnOptions(cwd: string, env: NodeJS.ProcessEnv): PiSpawnOption
  * 中断（signal）でサブエージェントを殺し、呼び出し側が後片付けできるように aborted を返す。上限は届いた行ごとに数え、超えた時点で殺す（終わってからでは遅い）。
  */
 /** サブエージェントを殺す。SIGTERM を無視するサブエージェントがいるので、猶予の後に強制終了する */
-function killChild(child: ChildProcess): void {
+function killChild(child: SpawnedChild): void {
   child.kill('SIGTERM');
   setTimeout(() => {
     if (!child.killed) {
@@ -380,7 +391,7 @@ function runOutcome(state: RunState, ending: { code: number; pid?: number }): Ru
 /** 走っているサブエージェントと見張りの時計。`settled` が立ったら何もしない。 */
 interface LiveRun {
   readonly state: RunState;
-  readonly child: ChildProcess;
+  readonly child: SpawnedChild;
   readonly quietMs: number;
   readonly onProgress?: RunOptions['onProgress'];
   readonly onModelEvent?: RunOptions['onModelEvent'];
