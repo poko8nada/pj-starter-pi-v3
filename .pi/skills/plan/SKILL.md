@@ -123,19 +123,6 @@ Steps:
 3. Read the report, and fix the plan from the findings.
 4. Report to the owner what was done with each finding.
 
-View:
-
-- `Goal` — the plan's `Goal` against the `Main` lines of the entries it carries; can the plan achieve it?
-- `Refactor` — the four questions.
-- `Files` — the files the affected names, and a file it does not name.
-- `Slice` — the slice whose concern its heading names, and whose closure its `Verify` proves.
-  - `Types` — a declaration the code uses but `Types` does not name, and a declaration against the type rules.
-  - `Steps` — the target files from the affected or the `External`; the ADR's `Add`, `Update` and `Drop` without omission.
-  - `Policy` — the ADR's `Policy` without omission.
-  - `Verify` — a `Verify` that does not run as written, one that is red with the change in place, and a check that stays green with the behavior removed.
-  - `Cases` — the test steps' cases against `references/design.md`'s `## Test cases`.
-- `Other` — a contradiction, a circular flow, a duplication, an omission.
-
 Notes:
 
 - The task is in `references/tasks.md`.

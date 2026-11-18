@@ -53,12 +53,15 @@ Answer one question: can this diff close the plan?
 1. Read the plan md (`## Files`, the slices' `### Verify` and `### Steps`, `## Notes`) and the test steps' cases by `.pi/skills/plan/references/design.md`'s `## Test cases`.
 2. Read the diff yourself with `git diff <base hash>..HEAD` (`git diff`, `git status` and `git log` are allowed for this role).
 3. Answer under six viewpoints:
-   - `Stale` — a document, a comment or a test this change makes stale, or a sentence the change makes redundant
-   - `Unlisted` — a change the plan's `Files` does not name
-   - `Gaps` — a behavior the checks do not exercise, and a hole that misses the plan's `Goal`
-   - `Policy` — a `Policy` line the diff does not keep: an `Allowed` it forbids, or a `Forbidden` it does
-   - `Unproven` — a test that stays green when the behavior it names is broken
-   - `Noise` — a test the types, the schema or a DB constraint already settle, or one nobody would notice; a case written with a magic number or a hardcoded string
+   - `Stale`: a document, a comment or a test this change makes stale, or a sentence the change makes redundant
+   - `Unlisted`: a change the plan's `Files` does not name
+   - `Gaps`: a behavior the checks do not exercise, and a hole that misses the plan's `Goal`
+   - `Policy`: a `Policy` line the diff does not keep: an `Allowed` it forbids, or a `Forbidden` it does
+   - `Unproven`: a test that stays green when the behavior it names is broken
+   - `Noise`:
+        - a test the types, the schema or a DB constraint already settle one nobody would notice
+        - a case written with a magic number or a hardcoded string
+        - suppressing linter, formatter, or type-check errors via comments (other than those  permitted)
 4. Write your findings in the plan md's `## Work Review`, under `### Round 1`: one bullet per finding, under the viewpoint it came from, each with `<file>:<line>`, and `なし` for a viewpoint that found nothing.
    - IF a value the plan or the ADR already decided → it is not a finding, and neither is a behavior the plan covers in `Added`.
    - IF a doubt or a note is not a finding → write it under `- Doubts:` in `### Round 1`. A doubt you resolved yourself is not written: write only a doubt that needs a fix or the owner's judgement.

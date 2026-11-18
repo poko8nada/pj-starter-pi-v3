@@ -155,6 +155,9 @@ Steps:
 1. Read the entry's `Context` and its pre-research facts in `Research & Trial`, and what they decide.
 2. Read the `Decision` section of `references/adr.format.md`.
 3. Write the opening proposal in the entry's `Decision`, with `Status` empty:
+   - **Completely discard the premise of minimal changes.**
+   - What things should be serves as the prerequisite.
+   - The proposal must be based on the initially agreed-upon intent.
 4. Say what the facts decide and what the proposal is, and go on:
    - _Full_: go to the Discussion Loop.
    - _Simple_: go to the `Decision`.
@@ -162,7 +165,6 @@ Steps:
 Notes:
 
 - The proposal is in adr.md, not only in the chat.
-- The proposal must be based on the initially agreed-upon intent.
 - An entry has one `Main` concern and sometimes `Secondary` concerns.
 - A `Secondary` is only when its change follows from the `Main`'s change or addition.
 
