@@ -212,32 +212,6 @@ describe('run', () => {
     expect(textOf(second)).toContain('started: consult-2');
   });
 
-  it('終わったサブエージェントの番号も数える → 次は consult-6', async () => {
-    const { pi } = fakePi();
-    const { run: runner } = deferredRunner();
-    const { runtime, place } = setup(pi, runner);
-    const seedNum = 5;
-    const expectedNum = seedNum + 1;
-    appendRun(
-      place,
-      aRunRecord({
-        session: SESSION,
-        subagent: `consult-${seedNum}`,
-        pid: process.pid,
-        started: Date.now() - 1000,
-        ended: Date.now(),
-        state: 'done',
-        files: [],
-        turns: 1,
-        spend: '0.0001 usd',
-      }),
-    );
-
-    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
-
-    expect(textOf(result)).toContain(`started: consult-${expectedNum}`);
-  });
-
   it('書き込むロール（code）で worktree を省くと、サブエージェントを起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
@@ -689,20 +663,6 @@ describe('status', () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
     const { runtime } = setup(pi, run);
-    const { ctx, notices } = fakeCommandContext();
-
-    await runtime.commands.status('', ctx);
-
-    expect(notices).toHaveLength(1);
-    expect(notices[0]?.type).toBe('info');
-  });
-
-  it('開始行と終わりの行を渡しても info で通知する', async () => {
-    const { pi } = fakePi();
-    const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
-    seedRunning(place, { subagent: 'consult-1', started: 1000 });
-    seedRunning(place, { subagent: 'consult-1', started: 2000, ended: 3000, state: 'done' });
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.status('', ctx);

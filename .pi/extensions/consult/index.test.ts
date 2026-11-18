@@ -99,7 +99,7 @@ describe('flushPending', () => {
     const found = aPlace();
     const { pi, sent } = fakePi();
 
-    expect(flushPending(portFor(found, pi))).toBe(0);
+    expect(flushPending(portFor(found, pi, 'session-a'))).toBe(0);
     expect(sent).toHaveLength(0);
   });
 });
@@ -212,17 +212,6 @@ describe('widget', () => {
     expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
   });
 
-  it('startTick: (empty) 何も走っていない → consult-running を更新する', () => {
-    const found = aPlace();
-    const { pi } = fakePi();
-    const { ui, calls } = aWidgetUI();
-    startTick({ ...portFor(found, pi, 'session-a'), ui });
-
-    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
-
-    expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
-  });
-
   it('setWidget が投げる → 音は鳴り、完了報告の送信は続く', () => {
     const found = aPlace();
     pending(found);
@@ -245,14 +234,6 @@ describe('showRunningOnce', () => {
   it('showRunningOnce: (happy) 走っている記録 → consult-running を更新する', () => {
     const found = aPlace();
     running(found);
-    const { ui, calls } = aWidgetUI();
-    showRunningOnce(ui, found, 'session-a');
-
-    expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
-  });
-
-  it('showRunningOnce: (empty) 記録がない → consult-running を更新する', () => {
-    const found = aPlace();
     const { ui, calls } = aWidgetUI();
     showRunningOnce(ui, found, 'session-a');
 

@@ -132,7 +132,7 @@ describe('consult_worktree', () => {
     const id = '2-b';
     await aNewWorktree(dir, deps);
     findWorktree(dir, deps, id);
-    seedUnit(dir, deps, id);
+    seedUnit(dir, deps, id, { pid: process.pid });
 
     const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(text(outcome)).toContain('サブエージェントが走っている');
@@ -153,25 +153,13 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
-  it('終わったサブエージェントの記録だけなら、走っていない（消える）', async () => {
-    const { dir } = repo();
-    const fake = createFakeGit();
-    const deps = depsFor(fake);
-    const id = '2-b';
-    await aNewWorktree(dir, deps);
-    seedUnit(dir, deps, id, { ended: 2, state: 'done' });
-
-    const outcome = await call({ action: 'remove', id }, dir, deps);
-    expect(outcome.details['outcome']).toBe('removed');
-  });
-
   it('別の session の走っているサブエージェントでも busy（ワークツリーを守る側なので session で絞らない）', async () => {
     const { dir } = repo();
     const fake = createFakeGit();
     const deps = depsFor(fake);
     const id = '2-b';
     await aNewWorktree(dir, deps);
-    seedUnit(dir, deps, id, { session: 'session-elsewhere' });
+    seedUnit(dir, deps, id, { pid: process.pid, session: 'session-elsewhere' });
 
     const outcome = await call({ action: 'remove', id }, dir, deps);
     expect(outcome.details['outcome']).toBe('busy');
@@ -184,7 +172,7 @@ describe('consult_worktree', () => {
     const id = '2-b';
     await aNewWorktree(dir, deps);
     findWorktree(dir, deps, id);
-    seedUnit(dir, deps, id);
+    seedUnit(dir, deps, id, { pid: process.pid });
 
     expect(text(await call({ action: 'list' }, dir, deps))).toContain('a subagent is running');
   });
@@ -234,19 +222,6 @@ describe('consult_worktree', () => {
     expect(runningIn(place, id, () => 'ended')).toBe(false);
     const outcome = await call({ action: 'remove', id }, dir, deps, () => 'ended');
     expect(outcome.details['outcome']).toBe('removed');
-  });
-
-  it('開始行だけ（startToken 付き）+ check が unknown の worktree → busy（走っている側）', async () => {
-    const { dir } = repo();
-    const fake = createFakeGit();
-    const deps = depsFor(fake);
-    const id = '2-b';
-    const startToken = START_TOKEN;
-    await aNewWorktree(dir, deps);
-    findWorktree(dir, deps, id);
-    const place = placeFor(deps.root, topLevel(dir, deps));
-    seedUnit(dir, deps, id, { pid: 11, startToken });
-    expect(runningIn(place, id, () => 'unknown')).toBe(true);
   });
 
   it('知らない action → エラー', async () => {

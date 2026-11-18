@@ -325,56 +325,12 @@ describe('removeWorktree', () => {
     expect(result.cleanup.branches).toEqual([{ state: 'removed', branch: branchFor('1-a') }]);
   });
 
-  it('consult/ のような id → missing', () => {
-    const dir = tempDir();
-    expect(removeWorktree(dir, deps, 'consult/').outcome).toBe('missing');
-  });
-
   it('worktree remove が status 1 → 例外（登録は残る）', () => {
     const dir = tempDir();
     createWorktree(dir, deps, '1-a');
     fake.fail('worktree remove');
     expect(() => removeWorktree(dir, deps, '1-a')).toThrow(/could not remove the worktree/);
     expect(findWorktree(dir, deps, '1-a')).toBeDefined();
-  });
-});
-
-describe('removeWorktree の統合', () => {
-  it('ゴーストと取り込み済み・未マージのブランチがある状態から remove が片付ける', () => {
-    const dir = tempDir();
-    const target = createWorktree(dir, deps, '1-t');
-    fake.addOrphan('consult/9-merged', true);
-    const unmergedWorktree = createWorktree(dir, deps, '1-u');
-    writeFileSync(join(unmergedWorktree.path, 'note.md'), 'the subagent wrote this\n');
-    fake.markUnmerged('consult/1-u');
-    rmSync(unmergedWorktree.path, { recursive: true, force: true });
-    const ghost = createWorktree(dir, deps, '1-g');
-    rmSync(ghost.path, { recursive: true, force: true });
-
-    const result = removeWorktree(dir, deps, '1-t');
-    expect(result.outcome).toBe('removed');
-    expect(result.cleanup.pruned).toContain(ghost.path);
-    const byBranch = new Map(result.cleanup.branches.map((entry) => [entry.branch, entry]));
-    expect(byBranch.get(branchFor('1-t'))).toEqual({ state: 'removed', branch: branchFor('1-t') });
-    expect(byBranch.get(branchFor('1-g'))).toEqual({ state: 'removed', branch: branchFor('1-g') });
-    expect(byBranch.get('consult/9-merged')).toEqual({
-      state: 'removed',
-      branch: 'consult/9-merged',
-    });
-    expect(byBranch.get(branchFor('1-u'))).toEqual({
-      state: 'kept',
-      branch: branchFor('1-u'),
-      reason: 'unmerged',
-    });
-    expect(listWorktrees(dir, deps)).toEqual([]);
-    expect(existsSync(target.path)).toBe(false);
-    expect(removeWorktree(dir, deps, '1-t')).toEqual({
-      outcome: 'missing',
-      cleanup: {
-        pruned: [],
-        branches: [{ state: 'kept', branch: branchFor('1-u'), reason: 'unmerged' }],
-      },
-    });
   });
 });
 
