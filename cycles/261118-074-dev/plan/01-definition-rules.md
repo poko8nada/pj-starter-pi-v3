@@ -244,16 +244,18 @@ rules/
 ### Round 2
 
 - Stale:
-- Unlisted:
+  - `rules/definition.rules.md:34` — Round 1 の `fixed:` 通りに直っていることを確認した。34 行目が `` `Reach and result` `` になり、15 行目の見出し `### Reach and result` と一致し、単独の `` `Result` `` はファイル内に残っていない。理由：改名後の見出しと参照の名指しが一致し、古い参照が解消されたため。
+- Unlisted: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
 - Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+  - `cycles/261118-074-dev/plan/01-definition-rules.md:204` — Round 1 の `fixed:` 通りに直っていることを確認した。Verify/Added に改名見出しのファイル内参照を突き合わせる other 項目が足され、`` `Reach and result` `` と `` `One loss` `` を例示して古い名指しの残存確認まで含む。理由：Round 1 が指摘した「落ちの有無だけを見て改名と参照の対応を見ない」という穴を手順が塞ぎ、Stale 側の修正がその手順で確かめられたため。
+- Policy: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Unproven: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Noise: なし（Round 1 がなしで、`fixed:` のある指摘がないため確認対象がない）。
+- Doubts: なし（新たに owner の判断を要する疑いはない。Round 1 の略称かどうかの疑いは Stale の修正で解消された）。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `definition.rules.md` が、重複を `definition.format.md` に寄せた 6 セクションの規則になり、Unit と Sub の判定、行の書き方、名付けをこのファイルで決められる。達成している。6 セクションが決めた順に並び、`Who` と `Stack` の定義は format にあり、rules は判定と書き方と名付けだけを持つ。
+- Ran: `pnpm test:run`（66 ファイル、830 テスト合格）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`git show 2e2483b7:rules/definition.rules.md` の各行と新しい見出しの読み合わせ。
+- Findings: なし
+- Doubts: なし
