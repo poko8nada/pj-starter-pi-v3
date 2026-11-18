@@ -240,4 +240,4 @@ pnpm test:run .pi/extensions/consult
 
 Spawning a real `pi` is not covered; the demonstrations do that.
 
-Git is started through one entry point only: `git()` in `lib/git-env.mjs`, which drops an inherited `GIT_*` before launching. The checks never start git themselves — they take the git they use as an argument — and the tests replace it with a fake, so the test suite starts no git process.
+Git is started through one entry point only: `git()` in `lib/git-env.mjs`, which drops an inherited `GIT_*` before launching. The checks never start git themselves — they take the git they use as an argument — and the tests replace it with a fake, so the test suite starts no git process except one contract test that runs the real git to pin its output.
