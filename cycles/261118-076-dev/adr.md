@@ -236,14 +236,24 @@ Type: _Full_
 
 - 受け取るプロセス起動の型
   ```ts
-  import type { ChildProcess } from 'node:child_process';
+  /** `runPi` が触る範囲の子プロセス。`Spawn` が返す形 */
+  export interface SpawnedChild {
+    readonly stdin: { end(data?: string): void } | null;
+    readonly stdout: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+    readonly stderr: { on(event: 'data', listener: (chunk: Buffer) => void): unknown } | null;
+    readonly pid?: number | undefined;
+    readonly killed: boolean;
+    kill(signal?: NodeJS.Signals): void;
+    on(event: 'close', listener: (code: number | null) => void): unknown;
+    on(event: 'error', listener: (error: Error) => void): unknown;
+  }
 
   /** pi を起動する。差し替えられるように、使う形だけを描く */
   export type Spawn = (
     command: string,
     args: readonly string[],
     options: PiSpawnOptions,
-  ) => ChildProcess;
+  ) => SpawnedChild;
 
   /** install を1回走らせる。使う形だけを描く */
   export type SpawnSync = (
@@ -256,6 +266,10 @@ Type: _Full_
     readonly stderr: string;
     readonly error?: Error;
   };
+  ```
+- 上の型を選んだ理由
+  ```text
+  当初は ChildProcess と書いた。ADR の段階では偽物がまだ無く、提供側（spawn の戻り値）の型を写したためである。実装で偽物が ChildProcess 全体を満たせず、型検査の抑止は使わないと決め、runPi が使う欄だけに寄せた。本物の spawn はキャストなしでこの型を満たす。run/run.ts は node:child_process を import しない。
   ```
 - `runOneSubagent` の入力
   ```ts
