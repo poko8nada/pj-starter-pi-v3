@@ -320,6 +320,57 @@ describe('installDependencies', () => {
     expect(outcome).toEqual({ kind: 'none' });
     expect(called).toBe(0);
   });
+
+  it('install: (happy) package-lock.json だけ → npm ci を1回走らせ、ok を返す', () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, 'package-lock.json'), '');
+    const calls: Array<{ command: string; args: readonly string[] }> = [];
+    const outcome = installDependencies(dir, (command, args) => {
+      calls.push({ command, args });
+      return { status: 0, stdout: '', stderr: '' };
+    });
+    expect(calls).toEqual([{ command: 'npm', args: ['ci'] }]);
+    expect(outcome).toEqual({ kind: 'ok', command: 'npm ci' });
+  });
+
+  it('install: (error) status null → failed を返す', () => {
+    const dir = dirWithLockfile();
+    const outcome = installDependencies(dir, () => ({
+      status: null,
+      stdout: '',
+      stderr: 'killed',
+    }));
+    expect(outcome).toEqual({
+      kind: 'failed',
+      command: 'pnpm install --frozen-lockfile',
+      error: 'killed',
+    });
+  });
+
+  it('install: (error) stderr が空で error がある → error の文言を error に入れる', () => {
+    const dir = dirWithLockfile();
+    const outcome = installDependencies(dir, () => ({
+      status: 1,
+      stdout: '',
+      stderr: '',
+      error: new Error('spawn pnpm ENOENT'),
+    }));
+    expect(outcome).toEqual({
+      kind: 'failed',
+      command: 'pnpm install --frozen-lockfile',
+      error: 'spawn pnpm ENOENT',
+    });
+  });
+
+  it('install: (error) stderr の前後に空白 → trim した文言を error に入れる', () => {
+    const dir = dirWithLockfile();
+    const outcome = installDependencies(dir, () => ({ status: 1, stdout: '', stderr: '  boom\n' }));
+    expect(outcome).toEqual({
+      kind: 'failed',
+      command: 'pnpm install --frozen-lockfile',
+      error: 'boom',
+    });
+  });
 });
 
 describe('runPi: stdio', () => {
