@@ -25,6 +25,7 @@
     worktree.ts           update
     worktree.test.ts      update
     run.ts                update
+    run.test.ts           update
     log.ts
     proc.ts
     place.ts
@@ -331,20 +332,23 @@ export function createFakeGit(): FakeGit;
 - Noise: なし — 重複・境界値のみの検査は `Cleanup` で既に落とされ、残る `999_999`（死んだ `pid`）や `session-a` 等は振る舞いに効く前提の明示であり、型が保証する値の再現や利用者に届かない文言の検査はない。新規の抑止コメントもない。
 - Doubts:
   - `cycles/261118-076-dev/plan/01-worktree-deps.md:299` — `Cleanup` での5件前後の検査削除（`index.test.ts` の空2件、`run/worktree.test.ts` の `consult/` と統合、`consult.test.ts` の2件、`tool/worktree.test.ts` の2件）は `Slices` の `Steps` に書かれていない。`Notes` の記録だけで足りるか、`Files`／`Scope` の変更として計画に追記すべきか、所有者の判断を求める。
+    - オーナーの判断: 記録だけで足りる。整理はスライスではなく、何が古くなったかは変更の後でしか分からない。`Steps` は書き換えない。
 
 ### Round 2
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
+- Stale: なし — 3件の `fixed:` を `git diff 2da1ae5f..HEAD` で確認した。`run/worktree.ts` 頭注は「保存場所の既定はリポジトリの外」＋「`deps.root` で渡し、`CONSULT_ROOT` 環境変数で上書きできる」に直り、`tool/worktree.ts` は「保存場所と worktree の依存（`deps`）は結線の時に1回だけ渡す」に直り、`index.test.ts` は `topLevel`／`cleanWorktrees` の模倣が2引数化され受けた `deps.root` を記録し `consultRoot` 模倣が消えている。
+- Unlisted: なし — `git diff --name-only 2da1ae5f..HEAD` の14件は計画 `Files` の13件に `run/run.test.ts` が加わった形だが、同ファイルは Round 1 `Gaps` の `fixed:` が指示した検査追加であり、計画外の実装変更ではない。
+- Gaps: なし — 3件の `fixed:` どおり検査が足されている。`run/run.test.ts` に `worktreeGit: (happy)`（渡した `git` をその `path` と `args` で呼び結果をそのまま返す）、`run/worktree.test.ts` に `topLevel: (error)`（`stderr` 空・`error` のみで失敗する `git` で例外文言に `error` が使われる）、`index.test.ts` に `entry wiring` 2件（`stubEnv` 値を `topLevel` 到達と `session_start` 経由の `cleanWorktrees` 到達の `deps.root` と比べる）が diff で確認できる。
+- Policy: なし — `git diff` 上、`deps` に既定値はなく全関数で必須のまま、2つの worktree テストに `vi.mock`／`vi.stubEnv` の再導入はなく、偽物の操作は `fail`／`print`／`makeDirty` 等の振る舞いに限られる。
+- Unproven: なし — 2件の `fixed:` どおりである。`run/worktree.test.ts` に `fake git: (error) 未知の命令 → 投げる` があり `commandOf` の `throw` を名指しする。`index.test.ts` の模倣は第2引数の `deps.root` を記録し `entry wiring` 2件が到達を比べるため、`deps` を渡し忘れると `undefined.root` 参照で当該テストが赤くなる構造である（diff 上、模倣が `deps.root` を直接読むことを確認）。
+- Noise: なし — Round 1 の `fixed:` は重複・境界値のみの検査を増やさず、追加は `worktreeGit` 経路・`error` 文言・配線到達・未知命令の `throw` という振る舞いに効く検査に限られ、新規の抑止コメントも diff にない。
 - Doubts:
+  - テストの緑／赤（`Verify Added` の「外すと赤になる」主張を含む）は実行で確かめていない。この役割で許可された `git diff`・`git status`・`git log` での記述と差分の一致確認に留まるため、実行結果の裏付けは所有者の通常検証に委ねる。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: 達成。`run/worktree.ts` は `lib/git-env.mjs` を import せず `process.env` も読まない。`worktreeGit` は `git` を引数で受け取り、`index.ts` が `process.env.CONSULT_ROOT ?? CONSULT_ROOT` を起動時に1回読んで `deps` として配る。振る舞いは変えていない。
+- Ran: `pnpm test:run`（67ファイル / 832件）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、pre-commit の同じ検査（`807f90fa`・`b6078abd`）、`Added` の証明2つ（`deps` を外すと `typecheck` が赤、`fake.fail('worktree add')` を消すと1件赤）。
+- Findings: なし
 - Doubts:
+  - Slice 1 と Slice 2 は1つのコミット（`807f90fa`）にまとまった。Slice 1 の中間状態が緑にならなかったためで、`### Slice 1` の `Unplanned` に理由を書いた。計画のスライス境界とは違う。
