@@ -240,16 +240,16 @@ declare function createFakeGit(): FakeGit;
 
 ### Slice 1: 共有する偽物が1つのファイルとして存在する
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `test/fake-git.fixture.ts` の `createFakeGit` と `git` に `eslint-disable-next-line max-lines-per-function` を付けた。`*.fixture.ts` はテスト用の上乗せ（240行）を受けず上限80のため、plan の内側4関数と9分岐の形では超える。理由を添えて抑え、戻り値と分岐は変えていない。
+- Commit: 433440e7
 - Stopped:
 
 ### Slice 2: 2つのテストファイルが共有の偽物を使う
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: 2件。1) 両テスト先頭に `/* eslint-disable typescript/no-non-null-assertion` を付けた。plan が `mockGit.current!` の遅延参照を決めているが、lint が `!` を禁じるため。形は変えず理由付きで抑えた。2) `枝`→`ブランチ` に8か所（run 4件のテスト名、tool 2件のテスト名＋2件の期待文字列）を置換。`scripts/checks/ja-check.json` の追加語でフックが落ちるため。期待2件は実装の出力と連動するので `tool/worktree.ts` の出力2件＋注釈1件も同語に揃え、テストの意味は変えていない。
+- Commit: 5caf525a
 - Stopped:
 
 ## Work Review
