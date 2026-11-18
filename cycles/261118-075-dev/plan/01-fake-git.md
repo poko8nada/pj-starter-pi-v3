@@ -241,6 +241,8 @@ declare function createFakeGit(): FakeGit;
 
 ## Notes
 
+取り消し: このエントリのコード変更は `5e700db2` で戻した。4つの `eslint-disable`（`no-non-null-assertion` の2つはファイル全体、`max-lines-per-function` の2つ）が `AGENTS.md` の許す場合に当たらず、原因は計画が lint の上限を超える形を定めていたことにある。表示の語（`枝` を `ブランチ` に）の変更だけは残した。エントリ 02（契約テスト）はそのまま残している。
+
 ### Slice 1: 共有する偽物が1つのファイルとして存在する
 
 - Findings: なし
