@@ -5,8 +5,10 @@ import { tempDir } from '../../../test/temp-dir.ts';
 import { aDoneRun, aPiFace, aPlace, aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
-import { type Place } from './run/place.ts';
+import { placeFor, type Place } from './run/place.ts';
 import entry, {
+  buildDeps,
+  buildLaunch,
   flushPending,
   roleOrder,
   showRunningOnce,
@@ -15,6 +17,10 @@ import entry, {
   type TickPort,
 } from './index.ts';
 import { loadTypes } from './policy/types.ts';
+import { CONSULT_ROOT, topLevel } from './run/worktree.ts';
+import { git as realGit } from '../../../lib/git-env.mjs';
+import type { GitOutput } from './run/run.ts';
+import { spawn, spawnSync } from 'node:child_process';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import type {
@@ -26,24 +32,8 @@ import type {
 } from './tool/consult.ts';
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
-const seenTopLevelRoots = vi.hoisted(() => [] as string[]);
-const seenCleanRoots = vi.hoisted(() => [] as string[]);
 const seenLaunches = vi.hoisted(() => [] as Array<RuntimeInput['launch']>);
-
-vi.mock('./run/worktree.ts', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    topLevel: (cwd: string, deps: { root: string }) => {
-      seenTopLevelRoots.push(deps.root);
-      return cwd;
-    },
-    cleanWorktrees: (_cwd: string, deps: { root: string }) => {
-      seenCleanRoots.push(deps.root);
-      return { pruned: [], branches: [] };
-    },
-  };
-});
+const seenPlaces = vi.hoisted(() => [] as Array<RuntimeInput['place']>);
 
 vi.mock('./tool/consult.ts', async (importOriginal) => {
   const actual = await importOriginal<{
@@ -53,6 +43,7 @@ vi.mock('./tool/consult.ts', async (importOriginal) => {
     ...actual,
     createRuntime: (input: RuntimeInput) => {
       seenLaunches.push(input.launch);
+      seenPlaces.push(input.place);
       return actual.createRuntime(input);
     },
   };
@@ -64,7 +55,7 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
 
 /** 記録は「いま」の日付ファイルに書く。読み取り側も同じテストの時計を見るので、日付は固定しない */
 function pending(found: Place): void {
-  appendRun(found, record());
+  appendRun(found, record(), new Date());
 }
 
 /** 走っている記録を 1 行足す。pid はこのテストのプロセスなので、既定の check で走っていると見える */
@@ -88,6 +79,9 @@ function quietUI(): WidgetUI {
   return { setWidget: () => {} };
 }
 
+/** 時刻の固定値。時計を渡す検査で、同じ関数であることを確かめるために使う */
+const fixedNow = (): number => 0;
+
 function portFor(
   found: Place,
   pi: PiFace,
@@ -98,6 +92,7 @@ function portFor(
     pi,
     place: found,
     sessionNow: () => session,
+    now: () => new Date(),
     ui: quietUI(),
     ...(check === undefined ? {} : { check }),
   };
@@ -128,7 +123,7 @@ describe('flushPending', () => {
     const found = aPlace();
     const { pi, sent } = fakePi();
 
-    expect(flushPending(portFor(found, pi, 'session-a'))).toBe(0);
+    expect(flushPending(portFor(found, pi, 'session-a'), new Date())).toBe(0);
     expect(sent).toHaveLength(0);
   });
 });
@@ -144,10 +139,12 @@ describe('startTick / stopTick', () => {
 
     expect(sent).toHaveLength(1);
     expect(played).toHaveLength(1);
-    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
+    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS, at: new Date() });
     expect(runs).toHaveLength(2);
     expect(deliveredKeys(runs).size).toBe(1);
-    expect(pendingReports(found, { session: 'session-a', days: KEEP_DAYS })).toEqual([]);
+    expect(
+      pendingReports(found, { session: 'session-a', days: KEEP_DAYS, at: new Date() }),
+    ).toEqual([]);
   });
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
@@ -226,6 +223,20 @@ describe('startTick / stopTick', () => {
     expect(sent).toHaveLength(0);
     expect(played).toHaveLength(0);
   });
+
+  it('tick は port.now() の窓を読む → 3 日前を指す時計では今日の完了を送らない', () => {
+    const found = aPlace();
+    pending(found);
+    const { pi, sent } = fakePi();
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    startTick({ ...portFor(found, pi, 'session-a'), now: () => threeDaysAgo });
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
+
+    expect(sent).toHaveLength(0);
+    expect(played).toHaveLength(0);
+  });
 });
 
 describe('widget', () => {
@@ -264,7 +275,7 @@ describe('showRunningOnce', () => {
     const found = aPlace();
     running(found);
     const { ui, calls } = aWidgetUI();
-    showRunningOnce(ui, found, 'session-a');
+    showRunningOnce(ui, found, 'session-a', new Date());
 
     expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
   });
@@ -296,6 +307,70 @@ describe('reload', () => {
 
     vi.advanceTimersByTime(SOUND_INTERVAL_MS);
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe('buildDeps', () => {
+  it('buildDeps: (happy) env に CONSULT_ROOT がある → root にその値が入る', () => {
+    const deps = buildDeps({ CONSULT_ROOT: '/tmp/consult-test' }, () => ({
+      status: 0,
+      stdout: '',
+      stderr: '',
+    }));
+    expect(deps.root).toBe('/tmp/consult-test');
+  });
+
+  it('buildDeps: (empty) env に CONSULT_ROOT がない → root に既定値が入る', () => {
+    const deps = buildDeps({}, () => ({ status: 0, stdout: '', stderr: '' }));
+    expect(deps.root).toBe(CONSULT_ROOT);
+  });
+
+  it('buildDeps: (happy) ラッパーに cwd と args を渡す → 元の git に env とともに渡る', () => {
+    const seen: Array<{
+      cwd: string;
+      args: readonly string[];
+      env: Readonly<NodeJS.ProcessEnv>;
+    }> = [];
+    const env = { CONSULT_ROOT: '/tmp/consult-test' };
+    const git = (
+      cwd: string,
+      args: readonly string[],
+      received: Readonly<NodeJS.ProcessEnv>,
+    ): GitOutput => {
+      seen.push({ cwd, args, env: received });
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    const deps = buildDeps(env, git);
+    deps.git('/tmp/repo', ['status', '--porcelain']);
+    expect(seen).toEqual([{ cwd: '/tmp/repo', args: ['status', '--porcelain'], env }]);
+  });
+});
+
+describe('buildLaunch', () => {
+  it('buildLaunch: (happy) env に GIT_INDEX_FILE がある → launch.env から落ちる', () => {
+    const launch = buildLaunch(
+      { KEEP: 'y', GIT_INDEX_FILE: '/tmp/index' },
+      spawn,
+      spawnSync,
+      Date.now,
+    );
+    expect(launch.env.KEEP).toBe('y');
+    expect('GIT_INDEX_FILE' in launch.env).toBe(false);
+  });
+
+  it('buildLaunch: (happy) spawn を渡す → launch.spawn が同じ', () => {
+    const launch = buildLaunch({}, spawn, spawnSync, Date.now);
+    expect(launch.spawn).toBe(spawn);
+  });
+
+  it('buildLaunch: (happy) spawnSync を渡す → launch.spawnSync が同じ', () => {
+    const launch = buildLaunch({}, spawn, spawnSync, Date.now);
+    expect(launch.spawnSync).toBe(spawnSync);
+  });
+
+  it('buildLaunch: (happy) now を渡す → launch.now が同じ', () => {
+    const launch = buildLaunch({}, spawn, spawnSync, fixedNow);
+    expect(launch.now).toBe(fixedNow);
   });
 });
 
@@ -344,13 +419,6 @@ describe('entry wiring', () => {
     expect(command?.description).toBe('List the running consult subagents of this session');
   });
 
-  it('entry wiring: (happy) CONSULT_ROOT の値 → topLevel の deps.root に届く', () => {
-    seenTopLevelRoots.length = 0;
-    const expected = process.env.CONSULT_ROOT ?? '';
-    fakeEntry();
-    expect(seenTopLevelRoots.at(-1)).toBe(expected);
-  });
-
   it('entry wiring: (happy) 起動時の env が launch.env に写る → 後の変更は伝わらず GIT_* が落ちる', () => {
     seenLaunches.length = 0;
     process.env.PI_WIRING_PROBE = 'before';
@@ -370,9 +438,8 @@ describe('entry wiring', () => {
     }
   });
 
-  it('entry wiring: (happy) 本物の spawn と spawnSync がそのまま launch に載る', async () => {
+  it('entry wiring: (happy) 本物の spawn と spawnSync がそのまま launch に載る', () => {
     seenLaunches.length = 0;
-    const { spawn, spawnSync } = await import('node:child_process');
     fakeEntry();
     const launch = seenLaunches.at(-1);
     if (launch === undefined) {
@@ -382,21 +449,15 @@ describe('entry wiring', () => {
     expect(launch.spawnSync).toBe(spawnSync);
   });
 
-  it('entry wiring: (happy) session_start → cleanWorktrees の deps.root に同じ値が届く', async () => {
-    seenCleanRoots.length = 0;
-    const { handlers } = fakeEntry();
-    const expected = process.env.CONSULT_ROOT ?? '';
-    const handler = handlers.get('session_start');
-    if (handler === undefined) {
-      throw new Error('session_start was not registered');
+  it('entry wiring: (happy) process.cwd() が place に写る → placeFor(root, topLevel(cwd)) と一致する', () => {
+    seenPlaces.length = 0;
+    fakeEntry();
+    const place = seenPlaces.at(-1);
+    if (place === undefined) {
+      throw new Error('createRuntime was not called');
     }
-    const ctx = {
-      cwd: tempDir(),
-      ui: { notify: () => {}, setWidget: () => {} },
-      sessionManager: { getSessionId: () => 'session-a' },
-    };
-    await handler({}, ctx);
-    stopTick();
-    expect(seenCleanRoots.at(-1)).toBe(expected);
+    const root = process.env.CONSULT_ROOT ?? '';
+    const expected = placeFor(root, topLevel(process.cwd(), buildDeps(process.env, realGit)));
+    expect(place).toEqual(expected);
   });
 });

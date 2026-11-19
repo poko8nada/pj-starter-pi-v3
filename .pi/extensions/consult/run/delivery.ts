@@ -126,10 +126,9 @@ export function pendingReports(
  * 渡した印を、記録に 1 行足す。
  *
  * 同じ走行（`session` と `subagent` と `started`）の印として読めるよう、走行を指す 3 つを
- * 写し、`delivered` に時刻を入れる。`at` を渡せばその日の file に書き、その時刻を印にする。
+ * 写し、`delivered` に時刻を入れる。その日の file に書き、その時刻を印にする。
  */
-export function appendDelivered(place: Place, record: RunRecord, at?: Date): void {
-  const now = at ?? new Date();
+export function appendDelivered(place: Place, record: RunRecord, at: Date): void {
   appendRun(
     place,
     {
@@ -138,8 +137,8 @@ export function appendDelivered(place: Place, record: RunRecord, at?: Date): voi
       role: record.role,
       pid: record.pid,
       started: record.started,
-      delivered: now.getTime(),
+      delivered: at.getTime(),
     },
-    now,
+    at,
   );
 }

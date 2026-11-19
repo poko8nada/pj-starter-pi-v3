@@ -63,6 +63,7 @@ function launchWithCapture(env: NodeJS.ProcessEnv = {}): {
       throw new Error('spawnSync is not used');
     },
     env,
+    now: () => 0,
   };
   return { launch, calls, stdinTexts };
 }

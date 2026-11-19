@@ -224,6 +224,7 @@ export interface LaunchPorts {
   readonly spawnSync: SpawnSync;
   /** 子に渡す環境の元。GIT_* は境界で落としてある */
   readonly env: NodeJS.ProcessEnv;
+  readonly now: () => number;
 }
 
 /** サブエージェントの起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
@@ -409,7 +410,7 @@ function clearWatchdog(live: LiveRun): void {
 }
 
 /** `agent_end` の後だけ時計を動かす。出力が来たら呼び直して戻す。 */
-function armWatchdog(live: LiveRun): void {
+function armWatchdog(live: LiveRun, now: () => number): void {
   clearWatchdog(live);
   if (live.state.endedAt === undefined) {
     return;
@@ -422,9 +423,9 @@ function armWatchdog(live: LiveRun): void {
     if (live.settled) {
       return;
     }
-    const now = Date.now();
-    if (!watchdogDue(live.state.endedAt, live.state.lastOutputAt, now, live.quietMs)) {
-      armWatchdog(live);
+    const at = now();
+    if (!watchdogDue(live.state.endedAt, live.state.lastOutputAt, at, live.quietMs)) {
+      armWatchdog(live, now);
       return;
     }
     killChild(live.child);
@@ -432,17 +433,18 @@ function armWatchdog(live: LiveRun): void {
 }
 
 /** stdout の届きを足し、行を数え、時計を戻す。 */
-function consumeStdout(live: LiveRun, input: { text: string; now: number }): void {
+function consumeStdout(live: LiveRun, input: { text: string; now: () => number }): void {
+  const at = input.now();
   live.state.stdout += input.text;
   live.state.buffered += input.text;
-  live.state.lastOutputAt = input.now;
+  live.state.lastOutputAt = at;
   live.onProgress?.({ stream: 'stdout', text: input.text });
   const lines = live.state.buffered.split('\n');
   live.state.buffered = lines.pop() ?? '';
   for (const line of lines) {
-    consumeLine(line, live, input.now);
+    consumeLine(line, live, at);
   }
-  armWatchdog(live);
+  armWatchdog(live, input.now);
 }
 
 /** stderr の届きを足す。見張りの時計は触らない。 */
@@ -473,7 +475,7 @@ function finishLive(
   input.settle(outcome);
 }
 
-export function runPi(options: RunOptions, spawn: Spawn): Promise<RunResult> {
+export function runPi(options: RunOptions, spawn: Spawn, now: () => number): Promise<RunResult> {
   return new Promise((settle) => {
     const child = spawn('pi', [...options.piArgs], spawnOptions(options.cwd, options.env));
     const { stdin, stdout, stderr } = child;
@@ -481,7 +483,7 @@ export function runPi(options: RunOptions, spawn: Spawn): Promise<RunResult> {
       throw new Error('pi spawn did not open stdio pipes');
     }
     const live: LiveRun = {
-      state: initialRunState(options.limits, Date.now()),
+      state: initialRunState(options.limits, now()),
       child,
       quietMs: options.watchdogMs ?? DEFAULT_WATCHDOG_MS,
       ...(options.onProgress === undefined ? {} : { onProgress: options.onProgress }),
@@ -511,7 +513,7 @@ export function runPi(options: RunOptions, spawn: Spawn): Promise<RunResult> {
       options.signal?.addEventListener('abort', onAbort, { once: true });
     }
     stdout.on('data', (chunk: Buffer) => {
-      consumeStdout(live, { text: chunk.toString(), now: Date.now() });
+      consumeStdout(live, { text: chunk.toString(), now });
     });
     stderr.on('data', (chunk: Buffer) => {
       appendStderr(live, chunk.toString());

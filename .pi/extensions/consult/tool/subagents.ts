@@ -35,6 +35,7 @@ import type { ControlAction, ControlOutcome } from './consult.ts';
 export interface SubagentsHost {
   readonly place: Place;
   readonly sessionNow: () => string;
+  readonly now: () => number;
   control(action: ControlAction, session: string): ControlOutcome;
   readonly check?: CheckRecord;
 }
@@ -207,10 +208,11 @@ export function createSubagentsTool(host: SubagentsHost) {
     const session = host.sessionNow();
 
     if (action === 'list') {
-      const all = readRuns(host.place, { session });
-      const now = Date.now();
-      const text = listText(all, now, host.check);
-      const count = rowsOf(all, host.check, now).length;
+      const now = new Date(host.now());
+      const all = readRuns(host.place, { session, at: now });
+      const at = now.getTime();
+      const text = listText(all, at, host.check);
+      const count = rowsOf(all, host.check, at).length;
       return result(text, {
         action,
         count,

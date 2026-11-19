@@ -107,7 +107,7 @@ if (isMain) {
     } else {
       let branch = '';
       try {
-        const result = git(root, ['branch', '--show-current']);
+        const result = git(root, ['branch', '--show-current'], process.env);
         if (result.status === 0) branch = (result.stdout ?? '').trim();
       } catch {
         branch = '';

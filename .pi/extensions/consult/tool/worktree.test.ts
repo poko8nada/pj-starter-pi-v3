@@ -13,6 +13,9 @@ function depsFor(fake: WorktreeGit): WorktreeDeps {
 
 type Outcome = Awaited<ReturnType<ReturnType<typeof createWorktreeTool>>>;
 
+/** 固定の時刻。記録の読み書きと worktree の作成はこの日で行う */
+const NOW = new Date('2024-05-06T07:08:09Z');
+
 /** 道具は位置で 5 つ受け取る。保存場所は cwd から決め、ここで組み立てる */
 function call(
   params: Record<string, unknown>,
@@ -21,7 +24,9 @@ function call(
   check?: CheckRecord,
 ): Promise<Outcome> {
   const place = placeFor(deps.root, topLevel(cwd, deps));
-  return createWorktreeTool(place, deps, check)(...aToolCall(params, { cwd }, 'call-1'));
+  return createWorktreeTool({ place, deps, now: () => NOW, check })(
+    ...aToolCall(params, { cwd }, 'call-1'),
+  );
 }
 
 function aNewWorktree(dir: string, deps: WorktreeDeps, id = '2-b') {
@@ -54,6 +59,7 @@ function seedUnit(
       worktree: id,
       ...extra,
     }),
+    NOW,
   );
 }
 
@@ -188,7 +194,7 @@ describe('consult_worktree', () => {
     const place = placeFor(deps.root, topLevel(dir, deps));
     seedUnit(dir, deps, id, { token });
     seedUnit(dir, deps, id, { ended: 2, state: 'done' });
-    expect(runningIn(place, id, () => 'running')).toBe(false);
+    expect(runningIn(place, id, NOW, () => 'running')).toBe(false);
     const outcome = await call({ action: 'remove', id }, dir, deps, () => 'running');
     expect(outcome.details['outcome']).toBe('removed');
   });
@@ -203,7 +209,7 @@ describe('consult_worktree', () => {
     findWorktree(dir, deps, id);
     const place = placeFor(deps.root, topLevel(dir, deps));
     seedUnit(dir, deps, id, { pid: 11, startToken });
-    expect(runningIn(place, id, () => 'running')).toBe(true);
+    expect(runningIn(place, id, NOW, () => 'running')).toBe(true);
     expect(text(await call({ action: 'remove', id }, dir, deps, () => 'running'))).toContain(
       'サブエージェントが走っている',
     );
@@ -219,9 +225,33 @@ describe('consult_worktree', () => {
     findWorktree(dir, deps, id);
     const place = placeFor(deps.root, topLevel(dir, deps));
     seedUnit(dir, deps, id, { pid: 11, startToken });
-    expect(runningIn(place, id, () => 'ended')).toBe(false);
+    expect(runningIn(place, id, NOW, () => 'ended')).toBe(false);
     const outcome = await call({ action: 'remove', id }, dir, deps, () => 'ended');
     expect(outcome.details['outcome']).toBe('removed');
+  });
+
+  it('now が窓を決める → 今日の開始行を 3 日前の now では走っていないと見る', async () => {
+    const { dir } = repo();
+    const fake = createWorktreeGit();
+    const deps = depsFor(fake);
+    const id = '2-b';
+    await aNewWorktree(dir, deps);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    appendRun(
+      place,
+      aRunRecord({
+        session: 'session-a',
+        subagent: 'consult-9',
+        pid: 11,
+        started: 1,
+        worktree: id,
+      }),
+      new Date(),
+    );
+    expect(runningIn(place, id, new Date(), () => 'running')).toBe(true);
+    expect(runningIn(place, id, threeDaysAgo, () => 'running')).toBe(false);
   });
 
   it('知らない action → エラー', async () => {

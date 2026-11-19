@@ -98,9 +98,9 @@ function parseAction(
  *
  * session では絞らない。ワークツリーを守る側なので、他のセッションのサブエージェントが走っているワークツリーも消してはいけない。
  */
-export function runningIn(place: Place, id: string, check?: CheckRecord): boolean {
+export function runningIn(place: Place, id: string, now: Date, check?: CheckRecord): boolean {
   const groups = new Map<string, RunRecord[]>();
-  const all = readRuns(place).filter((run) => run.worktree === id);
+  const all = readRuns(place, { at: now }).filter((run) => run.worktree === id);
   for (const run of all) {
     const list = groups.get(run.subagent);
     if (list !== undefined) {
@@ -166,13 +166,20 @@ export function removeText(id: string, removed: RemoveResult): string {
 /**
  * 道具を作る。保存場所と worktree の依存（`deps`）は結線の時に 1 回だけ渡す（`runningIn` は `place` を使い、worktree 操作は `deps` を使う）。cwd は pi の文脈から取る。
  */
-export function createWorktreeTool(place: Place, deps: WorktreeDeps, check?: CheckRecord) {
+export function createWorktreeTool(input: {
+  readonly place: Place;
+  readonly deps: WorktreeDeps;
+  readonly now: () => Date;
+  readonly check?: CheckRecord;
+}) {
+  const { place, deps, now, check } = input;
   return async function execute(...args: ExecuteArgs) {
     const [, params, , , ctx] = args;
     const action = parseAction(params);
     const cwd = ctx.cwd;
+    const at = now();
     if (action.action === 'new') {
-      const made = createWorktree(cwd, deps, action.id, action.base);
+      const made = createWorktree({ cwd, deps, id: action.id, base: action.base, now: at });
       return result(
         [
           `id: ${made.id}`,
@@ -186,7 +193,7 @@ export function createWorktreeTool(place: Place, deps: WorktreeDeps, check?: Che
     if (action.action === 'remove') {
       const removed = removeWorktree(cwd, deps, action.id, {
         force: action.force,
-        busy: runningIn(place, action.id, check),
+        busy: runningIn(place, action.id, at, check),
       });
       return result(removeText(action.id, removed), {
         action: 'remove',
@@ -198,7 +205,7 @@ export function createWorktreeTool(place: Place, deps: WorktreeDeps, check?: Che
     if (rows.length === 0) {
       return result('ワークツリーは無い。', { action: 'list', rows });
     }
-    return result(rows.map((row) => rowLine(row, runningIn(place, row.id, check))).join('\n'), {
+    return result(rows.map((row) => rowLine(row, runningIn(place, row.id, at, check))).join('\n'), {
       action: 'list',
       rows,
     });

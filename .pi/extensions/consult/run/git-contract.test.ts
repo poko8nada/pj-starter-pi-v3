@@ -1,7 +1,7 @@
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { git } from '../../../../lib/git-env.mjs';
+import { describe, expect, it } from 'vitest';
+import { git, gitEnv } from '../../../../lib/git-env.mjs';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { orphanBranchesIn } from './worktree.ts';
 
@@ -11,10 +11,14 @@ const WT = 'wt1';
 
 function initRepo(): string {
   const dir = tempDir('git-contract-');
-  git(dir, ['init']);
+  git(dir, ['init'], process.env);
   writeFileSync(join(dir, FILE), CONTENT);
-  git(dir, ['add', FILE]);
-  git(dir, ['-c', 'user.email=a@example.com', '-c', 'user.name=a', 'commit', '-m', 'init']);
+  git(dir, ['add', FILE], process.env);
+  git(
+    dir,
+    ['-c', 'user.email=a@example.com', '-c', 'user.name=a', 'commit', '-m', 'init'],
+    process.env,
+  );
   return dir;
 }
 
@@ -23,16 +27,12 @@ function worktreeDir(): string {
   return tempDir('git-contract-wt-');
 }
 
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('git contract', () => {
   it('happy: worktree を追加した直後の worktree list --porcelain → worktree、HEAD、branch の3行と空行', () => {
     const dir = initRepo();
     const wt = join(worktreeDir(), WT);
-    git(dir, ['worktree', 'add', '-b', WT, wt, 'HEAD']);
-    const output = git(dir, ['worktree', 'list', '--porcelain']).stdout;
+    git(dir, ['worktree', 'add', '-b', WT, wt, 'HEAD'], process.env);
+    const output = git(dir, ['worktree', 'list', '--porcelain'], process.env).stdout;
     const blocks = output.split('\n\n').filter((block) => block.trim() !== '');
     expect(blocks.length).toBeGreaterThanOrEqual(2);
     for (const block of blocks) {
@@ -47,21 +47,25 @@ describe('git contract', () => {
   it('happy: 実体を消した worktree → prunable で始まる行が付く', () => {
     const dir = initRepo();
     const wt = join(worktreeDir(), WT);
-    git(dir, ['worktree', 'add', '-b', WT, wt, 'HEAD']);
+    git(dir, ['worktree', 'add', '-b', WT, wt, 'HEAD'], process.env);
     rmSync(wt, { recursive: true, force: true });
-    const output = git(dir, ['worktree', 'list', '--porcelain']).stdout;
+    const output = git(dir, ['worktree', 'list', '--porcelain'], process.env).stdout;
     expect(output.split('\n').some((line) => line.startsWith('prunable'))).toBe(true);
   });
 
   it('happy: checkout 中のブランチと、checkout されていないブランチ → for-each-ref の各行が refs/heads/consult/<name> と2列目を持ち、orphanBranchesIn は checkout 中の行だけを捨てる', () => {
     const dir = initRepo();
-    git(dir, ['worktree', 'add', '-b', 'consult/held', join(worktreeDir(), 'held'), 'HEAD']);
-    git(dir, ['branch', 'consult/free']);
-    const raw = git(dir, [
-      'for-each-ref',
-      '--format=%(refname) %(worktreepath)',
-      'refs/heads/consult/*',
-    ]).stdout;
+    git(
+      dir,
+      ['worktree', 'add', '-b', 'consult/held', join(worktreeDir(), 'held'), 'HEAD'],
+      process.env,
+    );
+    git(dir, ['branch', 'consult/free'], process.env);
+    const raw = git(
+      dir,
+      ['for-each-ref', '--format=%(refname) %(worktreepath)', 'refs/heads/consult/*'],
+      process.env,
+    ).stdout;
     const lines = raw.split('\n').filter((line) => line !== '');
     const held = lines.find((line) => line.startsWith('refs/heads/consult/held'));
     const free = lines.find((line) => line.startsWith('refs/heads/consult/free'));
@@ -74,19 +78,30 @@ describe('git contract', () => {
   it('happy: 未マージのブランチ → branch -d の終了符号が 1、branch -D の終了符号が 0', () => {
     const dir = initRepo();
     const wt = join(worktreeDir(), 'unmerged');
-    git(dir, ['worktree', 'add', '-b', 'consult/unmerged', wt, 'HEAD']);
+    git(dir, ['worktree', 'add', '-b', 'consult/unmerged', wt, 'HEAD'], process.env);
     writeFileSync(join(wt, FILE), 'more\n');
-    git(wt, ['add', FILE]);
-    git(wt, ['-c', 'user.email=a@example.com', '-c', 'user.name=a', 'commit', '-m', 'more']);
-    git(dir, ['worktree', 'remove', '--force', wt]);
-    expect(git(dir, ['branch', '-d', 'consult/unmerged']).status).toBe(1);
-    expect(git(dir, ['branch', '-D', 'consult/unmerged']).status).toBe(0);
+    git(wt, ['add', FILE], process.env);
+    git(
+      wt,
+      ['-c', 'user.email=a@example.com', '-c', 'user.name=a', 'commit', '-m', 'more'],
+      process.env,
+    );
+    git(dir, ['worktree', 'remove', '--force', wt], process.env);
+    expect(git(dir, ['branch', '-d', 'consult/unmerged'], process.env).status).toBe(1);
+    expect(git(dir, ['branch', '-D', 'consult/unmerged'], process.env).status).toBe(0);
   });
 
   it('error: 使えない GIT_INDEX_FILE（ディレクトリ）を設定した状態 → git() はそれでも一時リポジトリを見る', () => {
     const dir = initRepo();
-    vi.stubEnv('GIT_INDEX_FILE', tempDir('git-contract-index-'));
-    const result = git(dir, ['status', '--porcelain']);
+    const result = git(dir, ['status', '--porcelain'], {
+      ...process.env,
+      GIT_INDEX_FILE: tempDir('git-contract-index-'),
+    });
     expect(result.status).toBe(0);
+  });
+
+  it('happy: gitEnv の引数なし呼び出し → 型エラーになる', () => {
+    // @ts-expect-error - env は必須。既定値で process.env を読まない
+    expect(() => gitEnv()).toThrow();
   });
 });

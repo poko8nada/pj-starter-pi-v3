@@ -103,4 +103,13 @@ describe('pendingReports', () => {
     appendRun(found, aDoneRun({ subagent: 'consult-plain', ended: 1500 }), at);
     expect(pendingReports(found, { at, session: 'session-a' })).toEqual([]);
   });
+
+  it('at を渡さない呼び出し → 型エラーになる', () => {
+    const found = aPlace();
+    const done = aDoneRun({ notice: 'できた' });
+    expect(() => {
+      // @ts-expect-error - at は必須。既定値で今日を読まない
+      appendDelivered(found, done);
+    }).toThrow();
+  });
 });

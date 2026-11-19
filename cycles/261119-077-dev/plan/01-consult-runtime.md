@@ -449,33 +449,90 @@ interface RuntimeState {
 
 ## Notes
 
-### Cleanup: <what it cleaned>
+### Slice 1: `git()` が環境を値で受け取る
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 6c77d553
+- Stopped:
+
+### Slice 2: 入口が値を組み立てる
+
+- Findings: なし
+- Unplanned:
+  - `index.ts` の `buildDeps`・`buildLaunch` の引数名（`git`・`spawn`・`spawnSync`）は plan の形どおりにし、shadow の警告を `eslint-disable-next-line no-shadow` で抑えた（入口の値をそのまま渡すため）。`index.test.ts` の `now` は外側に移し、動的 import を静的 import に変えて shadow を消した。
+- Commit: 9acd5e17
+- Stopped:
+
+### Slice 3: 時刻を値で受け取る
+
+- Findings: なし
+- Unplanned:
+  - `registerRunTool` の実行時は `showRunningOnce(ctx.ui, place, session, new Date())` と読む。plan の 1.4 が変えた署名の呼び出し側で、plan が挙げていない。道具の実行時（入口の一種）に時刻を 1 回読んで渡す形にした。
+  - `session_start` の port に `now: () => now` を載せた。plan の 1.7 の port リテラルには `now` がないが、1.9 の `TickPort.now` 必須と合わせ、`const now = new Date()` の 1 回読みを使い回すための読み一貫である。
+  - `max-lines: 480` を保つため振る舞いを変えずに圧縮した。`createRuntime` に `controlAt` を抽出して `control` と `cancel` で共用し、`runInBackground` に `appendOutcome` を抽出し、`nextSubagentId` の床の計算を集約した。`max-params` の抑えは 3 か所（`beginRun`・`showRunningOnce`・`announceRunningSubagents` の 5 引数は plan の形どおり）。
+  - Added の回帰検出を補った。`appendDelivered(place, record)` と `ensureRoot(cwd, deps)` の `@ts-expect-error` を `delivery.test.ts`・`run/worktree.test.ts` に足した（`stamp()` は非公開関数のため、既定値なしの署名を読み直しで確かめた）。
+- Commit: 05550574
+- Stopped:
+
+### Cleanup: 重複する GIT_* 検査と module 外の一時文脈
+
+- Findings:
+  - `run/git-contract.test.ts` の `happy: GIT_INDEX_FILE を含む env を渡す → git() はその env から GIT_* を落として一時リポジトリを見る` は、直上の `error:` ケースと Given（`GIT_INDEX_FILE` に使えないディレクトリを渡す）も結果（`status` 0）も同一のため落とした。残した `error:` が回帰（使えない `GIT_INDEX_FILE` でも一時リポジトリを見る）を担う。
+- Unplanned:
+  - `tool/consult.test.ts` の module 外の `toolCtx`（`tempDir()` を外で呼ぶと最初のテストの後始末で消える）を、テストごとに作る `testCtx()` に変えた。`startSubagent` が使う。振る舞いは同じ。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし。`git-contract.test.ts:94` の表題「設定した状態」は値渡し後の表現としても読め、`lib/git-env.mjs:10` の JSDoc や `tool/consult.ts:148` の `max-params` 注釈は diff で更新済みのため、不整合は残っていない。
 - Unlisted:
+  - なし。`git diff` の変更は `## Files` に挙がったファイル群と plan 自身の `Notes` 追記のみで、名指しのない実装ファイルの変更はない。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:310` の `process.cwd()` の 1 回読みに対応する検査がない。`index.test.ts:405` の配線試験は `launch.env` の写しと `GIT_*` 落としだけを見て、`placeOf(process.cwd(), deps)` に `cwd` が渡ることや入口より下で `cwd` を読まないことは確かめていない。Goal の「時刻・環境と並ぶ `cwd` を入口で 1 回読む」側の穴である。
+    fixed: 入口の `place` を `createRuntime` の mock で捕まえ、独立に組み立てた期待値（`placeFor(root, topLevel(process.cwd(), buildDeps(env, realGit)))`）と比べる配線試験を `index.test.ts` に足した。`cwd` を変えたら `topLevel` が変わり赤になる。
+  - 渡した時刻が使われることの検査がない。`tool/consult.test.ts:189` の種（`new Date()`）と `tool/consult.test.ts:363` などの呼出し（`new Date()`）が同日のため、`controlSubagent`・`nextSubagentId`・`runningIn` が `now` を無視して内部の今日を読んでも緑のままである。昨日書いて今日読むような日跨ぎの窓選択は `## Verify` の `Added`（型エラー）では担えない。
+    fixed: 日跨ぎの窓選択を壊せる検査を足した。`controlSubagent`（`consult.test.ts` の `now が窓を決める`）と `beginRun`→`nextSubagentId`（`consult.test.ts` の `記録の窓は now で決まる`、`setup` に時計注入）と `runningIn`（`tool/worktree.test.ts` の `now が窓を決める`）で、`now` を無視すると赤になる。
 - Policy:
+  - なし。`lib/git-env.mjs:10,28` に `process.env` の既定値や内部読みは残らず、`run/run.ts:413,436,478` は `now` を必須化して内部の `Date.now()` を持たず、`tool/consult.ts:340` の `run` 必須化で既定ランナー組立ては消えている。
 - Unproven:
+  - `.pi/extensions/consult/tool/consult.test.ts:766`（`controlSubagent` の `list` 系）は、種と呼出しがともに当日 `new Date()` のため、`readRuns(place, { at: now })` が `now` を無視して内部の今日を読んでも緑のままである。窓（`windowFiles`）の選択に `now` が効いていることを壊せない。
+    fixed: `host.now()` を 3 日前にした `list` 検査を `subagents.test.ts` に足した。`host.now()` を無視すると今日の記録が出て赤になる。
+  - `.pi/extensions/consult/index.test.ts:139` の tick 後の `readRuns(found, { at: new Date() })` は、書込み `pending(found)`（`index.test.ts:55` の `new Date()`）と同日のため、`startTick` が `port.now()` を無視して `new Date()` を読んでも緑のままである。時計の差替えが効くことを壊せない。
+    fixed: `port.now()` を 3 日前にした tick 検査を `index.test.ts` に足した。`port.now()` を無視すると今日の完了を送って赤になる。
 - Noise:
+  - なし。`index.ts:285,297,299` の `no-shadow` 抑えと `index.ts:122,194`・`tool/consult.ts:148,448` の `max-params` 抑えは plan の形どおりとして `Notes` で申告済みであり、`@ts-expect-error`（`run/git-contract.test.ts:104` ほか）は `Added` の回帰検出そのものである。`buildDeps`・`buildLaunch` の同値検査のリテラルは入力の echo で魔数ではない。
 - Doubts:
+  - `.pi/extensions/consult/index.ts:276` の `registerRunTool` 実行時の `new Date()` は `Notes` で「道具の実行時（入口の一種）」とされているが、`Policy` の「関数の内部で `new Date()` を読むこと」禁止に当たるかの所有者判断が要る。入口とみなすなら許容、そうでないなら clock 注入への修正が要る。
+  - `.pi/extensions/consult/sub/guard.ts:89` と `.pi/extensions/consult/sub/budget.ts:82` の `process.env` 読みは diff が触っておらず plan の `Files` 外だが、Goal の「入口で 1 回読む」に対する別入口（子 pi プロセス）とみなすかの所有者判断が要る。
 
 ### Round 2
 
 - Stale:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Unlisted:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Gaps:
+  - fixed である。`.pi/extensions/consult/index.test.ts:452` の配線試験は、入口の `place` を `createRuntime` の mock（`seenPlaces`）で捕まえ、独立に組み立てた期待値（`placeFor(root, topLevel(process.cwd(), buildDeps(process.env, realGit)))`）と比べている。実装 `.pi/extensions/consult/index.ts:310` は `placeOf(process.cwd(), deps)` で `cwd` を渡すため、`cwd` を無視する壊し（例: 固定値や `deps.root` の直渡し）では `topLevel` の差で赤になる。よって「`cwd` が `place` に渡ること」の穴は塞がった。
+  - fixed である。時刻の窓の 3 件はいずれも `now` を無視すると赤になる。`tool/consult.test.ts:501`（`controlSubagent` の `now が窓を決める`）は 3 日前の記録を今日の `now` では見えず・3 日前の `now` では `kill` すること、`tool/consult.test.ts:234`（`記録の窓は now で決まる`）は今日の `consult-3` を 3 日前の時計では数えず `consult-1` になること、`tool/worktree.test.ts:233`（`now が窓を決める`）は今日の開始行を今日の `now` では走行中・3 日前の `now` では走行外と見ることを確かめる。実装も `tool/consult.ts:186,189`（`readRuns(place, { session, at: now })`）、`tool/worktree.ts:103`（`readRuns(place, { at: now })`）と `now` を通すため、内部の今日読みに戻ると赤になる。
 - Policy:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Unproven:
+  - fixed である。`tool/subagents.test.ts:279`（`list は host.now() の窓を読む`）は今日の記録を 3 日前の時計では出さないことを確かめる。実装 `tool/subagents.ts:211` は `new Date(host.now())` を読み `readRuns(host.place, { session, at: now })` に渡すため、`host.now()` を無視して内部の今日を読む壊しでは記録が出て赤になる。
+  - fixed である。`.pi/extensions/consult/index.test.ts:227`（`tick は port.now() の窓を読む`）は `port.now()` を 3 日前にすると今日の完了を送らないことを確かめる。実装 `.pi/extensions/consult/index.ts:150` は `const now = port.now()` を 1 回読むため、`port.now()` を無視して `new Date()` を読む壊しでは送信と音が出て赤になる。
 - Noise:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Doubts:
+  - 入口の「1 回だけ読む」の回数自体は数えていない（`index.test.ts:452` は値の配線を見て、呼び回数は見ない）。値が渡ることは塞がったため finding とはしないが、回数の厳密さが必要かの所有者判断が要る。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: 達成。`subagent-consult` は実行環境を入口で 1 回読み、値を引数で受け取る。`process.env` は `index.ts:307` で 1 回だけ読み、`buildDeps`・`buildLaunch`（`env`・`spawn`・`spawnSync`・`Date.now` を渡す）に渡り、`git()` は値の `env` から `GIT_*` を落とす。`process.cwd()` は `index.ts:310` で 1 回だけ読み、`placeOf` に渡る（配線試験 `index.test.ts:452` が `topLevel` の差で壊せる）。時刻は内部読みがなく、日付選択は `Date` の `at`・`now`、経過計算は数時計 `now: () => number` を引数で受け、タイマー発火時はその場で読む。呼び回数の厳密さは数えていないが、値は渡る（Round 2 の `Doubts` を見よ）。
+- Ran: `pnpm test:related`（plan の 18 ファイル指定、238 passed）、`pnpm test:run`（67 ファイル・858 passed）、`pnpm typecheck`（root・.pi とも ok）、`pnpm lint`（`--deny-warnings` 通過）、`pnpm format:check`（通過）。plan は振る舞いを足さないため、壊して赤にする確認の代わりに `b40a69a1..HEAD` の差分を読み、入口以外の `process.env`・`process.cwd()`・`Date.now()`・`new Date()` が残っていないことを確かめた（残るのは入口まわりの 5 か所：`env`・`cwd`・`now` の 1 回読み、道具実行時の読み、時計の受け渡し。ほかに plan の `Files` 外の `sub/` に 4 か所あり、後者は Round 1 の `Doubts` のとおり）。
+- Findings: なし。Round 1 の 4 件は `ff385ffe` で検査を足して塞ぎ、Round 2 が壊せることを確認した。
 - Doubts:
+  - `registerRunTool` 実行時の `new Date()`（`index.ts:276`）を入口とみなすかの所有者判断が要る（Round 1 より継続）。
+  - `sub/guard.ts`・`sub/budget.ts` の `process.env` 読みを別入口（子 pi プロセス）とみなすかの所有者判断が要る（Round 1 より継続）。
+  - 入口の「1 回だけ読む」の回数自体は数えていない（Round 2 より継続）。値が渡ることは塞がった。
