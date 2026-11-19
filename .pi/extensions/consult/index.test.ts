@@ -275,7 +275,7 @@ describe('showRunningOnce', () => {
     const found = aPlace();
     running(found);
     const { ui, calls } = aWidgetUI();
-    showRunningOnce(ui, found, 'session-a', new Date());
+    showRunningOnce({ ui, place: found, sessionId: 'session-a', now: new Date() });
 
     expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
   });

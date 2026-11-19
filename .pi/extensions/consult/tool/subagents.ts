@@ -24,7 +24,7 @@ import {
   type RunRecord,
 } from '../run/log.ts';
 import type { Place } from '../run/place.ts';
-import type { ControlAction, ControlOutcome } from './consult.ts';
+import type { ControlAction, ControlOutcome } from './control.ts';
 
 /**
  * この道具が runtime に求める面。

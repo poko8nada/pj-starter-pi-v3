@@ -5,7 +5,7 @@
  * 保存場所（`Place`）はここで 1 回だけ決め、runtime に渡す。テストは保存場所を一時ディレクトリに逃がせる。
  */
 
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn as runSpawn, spawnSync as runSpawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,7 +26,7 @@ import { oldFiles, placeFor, type Place } from './run/place.ts';
 import { CONSULT_ROOT, cleanWorktrees, topLevel, type WorktreeDeps } from './run/worktree.ts';
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, createCommitTool } from './tool/commit.ts';
-import { git, gitEnv } from '../../../lib/git-env.mjs';
+import { git as runGit, gitEnv } from '../../../lib/git-env.mjs';
 import type { GitOutput, LaunchPorts, Spawn, SpawnSync } from './run/run.ts';
 import { loadTypes } from './policy/types.ts';
 import { countRoles, showRunning, type WidgetUI } from './view/widget.ts';
@@ -119,14 +119,14 @@ export function roleOrder(dir = EXTENSION_DIR): readonly string[] {
 }
 
 /** いまの session の稼働表示を 1 回セットする。失敗は握って、呼び出し側を止めない */
-// eslint-disable-next-line max-params -- plan の I/O（ui, place, sessionId, now, check の 5 つ）
-export function showRunningOnce(
-  ui: WidgetUI,
-  place: Place,
-  sessionId: string,
-  now: Date,
-  check?: CheckRecord,
-): void {
+export function showRunningOnce(input: {
+  readonly ui: WidgetUI;
+  readonly place: Place;
+  readonly sessionId: string;
+  readonly now: Date;
+  readonly check?: CheckRecord;
+}): void {
+  const { ui, place, sessionId, now, check } = input;
   try {
     showRunning(
       ui,
@@ -191,14 +191,14 @@ export function stopTick(): void {
  * いまの session の走っているサブエージェントだけを見る（別の session のサブエージェントの報告はここには来ないので、
  * 待たせない）。
  */
-// eslint-disable-next-line max-params -- plan の I/O（place, announced, ctx, now, check の 5 つ）
-function announceRunningSubagents(
-  place: Place,
-  announced: string,
-  ctx: ExtensionContext,
-  now: Date,
-  check?: CheckRecord,
-): void {
+function announceRunningSubagents(input: {
+  readonly place: Place;
+  readonly announced: string;
+  readonly ctx: ExtensionContext;
+  readonly now: Date;
+  readonly check?: CheckRecord;
+}): void {
+  const { place, announced, ctx, now, check } = input;
   if (runningRuns(place, { session: announced, at: now }, check).length === 0) {
     return;
   }
@@ -273,7 +273,7 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
     execute: (...args) => {
       const started = consult.run(...args);
       const [, , , , ctx] = args;
-      showRunningOnce(ctx.ui, place, session, new Date());
+      showRunningOnce({ ui: ctx.ui, place, sessionId: session, now: new Date() });
       return started;
     },
   });
@@ -282,7 +282,6 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
 /** 入口で読んだ環境から、保存場所の解決に使う材料を組み立てる */
 export function buildDeps(
   env: Readonly<NodeJS.ProcessEnv>,
-  // eslint-disable-next-line no-shadow -- 入口の git をそのまま渡すため、plan の形どおり引数名を git にする
   git: (cwd: string, args: readonly string[], env: Readonly<NodeJS.ProcessEnv>) => GitOutput,
 ): WorktreeDeps {
   return {
@@ -294,9 +293,7 @@ export function buildDeps(
 /** 入口で読んだ材料から、起動経路が外から受け取るものを組み立てる */
 export function buildLaunch(
   env: Readonly<NodeJS.ProcessEnv>,
-  // eslint-disable-next-line no-shadow -- 入口の起動経路をそのまま渡すため、plan の形どおり引数名を spawn にする
   spawn: Spawn,
-  // eslint-disable-next-line no-shadow -- 同上（spawnSync）
   spawnSync: SpawnSync,
   now: () => number,
 ): LaunchPorts {
@@ -305,8 +302,8 @@ export function buildLaunch(
 
 export default function (pi: ExtensionAPI) {
   const env = process.env;
-  const deps = buildDeps(env, git);
-  const launch = buildLaunch(env, spawn, spawnSync, Date.now);
+  const deps = buildDeps(env, runGit);
+  const launch = buildLaunch(env, runSpawn, runSpawnSync, Date.now);
   const place = placeOf(process.cwd(), deps);
   const run = createConsult(deps, launch);
   const consult = createRuntime({
@@ -328,8 +325,8 @@ export default function (pi: ExtensionAPI) {
     const now = new Date();
     const port = { pi, place, sessionNow: () => session, ui: ctx.ui, now: () => now };
     closeQuietly(place, session, now);
-    announceRunningSubagents(place, session, ctx, now);
-    showRunningOnce(ctx.ui, place, session, now);
+    announceRunningSubagents({ place, announced: session, ctx, now });
+    showRunningOnce({ ui: ctx.ui, place, sessionId: session, now });
     sweep(place, ctx.cwd, deps, now);
     flushPending(port, now);
     pruneCursors(place, now, KEEP_DAYS);

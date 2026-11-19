@@ -9,7 +9,6 @@
 import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  controlSubagent,
   createConsult,
   createRuntime,
   modelNotifier,
@@ -82,14 +81,14 @@ function fakeLaunch(): LaunchPorts {
 }
 
 /** runtime と保存場所を組む。session は `SESSION`。`check` と `now` で照合と時計を差し替えられる */
-// eslint-disable-next-line max-params -- 偽物の組立て（pi, run, check, psRun, now の 5 つ）
-function setup(
-  pi: PiFace,
-  run: ConsultRunner,
-  check?: CheckRecord,
-  psRun?: PsRun,
-  now: () => number = Date.now,
-): { readonly runtime: ConsultRuntime; readonly place: Place } {
+function setup(input: {
+  readonly pi: PiFace;
+  readonly run: ConsultRunner;
+  readonly check?: CheckRecord;
+  readonly psRun?: PsRun;
+  readonly now?: () => number;
+}): { readonly runtime: ConsultRuntime; readonly place: Place } {
+  const { pi, run, check, psRun, now = Date.now } = input;
   const place = aPlace();
   const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
   const launch = fakeLaunch();
@@ -196,7 +195,7 @@ describe('run', () => {
   it('review を 1 体起こす → id が返り、その時点でサブエージェントは終わっていない', async () => {
     const { pi, calls } = fakePi();
     const { run: runner, signals, resolvers } = deferredRunner();
-    const { runtime } = setup(pi, runner);
+    const { runtime } = setup({ pi, run: runner });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
@@ -210,7 +209,7 @@ describe('run', () => {
   it('記録に consult-3 がある → 次のサブエージェントは consult-4（reload で番号が戻らない）', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
-    const { runtime, place } = setup(pi, runner);
+    const { runtime, place } = setup({ pi, run: runner });
     const seedNum = 3;
     const expectedNum = seedNum + 1;
     seedRunning(place, { subagent: `consult-${seedNum}` });
@@ -223,7 +222,7 @@ describe('run', () => {
   it('別の session の consult-9 は数えない → この session の次は consult-1', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
-    const { runtime, place } = setup(pi, runner);
+    const { runtime, place } = setup({ pi, run: runner });
     seedRunning(place, { subagent: 'consult-9', session: 'other-session' });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
@@ -236,9 +235,7 @@ describe('run', () => {
     const { run: runner } = deferredRunner();
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const { runtime, place } = setup(pi, runner, undefined, undefined, () =>
-      threeDaysAgo.getTime(),
-    );
+    const { runtime, place } = setup({ pi, run: runner, now: () => threeDaysAgo.getTime() });
     seedRunning(place, { subagent: 'consult-3' });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
@@ -249,7 +246,7 @@ describe('run', () => {
   it('同じ runtime で続けて 2 体 → consult-1、consult-2（記録に書かれる前に次を決める）', async () => {
     const { pi } = fakePi();
     const { run: runner } = deferredRunner();
-    const { runtime } = setup(pi, runner);
+    const { runtime } = setup({ pi, run: runner });
 
     const first = await startSubagent(runtime, { role: 'review', task: '1 体目' });
     const second = await startSubagent(runtime, { role: 'review', task: '2 体目' });
@@ -261,7 +258,7 @@ describe('run', () => {
   it('書き込むロール（code）で worktree を省くと、サブエージェントを起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const { runtime } = setup(pi, runner);
+    const { runtime } = setup({ pi, run: runner });
 
     await expect(startSubagent(runtime, { role: 'code', task: 'x' })).rejects.toThrow(
       /needs a worktree/,
@@ -273,7 +270,7 @@ describe('run', () => {
   it('知らない worktree の id → サブエージェントを起こさずに拒む', async () => {
     const { pi } = fakePi();
     const { run: runner, signals } = deferredRunner();
-    const { runtime } = setup(pi, runner);
+    const { runtime } = setup({ pi, run: runner });
 
     await expect(
       startSubagent(runtime, { role: 'code', task: 'x', worktree: 'no-such-unit' }),
@@ -293,7 +290,7 @@ describe('完了の通知', () => {
         resolveOutcome = resolve;
       });
     };
-    const { runtime, place } = setup(pi, run);
+    const { runtime, place } = setup({ pi, run });
     await startSubagent(runtime, { role: 'review', task: '直す' });
 
     const body = 'the subagent text';
@@ -325,7 +322,7 @@ describe('完了の通知', () => {
       job.onStarted?.(process.pid);
       return Promise.reject(reason);
     };
-    const { runtime, place } = setup(pi, run);
+    const { runtime, place } = setup({ pi, run });
     await startSubagent(runtime, { role: 'review', task: '直す' });
     await flush();
 
@@ -340,7 +337,7 @@ describe('cancel', () => {
   it('/consult-cancel <id> → その id が止まる', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     await startSubagent(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -353,7 +350,7 @@ describe('cancel', () => {
   it('/consult-cancel に知らない id → 理由を出して止めない', async () => {
     const { pi } = fakePi();
     const { run, signals } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     await startSubagent(runtime, { role: 'review', task: 'a' });
 
     const { ctx, notices } = fakeCommandContext();
@@ -362,241 +359,6 @@ describe('cancel', () => {
     expect(notices[0]?.message).toContain('no such subagent: consult-999');
     expect(notices[0]?.type).toBe('error');
     expect(signals[0]?.aborted).toBe(false);
-  });
-});
-
-describe('controlSubagent: cancel', () => {
-  it('掴んでいるサブエージェント → abort で止まり、cancelled: true（kill は呼ばない）', () => {
-    const kills: number[] = [];
-    const controller = new AbortController();
-    const subagents = new Map([
-      ['consult-1', { id: 'consult-1', type: 'review', task: 'a', startedAt: 1, controller }],
-    ]);
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-1' },
-      subagents,
-      placeFor(tempDir(), tempDir()),
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(controller.signal.aborted).toBe(true);
-    expect(outcome.details).toMatchObject({ cancelled: true, id: 'consult-1' });
-    expect(kills).toEqual([]);
-  });
-
-  it('掴んでいないサブエージェント（記録だけ、pid 生存）→ kill がその pid で 1 回呼ばれ、cancelled: true', () => {
-    const found = placeFor(tempDir(), tempDir());
-    seedRunning(found, { pid: process.pid });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(kills).toEqual([process.pid]);
-    expect(outcome.details).toMatchObject({ cancelled: true, id: 'consult-9' });
-    expect(outcome.text).toContain('cancelled consult-9');
-  });
-
-  it('pid が死んでいるサブエージェント → kill を呼ばず、止められない理由を返す', () => {
-    const found = placeFor(tempDir(), tempDir());
-    seedRunning(found, { pid: 999_999 });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-    expect(outcome.text).toContain('lost');
-  });
-
-  it('終わったサブエージェント → kill を呼ばず、理由を返す', () => {
-    const found = placeFor(tempDir(), tempDir());
-    const id = 'consult-9';
-    appendRun(
-      found,
-      aRunRecord({
-        session: SESSION,
-        subagent: id,
-        pid: process.pid,
-        started: 1,
-        ended: 2,
-        state: 'done',
-      }),
-      new Date(),
-    );
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-  });
-
-  it('記録にない id → kill を呼ばず、理由を返す', () => {
-    const id = 'consult-999';
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id },
-      new Map(),
-      placeFor(tempDir(), tempDir()),
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-    expect(outcome.text).toContain(`no such subagent: ${id}`);
-  });
-
-  it('別の session のサブエージェント → 止めず、理由を返す', () => {
-    const found = placeFor(tempDir(), tempDir());
-    seedRunning(found, { session: 'other-session', pid: process.pid });
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-    );
-
-    expect(kills).toEqual([]);
-    expect(outcome.details).toMatchObject({ cancelled: false });
-    expect(outcome.text).toContain('another session');
-  });
-
-  it('now が窓を決める → 3 日前の記録は今日の now では見えない', () => {
-    const found = placeFor(tempDir(), tempDir());
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    appendRun(
-      found,
-      aRunRecord({ session: SESSION, subagent: 'consult-9', pid: 11, started: 1, token: 'a' }),
-      threeDaysAgo,
-    );
-    const kills: number[] = [];
-    const kill = (pid: number): void => {
-      kills.push(pid);
-    };
-    const fresh = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      kill,
-    );
-    expect(fresh.text).toContain('no such subagent');
-    const old = controlSubagent(
-      { action: 'cancel', id: 'consult-9' },
-      new Map(),
-      found,
-      SESSION,
-      threeDaysAgo,
-      kill,
-      () => 'running',
-    );
-    expect(kills).toEqual([11]);
-    expect(old.details).toMatchObject({ cancelled: true });
-  });
-});
-
-describe('controlSubagent: cancel (startToken)', () => {
-  it('開始行だけ（startToken 付き）の停止は check に従う（running → kill、ended → kill しない）', () => {
-    const found = placeFor(tempDir(), tempDir());
-    const id = 'consult-9';
-    const startToken = START_TOKEN;
-    appendRun(
-      found,
-      aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
-      new Date(),
-    );
-    const killsRunning: number[] = [];
-    const outcomeRunning = controlSubagent(
-      { action: 'cancel', id },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        killsRunning.push(pid);
-      },
-      () => 'running',
-    );
-    expect(killsRunning).toEqual([11]);
-    expect(outcomeRunning.details).toMatchObject({ cancelled: true });
-    const killsEnded: number[] = [];
-    const outcomeEnded = controlSubagent(
-      { action: 'cancel', id },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        killsEnded.push(pid);
-      },
-      () => 'ended',
-    );
-    expect(killsEnded).toEqual([]);
-    expect(outcomeEnded.details).toMatchObject({ cancelled: false });
-  });
-
-  it('開始行だけ（startToken 付き）+ check が unknown の停止 → kill する（走っている側）', () => {
-    const found = placeFor(tempDir(), tempDir());
-    const id = 'consult-9';
-    const startToken = START_TOKEN;
-    appendRun(
-      found,
-      aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
-      new Date(),
-    );
-    const kills: number[] = [];
-    const outcome = controlSubagent(
-      { action: 'cancel', id },
-      new Map(),
-      found,
-      SESSION,
-      new Date(),
-      (pid) => {
-        kills.push(pid);
-      },
-      () => 'unknown',
-    );
-    expect(kills).toEqual([11]);
-    expect(outcome.details).toMatchObject({ cancelled: true });
   });
 });
 
@@ -749,7 +511,7 @@ describe('status', () => {
   it('走っている記録が 2 件 → 1 回の通知に 2 行、info で出す', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
+    const { runtime, place } = setup({ pi, run });
     seedRunning(place, { subagent: 'consult-1' });
     seedRunning(place, { subagent: 'consult-2' });
     const { ctx, notices } = fakeCommandContext();
@@ -767,7 +529,7 @@ describe('status', () => {
   it('走っている記録がない → info で通知する', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.status('', ctx);
@@ -779,7 +541,7 @@ describe('status', () => {
   it('別セッションの走っている記録 → 出さない', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime, place } = setup(pi, run);
+    const { runtime, place } = setup({ pi, run });
     seedRunning(place, { subagent: 'consult-9', session: 'other-session' });
     const { ctx, notices } = fakeCommandContext();
 
@@ -793,7 +555,7 @@ describe('音', () => {
   it('/consult-sound → 状態を出し、on / off を切り替える', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     const { ctx, notices } = fakeCommandContext();
 
     await runtime.commands.sound('', ctx);
@@ -808,104 +570,11 @@ describe('音', () => {
   });
 });
 
-describe('controlSubagent: list', () => {
-  it('サブエージェントが 0 体なら、そう言う（空文字を返さない）', () => {
-    const outcome = controlSubagent(
-      { action: 'list' },
-      new Map(),
-      placeFor(tempDir(), tempDir()),
-      SESSION,
-      new Date(),
-    );
-    expect(outcome.text).toContain('no subagent is running');
-  });
-
-  it('知らせの文はどの分岐でも consult_subagents: で始まる', () => {
-    const controller = new AbortController();
-    const held = new Map([
-      ['consult-1', { id: 'consult-1', type: 'review', task: 'a', startedAt: 1, controller }],
-    ]);
-    const texts: string[] = [];
-    texts.push(
-      controlSubagent(
-        { action: 'list' },
-        new Map(),
-        placeFor(tempDir(), tempDir()),
-        SESSION,
-        new Date(),
-      ).text,
-    );
-    texts.push(
-      controlSubagent(
-        { action: 'cancel', id: 'consult-1' },
-        held,
-        placeFor(tempDir(), tempDir()),
-        SESSION,
-        new Date(),
-      ).text,
-    );
-    texts.push(
-      controlSubagent(
-        { action: 'cancel', id: 'consult-999' },
-        new Map(),
-        placeFor(tempDir(), tempDir()),
-        SESSION,
-        new Date(),
-      ).text,
-    );
-    const other = placeFor(tempDir(), tempDir());
-    seedRunning(other, { session: 'other-session', pid: process.pid });
-    texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION, new Date())
-        .text,
-    );
-    const done = placeFor(tempDir(), tempDir());
-    const doneId = 'consult-9';
-    appendRun(
-      done,
-      aRunRecord({
-        session: SESSION,
-        subagent: doneId,
-        pid: process.pid,
-        started: 1,
-        ended: 2,
-        state: 'done',
-      }),
-      new Date(),
-    );
-    texts.push(
-      controlSubagent({ action: 'cancel', id: doneId }, new Map(), done, SESSION, new Date()).text,
-    );
-    const lost = placeFor(tempDir(), tempDir());
-    seedRunning(lost, { pid: 999_999 });
-    texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), lost, SESSION, new Date())
-        .text,
-    );
-    const live = placeFor(tempDir(), tempDir());
-    seedRunning(live, { pid: process.pid });
-    texts.push(
-      controlSubagent(
-        { action: 'cancel', id: 'consult-9' },
-        new Map(),
-        live,
-        SESSION,
-        new Date(),
-        () => {},
-      ).text,
-    );
-    expect(texts).toHaveLength(7);
-    for (const text of texts) {
-      expect(text.startsWith('consult_subagents:')).toBe(true);
-    }
-  });
-});
-
 describe('commands: 引数と空の一覧', () => {
   it('/consult-cancel に id がなければ、使い方を出して止めない', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.cancel('', ctx);
     expect(notices[0]?.message).toContain('needs an id');
@@ -916,7 +585,7 @@ describe('commands: 引数と空の一覧', () => {
   it('/consult-sound に不正な引数 → 使い方を出す', async () => {
     const { pi } = fakePi();
     const { run } = deferredRunner();
-    const { runtime } = setup(pi, run);
+    const { runtime } = setup({ pi, run });
     const { ctx, notices } = fakeCommandContext();
     await runtime.commands.sound('nope', ctx);
     expect(notices[0]?.message).toContain('usage');
@@ -942,7 +611,7 @@ describe('beginRun: startToken', () => {
       job.onStarted?.(pid);
       return { text: 'done', details: {}, report: undefined };
     };
-    const { runtime, place } = setup(pi, run, undefined, psRun);
+    const { runtime, place } = setup({ pi, run, psRun });
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
     expect(called).toBe(1);
@@ -961,7 +630,7 @@ describe('beginRun: startToken', () => {
     };
     const gone = { status: 1 as const, stdout: '', stderr: '' };
     const psRun: PsRun = () => gone;
-    const { runtime, place } = setup(pi, run, undefined, psRun);
+    const { runtime, place } = setup({ pi, run, psRun });
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
     const records = readRuns(place, { session: SESSION, at: new Date() });
@@ -982,7 +651,7 @@ describe('beginRun: token', () => {
       job.onStarted?.(pid);
       return { text: 'done', details: {}, report: undefined };
     };
-    const { runtime, place } = setup(pi, run);
+    const { runtime, place } = setup({ pi, run });
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
     const records = readRuns(place, { session: SESSION, at: new Date() });
