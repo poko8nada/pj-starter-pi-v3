@@ -511,16 +511,28 @@ interface RuntimeState {
 ### Round 2
 
 - Stale:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Unlisted:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Gaps:
+  - fixed である。`.pi/extensions/consult/index.test.ts:452` の配線試験は、入口の `place` を `createRuntime` の mock（`seenPlaces`）で捕まえ、独立に組み立てた期待値（`placeFor(root, topLevel(process.cwd(), buildDeps(process.env, realGit)))`）と比べている。実装 `.pi/extensions/consult/index.ts:310` は `placeOf(process.cwd(), deps)` で `cwd` を渡すため、`cwd` を無視する壊し（例: 固定値や `deps.root` の直渡し）では `topLevel` の差で赤になる。よって「`cwd` が `place` に渡ること」の穴は塞がった。
+  - fixed である。時刻の窓の 3 件はいずれも `now` を無視すると赤になる。`tool/consult.test.ts:501`（`controlSubagent` の `now が窓を決める`）は 3 日前の記録を今日の `now` では見えず・3 日前の `now` では `kill` すること、`tool/consult.test.ts:234`（`記録の窓は now で決まる`）は今日の `consult-3` を 3 日前の時計では数えず `consult-1` になること、`tool/worktree.test.ts:233`（`now が窓を決める`）は今日の開始行を今日の `now` では走行中・3 日前の `now` では走行外と見ることを確かめる。実装も `tool/consult.ts:186,189`（`readRuns(place, { session, at: now })`）、`tool/worktree.ts:103`（`readRuns(place, { at: now })`）と `now` を通すため、内部の今日読みに戻ると赤になる。
 - Policy:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Unproven:
+  - fixed である。`tool/subagents.test.ts:279`（`list は host.now() の窓を読む`）は今日の記録を 3 日前の時計では出さないことを確かめる。実装 `tool/subagents.ts:211` は `new Date(host.now())` を読み `readRuns(host.place, { session, at: now })` に渡すため、`host.now()` を無視して内部の今日を読む壊しでは記録が出て赤になる。
+  - fixed である。`.pi/extensions/consult/index.test.ts:227`（`tick は port.now() の窓を読む`）は `port.now()` を 3 日前にすると今日の完了を送らないことを確かめる。実装 `.pi/extensions/consult/index.ts:150` は `const now = port.now()` を 1 回読むため、`port.now()` を無視して `new Date()` を読む壊しでは送信と音が出て赤になる。
 - Noise:
+  - なし。`fixed:` の対象がない（Round 1 がなしのため、再確認の対象外）。
 - Doubts:
+  - 入口の「1 回だけ読む」の回数自体は数えていない（`index.test.ts:452` は値の配線を見て、呼び回数は見ない）。値が渡ることは塞がったため finding とはしないが、回数の厳密さが必要かの所有者判断が要る。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
+- Goal: 達成。`subagent-consult` は実行環境を入口で 1 回読み、値を引数で受け取る。`process.env` は `index.ts:307` で 1 回だけ読み、`buildDeps`・`buildLaunch`（`env`・`spawn`・`spawnSync`・`Date.now` を渡す）に渡り、`git()` は値の `env` から `GIT_*` を落とす。`process.cwd()` は `index.ts:310` で 1 回だけ読み、`placeOf` に渡る（配線試験 `index.test.ts:452` が `topLevel` の差で壊せる）。時刻は内部読みがなく、日付選択は `Date` の `at`・`now`、経過計算は数時計 `now: () => number` を引数で受け、タイマー発火時はその場で読む。呼び回数の厳密さは数えていないが、値は渡る（Round 2 の `Doubts` を見よ）。
+- Ran: `pnpm test:related`（plan の 18 ファイル指定、238 passed）、`pnpm test:run`（67 ファイル・858 passed）、`pnpm typecheck`（root・.pi とも ok）、`pnpm lint`（`--deny-warnings` 通過）、`pnpm format:check`（通過）。plan は振る舞いを足さないため、壊して赤にする確認の代わりに `b40a69a1..HEAD` の差分を読み、入口以外の `process.env`・`process.cwd()`・`Date.now()`・`new Date()` が残っていないことを確かめた（残るのは入口まわりの 5 か所：`env`・`cwd`・`now` の 1 回読み、道具実行時の読み、時計の受け渡し。ほかに plan の `Files` 外の `sub/` に 4 か所あり、後者は Round 1 の `Doubts` のとおり）。
+- Findings: なし。Round 1 の 4 件は `ff385ffe` で検査を足して塞ぎ、Round 2 が壊せることを確認した。
 - Doubts:
+  - `registerRunTool` 実行時の `new Date()`（`index.ts:276`）を入口とみなすかの所有者判断が要る（Round 1 より継続）。
+  - `sub/guard.ts`・`sub/budget.ts` の `process.env` 読みを別入口（子 pi プロセス）とみなすかの所有者判断が要る（Round 1 より継続）。
+  - 入口の「1 回だけ読む」の回数自体は数えていない（Round 2 より継続）。値が渡ることは塞がった。
