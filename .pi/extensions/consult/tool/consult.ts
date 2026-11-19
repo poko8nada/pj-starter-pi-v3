@@ -324,7 +324,7 @@ export interface RuntimeInput {
   readonly place: Place;
   readonly deps: WorktreeDeps;
   readonly launch: LaunchPorts;
-  readonly run?: ConsultRunner;
+  readonly run: ConsultRunner;
   readonly sessionNow?: () => string;
   readonly check?: CheckRecord;
   readonly psRun?: PsRun;
@@ -524,12 +524,11 @@ function soundStatus(): string {
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す。
  */
 export function createRuntime(input: RuntimeInput): ConsultRuntime {
-  const { pi, place, deps, launch, run, sessionNow = () => '', check, psRun } = input;
-  const runner = run ?? createConsult(deps, launch);
+  const { pi, place, deps, run, sessionNow = () => '', check, psRun } = input;
   const state: RuntimeState = {
     pi,
     place,
-    run: runner,
+    run,
     subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,

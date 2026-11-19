@@ -10,6 +10,7 @@ import type { AgentToolResult } from '@earendil-works/pi-coding-agent';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   controlSubagent,
+  createConsult,
   createRuntime,
   modelNotifier,
   type CommandContext,
@@ -53,7 +54,7 @@ vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string
 
 // 道具の文脈は cwd と通知の窓口だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
 // 一時ものを本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の保存場所を指す。
-const toolCtx: ConsultContext = { cwd: process.cwd(), ui: { notify: () => {} } };
+const toolCtx: ConsultContext = { cwd: tempDir(), ui: { notify: () => {} } };
 
 beforeEach(() => {
   setSoundEnabled(true);
@@ -73,6 +74,7 @@ function fakeLaunch(): LaunchPorts {
       throw new Error('spawnSync is not used');
     },
     env: {},
+    now: () => 0,
   };
 }
 
@@ -630,6 +632,7 @@ describe('consult: 通知の配線', () => {
       place: placeFor(tempDir(), tempDir()),
       deps,
       launch,
+      run: createConsult(deps, launch),
       sessionNow: () => SESSION,
     });
 

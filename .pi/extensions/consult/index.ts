@@ -10,7 +10,7 @@ import { rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createRuntime, type ConsultRuntime, type PiFace } from './tool/consult.ts';
+import { createConsult, createRuntime, type ConsultRuntime, type PiFace } from './tool/consult.ts';
 import { PARAMETERS as SUBAGENTS_PARAMETERS, createSubagentsTool } from './tool/subagents.ts';
 import { PARAMETERS as RUN_PARAMETERS } from './tool/run.ts';
 import { SOUND_INTERVAL_MS, playSound } from './tool/sound.ts';
@@ -27,7 +27,7 @@ import { CONSULT_ROOT, cleanWorktrees, topLevel, type WorktreeDeps } from './run
 import { PARAMETERS as WORKTREE_PARAMETERS, createWorktreeTool } from './tool/worktree.ts';
 import { PARAMETERS as COMMIT_PARAMETERS, createCommitTool } from './tool/commit.ts';
 import { git, gitEnv } from '../../../lib/git-env.mjs';
-import type { LaunchPorts } from './run/run.ts';
+import type { GitOutput, LaunchPorts, Spawn, SpawnSync } from './run/run.ts';
 import { loadTypes } from './policy/types.ts';
 import { countRoles, showRunning, type WidgetUI } from './view/widget.ts';
 import { registerNotice } from './view/notice.ts';
@@ -269,19 +269,37 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
   });
 }
 
-export default function (pi: ExtensionAPI) {
-  const env = process.env;
-  const deps: WorktreeDeps = {
+/** 入口で読んだ環境から、保存場所の解決に使う材料を組み立てる */
+export function buildDeps(
+  env: Readonly<NodeJS.ProcessEnv>,
+  // eslint-disable-next-line no-shadow -- 入口の git をそのまま渡すため、plan の形どおり引数名を git にする
+  git: (cwd: string, args: readonly string[], env: Readonly<NodeJS.ProcessEnv>) => GitOutput,
+): WorktreeDeps {
+  return {
     git: (cwd, args) => git(cwd, args, env),
     root: env.CONSULT_ROOT ?? CONSULT_ROOT,
   };
-  const launch: LaunchPorts = {
-    spawn,
-    spawnSync,
-    env: gitEnv(env),
-  };
+}
+
+/** 入口で読んだ材料から、起動経路が外から受け取るものを組み立てる */
+export function buildLaunch(
+  env: Readonly<NodeJS.ProcessEnv>,
+  // eslint-disable-next-line no-shadow -- 入口の起動経路をそのまま渡すため、plan の形どおり引数名を spawn にする
+  spawn: Spawn,
+  // eslint-disable-next-line no-shadow -- 同上（spawnSync）
+  spawnSync: SpawnSync,
+  now: () => number,
+): LaunchPorts {
+  return { spawn, spawnSync, env: gitEnv(env), now };
+}
+
+export default function (pi: ExtensionAPI) {
+  const env = process.env;
+  const deps = buildDeps(env, git);
+  const launch = buildLaunch(env, spawn, spawnSync, Date.now);
   const place = placeOf(process.cwd(), deps);
-  const consult = createRuntime({ pi, place, deps, launch, sessionNow: () => session });
+  const run = createConsult(deps, launch);
+  const consult = createRuntime({ pi, place, deps, launch, run, sessionNow: () => session });
 
   // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
   registerNotice(pi);

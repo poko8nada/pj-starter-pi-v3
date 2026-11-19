@@ -224,6 +224,7 @@ export interface LaunchPorts {
   readonly spawnSync: SpawnSync;
   /** 子に渡す環境の元。GIT_* は境界で落としてある */
   readonly env: NodeJS.ProcessEnv;
+  readonly now: () => number;
 }
 
 /** サブエージェントの起動オプション。stdio を文字列の組で書くことで、`spawn` の「3 本とも pipe」の形に当たる */
