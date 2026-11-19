@@ -449,6 +449,32 @@ interface RuntimeState {
 
 ## Notes
 
+### Slice 1: `git()` が環境を値で受け取る
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 6c77d553
+- Stopped:
+
+### Slice 2: 入口が値を組み立てる
+
+- Findings: なし
+- Unplanned:
+  - `index.ts` の `buildDeps`・`buildLaunch` の引数名（`git`・`spawn`・`spawnSync`）は plan の形どおりにし、shadow の警告を `eslint-disable-next-line no-shadow` で抑えた（入口の値をそのまま渡すため）。`index.test.ts` の `now` は外側に移し、動的 import を静的 import に変えて shadow を消した。
+- Commit: 9acd5e17
+- Stopped:
+
+### Slice 3: 時刻を値で受け取る
+
+- Findings: なし
+- Unplanned:
+  - `registerRunTool` の実行時は `showRunningOnce(ctx.ui, place, session, new Date())` と読む。plan の 1.4 が変えた署名の呼び出し側で、plan が挙げていない。道具の実行時（入口の一種）に時刻を 1 回読んで渡す形にした。
+  - `session_start` の port に `now: () => now` を載せた。plan の 1.7 の port リテラルには `now` がないが、1.9 の `TickPort.now` 必須と合わせ、`const now = new Date()` の 1 回読みを使い回すための読み一貫である。
+  - `max-lines: 480` を保つため振る舞いを変えずに圧縮した。`createRuntime` に `controlAt` を抽出して `control` と `cancel` で共用し、`runInBackground` に `appendOutcome` を抽出し、`nextSubagentId` の床の計算を集約した。`max-params` の抑えは 3 か所（`beginRun`・`showRunningOnce`・`announceRunningSubagents` の 5 引数は plan の形どおり）。
+  - Added の回帰検出を補った。`appendDelivered(place, record)` と `ensureRoot(cwd, deps)` の `@ts-expect-error` を `delivery.test.ts`・`run/worktree.test.ts` に足した（`stamp()` は非公開関数のため、既定値なしの署名を読み直しで確かめた）。
+- Commit: 05550574
+- Stopped:
+
 ### Cleanup: <what it cleaned>
 
 ## Work Review
