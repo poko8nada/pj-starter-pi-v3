@@ -42,9 +42,9 @@ What the work reads decides how the plans are cut.
 
 ## Present
 
-How the cut is shown to the owner, one block per plan in a fence.
+How the cut is shown to the owner, one block per plan.
 
-- Present one block per plan, in a fence.
+- Present one block per plan.
 - Write the order last, numbered, for all plans.
 
 ```markdown

@@ -5,7 +5,7 @@ description: Use when the owner names an unfinished ROADMAP.md item or asks for 
 
 # adr
 
-One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It records the cycle's decisions about `DEFINITION.md`. `slug` is automatically determined from the branch.
+One cycle has one ADR: `cycles/<YYMMDD>-<NNN>-<slug>/adr.md`. It records the cycle's decisions about `DEFINITION.md`. `<YYMMDD>-<NNN>-<slug>` is **automatically determined** from the branch.
 
 The ADR records what the project will be. A plan writes the change from `DEFINITION.md`. The plan and the work are written from `DEFINITION.md`, and none of them argues.
 
@@ -19,6 +19,7 @@ Steps:
 
 1. Gather info from docs and codes to grab owner's context.
 2. Write what you understood first.
+   - "purpose", "reason", "point", "to do", "not to do" are included.
 3. Let the owner correct it.
 4. Repeat until no point is left in dispute.
 
@@ -103,7 +104,7 @@ Steps:
    - the split
    - what the owner said.
    - other info such as `memo-*`
-3. Write one entry's own items only: its premise, its constraint, its intent, and its question.
+3. Write one entry's own items only: its premise, its constraint, and its intent.
 4. Number them `C1`, `C2`, ... in each entry.
 
 Note:
@@ -120,33 +121,34 @@ The entry stage runs once per entry, in the order the split gave. An entry is `_
 Steps:
 
 1. Read the `## Scope` section of `references/adr.format.md`.
-2. Write the `Scope` to adr.md, every kind, `In` or `Out`.
-   - Ensure that you **answer the questions in the table** and categorize items appropriately.
+2. **Be sure to answer the "QUESTIONS" in the table**
+3. Present them in the chat in a table format.
    - Answers cannot be classified as `In` simply because it is "related" to the topic.
    - Every kind belongs to `In` or `Out`, and to only one of them; every Full entry writes every kind.
-3. Let the owner correct the list.
-4. Write the result to the entry's `Scope` as `In:` and `Out:`.
+4. Write the `Scope` to adr.md, every kind, `In` or `Out`.
+5. Let the owner correct the list.
+6. Write the result to the entry's `Scope` as `In:` and `Out:`.
 
 View:
 
 - A scope is a breakdown of an entry, and an entry is a breakdown of an intent.
 - Scope table:
-  | **question (yes → in)**                                                                                                 | Kinds         |
-  | ----------------------------------------------------------------------------------------------------------------------- | ------------- |
-  | Does it touch secrets, permissions, exposure, or personal data?                                                         | safety        |
-  | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?        | failure       |
-  | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)       | upstream      |
-  | Does **the kinds of observable result** change? (what kinds is returned or emitted; side effects) Not a content itsself | result        |
-  | Does how things are divided, ordered, nested, or placed change? (**module, files, dirs, schema**, layout)               | structure     |
-  | Do the steps or rules that produce the result change? (**conditions, order, algorithms, constraints, instructions**)    | logic         |
-  | Must an existing entity be moved or fixed? (stored data, installed versions, distributed docs, past records)            | existing      |
-  | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)                  | downstream    |
-  | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                         | cost          |
-  | Does the content or notation change? (names, wording, sentences, tone, formatting, spelling)                            | expression    |
-  | Must **the means** of confirming correctness (tests, checks, review) be added or changed? **Not the test itself.**      | verification  |
-  | Do the records or signals the product leave change? (logs, metrics, audit records) For audit-related only.              | observability |
-  | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                      | release       |
-  | Is there a concern that none of the above covers?                                                                       | other         |
+  | Kinds               | question (yes → in)                                                                                                                              | your answer | In/Out |
+  | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ------ |
+  | safety              | Does it touch secrets, permissions, exposure, or personal data?                                                                                  |             |        |
+  | failure             | Does the way things fail change, or is there a check, validation, constraint, or failure path that must be kept?                                 |             |        |
+  | upstream            | Is an ex-thing the product relies on added, updated, or removed? (package, library, contract, data, cited source)                                |             |        |
+  | result              | Does **the kinds of observable result** change? (what kinds is returned or emitted; side effects) Not a content itsself                          |             |        |
+  | structure           | Does how things are divided, ordered, nested, or placed change? (**module, files, dirs, schema**, layout)                                        |             |        |
+  | logic               | Do the pure logic or step inside function change? (**conditions, order, algorithms, constraints, instructions**)                                 |             |        |
+  | existing data       | Must an existing entity (**stored data, installed versions, distributed docs, past records**) be moved or fixed?                                 |             |        |
+  | downstream          | Does anything else name, reference, or assume the changed thing? (callers, queries, links, other docs)                                           |             |        |
+  | cost                | Do time, resources, or money change? (speed, memory, API calls, tokens, effort)                                                                  |             |        |
+  | values & expression | Does the content or notation (not a result) change ? (primitives, objects, references, wording, sentences, tone, formatting, spelling)           |             |        |
+  | verification        | Do the means of confirming (**NOT a test logic and methods. Commands, classification, etc. that we can use from outside.**) be changed or added? |             |        |
+  | observability       | Do the records or signals the product leave change? (logs, metrics, audit records) For audit-related only.                                       |             |        |
+  | release             | Does it affect how the change is published, distributed, or applied, or how it can be rolled back?                                               |             |        |
+  | other               | Is there a concern that none of the above covers?                                                                                                |             |        |
 
 ### 2. The opening proposal
 
@@ -176,7 +178,7 @@ Steps:
 2. For each `In`, name the concrete points that must be decided as `In`, each with the agent's proposal. One `In` may have more than one point.
    - Do not overturn or call into question the initial intent.
    - From the `In` items select ONLY points that could serve as subjects for discussion.
-     1. Limit these points to "matters involving some options that are equally compelling".
+     1. Limit these points to **matters involving some options that are equally compelling**.
      2. If **a proposal is determined by your principles**, then it is a matter for confirmation.
      3. Just confirming is not the issue point. These will be presented together at the end.
 3. Show one point at a time, and discuss it until it is settled.

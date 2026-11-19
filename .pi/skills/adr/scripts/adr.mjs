@@ -15,9 +15,9 @@ export function typeLine(type) {
 export function scopeBody(type) {
   if (type === 'Simple') return '_omission_';
   return `- In:
-  - <kind>: <何をするか>
+  - <kind>: <問いへの答えの理由とその根拠>
 - Out:
-  - <kind>: <何をしないか>（理由）`;
+  - <kind>: <問いへの答えの理由とその根拠>`;
 }
 
 /**
@@ -48,9 +48,9 @@ ${typeLine(type)}
 
 ### Context
 
-- C1: <前提。いまの振る舞い>
-- C2: <制約。上限、変えないと決めたこと>
-- C3: <意図。オーナーの意図と意志>
+- C1: <前提: いまの振る舞い>
+- C2: <制約: 上限、変えないと決めたこと>
+- C3: <意図: オーナーの意図と意志>
 
 ### Research & Trial
 

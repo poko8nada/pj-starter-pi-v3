@@ -15,20 +15,20 @@ Type: _Full_
 
 ### Context
 
-- C1: <前提。いまの振る舞い>
-- C2: <制約。上限、変えないと決めたこと>
-- C3: <意図。オーナーの意図と意志>
+- C1: <前提: いまの振る舞い>
+- C2: <制約: 上限、変えないと決めたこと>
+- C3: <意図: オーナーの意図と意志>
 
 ### Research & Trial
 
-- F1: <事実>。出所: <出所>
+- F1: <事実> 出所: <出所>
 
 ### Scope
 
 - In:
-  - <kind>: <何をするか>
+  - <kind>: <問いへの答えの理由とその根拠>
 - Out:
-  - <kind>: <何をしないか>（理由）
+  - <kind>: <問いへの答えの理由とその根拠>
 
 ### Decision
 
@@ -62,8 +62,8 @@ Type: _Full_
 
 ### Definition
 
-- `Unit.<name>`(updated): <新しい行>
-- `Unit.<name>`(kept): <その行が動かない理由>
+- `Unit.<name>`(updated): <新しい説明>
+- `Unit.<name>`(kept): <その説明が変わらない理由>
 ````
 
 ## Entries
@@ -89,8 +89,8 @@ The entry's way of working.
 
 The range the entry decides, in `In` and `Out`.
 
-- `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <what is done>`.
-- `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <what is not done>（理由）`.
+- `In:` holds one line per kind that answers yes — what this session changes, or checks for consistency — in `<kind>: <The reason for the answer to the question and its grounds>`.
+- `Out:` holds one line per kind that answers no — not a target, with the reason on the line — in `<kind>: <The reason for the answer to the question and its grounds>`.
 - When a kind needs a revisit condition, put it on that kind.
 - A Simple entry's body is `_omission_`.
 

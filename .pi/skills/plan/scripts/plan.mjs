@@ -119,7 +119,7 @@ export function filesTree(paths) {
 export function planSkeleton({ id, entries, place, files }) {
   return `# PLAN \`${id}\`
 
-- No: ${entries.join(', ')}
+- ADR-No: ${entries.join(', ')}
 - Place: ${place}
 - Boundary Plans:
 

@@ -9,7 +9,7 @@ Section and field names are English; the content is Japanese.
 ````md
 # PLAN `<plan id>`
 
-- No: <NN>[, <NN>...]
+- ADR-No: <NN>[, <NN>...]
 - Place: <worktree|base>
 - Boundary Plans: <the plans this one stands on, and the order>
 
@@ -148,8 +148,7 @@ The four questions the plan answers about shape, and why that shape.
 
 The ADR entries the plan carries.
 
-- `No` holds the entry numbers the plan carries, copied as they are, as a comma-separated list.
-- The plan keeps `- No: <NN>[, <NN>...]` at the top.
+- `ADR-No` holds the entry numbers the plan carries, copied as they are, as a comma-separated list.
 - The same entry number may appear in another plan.
 
 ## Files

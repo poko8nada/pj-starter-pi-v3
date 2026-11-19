@@ -100,7 +100,7 @@ describe('planSkeleton', () => {
       files: 'src/\n  a.ts',
     });
     expect(markdown).toContain('# PLAN `xxx-update`');
-    expect(markdown).toContain('- No: 01, 02');
+    expect(markdown).toContain('- ADR-No: 01, 02');
     expect(markdown).toContain('- Place: worktree');
     expect(markdown).toContain('```text\nsrc/\n  a.ts\n```');
     const headings = markdown.split('\n').filter((line) => line.startsWith('#'));
