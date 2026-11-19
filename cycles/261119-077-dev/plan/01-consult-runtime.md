@@ -475,7 +475,12 @@ interface RuntimeState {
 - Commit: 05550574
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: 重複する GIT_* 検査と module 外の一時文脈
+
+- Findings:
+  - `run/git-contract.test.ts` の `happy: GIT_INDEX_FILE を含む env を渡す → git() はその env から GIT_* を落として一時リポジトリを見る` は、直上の `error:` ケースと Given（`GIT_INDEX_FILE` に使えないディレクトリを渡す）も結果（`status` 0）も同一のため落とした。残した `error:` が回帰（使えない `GIT_INDEX_FILE` でも一時リポジトリを見る）を担う。
+- Unplanned:
+  - `tool/consult.test.ts` の module 外の `toolCtx`（`tempDir()` を外で呼ぶと最初のテストの後始末で消える）を、テストごとに作る `testCtx()` に変えた。`startSubagent` が使う。振る舞いは同じ。
 
 ## Work Review
 

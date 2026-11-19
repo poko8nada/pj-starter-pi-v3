@@ -100,15 +100,6 @@ describe('git contract', () => {
     expect(result.status).toBe(0);
   });
 
-  it('happy: GIT_INDEX_FILE を含む env を渡す → git() はその env から GIT_* を落として一時リポジトリを見る', () => {
-    const dir = initRepo();
-    const result = git(dir, ['status', '--porcelain'], {
-      ...process.env,
-      GIT_INDEX_FILE: tempDir('git-contract-index-'),
-    });
-    expect(result.status).toBe(0);
-  });
-
   it('happy: gitEnv の引数なし呼び出し → 型エラーになる', () => {
     // @ts-expect-error - env は必須。既定値で process.env を読まない
     expect(() => gitEnv()).toThrow();

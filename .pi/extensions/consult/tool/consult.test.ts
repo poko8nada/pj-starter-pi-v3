@@ -54,7 +54,10 @@ vi.mock('../run/subagent.ts', async (importOriginal: () => Promise<Record<string
 
 // 道具の文脈は cwd と通知の窓口だけ。ここは読み取り専用で、サブエージェントは差し替えた `run` が受けるので本体を見ない。
 // 一時ものを本体に作らない。読めない入力の検査は、本体 root に依存しないよう helper の保存場所を指す。
-const toolCtx: ConsultContext = { cwd: tempDir(), ui: { notify: () => {} } };
+// 文脈はテストごとに作る。module の外で一時ディレクトリを作ると最初のテストの後始末で消える
+function testCtx(): ConsultContext {
+  return { cwd: tempDir(), ui: { notify: () => {} } };
+}
 
 beforeEach(() => {
   setSoundEnabled(true);
@@ -107,7 +110,7 @@ function setup(
 type RunParams = Parameters<ConsultRuntime['run']>[1];
 
 function startSubagent(runtime: ConsultRuntime, params: RunParams) {
-  return runtime.run('call', params, undefined, undefined, toolCtx);
+  return runtime.run('call', params, undefined, undefined, testCtx());
 }
 
 /** 道具の戻り値の本文を取る */
