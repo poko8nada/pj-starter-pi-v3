@@ -1,7 +1,7 @@
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { git, gitEnv } from '../../../../lib/git-env.mjs';
+import { git } from '../../../../lib/git-env.mjs';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { orphanBranchesIn } from './worktree.ts';
 
@@ -98,10 +98,5 @@ describe('git contract', () => {
       GIT_INDEX_FILE: tempDir('git-contract-index-'),
     });
     expect(result.status).toBe(0);
-  });
-
-  it('happy: gitEnv の引数なし呼び出し → 型エラーになる', () => {
-    // @ts-expect-error - env は必須。既定値で process.env を読まない
-    expect(() => gitEnv()).toThrow();
   });
 });

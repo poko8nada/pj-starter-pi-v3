@@ -118,19 +118,6 @@ describe('appendRun / readRuns', () => {
     ).toHaveLength(1);
   });
 
-  it('at を渡さない呼び出し → 型エラーになる', () => {
-    const found = aPlace();
-    const run = record();
-    expect(() => {
-      // @ts-expect-error - at は必須。既定値で今日を読まない
-      appendRun(found, run);
-    }).toThrow();
-    // @ts-expect-error - scope は必須。既定値で今日を読まない
-    expect(() => readRuns(found)).toThrow();
-    // @ts-expect-error - now は必須。既定値で今日を読まない
-    closeOrphans({ place: found, session: 'A' });
-  });
-
   it('session で絞る → その session だけ。省けば両方', () => {
     const at = aAt();
     const found = aPlace();

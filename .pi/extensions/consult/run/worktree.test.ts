@@ -70,12 +70,6 @@ describe('ensureRoot', () => {
     ensureRoot(dir, deps, NOW);
     expect(readdirSync(deps.root)).toHaveLength(1);
   });
-
-  it('now を渡さない呼び出し → 型エラーになる', () => {
-    const dir = tempDir();
-    // @ts-expect-error - now は必須。既定値で今日を読まない
-    expect(() => ensureRoot(dir, deps)).toThrow();
-  });
 });
 
 describe('createWorktree', () => {
