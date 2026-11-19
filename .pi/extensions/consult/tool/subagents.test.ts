@@ -276,6 +276,21 @@ describe('createSubagentsTool', () => {
     expect(text).not.toContain(second);
   });
 
+  it('list は host.now() の窓を読む → 今日の記録を 3 日前の時計では出さない', async () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const found = withLog(
+      [record({ subagent: 'consult-9', ended: 2000, state: 'done' })],
+      new Date(),
+    );
+    const { host } = fakeHost(found);
+    const args: SubagentsArgs = aToolCall({ action: 'list' }, { cwd: tempDir() });
+    const text = textOf(
+      await createSubagentsTool({ ...host, now: () => threeDaysAgo.getTime() })(...args),
+    );
+    expect(text).toBe('no subagents in this session yet');
+  });
+
   it('3 日前に始まっていまも走っているサブエージェント（終わりの行がない）→ 一覧に出ない', async () => {
     const subagent = 'consult-old';
     const threeDaysAgo = new Date();

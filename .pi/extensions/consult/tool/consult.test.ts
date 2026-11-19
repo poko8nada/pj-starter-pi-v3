@@ -81,12 +81,14 @@ function fakeLaunch(): LaunchPorts {
   };
 }
 
-/** runtime と保存場所を組む。session は `SESSION`。`check` を渡すと生死の照合を差し替えられる */
+/** runtime と保存場所を組む。session は `SESSION`。`check` と `now` で照合と時計を差し替えられる */
+// eslint-disable-next-line max-params -- 偽物の組立て（pi, run, check, psRun, now の 5 つ）
 function setup(
   pi: PiFace,
   run: ConsultRunner,
   check?: CheckRecord,
   psRun?: PsRun,
+  now: () => number = Date.now,
 ): { readonly runtime: ConsultRuntime; readonly place: Place } {
   const place = aPlace();
   const deps = { git: () => ({ status: 0, stdout: '', stderr: '' }), root: tempDir() };
@@ -99,7 +101,7 @@ function setup(
       launch,
       run,
       sessionNow: () => SESSION,
-      now: Date.now,
+      now,
       check,
       psRun,
     }),
@@ -223,6 +225,21 @@ describe('run', () => {
     const { run: runner } = deferredRunner();
     const { runtime, place } = setup(pi, runner);
     seedRunning(place, { subagent: 'consult-9', session: 'other-session' });
+
+    const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
+
+    expect(textOf(result)).toContain('started: consult-1');
+  });
+
+  it('記録の窓は now で決まる → 今日の consult-3 を 3 日前の now では数えない', async () => {
+    const { pi } = fakePi();
+    const { run: runner } = deferredRunner();
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const { runtime, place } = setup(pi, runner, undefined, undefined, () =>
+      threeDaysAgo.getTime(),
+    );
+    seedRunning(place, { subagent: 'consult-3' });
 
     const result = await startSubagent(runtime, { role: 'review', task: '判定する' });
 
@@ -479,6 +496,41 @@ describe('controlSubagent: cancel', () => {
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
     expect(outcome.text).toContain('another session');
+  });
+
+  it('now が窓を決める → 3 日前の記録は今日の now では見えない', () => {
+    const found = placeFor(tempDir(), tempDir());
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    appendRun(
+      found,
+      aRunRecord({ session: SESSION, subagent: 'consult-9', pid: 11, started: 1, token: 'a' }),
+      threeDaysAgo,
+    );
+    const kills: number[] = [];
+    const kill = (pid: number): void => {
+      kills.push(pid);
+    };
+    const fresh = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      new Date(),
+      kill,
+    );
+    expect(fresh.text).toContain('no such subagent');
+    const old = controlSubagent(
+      { action: 'cancel', id: 'consult-9' },
+      new Map(),
+      found,
+      SESSION,
+      threeDaysAgo,
+      kill,
+      () => 'running',
+    );
+    expect(kills).toEqual([11]);
+    expect(old.details).toMatchObject({ cancelled: true });
   });
 });
 

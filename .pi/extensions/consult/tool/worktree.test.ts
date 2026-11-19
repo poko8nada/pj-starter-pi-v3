@@ -230,6 +230,30 @@ describe('consult_worktree', () => {
     expect(outcome.details['outcome']).toBe('removed');
   });
 
+  it('now が窓を決める → 今日の開始行を 3 日前の now では走っていないと見る', async () => {
+    const { dir } = repo();
+    const fake = createWorktreeGit();
+    const deps = depsFor(fake);
+    const id = '2-b';
+    await aNewWorktree(dir, deps);
+    const place = placeFor(deps.root, topLevel(dir, deps));
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    appendRun(
+      place,
+      aRunRecord({
+        session: 'session-a',
+        subagent: 'consult-9',
+        pid: 11,
+        started: 1,
+        worktree: id,
+      }),
+      new Date(),
+    );
+    expect(runningIn(place, id, new Date(), () => 'running')).toBe(true);
+    expect(runningIn(place, id, threeDaysAgo, () => 'running')).toBe(false);
+  });
+
   it('知らない action → エラー', async () => {
     const { dir } = repo();
     const fake = createWorktreeGit();

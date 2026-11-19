@@ -5,7 +5,7 @@ import { tempDir } from '../../../test/temp-dir.ts';
 import { aDoneRun, aPiFace, aPlace, aRunRecord, aWidgetUI } from './consult.fixture.ts';
 import { appendRun, deliveredKeys, KEEP_DAYS, readRuns, type RunRecord } from './run/log.ts';
 import { pendingReports } from './run/delivery.ts';
-import { type Place } from './run/place.ts';
+import { placeFor, type Place } from './run/place.ts';
 import entry, {
   buildDeps,
   buildLaunch,
@@ -17,7 +17,8 @@ import entry, {
   type TickPort,
 } from './index.ts';
 import { loadTypes } from './policy/types.ts';
-import { CONSULT_ROOT } from './run/worktree.ts';
+import { CONSULT_ROOT, topLevel } from './run/worktree.ts';
+import { git as realGit } from '../../../lib/git-env.mjs';
 import type { GitOutput } from './run/run.ts';
 import { spawn, spawnSync } from 'node:child_process';
 import { WIDGET_KEY, type WidgetUI } from './view/widget.ts';
@@ -32,6 +33,7 @@ import type {
 import { SOUND_INTERVAL_MS, setPlayer, setSoundEnabled } from './tool/sound.ts';
 
 const seenLaunches = vi.hoisted(() => [] as Array<RuntimeInput['launch']>);
+const seenPlaces = vi.hoisted(() => [] as Array<RuntimeInput['place']>);
 
 vi.mock('./tool/consult.ts', async (importOriginal) => {
   const actual = await importOriginal<{
@@ -41,6 +43,7 @@ vi.mock('./tool/consult.ts', async (importOriginal) => {
     ...actual,
     createRuntime: (input: RuntimeInput) => {
       seenLaunches.push(input.launch);
+      seenPlaces.push(input.place);
       return actual.createRuntime(input);
     },
   };
@@ -216,6 +219,20 @@ describe('startTick / stopTick', () => {
     stopTick();
 
     vi.advanceTimersByTime(SOUND_INTERVAL_MS * 2);
+
+    expect(sent).toHaveLength(0);
+    expect(played).toHaveLength(0);
+  });
+
+  it('tick は port.now() の窓を読む → 3 日前を指す時計では今日の完了を送らない', () => {
+    const found = aPlace();
+    pending(found);
+    const { pi, sent } = fakePi();
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    startTick({ ...portFor(found, pi, 'session-a'), now: () => threeDaysAgo });
+
+    vi.advanceTimersByTime(SOUND_INTERVAL_MS);
 
     expect(sent).toHaveLength(0);
     expect(played).toHaveLength(0);
@@ -430,5 +447,17 @@ describe('entry wiring', () => {
     }
     expect(launch.spawn).toBe(spawn);
     expect(launch.spawnSync).toBe(spawnSync);
+  });
+
+  it('entry wiring: (happy) process.cwd() が place に写る → placeFor(root, topLevel(cwd)) と一致する', () => {
+    seenPlaces.length = 0;
+    fakeEntry();
+    const place = seenPlaces.at(-1);
+    if (place === undefined) {
+      throw new Error('createRuntime was not called');
+    }
+    const root = process.env.CONSULT_ROOT ?? '';
+    const expected = placeFor(root, topLevel(process.cwd(), buildDeps(process.env, realGit)));
+    expect(place).toEqual(expected);
   });
 });

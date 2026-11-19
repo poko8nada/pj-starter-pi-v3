@@ -487,12 +487,26 @@ interface RuntimeState {
 ### Round 1
 
 - Stale:
+  - なし。`git-contract.test.ts:94` の表題「設定した状態」は値渡し後の表現としても読め、`lib/git-env.mjs:10` の JSDoc や `tool/consult.ts:148` の `max-params` 注釈は diff で更新済みのため、不整合は残っていない。
 - Unlisted:
+  - なし。`git diff` の変更は `## Files` に挙がったファイル群と plan 自身の `Notes` 追記のみで、名指しのない実装ファイルの変更はない。
 - Gaps:
+  - `.pi/extensions/consult/index.ts:310` の `process.cwd()` の 1 回読みに対応する検査がない。`index.test.ts:405` の配線試験は `launch.env` の写しと `GIT_*` 落としだけを見て、`placeOf(process.cwd(), deps)` に `cwd` が渡ることや入口より下で `cwd` を読まないことは確かめていない。Goal の「時刻・環境と並ぶ `cwd` を入口で 1 回読む」側の穴である。
+    fixed: 入口の `place` を `createRuntime` の mock で捕まえ、独立に組み立てた期待値（`placeFor(root, topLevel(process.cwd(), buildDeps(env, realGit)))`）と比べる配線試験を `index.test.ts` に足した。`cwd` を変えたら `topLevel` が変わり赤になる。
+  - 渡した時刻が使われることの検査がない。`tool/consult.test.ts:189` の種（`new Date()`）と `tool/consult.test.ts:363` などの呼出し（`new Date()`）が同日のため、`controlSubagent`・`nextSubagentId`・`runningIn` が `now` を無視して内部の今日を読んでも緑のままである。昨日書いて今日読むような日跨ぎの窓選択は `## Verify` の `Added`（型エラー）では担えない。
+    fixed: 日跨ぎの窓選択を壊せる検査を足した。`controlSubagent`（`consult.test.ts` の `now が窓を決める`）と `beginRun`→`nextSubagentId`（`consult.test.ts` の `記録の窓は now で決まる`、`setup` に時計注入）と `runningIn`（`tool/worktree.test.ts` の `now が窓を決める`）で、`now` を無視すると赤になる。
 - Policy:
+  - なし。`lib/git-env.mjs:10,28` に `process.env` の既定値や内部読みは残らず、`run/run.ts:413,436,478` は `now` を必須化して内部の `Date.now()` を持たず、`tool/consult.ts:340` の `run` 必須化で既定ランナー組立ては消えている。
 - Unproven:
+  - `.pi/extensions/consult/tool/consult.test.ts:766`（`controlSubagent` の `list` 系）は、種と呼出しがともに当日 `new Date()` のため、`readRuns(place, { at: now })` が `now` を無視して内部の今日を読んでも緑のままである。窓（`windowFiles`）の選択に `now` が効いていることを壊せない。
+    fixed: `host.now()` を 3 日前にした `list` 検査を `subagents.test.ts` に足した。`host.now()` を無視すると今日の記録が出て赤になる。
+  - `.pi/extensions/consult/index.test.ts:139` の tick 後の `readRuns(found, { at: new Date() })` は、書込み `pending(found)`（`index.test.ts:55` の `new Date()`）と同日のため、`startTick` が `port.now()` を無視して `new Date()` を読んでも緑のままである。時計の差替えが効くことを壊せない。
+    fixed: `port.now()` を 3 日前にした tick 検査を `index.test.ts` に足した。`port.now()` を無視すると今日の完了を送って赤になる。
 - Noise:
+  - なし。`index.ts:285,297,299` の `no-shadow` 抑えと `index.ts:122,194`・`tool/consult.ts:148,448` の `max-params` 抑えは plan の形どおりとして `Notes` で申告済みであり、`@ts-expect-error`（`run/git-contract.test.ts:104` ほか）は `Added` の回帰検出そのものである。`buildDeps`・`buildLaunch` の同値検査のリテラルは入力の echo で魔数ではない。
 - Doubts:
+  - `.pi/extensions/consult/index.ts:276` の `registerRunTool` 実行時の `new Date()` は `Notes` で「道具の実行時（入口の一種）」とされているが、`Policy` の「関数の内部で `new Date()` を読むこと」禁止に当たるかの所有者判断が要る。入口とみなすなら許容、そうでないなら clock 注入への修正が要る。
+  - `.pi/extensions/consult/sub/guard.ts:89` と `.pi/extensions/consult/sub/budget.ts:82` の `process.env` 読みは diff が触っておらず plan の `Files` 外だが、Goal の「入口で 1 回読む」に対する別入口（子 pi プロセス）とみなすかの所有者判断が要る。
 
 ### Round 2
 
