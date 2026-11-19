@@ -145,12 +145,13 @@ function describeSubagent(subagent: RunningSubagent): string {
  * 記録は書かない（終わりの行は、そのサブエージェントを持っていた側の完了処理が書く。持っていた側が既に居なければ、行方不明として見える）。
  * 知らない id・終わったサブエージェント・照合の通らないもの・別の session のサブエージェントは、理由を返して止めない。
  */
-// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, kill, check の 6 つ）
+// eslint-disable-next-line max-params -- plan の I/O（action, subagents, place, session, now, kill, check の 7 つ）
 export function controlSubagent(
   action: ControlAction,
   subagents: ReadonlyMap<string, RunningSubagent>,
   place: Place,
   session: string,
+  now: Date,
   kill: (pid: number) => void = (pid) => {
     process.kill(pid, 'SIGTERM');
   },
@@ -182,9 +183,11 @@ export function controlSubagent(
       details: { action: 'cancel', id: held.id, cancelled: true },
     };
   }
-  const own = latest(readRuns(place, { session })).find((run) => run.subagent === action.id);
+  const sessionRuns = readRuns(place, { session, at: now });
+  const own = latest(sessionRuns).find((run) => run.subagent === action.id);
   if (own === undefined) {
-    const elsewhere = latest(readRuns(place)).find((run) => run.subagent === action.id);
+    const allRuns = readRuns(place, { at: now });
+    const elsewhere = latest(allRuns).find((run) => run.subagent === action.id);
     if (elsewhere !== undefined) {
       return {
         text: `consult_subagents: ${action.id} belongs to another session (it cannot be stopped here)`,
@@ -325,6 +328,7 @@ export interface RuntimeInput {
   readonly deps: WorktreeDeps;
   readonly launch: LaunchPorts;
   readonly run: ConsultRunner;
+  readonly now: () => number;
   readonly sessionNow?: () => string;
   readonly check?: CheckRecord;
   readonly psRun?: PsRun;
@@ -337,6 +341,7 @@ interface RuntimeState {
   readonly run: ConsultRunner;
   readonly subagents: Map<string, RunningSubagent>;
   readonly sessionNow: () => string;
+  readonly now: () => number;
   /** 生死の照合。テストが差し替える関数（既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`） */
   readonly check?: CheckRecord;
   /** 起動時刻を読む `ps`。テストが差し替える関数（既定は本物の `ps`） */
@@ -365,14 +370,18 @@ function failureOutcome(error: unknown): ConsultOutcome {
  *
  * 落ちたサブエージェントも閉じる（開いたままにすると、いつまでも「走っている」と見える）。
  */
-function completionRecord(job: BackgroundJob, report: SubagentReport | undefined): RunRecord {
+function completionRecord(
+  job: BackgroundJob,
+  report: SubagentReport | undefined,
+  now: Date,
+): RunRecord {
   return {
     session: job.session,
     subagent: job.subagent.id,
     role: job.options.type,
     pid: job.subagent.pid ?? 0,
     started: job.subagent.startedAt,
-    ended: Date.now(),
+    ended: now.getTime(),
     state: report?.state ?? 'error',
     files: report === undefined ? [] : [...report.files],
     turns: report?.turns ?? 0,
@@ -385,22 +394,18 @@ function completionRecord(job: BackgroundJob, report: SubagentReport | undefined
 
 /** サブエージェントを起こし、完了を記録の 1 行にする。渡すのは tick の仕事。呼び出し側は待たない */
 function runInBackground(state: RuntimeState, job: BackgroundJob): void {
+  const now = new Date(state.now());
+  const appendOutcome = (report: SubagentReport | undefined, notice: string): void => {
+    appendRun(state.place, { ...completionRecord(job, report, now), notice }, now);
+  };
   state
     .run(job.ctx, job.options, job.job)
     .then((outcome) => {
-      const built = completionMessage(job.subagent, outcome);
-      appendRun(state.place, {
-        ...completionRecord(job, outcome.report),
-        notice: built.message.content,
-      });
+      appendOutcome(outcome.report, completionMessage(job.subagent, outcome).message.content);
     })
     .catch((error: unknown) => {
-      const outcome = failureOutcome(error);
-      const built = completionMessage(job.subagent, outcome);
-      appendRun(state.place, {
-        ...completionRecord(job, undefined),
-        notice: built.message.content,
-      });
+      const built = completionMessage(job.subagent, failureOutcome(error));
+      appendOutcome(undefined, built.message.content);
     })
     .finally(() => {
       state.subagents.delete(job.subagent.id);
@@ -415,8 +420,8 @@ function numberOf(subagent: string): number | undefined {
 }
 
 /** その session の記録にある最大の番号。`consult-` の形でない行は数えない */
-function highestInRecord(place: Place, session: string): number {
-  const used = readRuns(place, { session, days: KEEP_DAYS })
+function highestInRecord(place: Place, session: string, now: Date): number {
+  const used = readRuns(place, { session, days: KEEP_DAYS, at: now })
     .map((record) => numberOf(record.subagent))
     .filter((value): value is number => value !== undefined);
   return Math.max(0, ...used);
@@ -432,20 +437,21 @@ function highestInRecord(place: Place, session: string): number {
  * 記録に書かれるのはサブエージェントが起きた時なので、同じ runtime で続けて起こすと、2 体目が
  * 1 体目の行を見ない。だから決めた番号を覚えておき、次はその続きから振る。
  */
-function nextSubagentId(state: RuntimeState, session: string): string {
-  const floor =
-    state.number.session === session ? state.number.next : highestInRecord(state.place, session);
-  const next = floor + 1;
+function nextSubagentId(state: RuntimeState, session: string, now: Date): string {
+  const { session: current, next: remembered } = state.number;
+  const next = 1 + (current === session ? remembered : highestInRecord(state.place, session, now));
   state.number = { session, next };
   return `consult-${next}`;
 }
 
 /** サブエージェントを起こして、すぐ `started: <id>` を返す。完了はメッセージで届く */
+// eslint-disable-next-line max-params -- plan の I/O（state, ctx, request, deps, now の 5 つ）
 function beginRun(
   state: RuntimeState,
   ctx: ConsultContext,
   request: RunRequest,
   deps: WorktreeDeps,
+  now: Date,
 ): AgentToolResult<Record<string, unknown>> {
   const policy = resolveType(loadTypes(EXTENSION_DIR), request.role);
   // 行き先を決める。隔離するロールは worktree が要る（暗黙に作らない）。
@@ -462,10 +468,10 @@ function beginRun(
   // 番号は記録から決める。reload でメモリーが消えても、戻らないように。
   const session = state.sessionNow();
   const subagent: RunningSubagent = {
-    id: nextSubagentId(state, session),
+    id: nextSubagentId(state, session, now),
     type: policy.name,
     task: request.task,
-    startedAt: Date.now(),
+    startedAt: now.getTime(),
     controller: new AbortController(),
   };
   const job: SubagentJob = {
@@ -480,16 +486,20 @@ function beginRun(
       subagent.pid = pid;
       const startToken =
         state.psRun === undefined ? readStartToken(pid) : readStartToken(pid, state.psRun);
-      appendRun(state.place, {
-        session,
-        subagent: subagent.id,
-        role: policy.name,
-        pid,
-        started: subagent.startedAt,
-        token,
-        ...(startToken === undefined ? {} : { startToken }),
-        ...(worktree === undefined ? {} : { worktree: worktree.id }),
-      });
+      appendRun(
+        state.place,
+        {
+          session,
+          subagent: subagent.id,
+          role: policy.name,
+          pid,
+          started: subagent.startedAt,
+          token,
+          ...(startToken === undefined ? {} : { startToken }),
+          ...(worktree === undefined ? {} : { worktree: worktree.id }),
+        },
+        now,
+      );
     },
   };
   state.subagents.set(subagent.id, subagent);
@@ -524,7 +534,11 @@ function soundStatus(): string {
  * テストは `pi` と `run` を差し替えて、サブエージェントを起こさずに確かめられる。`launch` は必須で、起動を使わない偽物（触れたら投げるもの）を渡す。
  */
 export function createRuntime(input: RuntimeInput): ConsultRuntime {
-  const { pi, place, deps, run, sessionNow = () => '', check, psRun } = input;
+  const { pi, place, deps, run, now, sessionNow = () => '', check, psRun } = input;
+  const controlAt = (action: ControlAction, session: string): ControlOutcome => {
+    const at = new Date(state.now());
+    return controlSubagent(action, state.subagents, state.place, session, at, undefined, check);
+  };
   const state: RuntimeState = {
     pi,
     place,
@@ -532,6 +546,7 @@ export function createRuntime(input: RuntimeInput): ConsultRuntime {
     subagents: new Map(),
     number: { session: '', next: 0 },
     sessionNow,
+    now,
     ...(check === undefined ? {} : { check }),
     ...(psRun === undefined ? {} : { psRun }),
   };
@@ -539,15 +554,14 @@ export function createRuntime(input: RuntimeInput): ConsultRuntime {
     subagents: state.subagents,
     run: async (...args: RunExecuteArgs) => {
       const [, params, , , ctx] = args;
-      return beginRun(state, ctx, parseRunRequest(params), deps);
+      return beginRun(state, ctx, parseRunRequest(params), deps, new Date(state.now()));
     },
-    control: (action, session) =>
-      controlSubagent(action, state.subagents, state.place, session, undefined, check),
+    control: controlAt,
     commands: {
       status: async (_args, ctx) => {
-        const records = readRuns(state.place, { session: state.sessionNow() });
-        const text = listText(records, Date.now(), state.check, 'running');
-        ctx.ui.notify(text, 'info');
+        const at = new Date(state.now());
+        const records = readRuns(state.place, { session: state.sessionNow(), at });
+        ctx.ui.notify(listText(records, at.getTime(), state.check, 'running'), 'info');
       },
       cancel: async (args, ctx) => {
         const id = args.trim();
@@ -558,14 +572,7 @@ export function createRuntime(input: RuntimeInput): ConsultRuntime {
           );
           return;
         }
-        const outcome = controlSubagent(
-          { action: 'cancel', id },
-          state.subagents,
-          state.place,
-          state.sessionNow(),
-          undefined,
-          check,
-        );
+        const outcome = controlAt({ action: 'cancel', id }, state.sessionNow());
         ctx.ui.notify(outcome.text, outcome.details.cancelled === true ? 'info' : 'error');
       },
       sound: async (args, ctx) => {

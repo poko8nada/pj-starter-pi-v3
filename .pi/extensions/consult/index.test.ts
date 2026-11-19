@@ -52,7 +52,7 @@ function record(extra: Partial<RunRecord> = {}): RunRecord {
 
 /** 記録は「いま」の日付ファイルに書く。読み取り側も同じテストの時計を見るので、日付は固定しない */
 function pending(found: Place): void {
-  appendRun(found, record());
+  appendRun(found, record(), new Date());
 }
 
 /** 走っている記録を 1 行足す。pid はこのテストのプロセスなので、既定の check で走っていると見える */
@@ -89,6 +89,7 @@ function portFor(
     pi,
     place: found,
     sessionNow: () => session,
+    now: () => new Date(),
     ui: quietUI(),
     ...(check === undefined ? {} : { check }),
   };
@@ -119,7 +120,7 @@ describe('flushPending', () => {
     const found = aPlace();
     const { pi, sent } = fakePi();
 
-    expect(flushPending(portFor(found, pi, 'session-a'))).toBe(0);
+    expect(flushPending(portFor(found, pi, 'session-a'), new Date())).toBe(0);
     expect(sent).toHaveLength(0);
   });
 });
@@ -135,10 +136,12 @@ describe('startTick / stopTick', () => {
 
     expect(sent).toHaveLength(1);
     expect(played).toHaveLength(1);
-    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS });
+    const runs = readRuns(found, { session: 'session-a', days: KEEP_DAYS, at: new Date() });
     expect(runs).toHaveLength(2);
     expect(deliveredKeys(runs).size).toBe(1);
-    expect(pendingReports(found, { session: 'session-a', days: KEEP_DAYS })).toEqual([]);
+    expect(
+      pendingReports(found, { session: 'session-a', days: KEEP_DAYS, at: new Date() }),
+    ).toEqual([]);
   });
 
   it('走っている開始行 → 5 秒進める → 音が 1 回。送らない', () => {
@@ -255,7 +258,7 @@ describe('showRunningOnce', () => {
     const found = aPlace();
     running(found);
     const { ui, calls } = aWidgetUI();
-    showRunningOnce(ui, found, 'session-a');
+    showRunningOnce(ui, found, 'session-a', new Date());
 
     expect(calls.some((call) => call.key === WIDGET_KEY)).toBe(true);
   });

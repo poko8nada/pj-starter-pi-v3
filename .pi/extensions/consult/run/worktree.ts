@@ -74,7 +74,7 @@ function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-function stamp(now: Date = new Date()): string {
+function stamp(now: Date): string {
   return [
     now.getFullYear(),
     pad(now.getMonth() + 1),
@@ -123,13 +123,13 @@ export function rootFor(cwd: string, deps: WorktreeDeps): string | undefined {
  *
  * 既に consult の worktree があれば、その実行のルートを引き継ぐ（reload や別のセッションから来ても同じ場所を使う）。なければ今の時刻で 1 つ作る。unit のディレクトリは `Worktree.unitDir` で、その下に並ぶ。記録はここにはない。
  */
-export function ensureRoot(cwd: string, deps: WorktreeDeps): string {
+export function ensureRoot(cwd: string, deps: WorktreeDeps, now: Date): string {
   const existing = rootFor(cwd, deps);
   if (existing !== undefined) {
     return existing;
   }
   const base = resolveReal(deps.root);
-  const dir = join(base, `${basename(topLevel(cwd, deps))}-${stamp()}`);
+  const dir = join(base, `${basename(topLevel(cwd, deps))}-${stamp(now)}`);
   mkdirSync(dir, { recursive: true });
   // 実体のパスで持つ（git が返すパスと、そのまま比べられるように）
   return resolveReal(dir);
@@ -186,17 +186,19 @@ export function findWorktree(cwd: string, deps: WorktreeDeps, id: string): Workt
  *
  * base の既定は HEAD。`main` を仮定しない。
  */
-export function createWorktree(
-  cwd: string,
-  deps: WorktreeDeps,
-  id: string,
-  base = 'HEAD',
-): Worktree {
+export function createWorktree(input: {
+  readonly cwd: string;
+  readonly deps: WorktreeDeps;
+  readonly id: string;
+  readonly base?: string;
+  readonly now: Date;
+}): Worktree {
+  const { cwd, deps, id, base = 'HEAD', now } = input;
   const existing = findWorktree(cwd, deps, id);
   if (existing !== undefined) {
     return existing;
   }
-  const runRoot = ensureRoot(cwd, deps);
+  const runRoot = ensureRoot(cwd, deps, now);
   const path = join(runRoot, id, 'wt');
   const branch = branchFor(id);
   const result = deps.git(cwd, ['worktree', 'add', '-b', branch, path, base]);

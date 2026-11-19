@@ -96,6 +96,7 @@ function setup(
       launch,
       run,
       sessionNow: () => SESSION,
+      now: Date.now,
       check,
       psRun,
     }),
@@ -182,6 +183,7 @@ function seedRunning(place: Place, extra: Partial<RunRecord> = {}) {
       started: extra.started ?? Date.now(),
       ...extra,
     }),
+    new Date(),
   );
 }
 
@@ -285,7 +287,7 @@ describe('完了の通知', () => {
 
     expect(calls).toHaveLength(0);
     expect(runtime.subagents.size).toBe(0);
-    const records = readRuns(place, { session: SESSION });
+    const records = readRuns(place, { session: SESSION, at: new Date() });
     expect(records).toHaveLength(2);
     const done = records[1];
     expect(done?.notice).toContain(body);
@@ -308,7 +310,7 @@ describe('完了の通知', () => {
     await flush();
 
     expect(calls).toHaveLength(0);
-    const records = readRuns(place, { session: SESSION });
+    const records = readRuns(place, { session: SESSION, at: new Date() });
     expect(records).toHaveLength(2);
     expect(records[1]?.notice).toContain(reason.message);
   });
@@ -355,6 +357,7 @@ describe('controlSubagent: cancel', () => {
       subagents,
       placeFor(tempDir(), tempDir()),
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -374,6 +377,7 @@ describe('controlSubagent: cancel', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -393,6 +397,7 @@ describe('controlSubagent: cancel', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -416,11 +421,19 @@ describe('controlSubagent: cancel', () => {
         ended: 2,
         state: 'done',
       }),
+      new Date(),
     );
     const kills: number[] = [];
-    const outcome = controlSubagent({ action: 'cancel', id }, new Map(), found, SESSION, (pid) => {
-      kills.push(pid);
-    });
+    const outcome = controlSubagent(
+      { action: 'cancel', id },
+      new Map(),
+      found,
+      SESSION,
+      new Date(),
+      (pid) => {
+        kills.push(pid);
+      },
+    );
 
     expect(kills).toEqual([]);
     expect(outcome.details).toMatchObject({ cancelled: false });
@@ -434,6 +447,7 @@ describe('controlSubagent: cancel', () => {
       new Map(),
       placeFor(tempDir(), tempDir()),
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -453,6 +467,7 @@ describe('controlSubagent: cancel', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -472,6 +487,7 @@ describe('controlSubagent: cancel (startToken)', () => {
     appendRun(
       found,
       aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
+      new Date(),
     );
     const killsRunning: number[] = [];
     const outcomeRunning = controlSubagent(
@@ -479,6 +495,7 @@ describe('controlSubagent: cancel (startToken)', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         killsRunning.push(pid);
       },
@@ -492,6 +509,7 @@ describe('controlSubagent: cancel (startToken)', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         killsEnded.push(pid);
       },
@@ -508,6 +526,7 @@ describe('controlSubagent: cancel (startToken)', () => {
     appendRun(
       found,
       aRunRecord({ session: SESSION, subagent: id, pid: 11, started: 1, startToken }),
+      new Date(),
     );
     const kills: number[] = [];
     const outcome = controlSubagent(
@@ -515,6 +534,7 @@ describe('controlSubagent: cancel (startToken)', () => {
       new Map(),
       found,
       SESSION,
+      new Date(),
       (pid) => {
         kills.push(pid);
       },
@@ -634,6 +654,7 @@ describe('consult: 通知の配線', () => {
       launch,
       run: createConsult(deps, launch),
       sessionNow: () => SESSION,
+      now: Date.now,
     });
 
     await runtime.run('call', { role: 'review', task: 'x' }, undefined, undefined, ctx);
@@ -739,6 +760,7 @@ describe('controlSubagent: list', () => {
       new Map(),
       placeFor(tempDir(), tempDir()),
       SESSION,
+      new Date(),
     );
     expect(outcome.text).toContain('no subagent is running');
   });
@@ -750,7 +772,13 @@ describe('controlSubagent: list', () => {
     ]);
     const texts: string[] = [];
     texts.push(
-      controlSubagent({ action: 'list' }, new Map(), placeFor(tempDir(), tempDir()), SESSION).text,
+      controlSubagent(
+        { action: 'list' },
+        new Map(),
+        placeFor(tempDir(), tempDir()),
+        SESSION,
+        new Date(),
+      ).text,
     );
     texts.push(
       controlSubagent(
@@ -758,6 +786,7 @@ describe('controlSubagent: list', () => {
         held,
         placeFor(tempDir(), tempDir()),
         SESSION,
+        new Date(),
       ).text,
     );
     texts.push(
@@ -766,12 +795,14 @@ describe('controlSubagent: list', () => {
         new Map(),
         placeFor(tempDir(), tempDir()),
         SESSION,
+        new Date(),
       ).text,
     );
     const other = placeFor(tempDir(), tempDir());
     seedRunning(other, { session: 'other-session', pid: process.pid });
     texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION).text,
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), other, SESSION, new Date())
+        .text,
     );
     const done = placeFor(tempDir(), tempDir());
     const doneId = 'consult-9';
@@ -785,18 +816,28 @@ describe('controlSubagent: list', () => {
         ended: 2,
         state: 'done',
       }),
+      new Date(),
     );
-    texts.push(controlSubagent({ action: 'cancel', id: doneId }, new Map(), done, SESSION).text);
+    texts.push(
+      controlSubagent({ action: 'cancel', id: doneId }, new Map(), done, SESSION, new Date()).text,
+    );
     const lost = placeFor(tempDir(), tempDir());
     seedRunning(lost, { pid: 999_999 });
     texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), lost, SESSION).text,
+      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), lost, SESSION, new Date())
+        .text,
     );
     const live = placeFor(tempDir(), tempDir());
     seedRunning(live, { pid: process.pid });
     texts.push(
-      controlSubagent({ action: 'cancel', id: 'consult-9' }, new Map(), live, SESSION, () => {})
-        .text,
+      controlSubagent(
+        { action: 'cancel', id: 'consult-9' },
+        new Map(),
+        live,
+        SESSION,
+        new Date(),
+        () => {},
+      ).text,
     );
     expect(texts).toHaveLength(7);
     for (const text of texts) {
@@ -850,7 +891,7 @@ describe('beginRun: startToken', () => {
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
     expect(called).toBe(1);
-    const records = readRuns(place, { session: SESSION });
+    const records = readRuns(place, { session: SESSION, at: new Date() });
     expect(records).toHaveLength(2);
     expect(records[0]?.startToken).toBe(fixed);
     expect(typeof records[0]?.token).toBe('string');
@@ -868,7 +909,7 @@ describe('beginRun: startToken', () => {
     const { runtime, place } = setup(pi, run, undefined, psRun);
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
-    const records = readRuns(place, { session: SESSION });
+    const records = readRuns(place, { session: SESSION, at: new Date() });
     expect(records).toHaveLength(2);
     expect(records[0]?.startToken).toBeUndefined();
     expect(typeof records[0]?.token).toBe('string');
@@ -889,7 +930,7 @@ describe('beginRun: token', () => {
     const { runtime, place } = setup(pi, run);
     await startSubagent(runtime, { role: 'review', task: '調べる' });
     await flush();
-    const records = readRuns(place, { session: SESSION });
+    const records = readRuns(place, { session: SESSION, at: new Date() });
     expect(records).toHaveLength(2);
     const start = records[0];
     const end = records[1];

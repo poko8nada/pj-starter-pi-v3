@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { createWorktreeGit, type WorktreeGit } from './worktree.fixture.ts';
 import {
@@ -19,30 +19,23 @@ import {
 let fake: WorktreeGit;
 let deps: WorktreeDeps;
 
+/** 固定の時刻。runRoot の名前はこれから作る */
+const NOW = new Date('2024-05-06T07:08:09Z');
+
 beforeEach(() => {
   fake = createWorktreeGit();
   deps = { git: fake.git, root: tempDir() };
 });
 
-afterEach(() => {
-  vi.useRealTimers();
-});
-
 describe('rootFor', () => {
   it('worktree を作った後でも、同じ root を返す', () => {
     const dir = tempDir();
-    createWorktree(dir, deps, '1-a');
+    createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     const made = rootFor(dir, deps);
     const root = deps.root;
-    vi.useFakeTimers();
-    try {
-      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
-      const before = readdirSync(root).length;
-      expect(rootFor(dir, deps)).toBe(made);
-      expect(readdirSync(root)).toHaveLength(before);
-    } finally {
-      vi.useRealTimers();
-    }
+    const before = readdirSync(root).length;
+    expect(rootFor(dir, deps)).toBe(made);
+    expect(readdirSync(root)).toHaveLength(before);
   });
 
   it('worktree がなければ undefined → 作らない', () => {
@@ -55,7 +48,7 @@ describe('rootFor', () => {
 
   it('worktree があればそれを使う', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     expect(rootFor(dir, deps)).toBe(dirname(made.unitDir));
   });
 });
@@ -64,24 +57,24 @@ describe('ensureRoot', () => {
   it('2 回呼ぶと、同じルートを返し、作るのは 1 回だけ', () => {
     const dir = tempDir();
     const root = deps.root;
-    createWorktree(dir, deps, '1-a');
-    const first = ensureRoot(dir, deps);
+    createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
+    const first = ensureRoot(dir, deps, NOW);
     const before = readdirSync(root).length;
-    vi.useFakeTimers();
-    try {
-      vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
-      expect(ensureRoot(dir, deps)).toBe(first);
-      expect(readdirSync(root)).toHaveLength(before);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(ensureRoot(dir, deps, new Date('2030-01-01T00:00:00Z'))).toBe(first);
+    expect(readdirSync(root)).toHaveLength(before);
   });
 
   it('worktree がなければ新しく 1 つ作る', () => {
     const dir = tempDir();
     expect(readdirSync(deps.root)).toHaveLength(0);
-    ensureRoot(dir, deps);
+    ensureRoot(dir, deps, NOW);
     expect(readdirSync(deps.root)).toHaveLength(1);
+  });
+
+  it('now を渡さない呼び出し → 型エラーになる', () => {
+    const dir = tempDir();
+    // @ts-expect-error - now は必須。既定値で今日を読まない
+    expect(() => ensureRoot(dir, deps)).toThrow();
   });
 });
 
@@ -89,19 +82,19 @@ describe('createWorktree', () => {
   it('unit の worktree を作る → ブランチと保存場所が決まる', () => {
     const dir = tempDir();
     const id = '1-a';
-    const made = createWorktree(dir, deps, id);
+    const made = createWorktree({ cwd: dir, deps, id, now: NOW });
 
     expect(made.id).toBe(id);
     expect(made.branch).toBe(branchFor(id));
-    expect(made.path.startsWith(ensureRoot(dir, deps))).toBe(true);
+    expect(made.path.startsWith(ensureRoot(dir, deps, NOW))).toBe(true);
     expect(made.path.endsWith(join(id, 'wt'))).toBe(true);
     expect(listWorktrees(dir, deps).map((row) => row.id)).toEqual([id]);
   });
 
   it('2 回呼んでも増えない → 同じものが返る', () => {
     const dir = tempDir();
-    const first = createWorktree(dir, deps, '1-a');
-    const second = createWorktree(dir, deps, '1-a');
+    const first = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
+    const second = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
 
     expect(second.path).toBe(first.path);
     expect(listWorktrees(dir, deps)).toHaveLength(1);
@@ -111,22 +104,24 @@ describe('createWorktree', () => {
     const dir = tempDir();
     const id = '2-b';
     const base = 'abc123';
-    createWorktree(dir, deps, id, base);
+    createWorktree({ cwd: dir, deps, id, base, now: NOW });
     expect(fake.lastAdd()).toEqual(expect.objectContaining({ branch: branchFor(id), base }));
   });
 
   it('base の既定は HEAD', () => {
     const dir = tempDir();
-    createWorktree(dir, deps, '1-a');
+    createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     expect(fake.lastAdd()?.base).toBe('HEAD');
   });
 
   it('worktree add が status 1 → 例外、unit ディレクトリが残らない', () => {
     const dir = tempDir();
     fake.fail('worktree add');
-    expect(() => createWorktree(dir, deps, '1-a')).toThrow(/could not create the worktree/);
+    expect(() => createWorktree({ cwd: dir, deps, id: '1-a', now: NOW })).toThrow(
+      /could not create the worktree/,
+    );
     expect(listWorktrees(dir, deps)).toHaveLength(0);
-    expect(existsSync(join(ensureRoot(dir, deps), '1-a'))).toBe(false);
+    expect(existsSync(join(ensureRoot(dir, deps, NOW), '1-a'))).toBe(false);
   });
 });
 
@@ -134,7 +129,7 @@ describe('listWorktrees のゴースト', () => {
   it('実体がある登録 → 一覧に出る', () => {
     const dir = tempDir();
     const id = '1-a';
-    createWorktree(dir, deps, id);
+    createWorktree({ cwd: dir, deps, id, now: NOW });
 
     expect(listWorktrees(dir, deps).map((row) => row.id)).toEqual([id]);
     expect(findWorktree(dir, deps, id)).toBeDefined();
@@ -143,7 +138,7 @@ describe('listWorktrees のゴースト', () => {
   it('実体のない path の登録 → 一覧に出ない', () => {
     const dir = tempDir();
     const id = '1-a';
-    const made = createWorktree(dir, deps, id);
+    const made = createWorktree({ cwd: dir, deps, id, now: NOW });
     rmSync(made.path, { recursive: true, force: true });
 
     expect(listWorktrees(dir, deps)).toEqual([]);
@@ -177,7 +172,7 @@ describe('listWorktrees のゴースト', () => {
 describe('listWorktrees / findWorktree', () => {
   it('変更が残っている worktree → dirty', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     expect(findWorktree(dir, deps, '1-a')?.dirty).toBe(false);
 
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
@@ -189,7 +184,7 @@ describe('listWorktrees / findWorktree', () => {
 describe('removeWorktree', () => {
   it('作って消す → 登録と実体が消え、removed。2 回目は missing', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
 
     const first = removeWorktree(dir, deps, '1-a');
     expect(first.outcome).toBe('removed');
@@ -207,8 +202,8 @@ describe('removeWorktree', () => {
   it('サブエージェントが動いている → busy で断り、掃除もしない', () => {
     const dir = tempDir();
     const id = '1-a';
-    createWorktree(dir, deps, id);
-    const ghost = createWorktree(dir, deps, '1-b');
+    createWorktree({ cwd: dir, deps, id, now: NOW });
+    const ghost = createWorktree({ cwd: dir, deps, id: '1-b', now: NOW });
     rmSync(ghost.path, { recursive: true, force: true });
 
     const refused = removeWorktree(dir, deps, id, { busy: true });
@@ -222,7 +217,7 @@ describe('removeWorktree', () => {
 
   it('変更が残っている → force なしでは断る', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.makeDirty(made.path);
 
@@ -232,7 +227,7 @@ describe('removeWorktree', () => {
 
   it('変更が残っていても、孤児のブランチは掃除される（ワークツリーは残す）', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.makeDirty(made.path);
     fake.addOrphan('consult/9-merged', true);
@@ -246,7 +241,7 @@ describe('removeWorktree', () => {
 
   it('変更が残っていても force なら消える', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.makeDirty(made.path);
 
@@ -257,7 +252,7 @@ describe('removeWorktree', () => {
 
   it('未マージのブランチは残す（仕事を消さない）', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.markUnmerged(branchFor('1-a'));
 
@@ -270,7 +265,7 @@ describe('removeWorktree', () => {
 
   it('実体のない登録（ゴースト）→ prune で消え、missing と pruned にそのパス', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     rmSync(made.path, { recursive: true, force: true });
 
     const result = removeWorktree(dir, deps, '1-a');
@@ -282,7 +277,7 @@ describe('removeWorktree', () => {
 
   it('実体のない登録でも、force なら未マージのブランチを捨てる', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.markUnmerged(branchFor('1-a'));
     rmSync(made.path, { recursive: true, force: true });
@@ -301,8 +296,8 @@ describe('removeWorktree', () => {
 
   it('remove が消すのは unit のディレクトリだけ（同じ実行の別 unit は残る）', () => {
     const dir = tempDir();
-    const first = createWorktree(dir, deps, '1-a');
-    const second = createWorktree(dir, deps, '1-b');
+    const first = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
+    const second = createWorktree({ cwd: dir, deps, id: '1-b', now: NOW });
     expect(dirname(second.unitDir)).toBe(dirname(first.unitDir));
 
     const result = removeWorktree(dir, deps, '1-a');
@@ -317,7 +312,7 @@ describe('removeWorktree', () => {
 
   it('未マージでも force ならブランチも消える（捨てる）', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     writeFileSync(join(made.path, 'note.md'), 'the subagent wrote this\n');
     fake.markUnmerged(branchFor('1-a'));
 
@@ -328,7 +323,7 @@ describe('removeWorktree', () => {
 
   it('worktree remove が status 1 → 例外（登録は残る）', () => {
     const dir = tempDir();
-    createWorktree(dir, deps, '1-a');
+    createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     fake.fail('worktree remove');
     expect(() => removeWorktree(dir, deps, '1-a')).toThrow(/could not remove the worktree/);
     expect(findWorktree(dir, deps, '1-a')).toBeDefined();
@@ -338,7 +333,7 @@ describe('removeWorktree', () => {
 describe('cleanWorktrees', () => {
   it('掃除してから 2 回目を呼ぶ → 何も消さない', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     rmSync(made.path, { recursive: true, force: true });
 
     const first = cleanWorktrees(dir, deps);
@@ -351,7 +346,7 @@ describe('cleanWorktrees', () => {
 
   it('走っているサブエージェントのワークツリー → 消さず、そのブランチも消さない', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
 
     expect(cleanWorktrees(dir, deps)).toEqual({ pruned: [], branches: [] });
     expect(findWorktree(dir, deps, '1-a')).toBeDefined();
@@ -366,7 +361,7 @@ describe('cleanWorktrees', () => {
 
   it('for-each-ref が status 1 → 掃除が例外', () => {
     const dir = tempDir();
-    createWorktree(dir, deps, '1-a');
+    createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
     fake.fail('for-each-ref');
     expect(() => cleanWorktrees(dir, deps)).toThrow(/could not list the orphan branches/);
   });
@@ -375,12 +370,12 @@ describe('cleanWorktrees', () => {
 describe('unit の保存場所', () => {
   it('unit の保存場所 → worktree の実体は unit の下の wt', () => {
     const dir = tempDir();
-    const made = createWorktree(dir, deps, '1-a');
+    const made = createWorktree({ cwd: dir, deps, id: '1-a', now: NOW });
 
     expect(made.unitDir).not.toBe(made.path);
     expect(made.path.startsWith(made.unitDir)).toBe(true);
     expect(made.path).toBe(join(made.unitDir, 'wt'));
-    expect(dirname(made.unitDir)).toBe(ensureRoot(dir, deps));
+    expect(dirname(made.unitDir)).toBe(ensureRoot(dir, deps, NOW));
   });
 });
 

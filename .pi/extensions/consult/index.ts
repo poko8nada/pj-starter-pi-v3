@@ -74,6 +74,7 @@ export interface TickPort {
   readonly pi: PiFace;
   readonly place: Place;
   readonly sessionNow: () => string;
+  readonly now: () => Date;
   readonly check?: CheckRecord;
   /** 表示の窓口。tick が 5 秒ごとにウィジェットをセットし直す */
   readonly ui: WidgetUI;
@@ -84,13 +85,13 @@ export interface TickPort {
  *
  * 渡すたびに印の行を足す。送る途中で例外を投げたら、その行から印は進めない（次の tick が送り直す）。
  */
-export function flushPending(port: TickPort): number {
+export function flushPending(port: TickPort, now: Date): number {
   const current = port.sessionNow();
   if (current === '') {
     return 0;
   }
   let count = 0;
-  for (const record of pendingReports(port.place, { session: current, days: KEEP_DAYS })) {
+  for (const record of pendingReports(port.place, { session: current, days: KEEP_DAYS, at: now })) {
     port.pi.sendMessage(
       {
         customType: 'consult',
@@ -100,7 +101,7 @@ export function flushPending(port: TickPort): number {
       },
       { triggerTurn: true, deliverAs: 'followUp' },
     );
-    appendDelivered(port.place, record);
+    appendDelivered(port.place, record, now);
     count += 1;
   }
   return count;
@@ -118,14 +119,19 @@ export function roleOrder(dir = EXTENSION_DIR): readonly string[] {
 }
 
 /** いまの session の稼働表示を 1 回セットする。失敗は握って、呼び出し側を止めない */
+// eslint-disable-next-line max-params -- plan の I/O（ui, place, sessionId, now, check の 5 つ）
 export function showRunningOnce(
   ui: WidgetUI,
   place: Place,
   sessionId: string,
+  now: Date,
   check?: CheckRecord,
 ): void {
   try {
-    showRunning(ui, countRoles(runningRuns(place, { session: sessionId }, check), roleOrder()));
+    showRunning(
+      ui,
+      countRoles(runningRuns(place, { session: sessionId, at: now }, check), roleOrder()),
+    );
   } catch {
     // 表示は補助。失敗しても開始を止めない
   }
@@ -141,9 +147,10 @@ export function startTick(port: TickPort): void {
     return;
   }
   tickTimer = setInterval(() => {
+    const now = port.now();
     let delivered = 0;
     try {
-      delivered = flushPending(port);
+      delivered = flushPending(port, now);
     } catch {
       // 次の tick に任せる。印は進めていないので、同じものを送り直す
     }
@@ -152,8 +159,9 @@ export function startTick(port: TickPort): void {
       if (current === '') {
         return;
       }
-      const running = runningRuns(port.place, { session: current }, port.check);
-      const pending = pendingReports(port.place, { session: current, days: KEEP_DAYS }).length > 0;
+      const running = runningRuns(port.place, { session: current, at: now }, port.check);
+      const pending =
+        pendingReports(port.place, { session: current, days: KEEP_DAYS, at: now }).length > 0;
       if (running.length > 0 || delivered > 0 || pending) {
         playSound();
       }
@@ -183,16 +191,18 @@ export function stopTick(): void {
  * いまの session の走っているサブエージェントだけを見る（別の session のサブエージェントの報告はここには来ないので、
  * 待たせない）。
  */
+// eslint-disable-next-line max-params -- plan の I/O（place, announced, ctx, now, check の 5 つ）
 function announceRunningSubagents(
   place: Place,
   announced: string,
   ctx: ExtensionContext,
+  now: Date,
   check?: CheckRecord,
 ): void {
-  if (runningRuns(place, { session: announced }, check).length === 0) {
+  if (runningRuns(place, { session: announced, at: now }, check).length === 0) {
     return;
   }
-  const count = runningRuns(place, { session: announced }, check).length;
+  const count = runningRuns(place, { session: announced, at: now }, check).length;
   ctx.ui.notify(
     `consult: ${count} subagent(s) are still running from an earlier session (see consult_subagents)`,
     'info',
@@ -220,9 +230,9 @@ function registerCommands(pi: ExtensionAPI, consult: ConsultRuntime): void {
  *
  * 失敗は握って続ける（開始を止めない）。
  */
-function sweep(place: Place, cwd: string, deps: WorktreeDeps): void {
+function sweep(place: Place, cwd: string, deps: WorktreeDeps, now: Date): void {
   try {
-    for (const file of oldFiles(place, new Date(), KEEP_DAYS)) {
+    for (const file of oldFiles(place, now, KEEP_DAYS)) {
       rmSync(file, { force: true });
     }
   } catch (error) {
@@ -236,9 +246,9 @@ function sweep(place: Place, cwd: string, deps: WorktreeDeps): void {
 }
 
 /** 終わりのない開始行を閉じる。失敗は握って続ける（開始を止めない） */
-function closeQuietly(place: Place, current: string): void {
+function closeQuietly(place: Place, current: string, now: Date): void {
   try {
-    closeOrphans(place, current);
+    closeOrphans({ place, session: current, now });
   } catch {
     // 閉じ損ねても開始は止めない。走っていないものは次の判定で止まる
   }
@@ -263,7 +273,7 @@ function registerRunTool(pi: ExtensionAPI, consult: ConsultRuntime, place: Place
     execute: (...args) => {
       const started = consult.run(...args);
       const [, , , , ctx] = args;
-      showRunningOnce(ctx.ui, place, session);
+      showRunningOnce(ctx.ui, place, session, new Date());
       return started;
     },
   });
@@ -299,7 +309,15 @@ export default function (pi: ExtensionAPI) {
   const launch = buildLaunch(env, spawn, spawnSync, Date.now);
   const place = placeOf(process.cwd(), deps);
   const run = createConsult(deps, launch);
-  const consult = createRuntime({ pi, place, deps, launch, run, sessionNow: () => session });
+  const consult = createRuntime({
+    pi,
+    place,
+    deps,
+    launch,
+    run,
+    sessionNow: () => session,
+    now: Date.now,
+  });
 
   // 完了報告は既定では1行で表示し、ctrl+o で本文を開く
   registerNotice(pi);
@@ -307,13 +325,15 @@ export default function (pi: ExtensionAPI) {
   // reload をまたいだサブエージェントがまだ走っていれば知らせ、tick で記録を読み直す
   pi.on('session_start', (_event, ctx) => {
     session = readSession(ctx);
-    closeQuietly(place, session);
-    announceRunningSubagents(place, session, ctx);
-    showRunningOnce(ctx.ui, place, session);
-    sweep(place, ctx.cwd, deps);
-    flushPending({ pi, place, sessionNow: () => session, ui: ctx.ui });
-    pruneCursors(place, new Date(), KEEP_DAYS);
-    startTick({ pi, place, sessionNow: () => session, ui: ctx.ui });
+    const now = new Date();
+    const port = { pi, place, sessionNow: () => session, ui: ctx.ui, now: () => now };
+    closeQuietly(place, session, now);
+    announceRunningSubagents(place, session, ctx, now);
+    showRunningOnce(ctx.ui, place, session, now);
+    sweep(place, ctx.cwd, deps, now);
+    flushPending(port, now);
+    pruneCursors(place, now, KEEP_DAYS);
+    startTick(port);
   });
 
   registerRunTool(pi, consult, place);
@@ -332,6 +352,7 @@ export default function (pi: ExtensionAPI) {
     execute: createSubagentsTool({
       place,
       sessionNow: () => session,
+      now: Date.now,
       control: (action, subagentSession) => consult.control(action, subagentSession),
     }),
   });
@@ -347,7 +368,7 @@ export default function (pi: ExtensionAPI) {
       'Use action: "remove" only when the work is taken or dropped: the worktree is the record of what the subagent did.',
     ],
     parameters: WORKTREE_PARAMETERS,
-    execute: createWorktreeTool(place, deps),
+    execute: createWorktreeTool({ place, deps, now: () => new Date() }),
   });
 
   registerCommands(pi, consult);

@@ -160,6 +160,7 @@ export async function runOneSubagent(input: SubagentInput): Promise<SubagentResu
           ...(onModelEvent === undefined ? {} : { onModelEvent }),
         },
         launch.spawn,
+        launch.now,
       );
     },
     hooks.onFallback,

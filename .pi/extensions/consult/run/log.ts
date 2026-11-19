@@ -49,16 +49,16 @@ export interface RunRecord {
   readonly delivered?: number;
 }
 
-/** 読む幅。`days` を省けば `RECORD_DAYS`、`at` を省けば今日 */
+/** 読む幅。`days` を省けば `RECORD_DAYS` */
 export interface ReadScope {
   readonly session?: string;
   readonly days?: number;
-  readonly at?: Date;
+  readonly at: Date;
 }
 
 /** 1 行足す。その日のファイルに書く。保存場所のディレクトリがなければ作る */
-export function appendRun(place: Place, record: RunRecord, at?: Date): void {
-  const file = dayFile(place, at ?? new Date());
+export function appendRun(place: Place, record: RunRecord, at: Date): void {
+  const file = dayFile(place, at);
   mkdirSync(place.dir, { recursive: true });
   appendFileSync(file, `${JSON.stringify(record)}\n`);
 }
@@ -164,8 +164,8 @@ function isPaths(value: unknown): value is string[] {
 }
 
 /** 保存場所の窓の中の記録を、始まった順に返す */
-export function readRuns(place: Place, scope: ReadScope = {}): RunRecord[] {
-  const files = windowFiles(place, scope.at ?? new Date(), scope.days ?? RECORD_DAYS);
+export function readRuns(place: Place, scope: ReadScope): RunRecord[] {
+  const files = windowFiles(place, scope.at, scope.days ?? RECORD_DAYS);
   const records: RunRecord[] = [];
   for (const file of files) {
     let text: string;
@@ -227,17 +227,19 @@ export function runningRuns(
  *
  * session の行を subagent ごとにまとめ、`ended` のない subagent の開始行を `check`
  * （既定は startToken があれば `ps` の `lstart`、なければ `pidAlive`）に渡す。`ended`
- * なら、開始行を写して `ended: Date.now()`、`state: 'error'`、理由を足した行を
+ * なら、開始行を写して `ended: now.getTime()`、`state: 'error'`、理由を足した行を
  * `appendRun` し、閉じた行を返す。`running` と `unknown` なら何もしない。`appendRun` が投げたら
  * そのまま投げる（呼ぶ側の `index.ts` が握る）。
  */
-export function closeOrphans(
-  place: Place,
-  session: string,
-  check?: CheckRecord,
-): readonly RunRecord[] {
+export function closeOrphans(input: {
+  readonly place: Place;
+  readonly session: string;
+  readonly check?: CheckRecord;
+  readonly now: Date;
+}): readonly RunRecord[] {
+  const { place, session, check, now } = input;
   const groups = new Map<string, RunRecord[]>();
-  for (const record of readRuns(place, { session })) {
+  for (const record of readRuns(place, { session, at: now })) {
     const list = groups.get(record.subagent);
     if (list !== undefined) {
       list.push(record);
@@ -256,11 +258,11 @@ export function closeOrphans(
       }
       const done: RunRecord = {
         ...start,
-        ended: Date.now(),
+        ended: now.getTime(),
         state: 'error',
         reason: 'orphan: start without end (closed on session_start)',
       };
-      appendRun(place, done);
+      appendRun(place, done, now);
       closed.push(done);
     }
   }

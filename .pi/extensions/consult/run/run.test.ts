@@ -124,6 +124,7 @@ describe('runPi: onModelEvent', () => {
         onModelEvent: (event) => received.push(event),
       },
       fakeSpawn,
+      () => 1,
     );
     const child = children[0];
     if (child === undefined) {
@@ -385,6 +386,7 @@ describe('runPi: stdio', () => {
           limits: aTypePolicy().limits,
         },
         nullStdoutSpawn,
+        () => 1,
       ),
     ).rejects.toThrow('stdio pipes');
   });
