@@ -35,8 +35,12 @@
 |     | 0.9.9 | _todo_ |              | mid      | ミューテーションテスト手順追加         |
 |     | 0.9.9 | _todo_ |              | mid      | ミューテーションテストライブリ追加     |
 |     | 0.9.8 | _todo_ |              | high     | コードコメント、テスト説明の棚卸し     |
+|     | 0.9.8 | _todo_ |              | low      | エージェントが使うスクリプトhelp       |
 |     | 0.9.8 | _todo_ |              | low      | planのdesign、cut、formatの書き直し    |
-|     | 0.9.8 | _todo_ |              | mid      | プリンシプル違反のコード修正2          |
+|     | 0.9.8 | _todo_ |              | low      | プランナー追加、レビュー追加           |
+| 040 | 0.9.8 | _todo_ |              | low      | コメント抑制の棚卸しと修正             |
+| 039 | 0.9.8 | wip    | 078-d        | low      | コメント抑制のチェック追加             |
+| 038 | 0.9.8 | wip    | 077-d        | mid      | プリンシプル違反のコード修正2          |
 | 037 | 0.9.8 | done   | 075-d, 076-d | mid      | プリンシプルに違反しているコードの修正 |
 | 036 | 0.9.7 | done   | 074-d        | mid      | rules配下のファイル更新                |
 | 035 | 0.9.7 | done   | 073-d        | mid      | upgradeスキルの更新                    |
@@ -54,6 +58,51 @@
 | 023 | 0.9.5 | done   | 057-d        | mid      | スキルの文体と構造の見直し             |
 
 ### 0.9.8
+
+- description:
+  -
+- ideas:
+  - adrとplanは、スキャフォールドがフォーマットを参照して作られてない
+  - テストの内容が、プリンシプルの違反ではないか
+
+### 0.9.8 040
+
+- description:
+  - コメント抑制の棚卸しを行う
+- ideas:
+  - memo-suppresssionを参照
+  - 残すと決めたものは、suppression-checkのホワイトリストに追加し、Reasonを記入する
+
+### 0.9.8 039
+
+- description:
+  - リンターとタイプチェックのコメント抑制をみつけるスクリプトを追加したい
+- ideas:
+  - 作成したチェッカーを、拡張機能のquality-gateとleft-hookのプレコミットに追加する
+  - ===077-dで下記は実装済み===
+  - エージェントが勝手にコメント抑制で、リンターとタイプチェックを迂回するのを止める
+  - 対象は、oxlint、typecheck以外に、eslint、biomeなど、全ての書き方に対応。
+  - 種類も基本的に問わず、全てをはじく。
+  - ただし、jsonのホワイトリストに、いれて、かつreasonコメントを添えると回避できる仕組みにする
+  ```ts
+  // Reason: <日本語でなぜアサーションが必要で、どう安全かを書く>
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const el = document.getElementById('name') as HTMLInputElement;
+  ```
+  - スクリプトは、ファイルパスを渡して実行するか、パスなしなら全実行
+  - --reportで、exit 0でも全ての結果を表示させたい
+  - package.scriptに登録
+  - これは今サイクルでは対象外の予定だが、quality-gateにもくわえる想定なので、そのつもりで作る
+
+### 0.9.8 038
+
+- description:
+  - プリンシプル違反のコード修正とテストしたい。
+- ideas:
+  - memo-boundary.mdを参照。
+  - 2サイクルに分割する。077はsubagent-consultが実行環境を値で受け取る範囲、次のサイクルはconsult以外の実行環境の読みを片付ける。
+
+### 0.9.8 037
 
 - description:
   - プリンシプル違反のコード修正とテストしたい。
