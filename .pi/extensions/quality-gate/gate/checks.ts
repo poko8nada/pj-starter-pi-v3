@@ -136,7 +136,8 @@ export async function runChecks(
   const outcomes: CheckOutcome[] = [];
 
   for (const spec of CHECK_SPECS) {
-    // oxlint-disable-next-line no-await-in-loop -- 修正結果を検証するため順序が必須
+    // Reason: 修正してから検証する順序が仕様であり、並列にすると検証が修正前の状態を見る
+    // oxlint-disable-next-line no-await-in-loop
     const outcome = await runCheck(pi, ctx.cwd, spec, checked);
     if (outcome === undefined) {
       continue;

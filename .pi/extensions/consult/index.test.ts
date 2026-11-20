@@ -402,7 +402,7 @@ describe('entry wiring', () => {
         received.push([customType, renderer]);
       },
     };
-    // ExtensionAPI は 30 以上のメンバーを持つため、すべてを偽物で用意する価値がない。入口の配線だけを見るので、使う 4 つの入口だけを持つ偽物を渡す。
+    // Reason: 入口全体を呼ぶ 5 つの検証のために ExtensionAPI が必要で、30 以上のメンバーを偽物で用意しない
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     entry(fake as unknown as ExtensionAPI);
     return { commands, received, handlers };

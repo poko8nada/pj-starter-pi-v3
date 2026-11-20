@@ -164,7 +164,8 @@ function fakePi(piEnabled = true): PiSetup {
       enabled = value;
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- on と命令を記録する偽物である
+  // Reason: ExtensionAPI['on'] は overload 群で記録用の偽物を満たせないため、使う窓口だけを持つ偽物を渡す
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const pi = impl as unknown as PiPort;
   return { pi, events, commands, setPiEnabled: impl.setPiEnabled };
 }

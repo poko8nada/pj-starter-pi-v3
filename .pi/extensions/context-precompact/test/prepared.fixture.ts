@@ -41,7 +41,8 @@ export function preparedCompaction(
 /** モデルの偽物を作る。 */
 export function modelFake(contextWindow = 200_000): ExtensionContext['model'] {
   const model = { provider: 'test', id: 'm1', maxTokens: 8000, contextWindow };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 使うモデルの偽物
+  // Reason: compact が本物の Model を要求するためポートを狭められず、テストは使う欄だけを持つ偽物を渡す
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return model as unknown as ExtensionContext['model'];
 }
 

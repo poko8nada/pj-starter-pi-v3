@@ -148,27 +148,27 @@ scripts/
 
 ### Slice 1: 許可を狭め、6 件に理由を置く
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 1dd6f34a8d20b7ec9ea2b41d5cec2469f0bf1fb3
+- Stopped: なし
 
 ### Cleanup: なし
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
@@ -182,7 +182,7 @@ scripts/
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: 残す 6 件の抑制が、理由と狭い許可で通る。実装は達成している（`pnpm suppression-check --report` が `0 violations, 6 allowed` になり、6 件とも `allowed` と表示される）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、906 件）、`pnpm suppression-check --report`（作業前 6 件の違反 → 作業後 0 件、6 件が allowed）。
+- Findings: なし
+- Doubts: なし
