@@ -5,6 +5,8 @@
  * 収集は共有の `fakeRoot()` と `writeFile` で作った一時ツリーで試す。
  */
 
+import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fakeRoot, writeFile, writeJson } from '../../test/scripts.fixture.ts';
 import {
@@ -310,5 +312,145 @@ describe('suppression-check reason', () => {
 
   it('reason: happy 日本語でない → Reason がある', () => {
     expect(hasReason('// Reason: allow for testing')).toBe(true);
+  });
+});
+
+const SCRIPT = join(process.cwd(), 'scripts', 'checks', 'suppression-check.mjs');
+
+function runCli(
+  root: string,
+  args: readonly string[],
+): { status: number; stdout: string; stderr: string } {
+  const result = spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8', cwd: root });
+  return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
+}
+
+function writeAllow(root: string, entries: unknown): void {
+  writeJson(root, join('scripts', 'checks', 'suppression-check.json'), { allow: entries });
+}
+
+const HEADER_1 =
+  'suppression-check: Report to the owner. A suppressed rule is a bypass unless the whitelist and the Reason line allow it.';
+const HEADER_2 = 'suppression-check: Fix the code, or ask the owner to allow it.';
+
+describe('suppression-check cli', () => {
+  it('cli: happy --report → 許可済みの行も出る', () => {
+    const root = fakeRoot();
+    writeAllow(root, [{ path: 'a.ts', rules: ['max-params'] }]);
+    writeFile(
+      root,
+      'a.ts',
+      '// Reason: owner approved\n// eslint-disable-next-line max-params -- x\n',
+    );
+    const out = runCli(root, ['--report', 'a.ts']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('allowed');
+    expect(out.stdout).toContain('a.ts:2:');
+  });
+
+  it('cli: error 知らない --flag → exit 1 と stderr', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    const out = runCli(root, ['--unknown']);
+    expect(out.status).toBe(1);
+    expect(out.stderr).toContain('suppression-check: unknown argument');
+  });
+
+  it('cli: boundary 存在しないパス → 飛ばす', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    const out = runCli(root, ['missing.ts']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('0 files');
+  });
+
+  it('cli: error ディレクトリのパス → exit 1 と stderr', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    writeFile(root, 'sub/a.ts', 'ok\n');
+    const out = runCli(root, ['sub']);
+    expect(out.status).toBe(1);
+    expect(out.stderr).toContain('not a file');
+  });
+
+  it('cli: happy パスなし → 全体を集める', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    writeFile(root, 'a.ts', '// eslint-disable-next-line max-params -- x\n');
+    const out = runCli(root, []);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain('a.ts:1:');
+  });
+});
+
+describe('suppression-check display', () => {
+  it('display: happy ホワイトリストにない → not allowed の行と件数、exit 1', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    writeFile(root, 'a.ts', '// eslint-disable-next-line max-params -- x\n');
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain(HEADER_1);
+    expect(out.stdout).toContain(HEADER_2);
+    expect(out.stdout).toContain(
+      'a.ts:1: eslint-disable-next-line [eslint] max-params not allowed',
+    );
+    expect(out.stdout).toContain('suppression-check: 1 files, 1 violations, 0 allowed.');
+  });
+
+  it('display: happy 項目は当たるが Reason がない → no Reason line の行と件数、exit 1', () => {
+    const root = fakeRoot();
+    writeAllow(root, [{ path: 'a.ts', rules: ['max-params'] }]);
+    writeFile(root, 'a.ts', 'const x = 1;\n// eslint-disable-next-line max-params -- x\n');
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain('no Reason line: add // Reason: above');
+    expect(out.stdout).toContain('suppression-check: 1 files, 1 violations, 0 allowed.');
+  });
+
+  it('display: happy すべて許可 → No findings. と件数、exit 0', () => {
+    const root = fakeRoot();
+    writeAllow(root, [{ path: 'a.ts', rules: ['max-params'] }]);
+    writeFile(
+      root,
+      'a.ts',
+      '// Reason: owner approved\n// eslint-disable-next-line max-params -- x\n',
+    );
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('No findings.');
+    expect(out.stdout).toContain('suppression-check: 1 files, 0 violations, 1 allowed.');
+  });
+
+  it('display: empty 抑制なし → No findings. と件数', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    writeFile(root, 'a.ts', 'const x = 1;\n');
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('No findings.');
+    expect(out.stdout).toContain('suppression-check: 1 files, 0 violations, 0 allowed.');
+  });
+
+  it('display: happy --report で許可済み → allowed の行', () => {
+    const root = fakeRoot();
+    writeAllow(root, [{ path: 'a.ts', rules: ['max-params'] }]);
+    writeFile(
+      root,
+      'a.ts',
+      '// Reason: owner approved\n// eslint-disable-next-line max-params -- x\n',
+    );
+    const out = runCli(root, ['--report', 'a.ts']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('a.ts:2: eslint-disable-next-line [eslint] max-params allowed');
+  });
+
+  it('display: error 設定が壊れている → stderr と exit 1', () => {
+    const root = fakeRoot();
+    writeFile(root, join('scripts', 'checks', 'suppression-check.json'), '{not json');
+    writeFile(root, 'a.ts', 'const x = 1;\n');
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(1);
+    expect(out.stderr).toContain('suppression-check:');
   });
 });

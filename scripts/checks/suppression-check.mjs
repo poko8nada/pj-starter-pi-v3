@@ -4,6 +4,7 @@
 // .pi のようなドットで始まるディレクトリは、** が当たらない。設定に書くときは .pi/** と明示する。
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /**
  * @typedef {object} Suppression
@@ -342,4 +343,99 @@ export function judge(record, allow) {
     return { kind: 'no-reason', suppression: record };
   }
   return { kind: 'not-listed', suppression: record };
+}
+
+/**
+ * @typedef {object} Options
+ * @property {boolean} report
+ * @property {readonly string[]} paths
+ */
+
+export function parseArgs(argv) {
+  let report = false;
+  const paths = [];
+  for (const arg of argv) {
+    if (arg === '--report') {
+      report = true;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      throw new Error(`unknown argument: ${arg}`);
+    }
+    paths.push(arg);
+  }
+  return { report, paths };
+}
+
+function resolveTargets(root, paths) {
+  const out = [];
+  for (const p of paths) {
+    const abs = path.isAbsolute(p) ? p : path.join(root, p);
+    if (!fs.existsSync(abs)) {
+      continue;
+    }
+    if (!fs.statSync(abs).isFile()) {
+      throw new Error(`not a file: ${p}`);
+    }
+    if (!CODE_EXTENSIONS.has(path.extname(abs))) {
+      continue;
+    }
+    out.push(path.relative(root, abs).split(path.sep).join('/'));
+  }
+  out.sort();
+  return out;
+}
+
+function formatRecord(record, kind) {
+  const rules = record.rules.length === 0 ? 'all' : record.rules.join(', ');
+  const verdict =
+    kind === 'allowed'
+      ? 'allowed'
+      : kind === 'not-listed'
+        ? 'not allowed'
+        : "no Reason line: add // Reason: above (owner's approval needed)";
+  return `${record.file}:${record.line}: ${record.directive} [${record.tool}] ${rules} ${verdict}`;
+}
+
+export function run(root, options) {
+  const allow = loadAllow(root);
+  const rels = options.paths.length > 0 ? resolveTargets(root, options.paths) : collectFiles(root);
+  const found = [];
+  for (const rel of rels) {
+    const text = fs.readFileSync(path.join(root, ...rel.split('/')), 'utf8');
+    for (const item of findSuppressions(rel, text)) {
+      found.push(item);
+    }
+  }
+  found.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
+  const verdicts = found.map((s) => judge(s, allow));
+  const allowed = verdicts.filter((v) => v.kind === 'allowed');
+  const violations = verdicts.filter((v) => v.kind !== 'allowed');
+  console.log(
+    'suppression-check: Report to the owner. A suppressed rule is a bypass unless the whitelist and the Reason line allow it.',
+  );
+  console.log('suppression-check: Fix the code, or ask the owner to allow it.');
+  const shown = options.report ? verdicts : violations;
+  for (const v of shown) {
+    console.log(formatRecord(v.suppression, v.kind));
+  }
+  if (shown.length === 0) {
+    console.log('No findings.');
+  }
+  console.log(
+    `suppression-check: ${rels.length} files, ${violations.length} violations, ${allowed.length} allowed.`,
+  );
+  return violations.length > 0 ? 1 : 0;
+}
+
+const isMain =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  try {
+    const options = parseArgs(process.argv.slice(2));
+    process.exit(run(process.cwd(), options));
+  } catch (error) {
+    console.error(`suppression-check: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 }
