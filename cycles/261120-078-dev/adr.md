@@ -40,7 +40,7 @@ Type: _Full_
   - verification: 検出の境目を確かめるテストが増える。
 - Out:
   - safety: `.env` のような秘密のファイルは拡張子の一覧に無く、読むのはコードだけである。権限も増やさない。
-  - upstream: 新しいパッケージを加えない。使うのは `node:fs` と `node:path` だけである。
+  - upstream: 新しいパッケージを加えない。使うのは `node:fs`、`node:path`、`node:url` の組み込みだけである。
   - existing data: 既存のファイルを書き換えない。ホワイトリストの JSON は 02 が決める。
   - values & expression: 表示する文と語は 03 が決める。拾う綴りは論理の定数として扱い、利用者が読む文としては扱わない。
   - observability: 記録や監視の信号は増やさない。表示は結果であり、03 が決める。

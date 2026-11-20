@@ -14,7 +14,7 @@
   - Modules: `scripts/checks/suppression-check.mjs` を新しく 1 つ作り、検出、照合、呼び出しの入口をその中に置く。ADR 01 の Policy が、行数の上限に当たるまで 1 ファイルと決めている。`max-lines` の 480 行か `max-lines-per-function` の 80 行を超える場合だけ、呼び出しの入口を `scripts/checks/suppression-check-cli.mjs` に分割し、`package.json` は分割した方を指す。
   - Dirs: なし。`scripts/checks/` に置き、新しいディレクトリは作らない。`ja-check.mjs` と同じ場所で、検査の入口が 1 つのディレクトリに揃う。
 - Outside:
-  - Extract: なし。glob の照合は `node:path` の `matchesGlob` を再利用し、共通化する新しいモジュールは作らない。使うのは `node:fs` と `node:path` だけである。
+  - Extract: なし。glob の照合は `node:path` の `matchesGlob` を再利用し、共通化する新しいモジュールは作らない。使うのは `node:fs`、`node:path`、`node:url` の組み込みだけである。
   - Colocate: なし。共有しているモジュールを、利用者のそばへ移す変更はない。
 
 ## Files
