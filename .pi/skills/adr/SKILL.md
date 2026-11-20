@@ -74,7 +74,7 @@ Steps:
 
 Steps:
 
-1. Read the `Look it up` section of `references/tasks.md`.
+1. Read the `Look it up` and `Try it` sections of `references/tasks.md`.
 2. Propose the pre-research of every entry together. Name the entry, the type, the question, and what the answer decides.
 3. Run the approved ones in parallel. Group the entries whose question is the same, and run one `research` or `trial` subagent per group.
 4. write each result in its entry's `Research & Trial` when report is received.
