@@ -10,6 +10,7 @@ import type { Tuning } from '../settings/schema.ts';
 import { scrubThinking } from './detect.ts';
 
 type AgentMessage = MessageEndEvent['message'];
+type AssistantMessage = Extract<AgentMessage, { role: 'assistant' }>;
 
 export const REPLAY_FIELDS = ['reasoning_content', 'reasoning', 'reasoning_text'] as const;
 
@@ -53,12 +54,23 @@ function isThinkingBlock(block: unknown): block is ThinkingBlock {
   return block.type === 'thinking' && typeof block.thinking === 'string';
 }
 
+/** assistant であるかを返す。role と content の形を順に確かめる。 */
+export function isAssistantMessage(input: unknown): input is AssistantMessage {
+  if (typeof input !== 'object' || input === null) {
+    return false;
+  }
+  if (!('role' in input) || input.role !== 'assistant') {
+    return false;
+  }
+  if (!('content' in input) || !Array.isArray(input.content)) {
+    return false;
+  }
+  return true;
+}
+
 /** assistant の thinking を書き換える。変わらなければ undefined を返す。 */
 export function scrubMessage(message: AgentMessage, tuning: Tuning): Scrubbed | undefined {
-  if (message.role !== 'assistant') {
-    return undefined;
-  }
-  if (!Array.isArray(message.content)) {
+  if (!isAssistantMessage(message)) {
     return undefined;
   }
   let removed = 0;
