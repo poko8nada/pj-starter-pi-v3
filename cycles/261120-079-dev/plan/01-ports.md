@@ -229,13 +229,13 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 除去4件は計画どおりで、残る `test/prepared.fixture.ts:44-45` の `modelFake` と `.pi/extensions/context-precompact/index.test.ts:167-168` の `fakePi` は ADR 01 Main・04 が残すと決めた部分モックのため陳腐化ではない。型名・コメントに旧来の広い型への言及は残っていない。
+- Unlisted: なし — 差分のコード変更は `Files` の5件（`.pi/extensions/context-precompact/run/ports.ts:25-36`、`index.ts:27-28,57-60`、`run/ports.test.ts:2-3,27-30`、`test/prepared.fixture.ts:9,49-59`、`index.test.ts:18,88-114,202-214,301,471,810,825`）に収まる。`cycles/261120-079-dev/plan/01-ports.md:204-227` の差分は `Notes` の記入であり、手順の定める記録である。
+- Gaps: なし — `Goal` の狭いポート化は `run/ports.ts:25-36`・`index.ts:57-60` の型変更と `index.ts:249-255` の `SessionPort`→`Pick<SessionPort,'getSessionId'>` 受け渡しで達成され、`typecheck` が合否を決める。振る舞い変更はなく、既存の `ports.test.ts:44-99`（12引数・認証失敗・モデルなし）と `index.test.ts:301,471,810,825` の経路テストが回帰を抑える。
+- Policy: なし — `Allowed` の `Pick<本物の型,読むメンバー>`（`run/ports.ts:25-29`）と注釈受け（`index.test.ts:88,202`）を守り、`Forbidden` の `SummaryCtx.model` の狭小化なし（`run/ports.ts:32` 維持）、`pi.on`・`registerCommand` の並び不変（`index.ts:520-532` 差分なし）、新規 `as unknown as` なし、`modelFake` 不変（`test/prepared.fixture.ts:42-46` 差分なし）を守る。
+- Unproven: なし — `ports.test.ts:65,83` が別セッションIDの伝達を12番目の引数で検証し、`ports.test.ts:88-94,97-99` が認証失敗・モデルなしの例外を検証するため、名指しの振る舞いが壊れれば落ちる。`wiringWith()` 置換4か所は既定値（`settingsDirWith(settingsDocument())`・`now: ()=>0`・`compactOk()`）と一致し、`index.test.ts:172-179` の定義どおり毎回新規配線を作る。
+- Noise: なし — 新規の断定は型が決める可変コピー（`index.test.ts:94-97,204-208`）で、重複検証ではない。定数は `ports.test.ts:6-11` に切り出され、断定に直書きのマジックナンバー・ハードコード文字列はない。新規の抑制コメントはなく、残る抑制は entry 04 扱いの許可対象である。
+- Doubts: なし
 
 ### Round 2
 
@@ -249,7 +249,7 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `context-precompact` が、外部の型をそのまま受けず、読むメンバーだけの狭いポートを受ける。実装は達成している（`run/ports.ts:25-36` の `SessionPort`・`RegistryPort` と、`index.ts:57-60` の `PrecompactCtx`）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、902 件）、`pnpm suppression-check`（19 件から 15 件に減ることを確かめた）。
+- Findings: なし
+- Doubts: なし
