@@ -436,33 +436,85 @@ function run(root: string, options: Options): number; // 終了コード
 
 ## Notes
 
-### Cleanup: <what it cleaned>
+### Slice 1: 検出器
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 6038c347
+- Stopped:
+
+### Slice 2: 照合
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 8563802a
+- Stopped:
+
+### Slice 3: 呼び出しの入口
+
+- Findings: なし
+- Unplanned:
+  - `isMain` の守りに `node:url` の `pathToFileURL` を使った。Steps の式（`import.meta.url === pathToFileURL(process.argv[1]).href`）どおりで、前例（`.pi/skills/adr/scripts/index.mjs:83`）と同じ形。検出と照合の本体は `node:fs` と `node:path` だけを使う。
+- Commit: bb8f30aa
+- Stopped:
+
+### Cleanup: テストの重複を落とし、共通の前提をファクトリに移した
+
+- Findings: なし
+- Unplanned:
+  - `scripts/checks/suppression-check.test.ts` の `cli: happy --report → 許可済みの行も出る` を落とした。`display: happy --report で許可済み → allowed の行` と前提・引数が同一で、断言（`allowed` と `a.ts:2:` を含む）が完全行の断言に含まれるため。
+  - 同ファイルの `reason: happy 日本語でない → Reason がある` を落とした。`reason: happy 直前の 1 行 → Reason がある` と同じ分岐（有効な形の英語 → 真）で、日本語を要求しないことは英語が通ること自体が示すため。
+  - 許可済みと違反のツリー作りを `writeAllowedTree` と `writeViolationTree` に移した。4 件が同じ不変の前提を字面で繰り返しており、誰も変えないため（可変の `fakeRoot()` は各テストに残す）。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - `scripts/checks/suppression-check.test.ts:1`: 冒頭コメントが「検出器を試す」「収集は共有の `fakeRoot()` と `writeFile` で作った一時ツリーで試す」と slice 1 の範囲だけを説明し、config・match・reason・cli・display（slice 2〜3）の対象に触れていない。理由：440 行のファイル全体の説明として古く、読む者が対象を誤認するため。
+    fixed: 冒頭コメントを検出・照合・入口の 3 範囲を指す文に書き換えた。
 - Unlisted:
+  - なし。理由：差分のうち `DEFINITION.md`、`package.json`、`suppression-check.mjs`、`suppression-check.json`、`suppression-check.test.ts` は `## Files` に命名があり、`plan` md 自体の `Notes` 追記はサイクルの記録で `Files` の対象外のため。
 - Gaps:
+  - `scripts/checks/suppression-check.mjs:362`（対応する test は `scripts/checks/suppression-check.test.ts:347` のみ）：`parseArgs` の `--report=...` と `--` 単体を含む `--` 始まり引数の誤り分岐（plan Slice 3 Steps 1.1）が試されていない。理由：`--unknown` だけでは入口の誤り分岐を exercise しておらず、`Goal` のコマンド受付の堅さに穴が残るため。
+    fixed: 誤り flag の test を `--unknown`／`--report=x`／`--` の巡回にし、`--report=` 形と `--` 単体を exercise した。
+  - `scripts/checks/suppression-check.mjs:380`：`resolveTargets` の `CODE_EXTENSIONS` にない拡張子の絞り込み（plan Slice 3 Steps 1.2）が CLI・display のいずれの case でも試されていない。理由：絞り込みが壊れても全 CLI test が緑のままで、対象決定の振る舞いに穴が残るため。
+    fixed: `cli: boundary 対象外の拡張子 → 飛ばす` を足し、`a.md` を引数にして `0 files`・exit 0 を確かめた。
+  - `scripts/checks/suppression-check.mjs:390`：空 `rules` を `all` と書く表示分岐（plan Slice 3 Steps 1.3）が display のいずれの case でも試されていない（全 display case が `max-params` あり）。理由：ルール名を持たない抑制の表示は `Goal` の一覧の正しさに関わるのに穴が残るため。
+    fixed: `display: happy ルールなし → all と書く` を足し、`@ts-expect-error` の行で `[tsc] all` を確かめた。
 - Policy:
+  - なし。理由：`Allowed`／`Forbidden` の各行（1 ファイル配置、`isMain` の守り、自前走査、`matchesGlob` のみ、`Reason` 形、3 値判定、表示形、終了コード、`--report` 扱い、`quality-gate`・`lefthook` 不登録、`--report` なし script 等）は差分が守っており、`node:url` の import は Steps の式どおりの plan 決定値のため finding にしないため。
 - Unproven:
+  - `scripts/checks/suppression-check.test.ts:205`（`213`、`219` も同形）：`expect(() => loadAllow(root)).toThrow()` が引数なしで、plan の「理由を持つエラー」を確かめていない。理由：誤った理由文や汎用エラーでも緑になるため。
+    fixed: 3 件の `toThrow()` を `reasonOf` による文面長さの断言に変えた（具体文は断言しない）。
+  - `scripts/checks/suppression-check.test.ts:71`（`85`〜`88` も同形）：`oxlint` は `block` の `tool` のみ、`biome` は `next` の `tool` のみを断言し、`line`／`next-line`（`file`／`block`）の `tool` 対応が壊れても緑のまま。理由：表の写し間違いを検出できないため。
+    fixed: `oxlint` の `line`／`next-line` と `biome` の `file`／`block` に `tool` の断言を足した。
 - Noise:
+  - なし。理由：表示断言の見出し・件数・判定文は plan Slice 3 Steps 1.3 の決定値であり、`8`・行番号・`0 files` 等は前提から導出される値で magic number ではなく、linter・formatter・型エラーの抑止コメントもないため。
 - Doubts:
+  - `Refactor Outside` の「使うのは `node:fs` と `node:path` だけ」と Steps の `pathToFileURL` 式の読み方。`Notes` は Steps どおり・前例どおり・本体は `fs`／`path` のみと許容しているが、文言を直すかは owner の判断が要る。
+  - Slice 3 `Verify Added` の `node scripts/checks/suppression-check.mjs --report` と `pnpm suppression-check; echo "exit=$?"` の実行確認は、本レビューでは行っていない（本 role は `git diff`・`status`・`log` のみ）。owner の実行確認が要る。
 
 ### Round 2
 
 - Stale:
+  - なし。理由：`fixed:` の1件（冒頭コメントの書き換え）を確認した。現行 `suppression-check.test.ts:1-6` は「検出・照合・呼び出しの入口を試す」と3範囲を明示し、本文も `findSuppressions`／`fakeRoot()`・`writeFile`・`writeJson`／子プロセスと手段まで対応づけており、Round 1指摘の「slice 1の範囲だけ」状態は解消されているため。
 - Unlisted:
+  - なし。理由：Round 1に `fixed:` がなく、今回の差分（`suppression-check.test.ts` のみ＋plan追記）にも `## Files` 外の新規・未記載ファイルはないため。
 - Gaps:
+  - なし。理由：`fixed:` の3件を diff と実装に当てて確認した。(1) 誤りflag巡回（test:363-371）は `parseArgs`（mjs:354-368）の `arg === '--report'` 以外の `--` 始まりは一律 `unknown argument` 投下と一致し、`--unknown`／`--report=x`／`--` の3通りで `exit 1`＋`unknown argument` を断言している。(2) 対象外拡張子（test:373-380）は `resolveTargets`（mjs:380-381）の `CODE_EXTENSIONS` 不一致は `continue` と一致し、`a.md` 指定で `0 files`・exit 0を断言している。(3) 空rules表示（test:451-458）は `formatRecord`（mjs:390）の `rules.length === 0 ? 'all'` と一致し、`@ts-expect-error` で `[tsc] all not allowed` を断言しているため。
 - Policy:
+  - なし。理由：Round 1に `fixed:` がなく、今回の差分は test の断言追加のみで `Allowed`／`Forbidden`（1ファイル配置・`matchesGlob` のみ・表示形・終了コード等）の振る舞いを変えていないため。
 - Unproven:
+  - なし。理由：`fixed:` の2件を確認した。(1) `reasonOf` 化（test:206-224、定義346-356）は `loadAllow`（mjs:289-317）が 3 つとも `Error` に文面を持たせて投げることと一致し、投げない・文面なし・非 `Error` 投下では `length` が0になり赤になるため、Round 1指摘の「引数なし `toThrow()`」状態は解消されている。(2) `tool` 断言追加（test:71-73、89・91）は `DIRECTIVES` 表（mjs:23-39）の `oxlint` 3形・`biome` 3形の対応と一致し、写し間違いがあれば赤になるため。
 - Noise:
+  - なし。理由：Round 1に `fixed:` がなく、今回の追加断言（`0 files`、`all not allowed`、`unknown argument` 等）は plan Slice 3 Steps 1.1〜1.3 の決定値・前提から導出される値の確認で、新たな magic number や抑止コメントはないため。
 - Doubts:
+  - `reasonOf` は文面の長さのみを断言し具体文を固定しない（fixed 自体が「具体文は断言しない」と明記）。厳密な文面固定の是非は owner の運用判断が要るが、本レビューは finding にしない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: エージェントが、リンターと型チェックを抑制するコメントの一覧を、許可と違反に分けて、コマンドで受け取れる。達成している。
+- Ran: `pnpm test:run`（69 ファイル、900 テスト）と `pnpm typecheck`（root と `.pi`）、`pnpm lint`、`pnpm format:check`。`node scripts/checks/suppression-check.mjs --report` と `pnpm suppression-check` は、162 ファイル、19 違反、0 許可、exit 1。`findSuppressions`、`judge`、`parseArgs` を変更すると 48 件中 25 件が赤になり、戻すと 48 件が緑になった。
+- Findings: なし
+- Doubts: `Round 2` の `reasonOf` の文面固定は、`design.md` の「断言は直書きの文字列を持たない」に従い、固定しない。

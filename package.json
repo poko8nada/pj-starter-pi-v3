@@ -16,6 +16,7 @@
     "format:check": "oxfmt --check",
     "typecheck": "node scripts/checks/typecheck.mjs",
     "typecheck:staged": "node scripts/checks/typecheck-staged.mjs",
+    "suppression-check": "node scripts/checks/suppression-check.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {
