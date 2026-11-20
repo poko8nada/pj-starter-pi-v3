@@ -6,6 +6,7 @@
  */
 import type { CompactionResult, ExtensionContext } from '@earendil-works/pi-coding-agent';
 import type { PreparedCompaction } from '../prepare/types.ts';
+import type { RegistryPort } from '../run/ports.ts';
 import { RESERVE_TOKENS } from '../settings/constants.ts';
 
 /** 要約の使用量を作る。 */
@@ -52,8 +53,7 @@ export function registryFake(
     headers: {},
     env: {},
   },
-): ExtensionContext['modelRegistry'] {
+): RegistryPort {
   const registry = { getApiKeyAndHeaders: async () => auth };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- modelRegistry の使う関数だけを持つ偽物
-  return registry as unknown as ExtensionContext['modelRegistry'];
+  return registry;
 }

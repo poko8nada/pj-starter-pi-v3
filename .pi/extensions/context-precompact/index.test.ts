@@ -15,7 +15,7 @@ import {
   type PiPort,
   type PrecompactCtx,
 } from './index.ts';
-import { NO_MODEL_REASON, type SummaryCtx } from './run/ports.ts';
+import { NO_MODEL_REASON, type SessionPort, type SummaryCtx } from './run/ports.ts';
 import { readSettings } from './settings/read.ts';
 import { projectEntries, sessionWithTurns } from './test/session-entries.ts';
 import { llmUsage, modelFake, registryFake } from './test/prepared.fixture.ts';
@@ -85,13 +85,16 @@ function fakeCtx(options: {
   const statuses: (string | undefined)[] = [];
   const sessionId = options.sessionId ?? SESSION_ID;
   const branch = options.branch;
-  const manager = {
+  const manager: SessionPort = {
     buildSessionProjection: () => {
       if (options.throws === 'projection') {
         throw new Error(BOOM);
       }
       return {
-        entries: projectEntries(branch),
+        entries: projectEntries(branch).map((entry) => ({
+          sourceEntry: entry.sourceEntry,
+          messages: [...entry.messages],
+        })),
         messages: [],
         thinkingLevel: 'off',
         model: null,
@@ -108,8 +111,7 @@ function fakeCtx(options: {
     },
   };
   const ctx: PrecompactCtx = {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- branch の読み取りだけを持つ偽物
-    sessionManager: manager as unknown as ExtensionContext['sessionManager'],
+    sessionManager: manager,
     model: 'model' in options ? options.model : modelFake(CONTEXT_WINDOW),
     modelRegistry: registryFake(),
     thinkingLevel: 'medium',
@@ -197,16 +199,19 @@ function compactEvent(
   preparation: ReturnType<typeof matchingPreparation>,
   branch: readonly SessionEntry[],
 ): SessionBeforeCompactEvent {
-  const event = {
+  const event: SessionBeforeCompactEvent = {
     type: 'session_before_compact',
-    preparation,
-    branchEntries: branch,
+    preparation: {
+      ...preparation,
+      messagesToSummarize: [...preparation.messagesToSummarize],
+      turnPrefixMessages: [...preparation.turnPrefixMessages],
+    },
+    branchEntries: [...branch],
     reason: 'threshold',
     willRetry: false,
     signal: new AbortController().signal,
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, typescript/no-unsafe-type-assertion -- 判定に使う関数だけを持つ偽物
-  return event as unknown as SessionBeforeCompactEvent;
+  return event;
 }
 
 function appliedChat(before: number, after: number): string {
@@ -293,12 +298,7 @@ describe('precompact wiring', () => {
   it('turn_end の apply で stale なら draft がなくフォールバックを通知する', async () => {
     const { branch } = sessionWithTurns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
     const hot = fakeCtx({
@@ -468,12 +468,7 @@ describe('precompact now response', () => {
   it('now で準備がなければ preparing と nothing になり status が idle になる', async () => {
     const { session, branch: turns } = sessionWithTurns(3);
     const branch = [...turns, session.compaction('summary')];
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('now', setup.ctx);
     await wiring.flush();
@@ -812,12 +807,7 @@ describe('precompact error path', () => {
   it('buildSessionProjection と getBranch と getContextUsage の例外は failed になる', async () => {
     for (const thrown of ['projection', 'branch', 'usage'] as const) {
       const { branch } = sessionWithTurns(3);
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: settingsDirWith(settingsDocument()),
-        now: () => 0,
-        compactFn: compactOk(),
-      });
+      const wiring = wiringWith();
       const bad = fakeCtx({
         branch,
         usage: contextUsageOf(LEAD_TOKENS),
@@ -832,12 +822,7 @@ describe('precompact error path', () => {
   });
   it('notify が例外を投げると now は reject し running が戻る', async () => {
     const { branch } = sessionWithTurns(3);
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     const bad = fakeCtx({
       branch,
       usage: contextUsageOf(LEAD_TOKENS),
