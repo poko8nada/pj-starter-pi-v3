@@ -317,7 +317,6 @@ describe('完了の通知', () => {
   it('runner が投げる → 記録に 1 行、notice に失敗の本文。pi.sendMessage は呼ばれない', async () => {
     const { pi, calls } = fakePi();
     const reason = new Error('boom');
-    // eslint-disable-next-line unicorn/consistent-function-scoping -- テストごとに runner を変える
     const run: ConsultRunner = (_ctx, _options, job) => {
       job.onStarted?.(process.pid);
       return Promise.reject(reason);
