@@ -209,15 +209,15 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 ### Slice 2: 入口を狭いポートに合わせる
 
 - Findings: なし
-- Unplanned: なし
-- Commit:
+- Unplanned: import を値 import と型 import の2行に分けた。計画どおりのインライン import は `oxfmt` が6行に展開し、`index.ts` が `max-lines` の上限480行を超えた（484行）ため。2行形式は480行に収まり、`separate-type-imports` の方針とも合う。
+- Commit: 6eb18c07
 - Stopped:
 
 ### Slice 3: テストからキャストを消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `compactEvent` の注釈には `preparation.messagesToSummarize`・`preparation.turnPrefixMessages`・`branchEntries` の可変コピーが必要だった。`PreparedCompaction` と `branch` が読み取り専用であり、そのままでは `CompactionPreparation`・`SessionBeforeCompactEvent` の可変配列に合わないため。`entries` の組み立ては `{ sourceEntry, messages }` の明示構築にした。計画のスプレッド形式は `no-map-spread` に当たるため。
+- Commit: e6303bb8
 - Stopped:
 
 ### Cleanup: なし
