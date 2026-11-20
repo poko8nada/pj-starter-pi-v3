@@ -104,21 +104,13 @@ describe('scrubMessage', () => {
   });
 
   it('role が assistant 以外なら undefined になる', () => {
-    // assistant なら差し替わる本文である（happy test と同じ）。role のため undefined になる。
+    // text の user メッセージである。role のため undefined になる。
     const user: UserMessage = {
       role: 'user',
       content: [{ type: 'text', text: degenerate() }],
       timestamp: 1,
     };
     expect(scrubMessage(user, tuning)).toBeUndefined();
-  });
-
-  it('content が配列でない assistant は undefined になる', () => {
-    // Set は iterable だが配列でない。ガードがなければ thinking を検出して defined になる。
-    const blocks = new Set([
-      { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
-    ]);
-    expect(isAssistantMessage({ role: 'assistant', content: blocks })).toBe(false);
   });
 
   it('2 ブロックのうち 1 つだけ退化すればその 1 つだけ書き換わる', () => {
@@ -224,6 +216,16 @@ describe('scrubMessage', () => {
       throw new Error('second block must be thinking');
     }
     expect(second.thinking).toBe(expectedSecond);
+  });
+});
+
+describe('isAssistantMessage', () => {
+  it('content が配列でない assistant は false になる', () => {
+    // Set は iterable だが配列でないため false になる。
+    const blocks = new Set([
+      { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
+    ]);
+    expect(isAssistantMessage({ role: 'assistant', content: blocks })).toBe(false);
   });
 });
 

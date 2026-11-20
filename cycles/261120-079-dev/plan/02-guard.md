@@ -182,10 +182,12 @@ export function assistantMessage(overrides: Partial<PiAssistantMessage> = {}): P
 - Commit: a757a8a96842ed210138ae19e2f1fa9b9cdcd5e9
 - Stopped: なし
 
-### Cleanup: なし
+### Cleanup: ずれた題名と置き場所
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - `scrub/message.test.ts` の role テストの説明を直した（`happy test と同じ` → `text の user`）。スライス 2 で本文が text に変わり、説明が実態とずれていたため、ここで直した。
+  - `content` が配列でないテストを `describe('scrubMessage')` から `describe('isAssistantMessage')` に移し、題名を `false になる` に、説明を `Set は iterable だが配列でないため` に直した。スライス 2 で対象が `isAssistantMessage` に変わり、題名（`undefined`）と置き場所がずれていたため、ここで直した。
 
 ## Work Review
 
