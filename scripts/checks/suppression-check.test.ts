@@ -1,8 +1,8 @@
 /**
- * `scripts/checks/suppression-check.mjs` の検出器を試す。
+ * `scripts/checks/suppression-check.mjs` の検出・照合・呼び出しの入口を試す。
  *
- * 文字列を `findSuppressions` に渡し、記録の有無と中身を見る。
- * 収集は共有の `fakeRoot()` と `writeFile` で作った一時ツリーで試す。
+ * 検出は文字列を `findSuppressions` に渡し、収集と照合は共有の `fakeRoot()` と
+ * `writeFile`・`writeJson` で作った一時ツリーで試す。入口は子プロセスで試す。
  */
 
 import { spawnSync } from 'node:child_process';
@@ -69,6 +69,8 @@ describe('suppression-check directive', () => {
     expect(line[0]?.scope).toBe('line');
     expect(next[0]?.scope).toBe('next-line');
     expect(block[0]?.tool).toBe('oxlint');
+    expect(line[0]?.tool).toBe('oxlint');
+    expect(next[0]?.tool).toBe('oxlint');
   });
 
   it('directive: happy eslint の綴り → tool が eslint', () => {
@@ -84,7 +86,9 @@ describe('suppression-check directive', () => {
     const block = findSuppressions('a.ts', '// biome-ignore-start lint/style/useConst: reason\n');
     expect(next[0]?.tool).toBe('biome');
     expect(next[0]?.scope).toBe('next-line');
+    expect(file[0]?.tool).toBe('biome');
     expect(file[0]?.scope).toBe('file');
+    expect(block[0]?.tool).toBe('biome');
     expect(block[0]?.scope).toBe('block');
   });
 
@@ -202,7 +206,7 @@ describe('suppression-check config', () => {
   it('config: error allow 以外の鍵 → 理由を持つエラー', () => {
     const root = fakeRoot();
     writeJson(root, 'scripts/checks/suppression-check.json', { allow: [], extra: 1 });
-    expect(() => loadAllow(root)).toThrow();
+    expect(reasonOf(() => loadAllow(root)).length).toBeGreaterThan(0);
   });
 
   it('config: error rules が空 → 理由を持つエラー', () => {
@@ -210,13 +214,13 @@ describe('suppression-check config', () => {
     writeJson(root, 'scripts/checks/suppression-check.json', {
       allow: [{ path: 'src/*.ts', rules: [] }],
     });
-    expect(() => loadAllow(root)).toThrow();
+    expect(reasonOf(() => loadAllow(root)).length).toBeGreaterThan(0);
   });
 
   it('config: error JSON でない → 理由を持つエラー', () => {
     const root = fakeRoot();
     writeFile(root, 'scripts/checks/suppression-check.json', '{not json');
-    expect(() => loadAllow(root)).toThrow();
+    expect(reasonOf(() => loadAllow(root)).length).toBeGreaterThan(0);
   });
 });
 
@@ -339,17 +343,40 @@ function writeViolationTree(root: string): void {
   writeFile(root, 'a.ts', '// eslint-disable-next-line max-params -- x\n');
 }
 
+function reasonOf(fn: () => unknown): string {
+  try {
+    fn();
+  } catch (error) {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return '';
+  }
+  return '';
+}
+
 const HEADER_1 =
   'suppression-check: Report to the owner. A suppressed rule is a bypass unless the whitelist and the Reason line allow it.';
 const HEADER_2 = 'suppression-check: Fix the code, or ask the owner to allow it.';
 
 describe('suppression-check cli', () => {
   it('cli: error 知らない --flag → exit 1 と stderr', () => {
+    for (const flag of ['--unknown', '--report=x', '--']) {
+      const root = fakeRoot();
+      writeAllow(root, []);
+      const out = runCli(root, [flag]);
+      expect(out.status).toBe(1);
+      expect(out.stderr).toContain('suppression-check: unknown argument');
+    }
+  });
+
+  it('cli: boundary 対象外の拡張子 → 飛ばす', () => {
     const root = fakeRoot();
     writeAllow(root, []);
-    const out = runCli(root, ['--unknown']);
-    expect(out.status).toBe(1);
-    expect(out.stderr).toContain('suppression-check: unknown argument');
+    writeFile(root, 'a.md', '// eslint-disable-next-line max-params -- x\n');
+    const out = runCli(root, ['a.md']);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('0 files');
   });
 
   it('cli: boundary 存在しないパス → 飛ばす', () => {
@@ -419,6 +446,15 @@ describe('suppression-check display', () => {
     expect(out.status).toBe(0);
     expect(out.stdout).toContain('No findings.');
     expect(out.stdout).toContain('suppression-check: 1 files, 0 violations, 0 allowed.');
+  });
+
+  it('display: happy ルールなし → all と書く', () => {
+    const root = fakeRoot();
+    writeAllow(root, []);
+    writeFile(root, 'a.ts', '// @ts-expect-error\n');
+    const out = runCli(root, ['a.ts']);
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain('a.ts:1: @ts-expect-error [tsc] all not allowed');
   });
 
   it('display: happy --report で許可済み → allowed の行', () => {

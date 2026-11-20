@@ -471,12 +471,29 @@ function run(root: string, options: Options): number; // 終了コード
 ### Round 1
 
 - Stale:
+  - `scripts/checks/suppression-check.test.ts:1`: 冒頭コメントが「検出器を試す」「収集は共有の `fakeRoot()` と `writeFile` で作った一時ツリーで試す」と slice 1 の範囲だけを説明し、config・match・reason・cli・display（slice 2〜3）の対象に触れていない。理由：440 行のファイル全体の説明として古く、読む者が対象を誤認するため。
+    fixed: 冒頭コメントを検出・照合・入口の 3 範囲を指す文に書き換えた。
 - Unlisted:
+  - なし。理由：差分のうち `DEFINITION.md`、`package.json`、`suppression-check.mjs`、`suppression-check.json`、`suppression-check.test.ts` は `## Files` に命名があり、`plan` md 自体の `Notes` 追記はサイクルの記録で `Files` の対象外のため。
 - Gaps:
+  - `scripts/checks/suppression-check.mjs:362`（対応する test は `scripts/checks/suppression-check.test.ts:347` のみ）：`parseArgs` の `--report=...` と `--` 単体を含む `--` 始まり引数の誤り分岐（plan Slice 3 Steps 1.1）が試されていない。理由：`--unknown` だけでは入口の誤り分岐を exercise しておらず、`Goal` のコマンド受付の堅さに穴が残るため。
+    fixed: 誤り flag の test を `--unknown`／`--report=x`／`--` の巡回にし、`--report=` 形と `--` 単体を exercise した。
+  - `scripts/checks/suppression-check.mjs:380`：`resolveTargets` の `CODE_EXTENSIONS` にない拡張子の絞り込み（plan Slice 3 Steps 1.2）が CLI・display のいずれの case でも試されていない。理由：絞り込みが壊れても全 CLI test が緑のままで、対象決定の振る舞いに穴が残るため。
+    fixed: `cli: boundary 対象外の拡張子 → 飛ばす` を足し、`a.md` を引数にして `0 files`・exit 0 を確かめた。
+  - `scripts/checks/suppression-check.mjs:390`：空 `rules` を `all` と書く表示分岐（plan Slice 3 Steps 1.3）が display のいずれの case でも試されていない（全 display case が `max-params` あり）。理由：ルール名を持たない抑制の表示は `Goal` の一覧の正しさに関わるのに穴が残るため。
+    fixed: `display: happy ルールなし → all と書く` を足し、`@ts-expect-error` の行で `[tsc] all` を確かめた。
 - Policy:
+  - なし。理由：`Allowed`／`Forbidden` の各行（1 ファイル配置、`isMain` の守り、自前走査、`matchesGlob` のみ、`Reason` 形、3 値判定、表示形、終了コード、`--report` 扱い、`quality-gate`・`lefthook` 不登録、`--report` なし script 等）は差分が守っており、`node:url` の import は Steps の式どおりの plan 決定値のため finding にしないため。
 - Unproven:
+  - `scripts/checks/suppression-check.test.ts:205`（`213`、`219` も同形）：`expect(() => loadAllow(root)).toThrow()` が引数なしで、plan の「理由を持つエラー」を確かめていない。理由：誤った理由文や汎用エラーでも緑になるため。
+    fixed: 3 件の `toThrow()` を `reasonOf` による文面長さの断言に変えた（具体文は断言しない）。
+  - `scripts/checks/suppression-check.test.ts:71`（`85`〜`88` も同形）：`oxlint` は `block` の `tool` のみ、`biome` は `next` の `tool` のみを断言し、`line`／`next-line`（`file`／`block`）の `tool` 対応が壊れても緑のまま。理由：表の写し間違いを検出できないため。
+    fixed: `oxlint` の `line`／`next-line` と `biome` の `file`／`block` に `tool` の断言を足した。
 - Noise:
+  - なし。理由：表示断言の見出し・件数・判定文は plan Slice 3 Steps 1.3 の決定値であり、`8`・行番号・`0 files` 等は前提から導出される値で magic number ではなく、linter・formatter・型エラーの抑止コメントもないため。
 - Doubts:
+  - `Refactor Outside` の「使うのは `node:fs` と `node:path` だけ」と Steps の `pathToFileURL` 式の読み方。`Notes` は Steps どおり・前例どおり・本体は `fs`／`path` のみと許容しているが、文言を直すかは owner の判断が要る。
+  - Slice 3 `Verify Added` の `node scripts/checks/suppression-check.mjs --report` と `pnpm suppression-check; echo "exit=$?"` の実行確認は、本レビューでは行っていない（本 role は `git diff`・`status`・`log` のみ）。owner の実行確認が要る。
 
 ### Round 2
 
