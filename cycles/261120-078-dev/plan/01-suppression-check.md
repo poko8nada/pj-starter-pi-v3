@@ -436,6 +436,28 @@ function run(root: string, options: Options): number; // 終了コード
 
 ## Notes
 
+### Slice 1: 検出器
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 6038c347
+- Stopped:
+
+### Slice 2: 照合
+
+- Findings: なし
+- Unplanned: なし
+- Commit: 8563802a
+- Stopped:
+
+### Slice 3: 呼び出しの入口
+
+- Findings: なし
+- Unplanned:
+  - `isMain` の守りに `node:url` の `pathToFileURL` を使った。Steps の式（`import.meta.url === pathToFileURL(process.argv[1]).href`）どおりで、前例（`.pi/skills/adr/scripts/index.mjs:83`）と同じ形。検出と照合の本体は `node:fs` と `node:path` だけを使う。
+- Commit: bb8f30aa
+- Stopped:
+
 ### Cleanup: <what it cleaned>
 
 ## Work Review
