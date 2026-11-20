@@ -55,29 +55,22 @@ export function reportBlock(report: SubagentReport): string {
   return lines.join('\n');
 }
 
+/** 再試行の表示に渡す値。始まりと終わりで同じものを使う */
+export interface RetryNotice {
+  readonly label: string;
+  readonly model: string;
+  readonly attempt: number;
+  readonly maxAttempts: number;
+}
+
 /** 再試行の始まり。エラーの理由は 1 行にし、120 文字で切る */
-// eslint-disable-next-line max-params -- plan の I/O（label, model, attempt, maxAttempts, error, delayMs の 6 つ）
-export function retryStartLine(
-  label: string,
-  model: string,
-  attempt: number,
-  maxAttempts: number,
-  error: string,
-  delayMs: number,
-): string {
-  return `[consult] ${label}: ${model} retry ${attempt}/${maxAttempts} (${shortError(error)}) in ${Math.round(delayMs / 1000)}s`;
+export function retryStartLine(retry: RetryNotice, error: string, delayMs: number): string {
+  return `[consult] ${retry.label}: ${retry.model} retry ${retry.attempt}/${retry.maxAttempts} (${shortError(error)}) in ${Math.round(delayMs / 1000)}s`;
 }
 
 /** 再試行の終わり */
-// eslint-disable-next-line max-params -- plan の I/O（label, model, attempt, maxAttempts, success の 5 つ）
-export function retryEndLine(
-  label: string,
-  model: string,
-  attempt: number,
-  maxAttempts: number,
-  success: boolean,
-): string {
-  return `[consult] ${label}: ${model} retry ${attempt}/${maxAttempts} ${success ? 'ok' : 'failed'}`;
+export function retryEndLine(retry: RetryNotice, success: boolean): string {
+  return `[consult] ${retry.label}: ${retry.model} retry ${retry.attempt}/${retry.maxAttempts} ${success ? 'ok' : 'failed'}`;
 }
 
 /** 乗り換え。前のモデルは出さない */

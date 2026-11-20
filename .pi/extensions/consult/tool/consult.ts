@@ -43,6 +43,7 @@ import {
   retryStartLine,
   usageLine,
   type SubagentReport,
+  type RetryNotice,
 } from './render.ts';
 import { isSoundEnabled, setSoundEnabled } from './sound.ts';
 
@@ -145,10 +146,12 @@ export function modelNotifier(ctx: ConsultContext, label: string): SubagentHooks
         maxAttempts = event.maxAttempts;
         notify(
           retryStartLine(
-            label,
-            model,
-            event.attempt,
-            event.maxAttempts,
+            {
+              label,
+              model,
+              attempt: event.attempt,
+              maxAttempts: event.maxAttempts,
+            } satisfies RetryNotice,
             event.error,
             event.delayMs,
           ),
@@ -158,7 +161,12 @@ export function modelNotifier(ctx: ConsultContext, label: string): SubagentHooks
       if (maxAttempts === 0) {
         return;
       }
-      notify(retryEndLine(label, model, event.attempt, maxAttempts, event.success));
+      notify(
+        retryEndLine(
+          { label, model, attempt: event.attempt, maxAttempts } satisfies RetryNotice,
+          event.success,
+        ),
+      );
     },
     onFallback: (attempt) => {
       notify(fallbackLine(label, attempt.requested ?? 'main'));
