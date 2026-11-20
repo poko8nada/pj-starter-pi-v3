@@ -170,34 +170,36 @@ export function assistantMessage(overrides: Partial<PiAssistantMessage> = {}): P
 
 ### Slice 1: ガードを unknown から受ける型述語にする
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5c401f34052ce69d6e24cff838b097b57408b7c1
+- Stopped: なし
 
 ### Slice 2: ファクトリと 2 つの呼び出し側を同時に変える
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: a757a8a96842ed210138ae19e2f1fa9b9cdcd5e9
+- Stopped: なし
 
-### Cleanup: なし
+### Cleanup: ずれた題名と置き場所
 
-- Findings:
+- Findings: なし
 - Unplanned:
+  - `scrub/message.test.ts` の role テストの説明を直した（`happy test と同じ` → `text の user`）。スライス 2 で本文が text に変わり、説明が実態とずれていたため、ここで直した。
+  - `content` が配列でないテストを `describe('scrubMessage')` から `describe('isAssistantMessage')` に移し、題名を `false になる` に、説明を `Set は iterable だが配列でないため` に直した。スライス 2 で対象が `isAssistantMessage` に変わり、題名（`undefined`）と置き場所がずれていたため、ここで直した。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — コメント・題名は差分後の実態と一致し、冗長な文はない（`.pi/extensions/thinking-scrub/scrub/message.ts:57` の説明は述語の 3 段階と一致、`scrub/message.test.ts:107,224` の説明は user/text と Set/配列でない対象と一致）。`next` の注釈残置（`message.ts:78`）は plan Slice 1 Steps が決めた値のため対象外。
+- Unlisted: なし — コード差分は Files の 4 ファイル（`message.ts`・`message.test.ts`・`scrub.fixture.ts`・`index.test.ts`）に収まり、`index.ts` は無変更。plan md の Notes 追記は作業記録であり Files の対象外。
+- Gaps: なし — Goal の 2 要素（unknown 述語での assistant 判定、Partial による偽物の型保護）は Defined/Undefined 系テストと typecheck で exercise される。null・キー欠落の直撃テストはないが、`design.md` の「境界値は単独のテストにしない」に従うため gap としない。
+- Policy: なし — Slice 1・2 の Allowed/Forbidden を保持。述語内にキャストなし（`message.ts:58-69`）、検査は 2 ガードに留まる、`Record` 受けなし（`scrub.fixture.ts:70`・`index.test.ts:37`）、`Object.assign` 使用（`scrub.fixture.ts:81`）、期待変更は content の 1 か所のみ、接頭辞なし。残存する evil の `Record`/cast（`index.test.ts:643,650`）は ADR 04 C1 で残すと決めた値のため対象外。
+- Unproven: なし — role テスト（`scrub/message.test.ts:106-114`）は text 系 user のため単独では role ガード単体の破壊を見逃しうるが、前提値（text の user・`timestamp: 1`）は plan Slice 2 Steps と ADR Update が決めた値のため除外規定により finding としない。他に単独で green のまま残るテストはない（常時 false 化は Defined 系で検出される）。
+- Noise: なし — 新規の数値・文字列は plan/ADR の決定値（fixture 既定値、`timestamp: 1`、thinking 署名等）のため対象外。型・spec が保証する前提の再現テストなし。新規の抑制コメントなし（1 件削除のみ）。
+- Doubts: なし — 上記の role テストの弱さは plan/ADR の決定のため doubt とせず、所有者判断を求める事項はない。
 
 ### Round 2
 
@@ -211,7 +213,7 @@ export function assistantMessage(overrides: Partial<PiAssistantMessage> = {}): P
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `thinking-scrub` が、assistant かを `unknown` から型述語で確かめ、テストの偽物を型で守る。実装は達成している（`scrub/message.ts` の `isAssistantMessage` と `scrub/message.ts` の `scrubMessage` の 1 呼び出しへの置換、`scrub.fixture.ts` の `Partial<PiAssistantMessage>` と `Object.assign`）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、902 件）、`pnpm suppression-check`（15 件から 14 件に減ることを確かめた）。
+- Findings: なし
+- Doubts: なし
