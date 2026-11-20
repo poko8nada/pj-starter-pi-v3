@@ -170,17 +170,17 @@ export function assistantMessage(overrides: Partial<PiAssistantMessage> = {}): P
 
 ### Slice 1: ガードを unknown から受ける型述語にする
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 5c401f34052ce69d6e24cff838b097b57408b7c1
+- Stopped: なし
 
 ### Slice 2: ファクトリと 2 つの呼び出し側を同時に変える
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: a757a8a96842ed210138ae19e2f1fa9b9cdcd5e9
+- Stopped: なし
 
 ### Cleanup: なし
 
