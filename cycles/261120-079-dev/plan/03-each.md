@@ -169,13 +169,13 @@
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
@@ -189,7 +189,7 @@
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `context-precompact` のテストが、繰り返しではなく、事例ごとのテストで落ちた場所を示す。実装は達成している（`index.test.ts` の 3 つの表を `it.each` の 2 + 3 + 2 事例にし、題名に `$name`・`%s` を入れた）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、906 件）、`pnpm suppression-check`（このブランチの作業前 14 件から 9 件に減ることを確かめた）。
+- Findings: なし
+- Doubts: なし
