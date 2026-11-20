@@ -165,10 +165,10 @@ export function retryEndLine(retry: RetryNotice, success: boolean): string;
 - Commit: ea85f484
 - Stopped:
 
-### Cleanup: なし
+### Cleanup: retryEndLine の不変の前提を共有化した
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: `render.test.ts` の `retryEndLine` の2件（成功→ok・失敗→failed）が各自作っていた不変の前提（`attempt`・`maxAttempts` と `notice` オブジェクト）を `describe` 直下に寄せた。変わる値（`success` の真偽）は各テストに残し、素の真偽値で渡す。落としたテストはなし（成功・失敗は別の結果であり、開始・終了・配線の各テストも別の振る舞いのため残した）。`consult.test.ts` は変えていない。
 
 ## Work Review
 

@@ -138,22 +138,16 @@ describe('retryStartLine', () => {
 });
 
 describe('retryEndLine', () => {
+  const attempt = 2;
+  const maxAttempts = 3;
+  const notice = { label: 'consult-1', model: 'p/m', attempt, maxAttempts };
+
   it('成功 → ok', () => {
-    const attempt = 2;
-    const maxAttempts = 3;
-    const success = true;
-    expect(
-      retryEndLine({ label: 'consult-1', model: 'p/m', attempt, maxAttempts }, success),
-    ).toContain(`retry ${attempt}/${maxAttempts} ok`);
+    expect(retryEndLine(notice, true)).toContain(`retry ${attempt}/${maxAttempts} ok`);
   });
 
   it('失敗 → failed', () => {
-    const attempt = 2;
-    const maxAttempts = 3;
-    const success = false;
-    expect(
-      retryEndLine({ label: 'consult-1', model: 'p/m', attempt, maxAttempts }, success),
-    ).toContain(`retry ${attempt}/${maxAttempts} failed`);
+    expect(retryEndLine(notice, false)).toContain(`retry ${attempt}/${maxAttempts} failed`);
   });
 });
 
