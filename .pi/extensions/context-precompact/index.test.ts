@@ -814,12 +814,7 @@ describe('precompact error path', () => {
     'buildSessionProjection と getBranch と getContextUsage のうち %s の例外は failed になる',
     async (thrown) => {
       const { branch } = sessionWithTurns(3);
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: settingsDirWith(settingsDocument()),
-        now: () => 0,
-        compactFn: compactOk(),
-      });
+      const wiring = wiringWith();
       const bad = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS), throws: thrown });
       await wiring.onCommand('now', bad.ctx);
       await wiring.flush();

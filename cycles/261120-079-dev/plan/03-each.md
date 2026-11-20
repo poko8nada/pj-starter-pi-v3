@@ -160,10 +160,10 @@
 - Commit: db9e5fa616863e0d7b04e901376829cb81675362
 - Stopped: なし
 
-### Cleanup: なし
+### Cleanup: 規定値の配線組み立てを wiringWith に寄せた
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: `error path` の 3 事例の規定値どおりの配線組み立てを `wiringWith()` に寄せた。各事例が `wiringWith()` を呼んで自分の配線を作る形のままであり、挙動は変わらない。
 
 ## Work Review
 
