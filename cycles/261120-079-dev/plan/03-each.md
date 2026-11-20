@@ -155,27 +155,27 @@
 
 ### Slice 1: 繰り返しを事例ごとのテストに分ける
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: db9e5fa616863e0d7b04e901376829cb81675362
+- Stopped: なし
 
-### Cleanup: なし
+### Cleanup: 規定値の配線組み立てを wiringWith に寄せた
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: `error path` の 3 事例の規定値どおりの配線組み立てを `wiringWith()` に寄せた。各事例が `wiringWith()` を呼んで自分の配線を作る形のままであり、挙動は変わらない。
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
@@ -189,7 +189,7 @@
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `context-precompact` のテストが、繰り返しではなく、事例ごとのテストで落ちた場所を示す。実装は達成している（`index.test.ts` の 3 つの表を `it.each` の 2 + 3 + 2 事例にし、題名に `$name`・`%s` を入れた）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、906 件）、`pnpm suppression-check`（このブランチの作業前 14 件から 9 件に減ることを確かめた）。
+- Findings: なし
+- Doubts: なし
