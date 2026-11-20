@@ -298,12 +298,7 @@ describe('precompact wiring', () => {
   it('turn_end の apply で stale なら draft がなくフォールバックを通知する', async () => {
     const { branch } = sessionWithTurns(3);
     const lead = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     await wiring.onTurnEnd(lead.ctx);
     await wiring.flush();
     const hot = fakeCtx({
@@ -473,12 +468,7 @@ describe('precompact now response', () => {
   it('now で準備がなければ preparing と nothing になり status が idle になる', async () => {
     const { session, branch: turns } = sessionWithTurns(3);
     const branch = [...turns, session.compaction('summary')];
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
     await wiring.onCommand('now', setup.ctx);
     await wiring.flush();
@@ -817,12 +807,7 @@ describe('precompact error path', () => {
   it('buildSessionProjection と getBranch と getContextUsage の例外は failed になる', async () => {
     for (const thrown of ['projection', 'branch', 'usage'] as const) {
       const { branch } = sessionWithTurns(3);
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: settingsDirWith(settingsDocument()),
-        now: () => 0,
-        compactFn: compactOk(),
-      });
+      const wiring = wiringWith();
       const bad = fakeCtx({
         branch,
         usage: contextUsageOf(LEAD_TOKENS),
@@ -837,12 +822,7 @@ describe('precompact error path', () => {
   });
   it('notify が例外を投げると now は reject し running が戻る', async () => {
     const { branch } = sessionWithTurns(3);
-    const { pi } = fakePi();
-    const wiring = createPrecompactWiring(pi, {
-      settingsDir: settingsDirWith(settingsDocument()),
-      now: () => 0,
-      compactFn: compactOk(),
-    });
+    const wiring = wiringWith();
     const bad = fakeCtx({
       branch,
       usage: contextUsageOf(LEAD_TOKENS),

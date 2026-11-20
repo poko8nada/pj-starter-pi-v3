@@ -220,10 +220,10 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 - Commit: e6303bb8
 - Stopped:
 
-### Cleanup: なし
+### Cleanup: 規定値の配線組み立てを wiringWith に寄せた
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: 規定値どおりの配線を作る4か所（`turn_end` の stale 適用、準備なし now、例外3種、notify 例外）を `wiringWith()` に寄せた。可変の配線は各テストで作り直す形のままであり、挙動は変わらない。
 
 ## Work Review
 
