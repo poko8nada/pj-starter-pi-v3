@@ -1,0 +1,28 @@
+{
+  "allow": [
+    {
+      "path": "**/*.{ts,tsx}",
+      "rules": [
+        "@typescript-eslint/consistent-type-assertions",
+        "@typescript-eslint/no-unsafe-type-assertion",
+        "typescript/no-unsafe-type-assertion"
+      ]
+    },
+    {
+      "path": "**/.*/**/*.{ts,tsx}",
+      "rules": [
+        "@typescript-eslint/consistent-type-assertions",
+        "@typescript-eslint/no-unsafe-type-assertion",
+        "typescript/no-unsafe-type-assertion"
+      ]
+    },
+    {
+      "path": ".*.{ts,tsx}",
+      "rules": [
+        "@typescript-eslint/consistent-type-assertions",
+        "@typescript-eslint/no-unsafe-type-assertion",
+        "typescript/no-unsafe-type-assertion"
+      ]
+    }
+  ]
+}

@@ -266,3 +266,80 @@ export function findAll(root) {
   out.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
   return out;
 }
+
+/**
+ * @typedef {object} AllowEntry
+ * @property {string} path process.cwd() をルートにした / 区切りの glob
+ * @property {readonly string[]} rules 1 つ以上
+ */
+
+export function loadAllow(root) {
+  const configPath = path.join(root, 'scripts', 'checks', 'suppression-check.json');
+  let text;
+  try {
+    text = fs.readFileSync(configPath, 'utf8');
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('suppression-check.json is not valid JSON');
+  }
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error('suppression-check.json must have only allow');
+  }
+  const keys = Object.keys(data);
+  if (keys.length !== 1 || keys[0] !== 'allow') {
+    throw new Error('suppression-check.json must have only allow');
+  }
+  if (!Array.isArray(data.allow)) {
+    throw new Error('suppression-check.json allow must be an array');
+  }
+  for (const entry of data.allow) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new Error('suppression-check.json entry must have path and rules');
+    }
+    if (typeof entry.path !== 'string') {
+      throw new Error('suppression-check.json entry path must be a string');
+    }
+    const rulesOk =
+      Array.isArray(entry.rules) &&
+      entry.rules.length > 0 &&
+      entry.rules.every((r) => typeof r === 'string');
+    if (!rulesOk) {
+      throw new Error('suppression-check.json entry rules must be a non-empty array of strings');
+    }
+  }
+  return data.allow;
+}
+
+export function hasReason(before) {
+  const trimmed = before.trimStart();
+  const prefix = '// Reason: ';
+  if (!trimmed.startsWith(prefix)) {
+    return false;
+  }
+  return /\S/.test(trimmed.slice(prefix.length));
+}
+
+export function judge(record, allow) {
+  const keys = record.rules.length === 0 ? [record.directive] : record.rules;
+  for (const entry of allow) {
+    if (!path.matchesGlob(record.file, entry.path)) {
+      continue;
+    }
+    if (!keys.every((k) => entry.rules.includes(k))) {
+      continue;
+    }
+    if (hasReason(record.before)) {
+      return { kind: 'allowed', suppression: record };
+    }
+    return { kind: 'no-reason', suppression: record };
+  }
+  return { kind: 'not-listed', suppression: record };
+}

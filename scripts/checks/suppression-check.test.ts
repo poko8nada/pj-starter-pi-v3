@@ -6,8 +6,15 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { fakeRoot, writeFile } from '../../test/scripts.fixture.ts';
-import { collectFiles, findAll, findSuppressions } from './suppression-check.mjs';
+import { fakeRoot, writeFile, writeJson } from '../../test/scripts.fixture.ts';
+import {
+  collectFiles,
+  findAll,
+  findSuppressions,
+  hasReason,
+  judge,
+  loadAllow,
+} from './suppression-check.mjs';
 
 describe('suppression-check scan', () => {
   it('scan: boundary 文字列の中の // と指令 → コメントとして読まず、報告しない', () => {
@@ -174,5 +181,134 @@ describe('suppression-check collect', () => {
     const out = findAll(root);
     expect(out.map((s) => `${s.file}:${s.line}`)).toEqual(['a.ts:2', 'b.ts:1']);
     expect(out[0]?.before).toBe('ok');
+  });
+});
+
+describe('suppression-check config', () => {
+  it('config: happy 正しい形 → 読める', () => {
+    const root = fakeRoot();
+    writeJson(root, 'scripts/checks/suppression-check.json', {
+      allow: [{ path: 'src/*.ts', rules: ['max-params'] }],
+    });
+    expect(loadAllow(root)).toEqual([{ path: 'src/*.ts', rules: ['max-params'] }]);
+  });
+
+  it('config: empty 設定がない → 許可なし', () => {
+    expect(loadAllow(fakeRoot())).toEqual([]);
+  });
+
+  it('config: error allow 以外の鍵 → 理由を持つエラー', () => {
+    const root = fakeRoot();
+    writeJson(root, 'scripts/checks/suppression-check.json', { allow: [], extra: 1 });
+    expect(() => loadAllow(root)).toThrow();
+  });
+
+  it('config: error rules が空 → 理由を持つエラー', () => {
+    const root = fakeRoot();
+    writeJson(root, 'scripts/checks/suppression-check.json', {
+      allow: [{ path: 'src/*.ts', rules: [] }],
+    });
+    expect(() => loadAllow(root)).toThrow();
+  });
+
+  it('config: error JSON でない → 理由を持つエラー', () => {
+    const root = fakeRoot();
+    writeFile(root, 'scripts/checks/suppression-check.json', '{not json');
+    expect(() => loadAllow(root)).toThrow();
+  });
+});
+
+describe('suppression-check match', () => {
+  it('match: happy glob が一致し Reason がある → allowed', () => {
+    const record = findSuppressions('src/a.ts', '// eslint-disable-next-line max-params -- x\n')[0];
+    const out = judge({ ...record, file: 'src/a.ts', before: '// Reason: owner approved' }, [
+      { path: 'src/*.ts', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('allowed');
+  });
+
+  it('match: boundary **/*.{ts,tsx} は .pi/x.ts に当たらない → not-listed', () => {
+    const record = findSuppressions('.pi/x.ts', '// eslint-disable-next-line max-params -- x\n')[0];
+    const out = judge({ ...record, file: '.pi/x.ts', before: '// Reason: owner approved' }, [
+      { path: '**/*.{ts,tsx}', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('not-listed');
+  });
+
+  it('match: happy **/.*/**/*.{ts,tsx} は .pi/x.ts に当たる → allowed', () => {
+    const record = findSuppressions('.pi/x.ts', '// eslint-disable-next-line max-params -- x\n')[0];
+    const out = judge({ ...record, file: '.pi/x.ts', before: '// Reason: owner approved' }, [
+      { path: '**/.*/**/*.{ts,tsx}', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('allowed');
+  });
+
+  it('match: happy .*.{ts,tsx} は .foo.ts に当たる → allowed', () => {
+    const record = findSuppressions('.foo.ts', '// eslint-disable-next-line max-params -- x\n')[0];
+    const out = judge({ ...record, file: '.foo.ts', before: '// Reason: owner approved' }, [
+      { path: '.*.{ts,tsx}', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('allowed');
+  });
+
+  it('match: happy ルール名のすべてを含む → allowed', () => {
+    const record = findSuppressions(
+      'a.ts',
+      '// eslint-disable-next-line max-params, no-await-in-loop -- x\n',
+    )[0];
+    const out = judge({ ...record, file: 'a.ts', before: '// Reason: owner approved' }, [
+      { path: 'a.ts', rules: ['max-params', 'no-await-in-loop', 'other'] },
+    ]);
+    expect(out.kind).toBe('allowed');
+  });
+
+  it('match: boundary ルール名の 1 つが欠ける → not-listed', () => {
+    const record = findSuppressions(
+      'a.ts',
+      '// eslint-disable-next-line max-params, no-await-in-loop -- x\n',
+    )[0];
+    const out = judge({ ...record, file: 'a.ts', before: '// Reason: owner approved' }, [
+      { path: 'a.ts', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('not-listed');
+  });
+
+  it('match: boundary 項目は当たるが Reason がない → no-reason', () => {
+    const record = findSuppressions('a.ts', '// eslint-disable-next-line max-params -- x\n')[0];
+    const out = judge({ ...record, file: 'a.ts', before: 'const x = 1;' }, [
+      { path: 'a.ts', rules: ['max-params'] },
+    ]);
+    expect(out.kind).toBe('no-reason');
+  });
+
+  it('match: happy ルール名を持たない抑制を指令の名前で → allowed', () => {
+    const record = findSuppressions('a.ts', '// eslint-disable\n')[0];
+    const tsc = findSuppressions('a.ts', '// @ts-expect-error\n')[0];
+    const out = judge({ ...record, file: 'a.ts', before: '// Reason: owner approved' }, [
+      { path: 'a.ts', rules: ['eslint-disable'] },
+    ]);
+    const tout = judge({ ...tsc, file: 'a.ts', before: '// Reason: owner approved' }, [
+      { path: 'a.ts', rules: ['@ts-expect-error'] },
+    ]);
+    expect(out.kind).toBe('allowed');
+    expect(tout.kind).toBe('allowed');
+  });
+});
+
+describe('suppression-check reason', () => {
+  it('reason: happy 直前の 1 行 → Reason がある', () => {
+    expect(hasReason('// Reason: owner approved')).toBe(true);
+  });
+
+  it('reason: boundary 行の途中 → Reason がない', () => {
+    expect(hasReason('code // Reason: owner approved')).toBe(false);
+  });
+
+  it('reason: boundary 空白以外の文字がない → Reason がない', () => {
+    expect(hasReason('// Reason:   ')).toBe(false);
+  });
+
+  it('reason: happy 日本語でない → Reason がある', () => {
+    expect(hasReason('// Reason: allow for testing')).toBe(true);
   });
 });
