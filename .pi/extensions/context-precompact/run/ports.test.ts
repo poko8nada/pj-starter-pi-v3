@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CompactionResult, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { createSummaryPorts, NO_MODEL_REASON, type SummaryCtx } from './ports.ts';
+import type { CompactionResult } from '@earendil-works/pi-coding-agent';
+import { createSummaryPorts, NO_MODEL_REASON, type SessionPort, type SummaryCtx } from './ports.ts';
 import { modelFake, preparedCompaction, registryFake } from '../test/prepared.fixture.ts';
 
 const SESSION_ID = 'sess-1';
@@ -24,10 +24,9 @@ function resultOf(): CompactionResult {
   };
 }
 
-function sessionManagerOf(sessionId: string): ExtensionContext['sessionManager'] {
+function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'> {
   const manager = { getSessionId: () => sessionId };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- sessionManager の使う関数だけを持つ偽物
-  return manager as unknown as ExtensionContext['sessionManager'];
+  return manager;
 }
 
 function ctxOf(overrides: Partial<SummaryCtx>): SummaryCtx {
