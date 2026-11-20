@@ -203,13 +203,13 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 
 - Findings: なし
 - Unplanned: なし
-- Commit:
+- Commit: 4edfaf52
 - Stopped:
 
 ### Slice 2: 入口を狭いポートに合わせる
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 

@@ -24,7 +24,8 @@ import { compare } from './prepare/compare.ts';
 import { guard } from './prepare/guard.ts';
 import { prepare } from './prepare/prepare.ts';
 import type { Prepared, PrepareStamp } from './prepare/types.ts';
-import { createSummaryPorts, type SummaryCtx } from './run/ports.ts';
+import { createSummaryPorts } from './run/ports.ts';
+import type { RegistryPort, SessionPort, SummaryCtx } from './run/ports.ts';
 import { summarize } from './run/summarize.ts';
 import { readyFrom, type ReadyCompaction } from './apply/draft.ts';
 import {
@@ -54,9 +55,9 @@ export interface WiringOptions {
 }
 
 export interface PrecompactCtx {
-  readonly sessionManager: ExtensionContext['sessionManager'];
+  readonly sessionManager: SessionPort;
   readonly model: ExtensionContext['model'];
-  readonly modelRegistry: ExtensionContext['modelRegistry'];
+  readonly modelRegistry: RegistryPort;
   readonly thinkingLevel?: ExtensionContext['thinkingLevel'];
   readonly getContextUsage: ExtensionContext['getContextUsage'];
   readonly signal: AbortSignal | undefined;
