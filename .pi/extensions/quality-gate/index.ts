@@ -25,7 +25,7 @@ const MUTATING_TOOLS = new Set(['edit', 'write']);
 interface GateState {
   /** このランで edit と write が変更したファイルである（絶対パス）。git が使えないときの代替である。 */
   touched: Set<string>;
-  /** ラン開始時点の指紋である。git が答えられない場合は undefined である。 */
+  /** ラン開始時点のフィンガープリントである。git が答えられない場合は undefined である。 */
   baseline: Map<string, string> | undefined;
   /** 自動チェックの連続失敗回数である。 */
   attempts: number;
@@ -173,7 +173,7 @@ async function runGate(
 
 /**
  * そのランの間に変わったファイルを決める。
- * git の指紋が取れればそれを使い、取れなければ edit と write の記録に切り替わる。
+ * git のフィンガープリントが取れればそれを使い、取れなければ edit と write の記録に切り替わる。
  */
 async function resolveTargets(
   pi: ExtensionAPI,
@@ -236,7 +236,7 @@ async function handleAgentEnd(
     return;
   }
 
-  // 指紋の取得も含めて running で覆う（その間に次の agent_end が来ても二重に実行しない）。
+  // フィンガープリントの取得も含めて running で覆う（その間に次の agent_end が来ても二重に実行しない）。
   state.running = true;
   try {
     const files = await resolveTargets(pi, ctx.cwd, state, edited);
@@ -277,7 +277,7 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // 変更の検出は git の指紋で行う。ランの開始時点を記録しておく。
+  // 変更の検出は git のフィンガープリントで行う。ランの開始時点を記録しておく。
   pi.on('agent_start', async (_event, ctx) => {
     baselineEpoch += 1;
     const epoch = baselineEpoch;

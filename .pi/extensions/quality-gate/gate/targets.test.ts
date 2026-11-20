@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../../../test/temp-dir.ts';
 import { changedSince, filterByExtensions, fingerprint, parseStatus } from './targets.ts';
 
-// porcelain の解析、差分、指紋、拡張子の絞り込みを試す。`git` の起動は試さない。
+// porcelain の解析、差分、フィンガープリント、拡張子の絞り込みを試す。`git` の起動は試さない。
 // porcelain の入力と期待するパスの一覧は表にし、断言は表の値から取る。
 
 const trackedA = 'src/a.ts';
@@ -60,7 +60,7 @@ describe('changedSince', () => {
 });
 
 describe('fingerprint', () => {
-  it('存在するファイルだけ指紋を持ち、ないパスは入れない', () => {
+  it('存在するファイルだけフィンガープリントを持ち、ないパスは入れない', () => {
     const missing = join(tempDir(), 'nope-quality-gate');
     expect(fingerprint([missing]).size).toBe(0);
     const file = join(tempDir(), 'a.txt');

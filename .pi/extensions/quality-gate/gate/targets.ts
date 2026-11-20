@@ -39,7 +39,7 @@ export function filterByExtensions(paths: readonly string[], kind: 'format' | 'l
  * そのランの間に変わったファイルを git で調べる。
  *
  * 状態を示す文字（` M` など）だけでは足りない。すでに変更済みのファイルをさらに編集しても
- * 状態は ` M` のままのため、内容の同一性が必要である。そこで mtime と ctime とサイズで指紋を取る。
+ * 状態は ` M` のままのため、内容の同一性が必要である。そこで mtime と ctime とサイズでフィンガープリントを取る。
  * ctime を混ぜるのは、mtime を保つ書き換え（ツールが時刻を復元する場合）を検出するためである。
  * porcelain は追跡されていないファイルを `-uall` で個別に出し、git 管理外は出さない（ビルド成果物を含めない）。
  */
@@ -66,7 +66,7 @@ export function parseStatus(output: string): string[] {
   return paths;
 }
 
-/** パスの指紋である（更新時刻、変更時刻、サイズ）。消えたパスと読めないパスは入れない。 */
+/** パスのフィンガープリントである（更新時刻、変更時刻、サイズ）。消えたパスと読めないパスは入れない。 */
 export function fingerprint(paths: readonly string[]): Map<string, string> {
   const prints = new Map<string, string>();
 
@@ -82,7 +82,7 @@ export function fingerprint(paths: readonly string[]): Map<string, string> {
   return prints;
 }
 
-/** 前回の指紋から新しく現れたパスと内容が変わったパスを返す。 */
+/** 前回のフィンガープリントから新しく現れたパスと内容が変わったパスを返す。 */
 export function changedSince(
   before: ReadonlyMap<string, string>,
   after: ReadonlyMap<string, string>,
@@ -99,7 +99,7 @@ export function changedSince(
 }
 
 /**
- * 未コミットのファイルの指紋を取る。git が答えられない場合は undefined を返し、
+ * 未コミットのファイルのフィンガープリントを取る。git が答えられない場合は undefined を返し、
  * 呼び出し側は edit と write の記録に切り替わる。
  *
  * status のパスはリポジトリルートからの相対のため、ルートを先頭に付けて絶対パスに直す
