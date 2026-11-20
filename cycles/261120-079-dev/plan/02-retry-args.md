@@ -174,13 +174,13 @@ export function retryEndLine(retry: RetryNotice, success: boolean): string;
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし — 旧来の引数構成に触れるコメント・文書は残っていない。`.pi/extensions/consult/tool/render.ts:58-73` は抑制コメントなしで新シグネチャのみを持ち、`.pi/extensions/consult/tool/consult.test.ts:317-320` の除去跡に古い参照はない。
+- Unlisted: なし — コード差分は `Files` の4件（`render.ts`・`consult.ts`・`render.test.ts`・`consult.test.ts`）に収まる。`.pi/extensions/consult/tool/consult.ts:154,166` の `satisfies` と `.pi/extensions/consult/tool/render.test.ts:140-143` の前提寄せは同一ファイル内の手順範囲であり、`cycles/261120-079-dev/plan/02-retry-args.md:156-171` の差分は `Notes` の記入という手順の定める記録である。
+- Gaps: なし — `Goal` の「まとめた値で受ける」は `.pi/extensions/consult/tool/consult.ts:148-169` の2か所の配線で達成され、`.pi/extensions/consult/tool/render.test.ts:121-152`（開始の表示要素・終了 ok/failed）と `.pi/extensions/consult/tool/consult.test.ts:364-407`（開始1回・終了が覚えた maxAttempts を分母に使う・未開始の終了は無出力）の既存経路テストが回帰を抑える。`Added` の抑制 2+1 件減も除去3行（旧 `render.ts` 59・72行、`consult.test.ts:320`）と一致する。
+- Policy: なし — `.pi/extensions/consult/tool/render.ts:59-64,67,72` は共有 `RetryNotice` のみで `error`・`success` を型に入れず、出す文字列は `.pi/extensions/consult/tool/render.ts:68,73` が旧文言を維持し、題名に `happy:` 等の接頭辞はない（`.pi/extensions/consult/tool/render.test.ts:122,145,149`）。`.pi/extensions/consult/tool/consult.test.ts:317-320` は1行除去のみで期待不変。
+- Unproven: なし — `.pi/extensions/consult/tool/render.test.ts:146,150` は `notice` 共有でも `true`→ok・`false`→failed を別断定し、分岐破壊で落ちる。`.pi/extensions/consult/tool/consult.test.ts:387-406` は終了の分母が記憶値であることを断定し、誤配線で落ちる。関数は純粋な文字列生成で共有 `notice`（`.pi/extensions/consult/tool/render.test.ts:143`）を書き換えない。
+- Noise: なし — `true`・`false` の直渡し（`.pi/extensions/consult/tool/render.test.ts:146,150`）は真偽2値の分岐入力で命名の利益がなく、`'consult-1'`・`'p/m'`（`.pi/extensions/consult/tool/render.test.ts:143`）と `retry ... ok/failed` の期待文字列は手順の指定どおり・出力仕様そのもので型では決まらない。新規の抑制コメントはなく、既存の断定を重複させる追加もない。
+- Doubts: なし
 
 ### Round 2
 
@@ -194,7 +194,7 @@ export function retryEndLine(retry: RetryNotice, success: boolean): string;
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `consult` の再試行の表示が、6 つと 5 つの引数ではなく、まとめた値を受ける。実装は達成している（`render.ts` の `RetryNotice` と、`retryStartLine`・`retryEndLine` の 3 引数・2 引数化、`consult.ts` の 2 か所）。
+- Ran: `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm test:run`（69 ファイル、902 件）、`pnpm suppression-check`（15 件から 12 件に減ることを確かめた）。
+- Findings: なし
+- Doubts: なし
