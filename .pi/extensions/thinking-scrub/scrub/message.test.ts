@@ -13,9 +13,10 @@ import {
 } from '../scrub.fixture.ts';
 import { defaultSettings } from '../settings/schema.ts';
 import { detectRuns } from './detect.ts';
-import { scrubMessage } from './message.ts';
+import { isAssistantMessage, scrubMessage } from './message.ts';
 
 type AgentMessage = MessageEndEvent['message'];
+type UserMessage = Extract<AgentMessage, { role: 'user' }>;
 
 function thinkingMessage(thinking: string, signature: string): PiAssistantMessage {
   return assistantMessage({
@@ -104,8 +105,12 @@ describe('scrubMessage', () => {
 
   it('role が assistant 以外なら undefined になる', () => {
     // assistant なら差し替わる本文である（happy test と同じ）。role のため undefined になる。
-    const message = assistantMessage({ role: 'user' });
-    expect(scrubMessage(message, tuning)).toBeUndefined();
+    const user: UserMessage = {
+      role: 'user',
+      content: [{ type: 'text', text: degenerate() }],
+      timestamp: 1,
+    };
+    expect(scrubMessage(user, tuning)).toBeUndefined();
   });
 
   it('content が配列でない assistant は undefined になる', () => {
@@ -113,8 +118,7 @@ describe('scrubMessage', () => {
     const blocks = new Set([
       { type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' },
     ]);
-    const message = assistantMessage({ content: blocks });
-    expect(scrubMessage(message, tuning)).toBeUndefined();
+    expect(isAssistantMessage({ role: 'assistant', content: blocks })).toBe(false);
   });
 
   it('2 ブロックのうち 1 つだけ退化すればその 1 つだけ書き換わる', () => {

@@ -21,6 +21,7 @@ import {
 import { settingsDirWith } from '../../../test/settings.fixture.ts';
 import { tempDir } from '../../../test/temp-dir.ts';
 import { registerScrub, type PiPort } from './index.ts';
+import type { ThinkingBlock } from './scrub/message.ts';
 import { readSettings } from './settings/read.ts';
 import { defaultSettings, type SettingsRead } from './settings/schema.ts';
 
@@ -33,7 +34,7 @@ type AgentMessage = MessageEndEvent['message'];
 // PiPort は on と registerCommand と sendMessage を記録する偽物で渡す。
 
 function assistantThinking(thinking: string, signature?: string): AgentMessage {
-  const block: Record<string, unknown> =
+  const block: ThinkingBlock =
     signature === undefined
       ? { type: 'thinking', thinking }
       : { type: 'thinking', thinking, thinkingSignature: signature };

@@ -67,8 +67,8 @@ export function thinkingWithRun(length: number, base = 0): string {
 }
 
 /** assistant メッセージを作る。既定は退化した thinking 1 件である。 */
-export function assistantMessage(overrides: Record<string, unknown> = {}): PiAssistantMessage {
-  const base = {
+export function assistantMessage(overrides: Partial<PiAssistantMessage> = {}): PiAssistantMessage {
+  const base: PiAssistantMessage = {
     role: 'assistant',
     content: [{ type: 'thinking', thinking: degenerate(), thinkingSignature: 'reasoning_content' }],
     api: 'openai-completions',
@@ -78,8 +78,7 @@ export function assistantMessage(overrides: Record<string, unknown> = {}): PiAss
     stopReason: 'stop',
     timestamp: 123,
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- テストの偽物を作る
-  return { ...base, ...overrides } as unknown as PiAssistantMessage;
+  return Object.assign({}, base, overrides);
 }
 
 /** テストが期待する文言を 1 箇所に集める。製品の文言は実装側にもあるため、変えるときは両方を修正する。 */
