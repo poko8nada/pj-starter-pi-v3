@@ -393,7 +393,7 @@ function formatRecord(record, kind) {
       ? 'allowed'
       : kind === 'not-listed'
         ? 'not allowed'
-        : "no Reason line: add // Reason: above (owner's approval needed)";
+        : "no Reason line: add // Reason: above in Japanese (owner's approval needed)";
   return `${record.file}:${record.line}: ${record.directive} [${record.tool}] ${rules} ${verdict}`;
 }
 
