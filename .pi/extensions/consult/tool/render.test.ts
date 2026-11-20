@@ -127,7 +127,7 @@ describe('retryStartLine', () => {
     const reason = 'rate limited';
     const error = `${reason}\nmore detail`;
     const delayMs = 4000;
-    const line = retryStartLine(label, model, attempt, maxAttempts, error, delayMs);
+    const line = retryStartLine({ label, model, attempt, maxAttempts }, error, delayMs);
     expect(line).toContain(label);
     expect(line).toContain(model);
     expect(line).toContain(`retry ${attempt}/${maxAttempts}`);
@@ -142,18 +142,18 @@ describe('retryEndLine', () => {
     const attempt = 2;
     const maxAttempts = 3;
     const success = true;
-    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
-      `retry ${attempt}/${maxAttempts} ok`,
-    );
+    expect(
+      retryEndLine({ label: 'consult-1', model: 'p/m', attempt, maxAttempts }, success),
+    ).toContain(`retry ${attempt}/${maxAttempts} ok`);
   });
 
   it('失敗 → failed', () => {
     const attempt = 2;
     const maxAttempts = 3;
     const success = false;
-    expect(retryEndLine('consult-1', 'p/m', attempt, maxAttempts, success)).toContain(
-      `retry ${attempt}/${maxAttempts} failed`,
-    );
+    expect(
+      retryEndLine({ label: 'consult-1', model: 'p/m', attempt, maxAttempts }, success),
+    ).toContain(`retry ${attempt}/${maxAttempts} failed`);
   });
 });
 
