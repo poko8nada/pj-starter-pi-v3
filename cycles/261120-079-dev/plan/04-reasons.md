@@ -148,10 +148,10 @@ scripts/
 
 ### Slice 1: 許可を狭め、6 件に理由を置く
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
-- Stopped:
+- Stopped: なし
 
 ### Cleanup: なし
 

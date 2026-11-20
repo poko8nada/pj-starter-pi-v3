@@ -68,7 +68,8 @@ function fakePi(): {
       sent.push({ message, options });
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 偽物は使う窓口だけを持つ
+  // Reason: ExtensionAPI['on'] は overload 群で記録用の偽物を満たせないため、使う窓口だけを持つ偽物を渡す
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return { events, handlers, commands, sent, pi: pi as unknown as PiPort };
 }
 
@@ -646,7 +647,8 @@ describe('onAgentEnd', () => {
         throw new Error('boom');
       },
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- 例外を投げる偽物を作る
+    // Reason: role の取得で例外を投げる値を意図的に作り、境界の例外処理を確かめる
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const message = evil as unknown as AgentMessage;
     expect(wiring.onMessageEnd(messageEnd(message))).toBeUndefined();
     expect(wiring.getStatus().failures).toBe(1);

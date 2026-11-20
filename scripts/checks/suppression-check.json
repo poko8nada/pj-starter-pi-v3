@@ -4,25 +4,35 @@
       "path": "**/*.{ts,tsx}",
       "rules": [
         "@typescript-eslint/consistent-type-assertions",
-        "@typescript-eslint/no-unsafe-type-assertion",
-        "typescript/no-unsafe-type-assertion"
+        "typescript/consistent-type-assertions"
       ]
     },
     {
       "path": "**/.*/**/*.{ts,tsx}",
       "rules": [
         "@typescript-eslint/consistent-type-assertions",
-        "@typescript-eslint/no-unsafe-type-assertion",
-        "typescript/no-unsafe-type-assertion"
+        "typescript/consistent-type-assertions"
       ]
     },
     {
       "path": ".*.{ts,tsx}",
       "rules": [
         "@typescript-eslint/consistent-type-assertions",
-        "@typescript-eslint/no-unsafe-type-assertion",
-        "typescript/no-unsafe-type-assertion"
+        "typescript/consistent-type-assertions"
       ]
-    }
+    },
+    {
+      "path": ".pi/extensions/consult/**/*.{ts,tsx}",
+      "rules": ["typescript/no-unsafe-type-assertion"]
+    },
+    {
+      "path": ".pi/extensions/thinking-scrub/**/*.{ts,tsx}",
+      "rules": ["typescript/no-unsafe-type-assertion"]
+    },
+    {
+      "path": ".pi/extensions/context-precompact/**/*.{ts,tsx}",
+      "rules": ["typescript/no-unsafe-type-assertion"]
+    },
+    { "path": ".pi/extensions/quality-gate/**/*.{ts,tsx}", "rules": ["no-await-in-loop"] }
   ]
 }
