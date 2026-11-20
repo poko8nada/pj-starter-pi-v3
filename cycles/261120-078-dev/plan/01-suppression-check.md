@@ -498,16 +498,23 @@ function run(root: string, options: Options): number; // 終了コード
 ### Round 2
 
 - Stale:
+  - なし。理由：`fixed:` の1件（冒頭コメントの書き換え）を確認した。現行 `suppression-check.test.ts:1-6` は「検出・照合・呼び出しの入口を試す」と3範囲を明示し、本文も `findSuppressions`／`fakeRoot()`・`writeFile`・`writeJson`／子プロセスと手段まで対応づけており、Round 1指摘の「slice 1の範囲だけ」状態は解消されているため。
 - Unlisted:
+  - なし。理由：Round 1に `fixed:` がなく、今回の差分（`suppression-check.test.ts` のみ＋plan追記）にも `## Files` 外の新規・未記載ファイルはないため。
 - Gaps:
+  - なし。理由：`fixed:` の3件を diff と実装に当てて確認した。(1) 誤りflag巡回（test:363-371）は `parseArgs`（mjs:354-368）の `arg === '--report'` 以外の `--` 始まりは一律 `unknown argument` 投下と一致し、`--unknown`／`--report=x`／`--` の3通りで `exit 1`＋`unknown argument` を断言している。(2) 対象外拡張子（test:373-380）は `resolveTargets`（mjs:380-381）の `CODE_EXTENSIONS` 不一致は `continue` と一致し、`a.md` 指定で `0 files`・exit 0を断言している。(3) 空rules表示（test:451-458）は `formatRecord`（mjs:390）の `rules.length === 0 ? 'all'` と一致し、`@ts-expect-error` で `[tsc] all not allowed` を断言しているため。
 - Policy:
+  - なし。理由：Round 1に `fixed:` がなく、今回の差分は test の断言追加のみで `Allowed`／`Forbidden`（1ファイル配置・`matchesGlob` のみ・表示形・終了コード等）の振る舞いを変えていないため。
 - Unproven:
+  - なし。理由：`fixed:` の2件を確認した。(1) `reasonOf` 化（test:206-224、定義346-356）は `loadAllow`（mjs:289-317）が 3 つとも `Error` に文面を持たせて投げることと一致し、投げない・文面なし・非 `Error` 投下では `length` が0になり赤になるため、Round 1指摘の「引数なし `toThrow()`」状態は解消されている。(2) `tool` 断言追加（test:71-73、89・91）は `DIRECTIVES` 表（mjs:23-39）の `oxlint` 3形・`biome` 3形の対応と一致し、写し間違いがあれば赤になるため。
 - Noise:
+  - なし。理由：Round 1に `fixed:` がなく、今回の追加断言（`0 files`、`all not allowed`、`unknown argument` 等）は plan Slice 3 Steps 1.1〜1.3 の決定値・前提から導出される値の確認で、新たな magic number や抑止コメントはないため。
 - Doubts:
+  - `reasonOf` は文面の長さのみを断言し具体文を固定しない（fixed 自体が「具体文は断言しない」と明記）。厳密な文面固定の是非は owner の運用判断が要るが、本レビューは finding にしない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: エージェントが、リンターと型チェックを抑制するコメントの一覧を、許可と違反に分けて、コマンドで受け取れる。達成している。
+- Ran: `pnpm test:run`（69 ファイル、900 テスト）と `pnpm typecheck`（root と `.pi`）、`pnpm lint`、`pnpm format:check`。`node scripts/checks/suppression-check.mjs --report` と `pnpm suppression-check` は、162 ファイル、19 違反、0 許可、exit 1。`findSuppressions`、`judge`、`parseArgs` を変更すると 48 件中 25 件が赤になり、戻すと 48 件が緑になった。
+- Findings: なし
+- Doubts: `Round 2` の `reasonOf` の文面固定は、`design.md` の「断言は直書きの文字列を持たない」に従い、固定しない。
