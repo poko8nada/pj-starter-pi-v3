@@ -458,7 +458,13 @@ function run(root: string, options: Options): number; // 終了コード
 - Commit: bb8f30aa
 - Stopped:
 
-### Cleanup: <what it cleaned>
+### Cleanup: テストの重複を落とし、共通の前提をファクトリに移した
+
+- Findings: なし
+- Unplanned:
+  - `scripts/checks/suppression-check.test.ts` の `cli: happy --report → 許可済みの行も出る` を落とした。`display: happy --report で許可済み → allowed の行` と前提・引数が同一で、断言（`allowed` と `a.ts:2:` を含む）が完全行の断言に含まれるため。
+  - 同ファイルの `reason: happy 日本語でない → Reason がある` を落とした。`reason: happy 直前の 1 行 → Reason がある` と同じ分岐（有効な形の英語 → 真）で、日本語を要求しないことは英語が通ること自体が示すため。
+  - 許可済みと違反のツリー作りを `writeAllowedTree` と `writeViolationTree` に移した。4 件が同じ不変の前提を字面で繰り返しており、誰も変えないため（可変の `fakeRoot()` は各テストに残す）。
 
 ## Work Review
 
