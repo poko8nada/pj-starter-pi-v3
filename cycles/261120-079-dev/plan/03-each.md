@@ -155,10 +155,10 @@
 
 ### Slice 1: 繰り返しを事例ごとのテストに分ける
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 4ff5def947f15eaadd96c4551810f891fd4d7006
+- Stopped: なし
 
 ### Cleanup: なし
 

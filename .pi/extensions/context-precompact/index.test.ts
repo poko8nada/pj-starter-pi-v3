@@ -437,32 +437,38 @@ describe('precompact failure reason', () => {
 });
 
 describe('precompact now response', () => {
-  it('now で拡張か Pi が off なら preparing と off になりパスを作らない', async () => {
+  const wirings = [
+    {
+      name: '拡張が off',
+      make: () =>
+        createPrecompactWiring(fakePi().pi, {
+          settingsDir: settingsDirWith(settingsDocument({ enabled: false })),
+          now: () => 0,
+          compactFn: compactOk(),
+        }),
+    },
+    {
+      name: 'Pi が off',
+      make: () =>
+        createPrecompactWiring(fakePi(false).pi, {
+          settingsDir: settingsDirWith(settingsDocument()),
+          now: () => 0,
+          compactFn: compactOk(),
+        }),
+    },
+  ] as const;
+
+  it.each(wirings)('now で $name なら preparing と off になりパスを作らない', async ({ make }) => {
     const { branch } = sessionWithTurns(3);
-    const wirings = [
-      createPrecompactWiring(fakePi().pi, {
-        settingsDir: settingsDirWith(settingsDocument({ enabled: false })),
-        now: () => 0,
-        compactFn: compactOk(),
-      }),
-      createPrecompactWiring(fakePi(false).pi, {
-        settingsDir: settingsDirWith(settingsDocument()),
-        now: () => 0,
-        compactFn: compactOk(),
-      }),
-    ];
-    for (const wiring of wirings) {
-      const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
-      // eslint-disable-next-line no-await-in-loop -- 2 つの off を順に確かめる
-      await wiring.onCommand('now', setup.ctx);
-      // eslint-disable-next-line no-await-in-loop -- 2 つの off を順に確かめる
-      await wiring.flush();
-      expect(setup.notified).toEqual([
-        { message: chatText({ kind: 'preparing' }), type: 'info' },
-        { message: noticeText('off'), type: 'info' },
-      ]);
-      expect(wiring.getState().running).toBe(false);
-    }
+    const wiring = make();
+    const setup = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS) });
+    await wiring.onCommand('now', setup.ctx);
+    await wiring.flush();
+    expect(setup.notified).toEqual([
+      { message: chatText({ kind: 'preparing' }), type: 'info' },
+      { message: noticeText('off'), type: 'info' },
+    ]);
+    expect(wiring.getState().running).toBe(false);
   });
 
   it('now で準備がなければ preparing と nothing になり status が idle になる', async () => {
@@ -804,22 +810,22 @@ describe('precompact guards', () => {
 });
 
 describe('precompact error path', () => {
-  it('buildSessionProjection と getBranch と getContextUsage の例外は failed になる', async () => {
-    for (const thrown of ['projection', 'branch', 'usage'] as const) {
+  it.each(['projection', 'branch', 'usage'] as const)(
+    'buildSessionProjection と getBranch と getContextUsage のうち %s の例外は failed になる',
+    async (thrown) => {
       const { branch } = sessionWithTurns(3);
-      const wiring = wiringWith();
-      const bad = fakeCtx({
-        branch,
-        usage: contextUsageOf(LEAD_TOKENS),
-        throws: thrown,
+      const { pi } = fakePi();
+      const wiring = createPrecompactWiring(pi, {
+        settingsDir: settingsDirWith(settingsDocument()),
+        now: () => 0,
+        compactFn: compactOk(),
       });
-      // eslint-disable-next-line no-await-in-loop -- 3 つの throw を順に確かめる
+      const bad = fakeCtx({ branch, usage: contextUsageOf(LEAD_TOKENS), throws: thrown });
       await wiring.onCommand('now', bad.ctx);
-      // eslint-disable-next-line no-await-in-loop -- 3 つの throw を順に確かめる
       await wiring.flush();
       expect(wiring.getState().status.kind, thrown).toBe('failed');
-    }
-  });
+    },
+  );
   it('notify が例外を投げると now は reject し running が戻る', async () => {
     const { branch } = sessionWithTurns(3);
     const wiring = wiringWith();
@@ -894,20 +900,17 @@ describe('precompact session reset', () => {
 });
 
 describe('precompact command edges', () => {
-  it('壊れた settings で on と off は warning になる', async () => {
-    for (const command of ['on', 'off'] as const) {
-      const dir = tempDir();
-      writeFileSync(join(dir, 'settings.json'), '{');
-      const { pi } = fakePi();
-      const wiring = createPrecompactWiring(pi, {
-        settingsDir: dir,
-        now: () => 0,
-        compactFn: compactOk(),
-      });
-      const setup = fakeCtx({ branch: [], usage: undefined });
-      // eslint-disable-next-line no-await-in-loop -- on と off を順に確かめる
-      await wiring.onCommand(command, setup.ctx);
-      expect(setup.notified[0]?.type, command).toBe('warning');
-    }
+  it.each(['on', 'off'] as const)('壊れた settings で %s は warning になる', async (command) => {
+    const dir = tempDir();
+    writeFileSync(join(dir, 'settings.json'), '{');
+    const { pi } = fakePi();
+    const wiring = createPrecompactWiring(pi, {
+      settingsDir: dir,
+      now: () => 0,
+      compactFn: compactOk(),
+    });
+    const setup = fakeCtx({ branch: [], usage: undefined });
+    await wiring.onCommand(command, setup.ctx);
+    expect(setup.notified[0]?.type, command).toBe('warning');
   });
 });
