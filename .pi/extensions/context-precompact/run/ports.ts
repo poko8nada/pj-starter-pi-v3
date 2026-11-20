@@ -22,11 +22,17 @@ export interface SummaryPorts {
   readonly compact: (request: CompactRequest) => Promise<CompactionResult>;
 }
 
+export type SessionPort = Pick<
+  ExtensionContext['sessionManager'],
+  'getBranch' | 'getSessionId' | 'buildSessionProjection'
+>;
+export type RegistryPort = Pick<ExtensionContext['modelRegistry'], 'getApiKeyAndHeaders'>;
+
 export interface SummaryCtx {
   readonly model: ExtensionContext['model'];
-  readonly modelRegistry: ExtensionContext['modelRegistry'];
+  readonly modelRegistry: RegistryPort;
   readonly thinkingLevel: ExtensionContext['thinkingLevel'];
-  readonly sessionManager: ExtensionContext['sessionManager'];
+  readonly sessionManager: Pick<SessionPort, 'getSessionId'>;
   readonly compactFn: typeof compact;
 }
 

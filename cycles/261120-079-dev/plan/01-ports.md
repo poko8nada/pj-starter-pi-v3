@@ -201,8 +201,8 @@ function sessionManagerOf(sessionId: string): Pick<SessionPort, 'getSessionId'>;
 
 ### Slice 1: ポートの型を置く
 
-- Findings:
-- Unplanned:
+- Findings: なし
+- Unplanned: なし
 - Commit:
 - Stopped:
 
