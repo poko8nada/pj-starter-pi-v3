@@ -153,16 +153,16 @@ export function retryEndLine(retry: RetryNotice, success: boolean): string;
 
 ### Slice 1: 再試行の表示の引数をまとめる
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: `consult.ts` の2か所の呼び出しに `satisfies RetryNotice` を付けた。計画どおりの素のオブジェクトでは `type RetryNotice` の import が未使用となり `pnpm lint` が落ちるため。実行時の振る舞いは変わらない。
+- Commit: 06e407f3
 - Stopped:
 
 ### Slice 2: 使われていない抑制を消す
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: ea85f484
 - Stopped:
 
 ### Cleanup: なし
