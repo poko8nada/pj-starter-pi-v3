@@ -125,4 +125,7 @@ describe('buildGateMessage', () => {
     expect(touchedAt).toBeLessThan(body);
     expect(body).toBeLessThan(steps);
   });
+  it('検査の一覧に suppression-check を含む', () => {
+    expect(buildGateMessage(report())).toContain('pnpm suppression-check');
+  });
 });

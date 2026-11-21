@@ -259,36 +259,49 @@ interface CheckSpec {
 
 ### Slice 1: targets への改名
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: ba3469c3
+- Stopped: なし
 
 ### Slice 2: suppression の検査
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7abb45ce
+- Stopped: なし
 
 ### Slice 3: 文面の追従
 
-- Findings:
+- Findings: なし
+- Unplanned: なし
+- Commit: a8f0a0fb
+- Stopped: なし
+
+### Cleanup: check-ignore 非ゼロの前提をテスト内に移した
+
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `checks.test.ts` の `assertNoExclusion` ヘルパーをなくし、`check-ignore が 0 以外でも出力があれば除外しない` の前提（setup・file・終了コード・ignored 標準出力・断言）をテスト内に移した。ヘルパーが振る舞いに要る前提を隠していたため。挙動の変更なし。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし
 - Unlisted:
+  - なし
 - Gaps:
+  - なし
 - Policy:
+  - なし
 - Unproven:
+  - なし
 - Noise:
+  - なし
 - Doubts:
+  - なし
 
 ### Round 2
 
@@ -302,7 +315,7 @@ interface CheckSpec {
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: `quality-gate` がターンの変更分の抑制を検査し、エージェントに指摘を返すようになる。実装は Goal を満たしている。
+- Ran: `suppression` の `targets` を一時的に `'all'` に壊し、`checks.test.ts` の 2 件（新しい suppression のケースと `png` だけのケース）が赤になることを確認した。戻した後、`pnpm test:related` 22 件、`pnpm typecheck`、`pnpm lint`、`pnpm format:check` が緑。レビューは `git diff 9cc4e3cf..HEAD` を読み、finding なしと判定した。
+- Findings: なし
+- Doubts: なし

@@ -71,15 +71,18 @@ describe('fingerprint', () => {
 });
 
 describe('filterByExtensions', () => {
+  const ts = 'a.ts';
+  const md = 'b.md';
+  const json = 'c.json';
+  const png = 'd.png';
+  const paths = [ts, md, json, png];
   it('format と lint の拡張子を通し、大文字も通す', () => {
-    const ts = 'a.ts';
-    const md = 'b.md';
-    const json = 'c.json';
-    const png = 'd.png';
-    const paths = [ts, md, json, png];
     expect(filterByExtensions(paths, 'format')).toEqual([ts, md, json]);
     expect(filterByExtensions(paths, 'lint')).toEqual([ts]);
     const upper = 'A.TS';
     expect(filterByExtensions([upper], 'lint')).toEqual([upper]);
+  });
+  it('filter: happy targets が all → 拡張子で絞らない', () => {
+    expect(filterByExtensions(paths, 'all')).toEqual(paths);
   });
 });

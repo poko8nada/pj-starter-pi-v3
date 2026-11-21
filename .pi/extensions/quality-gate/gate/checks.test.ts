@@ -13,27 +13,6 @@ import { describe, expect, it } from 'vitest';
 import { runChecks, toRelative } from './checks.ts';
 import { checksSetup } from './checks.fixture.ts';
 
-async function assertNoExclusion(code: number): Promise<void> {
-  const setup = checksSetup();
-  const file = setup.tsFile('a.ts');
-  setup.fake.setCheckIgnoreCode(code);
-  const ignored = `${file}\n`;
-  setup.fake.setIgnoredStdout(ignored);
-
-  const run = await runChecks(setup.fake.pi, { cwd: setup.dir }, [file]);
-
-  expect(run.skipped).toEqual([]);
-  const gitCall = setup.fake.calls.find((call) => call.command === 'git');
-  expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
-  const pnpmArgs = setup.fake.calls
-    .filter((call) => call.command === 'pnpm')
-    .map((call) => call.args);
-  expect(pnpmArgs.length).toBeGreaterThan(0);
-  for (const args of pnpmArgs) {
-    expect(args).toContain(file);
-  }
-}
-
 describe('toRelative', () => {
   it('cwd からの相対を返す', () => {
     const cwd = '/repo';
@@ -97,7 +76,24 @@ describe('prepareTargets（runChecks 越しに見る）', () => {
       expect(args).not.toContain(dist);
     }
 
-    await assertNoExclusion(1);
+    // check-ignore が 1 でも、出力にパスがあっても除外しない（無視されたファイルなし扱い）。
+    const second = checksSetup();
+    const file = second.tsFile('a.ts');
+    second.fake.setCheckIgnoreCode(1);
+    second.fake.setIgnoredStdout(`${file}\n`);
+
+    const secondRun = await runChecks(second.fake.pi, { cwd: second.dir }, [file]);
+
+    expect(secondRun.skipped).toEqual([]);
+    const gitCall = second.fake.calls.find((call) => call.command === 'git');
+    expect(gitCall?.args).toEqual(['check-ignore', '--', file]);
+    const pnpmArgs = second.fake.calls
+      .filter((call) => call.command === 'pnpm')
+      .map((call) => call.args);
+    expect(pnpmArgs.length).toBeGreaterThan(0);
+    for (const args of pnpmArgs) {
+      expect(args).toContain(file);
+    }
   });
 });
 
@@ -165,6 +161,19 @@ describe('runCheck（runChecks 越しに見る）', () => {
     for (const outcome of verify) {
       expect(outcome.output).toBe(expectedOutput);
     }
+  });
+  it('suppression: happy コードファイルと md を渡す → コードファイルだけを受け取る', async () => {
+    const setup = checksSetup();
+    const ts = setup.tsFile('a.ts');
+    const md = join(setup.dir, 'b.md');
+    writeFileSync(md, 'x\n');
+
+    const run = await runChecks(setup.fake.pi, { cwd: setup.dir }, [ts, md]);
+
+    const suppression = setup.fake.calls.find((call) => call.args.includes('suppression-check'));
+    expect(suppression?.args).toContain(ts);
+    expect(suppression?.args).not.toContain(md);
+    expect(run.outcomes.map((outcome) => outcome.label)).toContain('suppression');
   });
 });
 
