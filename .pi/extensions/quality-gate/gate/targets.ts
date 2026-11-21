@@ -30,9 +30,20 @@ const LINTABLE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mts', '.cts
  * 非対応の拡張子を渡すと oxfmt/oxlint が「No files found」で異常終了するため、
  * 実行前に対象を確定させておく必要がある。
  */
-export function filterByExtensions(paths: readonly string[], kind: 'format' | 'lint'): string[] {
-  const allowed = kind === 'format' ? FORMATTABLE_EXTENSIONS : LINTABLE_EXTENSIONS;
-  return paths.filter((path) => allowed.has(extname(path).toLowerCase()));
+export function filterByExtensions(
+  paths: readonly string[],
+  targets: 'format' | 'lint' | 'all',
+): string[] {
+  switch (targets) {
+    case 'all':
+      return [...paths];
+    case 'format':
+      return paths.filter((path) => FORMATTABLE_EXTENSIONS.has(extname(path).toLowerCase()));
+    case 'lint':
+      return paths.filter((path) => LINTABLE_EXTENSIONS.has(extname(path).toLowerCase()));
+  }
+  const exhaustive: never = targets;
+  return exhaustive;
 }
 
 /**

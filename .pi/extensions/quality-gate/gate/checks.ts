@@ -14,7 +14,8 @@ interface CheckSpec {
   readonly script: string;
   /** スクリプトへ渡す固定フラグである。対象パスはこの後に連結する。 */
   readonly flags: readonly string[];
-  readonly kind: 'format' | 'lint' | 'typecheck';
+  /** 対象を選ぶ拡張子の種類である。`all` は絞らない。 */
+  readonly targets: 'format' | 'lint' | 'all';
 }
 
 /**
@@ -35,7 +36,7 @@ const CHECK_SPECS: readonly CheckSpec[] = [
     script: 'lint:fix',
     // 対象が ignore された場合の "No files found" を無害化する
     flags: ['--no-error-on-unmatched-pattern'],
-    kind: 'lint',
+    targets: 'lint',
   },
   {
     phase: 'fix',
@@ -43,16 +44,16 @@ const CHECK_SPECS: readonly CheckSpec[] = [
     script: 'format',
     // 対象が ignore された場合に oxfmt が exit 2 で落ちるのを防ぐ
     flags: ['--no-error-on-unmatched-pattern'],
-    kind: 'format',
+    targets: 'format',
   },
   {
     phase: 'verify',
     label: 'lint',
     script: 'lint',
     flags: ['--no-error-on-unmatched-pattern'],
-    kind: 'lint',
+    targets: 'lint',
   },
-  { phase: 'verify', label: 'typecheck', script: 'typecheck:staged', flags: [], kind: 'typecheck' },
+  { phase: 'verify', label: 'typecheck', script: 'typecheck:staged', flags: [], targets: 'all' },
 ];
 
 export function toRelative(cwd: string, path: string): string {
@@ -106,8 +107,8 @@ async function runCheck(
   spec: CheckSpec,
   checked: readonly string[],
 ): Promise<CheckOutcome | undefined> {
-  const paths = spec.kind === 'typecheck' ? checked : filterByExtensions(checked, spec.kind);
-  if (spec.kind !== 'typecheck' && paths.length === 0) {
+  const paths = filterByExtensions(checked, spec.targets);
+  if (spec.targets !== 'all' && paths.length === 0) {
     // 対象拡張子がない場合は、ツールが「対象なし」で異常終了するためスキップする。
     return undefined;
   }
