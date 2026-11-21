@@ -61,7 +61,7 @@ Steps:
      - the change is reversible with git.
      - it crosses no Unit, as merging functions would.
      - the owner's intent has a single reading.
-     - the outline of the work is inferable, and there is one way to do it, with nothing to compare.
+     - the outline of the work is inferable, and one way to do it, with nothing to compare. It is based on **your principles**.
    - Basically, an entry whose decision influences a later entry comes first.
 4. Show the owner the split, each entry's purpose, `Type`, and the order of the entries with its reason.
    - Rewrite a rejected split, and show it again.
@@ -159,7 +159,7 @@ Steps:
 3. Write the opening proposal in the entry's `Decision`, with `Status` empty:
    - **Completely discard the premise of minimal changes.**
    - What things should be serves as the prerequisite.
-   - The proposal must be based on the initially agreed-upon intent.
+   - The proposal must be based on the agreed-upon intent, `Context` and `Research & Trial`.
 4. Say what the facts decide and what the proposal is, and go on:
    - _Full_: go to the Discussion Loop.
    - _Simple_: go to the `Decision`.
