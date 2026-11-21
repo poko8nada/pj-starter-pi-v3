@@ -143,42 +143,65 @@ pre-commit の検査の並びに、抑制を報告する job を加える。
 ### Slice 1: pre-commit の job
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `pnpm test:run` は `scripts/product-ready/index.test.ts` の1件（ROADMAP 置き換えが `## 0.x.x` を含むこと）が赤い。`rules/roadmap.md` の見出しが `## 1.0.x` 系に変わったことによる期待のずれで、`lefthook.yaml` は関与しない。`typecheck`・`lint`・`format:check` は緑。
+    - left: 赤はこのスライスの前からある置き換え側のずれで、直す先は product-ready と roadmap の持ち分であるため。このスライスでは閉じない。
+- Unplanned: なし
+- Commit: 57972ea3ee826d30e7bc496adc3bed6523e6d532
 - Stopped:
+- Ran: `pnpm exec lefthook run pre-commit` を抑制あり・なしの一時ファイルで実行。抑制ありでは `suppression-check` が失敗して `fail_text` を出し exit 1（コミット停止）、抑制なしでは全 job が緑。全走査は 163 件・違反 0・許可 6。一時ファイルは削除済み。
 
 ### Slice 2: README の追従
 
 - Findings:
-- Unplanned:
-- Commit:
+  - `pnpm test:run` はスライス1と同じ `scripts/product-ready/index.test.ts` の1件が赤い。ほかは緑で、README の変更が赤に関与しないことは差分の範囲から明らか。
+    - left: スライス1に書いたとおり、赤は前からの置き換え側のずれでこの計画の持ち分でないため。ここでは閉じない。
+- Unplanned: なし
+- Commit: 5ae1a97bad0602b96339aa5c810c1b5c4c8a43a0
 - Stopped:
+- Ran: `README.md` と `README.ja.md` を読み、`suppression-check` が `typecheck` の次・`test` の前にあり日英の並びが同じことを確認。`README.ja.md` の校正は問題なし（周囲の文体と整合）。
 
 ## Work Review
 
 ### Round 1
 
 - Stale:
+  - なし — README.md・README.ja.md は suppression-check に追従済みで、`scripts/harness-sync/setting.json:14,18` の copy は lefthook.yaml と scripts/checks を既に含むため、古くなる文書・コメント・テストはない。
 - Unlisted:
+  - なし — コード差分は lefthook.yaml・README.md・README.ja.md のみで、いずれも `## Files` に名前がある。plan md 自体の追記は作業記録であり対象外。
 - Gaps:
+  - Slice 1 の Added の手動確認 (抑制ありで `suppression-check` が失敗し fail_text を出すこと・抑制なしで通ること) の実行記録が Notes にないため、Goal の「指摘があればコミットが止まる」が証拠で裏付けられない。cycles/261121-080-dev/plan/01-lefthook-suppression.md:82 の要求に対し cycles/261121-080-dev/plan/01-lefthook-suppression.md:145 の Findings は test/typecheck/lint/format のみを記す。理由: 差分と記録だけでは lefthook.yaml:20 の job が実際に止めることが確認できない。
+    - fixed: Slice 1 の Notes に `- Ran:` として実行結果（抑制ありで失敗・`fail_text`・exit 1、抑制なしで全緑、全走査 163 件・違反 0・許可 6）を追記した。
+  - Slice 2 の Added の proofread (README.ja.md の校正) の結果記録が Notes にない。cycles/261121-080-dev/plan/01-lefthook-suppression.md:139 の要求に対し cycles/261121-080-dev/plan/01-lefthook-suppression.md:155 はテストの色のみを記す。理由: 並びは差分で読めるが、校正を終えたという確認が記録に残らない。
+    - fixed: Slice 2 の Notes に `- Ran:` として並び確認と校正結果（問題なし）を追記した。
 - Policy:
+  - なし — glob/run/fail_text/配置は lefthook.yaml:20-23 が計画どおり (スクリプトの 8 拡張子と一致、typecheck の次、parallel: true 維持) で、Forbidden の stage_fixed 付与・{staged_files} のクォート・root 指定・parallel 変更・検出判定変更はいずれもないため。README 側も typecheck の次・test の前という日英同一の並びで、他の検査の説明を変えていないため。
 - Unproven:
+  - なし — Types がなく新規テストファイルがないため、壊れても緑のままになるテストはない。Added は手動の other 確認であり、自動テストの名指しがない。
 - Noise:
+  - なし — 新規テストがなく、差分に抑制コメント (linter/formatter/type-check 抑止) の追加もないため、型や既存制約と重複するテストも魔数・ハードコードもない。
 - Doubts:
+  - なし
 
 ### Round 2
 
 - Stale:
+  - なし。理由：Round 1 に `fixed:` がなく、今回の追記は Notes の `- Ran:` 2 件だけで文書・コメント・テストを古くしないため。
 - Unlisted:
+  - なし。理由：Round 1 に `fixed:` がなく、plan md 自体の追記は作業記録で `## Files` の対象外のため。
 - Gaps:
+  - なし。理由：`fixed:` の 2 件を確認した。(1) Slice 1 の Notes 151 行目に `- Ran:` があり、抑制ありの失敗・`fail_text`・exit 1、抑制なしの全緑、全走査 163 件・違反 0・許可 6 を記し、Round 1 指摘の証拠欠落を埋めているため。(2) Slice 2 の Notes 161 行目に `- Ran:` があり、並び確認と校正問題なしを記し、指摘の確認欠落を埋めているため。
 - Policy:
+  - なし。理由：Round 1 に `fixed:` がなく、追記は Notes の記録だけで job の形・README の並びを変えないため。
 - Unproven:
+  - なし。理由：Round 1 に `fixed:` がなく、追記は手動確認の記録で自動テストの名指しを増やさないため。
 - Noise:
+  - なし。理由：Round 1 に `fixed:` がなく、追記に抑制コメントや魔数・ハードコードの追加はないため。
 - Doubts:
+  - 実行記録の数値（全走査 163 件・違反 0・許可 6 など）を本レビューは再実行で裏付けていない。記録の真偽の最終確認は owner の判断が要るが、finding にしない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: コミットの前に抑制の検査が走り、指摘があればコミットが止まるようになる。実装は Goal を満たしている。
+- Ran: 抑制を含む一時ファイルをステージして `pnpm exec lefthook run pre-commit` を実行し、`suppression-check` が `fail_text` を出して exit 1 で止まることを確認した。`lefthook.yaml` から job を一時的に外すと exit 0 になり、戻すと再び止まることを確認した。`pnpm typecheck`、`pnpm lint`、`pnpm format:check` は緑。全体の `pnpm test:run` は `scripts/product-ready/index.test.ts` の 1 件だけ赤で、これは計画の外の既存不具合である。
+- Findings: `scripts/product-ready/index.test.ts:267` の赤は、オーナーの `rules/roadmap.md` の変更（`## 1.0.x (.4 or less)`、`## 0.9.x (.5 or more)`）に対する期待のずれである。この計画の範囲外であり、プランの `Notes` に `left:` として記録した。
+- Doubts: レビューの Doubt（実行記録の数値を再実行で裏付けていない）は、上の `Ran` の実走で裏付けた。

@@ -44,11 +44,12 @@ Automated gates keep style, correctness, behavior, and wording consistent on eve
 - typecheck:
   - `scripts/checks/typecheck.mjs` - Checks root and harness types on push.
   - `scripts/checks/typecheck-staged.mjs` - Checks only staged files on commit.
+- suppression-check: `scripts/checks/suppression-check.mjs` - Reports linter and typecheck suppressions that the allowlist and the Reason line do not permit.
 - test:
   - `vitest.config.ts` - Test config; product:ready writes the harness paths into its exclude list from test-exclude.json.
 - japanese-check: `scripts/checks/ja-check.mjs` - Reports banned Japanese words with error and warn counts, and skips the paths listed in `exclude` in `scripts/checks/ja-check.json`.
 - localhook: `lefthook`
-  - pre-commit: Runs format, lint, staged typecheck, related tests, and japanese-check on changed parts.
+  - pre-commit: Runs format, lint, staged typecheck, suppression-check, related tests, and japanese-check on changed parts.
   - pre-push: Runs full typecheck and tests.
 
 ### Handover
