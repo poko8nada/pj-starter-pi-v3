@@ -343,6 +343,11 @@ function writeViolationTree(root: string): void {
   writeFile(root, 'a.ts', '// eslint-disable-next-line max-params -- x\n');
 }
 
+function writeTwoViolations(root: string): void {
+  writeViolationTree(root);
+  writeFile(root, 'b.ts', '// @ts-expect-error\n');
+}
+
 function reasonOf(fn: () => unknown): string {
   try {
     fn();
@@ -402,6 +407,26 @@ describe('suppression-check cli', () => {
     const out = runCli(root, []);
     expect(out.status).toBe(1);
     expect(out.stdout).toContain('a.ts:1:');
+  });
+
+  it('cli: happy 2 つのコードファイルと対象外のパスを 1 回で渡す → 2 件の行、件数、exit 1', () => {
+    const root = fakeRoot();
+    writeTwoViolations(root);
+    writeFile(root, 'c.md', '// eslint-disable-next-line max-params -- x\n');
+
+    const first = runCli(root, ['a.ts', 'b.ts', 'c.md', 'missing.ts']);
+    expect(first.status).toBe(1);
+    expect(first.stdout).toContain(
+      'a.ts:1: eslint-disable-next-line [eslint] max-params not allowed',
+    );
+    expect(first.stdout).toContain('b.ts:1: @ts-expect-error [tsc] all not allowed');
+    expect(first.stdout).toContain('suppression-check: 2 files, 2 violations, 0 allowed.');
+    expect(first.stdout.indexOf('a.ts:1:')).toBeLessThan(first.stdout.indexOf('b.ts:1:'));
+
+    const reversed = runCli(root, ['b.ts', 'a.ts']);
+    expect(reversed.status).toBe(1);
+    expect(reversed.stdout).toContain('suppression-check: 2 files, 2 violations, 0 allowed.');
+    expect(reversed.stdout.indexOf('a.ts:1:')).toBeLessThan(reversed.stdout.indexOf('b.ts:1:'));
   });
 });
 

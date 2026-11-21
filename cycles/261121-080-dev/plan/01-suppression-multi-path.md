@@ -101,22 +101,27 @@ CLI が複数のパスを 1 回で受け取り、すべてを走査してファ�
 
 ### Slice 1: 複数パスのテスト
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f620ea2c084311ac8b264fc71990b542d32a0c27
 - Stopped:
+
+### Cleanup: 多パス追加後のテスト重複点検
+
+- Findings: なし
+- Unplanned: なし
 
 ## Work Review
 
 ### Round 1
 
-- Stale:
-- Unlisted:
-- Gaps:
-- Policy:
-- Unproven:
-- Noise:
-- Doubts:
+- Stale: なし
+- Unlisted: なし
+- Gaps: なし
+- Policy: なし
+- Unproven: なし
+- Noise: なし
+- Doubts: なし
 
 ### Round 2
 
@@ -130,7 +135,7 @@ CLI が複数のパスを 1 回で受け取り、すべてを走査してファ�
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: CLI が複数のパスを 1 回で受け取れることが、テストで保たれる。実装は Goal を満たしている。
+- Ran: `pnpm test:related scripts/checks/suppression-check.test.ts`（49 件成功）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。レビューは `git diff 9cc4e3cf..HEAD` を読み、finding なしと判定した。
+- Findings: なし
+- Doubts: なし
