@@ -76,7 +76,7 @@ Section and field names are English; the content is Japanese.
   - <`pnpm typecheck`>
   - <`pnpm lint`>
   - <`pnpm format:check`>
-  - <変えたファイル全体と、名指すファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す>
+  - <変えたファイル全体と、明示されたファイルを読み、読む者の順に手順をたどり、番号、パス、名前、形を当て、不整合を直す>
 - Added: <DB / front / auth / base / other。当たるものを 1 本ずつ、なければ なし>
 
 ## 2.<スライス名>
