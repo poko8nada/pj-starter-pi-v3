@@ -185,16 +185,23 @@ pre-commit の検査の並びに、抑制を報告する job を加える。
 ### Round 2
 
 - Stale:
+  - なし。理由：Round 1 に `fixed:` がなく、今回の追記は Notes の `- Ran:` 2 件だけで文書・コメント・テストを古くしないため。
 - Unlisted:
+  - なし。理由：Round 1 に `fixed:` がなく、plan md 自体の追記は作業記録で `## Files` の対象外のため。
 - Gaps:
+  - なし。理由：`fixed:` の 2 件を確認した。(1) Slice 1 の Notes 151 行目に `- Ran:` があり、抑制ありの失敗・`fail_text`・exit 1、抑制なしの全緑、全走査 163 件・違反 0・許可 6 を記し、Round 1 指摘の証拠欠落を埋めているため。(2) Slice 2 の Notes 161 行目に `- Ran:` があり、並び確認と校正問題なしを記し、指摘の確認欠落を埋めているため。
 - Policy:
+  - なし。理由：Round 1 に `fixed:` がなく、追記は Notes の記録だけで job の形・README の並びを変えないため。
 - Unproven:
+  - なし。理由：Round 1 に `fixed:` がなく、追記は手動確認の記録で自動テストの名指しを増やさないため。
 - Noise:
+  - なし。理由：Round 1 に `fixed:` がなく、追記に抑制コメントや魔数・ハードコードの追加はないため。
 - Doubts:
+  - 実行記録の数値（全走査 163 件・違反 0・許可 6 など）を本レビューは再実行で裏付けていない。記録の真偽の最終確認は owner の判断が要るが、finding にしない。
 
 ## Acceptance
 
-- Goal:
-- Ran:
-- Findings:
-- Doubts:
+- Goal: コミットの前に抑制の検査が走り、指摘があればコミットが止まるようになる。実装は Goal を満たしている。
+- Ran: 抑制を含む一時ファイルをステージして `pnpm exec lefthook run pre-commit` を実行し、`suppression-check` が `fail_text` を出して exit 1 で止まることを確認した。`lefthook.yaml` から job を一時的に外すと exit 0 になり、戻すと再び止まることを確認した。`pnpm typecheck`、`pnpm lint`、`pnpm format:check` は緑。全体の `pnpm test:run` は `scripts/product-ready/index.test.ts` の 1 件だけ赤で、これは計画の外の既存不具合である。
+- Findings: `scripts/product-ready/index.test.ts:267` の赤は、オーナーの `rules/roadmap.md` の変更（`## 1.0.x (.4 or less)`、`## 0.9.x (.5 or more)`）に対する期待のずれである。この計画の範囲外であり、プランの `Notes` に `left:` として記録した。
+- Doubts: レビューの Doubt（実行記録の数値を再実行で裏付けていない）は、上の `Ran` の実走で裏付けた。
