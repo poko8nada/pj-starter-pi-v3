@@ -146,13 +146,15 @@ pre-commit の検査の並びに、抑制を報告する job を加える。
   - `pnpm test:run` は `scripts/product-ready/index.test.ts` の1件（ROADMAP 置き換えが `## 0.x.x` を含むこと）が赤い。`rules/roadmap.md` の見出しが `## 1.0.x` 系に変わったことによる期待のずれで、`lefthook.yaml` は関与しない。`typecheck`・`lint`・`format:check` は緑。
     - left: 赤はこのスライスの前からある置き換え側のずれで、直す先は product-ready と roadmap の持ち分であるため。このスライスでは閉じない。
 - Unplanned: なし
-- Commit:
+- Commit: 57972ea3ee826d30e7bc496adc3bed6523e6d532
 - Stopped:
 
 ### Slice 2: README の追従
 
 - Findings:
-- Unplanned:
+  - `pnpm test:run` はスライス1と同じ `scripts/product-ready/index.test.ts` の1件が赤い。ほかは緑で、README の変更が赤に関与しないことは差分の範囲から明らか。
+    - left: スライス1に書いたとおり、赤は前からの置き換え側のずれでこの計画の持ち分でないため。ここでは閉じない。
+- Unplanned: なし
 - Commit:
 - Stopped:
 

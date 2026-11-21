@@ -44,11 +44,12 @@ English: [README.md](README.md)
 - typecheck:
   - `scripts/checks/typecheck.mjs` - push 時にルートと harness の型を確認する。
   - `scripts/checks/typecheck-staged.mjs` - commit 時に変更分だけの型を確認する。
+- suppression-check: `scripts/checks/suppression-check.mjs` - リンターと型チェックの抑制のうち、ホワイトリストと Reason で許可されていないものを報告する。
 - test:
   - `vitest.config.ts` - テストの設定で、product:ready が test-exclude.json の一覧を除外に書く。
 - japanese-check: `scripts/checks/ja-check.mjs` - 禁止語の出現を数え、error と warn で報告し、`scripts/checks/ja-check.json` の `exclude` に書いたパスは検査しない。
 - localhook: `lefthook`
-  - pre-commit: 変更分に書式と lint と型と関連テストと日本語検査を実行する。
+  - pre-commit: 変更分に書式と lint と型と抑制検査と関連テストと日本語検査を実行する。
   - pre-push: 全体の型とテストを実行する。
 
 ### Handover
