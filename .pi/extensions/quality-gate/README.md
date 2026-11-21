@@ -1,6 +1,6 @@
 # quality-gate
 
-Runs format, lint and typecheck on the files the agent changed in a run, and hands the failures back as a follow-up so the same session fixes them.
+Runs format, lint, suppression and typecheck on the files the agent changed in a run, and hands the failures back as a follow-up so the same session fixes them.
 
 ## Install
 
@@ -14,12 +14,13 @@ When a run ends, it works out what that run changed, checks it and, on failure, 
 
 Targets come from git. The working tree is fingerprinted when a run starts and again when it ends, and what differs is checked — so a file written by a script or a formatter counts, not just one written through `edit` or `write`. Paths those tools reported are added on top, so a mid-run `git commit` cannot hide them. Git-ignored paths never appear in the list, and deleted files are not handed to the tools.
 
-| Phase  | Check       | Script                      | On failure                                     |
-| ------ | ----------- | --------------------------- | ---------------------------------------------- |
-| fix    | `lint:fix`  | `pnpm run lint:fix`         | ignored, the verify phase reports what remains |
-| fix    | `format`    | `pnpm run format`           | ignored, same                                  |
-| verify | `lint`      | `pnpm run lint`             | reported                                       |
-| verify | `typecheck` | `pnpm run typecheck:staged` | reported                                       |
+| Phase  | Check         | Script                       | On failure                                     |
+| ------ | ------------- | ---------------------------- | ---------------------------------------------- |
+| fix    | `lint:fix`    | `pnpm run lint:fix`          | ignored, the verify phase reports what remains |
+| fix    | `format`      | `pnpm run format`            | ignored, same                                  |
+| verify | `lint`        | `pnpm run lint`              | reported                                       |
+| verify | `suppression` | `pnpm run suppression-check` | reported                                       |
+| verify | `typecheck`   | `pnpm run typecheck:staged`  | reported                                       |
 
 The fix phase only applies changes that cannot alter meaning. `oxlint --fix` can leave braces in a shape the formatter disagrees with, which is why `format` runs after it. Anything needing a judgement call (`eqeqeq`, `no-unused-vars`) is left for the agent.
 
@@ -47,7 +48,7 @@ Three consecutive failures. Beyond that the agent is told to stop and report wha
 
 ## Relation to lefthook
 
-`lefthook.yaml` runs format, lint, typecheck and test at commit time. This extension runs the first three earlier, while the agent still has the turn open, so the agent fixes its own mistakes instead of the user finding them at commit.
+lefthook.yaml runs format, lint, typecheck and test at commit time. This extension runs format, lint, suppression and typecheck earlier, while the agent still has the turn open, so the agent fixes its own mistakes instead of the user finding them at commit.
 
 `pnpm test` is not in the list, and nothing in the code says why. It runs at commit time through `lefthook`, so a broken test is caught before the change lands, but the agent does not see the failure while it still has the turn open.
 

@@ -90,7 +90,7 @@ export function buildGateMessage(report: GateFailureReport): string {
   const instructions = [
     'Fix the problems reported above.',
     'Run the checks yourself if you need more detail:',
-    '  pnpm format / pnpm lint / pnpm typecheck:staged <files>',
+    '  pnpm format / pnpm lint / pnpm suppression-check / pnpm typecheck:staged <files>',
     'Do not weaken, disable, or reconfigure the checks themselves.',
     'Do not delete the offending file just to make the checks pass - fix the real problem.',
     report.isFinalAttempt
