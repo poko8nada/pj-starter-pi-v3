@@ -32,7 +32,7 @@ It is the layer outside `DEFINITION.md`: the picture says what the product is, a
 ```md
 # Roadmap
 
-## 1.x.x
+## 1.0.x (.4 or less)
 
 | No  | Ver | status | cycles | priority | title |
 | --- | --- | ------ | ------ | -------- | ----- |
@@ -44,7 +44,7 @@ It is the layer outside `DEFINITION.md`: the picture says what the product is, a
 - ideas:
   - <思いついた形>
 
-## 0.x.x
+## 0.9.x (.5 or more)
 
 | No  | Ver | status | cycles | priority | title |
 | --- | --- | ------ | ------ | -------- | ----- |
