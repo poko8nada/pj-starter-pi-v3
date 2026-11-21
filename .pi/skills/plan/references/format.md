@@ -38,8 +38,6 @@ Section and field names are English; the content is Japanese.
 <file>
 ```
 
-## Slices
-
 ## 1.<スライス名>
 
 ### Types

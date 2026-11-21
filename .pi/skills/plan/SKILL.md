@@ -163,7 +163,7 @@ Notes:
 3. Report your findings to the owner (if nothing, tell them to the owner).
 4. Once approved, update the ADR, affected, or plan accordingly.
 
-### 8. Show the owner
+### 9. Show the owner
 
 Steps:
 
