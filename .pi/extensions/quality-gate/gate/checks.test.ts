@@ -166,6 +166,19 @@ describe('runCheck（runChecks 越しに見る）', () => {
       expect(outcome.output).toBe(expectedOutput);
     }
   });
+  it('suppression: happy コードファイルと md を渡す → コードファイルだけを受け取る', async () => {
+    const setup = checksSetup();
+    const ts = setup.tsFile('a.ts');
+    const md = join(setup.dir, 'b.md');
+    writeFileSync(md, 'x\n');
+
+    const run = await runChecks(setup.fake.pi, { cwd: setup.dir }, [ts, md]);
+
+    const suppression = setup.fake.calls.find((call) => call.args.includes('suppression-check'));
+    expect(suppression?.args).toContain(ts);
+    expect(suppression?.args).not.toContain(md);
+    expect(run.outcomes.map((outcome) => outcome.label)).toContain('suppression');
+  });
 });
 
 describe('runChecks（2フェーズ）', () => {

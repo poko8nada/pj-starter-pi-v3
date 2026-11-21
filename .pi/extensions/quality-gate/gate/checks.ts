@@ -53,6 +53,13 @@ const CHECK_SPECS: readonly CheckSpec[] = [
     flags: ['--no-error-on-unmatched-pattern'],
     targets: 'lint',
   },
+  {
+    phase: 'verify',
+    label: 'suppression',
+    script: 'suppression-check',
+    flags: [],
+    targets: 'lint',
+  },
   { phase: 'verify', label: 'typecheck', script: 'typecheck:staged', flags: [], targets: 'all' },
 ];
 
