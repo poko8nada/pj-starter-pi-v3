@@ -155,7 +155,7 @@ pre-commit の検査の並びに、抑制を報告する job を加える。
   - `pnpm test:run` はスライス1と同じ `scripts/product-ready/index.test.ts` の1件が赤い。ほかは緑で、README の変更が赤に関与しないことは差分の範囲から明らか。
     - left: スライス1に書いたとおり、赤は前からの置き換え側のずれでこの計画の持ち分でないため。ここでは閉じない。
 - Unplanned: なし
-- Commit:
+- Commit: 5ae1a97bad0602b96339aa5c810c1b5c4c8a43a0
 - Stopped:
 
 ## Work Review
