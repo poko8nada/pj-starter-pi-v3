@@ -101,9 +101,9 @@ CLI が複数のパスを 1 回で受け取り、すべてを走査してファ�
 
 ### Slice 1: 複数パスのテスト
 
-- Findings:
-- Unplanned:
-- Commit:
+- Findings: なし
+- Unplanned: なし
+- Commit: f620ea2c084311ac8b264fc71990b542d32a0c27
 - Stopped:
 
 ## Work Review
