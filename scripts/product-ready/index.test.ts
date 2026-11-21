@@ -264,7 +264,7 @@ describe('product-ready index', () => {
     expect(result.status).toBe(0);
     const roadmap = readFileSync(join(tree.root, 'ROADMAP.md'), 'utf8');
     expect(roadmap).not.toContain('old');
-    expect(roadmap).toContain('## 0.x.x');
+    expect(roadmap).toContain('## 0.9.x (.5 or more)');
     expect(roadmap).toContain('<何をするか。1 行>');
   });
 
