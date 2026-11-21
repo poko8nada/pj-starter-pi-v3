@@ -259,24 +259,30 @@ interface CheckSpec {
 
 ### Slice 1: targets への改名
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: ba3469c3
+- Stopped: なし
 
 ### Slice 2: suppression の検査
 
-- Findings:
-- Unplanned:
-- Commit:
-- Stopped:
+- Findings: なし
+- Unplanned: なし
+- Commit: 7abb45ce
+- Stopped: なし
 
 ### Slice 3: 文面の追従
 
-- Findings:
+- Findings: なし
+- Unplanned: なし
+- Commit: a8f0a0fb
+- Stopped: なし
+
+### Cleanup: check-ignore 非ゼロの前提をテスト内に移した
+
+- Findings: なし
 - Unplanned:
-- Commit:
-- Stopped:
+  - `checks.test.ts` の `assertNoExclusion` ヘルパーをなくし、`check-ignore が 0 以外でも出力があれば除外しない` の前提（setup・file・終了コード・ignored 標準出力・断言）をテスト内に移した。ヘルパーが振る舞いに要る前提を隠していたため。挙動の変更なし。
 
 ## Work Review
 
